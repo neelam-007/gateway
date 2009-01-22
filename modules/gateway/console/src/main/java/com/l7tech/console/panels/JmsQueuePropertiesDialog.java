@@ -9,7 +9,6 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.transport.jms.*;
 import static com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType.*;
@@ -18,8 +17,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -1335,6 +1333,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
             } else if (ExceptionUtils.causedBy(e, IOException.class)) {
                 String errorMsg = ExceptionUtils.getMessage(e, "Invalid JMS connection settings.");
                 JOptionPane.showMessageDialog(this, errorMsg, "JMS Connection Settings", JOptionPane.ERROR_MESSAGE);
+            } else if (ExceptionUtils.causedBy(e, VersionException.class)) {
+                String errorMsg = ExceptionUtils.getMessage(e, "Failed to save JMS connection settings.");
+                JOptionPane.showMessageDialog(this, errorMsg, "JMS Connection Settings", JOptionPane.ERROR_MESSAGE);
+                onCancel();               
             } else {
                 throw new RuntimeException("Unable to save changes to this JMS Queue", e);
             }

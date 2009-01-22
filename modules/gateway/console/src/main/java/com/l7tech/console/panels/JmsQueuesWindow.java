@@ -7,6 +7,7 @@ package com.l7tech.console.panels;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import static com.l7tech.objectmodel.EntityType.JMS_ENDPOINT;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
@@ -320,19 +321,38 @@ public class JmsQueuesWindow extends JDialog {
         if (row >= 0) {
             JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueues().get(row);
             if (i != null) {
-                final JmsQueuePropertiesDialog pd =
-                  JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, i.getConnection(), i.getEndpoint(), false);
-                pd.pack();
-                Utilities.centerOnScreen(pd);
-                DialogDisplayer.display(pd, new Runnable() {
-                    public void run() {
-                        if (!pd.isCanceled()) {
-                            updateEndpointList(pd.getEndpoint());
-                        }
+                //grab the latest version from the list
+                long connectionOid = i.getConnection().getOid();
+                long endpointOid = i.getEndpoint().getOid();
+                try {
+                    JmsConnection connection = Registry.getDefault().getJmsManager().findConnectionByPrimaryKey(connectionOid);
+                    JmsEndpoint endpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(endpointOid);
+                    if (connection == null || endpoint == null) {
+                        //the connection or endpoint has been removed some how
+                        DialogDisplayer.showMessageDialog(this, "JMS connection not found.", refreshEndpointList());
+                    } else {
+                        final JmsQueuePropertiesDialog pd =
+                                JmsQueuePropertiesDialog.createInstance(JmsQueuesWindow.this, connection, endpoint, false);
+                        pd.pack();
+                        Utilities.centerOnScreen(pd);
+                        DialogDisplayer.display(pd, refreshEndpointList()); //refresh after any changes
                     }
-                });
+                } catch (FindException fe) {
+                    DialogDisplayer.showMessageDialog(this, "JMS connection not found.", refreshEndpointList());
+                }
             }
         }
+    }
+
+    /**
+     * @return  A runnable that will refresh the endpoint list
+     */
+    private Runnable refreshEndpointList() {
+        return new Runnable() {
+            public void run() {
+                updateEndpointList(null);
+            }
+        };
     }
 
     private JTable getJmsQueueTable() {

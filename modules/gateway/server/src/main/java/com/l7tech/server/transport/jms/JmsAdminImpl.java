@@ -97,7 +97,12 @@ public class JmsAdminImpl implements JmsAdmin {
                 jmsConnectionManager.update(connection);
             return oid;
         } catch (ObjectModelException e) {
-            throw new SaveException("Couldn't save JmsConnection", e);
+            if (ExceptionUtils.causedBy(e, StaleUpdateException.class)) {
+                logger.log(Level.INFO, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                throw new VersionException("Current JMS connection version is outdated.  No changes will be saved.", e);
+            } else {
+                throw new SaveException("Couldn't save JmsConnection", e);
+            }
         }
     }
 
@@ -259,7 +264,12 @@ public class JmsAdminImpl implements JmsAdmin {
 
             return oid;
         } catch (ObjectModelException e) {
-            throw new SaveException("Couldn't save endpoint", e);
+            if (ExceptionUtils.causedBy(e, StaleUpdateException.class)) {
+                logger.log(Level.INFO, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                throw new VersionException("Current JMS connection version is outdated.  No changes will be saved.", e);
+            } else {
+                throw new SaveException("Couldn't save endpoint", e);
+            }
         }
     }
 

@@ -297,6 +297,16 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     }
                 }
             }
+
+            try {
+                ET original = findByPrimaryKey(entity.getOid());                
+                if (original == null || original.getVersion() != entity.getVersion()) {
+                    throw new StaleUpdateException("Entity " + entity.getOid() + ": version mismatch");
+                }
+            } catch (FindException fe) {
+                throw new UpdateException("Couldn't find previous version to check for versioning");
+            }
+
             getHibernateTemplate().merge(entity);
         } catch (RuntimeException e) {
             throw new UpdateException("Couldn't update " + entity.getClass().getSimpleName(), e);
