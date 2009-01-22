@@ -3014,15 +3014,15 @@
     </target>
 
     <target name="generate-xbean-jars">
-        <xmlbeancompiler destfile="${src.root}/lib/xbean-xenc-xmldsig.jar" classpathref="project.classpath">
+        <xmlbeancompiler destfile="${src.root}/build/xbean-xenc-xmldsig.jar" classpathref="project.classpath">
             <fileset dir="${src.root}/etc/schema/xbean" includes="xmldsig-core-schema.xsd, xenc-schema.xsd"/>
         </xmlbeancompiler>
-        <xmlbeancompiler destfile="${src.root}/lib/xbean-saml1_1.jar" classpathref="project.classpath">
+        <xmlbeancompiler destfile="${src.root}/build/xbean-saml1_1.jar" classpathref="project.classpath">
             <fileset dir="${src.root}/etc/schema/xbean" includes="oasis-sstc-saml-schema-assertion-1.1.xsd"/>
         </xmlbeancompiler>
-        <xmlbeancompiler destfile="${src.root}/lib/xbean-saml2_0.jar">
+        <xmlbeancompiler destfile="${src.root}/build/xbean-saml2_0.jar">
             <classpath>
-                <pathelement location="${src.root}/lib/xbean-xenc-xmldsig.jar"/>
+                <pathelement location="${src.root}/build/xbean-xenc-xmldsig.jar"/>
                 <path refid="project.classpath"/>
             </classpath>
             <fileset dir="${src.root}/etc/schema/xbean">
@@ -3035,6 +3035,7 @@
                 <include name="saml-schema-authn-context-xmldsig-2.0.xsd"/>
             </fileset>
         </xmlbeancompiler>
+        <echo level="info">Output JARs (build/ xbean-xenc-xmldsig.jar, xbean-saml1_1.jar, xbean-saml2_0.jar)  should be installed to lib/repository/com.l7tech.lib/ for use in build.</echo>
     </target>
 
     <!--
