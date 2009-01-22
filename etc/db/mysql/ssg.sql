@@ -1059,6 +1059,7 @@ INSERT INTO rbac_permission VALUES (-501,0,-500,'READ',NULL,'METRICS_BIN');
 INSERT INTO rbac_permission VALUES (-502,0,-500,'READ',NULL,'SERVICE');
 INSERT INTO rbac_permission VALUES (-503,0,-500,'READ',NULL,'CLUSTER_INFO');
 INSERT INTO rbac_permission VALUES (-504,0,-500,'READ',NULL,'SERVICE_USAGE');
+INSERT INTO rbac_permission VALUES (-505,0,-500,'READ',NULL,'FOLDER');
 
 INSERT INTO rbac_role VALUES (-550,0,'Manage Cluster Status', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster status information.');
 INSERT INTO rbac_permission VALUES (-551,0,-550,'READ',NULL,'CLUSTER_INFO');

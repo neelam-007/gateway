@@ -307,6 +307,11 @@ INSERT INTO rbac_permission VALUES (-427,0,-400,'UPDATE',NULL,'SERVICE_ALIAS');
 INSERT INTO rbac_permission VALUES (-428,0,-400,'DELETE',NULL,'SERVICE_ALIAS');
 
 --
+-- Add new RBAC permissions for view service metrics
+--
+INSERT INTO rbac_permission VALUES (-505,0,-500,'READ',NULL,'FOLDER');
+
+--
 -- Create tables for RBAC folder predicates
 --
 CREATE TABLE rbac_predicate_folder (
