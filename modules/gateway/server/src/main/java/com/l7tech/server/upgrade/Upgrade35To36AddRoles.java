@@ -67,8 +67,8 @@ public class Upgrade35To36AddRoles implements UpgradeTask {
         // If any of them doesn't have a role, try to create it
         Collection<PublishedService> services = serviceManager.findAll();
         for (PublishedService service : services) {
-            Role role = roleManager.findEntitySpecificRole(SERVICE, service.getOid());
-            if (role == null) {
+            Collection<Role> roles = roleManager.findEntitySpecificRoles(SERVICE, service.getOid());
+            if (roles == null || roles.isEmpty() ) {
                 logger.info("Auto-creating missing admin Role for service " + service.getName() + " (#" + service.getOid() + ")");
                 serviceManager.addManageServiceRole(service);
             }
@@ -84,8 +84,8 @@ public class Upgrade35To36AddRoles implements UpgradeTask {
         for (IdentityProviderConfig ipc : ipcs) {
             if (ipc.getOid() <= 0) continue;  // Don't mess with built-in ones
             
-            Role role = roleManager.findEntitySpecificRole(ID_PROVIDER_CONFIG, ipc.getOid());
-            if (role == null) {
+            Collection<Role> roles = roleManager.findEntitySpecificRoles(ID_PROVIDER_CONFIG, ipc.getOid());
+            if (roles == null || roles.isEmpty() ) {
                 logger.info("Auto-creating missing admin Role for identity provider " + ipc.getName() + " (#" + ipc.getOid() + ")");
                 ipcManager.addManageProviderRole(ipc);
             }

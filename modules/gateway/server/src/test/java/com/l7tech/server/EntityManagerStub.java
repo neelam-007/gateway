@@ -4,13 +4,15 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.FolderedEntityManager;
+import com.l7tech.objectmodel.folder.Folder;
 
 import java.util.*;
 
 /**
  * Stub Entity Manager
  */
-public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends EntityHeader> implements EntityManager<ET, EH> {
+public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends EntityHeader> implements FolderedEntityManager<ET, EH> {
     protected final Map<Long, ET> entities;
     protected final Map<Long, EH> headers;
     private final boolean canHasNames = NamedEntity.class.isAssignableFrom(getImpClass());
@@ -37,19 +39,23 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         this.nextOid = ++maxOid;
     }
 
+    @Override
     public ET findByPrimaryKey(long oid) throws FindException {
         return entities.get(oid);
     }
 
+    @Override
     public ET findByHeader(EntityHeader header) throws FindException {
         return findByPrimaryKey(header.getOid());
     }
 
+    @Override
     public synchronized void delete(long oid) throws DeleteException, FindException {
         entities.remove(oid);
         headers.remove(oid);
     }
 
+    @Override
     public synchronized void update(ET entity) throws UpdateException {
         if (entity.getOid() == PersistentEntity.DEFAULT_OID || entity.getId() == null) throw new IllegalArgumentException();
         entities.put(entity.getOid(), entity);
@@ -60,6 +66,7 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         return (EH) new EntityHeader(entity.getId(), getEntityType(), name(entity), null);
     }
 
+    @Override
     public synchronized Collection<EH> findAllHeaders() throws FindException {
         return Collections.unmodifiableCollection(headers.values());
     }
@@ -68,6 +75,7 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         return Collections.unmodifiableCollection(headers.values());
     }
 
+    @Override
     public synchronized Collection<EH> findAllHeaders(int offset, int limit) throws FindException {
         EH[] dest = (EH[]) new EntityHeader[limit];
         EH[] all = (EH[]) headers.values().toArray(new EntityHeader[limit]);
@@ -75,6 +83,7 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         return Arrays.asList(dest);
     }
 
+    @Override
     public ET findByUniqueName(String name) throws FindException {
         if (!canHasNames) throw new FindException(getImpClass() + " has no name");
         ET got = null;
@@ -90,15 +99,18 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         return got;
     }
 
+    @Override
     public synchronized Collection<ET> findAll() throws FindException {
         return Collections.unmodifiableCollection(entities.values());
     }
 
+    @Override
     public Integer getVersion(long oid) throws FindException {
         ET ent = entities.get(oid);
         return ent == null ? null : ent.getVersion();
     }
 
+    @Override
     public synchronized Map<Long, Integer> findVersionMap() throws FindException {
         Map<Long, Integer> versions = new HashMap<Long, Integer>();
         for (Map.Entry<Long, ET> entry : entities.entrySet()) {
@@ -107,10 +119,12 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         return Collections.unmodifiableMap(versions);
     }
 
+    @Override
     public ET getCachedEntity(long o, int maxAge) throws FindException {
         return entities.get(o);
     }
 
+    @Override
     public synchronized long save(ET entity) throws SaveException {
         long oid = nextOid++;
         entity.setOid(oid);
@@ -130,23 +144,36 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         return name;
     }
 
+    @Override
+    public void updateFolder( final long entityId, final Folder folder ) throws UpdateException {
+    }
+
+    @Override
+    public void updateFolder( final ET entity, final Folder folder ) throws UpdateException {
+    }
+
+    @Override
     public synchronized void delete(ET entity) throws DeleteException {
         entities.remove(entity.getOid());
         headers.remove(entity.getOid());
     }
 
+    @Override
     public Class<? extends Entity> getImpClass() {
         return PersistentEntity.class;
     }
 
+    @Override
     public Class<? extends Entity> getInterfaceClass() {
         return Entity.class;
     }
 
+    @Override
     public EntityType getEntityType() {
         return EntityTypeRegistry.getEntityType(getImpClass());
     }
 
+    @Override
     public String getTableName() {
         return getEntityType().name().toLowerCase();
     }

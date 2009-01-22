@@ -178,7 +178,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     @Override
     public void delete( final SsgCluster ssgCluster ) throws DeleteException {
         super.delete(ssgCluster);
-        roleManager.deleteEntitySpecificRole(ESM_SSG_CLUSTER, ssgCluster.getOid());
+        roleManager.deleteEntitySpecificRoles(ESM_SSG_CLUSTER, ssgCluster.getOid());
     }
 
     @Override
@@ -186,7 +186,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
         super.update(ssgCluster);
 
         try {
-            roleManager.renameEntitySpecificRole(EntityType.ESM_SSG_CLUSTER, ssgCluster, replaceRoleName);
+            roleManager.renameEntitySpecificRoles(EntityType.ESM_SSG_CLUSTER, ssgCluster, replaceRoleName);
         } catch (FindException e) {
             throw new UpdateException("Couldn't find Role to rename", e);
         }

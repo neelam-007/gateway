@@ -73,9 +73,7 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         actions.add(new PolicyRevisionsAction(this));
         actions.add(new RefreshTreeNodeAction(this));
 
-        Action secureCut = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
-                                                                OperationType.UPDATE,
-                                                                ServicesAndPoliciesTree.ClipboardActionType.CUT);
+        Action secureCut = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.CUT);
         if(secureCut != null){
             actions.add(secureCut);
         }

@@ -15,10 +15,11 @@ import com.l7tech.server.util.JaasUtils;
 import com.l7tech.policy.Policy;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.event.system.ServiceCacheEvent;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.resolution.ResolutionManager;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.gateway.common.service.*;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -40,7 +41,7 @@ import java.util.*;
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
 public class ServiceManagerImp
-        extends HibernateEntityManager<PublishedService, ServiceHeader>
+        extends FolderSupportHibernateEntityManager<PublishedService, ServiceHeader>
         implements ServiceManager, ApplicationContextAware
 {
     private static final Logger logger = Logger.getLogger(ServiceManagerImp.class.getName());
@@ -60,7 +61,6 @@ public class ServiceManagerImp
         this.resolutionManager = resolutionManager;
         this.serviceAliasManager = serviceAliasManager;
     }
-
 
     @Override
     protected ServiceHeader newHeader(PublishedService entity) {
@@ -152,13 +152,24 @@ public class ServiceManagerImp
         }
 
         try {
-            roleManager.renameEntitySpecificRole(SERVICE, service, replaceRoleName);
+            roleManager.renameEntitySpecificRoles(SERVICE, service, replaceRoleName);
         } catch (FindException e) {
             throw new UpdateException("Couldn't find Role to rename", e);
         }
 
         // update cache after commit
         spring.publishEvent(new ServiceCacheEvent.Updated(service));
+    }
+
+    @Override
+    public void updateFolder( final long entityId, final Folder folder ) throws UpdateException {
+        setParentFolderForEntity( entityId, folder );
+    }
+
+    @Override
+    public void updateFolder( final PublishedService entity, final Folder folder ) throws UpdateException {
+        if ( entity == null ) throw new UpdateException("Service is required but missing.");
+        setParentFolderForEntity( entity.getOid(), folder );
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.Policy;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.Folder;
 
 import java.util.Collection;
 import java.util.Set;
@@ -144,6 +145,16 @@ public class VersioningPolicyManager implements PolicyManager {
         } catch ( ObjectModelException ome ) {
             throw new UpdateException("Unable to save policy version.", ome);
         }
+    }
+
+    @Override
+    public void updateFolder(Policy entity, Folder folder) throws UpdateException {
+        policyManager.updateFolder(entity, folder);
+    }
+
+    @Override
+    public void updateFolder(long entityId, Folder folder) throws UpdateException {
+        policyManager.updateFolder(entityId, folder);
     }
 
     @Override

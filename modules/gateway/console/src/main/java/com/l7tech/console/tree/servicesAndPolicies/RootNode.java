@@ -5,11 +5,9 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.gateway.common.admin.PolicyAdmin;
-import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.objectmodel.folder.FolderHeader;
@@ -217,9 +215,7 @@ public final class RootNode extends FolderNode {
                 actions.add(action);
         }
 
-        Action securePaste = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
-                                                                OperationType.UPDATE,
-                                                                ServicesAndPoliciesTree.ClipboardActionType.PASTE);
+        Action securePaste = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.PASTE);
         if(securePaste != null) actions.add(securePaste);
 
         return actions.toArray(new Action[actions.size()]);

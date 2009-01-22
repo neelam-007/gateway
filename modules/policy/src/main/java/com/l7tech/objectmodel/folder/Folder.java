@@ -11,7 +11,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * Represents a service/policy folder.
  */
 @XmlRootElement
-public class Folder extends NamedEntityImp {
+public class Folder extends NamedEntityImp implements HasFolder {
     private Folder parentFolder;
     private static final int MAX_NESTING_CHECK_LEVEL = 1000;
 
@@ -23,13 +23,15 @@ public class Folder extends NamedEntityImp {
     @Deprecated // For Serialization and persistence only
     public Folder() { }
 
+    @Override
     @Migration(mapName = NONE, mapValue = NONE)
-    public Folder getParentFolder() {
+    public Folder getFolder() {
         return parentFolder;
     }
 
+    @Override
     @Deprecated // For Serialization and persistence only; don't want exceptions thrown, like the alternative reParent() does
-    public void setParentFolder(Folder parentFolder) {
+    public void setFolder(Folder parentFolder) {
         this.parentFolder = parentFolder;
     }
 
@@ -49,7 +51,7 @@ public class Folder extends NamedEntityImp {
      */
     public Folder(final Folder folder) {
         super(folder);
-        this.parentFolder = folder.getParentFolder();
+        this.parentFolder = folder.getFolder();
     }
 
     public boolean isParentOf(Folder targetFolder) {
@@ -57,11 +59,11 @@ public class Folder extends NamedEntityImp {
             return false;
 
         int nesting = 0;
-        Folder parent = targetFolder.getParentFolder();
+        Folder parent = targetFolder.getFolder();
         while(parent != null && nesting++ < MAX_NESTING_CHECK_LEVEL) {
             if (parent.getOid() == _oid)
                 return true;
-            parent = parent.getParentFolder();
+            parent = parent.getFolder();
         }
         return false;
     }

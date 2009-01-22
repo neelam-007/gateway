@@ -291,6 +291,22 @@ ALTER TABLE trusted_cert ADD serial varchar(64);
 CREATE INDEX i_issuer_dn ON trusted_cert (issuer_dn);
 
 --
+-- Add new RBAC permissions for manage webservices
+--
+INSERT INTO rbac_permission VALUES (-417,0,-400,'CREATE',NULL,'FOLDER');
+INSERT INTO rbac_permission VALUES (-418,0,-400,'READ',  NULL,'FOLDER');
+INSERT INTO rbac_permission VALUES (-419,0,-400,'UPDATE',NULL,'FOLDER');
+INSERT INTO rbac_permission VALUES (-420,0,-400,'DELETE',NULL,'FOLDER');
+INSERT INTO rbac_permission VALUES (-421,0,-400,'CREATE',NULL,'POLICY_ALIAS');
+INSERT INTO rbac_permission VALUES (-422,0,-400,'READ',  NULL,'POLICY_ALIAS');
+INSERT INTO rbac_permission VALUES (-423,0,-400,'UPDATE',NULL,'POLICY_ALIAS');
+INSERT INTO rbac_permission VALUES (-424,0,-400,'DELETE',NULL,'POLICY_ALIAS');
+INSERT INTO rbac_permission VALUES (-425,0,-400,'CREATE',NULL,'SERVICE_ALIAS');
+INSERT INTO rbac_permission VALUES (-426,0,-400,'READ',  NULL,'SERVICE_ALIAS');
+INSERT INTO rbac_permission VALUES (-427,0,-400,'UPDATE',NULL,'SERVICE_ALIAS');
+INSERT INTO rbac_permission VALUES (-428,0,-400,'DELETE',NULL,'SERVICE_ALIAS');
+
+--
 -- Create tables for RBAC folder predicates
 --
 CREATE TABLE rbac_predicate_folder (
@@ -309,6 +325,19 @@ CREATE TABLE rbac_predicate_entityfolder (
   PRIMARY KEY (objectid),
   FOREIGN KEY (objectid) REFERENCES rbac_predicate (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+--
+-- RBAC updates for folder roles. All service policies should be in the same folder as the service entity. Entity roles are no longer unique.
+--
+UPDATE policy JOIN published_service ON published_service.policy_oid=policy.objectid SET policy.folder_oid = published_service.folder_oid;
+ALTER TABLE rbac_role DROP KEY entity_info;
+
+--
+-- Upgrade task for folder roles
+--
+INSERT INTO cluster_properties
+    (objectid, version, propkey, propvalue)
+    values (-500000, 0, "upgrade.task.500000", "com.l7tech.server.upgrade.Upgrade465To50UpdateRoles");
 
 -- Add version column to the Folders table
 ALTER TABLE folder ADD COLUMN version int(11) NOT NULL AFTER objectid; 

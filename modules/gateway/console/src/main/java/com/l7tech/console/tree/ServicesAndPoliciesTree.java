@@ -8,9 +8,8 @@ import com.l7tech.console.tree.servicesAndPolicies.SortComponents;
 import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.util.Refreshable;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.ClipboardActions;
 import com.l7tech.gui.util.Utilities;
@@ -107,6 +106,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
         return sortComponents;
     }
 
+    @Override
     public void refresh() {
         //refresh(null);
         refresh((AbstractTreeNode)this.getModel().getRoot());
@@ -137,13 +137,16 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
      *
      * @return always true
      */
+    @Override
     public boolean canRefresh() {
         return true;
     }
 
+    @Override
     public void focusGained(FocusEvent e) {
     }
 
+    @Override
     public void focusLost(FocusEvent e) {
         //let user see that all cut nodes have been undone
         setAllChildrenUnCut();
@@ -158,6 +161,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
         /**
          * Invoked when a key has been pressed.
          */
+        @Override
         public void keyPressed(KeyEvent e) {
             JTree tree = (JTree)e.getSource();
             TreePath path = tree.getSelectionPath();
@@ -187,6 +191,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
         /**
          * Invoked when the mouse has been clicked on a component.
          */
+        @Override
         public void mouseClicked(MouseEvent e) {
             if (e.getClickCount() != 2) return;
             JTree tree = (JTree)e.getSource();
@@ -199,10 +204,12 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
                 new EditPolicyAction((EntityWithPolicyNode)node).actionPerformed(null);
         }
 
+        @Override
         public void mousePressed(MouseEvent e) {
             popUpMenuHandler(e);
         }
 
+        @Override
         public void mouseReleased(MouseEvent e) {
             popUpMenuHandler(e);
         }
@@ -262,6 +269,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
             return actionName;
         }
 
+        @Override
         public String toString() {
             return actionName;
         }
@@ -275,20 +283,14 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
      * If a client uses this method in a once off initialization for cut and paste actions there is the chance that
      * the clipboard is not yet ready, in which case null will be returned.
      *
-     * @param entityType The EntityType the user must have a permission for
-     * @param operationType The OperationType the user must have on the supplied EntityType
      * @param clipboardActionType Specify whether you want to 'Cut' or 'Paste'. Currently all that is supported
      * @return Action if the current user has the correct permissions, otherwise null
      */
-    public static Action getSecuredAction(EntityType entityType,
-                                          OperationType operationType,
-                                          ClipboardActionType clipboardActionType
-    ) {
-        if (!entityType.equals(EntityType.FOLDER) || !operationType.equals(OperationType.UPDATE)) return null;
+    public static Action getSecuredAction( final ClipboardActionType clipboardActionType ) {
         if (!ClipboardActions.isSystemClipboardAvailable()) return null;
         if (!Registry.getDefault().isAdminContextPresent()) return null;
 
-        if(!isUserAuthorizedToMoveFolders()) return null;
+        if ( !isUserAuthorizedToUpdateFolders() ) return null;
 
         switch(clipboardActionType) {
             case CUT:
@@ -301,16 +303,16 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
     }
 
     /**
-     * The user can move folders if they have the permission to update any entity of type folder
+     * The user can update folders if they have the permission to update any entity of type folder
+     * 
      * @return true if authorized, false otherwise
      */
-    public static boolean isUserAuthorizedToMoveFolders(){
-        AttemptedUpdateAny attemptedUpdate = new AttemptedUpdateAny(EntityType.FOLDER);
-
+    public static boolean isUserAuthorizedToUpdateFolders(){
+        if (!Registry.getDefault().isAdminContextPresent()) return false;
+        
         SecurityProvider securityProvider = Registry.getDefault().getSecurityProvider();
-        if (!securityProvider.hasPermission(attemptedUpdate)) return false;
-
-        return true;
+        AttemptedUpdateAny attemptedUpdate = new AttemptedUpdateAny(EntityType.FOLDER);
+        return securityProvider.hasPermission(attemptedUpdate);
     }
 
     public void setIgnoreCurrentClipboard(boolean set){
@@ -361,11 +363,6 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
         return selectedNodes;
     }
 
-    private RootNode getRootNode(){
-        DefaultTreeModel model = (DefaultTreeModel) getModel();
-        return (RootNode) model.getRoot();
-    }
-
     public void updateAllAliases(Long entityOid){
         DefaultTreeModel model = (DefaultTreeModel) getModel();
         RootNode rootNode = (RootNode) model.getRoot();
@@ -396,13 +393,11 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
             newHeader.setAliasOid(oH.getAliasOid());
 
             atn.setUserObject(newHeader);
-            if(atn instanceof EntityWithPolicyNode){
-                EntityWithPolicyNode ewpn = (EntityWithPolicyNode) atn;
-                try {
-                    ewpn.updateUserObject();
-                } catch (FindException e) {
-                    log.log(Level.INFO, e.getMessage());
-                }
+            EntityWithPolicyNode ewpn = (EntityWithPolicyNode) atn;
+            try {
+                ewpn.updateUserObject();
+            } catch (FindException e) {
+                log.log(Level.INFO, e.getMessage());
             }
             model.nodeStructureChanged(atn);
         }

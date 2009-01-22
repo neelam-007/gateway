@@ -20,6 +20,7 @@ import java.text.MessageFormat;
  * Handles {@link PermissionDeniedException}s thrown from the SSG
  */
 public class PermissionDeniedErrorHandler implements ErrorHandler {
+    @Override
     public void handle(ErrorEvent e) {
         final Throwable t = e.getThrowable();
         if (t instanceof PermissionDeniedException) {
@@ -38,10 +39,10 @@ public class PermissionDeniedErrorHandler implements ErrorHandler {
                 }
                 message = MessageFormat.format("You do not have sufficient privileges to {0} {1}", opname, ename);
             } else {
-                message = "You do not have sufficient privileges to invoke the requested operation";
+                message = "You do not have sufficient privileges to perform the requested operation";
             }
 
-            e.getLogger().log(Level.INFO, message, t);
+            e.getLogger().log(Level.INFO, message, ExceptionUtils.getDebugException(t));
             DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Permission Denied", message, null);
         } else if ( ExceptionUtils.causedBy(t, WsdlUtils.WSDLFactoryNotTrustedException.class) ) {
             TopComponents.getInstance().showNoPrivilegesErrorMessage();

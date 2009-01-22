@@ -16,7 +16,7 @@ import com.l7tech.policy.*;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.server.util.JaasUtils;
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TextUtils;
@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
  * @author alex
  */
 @Transactional(propagation=REQUIRED, rollbackFor=Throwable.class)
-public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHeader> implements PolicyManager {
+public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Policy, PolicyHeader> implements PolicyManager {
     private static final Logger logger = Logger.getLogger(PolicyManagerImpl.class.getName());
     
     String ROLE_NAME_TYPE_SUFFIX = "Policy";
@@ -74,6 +74,7 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
         }
     }
 
+    @Override
     public Policy findByGuid(final String guid) throws FindException {
         try {
             //noinspection unchecked
@@ -90,10 +91,12 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
         }
     }
 
+    @Override
     public Collection<PolicyHeader> findHeadersWithTypes(final Set<PolicyType> types) throws FindException{
         return this.findHeadersWithTypes(types, false);
     }
 
+    @Override
     public Collection<PolicyHeader> findHeadersWithTypes(final Set<PolicyType> types, boolean includeAliases)
             throws FindException{
 
@@ -189,13 +192,24 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
 
         if ( policy.getType() != PolicyType.PRIVATE_SERVICE ) {
             try {
-                roleManager.renameEntitySpecificRole(POLICY, policy, replaceRoleName);
+                roleManager.renameEntitySpecificRoles(POLICY, policy, replaceRoleName);
             } catch (FindException e) {
                 throw new UpdateException("Couldn't find Role to rename", e);
             }
         }
 
         super.update(policy);
+    }
+
+    @Override
+    public void updateFolder( final long entityId, final Folder folder ) throws UpdateException {
+        setParentFolderForEntity( entityId, folder );
+    }
+
+    @Override
+    public void updateFolder( final Policy entity, final Folder folder ) throws UpdateException {
+        if ( entity == null ) throw new UpdateException("Policy is required but missing.");
+        setParentFolderForEntity( entity.getOid(), folder );
     }
 
     @Override
@@ -215,11 +229,13 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
         super.delete(policy);
     }
 
+    @Override
     @Transactional(readOnly=true)
     public Collection<PolicyHeader> findHeadersByType(final PolicyType type) throws FindException {
         return findHeadersWithTypes(EnumSet.of(type));
     }
 
+    @Override
     public void addManagePolicyRole(Policy policy) throws SaveException {
         User currentUser = JaasUtils.getCurrentUser();
 
@@ -266,16 +282,19 @@ public class PolicyManagerImpl extends HibernateEntityManager<Policy, PolicyHead
         roleManager.save(newRole);
     }
 
+    @Override
     @Transactional(propagation=Propagation.SUPPORTS)
     public Class<? extends Entity> getImpClass() {
         return Policy.class;
     }
 
+    @Override
     @Transactional(propagation=Propagation.SUPPORTS)
     public Class<? extends Entity> getInterfaceClass() {
         return Policy.class;
     }
 
+    @Override
     @Transactional(propagation=Propagation.SUPPORTS)
     public String getTableName() {
         return "policy";

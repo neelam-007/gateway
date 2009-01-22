@@ -60,7 +60,7 @@ public class IdProvConfManagerServer
             fixInternalConfig(identityProviderConfig);
         } else {
             try {
-                roleManager.renameEntitySpecificRole(ID_PROVIDER_CONFIG, identityProviderConfig, replaceRoleName);
+                roleManager.renameEntitySpecificRoles(ID_PROVIDER_CONFIG, identityProviderConfig, replaceRoleName);
             } catch (FindException e) {
                 throw new UpdateException("Couldn't find Role to rename", e);
             }

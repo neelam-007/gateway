@@ -6,7 +6,6 @@
 package com.l7tech.gateway.common;
 
 import com.l7tech.gateway.common.security.rbac.*;
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 
 import java.util.Collection;
@@ -68,29 +67,25 @@ public abstract class Authorizer {
             }
 
             if (attempted instanceof AttemptedEntityOperation) {
-                AttemptedEntityOperation aeo = (AttemptedEntityOperation) attempted;
-                Entity ent = aeo.getEntity();
-                if (perm.matches(ent)) return true;
-            } else if (attempted instanceof AttemptedCreate) {
-                // CREATE doesn't support any scope yet, only a type
-                return true;
-            } else if (attempted instanceof AttemptedReadSpecific) {
                 // Permission grants read access to anything with matching type
                 if (perm.getScope() == null || perm.getScope().size() == 0) return true;
 
-                AttemptedReadSpecific read = (AttemptedReadSpecific) attempted;
-                if (read.getId() != null) {
-                    if (perm.getScope().size() == 1) {
+                AttemptedEntityOperation attemptedEntityOperation = (AttemptedEntityOperation) attempted;
+                if (attemptedEntityOperation.getEntity() != null && attemptedEntityOperation.getEntity().getId() != null) {
+                    if ( perm.getScope().size() == 1) {
                         ScopePredicate pred = perm.getScope().iterator().next();
-                        if (pred instanceof ObjectIdentityPredicate) {
-                            ObjectIdentityPredicate oip = (ObjectIdentityPredicate) pred;
-                            if (read.getId().equals(oip.getTargetEntityId())) {
-                                // Permission is granted to read this object
-                                return true;
+                        if ( pred instanceof ScopeEvaluator ) {
+                            try {
+                                return ((ScopeEvaluator)pred).matches( attemptedEntityOperation.getEntity() );
+                            } catch ( Exception e ) {
+                                // check other permissions
                             }
                         }
                     }
                 }
+            } else if (attempted instanceof AttemptedCreate) {
+                // CREATE doesn't support any scope yet, only a type
+                return true;
             } else if (attempted instanceof AttemptedReadAny) {
                 // EntityType and Operation already match
                 return true;
@@ -99,7 +94,8 @@ public abstract class Authorizer {
             } else if (attempted instanceof AttemptedDeleteAll) {
                 return perm.getScope().isEmpty();
             } else if (attempted instanceof AttemptedUpdateAny){
-                return perm.getScope().isEmpty();                
+                // EntityType and Operation already match
+                return true;
             }
         }
         return false;

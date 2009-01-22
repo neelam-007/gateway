@@ -3,12 +3,9 @@ package com.l7tech.console.tree.servicesAndPolicies;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.admin.AliasAdmin;
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.*;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
@@ -38,12 +35,12 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
     protected Transferable createTransferable(JComponent c) {
         if(c instanceof ServicesAndPoliciesTree) {
             //Can only drag and drop if the user is admin or has 'Manage Webservices' role
-            if(!ServicesAndPoliciesTree.isUserAuthorizedToMoveFolders()) return null;
+            if(!ServicesAndPoliciesTree.isUserAuthorizedToUpdateFolders()) return null;
 
             ServicesAndPoliciesTree servicesAndPoliciesTree = (ServicesAndPoliciesTree) c;            
             List<AbstractTreeNode> transferNodes = servicesAndPoliciesTree.getSmartSelectedNodes();
             //don't let the rootnode be dragged or appear to be draggable
-            for(AbstractTreeNode atn: transferNodes){
+            for(AbstractTreeNode atn : transferNodes){
                 if(atn instanceof RootNode){
                     return null;
                 }
@@ -129,11 +126,11 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                             Folder movedFolder = child.getFolder();
                             movedFolder.reParent(newParentFolder);
                             try {
-                                long folderId = Registry.getDefault().getFolderAdmin().saveFolder(movedFolder);
+                                Registry.getDefault().getFolderAdmin().moveEntityToFolder( newParentFolder, movedFolder );
 
                                 //need to update with new folder version from the database
-                                Folder updatedFolder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(folderId);
-                                updatedFolderNode = new FolderNode(new FolderHeader(updatedFolder), updatedFolder.getParentFolder());
+                                Folder updatedFolder = Registry.getDefault().getFolderAdmin().findByPrimaryKey(movedFolder.getOid());
+                                updatedFolderNode = new FolderNode(new FolderHeader(updatedFolder), updatedFolder.getFolder());
                             } catch(ConstraintViolationException e) {
                                 DialogDisplayer.showMessageDialog(tree,
                                                  "Folder '"+movedFolder.getName()+"' already exists.",
@@ -143,7 +140,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                             } catch (FindException fe) {
                                 //should not happen
                                 DialogDisplayer.showMessageDialog(tree,
-                                                 "Cannot find folder '"+movedFolder.getName()+"' to update version.",
+                                                 "Cannot find folder '"+movedFolder.getName()+"'.",
                                                  "Folder cannot be found",
                                                  JOptionPane.ERROR_MESSAGE, null);
                                 return false;
@@ -193,9 +190,9 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                                     DialogDisplayer.showMessageDialog(tree, "Cannot find alias", "Find Error", JOptionPane.ERROR_MESSAGE, null);
                                     return false;
                                 }
-                                //now update the alias
-                                alias.setFolder(newParentFolder);
-                                aliasAdmin.saveAlias(alias);
+                                
+                                // now update the alias parent folder
+                                Registry.getDefault().getFolderAdmin().moveEntityToFolder( newParentFolder, alias );
 
                                 //Update the OrganizationHeader representing the alias
                                 //this is enough to update the entity correctly. Below when updateUserObject is called
@@ -203,14 +200,9 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                                 //folder and alias properties
                                 OrganizationHeader header = (OrganizationHeader) childTransferNode.getUserObject();
                                 header.setFolderOid(newParent.getOid());
-                            } else if (entity instanceof HasFolderOid) {
-                                HasFolderOid o = (HasFolderOid) entity;
-                                o.setFolderOid(newParent.getOid());
-                                saveIt(childTransferNode, entity);
-                            } else if (entity instanceof HasFolder) {
-                                HasFolder o = (HasFolder)entity;
-                                o.setFolder(newParentFolder);
-                                saveIt(childTransferNode, entity);
+                            } else if ( entity instanceof PersistentEntity ) {
+                                Registry.getDefault().getFolderAdmin().moveEntityToFolder( newParentFolder, (PersistentEntity)entity );
+
                             }
                             childTransferNode.updateUserObject();
                         }
@@ -263,11 +255,6 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                     DialogDisplayer.showMessageDialog(tree, ExceptionUtils.getMessage(e), "Folder Error", JOptionPane.ERROR_MESSAGE, null);
                 }
                 return false;
-            } catch (SaveException e) {
-                if(tree != null){
-                    DialogDisplayer.showMessageDialog(tree,"Cannot save folder: " + e.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE, null);
-                }
-                return false;
             } catch (UpdateException e){
                 if(tree != null){
                     if (ExceptionUtils.causedBy(e, StaleUpdateException.class)) {
@@ -300,14 +287,5 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             }
         }
         return true;
-    }
-
-    private void saveIt(EntityWithPolicyNode childTransferNode, Entity entity)
-        throws UpdateException, SaveException, VersionException, PolicyAssertionException {
-        if (childTransferNode instanceof ServiceNode) {
-            Registry.getDefault().getServiceManager().savePublishedService((PublishedService) entity);
-        } else if(childTransferNode instanceof PolicyEntityNode) {
-            Registry.getDefault().getPolicyAdmin().savePolicy((Policy) entity);
-        }
     }
 }

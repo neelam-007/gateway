@@ -1,8 +1,9 @@
 package com.l7tech.server.service;
 
-import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.Folder;
 import org.hibernate.Session;
 import org.hibernate.HibernateException;
 import org.hibernate.Criteria;
@@ -20,7 +21,7 @@ import java.util.*;
  * @author darmstrong
  */
 public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends PersistentEntity, HT extends OrganizationHeader>
-    extends HibernateEntityManager<AT, HT> 
+    extends FolderSupportHibernateEntityManager<AT, HT>
     implements AliasManager<AT, ET, HT>
 {
 
@@ -29,6 +30,7 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends Persiste
         return UniqueType.NONE;
     }
 
+    @Override
     public AT findAliasByEntityAndFolder(final Long serviceOid, final Long folderOid) throws FindException {
         if (serviceOid == null || folderOid == null) throw new NullPointerException();
         if (!(PersistentEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not PersistentEntity!");
@@ -49,6 +51,7 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends Persiste
         }
     }
 
+    @Override
     public Collection<AT> findAllAliasesForEntity(final Long serviceOid) throws FindException {
         if (serviceOid == null) throw new NullPointerException();
         if (!(PersistentEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not PersistentEntity!");
@@ -76,6 +79,7 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends Persiste
      */
     public abstract HT getNewEntityHeader(HT ht);
 
+    @Override
     public Collection<HT> expandEntityWithAliases(Collection<HT> originalHeaders)
             throws FindException{
         Collection<AT> allAliases = findAll();
@@ -106,5 +110,16 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends Persiste
         }
         return returnHeaders;
 
+    }
+
+    @Override
+    public void updateFolder( final long entityId, final Folder folder ) throws UpdateException {
+        setParentFolderForEntity( entityId, folder );
+    }
+
+    @Override
+    public void updateFolder( final AT entity, final Folder folder ) throws UpdateException {
+        if ( entity == null ) throw new UpdateException("Alias is required but missing.");
+        setParentFolderForEntity( entity.getOid(), folder );
     }
 }

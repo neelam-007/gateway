@@ -44,6 +44,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     private AsyncAdminMethodsImpl asyncSupport = new AsyncAdminMethodsImpl();
     private CollectionUpdateProducer<ServiceHeader, FindException> publishedServicesUpdateProducer =
             new CollectionUpdateProducer<ServiceHeader, FindException>(5000, 10, new ServiceHeaderDifferentiator()) {
+                @Override
                 protected Collection<ServiceHeader> getCollection() throws FindException {
                     return serviceManager.findAllHeaders();
                 }
@@ -54,10 +55,12 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      *
      * @param oid
      */
+    @Override
     public PublishedService findServiceByID(String oid) throws FindException {
         return serviceManager.findByPrimaryKey(toLong(oid));
     }
 
+    @Override
     public PublishedServiceAlias findAliasByEntityAndFolder(Long serviceOid, Long folderOid) throws FindException {
         return serviceAliasManager.findAliasByEntityAndFolder(serviceOid, folderOid);
     }
@@ -69,6 +72,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @param url
      * @return a string containing the xml document
      */
+    @Override
     public String resolveWsdlTarget(String url) {
         return serviceManager.resolveWsdlTarget(url);
     }
@@ -78,12 +82,14 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      *
      * @param service
      */
+    @Override
     public long savePublishedService(PublishedService service)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException {
         return serviceManager.save(service);
     }
 
-    public long saveAlias(PublishedServiceAlias serviceAlias) throws UpdateException, SaveException, VersionException, PolicyAssertionException, IllegalStateException {
+    @Override
+    public long saveAlias(PublishedServiceAlias serviceAlias) throws UpdateException, SaveException, VersionException {
         return serviceAliasManager.save(serviceAlias);
     }
 
@@ -98,6 +104,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @param service
      * @param docs ignored
      */
+    @Override
     public long savePublishedServiceWithDocuments(PublishedService service, Collection<ServiceDocument> docs)
             throws UpdateException, SaveException, VersionException, PolicyAssertionException {
         return serviceManager.save(service);
@@ -110,6 +117,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @return The documents
      * @throws FindException on find error
      */
+    @Override
     public Collection<ServiceDocument> findServiceDocumentsByServiceID(String serviceID) throws FindException {
         return Collections.EMPTY_LIST;
     }
@@ -119,6 +127,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      *
      * @param id service id
      */
+    @Override
     public void deletePublishedService(String id) throws DeleteException {
         PublishedService service = null;
         try {
@@ -133,6 +142,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
 
     }
 
+    @Override
     public void deleteEntityAlias(String serviceID) throws DeleteException {
         final PublishedServiceAlias alias;
         try {
@@ -145,17 +155,20 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         }
     }
     
+    @Override
     public JobId<PolicyValidatorResult> validatePolicy(final String policyXml,
                                                        final PolicyType policyType,
                                                        final boolean soap,
                                                        final Wsdl wsdl)
     {
         Future<PolicyValidatorResult> future = new FutureTask<PolicyValidatorResult>(new Callable<PolicyValidatorResult>() {
+            @Override
             public PolicyValidatorResult call() throws Exception {
                 try {
                     final Assertion assertion = WspReader.getDefault().parsePermissively(policyXml);
                     return policyValidator.validate(assertion, policyType, wsdl, soap,
                             new AssertionLicense() {
+                                @Override
                                 public boolean isAssertionEnabled( Assertion assertion ) {
                                     return true;
                                 }
@@ -168,6 +181,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return asyncSupport.registerJob(future, PolicyValidatorResult.class);
     }
 
+    @Override
     public JobId<PolicyValidatorResult> validatePolicy(final String policyXml,
                                                        final PolicyType policyType,
                                                        final boolean soap,
@@ -184,6 +198,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      *
      * @return A <code>Collection</code> of EntityHeader objects.
      */
+    @Override
     public ServiceHeader[] findAllPublishedServices() throws FindException {
         Collection res = serviceManager.findAllHeaders();
         return collectionToHeaderArray(res);
@@ -196,6 +211,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @param includeAliases if true the returned array can contain aliases
      * @return A <code>Collection</code> of EntityHeader objects.
      */
+    @Override
     public ServiceHeader[] findAllPublishedServices(boolean includeAliases) throws FindException {
         Collection res = serviceManager.findAllHeaders(includeAliases);
         return collectionToHeaderArray(res);
@@ -208,10 +224,12 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      *
      * @return A <code>Collection</code> of EntityHeader objects.
      */
+    @Override
     public ServiceHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) {
         throw new RuntimeException("Not Implemented");
     }
 
+    @Override
     public CollectionUpdate<ServiceHeader> getPublishedServicesUpdate(int oldVersionID) throws FindException {
         return publishedServicesUpdateProducer.createUpdate(oldVersionID);
     }
@@ -227,6 +245,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @param caseSensitive  True if case sensitive, false otherwise.
      * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
      */
+    @Override
     public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, UDDIRegistryInfo info, String username, char[] password, String namePattern, boolean caseSensitive) throws FindException {
         WsdlInfo[] siList = new WsdlInfo[3];
 
@@ -237,6 +256,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return siList;
     }
 
+    @Override
     public String[] findUDDIRegistryURLs() throws FindException {
         String[] urlList = new String[3];
         urlList[0] = "http://whale.l7tech.com:8080/uddi/inquiry";
@@ -246,22 +266,27 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return urlList;
     }
 
+    @Override
     public String[] listExistingCounterNames() throws FindException {
         return new String[0];
     }
 
+    @Override
     public SampleMessage findSampleMessageById(long oid) throws FindException {
         return null;
     }
 
+    @Override
     public EntityHeader[] findSampleMessageHeaders(long serviceOid, String operationName) throws FindException {
         return new EntityHeader[0];
     }
 
+    @Override
     public long saveSampleMessage(SampleMessage sm) throws SaveException {
         return 0;
     }
 
+    @Override
     public void deleteSampleMessage(SampleMessage message) throws DeleteException {
 
     }
@@ -282,6 +307,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         this.serviceAliasManager = serviceAliasManager;
     }
     
+    @Override
     public void afterPropertiesSet() throws Exception {
         if (policyValidator == null) {
             throw new IllegalArgumentException("Policy Validator is required");
@@ -321,26 +347,32 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         return output;
     }
 
+    @Override
     public String getPolicyURL(String serviceoid) throws FindException {
         throw new RuntimeException("Not Implemented");
     }
 
+    @Override
     public String getConsumptionURL(String serviceoid) throws FindException {
         throw new RuntimeException("Not Implemented");
     }
 
+    @Override
     public Collection<UDDIRegistryInfo> getUDDIRegistryInfo() {
         throw new RuntimeException("Not Implemented");
     }
 
+    @Override
     public Set<ServiceTemplate> findAllTemplates() {
         throw new RuntimeException("Not Implemented");
     }
 
+    @Override
     public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
         return asyncSupport.getJobStatus(jobId);
     }
 
+    @Override
     public <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException {
         return asyncSupport.getJobResult(jobId);
     }

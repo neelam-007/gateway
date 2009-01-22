@@ -62,38 +62,40 @@ public class Upgrade365To37AddSampleMessagePermissions implements UpgradeTask {
             throws FindException, UpdateException {
         Collection<PublishedService> services = serviceManager.findAll();
         for (PublishedService service : services) {
-            Role role = roleManager.findEntitySpecificRole(EntityType.SERVICE, service.getOid());
-            if (role == null) {
+            Collection<Role> roles = roleManager.findEntitySpecificRoles(EntityType.SERVICE, service.getOid());
+            if (roles == null) {
                 logger.warning("Missing admin Role for service " + service.getName() + " (#" + service.getOid() + ")");
                 continue;
             }
 
-            boolean canCreate = false, canRead = false, canUpdate = false, canDelete = false;
-            for (Permission perm : role.getPermissions()) {
-                if (perm.getEntityType() == SAMPLE_MESSAGE) {
-                    switch(perm.getOperation()) {
-                        case CREATE:
-                            canCreate = scopeIncludesThisService(perm.getScope(), service.getId());
-                            break;
-                        case READ:
-                            canRead = scopeIncludesThisService(perm.getScope(), service.getId());
-                            break;
-                        case UPDATE:
-                            canUpdate = scopeIncludesThisService(perm.getScope(), service.getId());
-                            break;
-                        case DELETE:
-                            canDelete = scopeIncludesThisService(perm.getScope(), service.getId());
-                            break;
+            for ( Role role : roles ) {
+                boolean canCreate = false, canRead = false, canUpdate = false, canDelete = false;
+                for (Permission perm : role.getPermissions()) {
+                    if (perm.getEntityType() == SAMPLE_MESSAGE) {
+                        switch(perm.getOperation()) {
+                            case CREATE:
+                                canCreate = scopeIncludesThisService(perm.getScope(), service.getId());
+                                break;
+                            case READ:
+                                canRead = scopeIncludesThisService(perm.getScope(), service.getId());
+                                break;
+                            case UPDATE:
+                                canUpdate = scopeIncludesThisService(perm.getScope(), service.getId());
+                                break;
+                            case DELETE:
+                                canDelete = scopeIncludesThisService(perm.getScope(), service.getId());
+                                break;
+                        }
                     }
                 }
+
+                if (!canCreate) role.addAttributePermission(CREATE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
+                if (!canRead)   role.addAttributePermission(READ,   SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
+                if (!canUpdate) role.addAttributePermission(UPDATE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
+                if (!canDelete) role.addAttributePermission(DELETE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
+
+                roleManager.update(role);
             }
-
-            if (!canCreate) role.addAttributePermission(CREATE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
-            if (!canRead)   role.addAttributePermission(READ,   SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
-            if (!canUpdate) role.addAttributePermission(UPDATE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
-            if (!canDelete) role.addAttributePermission(DELETE, SAMPLE_MESSAGE, SampleMessage.ATTR_SERVICE_OID, Long.toString(service.getOid()));
-
-            roleManager.update(role);
         }
     }
 

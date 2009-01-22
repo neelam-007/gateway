@@ -1,6 +1,7 @@
 package com.l7tech.server.service;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.FolderedEntityManager;
 
 import java.util.Collection;
 
@@ -19,7 +20,7 @@ import java.util.Collection;
  * @author darmstrong
  */
 public interface AliasManager<AT extends Alias<ET>, ET extends PersistentEntity, HT extends OrganizationHeader>
-        extends EntityManager<AT, HT>
+        extends FolderedEntityManager<AT, HT>
 {
 
     /**

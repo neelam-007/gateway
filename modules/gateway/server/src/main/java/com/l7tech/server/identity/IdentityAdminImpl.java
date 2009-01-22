@@ -204,7 +204,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
 
             manager.delete(ipc);
 
-            roleManager.deleteEntitySpecificRole(ID_PROVIDER_CONFIG, ipc.getOid());
+            roleManager.deleteEntitySpecificRoles(ID_PROVIDER_CONFIG, ipc.getOid());
             trustedEsmUserManager.deleteMappingsForIdentityProvider(ipc.getOid());
             logger.info("Deleted IDProviderConfig: " + ipc);
         } catch (FindException e) {

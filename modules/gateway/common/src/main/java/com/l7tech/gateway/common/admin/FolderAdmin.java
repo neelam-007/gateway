@@ -18,6 +18,9 @@ import java.util.Collection;
 @Secured(types= EntityType.FOLDER)
 @Administrative
 public interface FolderAdmin {
+
+    String ROLE_NAME_TYPE_SUFFIX = "Folder";
+    
     /**
      * Retrieve all of the {@link Folder} headers.
      * This method is currently not Secured as there is no RBAC set up in 4.6 for access to entities of type
@@ -44,6 +47,17 @@ public interface FolderAdmin {
      */
     @Secured(stereotype= MethodStereotype.SAVE_OR_UPDATE, relevantArg=0)
     long saveFolder(Folder folder) throws UpdateException, SaveException, ConstraintViolationException;
+
+    /**
+     * Update the parent folder for the given entity.
+     *
+     * @param folder The target folder (may be null for root)
+     * @param entity The entity to move (must not be null)
+     * @throws UpdateException if the update fails
+     * @throws ConstraintViolationException if the move causes a contraint violation (e.g. duplicate folder name)
+     */
+    @Secured(types=EntityType.FOLDER, stereotype=MethodStereotype.DELETE_MULTI) //TODO we need an UPDATE_MULTI
+    void moveEntityToFolder( Folder folder, PersistentEntity entity ) throws UpdateException, ConstraintViolationException;
 
     /**
      * Delete a {@link com.l7tech.objectmodel.folder.Folder} by its unique identifier.

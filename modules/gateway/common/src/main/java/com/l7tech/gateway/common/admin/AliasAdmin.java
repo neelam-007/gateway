@@ -8,7 +8,6 @@ import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.SAVE_OR_UPDATE;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.DELETE_BY_ID;
 import com.l7tech.objectmodel.*;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 
 /**
  * Admin interface for managing aliased entities
@@ -23,19 +22,18 @@ public interface AliasAdmin<HT extends Alias> {
      * Store the specified new or existing alias. If the specified {@link com.l7tech.objectmodel.Alias} contains a
      * unique object ID that already exists, this will replace the objects current configuration with the new configuration.
      * Otherwise, a new object will be created.
-     * The only reason to save an alias is if you have changed it's folder attribute.
+     *
+     * <p>The only reason to save an alias is if you are creating a new alias.</p>
      *
      * @param alias
      * @return
      * @throws com.l7tech.objectmodel.SaveException   if the requested information could not be saved
      * @throws com.l7tech.objectmodel.UpdateException if the requested information could not be updated
      * @throws com.l7tech.objectmodel.VersionException if the service version conflict is detected
-     * @throws com.l7tech.policy.assertion.PolicyAssertionException if the server policy could not be instantiated for this policy
-     * @throws IllegalStateException if this save represents anything other than a change to the aliases folder property
      */
     @Secured(stereotype=SAVE_OR_UPDATE)
     long saveAlias(HT alias)
-            throws UpdateException, SaveException, VersionException, PolicyAssertionException, IllegalStateException;
+            throws UpdateException, SaveException, VersionException;
 
     /**
      * Find an Alias based on the original entities oid and the folderoid in which the alias currently resides

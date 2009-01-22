@@ -4,23 +4,19 @@
 package com.l7tech.gateway.common.security.rbac;
 
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.AnonymousEntityReference;
 
 /**
  * @author alex
  */
-public class AttemptedReadSpecific extends AttemptedOperation {
-    private final String id;
+public class AttemptedReadSpecific extends AttemptedEntityOperation {
 
     public AttemptedReadSpecific(EntityType type, String id) {
-        super(type);
-        this.id = id;
+        super(type, new AnonymousEntityReference(type.getEntityClass(), id));
     }
 
+    @Override
     public OperationType getOperation() {
         return OperationType.READ;
-    }
-
-    public String getId() {
-        return id;
     }
 }

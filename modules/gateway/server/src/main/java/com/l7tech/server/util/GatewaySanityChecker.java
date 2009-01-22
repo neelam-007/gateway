@@ -54,7 +54,8 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
             p(Starting.class, "com.l7tech.server.upgrade.Upgrade365To37AddSampleMessagePermissions");
             p(Started.class,  "com.l7tech.server.upgrade.Upgrade35To36AddRoles",
                               "com.l7tech.server.upgrade.Upgrade42To43AddPolicyPermissions",
-                              "com.l7tech.server.upgrade.Upgrade42To43AddInitialPolicyVersions");
+                              "com.l7tech.server.upgrade.Upgrade42To43AddInitialPolicyVersions",
+                              "com.l7tech.server.upgrade.Upgrade465To50UpdateRoles");
         }
             
         private void p(Class<? extends SystemEvent> clazz, String... strings) {
@@ -79,6 +80,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
         if (clusterPropertyManager == null) throw new NullPointerException("Cluster Property Manager is required");
     }
 
+    @Override
     public void afterPropertiesSet() throws Exception {
         this.auditor = new Auditor(this, getApplicationContext(), logger);
 
@@ -222,6 +224,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
         auditContext.setSystem(true);
         try {
             new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
+                @Override
                 protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
                     try {
                         // If triggered by a cluster property, remove it so noone else repeats the work
@@ -288,6 +291,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
         return (UpgradeTask)c.newInstance();
     }
 
+    @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof SystemEvent) {
             SystemEvent event = (SystemEvent) applicationEvent;

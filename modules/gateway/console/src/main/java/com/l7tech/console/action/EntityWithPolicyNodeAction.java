@@ -5,12 +5,18 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
+import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.*;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.policy.PolicyAlias;
+import com.l7tech.policy.Policy;
 
 /**
  * Abstract class providing common logic for any policy, service or alias
@@ -43,13 +49,34 @@ public abstract class EntityWithPolicyNodeAction<HT extends EntityWithPolicyNode
         }
 
         EntityType type = EntityType.findTypeByEntity( entity.getClass() );
-        
+        Entity aliasEntity = null;
+        EntityType aliasType = null;
+        if ( sn.getEntityHeader() instanceof OrganizationHeader ) {
+            OrganizationHeader header = (OrganizationHeader) sn.getEntityHeader();
+            if ( header.isAlias() && header.getAliasOid()!=null){
+                switch ( header.getType() ) {
+                    case POLICY:
+                        PolicyAlias policyAlias = new PolicyAlias( (Policy)entity, ((FolderNode)sn.getParent()).getFolder() );
+                        policyAlias.setOid( header.getAliasOid() );
+                        aliasEntity = policyAlias;
+                        aliasType = EntityType.POLICY_ALIAS;
+                        break;
+                    case SERVICE:
+                        PublishedServiceAlias serviceAlias = new PublishedServiceAlias( (PublishedService)entity, ((FolderNode)sn.getParent()).getFolder() );
+                        serviceAlias.setOid( header.getAliasOid() );
+                        aliasEntity = serviceAlias;
+                        aliasType = EntityType.SERVICE_ALIAS;
+                        break;
+                }
+            }
+        }
+
         switch(getOperation()) {
             case CREATE:
-                ao = new AttemptedCreate(type);
+                ao = new AttemptedCreate( aliasType==null ? type : aliasType);
                 break;
             case DELETE:
-                ao = new AttemptedDeleteSpecific(type, entity);
+                ao =  aliasType==null ? new AttemptedDeleteSpecific(type, entity) :  new AttemptedDeleteSpecific(aliasType, aliasEntity);
                 break;
             case READ:
                 ao = new AttemptedReadSpecific(type, entity.getId());

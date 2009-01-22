@@ -40,8 +40,6 @@ public class FolderPredicate extends ScopePredicate implements ScopeEvaluator {
         final Folder entityFolder;
         if (entity instanceof HasFolder) {
             entityFolder = ((HasFolder)entity).getFolder();
-        } else if (entity instanceof Folder) {
-            entityFolder = (Folder)entity;
         } else {
             logger.log(Level.INFO, String.format("%s #%s has no folder", entity.getClass().getSimpleName(), entity.getId()));
             return false;
@@ -51,7 +49,7 @@ public class FolderPredicate extends ScopePredicate implements ScopeEvaluator {
         while (nextFolder != null) {
             if (nextFolder.getOid() == this.folder.getOid()) return true;
             if (!transitive) break;
-            nextFolder = nextFolder.getParentFolder();
+            nextFolder = nextFolder.getFolder();
         }
         return false;
     }
@@ -82,6 +80,7 @@ public class FolderPredicate extends ScopePredicate implements ScopeEvaluator {
         this.transitive = transitive;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(permission.getEntityType().getPluralName());
@@ -92,6 +91,7 @@ public class FolderPredicate extends ScopePredicate implements ScopeEvaluator {
         return sb.toString();
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

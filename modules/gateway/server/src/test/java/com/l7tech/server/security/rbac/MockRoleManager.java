@@ -73,20 +73,20 @@ public class MockRoleManager extends EntityManagerStub<Role,EntityHeader> implem
     }
 
     @Override
-    public Role findEntitySpecificRole(EntityType etype, long entityOid) throws FindException {
+    public Collection<Role> findEntitySpecificRoles(EntityType etype, long entityOid) throws FindException {
         for (Role role : entities.values()) {
-            if (role.getEntityType() == etype && role.getEntityOid() == entityOid) return role;
+            if (role.getEntityType() == etype && role.getEntityOid() == entityOid) return Collections.singletonList(role);
         }
         return null;
     }
 
     @Override
-    public void deleteEntitySpecificRole(EntityType etype, long entityOid) throws DeleteException {
+    public void deleteEntitySpecificRoles(EntityType etype, long entityOid) throws DeleteException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void renameEntitySpecificRole(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
+    public void renameEntitySpecificRoles(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
 
@@ -118,21 +118,25 @@ public class MockRoleManager extends EntityManagerStub<Role,EntityHeader> implem
 
     // DELEGATED!
 
+    @Override
     public boolean isPermittedForEntitiesOfTypes(User authenticatedUser, OperationType requiredOperation, Set<EntityType> requiredTypes)
         throws FindException {
         return rbacServices.isPermittedForEntitiesOfTypes(authenticatedUser, requiredOperation, requiredTypes);
     }
 
+    @Override
     public boolean isPermittedForAnyEntityOfType(User authenticatedUser, OperationType requiredOperation, EntityType requiredType)
         throws FindException {
         return rbacServices.isPermittedForAnyEntityOfType(authenticatedUser, requiredOperation, requiredType);
     }
 
+    @Override
     public boolean isPermittedForEntity(User user, Entity entity, OperationType operation, String otherOperationName)
         throws FindException {
         return rbacServices.isPermittedForEntity(user, entity, operation, otherOperationName);
     }
 
+    @Override
     public <T extends OrganizationHeader> Iterable<T> filterPermittedHeaders(User authenticatedUser, OperationType requiredOperation, Iterable<T> headers, EntityFinder entityFinder)
         throws FindException {
         return rbacServices.filterPermittedHeaders(authenticatedUser, requiredOperation, headers, entityFinder);

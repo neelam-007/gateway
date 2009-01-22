@@ -34,7 +34,7 @@ public class CreateFolderAction extends SecureAction {
     private final Folder parentFolder;
 
     public CreateFolderAction(Folder parentFolder, AbstractTreeNode parentNode, FolderAdmin folderAdmin) {
-        super(new AttemptedCreate(EntityType.FOLDER), UI_PUBLISH_SERVICE_WIZARD);
+        super(new AttemptedCreate(EntityType.FOLDER));
         this.parentFolder = parentFolder;
         this.parentNode = parentNode;
         this.folderAdmin = folderAdmin;
@@ -43,6 +43,7 @@ public class CreateFolderAction extends SecureAction {
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Create New Folder";
     }
@@ -50,6 +51,7 @@ public class CreateFolderAction extends SecureAction {
     /**
      * @return the action description
      */
+    @Override
     public String getDescription() {
         return "Create New Folder";
     }
@@ -57,10 +59,12 @@ public class CreateFolderAction extends SecureAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/folder.gif";
     }
 
+    @Override
     protected void performAction() {
         Frame f = TopComponents.getInstance().getTopParent();
         PolicyFolderPropertiesDialog dialog = new PolicyFolderPropertiesDialog(f, "");
@@ -81,6 +85,7 @@ public class CreateFolderAction extends SecureAction {
 
                     tree.setSelectionPath(new TreePath(sn.getPath()));
                     SwingUtilities.invokeLater(new Runnable() {
+                        @Override
                         public void run() {
                             //reset filter
                             ((ServicesAndPoliciesTree) tree).filterTreeToDefault();

@@ -366,7 +366,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     }
 
     @Override
-    public long saveAlias(PublishedServiceAlias psa) throws UpdateException, SaveException, VersionException, PolicyAssertionException, IllegalStateException {
+    public long saveAlias(PublishedServiceAlias psa) throws UpdateException, SaveException, VersionException {
         long oid;
         try {
             if (psa.getOid() > 0) {
@@ -444,7 +444,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
             long oid = toLong(serviceID);
             service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
-            roleManager.deleteEntitySpecificRole(SERVICE, service.getOid());
+            roleManager.deleteEntitySpecificRoles(SERVICE, service.getOid());
             logger.info("Deleted PublishedService: " + oid);
         } catch (FindException e) {
             throw new DeleteException("Could not find object to delete.", e);

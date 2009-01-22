@@ -16,6 +16,8 @@ import com.l7tech.gateway.common.security.rbac.AttributePredicate;
 import com.l7tech.gateway.common.security.rbac.ObjectIdentityPredicate;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.ScopePredicate;
+import com.l7tech.gateway.common.security.rbac.FolderPredicate;
+import com.l7tech.gateway.common.security.rbac.EntityFolderAncestryPredicate;
 import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.MetricsBinDetail;
 import com.l7tech.gateway.common.transport.email.EmailListenerState;
@@ -81,6 +83,8 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         noAuditClassNames.add(ScopePredicate.class.getName());
         noAuditClassNames.add(ObjectIdentityPredicate.class.getName());
         noAuditClassNames.add(AttributePredicate.class.getName());
+        noAuditClassNames.add(FolderPredicate.class.getName());
+        noAuditClassNames.add(EntityFolderAncestryPredicate.class.getName());
         noAuditClassNames.add(ResolutionParameters.class.getName());
 
         auditContext = context;
@@ -104,6 +108,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
     /**
      * Detects saves and fires a {@link com.l7tech.server.event.admin.Created} event if the entity isn't {@link #ignored} and the save is committed
      */
+    @Override
     public boolean onSave(final Object entity, final Serializable id, Object[] state, String[] propertyNames, Type[] types) throws CallbackException {
         if (!ignored(entity)) {
             logger.log(Level.FINE, "Created " + entity.getClass().getName() + " " + id);
@@ -115,6 +120,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
     /**
      * Detects deletes and fires a {@link Deleted} event if the entity isn't {@link #ignored} and the deletion is committed
      */
+    @Override
     public void onDelete(final Object entity, final Serializable id, Object[] state, String[] propertyNames, Type[] types) throws CallbackException {
         if (!ignored(entity)) {
             logger.log(Level.FINE, "Deleted " + entity.getClass().getName() + " " + id);
@@ -125,6 +131,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
     /**
      * Detects updates and fires an {@link com.l7tech.server.event.admin.Updated} event if the entity isn't {@link #ignored} and the update is committed
      */
+    @Override
     public boolean onFlushDirty(Object entity, Serializable id, Object[] currentState, Object[] previousState, String[] propertyNames, Type[] types) throws CallbackException {
         if (!ignored(entity)) {
             logger.log(Level.FINE, "Updated " + entity.getClass().getName() + " " + id);
@@ -173,68 +180,83 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
     }
 
     /** Ignored */
+    @Override
     public void onCollectionRecreate(Object collection, Serializable key) throws CallbackException {
     }
 
     /** Ignored */
+    @Override
     public void onCollectionRemove(Object collection, Serializable key) throws CallbackException {
     }
 
     /** Ignored */
+    @Override
     public void onCollectionUpdate(Object collection, Serializable key) throws CallbackException {
     }
 
     /** Ignored */
+    @Override
     public boolean onLoad(Object entity, Serializable id, Object[] state, String[] propertyNames, Type[] types) throws CallbackException {
         return false;
     }
 
     /** Ignored */
+    @Override
     public void preFlush(Iterator entities) throws CallbackException {
     }
 
     /** Ignored */
+    @Override
     public void postFlush(Iterator entities) throws CallbackException {
     }
 
     /** Ignored */
+    @Override
     public Boolean isTransient(Object entity) {
         return null;
     }
 
     /** Ignored */
+    @Override
     public int[] findDirty(Object entity, Serializable id, Object[] currentState, Object[] previousState, String[] propertyNames, Type[] types) {
         return null;
     }
 
     /** Ignored */
+    @Override
     public Object instantiate(String entityName, EntityMode entityMode, Serializable id) throws CallbackException {
         return null;
     }
 
     /** Ignored */
+    @Override
     public String getEntityName(Object object) throws CallbackException {
         return null;
     }
 
     /** Ignored */
+    @Override
     public Object getEntity(String entityName, Serializable id) throws CallbackException {
         return null;
     }
 
     /** Ignored */
+    @Override
     public void afterTransactionBegin(Transaction tx) {
     }
 
     /** Ignored */
+    @Override
     public void beforeTransactionCompletion(Transaction tx) {
     }
 
     /** Ignored */
+    @Override
     public void afterTransactionCompletion(Transaction tx) {
     }
 
     /** Ignored */
+    @Override
     public String onPrepareStatement(String sql) {
         return sql;
     }

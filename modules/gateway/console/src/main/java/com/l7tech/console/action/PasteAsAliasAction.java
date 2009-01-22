@@ -33,13 +33,14 @@ public class PasteAsAliasAction extends SecureAction {
     private final FolderNode parentNode;
 
     public PasteAsAliasAction(FolderNode parentNode) {
-        super(new AttemptedCreate(EntityType.FOLDER), UI_PUBLISH_SERVICE_WIZARD);
+        super(new AttemptedCreate(EntityType.SERVICE_ALIAS));
         this.parentNode = parentNode;
     }
 
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Paste as Alias";
     }
@@ -47,6 +48,7 @@ public class PasteAsAliasAction extends SecureAction {
     /**
      * @return the action description
      */
+    @Override
     public String getDescription() {
         return "Paste as Alias";
     }
@@ -54,12 +56,14 @@ public class PasteAsAliasAction extends SecureAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/folder.gif";
     }
 
     /**
      */
+    @Override
     protected void performAction() {
         List<AbstractTreeNode> abstractTreeNodes = RootNode.getEntitiesToAlias();
         RootNode.clearEntitiesToAlias();
@@ -112,9 +116,11 @@ public class PasteAsAliasAction extends SecureAction {
                     header = new ServiceHeader(ps);
                     PublishedServiceAlias psa = new PublishedServiceAlias(ps, parentFolder);
                     aliasOid = Registry.getDefault().getServiceManager().saveAlias(psa);
-                } catch (Exception e1) {
-                    throw new RuntimeException("Unable to save alias", e1);
-                } 
+                } catch (ObjectModelException ome) {
+                    throw new RuntimeException("Unable to save alias", ome);
+                } catch (VersionException ve) {
+                    throw new RuntimeException("Unable to save alias", ve);
+                }
             } else if (e instanceof Policy) {
                 Policy policy = (Policy) e;
                 //check if an alias already exists here

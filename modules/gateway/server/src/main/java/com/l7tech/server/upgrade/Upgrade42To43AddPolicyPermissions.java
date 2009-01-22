@@ -16,6 +16,7 @@ import org.springframework.context.ApplicationContext;
 
 import java.text.MessageFormat;
 import java.util.logging.Logger;
+import java.util.Collection;
 
 /**
  * Finds Manage Specific Service roles, and adds permissions to read and update the policies for those services.
@@ -47,15 +48,17 @@ public class Upgrade42To43AddPolicyPermissions implements UpgradeTask {
                     continue;
                 }
 
-                Role role = roleManager.findEntitySpecificRole(EntityType.SERVICE, service.getOid());
-                if (role == null) {
+                Collection<Role> roles = roleManager.findEntitySpecificRoles(EntityType.SERVICE, service.getOid());
+                if (roles == null) {
                     logger.warning(MessageFormat.format("Role for Service #{0} ({1}) [{2}] is missing, cannot update permissions", service.getOid(), service.getName(), uri == null ? "" : uri));
                     continue;
                 }
 
-                role.addEntityPermission(OperationType.READ, EntityType.POLICY, policy.getId());
-                role.addEntityPermission(OperationType.UPDATE, EntityType.POLICY, policy.getId());
-                roleManager.update(role);
+                for ( Role role : roles ) {
+                    role.addEntityPermission(OperationType.READ, EntityType.POLICY, policy.getId());
+                    role.addEntityPermission(OperationType.UPDATE, EntityType.POLICY, policy.getId());
+                    roleManager.update(role);
+                }
             }
         } catch (ObjectModelException e) {
             throw new FatalUpgradeException("Unable to continue upgrade task", e);

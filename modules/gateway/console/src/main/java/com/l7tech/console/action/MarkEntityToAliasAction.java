@@ -2,10 +2,13 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
+import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
+import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -28,14 +31,14 @@ import java.util.Collections;
 public class MarkEntityToAliasAction extends SecureAction {
     static Logger log = Logger.getLogger(CreateFolderAction.class.getName());
 
-    public MarkEntityToAliasAction(AbstractTreeNode abstractTreeNode)
-    {
-        super(new AttemptedCreate(EntityType.FOLDER), UI_PUBLISH_SERVICE_WIZARD);
+    public MarkEntityToAliasAction( final EntityHeaderNode entityHeaderNode ) {
+        super( getOperation(entityHeaderNode) );
     }
 
     /**
      * @return the action name
      */
+    @Override
     public String getName() {
         return "Copy as Alias";
     }
@@ -43,6 +46,7 @@ public class MarkEntityToAliasAction extends SecureAction {
     /**
      * @return the action description
      */
+    @Override
     public String getDescription() {
         return "Copy as Alias";
     }
@@ -50,20 +54,22 @@ public class MarkEntityToAliasAction extends SecureAction {
     /**
      * specify the resource name for this action
      */
+    @Override
     protected String iconResource() {
         return "com/l7tech/console/resources/folder.gif";
     }
 
     /**
      */
+    @Override
     protected void performAction() {
         ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
         List<AbstractTreeNode> emptyNodes = Collections.emptyList();
         RootNode.setEntitiesToAlias(emptyNodes);
         if (tree != null) {
             List<AbstractTreeNode> abstractTreeNodes = tree.getSmartSelectedNodes();
-            long parentFolderOid = -1;
-            long currentParnetFolderOid = -1;
+            long parentFolderOid;
+            long currentParentFolderOid = -1;
             boolean first = true;
             //parentFolderOid must be the same for all nodes and they can't be folder nodes
             for(AbstractTreeNode atn: abstractTreeNodes){
@@ -75,17 +81,33 @@ public class MarkEntityToAliasAction extends SecureAction {
                 FolderHeader folderHeader = (FolderHeader) node.getUserObject();
                 parentFolderOid = folderHeader.getOid();
                 if(first){
-                    currentParnetFolderOid = parentFolderOid;
                     first = false;
                 }else{
-                    if(parentFolderOid != currentParnetFolderOid){
+                    if(parentFolderOid != currentParentFolderOid){
                         DialogDisplayer.showMessageDialog(tree, "All entites must be within the same folder", "Cannot select from multiple folders", JOptionPane.ERROR_MESSAGE, null);                        
                         return;
                     }
                 }
-                currentParnetFolderOid = parentFolderOid;
+                currentParentFolderOid = parentFolderOid;
             }
             RootNode.setEntitiesToAlias(abstractTreeNodes);
         }
+    }
+
+    //- PRIVATE
+
+    private static AttemptedOperation getOperation( final EntityHeaderNode entityHeaderNode ) {
+        AttemptedOperation operation = new AttemptedDeleteAll(EntityType.ANY);
+
+        switch ( entityHeaderNode.getEntityHeader().getType() ) {
+            case SERVICE:
+                operation = new AttemptedCreate( EntityType.SERVICE_ALIAS );
+                break;
+            case POLICY:
+                operation = new AttemptedCreate( EntityType.POLICY_ALIAS );
+                break;
+        }
+
+        return operation;
     }
 }

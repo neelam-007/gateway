@@ -5,8 +5,6 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.objectmodel.FindException;
@@ -107,9 +105,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         actions.add(new MarkEntityToAliasAction(this));
         actions.add(new PolicyRevisionsAction(this));
         actions.add(new RefreshTreeNodeAction(this));
-        Action secureCut = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
-                                                                OperationType.UPDATE,
-                                                                ServicesAndPoliciesTree.ClipboardActionType.CUT);
+        Action secureCut = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.CUT);
         if(secureCut != null){
             actions.add(secureCut);
         }
@@ -172,6 +168,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
     /**
      *
      */
+    @Override
     public int compareTo( ServiceNode serviceNode ) {
         return getName().toLowerCase().compareTo( serviceNode.getName().toLowerCase() );
     }

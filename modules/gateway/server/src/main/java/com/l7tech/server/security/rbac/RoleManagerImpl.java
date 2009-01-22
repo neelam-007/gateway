@@ -38,7 +38,9 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     private RbacServices rbacServices;
 
     private static RoleManagerIdentitySource groupProvider = new RoleManagerIdentitySource(){
+        @Override
         public void validateRoleAssignments() throws UpdateException {}
+        @Override
         public Set<IdentityHeader> getGroups(User user) throws FindException {
             return Collections.emptySet();
         }
@@ -48,24 +50,29 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         RoleManagerImpl.groupProvider = groupProvider;
     }
 
+    @Override
     public Class<Role> getImpClass() {
         return Role.class;
     }
 
+    @Override
     public Class<Role> getInterfaceClass() {
         return Role.class;
     }
 
+    @Override
     public String getTableName() {
         return "rbac_role";
     }
 
+    @Override
     @Transactional(readOnly=true)
     public Collection<Role> getAssignedRoles(final User user) throws FindException {
         final Set<IdentityHeader> groupHeaders = groupProvider.getGroups(user);
 
         //noinspection unchecked
         return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            @Override
             public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 //Get the User's directly assigned Role's
                 Set<Role> roles = new HashSet<Role>();
@@ -106,6 +113,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         });
     }
 
+    @Override
     @Transactional(readOnly=true)
     public boolean isPermittedForEntitiesOfTypes(final User authenticatedUser,
                                                  final OperationType requiredOperation,
@@ -116,6 +124,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     }
 
 
+    @Override
     @Transactional(readOnly=true)
     public boolean isPermittedForAnyEntityOfType(final User authenticatedUser,
                                                  final OperationType requiredOperation,
@@ -163,6 +172,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         validateRoleAssignments();
     }
 
+    @Override
     @Transactional(readOnly=true)
     public void validateRoleAssignments() throws UpdateException {
         try {
@@ -172,11 +182,13 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         }
     }
 
+    @Override
     @Transactional(readOnly=true)
     public boolean isPermittedForEntity(User user, Entity entity, OperationType operation, String otherOperationName) throws FindException {
         return rbacServices.isPermittedForEntity(user, entity, operation, otherOperationName);
     }
 
+    @Override
     @Transactional(readOnly=true)
     public Role findByTag(final Role.Tag tag) throws FindException {
         if ( tag == null ) throw new IllegalArgumentException("tag must not be null");
@@ -191,42 +203,51 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         return role;
     }
 
+    @SuppressWarnings({"unchecked"})
+    @Override
     @Transactional(readOnly=true)
-    public Role findEntitySpecificRole(final EntityType etype, final long entityId) throws FindException {
-        return (Role) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+    public Collection<Role> findEntitySpecificRoles(final EntityType etype, final long entityId) throws FindException {
+        return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+            @Override
             protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                 Criteria crit = session.createCriteria(Role.class);
                 crit.add(Restrictions.eq("entityTypeName", etype.name()));
                 crit.add(Restrictions.eq("entityOid", entityId));
-                return crit.uniqueResult();
+                return crit.list();
             }
         });
     }
 
-    public void deleteEntitySpecificRole(EntityType etype, final long entityOid) throws DeleteException {
+    @Override
+    public void deleteEntitySpecificRoles(EntityType etype, final long entityOid) throws DeleteException {
         try {
-            Role role = findEntitySpecificRole(etype, entityOid);
-            if (role == null) return;
-            logger.info("Deleting obsolete Role #" + role.getOid() + " (" + role.getName() + ")");
-            delete(role);
+            Collection<Role> roles = findEntitySpecificRoles(etype, entityOid);
+            if (roles == null) return;
+            for ( Role role : roles ) {
+                logger.info("Deleting obsolete Role #" + role.getOid() + " (" + role.getName() + ")");
+                delete(role);
+            }
         } catch (FindException e) {
             throw new DeleteException("Couldn't find Roles for this Entity", e);
         }
     }
 
-    public void renameEntitySpecificRole(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
-        Role role = findEntitySpecificRole(entityType, entity.getOid());
-        if (role == null) {
+    @Override
+    public void renameEntitySpecificRoles(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException {
+        Collection<Role> roles = findEntitySpecificRoles(entityType, entity.getOid());
+        if (roles == null) {
             logger.warning(MessageFormat.format("No entity-specific role was found for {0} ''{1}'' (#{2})", entity.getName(), entityType.getName(), entity.getOid()));
             return;
         }
-        String name = role.getName();
-        Matcher matcher = replacePattern.matcher(name);
-        String newName = matcher.replaceAll(entity.getName().replace("\\", "\\\\").replace("$", "\\$"));
-        if (!newName.equals(name)) {
-            logger.info(MessageFormat.format("Updating ''{0}'' Role with new name: ''{1}''", role.getName(), newName));
-            role.setName(newName);
-            update(role);
+        for ( Role role : roles ) {
+            String name = role.getName();
+            Matcher matcher = replacePattern.matcher(name);
+            String newName = matcher.replaceAll(entity.getName().replace("\\", "\\\\").replace("$", "\\$"));
+            if (!newName.equals(name)) {
+                logger.info(MessageFormat.format("Updating ''{0}'' Role with new name: ''{1}''", role.getName(), newName));
+                role.setName(newName);
+                update(role);
+            }
         }
     }
 
@@ -246,6 +267,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     }
 
 
+    @Override
     @Transactional(readOnly=true)
     public <T extends OrganizationHeader> Iterable<T> filterPermittedHeaders(User authenticatedUser,
                                                                        OperationType requiredOperation,
@@ -256,6 +278,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         return rbacServices.filterPermittedHeaders(authenticatedUser, requiredOperation, headers, entityFinder);
     }
 
+    @Override
     @SuppressWarnings({ "ThrowInsideCatchBlockWhichIgnoresCaughtException" })
     public void deleteRoleAssignmentsForUser(final User user) throws DeleteException {
         try {

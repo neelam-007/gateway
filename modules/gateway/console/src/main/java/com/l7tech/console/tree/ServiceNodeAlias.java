@@ -4,8 +4,6 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.console.action.*;
 import com.l7tech.console.util.TopComponents;
 
@@ -32,9 +30,7 @@ public class ServiceNodeAlias extends ServiceNode{
         actions.add(new DeleteServiceAliasAction(this));
         actions.add(new PolicyRevisionsAction(this));
         actions.add(new RefreshTreeNodeAction(this));
-        Action secureCut = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
-                                                                OperationType.UPDATE,
-                                                                ServicesAndPoliciesTree.ClipboardActionType.CUT);
+        Action secureCut = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.CUT);
         if(secureCut != null){
             actions.add(secureCut);
         }

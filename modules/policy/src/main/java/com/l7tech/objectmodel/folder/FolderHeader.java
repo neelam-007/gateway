@@ -9,12 +9,13 @@ import com.l7tech.objectmodel.EntityType;
  * @author darmstrong
  */
 public class FolderHeader extends EntityHeader {
+
     //- PUBLIC
 
     public FolderHeader(final Folder folder) {
         this( folder.getOid(),
               folder.getName(),
-              folder.getParentFolder() == null ? null : folder.getParentFolder().getOid(),
+              folder.getFolder() == null ? null : folder.getFolder().getOid(),
               folder.getVersion() );
     }
 

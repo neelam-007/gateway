@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 
@@ -151,6 +152,16 @@ public class PolicyVersioningServiceManager implements ServiceManager {
                 throw new UpdateException("Unable to save policy version when saving service.", ome);
             }
         }
+    }
+
+    @Override
+    public void updateFolder(PublishedService entity, Folder folder) throws UpdateException {
+        serviceManager.updateFolder(entity, folder);
+    }
+
+    @Override
+    public void updateFolder(long entityId, Folder folder) throws UpdateException {
+        serviceManager.updateFolder(entityId, folder);
     }
 
     //- PRIVATE

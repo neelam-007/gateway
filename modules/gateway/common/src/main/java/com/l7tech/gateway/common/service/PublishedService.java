@@ -290,6 +290,9 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
 
     public void setPolicy(Policy policy) {
         this.policy = policy;
+        if ( policy != null ) {
+            policy.setFolder( folder );
+        }
     }
 
     public boolean isDisabled() {
@@ -494,6 +497,9 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
     @Override
     public void setFolder(Folder folder) {
         this.folder = folder;
+        if ( policy != null ) {
+            policy.setFolder( folder );
+        }
     }
 
     /**

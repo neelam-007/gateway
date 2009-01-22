@@ -105,7 +105,7 @@
 
         <property name="name" column="name" type="string"/>
 
-        <many-to-one class="com.l7tech.objectmodel.folder.Folder" name="parentFolder" lazy="false" column="parent_folder_oid"/>
+        <many-to-one class="com.l7tech.objectmodel.folder.Folder" name="folder" lazy="false" column="parent_folder_oid"/>
     </class>
 
     <class name="com.l7tech.server.service.resolution.ResolutionParameters" table="service_resolution" lazy="false">

@@ -853,7 +853,6 @@ CREATE TABLE rbac_role (
   description mediumtext,
   PRIMARY KEY (objectid),
   UNIQUE KEY name (name),
-  UNIQUE KEY entity_info (entity_type, entity_oid),
   INDEX i_rbacrole_etype (entity_type),
   INDEX i_rbacrole_eoid (entity_oid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
@@ -1038,13 +1037,18 @@ INSERT INTO rbac_permission VALUES (-413,0,-400,'READ',NULL,'JMS_ENDPOINT');
 INSERT INTO rbac_permission VALUES (-414,0,-400,'READ',NULL,'SERVICE_TEMPLATE');
 INSERT INTO rbac_permission VALUES (-415,0,-400,'READ',NULL,'POLICY');
 INSERT INTO rbac_permission VALUES (-416,0,-400,'UPDATE',NULL,'POLICY');
-
--- Manage Webservices users can CRUD each and every possible folder
-INSERT INTO rbac_permission VALUES (-417, 0, -400, 'CREATE', null, 'FOLDER');
-INSERT INTO rbac_permission VALUES (-418, 0, -400, 'READ',   null, 'FOLDER');
-INSERT INTO rbac_permission VALUES (-419, 0, -400, 'UPDATE', null, 'FOLDER');
-INSERT INTO rbac_permission VALUES (-420, 0, -400, 'DELETE', null, 'FOLDER');
-
+INSERT INTO rbac_permission VALUES (-417,0,-400,'CREATE',NULL,'FOLDER');
+INSERT INTO rbac_permission VALUES (-418,0,-400,'READ',  NULL,'FOLDER');
+INSERT INTO rbac_permission VALUES (-419,0,-400,'UPDATE',NULL,'FOLDER');
+INSERT INTO rbac_permission VALUES (-420,0,-400,'DELETE',NULL,'FOLDER');
+INSERT INTO rbac_permission VALUES (-421,0,-400,'CREATE',NULL,'POLICY_ALIAS');
+INSERT INTO rbac_permission VALUES (-422,0,-400,'READ',  NULL,'POLICY_ALIAS');
+INSERT INTO rbac_permission VALUES (-423,0,-400,'UPDATE',NULL,'POLICY_ALIAS');
+INSERT INTO rbac_permission VALUES (-424,0,-400,'DELETE',NULL,'POLICY_ALIAS');
+INSERT INTO rbac_permission VALUES (-425,0,-400,'CREATE',NULL,'SERVICE_ALIAS');
+INSERT INTO rbac_permission VALUES (-426,0,-400,'READ',  NULL,'SERVICE_ALIAS');
+INSERT INTO rbac_permission VALUES (-427,0,-400,'UPDATE',NULL,'SERVICE_ALIAS');
+INSERT INTO rbac_permission VALUES (-428,0,-400,'DELETE',NULL,'SERVICE_ALIAS');
 
 INSERT INTO rbac_role VALUES (-450,0,'View Audit Records and Logs', null,null,null, 'Users assigned to the {0} role have the ability to view audit and log details in manager.');
 INSERT INTO rbac_permission VALUES (-451,0,-450,'READ',NULL,'CLUSTER_INFO');

@@ -3,8 +3,6 @@ package com.l7tech.console.tree.servicesAndPolicies;
 import com.l7tech.console.action.*;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.admin.FolderAdmin;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.Folder;
@@ -53,10 +51,12 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
         };
     }
 
+    @Override
     public String getName() {
         return folderHeader.getName();
     }
 
+    @Override
     public long getOid() {
         return folderHeader.getOid();
     }
@@ -66,6 +66,7 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
      *
      * @param open for nodes that can be opened, can have children
      */
+    @Override
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/folder.gif";
     }
@@ -109,16 +110,13 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
             if (action.isEnabled())
                 actions.add(action);
         }
-        Action secureCut = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
-                                                                OperationType.UPDATE,
-                                                                ServicesAndPoliciesTree.ClipboardActionType.CUT);
+        Action secureCut = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.CUT);
         if(secureCut != null) actions.add(secureCut);
-        Action securePaste = ServicesAndPoliciesTree.getSecuredAction(EntityType.FOLDER,
-                                                                OperationType.UPDATE,
-                                                                ServicesAndPoliciesTree.ClipboardActionType.PASTE);
+
+        Action securePaste = ServicesAndPoliciesTree.getSecuredAction(ServicesAndPoliciesTree.ClipboardActionType.PASTE);
         if(securePaste != null) actions.add(securePaste);
 
-        return actions.toArray(new Action[]{});
+        return actions.toArray(new Action[actions.size()]);
     }
 
     /**
@@ -141,6 +139,7 @@ public class FolderNode extends AbstractTreeNode implements FolderNodeBase {
         return false;
     }
 
+    @Override
     public Folder getFolder() {
         return folder;
     }

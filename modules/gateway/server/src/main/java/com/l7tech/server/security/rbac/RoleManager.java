@@ -36,7 +36,7 @@ public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServ
      * provided {@link Entity}.
      */
     @Transactional(readOnly=true)
-    Role findEntitySpecificRole(EntityType etype, long entityOid) throws FindException;
+    Collection<Role> findEntitySpecificRoles(EntityType etype, long entityOid) throws FindException;
 
     /**
      * Deletes any roles in which every {@link com.l7tech.gateway.common.security.rbac.Permission} is scoped to the single
@@ -45,16 +45,16 @@ public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServ
      * @param etype
      * @param entityOid
      */
-    void deleteEntitySpecificRole(EntityType etype, long entityOid) throws DeleteException;
+    void deleteEntitySpecificRoles(EntityType etype, long entityOid) throws DeleteException;
 
     /**
-     * Updates the Role corresponding to the provided Entity to match a new name, if it's different
+     * Updates the Roles corresponding to the provided Entity to match a new name, if it's different
      * @param entityType the RBAC type of the Entity being updated
      * @param entity the entity being updated
      * @param replacePattern a Pattern that finds the name component in the entity name
      * @throws com.l7tech.objectmodel.UpdateException
      */
-    void renameEntitySpecificRole(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException;
+    void renameEntitySpecificRoles(EntityType entityType, NamedEntityImp entity, Pattern replacePattern) throws FindException, UpdateException;
 
     /**
      * Ensure that the assignment of a users to roles is acceptable.

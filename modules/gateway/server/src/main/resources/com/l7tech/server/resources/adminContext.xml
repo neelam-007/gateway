@@ -227,7 +227,27 @@
     </bean>
 
     <bean id="folderAdmin" class="com.l7tech.server.folder.FolderAdminImpl">
-        <constructor-arg ref="folderManager"/>
+        <constructor-arg index="0" ref="folderManager"/>
+        <constructor-arg index="1" ref="roleManager"/>
+        <constructor-arg index="2">
+            <map>
+                <entry key="com.l7tech.objectmodel.folder.Folder">
+                    <ref bean="folderManager"/>
+                </entry>
+                <entry key="com.l7tech.policy.Policy">
+                    <ref bean="policyManager"/>
+                </entry>
+                <entry key="com.l7tech.gateway.common.service.PublishedService">
+                    <ref bean="serviceManager"/>
+                </entry>
+                <entry key="com.l7tech.policy.PolicyAlias">
+                    <ref bean="policyAliasManager"/>
+                </entry>
+                <entry key="com.l7tech.gateway.common.service.PublishedServiceAlias">
+                    <ref bean="serviceAliasManager"/>
+                </entry>
+            </map>
+        </constructor-arg>
     </bean>
 
     <!-- schema admin servant -->
