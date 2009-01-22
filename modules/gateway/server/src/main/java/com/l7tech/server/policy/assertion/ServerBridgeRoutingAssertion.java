@@ -107,7 +107,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         wspReader = (WspReader)applicationContext.getBean("wspReader", WspReader.class);
 
         try {
-            signerInfo = ServerResponseWssSignature.getSignerInfo(ctx, assertion);
+            signerInfo = ServerAssertionUtils.getSignerInfo(ctx, assertion);
         } catch (KeyStoreException e) {
             throw new RuntimeException("Unable to read private key for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
         }

@@ -30,6 +30,7 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -57,51 +58,9 @@ public abstract class ServerResponseWssSignature extends AbstractServerAssertion
         this.auditor = new Auditor(this, spring, logger);
         this.wssConfig = responseWssAssertion;
         try {
-            this.signerInfo = getSignerInfo(spring, responseWssAssertion);
+            this.signerInfo = ServerAssertionUtils.getSignerInfo(spring, responseWssAssertion);
         } catch (KeyStoreException e) {
             throw new RuntimeException(e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Get the SignerInfo (cert chain and private key) to use for the specified object.
-     * If the object is an instance of PrivateKeyable that requests a specific private key, that private key will
-     * be returned.  Otherwise the default private key will be returned.
-     *
-     * TODO move this somewhere more reasonable (com.l7tech.server.policy.assertion?)
-     *
-     * @param ctx  the Spring context.  Required.
-     * @param maybePrivateKeyable  an Object that might be an instance of PrivateKeyable.  Optional.
-     * @return The SslSignerInfo to use for the specified object.  Never null.
-     * @throws KeyStoreException if there is a problem loading the requested cert chain and private key.
-     */
-    public static SignerInfo getSignerInfo(ApplicationContext ctx, Object maybePrivateKeyable) throws KeyStoreException {
-        try {
-            if (maybePrivateKeyable instanceof PrivateKeyable) {
-                PrivateKeyable keyable = (PrivateKeyable)maybePrivateKeyable;
-                if (!keyable.isUsesDefaultKeyStore()) {
-                    final long keystoreId = keyable.getNonDefaultKeystoreId();
-                    final String keyAlias = keyable.getKeyAlias();
-                    com.l7tech.server.security.keystore.SsgKeyStoreManager sksm =
-                            (SsgKeyStoreManager)ctx.getBean("ssgKeyStoreManager", com.l7tech.server.security.keystore.SsgKeyStoreManager.class);
-                    SsgKeyEntry keyEntry = sksm.lookupKeyByKeyAlias(keyAlias, keystoreId);
-                    X509Certificate[] certChain = keyEntry.getCertificateChain();
-                    PrivateKey privateKey = keyEntry.getPrivateKey();
-                    return new SignerInfo(privateKey, certChain);
-                }
-            }
-
-            // Default keystore
-            DefaultKey ku = (DefaultKey)ctx.getBean("defaultKey", DefaultKey.class);
-            return ku.getSslInfo();
-        } catch (IOException e) {
-            throw new KeyStoreException("Can't read the keystore for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
-        } catch (FindException e) {
-            throw new KeyStoreException("Can't read the keystore for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
-        } catch (UnrecoverableKeyException e) {
-            throw new KeyStoreException("Can't read the keystore for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
-        } catch (ObjectNotFoundException e) {
-            throw new KeyStoreException("Can't find private key for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
         }
     }
 

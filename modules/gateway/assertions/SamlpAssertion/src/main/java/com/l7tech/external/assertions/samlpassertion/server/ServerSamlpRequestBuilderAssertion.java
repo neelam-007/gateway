@@ -9,6 +9,7 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -19,12 +20,19 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertionUtils;
+import com.l7tech.server.policy.assertion.xmlsec.ServerResponseWssIntegrity;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.message.Message;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -43,6 +51,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.PrivateKey;
 import java.security.SignatureException;
+import java.security.KeyStoreException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.Map;
@@ -86,10 +96,11 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
         this.variablesUsed = assertion.getVariablesUsed();
 
         // get the Server Cert and signer info -- Copied from SamlIssuer
-        X509Certificate serverCert = (X509Certificate) spring.getBean("sslKeystoreCertificate");
-        if (serverCert == null) throw new IllegalStateException("Unable to locate server certificate");
-        X509Certificate[] serverCertChain = new X509Certificate[]{serverCert};
-        this.signerInfo = new SignerInfo((PrivateKey) spring.getBean("sslKeystorePrivateKey"), serverCertChain);
+        try {
+            this.signerInfo = ServerAssertionUtils.getSignerInfo(spring, assertion);
+        } catch (KeyStoreException e) {
+            throw new ServerPolicyException(assertion, "Unable to access configured private key: " + ExceptionUtils.getMessage(e), e);
+        }
     }
 
     /**

@@ -109,7 +109,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
         try {
             final SignerInfo signerInfo;
-            signerInfo = ServerResponseWssSignature.getSignerInfo(ctx, assertion);
+            signerInfo = ServerAssertionUtils.getSignerInfo(ctx, assertion);
 
             final KeyManager[] keyManagers;
             if (!assertion.isUsesDefaultKeyStore()) {

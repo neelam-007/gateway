@@ -83,7 +83,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         this.varsUsed = assertion.getVariablesUsed();
         this.confirmationMethod = SubjectStatement.Confirmation.forUri(assertion.getSubjectConfirmationMethodUri());
         try {
-            this.signerInfo = ServerResponseWssIntegrity.getSignerInfo(spring, assertion);
+            this.signerInfo = ServerAssertionUtils.getSignerInfo(spring, assertion);
         } catch (KeyStoreException e) {
             throw new ServerPolicyException(assertion, "Unable to access configured private key: " + ExceptionUtils.getMessage(e), e);
         }

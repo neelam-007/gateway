@@ -26,6 +26,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.assertion.xmlsec.ServerResponseWssSignature;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import org.safehaus.uuid.EthernetAddress;
@@ -66,7 +67,7 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
         ClusterInfoManager cim = (ClusterInfoManager) spring.getBean("clusterInfoManager");
         this.macAddress = new EthernetAddress(cim.getSelfNodeInf().getMac());
         try {
-            this.signerInfo = ServerResponseWssSignature.getSignerInfo(spring, assertion);
+            this.signerInfo = ServerAssertionUtils.getSignerInfo(spring, assertion);
         } catch (KeyStoreException e) {
             throw new RuntimeException("Unable to read private key for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
         }
