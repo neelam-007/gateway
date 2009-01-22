@@ -24,6 +24,7 @@ import com.l7tech.util.ResourceUtils;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.LoginRequireClientCertificateException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -78,6 +79,7 @@ public class ManagerAppletFilter implements Filter {
     public static final String INVALID_CERT = "Relogin due to incorrect certificate";
     public static final String CREDS_EXPIRED = "Relogin due to expired credentials";
     public static final String INVALID_PASSWORD = "Relogin due to invalid password.";
+    public static final String REQUIRE_CERT_LOGIN = "REQUIRE.CERT.LOGIN";
     public static final String PROP_CREDS = "ManagerApplet.authenticatedCredentials";
     public static final String PROP_USER = "ManagerApplet.authenticatedUser";
     public static final String SESSION_ID_COOKIE_NAME = "sessionId";
@@ -412,6 +414,8 @@ public class ManagerAppletFilter implements Filter {
                     //credentials expired so we'll need to redirect to proper page to change password and login
                     hreq.setAttribute(CREDS_EXPIRED, "YES");
                     hreq.setAttribute(USERNAME, username);
+                } else if (ExceptionUtils.causedBy(e, LoginRequireClientCertificateException.class)) {
+                    hreq.setAttribute(REQUIRE_CERT_LOGIN, "YES");
                 } else if (newPassword != null || confirmPassword != null) {
                     //need to redirect back to the change password and login page
                     hreq.setAttribute(INVALID_PASSWORD, "YES");

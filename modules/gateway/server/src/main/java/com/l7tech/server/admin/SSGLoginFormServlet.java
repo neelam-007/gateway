@@ -20,6 +20,7 @@ public class SSGLoginFormServlet extends HttpServlet {
     private static final String INCORRECT_USR_PWD_MESSAGE = "The user name or password is incorrect.  Try again.";
     private static final String LOCK_OUT_MESSAGE = "Maximum login attempts exceeded, please try again later.";
     private static final String CREDS_EXPIRED_MESSAGE = "Password expired, please change your password.";
+    private static final String REQUIRE_CERT_TO_LOGIN = "User is required to use client certificate login";
     private static final String LOGIN_PAGE = "loginPage";
 
     protected void doGet(HttpServletRequest hreq, HttpServletResponse hresp) throws ServletException, IOException {
@@ -54,6 +55,11 @@ public class SSGLoginFormServlet extends HttpServlet {
                 }
                 //fill in the username into the field
                 username = (String) hreq.getAttribute(ManagerAppletFilter.USERNAME);
+            } else if (hreq.getAttribute(ManagerAppletFilter.REQUIRE_CERT_LOGIN) != null) {
+                String requireCert = (String) hreq.getAttribute(ManagerAppletFilter.REQUIRE_CERT_LOGIN);
+                if (requireCert.equalsIgnoreCase("YES")) {
+                    loginMessage = REQUIRE_CERT_TO_LOGIN;
+                }
             }
             ps.print(MessageFormat.format(page, css, loginMessage, username));
         }
