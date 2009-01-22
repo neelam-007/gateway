@@ -2,6 +2,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.Policy;
 import com.l7tech.gateway.common.service.PublishedService;
 
 
@@ -16,6 +17,7 @@ public class PolicyChange {
     private Assertion policy = null;
     private PolicyEvent event = null;
     private PublishedService service = null;
+    private Policy policyFragment = null;
     protected AssertionTreeNode newChild;
     protected AssertionTreeNode parent;
     protected int childLocation;
@@ -27,10 +29,23 @@ public class PolicyChange {
      * @param event the policy event describing the change
      * @param service the service this policy belongs to
      */
-    public PolicyChange(Assertion policy, PolicyEvent event, PublishedService service) {
+    public PolicyChange( Assertion policy, PolicyEvent event, PublishedService service ) {
         this.policy = policy;
         this.event = event;
         this.service = service;
+    }
+
+    /**
+     * Construct the policy change that will invoke advices for a given policy
+     * change.
+     * @param policy the policy that will be changed
+     * @param event the policy event describing the change
+     * @param policyFragment the policy fragment this policy belongs to
+     */
+    public PolicyChange( Assertion policy, PolicyEvent event, Policy policyFragment ) {
+        this.policy = policy;
+        this.event = event;
+        this.policyFragment = policyFragment;
     }
 
     /**
@@ -45,10 +60,19 @@ public class PolicyChange {
     /**
      * Gets service.
      * 
-     * @return the service that the policy is changed
+     * @return the service that the policy belongs to (may be null)
      */
     public PublishedService getService() {
         return this.service;
+    }
+
+    /**
+     * Gets policy fragment.
+     *
+     * @return the policy fragment that the policy belongs to (may be null)
+     */
+    public Policy getPolicyFragment() {
+        return policyFragment;
     }
 
     /**
@@ -81,6 +105,7 @@ public class PolicyChange {
     }
 
 
+    @Override
     public String toString() {
         return this.getClass().getName() + "@" +
           Integer.toHexString(System.identityHashCode(this)) + "[" +

@@ -521,10 +521,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
 
     protected boolean checkForInclude(AbstractTreeNode draggingNode) {
         Include include = null;
-        if (draggingNode instanceof IncludeAssertionPaletteNode) {
-            IncludeAssertionPaletteNode iapn = (IncludeAssertionPaletteNode) draggingNode;
-            include = (Include) iapn.asAssertion();
-        } else if (draggingNode instanceof IncludeAssertionPolicyNode) {
+        if (draggingNode instanceof IncludeAssertionPolicyNode) {
             IncludeAssertionPolicyNode iapn = (IncludeAssertionPolicyNode) draggingNode;
             include = iapn.asAssertion();
         }

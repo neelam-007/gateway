@@ -266,7 +266,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     	return r;
                 	}
                     PolicyValidatorResult r = policyValidator.validate(assertion, policy.getType(), wsdl, soap, licenseManager);
-                    policyValidator.checkForCircularIncludes(policy.getName(), assertion, r);
+                    policyValidator.checkForCircularIncludes(policy.getGuid(), policy.getName(), assertion, r);
                     return r;
                 }
             };
@@ -643,7 +643,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 public PolicyValidatorResult call() throws Exception {
                     final Policy policy = getPolicyNode().getPolicy();
                     PolicyValidatorResult result = policyValidator.validate(assertion, type, wsdl, soap, licenseManager);
-                    policyValidator.checkForCircularIncludes(policy.getName(), assertion, result);
+                    policyValidator.checkForCircularIncludes(policy.getGuid(), policy.getName(), assertion, result);
                     if (getPublishedService() != null) {
                         ServiceAdmin serviceAdmin = Registry.getDefault().getServiceManager();
                         AsyncAdminMethods.JobId<PolicyValidatorResult> result2Job = serviceAdmin.

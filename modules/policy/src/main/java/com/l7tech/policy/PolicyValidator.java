@@ -1,7 +1,5 @@
 package com.l7tech.policy;
 
-import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.Policy;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
@@ -10,9 +8,10 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * A class for validating policies.
@@ -88,28 +87,35 @@ public abstract class PolicyValidator {
 
     /**
      * Scans the provided assertion tree looking for circular includes.
+     *
+     * @param policyId The identifier for the policy that the provided assertion is the root of
      * @param policyName The name of the policy that the provided assertion is the root of
      * @param rootAssertion The root assertion to start scanning
      * @param r The results of the validation check
      */
-    public void checkForCircularIncludes(String policyName, Assertion rootAssertion, PolicyValidatorResult r) {
-        HashSet<String> visitedPolicyNames = new HashSet<String>();
-        visitedPolicyNames.add(policyName);
+    public void checkForCircularIncludes(String policyId, String policyName, Assertion rootAssertion, PolicyValidatorResult r) {
+        Map<String,String> visitedPolicyIdentifiers = new HashMap<String,String>();
+        visitedPolicyIdentifiers.put(policyId, policyName);
 
-        checkAssertionForCircularIncludes(rootAssertion, visitedPolicyNames, r);
+        checkAssertionForCircularIncludes(rootAssertion, visitedPolicyIdentifiers, r);
     }
 
-    private void checkAssertionForCircularIncludes(Assertion rootAssertion, HashSet<String> visitedPolicyNames, PolicyValidatorResult r) {
+    @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+    private void checkAssertionForCircularIncludes(Assertion rootAssertion, Map<String,String> visitedPolicies, PolicyValidatorResult r) {
         if(rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion compositeAssertion = (CompositeAssertion)rootAssertion;
             for(Iterator it = compositeAssertion.children();it.hasNext();) {
                 Assertion child = (Assertion)it.next();
-                checkAssertionForCircularIncludes(child, visitedPolicyNames, r);
+                checkAssertionForCircularIncludes(child, visitedPolicies, r);
             }
         } else if(rootAssertion instanceof Include) {
             Include includeAssertion = (Include)rootAssertion;
-            if(visitedPolicyNames.contains(includeAssertion.getPolicyName())) {
-                PolicyAssertionException pae = new PolicyAssertionException(includeAssertion, "Circular policy include for Policy " + includeAssertion.getPolicyName());
+            String policyIdentifier = includeAssertion.getPolicyGuid();
+            if ( policyIdentifier == null ) {
+                policyIdentifier = "policyoid:" + includeAssertion.getPolicyOid();    
+            }
+            if(visitedPolicies.keySet().contains(policyIdentifier)) {
+                PolicyAssertionException pae = new PolicyAssertionException(includeAssertion, "Circular policy include for Policy " + visitedPolicies.get(policyIdentifier));
                 r.addError(new PolicyValidatorResult.Error(includeAssertion, new AssertionPath(includeAssertion.getPath()), pae.getMessage(), pae));
             } else {
                 Policy includedPolicy = includeAssertion.retrieveFragmentPolicy();
@@ -125,15 +131,15 @@ public abstract class PolicyValidator {
                     }
                 }
 
-                if(includedPolicy != null) {
-                    visitedPolicyNames.add(includedPolicy.getName());
-                    try {
-                        checkAssertionForCircularIncludes(includedPolicy.getAssertion(), visitedPolicyNames, r);
-                        visitedPolicyNames.remove(includedPolicy.getName());
-                    } catch(IOException e) {
-                    }
-
-                    visitedPolicyNames.remove(includedPolicy.getName());
+                visitedPolicies.put(includedPolicy.getGuid(), includedPolicy.getName());
+                visitedPolicies.put("policyoid:" + includedPolicy.getOid(), includedPolicy.getName());
+                try {
+                    checkAssertionForCircularIncludes(includedPolicy.getAssertion(), visitedPolicies, r);
+                } catch(IOException e) {
+                    // ignore
+                } finally {
+                    visitedPolicies.remove(includedPolicy.getGuid());
+                    visitedPolicies.remove("policyoid:" + includedPolicy.getOid());
                 }
             }
         }

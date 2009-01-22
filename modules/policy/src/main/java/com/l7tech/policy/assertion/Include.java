@@ -19,10 +19,8 @@ import java.util.UUID;
  * @author alex
  */
 public class Include extends Assertion implements UsesEntities, PolicyReference {
-    private Long policyOid;
-    private String policyGuid;
-    private String policyName;
-    private transient Policy fragmentPolicy;
+
+    //- PUBLIC
 
     public Include() {
     }
@@ -116,5 +114,44 @@ public class Include extends Assertion implements UsesEntities, PolicyReference 
 
         Include includeAssertion = (Include)assertion;
         fragmentPolicy = includeAssertion.retrieveFragmentPolicy();
+    }
+
+    /**
+     * Get the meta data for this assertion.
+     *
+     * @return The metadata for this assertion
+     */
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = super.defaultMeta();
+        if (!Boolean.TRUE.equals(meta.get(META_INITIALIZED))) {
+            populateMeta(meta);
+            meta.put(META_INITIALIZED, Boolean.TRUE);
+        }
+
+        return meta;
+    }
+
+    //- PRIVATE
+
+    // Metadata flag
+    private static final String META_INITIALIZED = Include.class.getName() + ".metadataInitialized";
+
+    private Long policyOid;
+    private String policyGuid;
+    private String policyName;
+    private transient Policy fragmentPolicy;
+
+    /**
+     * Populate the given metadata.
+     */
+    private void populateMeta( final DefaultAssertionMetadata meta ) {
+        // Set description for GUI
+        meta.put(AssertionMetadata.SHORT_NAME, "Include Policy Fragment");
+        meta.put(AssertionMetadata.LONG_NAME, "Include a Policy Fragment in the policy.");
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "policyLogic" });
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/folder.gif");
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddIncludeAdvice");
+        meta.put(AssertionMetadata.POLICY_NODE_CLASSNAME, "com.l7tech.console.tree.policy.IncludeAssertionPolicyNode");
     }
 }

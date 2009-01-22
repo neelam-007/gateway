@@ -5,11 +5,13 @@ import com.l7tech.console.event.PolicyWillChangeListener;
 import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.policy.advice.Advice;
 import com.l7tech.console.tree.policy.advice.Advices;
 import com.l7tech.console.tree.policy.advice.PolicyValidatorAdvice;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.gateway.common.service.PublishedService;
 
@@ -180,6 +182,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * Invoked this to insert newChild at location index in parents children.
      * Overriden to support the policy will change lsteners.
      */
+    @Override
     public void insertNodeInto(MutableTreeNode newChild, MutableTreeNode parent, int index) {
         updateAssertionTreeNodeDisableStatus(newChild, parent);
         checkArgumentIsAssertionTreeNode(newChild);
@@ -198,12 +201,26 @@ public class PolicyTreeModel extends DefaultTreeModel {
             if (sn != null) {
                 service = sn.getEntity();
             }
+            EntityWithPolicyNode pn = assertionTreeNode.getPolicyNodeCookie();
+            Policy policyFragment = null;
+            if (pn!=null) {
+                policyFragment = pn.getPolicy();
+            }
             Assertion policy = assertionTreeNode.asAssertion();
-            PolicyTreeModelChange pc = new PolicyTreeModelChange(policy,
-              event,
-              service,
-              this, (AssertionTreeNode)newChild,
-              (AssertionTreeNode)parent, index);
+            PolicyTreeModelChange pc;
+            if ( service != null ) {
+                pc = new PolicyTreeModelChange(policy,
+                  event,
+                  service,
+                  this, (AssertionTreeNode)newChild,
+                  (AssertionTreeNode)parent, index);
+            } else {
+                pc = new PolicyTreeModelChange(policy,
+                  event,
+                  policyFragment,
+                  this, (AssertionTreeNode)newChild,
+                  (AssertionTreeNode)parent, index);
+            }
             pc.advices = Advices.getAdvices(a);
             pc.proceed();
         } catch (FindException e) {
@@ -306,6 +323,25 @@ public class PolicyTreeModel extends DefaultTreeModel {
             this.childLocation = childLocation;
         }
 
+        /**
+         * Construct the policy change that will invoke advices for a given policy
+         * change.
+         *
+         * @param policy  the policy that will be changed
+         * @param event   the policy event describing the change
+         * @param policyFragment the policyFragment this policy belongs to
+         */
+        public PolicyTreeModelChange(Assertion policy, PolicyEvent event, Policy policyFragment,
+                                     PolicyTreeModel treeModel, AssertionTreeNode newChild,
+                                     AssertionTreeNode parent, int childLocation) {
+            super(policy, event, policyFragment);
+            this.treeModel = treeModel;
+            this.newChild = newChild;
+            this.parent = parent;
+            this.childLocation = childLocation;
+        }
+
+        @Override
         public void proceed() {
             if (advices == null || this.adviceIndex == advices.length) {
                 treeModel.rawInsertNodeInto(newChild, parent, childLocation);
@@ -335,6 +371,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
             super(policy, event, service, treeModel, childNode, parent, childLocation);
         }
 
+        @Override
         public void proceed() {
             if (advices == null || this.adviceIndex == advices.length) {
             } else
@@ -347,6 +384,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * Message this to remove node from its parent.
      * Overriden to support the policy will change lsteners.
      */
+    @Override
     public void removeNodeFromParent(final MutableTreeNode node) {
         checkArgumentIsAssertionTreeNode(node);
         final AssertionTreeNode parent = (AssertionTreeNode)node.getParent();

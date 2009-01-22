@@ -126,8 +126,8 @@ public class FindEntityDialog extends JDialog {
 
     public static void find(final EntityType whatKind, final Functions.UnaryVoid<EntityHeader> runWhenSelected) {
         final FindEntityDialog fed = new FindEntityDialog(TopComponents.getInstance().getTopParent(), whatKind);
-        Utilities.centerOnParent(fed);
         fed.pack();
+        Utilities.centerOnParentWindow(fed);
         DialogDisplayer.display(fed, new Runnable() {
             public void run() {
                 EntityHeader eh = fed.getSelectedEntityHeader();
