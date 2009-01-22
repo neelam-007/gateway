@@ -83,7 +83,7 @@ public class EnterpriseFolder extends NamedEntityImp implements JSON.Convertible
     public void toJSON(JSON.Output output) {
         output.add(JSONConstants.ID, guid);
         output.add(JSONConstants.PARENT_ID, parentFolder == null ? null : parentFolder.getGuid());
-        output.add(JSONConstants.TYPE, JSONConstants.Entity.ENTERPRISE_FOLDER);
+        output.add(JSONConstants.TYPE, JSONConstants.EntityType.ENTERPRISE_FOLDER);
         output.add(JSONConstants.NAME, _name);
     }
 

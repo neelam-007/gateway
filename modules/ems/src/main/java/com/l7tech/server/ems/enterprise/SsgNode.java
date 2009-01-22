@@ -1,13 +1,11 @@
 package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-
-import javax.persistence.*;
-
 import org.mortbay.util.ajax.JSON;
 
-import java.util.Map;
+import javax.persistence.*;
 import java.net.InetAddress;
+import java.util.Map;
 
 /**
  * Entity class for SSG Node
@@ -88,7 +86,7 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
     public void toJSON(JSON.Output output) {
         output.add(JSONConstants.ID, guid);
         output.add(JSONConstants.PARENT_ID, ssgCluster.getGuid());
-        output.add(JSONConstants.TYPE, JSONConstants.Entity.SSG_NODE);
+        output.add(JSONConstants.TYPE, JSONConstants.EntityType.SSG_NODE);
         output.add(JSONConstants.VERSION, getSoftwareVersion());
         output.add(JSONConstants.NAME, _name);
         output.add(JSONConstants.RBAC_CUD, false);

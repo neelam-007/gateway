@@ -1,61 +1,60 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.server.ems.ui.NavigationPage;
-import com.l7tech.server.ems.util.TypedPropertyColumn;
-import com.l7tech.server.ems.migration.MigrationRecordManager;
-import com.l7tech.server.ems.migration.MigrationMappingRecordManager;
-import com.l7tech.server.ems.migration.MigrationMappingRecord;
-import com.l7tech.server.ems.migration.MigrationMappedEntity;
-import com.l7tech.server.ems.enterprise.SsgClusterManager;
-import com.l7tech.server.ems.enterprise.SsgCluster;
-import com.l7tech.server.ems.enterprise.JSONConstants;
-import com.l7tech.server.ems.gateway.GatewayContextFactory;
-import com.l7tech.server.ems.gateway.GatewayContext;
-import com.l7tech.server.ems.gateway.GatewayException;
-import com.l7tech.server.management.api.node.MigrationApi;
-import com.l7tech.server.management.api.node.GatewayApi;
-import com.l7tech.server.management.migration.bundle.MigrationMetadata;
-import com.l7tech.server.management.migration.bundle.MigrationBundle;
-import com.l7tech.server.management.migration.bundle.ExportedItem;
-import com.l7tech.server.management.migration.bundle.MigratedItem;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeaderSet;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.migration.MigrationDependency;
-import com.l7tech.util.Pair;
+import com.l7tech.server.ems.enterprise.JSONConstants;
+import com.l7tech.server.ems.enterprise.SsgCluster;
+import com.l7tech.server.ems.enterprise.SsgClusterManager;
+import com.l7tech.server.ems.gateway.GatewayContext;
+import com.l7tech.server.ems.gateway.GatewayContextFactory;
+import com.l7tech.server.ems.gateway.GatewayException;
+import com.l7tech.server.ems.migration.MigrationMappedEntity;
+import com.l7tech.server.ems.migration.MigrationMappingRecord;
+import com.l7tech.server.ems.migration.MigrationMappingRecordManager;
+import com.l7tech.server.ems.migration.MigrationRecordManager;
+import com.l7tech.server.ems.ui.NavigationPage;
+import com.l7tech.server.ems.util.TypedPropertyColumn;
+import com.l7tech.server.management.api.node.GatewayApi;
+import com.l7tech.server.management.api.node.MigrationApi;
+import com.l7tech.server.management.migration.bundle.ExportedItem;
+import com.l7tech.server.management.migration.bundle.MigratedItem;
+import com.l7tech.server.management.migration.bundle.MigrationBundle;
+import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.util.ExceptionUtils;
-import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.HiddenField;
-import org.apache.wicket.markup.html.form.DropDownChoice;
-import org.apache.wicket.markup.html.form.TextField;
-import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.WebComponent;
-import org.apache.wicket.markup.html.IHeaderResponse;
-import org.apache.wicket.markup.html.panel.EmptyPanel;
-import org.apache.wicket.markup.html.list.ListView;
-import org.apache.wicket.markup.html.list.ListItem;
-import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.model.Model;
-import org.apache.wicket.model.PropertyModel;
-import org.apache.wicket.ajax.form.AjaxFormSubmitBehavior;
-import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.AjaxEventBehavior;
-import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
-import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
-import org.apache.wicket.spring.injection.annot.SpringBean;
+import com.l7tech.util.Pair;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
 import org.apache.wicket.RequestCycle;
+import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
+import org.apache.wicket.ajax.AjaxEventBehavior;
+import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.ajax.form.AjaxFormSubmitBehavior;
+import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
+import org.apache.wicket.markup.html.IHeaderResponse;
+import org.apache.wicket.markup.html.WebComponent;
+import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.form.DropDownChoice;
+import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.HiddenField;
+import org.apache.wicket.markup.html.form.TextField;
+import org.apache.wicket.markup.html.list.ListItem;
+import org.apache.wicket.markup.html.list.ListView;
+import org.apache.wicket.markup.html.panel.EmptyPanel;
+import org.apache.wicket.model.Model;
+import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebRequest;
+import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.mortbay.util.ajax.JSON;
 
 import javax.xml.ws.soap.SOAPFaultException;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.*;
 import java.io.Serializable;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -392,7 +391,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     options = new ArrayList<DependencyItem>(retrieveDependencies( dir ));
                     for ( Iterator<DependencyItem> itemIter = options.iterator(); itemIter.hasNext();  ) {
                         DependencyItem item = itemIter.next();
-                        if ( item.hidden || EntityType.FOLDER.toString().equals(item.type) ) {
+                        if ( item.hidden || com.l7tech.objectmodel.EntityType.FOLDER.toString().equals(item.type) ) {
                             itemIter.remove();
                         }
                     }
@@ -431,7 +430,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                 final DependencyItem dependencyItem = ((DependencyItem)item.getModelObject());
                 item.add(new Label("optional", dependencyItem.getOptional()).setEscapeModelStrings(false));
                 item.add(new Label("name", dependencyItem.name));
-                item.add(new Label("type", fromEntityType(EntityType.valueOf(dependencyItem.type))));
+                item.add(new Label("type", fromEntityType(com.l7tech.objectmodel.EntityType.valueOf(dependencyItem.type))));
                 item.add(new Label("version", dependencyItem.getVersionAsString()));
             }
         };
@@ -443,7 +442,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
     }
 
-    private static String fromEntityType( final EntityType entityType ) {
+    private static String fromEntityType( final com.l7tech.objectmodel.EntityType entityType ) {
         String type;
 
         switch ( entityType ) {
@@ -865,11 +864,11 @@ public class PolicyMigration extends EsmStandardWebPage {
                         }
                     }
 
-                    Collection<GatewayApi.EntityInfo> folders = targetGatewayApi.getEntityInfo( Collections.singleton(EntityType.FOLDER) );
+                    Collection<GatewayApi.EntityInfo> folders = targetGatewayApi.getEntityInfo( Collections.singleton(com.l7tech.objectmodel.EntityType.FOLDER) );
                     EntityHeader targetFolderHeader = null;
                     for ( GatewayApi.EntityInfo info : folders ) {
                         if ( targetFolderId.equals( info.getId() ) ) {
-                            targetFolderHeader = new EntityHeader(info.getId(), EntityType.FOLDER, info.getName(), null, info.getVersion());
+                            targetFolderHeader = new EntityHeader(info.getId(), com.l7tech.objectmodel.EntityType.FOLDER, info.getName(), null, info.getVersion());
                         }
                     }
 
@@ -994,10 +993,10 @@ public class PolicyMigration extends EsmStandardWebPage {
         builder.append( overwrite );
         builder.append( "\n" );
         builder.append( "Services migrated: " );
-        builder.append( count(export.getExportedItems().values(), metadata,EntityType.SERVICE) );
+        builder.append( count(export.getExportedItems().values(), metadata, com.l7tech.objectmodel.EntityType.SERVICE) );
         builder.append( "\n" );
         builder.append( "Policies migrated: " );
-        builder.append( count(export.getExportedItems().values(), metadata,EntityType.POLICY) );
+        builder.append( count(export.getExportedItems().values(), metadata, com.l7tech.objectmodel.EntityType.POLICY) );
         builder.append( "\n\n" );
 
         // entity details
@@ -1043,7 +1042,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         return builder.toString();
     }
 
-    private int count( final Collection<ExportedItem> items, final MigrationMetadata metadata, final EntityType type ) {
+    private int count( final Collection<ExportedItem> items, final MigrationMetadata metadata, final com.l7tech.objectmodel.EntityType type ) {
         int count = 0;
 
         for ( ExportedItem item : items ) {
@@ -1065,10 +1064,10 @@ public class PolicyMigration extends EsmStandardWebPage {
         return icon;
     }
 
-    private static boolean isSearchable( final EntityType type ) {
-        return  type == EntityType.POLICY ||
-                type == EntityType.USER ||
-                type == EntityType.GROUP;
+    private static boolean isSearchable( final com.l7tech.objectmodel.EntityType type ) {
+        return  type == com.l7tech.objectmodel.EntityType.POLICY ||
+                type == com.l7tech.objectmodel.EntityType.USER ||
+                type == com.l7tech.objectmodel.EntityType.GROUP;
     }
 
     private static class DependencyItemsRequest implements JSON.Convertible, Serializable {
@@ -1105,7 +1104,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             Collection<EntityHeader> headers = new ArrayList<EntityHeader>();
 
             for ( DependencyItem entity : entities ) {
-                EntityType type = JSONConstants.Entity.ENTITY_TYPE_MAP.get( entity.type );
+                com.l7tech.objectmodel.EntityType type = JSONConstants.EntityType.ENTITY_TYPE_MAP.get( entity.type );
                 if ( type != null ) {
                     headers.add( new EntityHeader( entity.id, type, entity.name, null) );
                 } else {
@@ -1119,7 +1118,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
     private static final class DependencyKey implements Serializable {
         private final String clusterId;
-        private final EntityType type;
+        private final com.l7tech.objectmodel.EntityType type;
         private final String id;
         private final EntityHeader header;
 
@@ -1199,7 +1198,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
 
         public String getType() {
-            return fromEntityType(EntityType.valueOf(type));
+            return fromEntityType(com.l7tech.objectmodel.EntityType.valueOf(type));
         }
 
         public String getOptional() {

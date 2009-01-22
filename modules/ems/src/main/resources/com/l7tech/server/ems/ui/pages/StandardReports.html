@@ -396,9 +396,9 @@
             // Updates the add button.
             var entityTypeText;
             var entityType = getEntitySelectionType();
-            if (entityType == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
+            if (entityType == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE) {
                 entityTypeText = localizedStrings.PUBLISHED_SERVICE_S;
-            } else if (entityType == l7.EntityTreeTable.ENTITY.OPERATION) {
+            } else if (entityType == l7.Constants.ENTITY_TYPE.OPERATION) {
                 entityTypeText = localizedStrings.OPERATION_S;
             }
             addEntityButton.set('label', l7.Util.formatMessage(localizedStrings.ADD_ENTITY_BUTTON_LABEL, entityTypeText));
@@ -505,14 +505,14 @@
 
         /**
          * Returns the entity selection type.
-         * @return {string} an l7.EntityTreeTable.ENTITY value
+         * @return {string} an l7.Constants.ENTITY_TYPE value
          */
         function getEntitySelectionType() {
             var result;
             if (publishedServiceRadioButton.checked) {
-                result = l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE;
+                result = l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE;
             } else if (operationRadioButton.checked) {
-                result = l7.EntityTreeTable.ENTITY.OPERATION;
+                result = l7.Constants.ENTITY_TYPE.OPERATION;
             } else {
                 YAHOO.log('Unexpected entity type selection.', 'error', 'StandardReports.html getEntitySelectionType');
             }
@@ -521,12 +521,12 @@
 
         /**
          * Sets the entity selection type.
-         * @param {string} type     an l7.EntityTreeTable.ENTITY value
+         * @param {string} type     an l7.Constants.ENTITY_TYPE value
          */
         function setEntitySelectionType(type) {
-            if (type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
+            if (type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE) {
                 publishedServiceRadioButton.checked = true;
-            } else if (type == l7.EntityTreeTable.ENTITY.OPERATION) {
+            } else if (type == l7.Constants.ENTITY_TYPE.OPERATION) {
                 operationRadioButton.checked = true;
             } else {
                 YAHOO.log('Unexpected entity type: ' + type, 'error', 'StandardReports.html setEntitySelectionType');
@@ -542,7 +542,7 @@
          */
         function isExistSSGCluster(id) {
             var entity = ssgClusterSelectorWindow.getEntityTreeTable().getEntityById(id);
-            return entity && entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER;
+            return entity && entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER;
         }
 
         /**
@@ -908,12 +908,12 @@
         function refreshSsgClusterContentSelector() {
             var ssgCluster = ssgClusterSelectorWindow.getEntityTreeTable().getHighlightedEntity();
             var entitySelectionType = getEntitySelectionType();
-            var entitiesWithTristateCheckbox = [l7.EntityTreeTable.ENTITY.SERVICE_FOLDER, entitySelectionType];
-            if (entitySelectionType == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
-                entitiesWithTristateCheckbox.push(l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS);
-            } else if (entitySelectionType == l7.EntityTreeTable.ENTITY.OPERATION) {
-                entitiesWithTristateCheckbox.push(l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE);
-                entitiesWithTristateCheckbox.push(l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS);
+            var entitiesWithTristateCheckbox = [l7.Constants.ENTITY_TYPE.SERVICE_FOLDER, entitySelectionType];
+            if (entitySelectionType == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE) {
+                entitiesWithTristateCheckbox.push(l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS);
+            } else if (entitySelectionType == l7.Constants.ENTITY_TYPE.OPERATION) {
+                entitiesWithTristateCheckbox.push(l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE);
+                entitiesWithTristateCheckbox.push(l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS);
             }
             ssgClusterContentSelectorWindow.loadSsgClusterContent(ssgCluster, entitiesWithTristateCheckbox, null);
         }
@@ -979,7 +979,7 @@
             if (entities) {
                 for (var i = 0; i < entities.length; ++i) {
                     var entity = entities[i];
-                    if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
+                    if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
                         var option = document.createElement('option');
                         option.value = entity.id;
                         if (entity.ancestors) {
@@ -1115,13 +1115,13 @@
             for (var i = 0; i < entities.length; ++i) {
                 var entity = entities[i];
 
-                if (entitySelectionType == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
-                    if (entity.type != l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE &&
-                        entity.type != l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS) {
+                if (entitySelectionType == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE) {
+                    if (entity.type != l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE &&
+                        entity.type != l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS) {
                         continue;
                     }
-                } else if (entitySelectionType == l7.EntityTreeTable.ENTITY.OPERATION) {
-                    if (entity.type != l7.EntityTreeTable.ENTITY.OPERATION) {
+                } else if (entitySelectionType == l7.Constants.ENTITY_TYPE.OPERATION) {
+                    if (entity.type != l7.Constants.ENTITY_TYPE.OPERATION) {
                         continue;
                     }
                 } else {
@@ -1130,9 +1130,9 @@
 
                 var publishedService;
                 var operation;
-                if (entity.type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE || entity.type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS) {
+                if (entity.type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE || entity.type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS) {
                     publishedService = entity;
-                } else if (entity.type == l7.EntityTreeTable.ENTITY.OPERATION) {
+                } else if (entity.type == l7.Constants.ENTITY_TYPE.OPERATION) {
                     publishedService = ssgClusterContentSelectorWindow.getEntityTreeTable().getParentEntity(entity);
                     operation = entity.name;
                 }

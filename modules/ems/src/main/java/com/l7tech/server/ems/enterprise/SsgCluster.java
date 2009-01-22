@@ -2,14 +2,17 @@ package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.management.api.node.GatewayApi;
-import org.mortbay.util.ajax.JSON;
 import org.hibernate.annotations.*;
+import org.mortbay.util.ajax.JSON;
 
+import javax.persistence.CascadeType;
 import javax.persistence.*;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import javax.persistence.CascadeType;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Encapsulates info of an SSG Cluster as known to the Enterprise Manager.
@@ -214,7 +217,7 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
     public void toJSON(JSON.Output output) {
         output.add(JSONConstants.ID, guid);
         output.add(JSONConstants.PARENT_ID, parentFolder.getGuid());
-        output.add(JSONConstants.TYPE, JSONConstants.Entity.SSG_CLUSTER);
+        output.add(JSONConstants.TYPE, JSONConstants.EntityType.SSG_CLUSTER);
         output.add(JSONConstants.NAME, _name);
         output.add(JSONConstants.TRUST_STATUS, trustStatus);
         output.add(JSONConstants.SSL_HOST_NAME, sslHostName);

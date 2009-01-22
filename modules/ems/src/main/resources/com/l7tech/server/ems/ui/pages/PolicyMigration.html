@@ -246,10 +246,10 @@
                 var result = [];
                 var entities = srcSSGClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxSelected(
                     [
-                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
-                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
-                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
-                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
+                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE,
+                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS,
+                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT,
+                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS
                     ]);
                 for (var i = 0; i < entities.length; ++i) {
                     var entity = entities[i];
@@ -287,19 +287,19 @@
                 srcSSGClusterContentSelectorWindow.setEntityTristateCheckboxClickedCallback(onChangeSrcSSGClusterContentSelection);
                 srcSSGClusterContentSelectorWindow.setHighlightableEntitiesAndCallback(
                     [
-                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
-                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
-                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
-                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
+                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE,
+                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS,
+                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT,
+                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS
                     ], onItemHighlighted);
                 srcSSGClusterContentSelectorWindow.loadSsgClusterContent(
                     ssgCluster,
                     [
-                        l7.EntityTreeTable.ENTITY.SERVICE_FOLDER,
-                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
-                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
-                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
-                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
+                        l7.Constants.ENTITY_TYPE.SERVICE_FOLDER,
+                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE,
+                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS,
+                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT,
+                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS
                     ],
                     null);
             }
@@ -309,16 +309,16 @@
                 destSSGClusterContentSelectorWindow.setEntityRadioButtonClickedCallback(onChangeDestSSGClusterContentSelection);
                 destSSGClusterContentSelectorWindow.setHighlightableEntitiesAndCallback(
                     [
-                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
-                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
-                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
-                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
+                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE,
+                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS,
+                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT,
+                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS
                     ], onItemHighlighted);
                 destSSGClusterContentSelectorWindow.loadSsgClusterContent(
                     ssgCluster,
                     null,
                     [
-                        l7.EntityTreeTable.ENTITY.SERVICE_FOLDER
+                        l7.Constants.ENTITY_TYPE.SERVICE_FOLDER
                     ]);
             }
 

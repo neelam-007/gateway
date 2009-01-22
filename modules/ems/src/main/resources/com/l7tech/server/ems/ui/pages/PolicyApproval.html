@@ -114,16 +114,16 @@
             if (callbackId == 'destSSGClusterSelector') {
                 destSSGClusterContentSelectorWindow.setHighlightableEntitiesAndCallback(
                     [
-                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE,
-                        l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE_ALIAS,
-                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT,
-                        l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT_ALIAS
+                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE,
+                        l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS,
+                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT,
+                        l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS
                     ], zoomItem);
                 destSSGClusterContentSelectorWindow.loadSsgClusterContent(
                     ssgCluster,
                     null,
                     [
-                        l7.EntityTreeTable.ENTITY.SERVICE_FOLDER
+                        l7.Constants.ENTITY_TYPE.SERVICE_FOLDER
                     ]);
             }
         }

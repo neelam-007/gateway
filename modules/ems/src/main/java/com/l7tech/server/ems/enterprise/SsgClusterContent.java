@@ -1,7 +1,5 @@
 package com.l7tech.server.ems.enterprise;
 
-import com.l7tech.objectmodel.EntityType;
-
 /**
  * Not thread safe (see JSONSupport).
  *
@@ -15,12 +13,12 @@ public class SsgClusterContent extends JSONSupport {
     private String id;
     private String relatedId;  // Store the OID of a real published service / policy fragment if the entity is an alias.  relatedId = null if the entity is not an alias.
     private String parentId;
-    private EntityType entityType;
+    private com.l7tech.objectmodel.EntityType entityType;
     private String name;
     private Integer version;
     private boolean isOperation;
 
-    public SsgClusterContent(String id, String relatedId, String parentId, EntityType entityType, String name, Integer version) {
+    public SsgClusterContent(String id, String relatedId, String parentId, com.l7tech.objectmodel.EntityType entityType, String name, Integer version) {
         this.id = id;
         this.relatedId = relatedId;
         this.parentId = parentId;
@@ -47,21 +45,21 @@ public class SsgClusterContent extends JSONSupport {
         if (version != null) add(JSONConstants.VERSION, version.toString());
     }
 
-    private String findType(EntityType type, boolean isOperation) {
+    private String findType(com.l7tech.objectmodel.EntityType type, boolean isOperation) {
         if (isOperation) {
-            return JSONConstants.Entity.OPERATION;
+            return JSONConstants.EntityType.OPERATION;
         }
 
-        if (EntityType.FOLDER.equals(type)) {
-            return JSONConstants.Entity.SERVICE_FOLDER;
-        } else if (EntityType.SERVICE.equals(type)) {
-            return JSONConstants.Entity.PUBLISHED_SERVICE;
-        } else if (EntityType.SERVICE_ALIAS.equals(type)) {
-            return JSONConstants.Entity.PUBLISHED_SERVICE_ALIAS;
-        } else if (EntityType.POLICY.equals(type)) {
-            return JSONConstants.Entity.POLICY_FRAGMENT;
-        } else if (EntityType.POLICY_ALIAS.equals(type)) {
-            return JSONConstants.Entity.POLICY_FRAGMENT_ALIAS;
+        if (com.l7tech.objectmodel.EntityType.FOLDER.equals(type)) {
+            return JSONConstants.EntityType.SERVICE_FOLDER;
+        } else if (com.l7tech.objectmodel.EntityType.SERVICE.equals(type)) {
+            return JSONConstants.EntityType.PUBLISHED_SERVICE;
+        } else if (com.l7tech.objectmodel.EntityType.SERVICE_ALIAS.equals(type)) {
+            return JSONConstants.EntityType.PUBLISHED_SERVICE_ALIAS;
+        } else if (com.l7tech.objectmodel.EntityType.POLICY.equals(type)) {
+            return JSONConstants.EntityType.POLICY_FRAGMENT;
+        } else if (com.l7tech.objectmodel.EntityType.POLICY_ALIAS.equals(type)) {
+            return JSONConstants.EntityType.POLICY_FRAGMENT_ALIAS;
         } else {
             throw new IllegalArgumentException("Unsupported entity type ('" + entityType + "') in SSG Cluster Content.");
         }

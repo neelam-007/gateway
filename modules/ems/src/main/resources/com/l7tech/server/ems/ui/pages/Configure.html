@@ -149,36 +149,36 @@
              */
             function isPermitted(entity, action) {
                 var result = false;
-                if (entity.type == l7.EntityTreeTable.ENTITY.ENTERPRISE_FOLDER) {
+                if (entity.type == l7.Constants.ENTITY_TYPE.ENTERPRISE_FOLDER) {
                     var isRootFolder = entity.parentId == null;
                     if (action == 'addFolder') result = entity.rbacCUD;
                     if (action == 'edit') result = entity.rbacCUD;
                     if (action == 'move') result = !isRootFolder && entity.rbacCUD;
                     if (action == 'delete') result = !isRootFolder && entity.rbacCUD;
                     if (action == 'addSSGCluster') result = entity.rbacCUD;
-                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
+                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
                     if (action == 'edit') result = entity.rbacCUD;
                     if (action == 'move') result = entity.rbacCUD;
                     if (action == 'delete') result = entity.rbacCUD;
                     if (action == 'launchSSM') result = entity.trustStatus &&
                                                         entity.accessStatus &&
-                                                        entity.onlineStatus != l7.EntityTreeTable.SSG_CLUSTER_ONLINE_STATE.DOWN;
-                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_NODE) {
+                                                        entity.onlineStatus != l7.Constants.SSG_CLUSTER_ONLINE_STATE.DOWN;
+                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE) {
                     if (action == 'start') result = entity.trustStatus &&
                                                     entity.accessStatus &&
-                                                    entity.onlineStatus != l7.EntityTreeTable.SSG_NODE_ONLINE_STATE.ON &&
-                                                    entity.onlineStatus != l7.EntityTreeTable.SSG_NODE_ONLINE_STATE.OFFLINE;
+                                                    entity.onlineStatus != l7.Constants.SSG_NODE_ONLINE_STATE.ON &&
+                                                    entity.onlineStatus != l7.Constants.SSG_NODE_ONLINE_STATE.OFFLINE;
                     if (action == 'stop') result = entity.trustStatus &&
                                                    entity.accessStatus &&
-                                                   entity.onlineStatus == l7.EntityTreeTable.SSG_NODE_ONLINE_STATE.ON;
-                } else if (entity.type == l7.EntityTreeTable.ENTITY.SERVICE_FOLDER) {
+                                                   entity.onlineStatus == l7.Constants.SSG_NODE_ONLINE_STATE.ON;
+                } else if (entity.type == l7.Constants.ENTITY_TYPE.SERVICE_FOLDER) {
                     if (action == 'addFolder') result = entity.rbacCUD;
                     if (action == 'edit') result = entity.rbacCUD;
                     if (action == 'move') result = entity.rbacCUD;
                     if (action == 'delete') result = entity.rbacCUD;
-                } else if (entity.type == l7.EntityTreeTable.ENTITY.PUBLISHED_SERVICE) {
+                } else if (entity.type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE) {
                     if (action == 'launchSSM') result = entity.rbacCUD;
-                } else if (entity.type == l7.EntityTreeTable.ENTITY.POLICY_FRAGMENT) {
+                } else if (entity.type == l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT) {
                     if (action == 'launchSSM') result = entity.rbacCUD;
                 }
                 return result;
@@ -260,9 +260,9 @@
                         l7.EntityTreeTable.COLUMN.DETAILS
                     ],
                     highlightableEntities : [
-                        l7.EntityTreeTable.ENTITY.ENTERPRISE_FOLDER,
-                        l7.EntityTreeTable.ENTITY.SSG_CLUSTER,
-                        l7.EntityTreeTable.ENTITY.SSG_NODE
+                        l7.Constants.ENTITY_TYPE.ENTERPRISE_FOLDER,
+                        l7.Constants.ENTITY_TYPE.SSG_CLUSTER,
+                        l7.Constants.ENTITY_TYPE.SSG_NODE
                     ],
                     onEntityHighlighted : onEntityHighlighted,
                     onClickTrustDialogButton : onClickTrustDialogButton,
@@ -329,9 +329,9 @@
 
             function onClickEdit(event) {
                 var entity = entityTreeTable.getHighlightedEntity();
-                if (entity.type == l7.EntityTreeTable.ENTITY.ENTERPRISE_FOLDER) {
+                if (entity.type == l7.Constants.ENTITY_TYPE.ENTERPRISE_FOLDER) {
                     onClickEditFolder(event);
-                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
+                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
                     onClickEditSSGCluster(event);
                 } else {
                     YAHOO.log('No edit handler for entity type: ' + entity.type, 'error', 'Configure.html');
@@ -362,9 +362,9 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
 
             function onClickDelete(event) {
                 var entity = entityTreeTable.getHighlightedEntity();
-                if (entity.type == l7.EntityTreeTable.ENTITY.ENTERPRISE_FOLDER) {
+                if (entity.type == l7.Constants.ENTITY_TYPE.ENTERPRISE_FOLDER) {
                     onClickDeleteFolder(event);
-                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
+                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
                     onClickDeleteSSGCluster(event);
                 } else {
                     YAHOO.log('No delete handler for entity type: ' + entity.type, 'error', 'Configure.html');
@@ -383,9 +383,9 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
             }
 
             function onClickTrustDialogButton(event, entity) {
-                if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
+                if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
                     launchSSGClusterTrustDialog(entity.id, entity.name, entity.sslHostName, entity.adminPort);
-                } else if (entity.type == l7.EntityTreeTable.ENTITY.SSG_NODE) {
+                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE) {
                     // TODO
 alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entity.id + '\nentity.type = ' + entity.type + '\nentity.name = ' + entity.name);
                 } else {
@@ -394,7 +394,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
             };
 
             function onClickAccessDialogButton(event, entity) {
-                if (entity.type == l7.EntityTreeTable.ENTITY.SSG_CLUSTER) {
+                if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
                     if (entity.accessStatus) {
                         launchChangeAccessAccountDialog(entity);
                     } else {

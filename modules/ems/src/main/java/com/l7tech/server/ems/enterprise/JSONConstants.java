@@ -1,10 +1,8 @@
 package com.l7tech.server.ems.enterprise;
 
-import com.l7tech.objectmodel.EntityType;
-
-import java.util.Map;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * JSON string constants to match those defined in JavaScripts.
@@ -26,7 +24,7 @@ public final class JSONConstants {
 
     /**
      * Monitoring property names for SSG Cluster entities.
-     * Defined as l7.EntityTreeTable.SSG_CLUSTER_MONITORING_PROPERTY in entityTreeTable.js.
+     * Defined as l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY in l7.js.
      */
     public static final class SsgClusterMonitoringProperty {
         public static final String AUDIT_SIZE = "auditSize";
@@ -34,21 +32,22 @@ public final class JSONConstants {
 
     /**
      * Monitoring property names for SSG Node entities.
-     * Defined as l7.EntityTreeTable.SSG_NODE_MONITORING_PROPERTY in entityTreeTable.js.
+     * Defined as l7.Constants.SSG_NODE_MONITORING_PROPERTY in l7.js.
      */
     public static final class SsgNodeMonitoringProperty {
-        public static final String LOG_SIZE    = "logSize";
-        public static final String DISK_USED   = "diskUsed";
-        public static final String DISK_FREE   = "diskFree";
-        public static final String RAID_STATUS = "raidStatus";
-        public static final String CPU_TEMP    = "cpuTemp";
-        public static final String CPU_USAGE   = "cpuUsage";
-        public static final String CLOCK_DRIFT = "clockDrift";
+        public static final String OPERATING_STATUS = "operatingStatus";
+        public static final String LOG_SIZE         = "logSize";
+        public static final String DISK_USAGE       = "diskUsage";
+        public static final String RAID_STATUS      = "raidStatus";
+        public static final String CPU_TEMP         = "cpuTemp";
+        public static final String CPU_USAGE        = "cpuUsage";
+        public static final String SWAP_USAGE       = "swapUsage";
+        public static final String CLOCK_DRIFT      = "clockDrift";
     }
 
     /**
      * Enum of monitoring property states.
-     * Defined as l7.EntityTreeTable.MONITORING_PROPERTY_STATE in entityTreeTable.js.
+     * Defined as l7.Constants.MONITORING_PROPERTY_STATE in l7.js.
      */
     public final class MonitoringPropertyState {
         public static final String NOT_APPLICABLE = "notApplicable";
@@ -58,7 +57,7 @@ public final class JSONConstants {
 
     /**
      * Enum of SSG Cluster online states.
-     * Defined as l7.EntityTreeTable.SSG_CLUSTER_ONLINE_STATE in entityTreeTable.js.
+     * Defined as l7.Constants.SSG_CLUSTER_ONLINE_STATE in l7.js.
      */
     public static final class SsgClusterOnlineState {
         public static final String UP      = "up";
@@ -68,7 +67,7 @@ public final class JSONConstants {
 
     /**
      * Enum of SSG Node online states.
-     * Defined as l7.EntityTreeTable.SSG_NODE_ONLINE_STATE in entityTreeTable.js.
+     * Defined as l7.Constants.SSG_NODE_ONLINE_STATE in l7.js.
      */
     public static final class SsgNodeOnlineState {
         public static final String ON      = "on";
@@ -79,9 +78,9 @@ public final class JSONConstants {
 
     /**
      * Entity types.
-     * Defined as l7.EntityTreeTable.ENTITY in entityTreeTable.js.
+     * Defined as l7.Constants.ENTITY_TYPE in l7.js.
      */
-    public static final class Entity {
+    public static final class EntityType {
         public static final String ENTERPRISE_FOLDER       = "enterpriseFolder";
         public static final String SSG_CLUSTER             = "ssgCluster";
         public static final String SSG_NODE                = "ssgNode";
@@ -93,18 +92,18 @@ public final class JSONConstants {
         public static final String POLICY_FRAGMENT_ALIAS   = "policyFragmentAlias";
         public static final String SERVICE_FOLDER          = "serviceFolder";
 
-        public static final Map<String, EntityType> ENTITY_TYPE_MAP;
+        public static final Map<String, com.l7tech.objectmodel.EntityType> ENTITY_TYPE_MAP;
         static {
-            Map<String,EntityType> entityTypeMap = new HashMap<String,EntityType>();
-            entityTypeMap.put( ENTERPRISE_FOLDER, EntityType.ESM_ENTERPRISE_FOLDER );
-            entityTypeMap.put( SSG_CLUSTER, EntityType.ESM_SSG_CLUSTER );
-            entityTypeMap.put( SSG_NODE, EntityType.ESM_SSG_NODE );
-            entityTypeMap.put( SSG_FOLDER, EntityType.FOLDER );
-            entityTypeMap.put( PUBLISHED_SERVICE, EntityType.SERVICE );
-            entityTypeMap.put( PUBLISHED_SERVICE_ALIAS, EntityType.SERVICE_ALIAS );
-            entityTypeMap.put( POLICY_FRAGMENT, EntityType.POLICY );
-            entityTypeMap.put( POLICY_FRAGMENT_ALIAS, EntityType.POLICY_ALIAS );
-            entityTypeMap.put( SERVICE_FOLDER, EntityType.FOLDER );
+            Map<String, com.l7tech.objectmodel.EntityType> entityTypeMap = new HashMap<String, com.l7tech.objectmodel.EntityType>();
+            entityTypeMap.put( ENTERPRISE_FOLDER, com.l7tech.objectmodel.EntityType.ESM_ENTERPRISE_FOLDER );
+            entityTypeMap.put( SSG_CLUSTER, com.l7tech.objectmodel.EntityType.ESM_SSG_CLUSTER );
+            entityTypeMap.put( SSG_NODE, com.l7tech.objectmodel.EntityType.ESM_SSG_NODE );
+            entityTypeMap.put( SSG_FOLDER, com.l7tech.objectmodel.EntityType.FOLDER );
+            entityTypeMap.put( PUBLISHED_SERVICE, com.l7tech.objectmodel.EntityType.SERVICE );
+            entityTypeMap.put( PUBLISHED_SERVICE_ALIAS, com.l7tech.objectmodel.EntityType.SERVICE_ALIAS );
+            entityTypeMap.put( POLICY_FRAGMENT, com.l7tech.objectmodel.EntityType.POLICY );
+            entityTypeMap.put( POLICY_FRAGMENT_ALIAS, com.l7tech.objectmodel.EntityType.POLICY_ALIAS );
+            entityTypeMap.put( SERVICE_FOLDER, com.l7tech.objectmodel.EntityType.FOLDER );
             ENTITY_TYPE_MAP = Collections.unmodifiableMap(entityTypeMap);
         }
     }
@@ -148,7 +147,7 @@ public final class JSONConstants {
 
     /**
      * Enum of standard report types.
-     * Defined in StandardReports.html.
+     * Defined as l7.Constants.REPORT_TYPE in l7.js.
      */
     public static final class ReportType {
         public static final String PERFORMANCE = "performance";
@@ -156,7 +155,8 @@ public final class JSONConstants {
     }
 
     /**
-     * Enum of time period types.
+     * Enum of time period types in standard reports.
+     * Defined as l7.Constants.REPORT_TIME_PERIOD_TYPE in l7.js.
      */
     public static final class TimePeriodTypeValues {
         public static final String RELATIVE = "relative";

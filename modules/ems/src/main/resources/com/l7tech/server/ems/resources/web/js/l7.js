@@ -21,6 +21,129 @@ if (typeof l7 == "undefined" || !l7) {
 }
 
 // -----------------------------------------------------------------------------
+// Constants
+// -----------------------------------------------------------------------------
+if (!l7.Constants) {
+    (function(){
+        /**
+         * Provides various system-wide constants.
+         *
+         * @class l7.Constants
+         */
+        l7.Constants = {};
+
+        /**
+         * Enum of entity types.
+         * @final
+         */
+        l7.Constants.ENTITY_TYPE = {
+            ENTERPRISE_FOLDER       : 'enterpriseFolder',
+            SSG_CLUSTER             : 'ssgCluster',
+            SSG_NODE                : 'ssgNode',
+            SERVICE_FOLDER          : 'serviceFolder',
+            PUBLISHED_SERVICE       : 'publishedService',
+            PUBLISHED_SERVICE_ALIAS : 'publishedServiceAlias',
+            OPERATION               : 'operation',
+            POLICY_FRAGMENT         : 'policyFragment',
+            POLICY_FRAGMENT_ALIAS   : 'policyFragmentAlias'
+        };
+
+        /**
+         * Enum of SSG Cluster online states.
+         * @final
+         */
+        l7.Constants.SSG_CLUSTER_ONLINE_STATE = {
+            UP      : 'up',
+            PARTIAL : 'partial',
+            DOWN    : 'down'
+        };
+
+        /**
+         * Enum of SSG Node online states.
+         * @final
+         */
+        l7.Constants.SSG_NODE_ONLINE_STATE = {
+            ON      : 'on',
+            OFF     : 'off',
+            DOWN    : 'down',
+            OFFLINE : 'offline'
+        };
+
+        /**
+         * Enum of monitoring property names for SSG Cluster entities.
+         * @final
+         */
+        l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY = {
+            AUDIT_SIZE : 'auditSize'
+        };
+
+        /**
+         * Enum of monitoring property names for SSG Node entities.
+         * @final
+         */
+        l7.Constants.SSG_NODE_MONITORING_PROPERTY = {
+            OPERATING_STATUS : 'operatingStatus',
+            LOG_SIZE         : 'logSize',
+            DISK_USAGE       : 'diskUsage',
+            RAID_STATUS      : 'raidStatus',
+            CPU_TEMP         : 'cpuTemp',
+            CPU_USAGE        : 'cpuUsage',
+            SWAP_USAGE       : 'swapUsage',
+            CLOCK_DRIFT      : 'clockDrift'
+        };
+
+        /**
+         * Enum of monitoring property states. Note that the corresponding CSS classes are identically named.
+         * @final
+         */
+        l7.Constants.MONITORING_PROPERTY_STATE = {
+            NOT_APPLICABLE : 'notApplicable',
+            NOT_MONITORED  : 'notMonitored',
+            CRITICAL       : 'critical'
+        };
+
+        /**
+         * Enum of notification types.
+         * @final
+         */
+        l7.Constants.NOTIFICATION_TYPE = {
+            E_MAIL       : 'eMail',
+            SNMP_TRAP    : 'snmpTrap',
+            HTTP_REQUEST : 'httpRequest'
+        };
+
+        /**
+         * Enum of protocol types for e-mail notification.
+         * @final
+         */
+        l7.Constants.NOTIFICATION_EMAIL_PROTOCOL = {
+            PLAIN_SMTP : 'plainSmtp',
+            SMTP_over_SSL : 'sslSmtp',
+            SMTP_WITH_STARTTLS : 'startTlsSmtp'
+        };
+
+        /**
+         * Enum of standard report types.
+         * @final
+         */
+        l7.Constants.REPORT_TYPE = {
+            PERFORMANCE : 'performance',
+            USAGE       : 'usage'
+        };
+
+        /**
+         * Enum of time period types in standard reports.
+         * @final
+         */
+        l7.Constants.REPORT_TIME_PERIOD_TYPE = {
+            RELATIVE : 'relative',
+            ABSOLUTE : 'absolute'
+        };
+
+    })();
+};
+
+// -----------------------------------------------------------------------------
 // Utilities
 // -----------------------------------------------------------------------------
 if (!l7.Util) {
