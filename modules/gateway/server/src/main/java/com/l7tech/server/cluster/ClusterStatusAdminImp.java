@@ -277,6 +277,11 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     }
 
     @Override
+    public void validateLicense(String newLicenseXml) throws InvalidLicenseException {
+        licenseManager.validateLicense(newLicenseXml);
+    }
+
+    @Override
     public boolean isMetricsEnabled() {
         return serviceMetricsManager.isEnabled();
     }

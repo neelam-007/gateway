@@ -217,6 +217,15 @@ public interface ClusterStatusAdmin {
     void installNewLicense(String newLicenseXml) throws UpdateException, InvalidLicenseException;
 
     /**
+     * Validates the license.  Check for validity and version.
+     *
+     * @param newLicenseXml The new license
+     * @throws InvalidLicenseException  Specifies that the license is invalid with reason.
+     */
+    @Administrative(licensed=false)
+    void validateLicense(String newLicenseXml) throws InvalidLicenseException;
+
+    /**
      * @return whether collection of service metrics is currently enabled
      */
     boolean isMetricsEnabled();

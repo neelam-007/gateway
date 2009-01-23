@@ -193,6 +193,15 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin {
     }
 
     @Override
+    public void validateLicense(String newLicenseXml) throws InvalidLicenseException {
+        try {
+            license = new License(newLicenseXml, null, GatewayFeatureSets.getFeatureSetExpander());
+        } catch (Exception e) {
+            throw new InvalidLicenseException(e.getMessage(), e);
+        }
+    }
+
+    @Override
     public boolean isMetricsEnabled() {
         throw new UnsupportedOperationException();
     }

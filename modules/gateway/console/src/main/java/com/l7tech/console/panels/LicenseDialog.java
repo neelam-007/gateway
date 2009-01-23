@@ -351,6 +351,15 @@ public class LicenseDialog extends JDialog {
                     if (is == null) return;
                     String licenseXml = XmlUtil.nodeToString(XmlUtil.parse(is));
 
+                    //check if the license is valid
+                    try {
+                        admin.validateLicense(licenseXml);
+                    } catch (InvalidLicenseException ile) {
+                        JOptionPane.showMessageDialog(LicenseDialog.this,
+                                "That license is invalid and cannot be installed:\n " + ExceptionUtils.getMessage(ile),
+                                "Invalid license", JOptionPane.ERROR_MESSAGE);
+                            return;
+                    }
                     if (showingLicenseOrError) {
                         // Last chance to confirm installation over top of an existing license
                         final String cancel = "    Cancel    ";

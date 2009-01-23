@@ -239,6 +239,22 @@ public class GatewayLicenseManager extends ApplicationObjectSupport implements I
     }
 
     /**
+     * Validate the license.
+     *
+     * @param licenseXml    The license to validate
+     * @throws InvalidLicenseException  License that is invalid with reason.
+     */
+    public void validateLicense(String licenseXml) throws InvalidLicenseException {
+        try {
+            final License license = new License(licenseXml, getTrustedIssuers(), GatewayFeatureSets.getFeatureSetExpander());
+            license.checkValidity();
+            checkProductVersion(license);
+        } catch (Exception e) {
+            throw new InvalidLicenseException(ExceptionUtils.getMessage(e));
+        }
+    }
+
+    /**
      * Ensure that the specified license grants access to the current product and version
      * as gathered from BuildInfo.  If this method returns, the specified license allows access
      * to the current product version.
