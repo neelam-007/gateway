@@ -136,7 +136,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
     private static final int QUEUE_CAPACITY = 200;
     private static final int DROP_BATCH_SIZE = 20;
     private static final long DEFAULT_RECONNECT_SLEEP = 1000L;
-    private static final long MAX_RECONNECT_SLEEP = 8000L; // todo: revert max back to 60000L;
+    private static final long MAX_RECONNECT_SLEEP = 60000L;
 
     private final BlockingQueue<FormattedSyslogMessage> messageQueue = new ArrayBlockingQueue<FormattedSyslogMessage>(QUEUE_CAPACITY);
     private final MessageSender sender;
