@@ -29,6 +29,10 @@
             font-size: 90%;
             margin-left: 8px;
         }
+
+        .panelToolbar span {
+            vertical-align: middle;
+        }
     </style>
     <script type="text/javascript" src="/js/l7.js"></script>
     <script type="text/javascript" src="/js/entityTreeTable.js"></script>
@@ -869,9 +873,15 @@
          * Note: This is asynchronous.
          */
         function populateSettingsListDropDown() {
-            while (settingsListDropDown.length > 0) {
-                settingsListDropDown.remove(0);
+            var numPrevSettings = settingsListDropDown.length;
+            function removePrevSettings() {
+                // Removes the old settings including the initial blank one.
+                // But do this after adding new settings; otherwise weird overlap in IE7.
+                for (var i = 0; i < numPrevSettings; ++i) {
+                    settingsListDropDown.remove(0);
+                }
             }
+
             var callback = {
                 success : function(o) {
                     var result = l7.Dialog.parseJSON(
@@ -887,11 +897,13 @@
                             option.innerHTML = result[i].name;
                             settingsListDropDown.appendChild(option); // Note: HTMLSelectElement.add(option, null) doesn't work in IE7.
                         }
-                        loadSettingsButton.set('disabled', settingsListDropDown.length == 0);
-                        deleteSettingsButton.set('disabled', settingsListDropDown.length == 0);
                     }
+                    removePrevSettings();
+                    loadSettingsButton.set('disabled', settingsListDropDown.length == 0);
+                    deleteSettingsButton.set('disabled', settingsListDropDown.length == 0);
                 },
                 failure : function(o) {
+                    removePrevSettings();
                     loadSettingsButton.set('disabled', settingsListDropDown.length == 0);
                     deleteSettingsButton.set('disabled', settingsListDropDown.length == 0);
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
@@ -1625,19 +1637,17 @@
                     <div class="panelTitle tippy"><img id="newReportTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'newReportDiv')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('newReportTippy', 'newReportDiv')">Generate New Report</span></div>
                     <div id="newReportDiv">
                         <div class="panelToolbar">
-                            <table> <!-- Any other way to middle-align SELECT and BUTTON elements? -->
-                                <tr>
-                                    <td class="middle"><button id="loadSettingsButton" title="Load selected settings">Load Settings:</button></td>
-                                    <td class="middle">
-                                        <select id="settingsListDropDown">
-                                            <option></option> <!-- Workaround for IE7 bug: Weird overlap without this. -->
-                                        </select>
-                                    </td>
-                                    <td class="middle"><img class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of saved settings" alt="Refresh" onclick="populateSettingsListDropDown();" /></td>
-                                    <td class="middle"><button id="deleteSettingsButton" title="Delete selected setttings">Delete</button></td>
-                                    <td class="middle"><button id="saveSettingsButton" title="Save as a named setttings">Save Settings As ...</button></td>
-                                </tr>
-                            </table>
+                            <span style="font-weight: bold;">Saved Settings:</span>
+                            <span>
+                                <select id="settingsListDropDown">
+                                    <option></option> <!-- Workaround for IE7 bug: Weird overlap without this. -->
+                                </select>
+                            </span>
+                            <span><img class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of saved settings" alt="Refresh" onclick="populateSettingsListDropDown();" /></span>
+                            <button id="loadSettingsButton" title="Load selected settings">Load</button>
+                            <button id="deleteSettingsButton" title="Delete selected setttings">Delete</button>
+                            <span style="margin-left: 0.5em; margin-right: 0.5em;">|</span>
+                            <button id="saveSettingsButton" title="Save as a named setttings">Save Current Settings ...</button>
                         </div>
                         <div class="panelContent">
                         <form wicket:id="form">
@@ -1677,7 +1687,12 @@
                                                     </tr>
                                                 </table>
                                             <div class="panelToolbar">
-                                                <button id="addEntityButton">Add Checked Published Service(s)</button>
+                                                <table width="100%">
+                                                    <tr>
+                                                        <td width="50%"></td>
+                                                        <td width="50%"><button id="addEntityButton">Add Checked Published Service(s)</button></td>
+                                                    </tr>
+                                                </table>
                                             </div>
                                             <div class="panelContent smallPadding">
                                                 <table class="dataTable">
