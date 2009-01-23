@@ -230,7 +230,6 @@ input[type='text'].invalid {
     background-color: #ffffe4;
 }
 
-/** Used by treeTable.js. */
 .mixedStateCheckbox {
     opacity: 0.4;
     *filter: alpha(opacity=40);
