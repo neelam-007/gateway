@@ -333,6 +333,8 @@ public class EmailListenerPropertiesDialog extends JDialog {
 
         // Interval must be an integer between greater than or equal to 1
         checkInterval.setModel(new SpinnerNumberModel(5, 1, Integer.MAX_VALUE, 1));
+        JSpinner.NumberEditor jsne = new JSpinner.NumberEditor(checkInterval,"#");  //number format for parse and display 
+        checkInterval.setEditor(jsne);        
         ((JSpinner.DefaultEditor) checkInterval.getEditor()).getTextField().setFocusLostBehavior(JFormattedTextField.PERSIST);  //we'll do our own checking
 
     }
