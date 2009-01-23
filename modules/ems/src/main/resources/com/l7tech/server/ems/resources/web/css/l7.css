@@ -54,7 +54,7 @@ h4 {
 }
 
 input, select {
-    border: 1px #433e29 solid;
+    border: 1px #606060 solid;
 }
 
 button, input[type='button'], input[type='submit'] {
@@ -97,7 +97,7 @@ input[type='checkbox'], input[type='radio'] {
 }
 
 textarea {
-    border: 1px #433e29 solid;
+    border: 1px #606060 solid;
     font-size: 1em;
     padding: 2px 4px 2px 4px;
 }
@@ -630,7 +630,7 @@ table.dataTable td.critical {
 
 .sideBySide iframe {
     background-color: #eeeeee;
-    border: 1px #433e29 solid;
+    border: 1px #606060 solid;
 }
 
 .roundedTitleLeft, .roundedTitleRight {
@@ -715,7 +715,7 @@ table.dataTable td.critical {
 }
 
 .submissionMessageEntry input[type='text'] {
-    border: 1px #433e29 solid;
+    border: 1px #606060 solid;
     width: 98%;
 }
 
