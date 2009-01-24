@@ -9,10 +9,7 @@ import javax.persistence.CascadeType;
 import javax.persistence.*;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Encapsulates info of an SSG Cluster as known to the Enterprise Manager.
@@ -224,6 +221,7 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         output.add(JSONConstants.ADMIN_PORT, Integer.toString(adminPort));
         output.add(JSONConstants.ADMIN_APPLET_PORT, Integer.toString(adminAppletPort));
         output.add(JSONConstants.ONLINE_STATUS, onlineStatus);
+        output.add(JSONConstants.CLUSTER_ANCESTORS, findAllAncestors());
 // TODO       output.add(JSONConstants.DB_HOSTS, ...);
 // TODO       output.add(JSONConstants.IP_ADDRESS, ...);
     }
@@ -232,5 +230,21 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
     @Override
     public void fromJSON(Map map) {
         throw new UnsupportedOperationException("Mapping from JSON not supported.");
+    }
+
+    /**
+     * Find all enterprise folders (i.e., ancestors) of the SSG cluster.
+     * @return a list of enterprise folders' names.
+     */
+    private Object[] findAllAncestors() {
+        List<String> ancestorNames = new ArrayList<String>();
+
+        EnterpriseFolder parent = parentFolder;
+        while (parent != null) {
+            ancestorNames.add(0, parent.getName());
+            parent = parent.getParentFolder();
+        }
+
+        return ancestorNames.toArray();
     }
 }

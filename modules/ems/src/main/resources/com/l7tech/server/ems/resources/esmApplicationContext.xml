@@ -90,6 +90,7 @@
                 <!-- Reporting -->
                 <value>com.l7tech.server.ems.standardreports.StandardReport</value>
                 <value>com.l7tech.server.ems.standardreports.StandardReportArtifact</value>
+                <value>com.l7tech.server.ems.standardreports.StandardReportSettings</value>
 
                 <!-- Enterprise Migration -->
                 <value>com.l7tech.server.ems.migration.MigrationRecord</value>
@@ -466,6 +467,10 @@
 
     <!-- Migration Manager -->
     <bean id="migrationRecordManager" class="com.l7tech.server.ems.migration.MigrationRecordManagerImpl" parent="hibernateBean">
+    </bean>
+
+    <!-- Standard Report Settings Manager -->
+    <bean id="standardReportSettingsManager" class="com.l7tech.server.ems.standardreports.StandardReportSettingsManagerImpl" parent="hibernateBean">
     </bean>
 
     <bean id="migrationMappingManager" class="com.l7tech.server.ems.migration.MigrationMappingRecordManagerImpl" parent="hibernateBean">

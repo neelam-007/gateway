@@ -62,4 +62,18 @@ public interface SsgClusterManager extends EntityManager<SsgCluster, EntityHeade
      * @throws FindException if failed to query database
      */
     List<SsgCluster> findChildSsgClusters(final EnterpriseFolder parentFolder) throws FindException;
+
+    /**
+     * Find all ancestors (i.e., enterprise folders) of the SSG cluster
+     * @param guid: the GUID of the SSG Cluster
+     * @return a list of enterprise folder objects (Note: the root ancestor will be the first element in the list.)
+     */
+    List<EnterpriseFolder> findAllAncestors(final String guid) throws FindException;
+
+    /**
+     * Find all ancestors (i.e., enterprise folders) of the SSG cluster
+     * @param ssgCluster: the SSG Cluster object
+     * @return a list of enterprise folder objects (Note: the root ancestor will be the first element in the list.)
+     */
+    List<EnterpriseFolder> findAllAncestors(final SsgCluster ssgCluster);
 }

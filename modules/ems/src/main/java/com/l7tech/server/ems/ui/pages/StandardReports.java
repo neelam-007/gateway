@@ -1,9 +1,7 @@
 package com.l7tech.server.ems.ui.pages;
 
 import com.l7tech.server.ems.ui.NavigationPage;
-import com.l7tech.server.ems.enterprise.JSONException;
-import com.l7tech.server.ems.enterprise.SsgCluster;
-import com.l7tech.server.ems.enterprise.SsgClusterManager;
+import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayException;
@@ -14,18 +12,26 @@ import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import org.apache.wicket.RequestCycle;
+import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.ajax.AjaxRequestTarget;
+import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.IChoiceRenderer;
+import org.apache.wicket.markup.html.form.HiddenField;
+import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.mortbay.util.ajax.JSON;
 
 import java.text.SimpleDateFormat;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,7 +43,8 @@ import java.util.logging.Logger;
 public class StandardReports extends EsmStandardWebPage {
     private static final Logger logger = Logger.getLogger(StandardReports.class.getName());
     private static final SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
-    
+    private static final String WARNING_LOADING_SETTINGS = "{0} in the SSG Cluster with GUID {1} cannot be added because the SSG Cluster no longer exists in the enterprise tree.";
+
     @SpringBean
     private ReportService reportService;
 
@@ -47,77 +54,32 @@ public class StandardReports extends EsmStandardWebPage {
     @SpringBean
     private GatewayContextFactory gatewayContextFactory;
 
+    @SpringBean
+    private StandardReportSettingsManager standardReportSettingsManager;
+
+    private DropDownChoice timeZoneChoice;
+    private YuiDateSelector fromDateField;
+    private YuiDateSelector toDateField;
+    private Label fromDateJavascript;
+    private Label toDateJavascript;
+
     // Keep tracking on the time-zone changing.
     private String currentTimeZoneId;
 
     public StandardReports() {
         currentTimeZoneId = getSession().getTimeZoneId();
 
-        add(new JsonPostInteraction("postReportParameters", "generateReportUrl", new JsonDataProvider(){
-
-            Object returnValue = null;
-
-            @Override
-            public Object getData() {
-                return returnValue;
-            }
-
-            @Override
-            public void setData(Object jsonData) {
-                if( jsonData instanceof JSONException ){
-                    //some exception happened whilst trying to retrieve the payload from upload request
-                    returnValue = jsonData;
-                } else if ( jsonData instanceof String ) {
-                    Object jsonDataObj;
-                    try{
-                        jsonDataObj = JSON.parse(jsonData.toString());
-                    }catch(Exception e){
-                        returnValue = new JSONException(
-                                new Exception("Cannot parse uploaded JSON data", e.getCause()));
-                        logger.log(Level.FINER, "Cannot parse uploaded JSON data", e.getCause());
-                        return;
-                    }
-
-                    try{
-                        if(!(jsonDataObj instanceof Map)){
-                            logger.log(Level.FINER, "Incorrect JSON data. Not convertible to a Map");
-                            throw new ReportException("Incorrect JSON data. Not convertible to a Map");
-                        }
-                        Map jsonDataMap = (Map) jsonDataObj;
-                        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonDataMap);
-                        Collection<ReportSubmissionClusterBean> clusterBeans =
-                                convertor.getReportSubmissions(jsonDataMap, getUser().getLogin());
-
-                        for(ReportSubmissionClusterBean clusterBean: clusterBeans){
-                            reportService.enqueueReport(clusterBean.getClusterId(), getUser(), clusterBean.getReportSubmission());
-                        }
-
-                        // null for success
-                        returnValue = null;
-                    }catch(ReportException ex){
-                        logger.log(Level.FINER, "Problem running report: " + ex.getMessage(), ex.getCause());
-                        returnValue = new JSONException(
-                                new Exception("Problem running report: " + ex.getMessage(), ex.getCause()));
-                    }
-                } else {
-                    throw new IllegalArgumentException("jsonData must be either a JSONException or a JSON formatted String");                    
-                }
-            }
-        }));
-
-        add( new StandardReportsManagementPanel("generatedReports") );
-
-        Form form = new Form("form");
+        Form reportParametersForm = new Form("reportParametersForm");
 
         Date now = new Date();
         Date yesterday = new Date(now.getTime() - TimeUnit.DAYS.toMillis(1));
-        final YuiDateSelector fromDateField = new YuiDateSelector("fromDate", "absoluteTimePeriodFromDateTextBox", new Model(yesterday), null, now, currentTimeZoneId);
-        final YuiDateSelector toDateField = new YuiDateSelector("toDate", "absoluteTimePeriodToDateTextBox", new Model(now), yesterday, now, currentTimeZoneId);
+        fromDateField = new YuiDateSelector("fromDate", "absoluteTimePeriodFromDateTextBox", new Model(yesterday), null, now, currentTimeZoneId);
+        toDateField = new YuiDateSelector("toDate", "absoluteTimePeriodToDateTextBox", new Model(now), yesterday, now, currentTimeZoneId);
 
-        final Label fromDateJavascript = new Label("fromDateJavascript", buildDateJavascript(true, fromDateField.getDateTextField().getModelObject()));
+        fromDateJavascript = new Label("fromDateJavascript", buildDateJavascript(true, fromDateField.getDateTextField().getModelObject()));
         fromDateJavascript.setEscapeModelStrings(false);
 
-        final Label toDateJavascript = new Label("toDateJavascript", buildDateJavascript(false, toDateField.getDateTextField().getModelObject()));
+        toDateJavascript = new Label("toDateJavascript", buildDateJavascript(false, toDateField.getDateTextField().getModelObject()));
         toDateJavascript.setEscapeModelStrings(false);
 
         fromDateField.addInteractionWithOtherDateSelector(toDateField, false, new YuiDateSelector.InteractionTasker() {
@@ -137,7 +99,7 @@ public class StandardReports extends EsmStandardWebPage {
 
         List<String> zoneIds = Arrays.asList(TimeZone.getAvailableIDs());
         Collections.sort(zoneIds);
-        final DropDownChoice timeZoneChoice = new DropDownChoice("timezone", new Model(getSession().getTimeZoneId()), zoneIds, new IChoiceRenderer(){
+        timeZoneChoice = new DropDownChoice("timezone", new Model(getSession().getTimeZoneId()), zoneIds, new IChoiceRenderer(){
             @Override
             public Object getDisplayValue(Object object) {
                 return object;
@@ -174,15 +136,42 @@ public class StandardReports extends EsmStandardWebPage {
         });
         timeZoneChoice.setMarkupId("timePeriodTimeZoneDropDown");
 
-        form.add( timeZoneChoice );
-        form.add( fromDateField.setOutputMarkupId(true) );
-        form.add( toDateField.setOutputMarkupId(true) );
+        reportParametersForm.add( timeZoneChoice );
+        reportParametersForm.add( fromDateField.setOutputMarkupId(true) );
+        reportParametersForm.add( toDateField.setOutputMarkupId(true) );
 
-        add( form );
+        final HiddenField deleteSettingsDialogInputId = new HiddenField("deleteSettingsDialog_id", new Model(""));
+        Form deleteSettingsForm = new JsonDataResponseForm("deleteSettingsForm", new AttemptedDeleteAll( EntityType.ESM_STANDARD_REPORT )){
+            @Override
+            protected Object getJsonResponseData() {
+                String deletedSettingsOid = (String)deleteSettingsDialogInputId.getConvertedInput();
+                try {
+                    logger.fine("Deleting standard report settings (OID = "+ deletedSettingsOid + ").");
+
+                    standardReportSettingsManager.delete(deletedSettingsOid);
+                    return null;    // No response object expected if successful.
+                } catch (Exception e) {
+                    String errmsg = "Cannot delete the standard report settings (OID = '" + deletedSettingsOid + "').";
+                    logger.warning(errmsg);
+                    return new JSONException(new Exception(errmsg));
+                }
+            }
+        };
+        deleteSettingsForm.add(deleteSettingsDialogInputId );
+
+        add( reportParametersForm);
         add( fromDateJavascript.setOutputMarkupId(true) );
         add( toDateJavascript.setOutputMarkupId(true) );
+        add( deleteSettingsForm );
 
-        add( new JsonInteraction("jsonMappings", "jsonMappingUrl", new MappingDataProvider() ) );
+        add( new JsonInteraction("jsonMappings", "jsonMappingUrl", new MappingDataProvider()) );
+        add( new JsonPostInteraction("postReportParameters", "generateReportUrl", new ReportParametersDataProvider()) );
+        add( new JsonPostInteraction("postReportSavingSettings", "saveSettingsUrl", new ReportSavingSettingsDataProvider()) );
+        add( new JsonPostInteraction("reconfirmPostReportSavingSettings", "saveSettingsOverwriteUrl", new ReportSavingSettingsDataProvider()) );
+        add( new JsonInteraction("getReportSettingsList", "getSettingsListUrl", new SettingsListDataProvider()) );
+        add( new ReportSettingsJsonPostInteraction("getReportSettings", "getSettingsUrl", new ReportSettingsDataProvider()) );
+
+        add( new StandardReportsManagementPanel("generatedReports") );
     }
 
     /**
@@ -258,6 +247,195 @@ public class StandardReports extends EsmStandardWebPage {
         }
     }
 
+    private final class ReportParametersDataProvider implements JsonDataProvider {
+        private Object returnValue = null;
+
+        @Override
+        public Object getData() {
+            return returnValue;
+        }
+
+        @Override
+        public void setData(Object jsonData) {
+            if(jsonData instanceof JSONException) {
+                //some exception happened whilst trying to retrieve the payload from upload request
+                returnValue = jsonData;
+            } else if (jsonData instanceof String) {
+                Object jsonDataObj;
+                try {
+                    jsonDataObj = JSON.parse(jsonData.toString());
+                } catch(Exception e) {
+                    returnValue = new JSONException(new Exception("Cannot parse uploaded JSON data", e.getCause()));
+                    logger.log(Level.FINER, "Cannot parse uploaded JSON data", e.getCause());
+                    return;
+                }
+
+                try {
+                    if (!(jsonDataObj instanceof Map)){
+                        logger.log(Level.FINER, "Incorrect JSON data. Not convertible to a Map");
+                        throw new ReportException("Incorrect JSON data. Not convertible to a Map");
+                    }
+                    Map jsonDataMap = (Map) jsonDataObj;
+                    JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonDataMap);
+                    Collection<ReportSubmissionClusterBean> clusterBeans =
+                        convertor.getReportSubmissions(jsonDataMap, getUser().getLogin());
+
+                    for (ReportSubmissionClusterBean clusterBean: clusterBeans){
+                        reportService.enqueueReport(clusterBean.getClusterId(), getUser(), clusterBean.getReportSubmission());
+                    }
+
+                    // null for success
+                    returnValue = null;
+                } catch (ReportException ex) {
+                    logger.log(Level.FINER, "Problem running report: " + ex.getMessage(), ex.getCause());
+                    returnValue = new JSONException(new Exception("Problem running report: " + ex.getMessage(), ex.getCause()));
+                }
+            } else {
+                returnValue = new JSONException(new IllegalArgumentException("jsonData must be either a JSONException or a JSON formatted String"));
+            }
+        }
+
+    }
+
+    private final class ReportSavingSettingsDataProvider implements JsonDataProvider {
+        private Object returnValue;
+
+        @Override
+        public Object getData() {
+            return returnValue;
+        }
+
+        @Override
+        public void setData(Object jsonData) {
+            if (jsonData instanceof JSONException ){
+                //some exception happened whilst trying to retrieve the payload from upload request
+                returnValue = jsonData;
+            } else if (jsonData instanceof String) {
+                Object jsonDataObj;
+                try {
+                    jsonDataObj = JSON.parse(jsonData.toString());
+                } catch(Exception e){
+                    logger.log(Level.FINER, "Cannot parse uploaded JSON data", e.getCause());
+                    returnValue = new JSONException(new Exception("Cannot parse uploaded JSON data", e.getCause()));
+                    return;
+                }
+
+                if (!(jsonDataObj instanceof Map)) {
+                    logger.log(Level.FINER, "Incorrect JSON data. Not convertible to a Map");
+                    returnValue = new JSONException(new Exception("Incorrect JSON data. Not convertible to a Map"));
+                    return;
+                }
+
+                Map jsonDataMap = (Map) jsonDataObj;
+                String name = (String) jsonDataMap.get("name");
+
+                Map<String, Object> settingsProps = new HashMap<String, Object>();
+                settingsProps.put(JSONConstants.REPORT_TYPE, jsonDataMap.get(JSONConstants.REPORT_TYPE));
+                settingsProps.put(JSONConstants.ENTITY_TYPE, jsonDataMap.get(JSONConstants.ENTITY_TYPE));
+                settingsProps.put(JSONConstants.REPORT_ENTITIES, jsonDataMap.get(JSONConstants.REPORT_ENTITIES));
+                settingsProps.put(JSONConstants.TimePeriodTypeKeys.TIME_PERIOD_MAIN, jsonDataMap.get(JSONConstants.TimePeriodTypeKeys.TIME_PERIOD_MAIN));
+                settingsProps.put(JSONConstants.TimePeriodTypeKeys.TIME_INTERVAL, jsonDataMap.get(JSONConstants.TimePeriodTypeKeys.TIME_INTERVAL));
+                settingsProps.put(JSONConstants.GROUPINGS, jsonDataMap.get(JSONConstants.GROUPINGS));
+                settingsProps.put(JSONConstants.SUMMARY_CHART, jsonDataMap.get(JSONConstants.SUMMARY_CHART));
+                settingsProps.put(JSONConstants.SUMMARY_REPORT, jsonDataMap.get(JSONConstants.SUMMARY_REPORT));
+                settingsProps.put(JSONConstants.REPORT_NAME, jsonDataMap.get(JSONConstants.REPORT_NAME));
+
+                try {
+                    standardReportSettingsManager.save(new StandardReportSettings(name, settingsProps));
+
+                    // null for success
+                    returnValue = null;
+                } catch (Exception e) {
+                    logger.log(Level.FINER, "Problem saving report settings: " + e.getMessage(), e.getCause());
+
+                    if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+                        returnValue = new JSON.Convertible() {
+                            @Override
+                            public void toJSON(JSON.Output output) {
+                                output.add("reconfirm", true);
+                            }
+
+                            @Override
+                            public void fromJSON(Map map) {
+                                throw new UnsupportedOperationException("Mapping from JSON not supported.");
+                            }
+                        };
+                    } else {
+                        returnValue = new JSONException(new Exception("Problem saving report settings: " + e.getMessage(), e.getCause()));
+                    }
+                }
+            } else {
+                returnValue = new JSONException(new IllegalArgumentException("jsonData must be either a JSONException or a JSON formatted String"));
+            }
+        }
+    }
+
+    private final class SettingsListDataProvider implements JsonDataProvider {
+        @Override
+        public Object getData() {
+            final List<Object> settingsList = new ArrayList<Object>();
+            try {
+                for (StandardReportSettings settings: standardReportSettingsManager.findAll()) {
+                    settingsList.add(settings);
+                }
+            } catch (FindException e) {
+                logger.warning("Cannot find standard reports settings.");
+                return new JSONException(e);
+            }
+            return settingsList;
+        }
+
+        @Override
+        public void setData(Object jsonData) {
+            throw new UnsupportedOperationException("setData not required in JsonInteraction");
+        }
+    }
+
+    private final class ReportSettingsDataProvider implements JsonDataProvider {
+        private Object returnValue;
+
+        @Override
+        public Object getData() {
+            return returnValue;
+        }
+
+        @Override
+        public void setData(Object jsonData) {
+            if (jsonData instanceof JSONException ){
+                //some exception happened whilst trying to retrieve the payload from upload request
+                returnValue = jsonData;
+            } else if (jsonData instanceof String) {
+                String oid = (String) jsonData;
+                try {
+                    StandardReportSettings reportSettings = standardReportSettingsManager.findByPrimaryKey(Integer.parseInt(oid));
+                    Map<String, Object> settingsPropsMap = reportSettings.obtainSettingsProps();
+                    updateReportSettings(settingsPropsMap);
+
+                    // null for success
+                    returnValue = settingsPropsMap;
+                } catch (NumberFormatException e) {
+                    String errmsg = "The OID ('" + oid + "') is not an integer.";
+                    logger.warning(errmsg);
+                    returnValue = new JSONException(new NumberFormatException("The OID ('" + oid + "') is not an integer."));
+                } catch (FindException e) {
+                    String errmsg = "Cannot find standard reports settings by OID ('" + oid + "').";
+                    logger.warning(errmsg);
+                    returnValue = new JSONException(new FindException(errmsg));
+                }
+            } else {
+                returnValue = new JSONException(new IllegalArgumentException("jsonData must be either a JSONException or a JSON formatted String"));
+            }
+        }
+    }
+
+    private final class ReportSettingsJsonPostInteraction extends JsonPostInteraction {
+        public ReportSettingsJsonPostInteraction(final String id, final String jsonUrlVariable, final JsonDataProvider provider) {
+            super(id, jsonUrlVariable, provider);
+
+            add(buildLoadingTimePeriodSettingsBehavior("loadTimePeriodSettingsUrl"));
+        }
+    }
+
     private static final class MappingKey implements JSON.Convertible {
         private final String id;
         private final String[] standard;
@@ -292,5 +470,131 @@ public class StandardReports extends EsmStandardWebPage {
         public void fromJSON(final Map object) {
             throw new UnsupportedOperationException();
         }
+    }
+
+    /**
+     * Add some runtime properties (such as clusterName and clusterAncestors for "entities" and "groupings") into the
+     * the settings and also validate all properties of the setting.
+     *
+     * @param settingsPropsMap: the map of the settings properties.
+     */
+    private void updateReportSettings(Map<String, Object> settingsPropsMap) {
+        List<String> warnings = new ArrayList<String>();
+        MessageFormat warningMsgFormat = new MessageFormat(WARNING_LOADING_SETTINGS);
+
+        // Step 1: update and validate "entities"
+        List<Object> entitiesPropsMapList = new ArrayList<Object>(Arrays.asList((Object[])settingsPropsMap.get(JSONConstants.REPORT_ENTITIES)));
+        List<String> removedGuidsForEntities = new ArrayList<String>();
+        for (Iterator<Object> itr = entitiesPropsMapList.iterator(); itr.hasNext(); ) {
+            Map entityPropsMap = (Map) itr.next();
+            String clusterGuid = (String) entityPropsMap.get(JSONConstants.ReportEntities.CLUSTER_ID);
+            try {
+                SsgCluster ssgCluster = ssgClusterManager.findByGuid(clusterGuid);
+                entityPropsMap.put(JSONConstants.CLUSTER_NAME, ssgCluster.getName());
+                entityPropsMap.put(JSONConstants.CLUSTER_ANCESTORS, getClusterAncestors(ssgCluster));
+            } catch (FindException e) {
+                if (! removedGuidsForEntities.contains(clusterGuid)) {
+                    removedGuidsForEntities.add(clusterGuid);
+                    warnings.add(warningMsgFormat.format(new Object[]{"Entities", clusterGuid}));
+                }
+                itr.remove();
+            }
+        }
+        // Update the "entities" property
+        settingsPropsMap.put(JSONConstants.REPORT_ENTITIES, entitiesPropsMapList.toArray());
+
+        // Step 2: update and validate "groupings"
+        List<Object> groupingsPropsMapList = new ArrayList<Object>(Arrays.asList((Object[])settingsPropsMap.get(JSONConstants.GROUPINGS)));
+        List<String> removedGuidsForGroupings = new ArrayList<String>();
+        for (Iterator<Object> itr = groupingsPropsMapList.iterator(); itr.hasNext(); ) {
+            Map groupingPropsMap = (Map) itr.next();
+            String clusterGuid = (String) groupingPropsMap.get(JSONConstants.ReportEntities.CLUSTER_ID);
+            try {
+                SsgCluster ssgCluster = ssgClusterManager.findByGuid(clusterGuid);
+                groupingPropsMap.put(JSONConstants.CLUSTER_NAME, ssgCluster.getName());
+                groupingPropsMap.put(JSONConstants.CLUSTER_ANCESTORS, getClusterAncestors(ssgCluster));
+            } catch (FindException e) {
+                if (! removedGuidsForGroupings.contains(clusterGuid)) {
+                    removedGuidsForGroupings.add(clusterGuid);
+                    warnings.add(warningMsgFormat.format(new Object[]{"Groupings", clusterGuid}));
+                }
+                itr.remove();
+            }
+        }
+        // Update the "groupings" property
+        settingsPropsMap.put(JSONConstants.GROUPINGS, groupingsPropsMapList.toArray());
+
+        // Step 3: Check if there are warnings.
+        if (! warnings.isEmpty()) {
+            settingsPropsMap.put(JSONConstants.REPORT_SETTINGS_WARNING_ITEMS, warnings.toArray());
+        }
+    }
+
+    private Object[] getClusterAncestors(SsgCluster ssgCluster) {
+        List<String> ancestorNames = new ArrayList<String>();
+
+        for (EnterpriseFolder ancestor: ssgClusterManager.findAllAncestors(ssgCluster)) {
+            ancestorNames.add(ancestor.getName());
+        }
+
+        return ancestorNames.toArray();
+    }
+
+    private AbstractDefaultAjaxBehavior buildLoadingTimePeriodSettingsBehavior(final String callbackUrl) {
+        return new AbstractDefaultAjaxBehavior(){
+            @Override
+            public void renderHead( final IHeaderResponse iHeaderResponse ) {
+                super.renderHead( iHeaderResponse );
+                iHeaderResponse.renderJavascript("var " + callbackUrl + " = '" + getCallbackUrl(true) + "';", null);
+            }
+
+            @Override
+            protected void respond( final AjaxRequestTarget ajaxRequestTarget ) {
+                WebRequest request = (WebRequest) RequestCycle.get().getRequest();
+                String type = request.getParameter("type");
+                String timeZone = request.getParameter("timeZone");
+
+                // Update time zone
+                timeZoneChoice.setModelObject(timeZone);
+                ajaxRequestTarget.addComponent(timeZoneChoice);
+
+                if ("relative".equals(type)) {
+                    return;
+                }
+
+                String absoluteFrom = request.getParameter("absoluteFrom");
+                String absoluteTo = request.getParameter("absoluteTo");
+
+                // Update "from" and "to" date selectors 
+                Date now = new Date();
+                String newTimeZoneId = (String)timeZoneChoice.getModelObject();
+                format.setTimeZone(TimeZone.getTimeZone(newTimeZoneId));
+                fromDateField.setNewTimeZoneUsed(newTimeZoneId);
+                toDateField.setNewTimeZoneUsed(newTimeZoneId);
+
+                Date from, to;
+                try {
+                    from = new Date(absoluteFrom);
+                    to = new Date(absoluteTo);
+                } catch (Exception e) {
+                    to = now;
+                    from = new Date(now.getTime() - TimeUnit.DAYS.toMillis(1));
+                }
+
+                fromDateField.getDateTextField().setModelObject(from);
+                fromDateField.setDateSelectorModel(null, to);
+                fromDateJavascript.setModelObject(buildDateJavascript(true, fromDateField.getModelObject()));
+                ajaxRequestTarget.addComponent(fromDateJavascript);
+                ajaxRequestTarget.addComponent(fromDateField);
+
+                toDateField.getDateTextField().setModelObject(to);
+                toDateField.setDateSelectorModel(from, now);
+                toDateJavascript.setModelObject(buildDateJavascript(false, toDateField.getModelObject()));
+                ajaxRequestTarget.addComponent(toDateJavascript);
+                ajaxRequestTarget.addComponent(toDateField);
+
+                currentTimeZoneId = newTimeZoneId;
+            }
+        };
     }
 }

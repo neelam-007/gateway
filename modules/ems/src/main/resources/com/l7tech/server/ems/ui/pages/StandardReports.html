@@ -600,7 +600,7 @@
             // Published Service column.
             td = tr.insertCell(-1);
             td.innerHTML = publishedServiceName;
-            if (relatedId != undefined) { // the selected entity is either a published service alias or an operation inside a published service alias	
+            if (relatedId != undefined) { // the selected entity is either a published service alias or an operation inside a published service alias
                 td.style.fontStyle = 'italic';
             }
             tr._publishedServiceId = publishedServiceId;        // Stash away for later retrieval.
@@ -629,6 +629,7 @@
                           entity.clusterAncestors,
                           entity.publishedServiceId,
                           entity.publishedServiceName,
+                          entity.relatedId,
                           entity.operation);
             }
 
@@ -658,19 +659,21 @@
          * @param {string} absoluteTo       applies if type == TimePeriodType.ABSOLUTE
          */
         function setTimePeriod(timeZone, type, relativeValue, relativeUnit, absoluteFrom, absoluteTo) {
-            l7.Widget.selectDropDownByValue(timePeriodTimeZoneDropDown, timeZone);
-
             if (type == TimePeriodType.RELATIVE) {
                 relativeTimePeriodRadioButton.checked = true;
+                wicketAjaxGet(loadTimePeriodSettingsUrl + '&type=relative' + '&timeZone=' + escape(timeZone), function() {}, function() {});
                 relativeTimePeriodTextBox.value = relativeValue;
                 l7.Widget.selectDropDownByValue(relativeTimePeriodUnitDropDown, relativeUnit);
             } else if (type == TimePeriodType.ABSOLUTE) {
                 absoluteTimePeriodRadioButton.checked = true;
                 var from = deserializeDateTime(absoluteFrom);
-                absoluteTimePeriodFromDateTextBox.getCalendar().select(from);
-                l7.Widget.selectDropDownByValue(absoluteTimePeriodFromHourDropDown, from.getHours());
                 var to = deserializeDateTime(absoluteTo);
-                absoluteTimePeriodToDateTextBox.getCalendar().select(to);
+                wicketAjaxGet(loadTimePeriodSettingsUrl +
+                              '&type=absolute' +
+                              '&timeZone=' + escape(timeZone) +
+                              '&absoluteFrom=' + escape(from.toString()) +
+                              '&absoluteTo=' + escape(to.toString()), function() {}, function() {});
+                l7.Widget.selectDropDownByValue(absoluteTimePeriodFromHourDropDown, from.getHours());
                 l7.Widget.selectDropDownByValue(absoluteTimePeriodToHourDropDown, to.getHours());
             } else {
                 YAHOO.log('Unexpected time period type: ' + type, 'error', 'StandardReports.html setTimePeriod');
@@ -909,7 +912,6 @@
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             };
-            var getSettingsListUrl = document.forms['getSettingsListForm'].action;
             YAHOO.util.Connect.asyncRequest('GET', getSettingsListUrl, callback, null);
         }
 
@@ -1099,10 +1101,12 @@
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, l7.Util.formatMessage(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS, settingsName) + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             };
-            var getSettingsUrl = document.forms['getSettingsForm'].action;
-            var postData = 'id=' + encodeURIComponent(settingsId);
+            var postData = settingsId;
             l7.Dialog.showWaitDialog(l7.Util.formatMessage(localizedStrings.LOADING_SAVED_SETTINGS, settingsName));
+            YAHOO.util.Connect.setDefaultPostHeader(false);
+            YAHOO.util.Connect.initHeader('Content-Type', 'application/json; charset=utf-8');
             YAHOO.util.Connect.asyncRequest('POST', getSettingsUrl, callback, postData);
+            YAHOO.util.Connect.setDefaultPostHeader(true);
         }
 
         function onClickSaveSettings() {
@@ -1149,7 +1153,7 @@
                     operation = entity.name;
                 }
 
-                addEntity(ssgCluster.id, ssgCluster.name, ssgCluster.ancestors, publishedService.id, publishedService.name, publishedService.relatedId, operation);
+                addEntity(ssgCluster.id, ssgCluster.name, ssgCluster.clusterAncestors, publishedService.id, publishedService.name, publishedService.relatedId, operation);
             }
             onChangeSelectedEntities();
         }
@@ -1650,7 +1654,7 @@
                             <button id="saveSettingsButton" title="Save as a named setttings">Save Current Settings ...</button>
                         </div>
                         <div class="panelContent">
-                        <form wicket:id="form">
+                        <form wicket:id="reportParametersForm">
                             <table class="spaced">
                                 <tr>
                                     <th class="middle">Report Type:</th>
@@ -1879,20 +1883,11 @@
                 </div>
 
                 <div wicket:id="jsonMappings"/>
-                <div wicket:id="postReportParameters">
-                    
-                </div>
-
-                <div style="display: none;">
-                    <form name="getSettingsListForm" action="TODO_ToBeGeneratedByWicket" method="POST">
-                    </form>
-                </div>
-
-                <div style="display: none;">
-                    <form name="getSettingsForm" action="TODO_ToBeGeneratedByWicket" method="POST">
-                        <input id="getSettingsForm_id" type="hidden"/>
-                    </form>
-                </div>
+                <div wicket:id="postReportParameters"/>
+                <div wicket:id="postReportSavingSettings"/>
+                <div wicket:id="reconfirmPostReportSavingSettings"/>
+                <div wicket:id="getReportSettingsList"/>
+                <div wicket:id="getReportSettings"/>
 
                 <div id="saveSettingsDialog">
                     <div class="hd">Save Settings As</div>
@@ -1925,8 +1920,8 @@
                 <div id="deleteSettingsDialog">
                     <div class="hd">Delete Settings</div>
                     <div class="bd">
-                        <form action="action/standardReport/deleteSettings" method="POST">
-                            <input id="deleteSettingsDialog_id" type="hidden" name="id" />
+                        <form name="deleteSettingsForm" wicket:id="deleteSettingsForm" method="POST">
+                            <input id="deleteSettingsDialog_id" wicket:id="deleteSettingsDialog_id" type="hidden" name="id" />
                             Delete the setting &ldquo;<span id="deleteSettingsDialog_name"></span>&rdquo;?
                         </form>
                     </div>

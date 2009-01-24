@@ -42,4 +42,14 @@ public class MockSsgClusterManager extends EntityManagerStub<SsgCluster, EntityH
     public List<SsgCluster> findChildSsgClusters(EnterpriseFolder parentFolder) throws FindException {
         return null;
     }
+
+    @Override
+    public List<EnterpriseFolder> findAllAncestors(String guid) throws FindException {
+        return null;
+    }
+
+    @Override
+    public List<EnterpriseFolder> findAllAncestors(SsgCluster ssgCluster) {
+        return null;
+    }
 }

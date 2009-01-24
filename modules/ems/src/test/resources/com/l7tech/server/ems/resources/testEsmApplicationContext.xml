@@ -69,6 +69,8 @@
 
     <bean id="standardReportManager" class="com.l7tech.server.ems.standardreports.MockStandardReportManager"/>
 
+    <bean id="standardReportSettingsManager" class="com.l7tech.server.ems.standardreports.MockStandardReportSettingsManager"/>
+
     <bean id="migrationRecordManager" class="com.l7tech.server.ems.migration.MockMigrationRecordManager"/>
 
     <bean id="eventPublisher" class="com.l7tech.server.ems.util.ApplicationEventPublisherImpl"/>

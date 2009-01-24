@@ -116,7 +116,8 @@ public final class JSONConstants {
     public static final String NAME      = "name";
 
     // Additional properties for SSG Cluster entities.
-    public static final String ANCESTORS     = "ancestors";
+    public static final String CLUSTER_NAME = "clusterName";
+    public static final String CLUSTER_ANCESTORS = "clusterAncestors";
     public static final String SSL_HOST_NAME = "sslHostName";
     public static final String ADMIN_PORT    = "adminPort";
     public static final String ADMIN_APPLET_PORT = "adminAppletPort";
@@ -220,4 +221,5 @@ public final class JSONConstants {
 
     public static final String REPORT_NAME = "reportName";
 
+    public static final String REPORT_SETTINGS_WARNING_ITEMS = "warningItems";
 }

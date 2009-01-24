@@ -165,6 +165,26 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     }
 
     @Override
+    public List<EnterpriseFolder> findAllAncestors(String guid) throws FindException {
+        SsgCluster ssgCluster = findByGuid(guid);
+        return findAllAncestors(ssgCluster);
+    }
+
+    @Override
+    public List<EnterpriseFolder> findAllAncestors(SsgCluster ssgCluster) {
+        List<EnterpriseFolder> ancestors = new ArrayList<EnterpriseFolder>();
+        if (ssgCluster == null) return ancestors;
+
+        EnterpriseFolder parent = ssgCluster.getParentFolder();
+        while (parent != null) {
+            ancestors.add(0, parent);
+            parent = parent.getParentFolder();
+        }
+
+        return ancestors;
+    }
+
+    @Override
     public void deleteByGuid(String guid) throws FindException, DeleteException {
         final SsgCluster ssgCluster = findByGuid(guid);
         delete(ssgCluster);
