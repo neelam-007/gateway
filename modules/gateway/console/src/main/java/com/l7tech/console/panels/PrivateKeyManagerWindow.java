@@ -25,6 +25,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -62,8 +63,10 @@ public class PrivateKeyManagerWindow extends JDialog {
     private static final Map<PrivateKeyManagerWindow, Object> timerClients = new WeakHashMap<PrivateKeyManagerWindow, Object>();
     static {
         TimerTask task = new TimerTask() {
+            @Override
             public void run() {
                 SwingUtilities.invokeLater(new Runnable() {
+                    @Override
                     public void run() {
                         // Deliver tick events on the swing thread, as long as we are connected to the SSG
                         if (timerClients.isEmpty() || !Registry.getDefault().isAdminContextPresent())
@@ -125,36 +128,42 @@ public class PrivateKeyManagerWindow extends JDialog {
         keyTable = new KeyTable();
 
         keyTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableOrDisableButtons();
             }
         });
 
         closeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 dispose();
             }
         });
 
         propertiesButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 doProperties();
             }
         });
 
         createButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doNewPrivateKey();
             }
         });
 
         importButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doImport();
             }
         });
 
         signCsrButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doSignCsr();
             }
@@ -240,6 +249,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 JOptionPane.YES_NO_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE,
                 new DialogDisplayer.OptionListener() {
+                    @Override
                     public void reportResult(int option) {
                         if (option == JOptionPane.YES_OPTION)
                             signCsrNoConfirm(subject);
@@ -250,6 +260,7 @@ public class PrivateKeyManagerWindow extends JDialog {
     private void signCsrNoConfirm(final KeyTableRow subject) {
         final byte[][] csrBytes = { null };
         FileChooserUtil.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+            @Override
             public void useFileChooser(JFileChooser fc) {
                 csrBytes[0] = readCsrFile(fc);
             }
@@ -273,6 +284,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         }
 
         FileChooserUtil.doWithJFileChooser(new FileChooserUtil.FileChooserUser() {
+            @Override
             public void useFileChooser(JFileChooser fc) {
                 savePemCertChain(fc, pemCertChain);
             }
@@ -313,6 +325,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             }
 
             FileUtils.save(file, new FileUtils.Saver() {
+                @Override
                 public void doSave(FileOutputStream fos) throws IOException {
                     for (String msg : pemCertChain) {
                         fos.write(msg.getBytes("ASCII")); // it's PEM
@@ -477,6 +490,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 if (dlg.isDefaultKeyChanged()) {
                     defaultAliasTracker.invalidate();
@@ -502,6 +516,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 if (dlg.isConfirmed()) {
                     setActiveKeypairJob(dlg.getKeypairJobId(), dlg.getNewAlias(), dlg.getSecondsToWaitForJobToFinish());
@@ -700,7 +715,6 @@ public class PrivateKeyManagerWindow extends JDialog {
         private final TrustedCertAdmin.KeystoreInfo keystoreInfo;
         private SsgKeyEntry keyEntry;
         private String keyType = null;
-        private String expiry = null;
         private boolean defaultSsl;
         private boolean defaultCa;
         private boolean certCaCapable;
@@ -753,9 +767,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         }
 
         public Object getExpiry() {
-            if (expiry == null)
-                expiry = DateFormat.getDateInstance().format(getCertificate().getNotAfter());
-            return expiry;
+            return getCertificate().getNotAfter();
         }
 
         public boolean isDefaultSsl() {
@@ -795,6 +807,14 @@ public class PrivateKeyManagerWindow extends JDialog {
                 if (model.isColumnImage(i)) col.setCellRenderer(new JTable().getDefaultRenderer(ImageIcon.class)); 
             }
             setRowHeight(19);
+            Utilities.setRowSorter(this, model, new int[]{1,2}, new boolean[]{true, true},
+                    new Comparator[]{null, null});
+            this.setDefaultRenderer( Date.class,  new DefaultTableCellRenderer(){
+                @Override
+                protected void setValue(Object value) {
+                    super.setValue( DateFormat.getDateInstance().format((Date)value) );
+                }
+            });
         }
 
         public KeyTableRow getRowAt(int row) {
@@ -821,19 +841,26 @@ public class PrivateKeyManagerWindow extends JDialog {
                 final int minWidth;
                 final int prefWidth;
                 final int maxWidth;
+                final Class columnClass;
                 boolean isImage;
 
                 protected Col(String name, int minWidth, int prefWidth, int maxWidth) {
+                    this( name, minWidth, prefWidth, maxWidth, String.class );
+                }
+
+                protected Col(String name, int minWidth, int prefWidth, int maxWidth, Class columnClass) {
                     this.name = name;
                     this.minWidth = minWidth;
                     this.prefWidth = prefWidth;
                     this.maxWidth = maxWidth;
+                    this.columnClass = columnClass;
                 }
                 abstract Object getValueForRow(KeyTableRow row);
             }
 
             public static final Col[] columns = new Col[] {
-                    new Col(" ", 19, 19, 19) {
+                    new Col(" ", 19, 19, 19, Object.class) {
+                        @Override
                         Object getValueForRow(KeyTableRow row) {
                             return row.isCertCaCapable()
                                     ? ImageCache.getInstance().getIconAsIcon(PATH_CERT_CA)
@@ -843,36 +870,42 @@ public class PrivateKeyManagerWindow extends JDialog {
                     },
 
                     new Col("Alias", 60, 90, 300) {
+                        @Override
                         Object getValueForRow(KeyTableRow row) {
                             return row.getAlias();
                         }
                     },
 
                     new Col("Subject", 3, 100, 999999) {
+                        @Override
                         Object getValueForRow(KeyTableRow row) {
                             return row.getSubjectDN();
                         }
                     },
 
                     new Col("Key Type", 3, 88, 88) {
+                        @Override
                         Object getValueForRow(KeyTableRow row) {
                             return row.getKeyType();
                         }
                     },
 
-                    new Col("Expiry", 3, 85, 85) {
+                    new Col("Expiry", 3, 85, 85, Date.class) {
+                        @Override
                         Object getValueForRow(KeyTableRow row) {
                             return row.getExpiry();
                         }
                     },
 
                     new Col("Location", 60, 90, 90) {
+                        @Override
                         Object getValueForRow(KeyTableRow row) {
                             return row.getKeystore().name;
                         }
                     },
 
-                    new Col(" ", 19, 19, 19) {
+                    new Col(" ", 19, 19, 19, Object.class) {
+                        @Override
                         Object getValueForRow(KeyTableRow row) {
                             int val = row.isDefaultSsl() ? 1 : 0;
                             if (row.isDefaultCa()) val += 2;
@@ -910,6 +943,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 return columns[column].maxWidth;
             }
 
+            @Override
             public String getColumnName(int column) {
                 return columns[column].name;
             }
@@ -939,14 +973,22 @@ public class PrivateKeyManagerWindow extends JDialog {
                 return -1;
             }
 
+            @Override
+            public Class<?> getColumnClass(int column) {
+                return columns[column].columnClass;
+            }
+
+            @Override
             public int getRowCount() {
                 return rows.size();
             }
 
+            @Override
             public int getColumnCount() {
                 return columns.length;
             }
 
+            @Override
             public Object getValueAt(int rowIndex, int columnIndex) {
                 return columns[columnIndex].getValueForRow(rows.get(rowIndex));
             }
