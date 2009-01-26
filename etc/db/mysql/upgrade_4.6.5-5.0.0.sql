@@ -293,10 +293,6 @@ CREATE INDEX i_issuer_dn ON trusted_cert (issuer_dn);
 --
 -- Add new RBAC permissions for manage webservices
 --
-INSERT INTO rbac_permission VALUES (-417,0,-400,'CREATE',NULL,'FOLDER');
-INSERT INTO rbac_permission VALUES (-418,0,-400,'READ',  NULL,'FOLDER');
-INSERT INTO rbac_permission VALUES (-419,0,-400,'UPDATE',NULL,'FOLDER');
-INSERT INTO rbac_permission VALUES (-420,0,-400,'DELETE',NULL,'FOLDER');
 INSERT INTO rbac_permission VALUES (-421,0,-400,'CREATE',NULL,'POLICY_ALIAS');
 INSERT INTO rbac_permission VALUES (-422,0,-400,'READ',  NULL,'POLICY_ALIAS');
 INSERT INTO rbac_permission VALUES (-423,0,-400,'UPDATE',NULL,'POLICY_ALIAS');
