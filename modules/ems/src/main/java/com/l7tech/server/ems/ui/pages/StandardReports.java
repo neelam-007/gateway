@@ -490,6 +490,10 @@ public class StandardReports extends EsmStandardWebPage {
             String clusterGuid = (String) entityPropsMap.get(JSONConstants.ReportEntities.CLUSTER_ID);
             try {
                 SsgCluster ssgCluster = ssgClusterManager.findByGuid(clusterGuid);
+                if (ssgCluster == null) {
+                    throw new FindException("Cannot find the SSG cluster (GUID = '" + clusterGuid + "').");
+                }
+
                 entityPropsMap.put(JSONConstants.CLUSTER_NAME, ssgCluster.getName());
                 entityPropsMap.put(JSONConstants.CLUSTER_ANCESTORS, getClusterAncestors(ssgCluster));
             } catch (FindException e) {
@@ -511,6 +515,10 @@ public class StandardReports extends EsmStandardWebPage {
             String clusterGuid = (String) groupingPropsMap.get(JSONConstants.ReportEntities.CLUSTER_ID);
             try {
                 SsgCluster ssgCluster = ssgClusterManager.findByGuid(clusterGuid);
+                if (ssgCluster == null) {
+                    throw new FindException("Cannot find the SSG cluster (GUID = '" + clusterGuid + "').");
+                }
+                
                 groupingPropsMap.put(JSONConstants.CLUSTER_NAME, ssgCluster.getName());
                 groupingPropsMap.put(JSONConstants.CLUSTER_ANCESTORS, getClusterAncestors(ssgCluster));
             } catch (FindException e) {

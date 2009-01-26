@@ -622,6 +622,9 @@
          * @param {array} entities      array of entity object literals
          */
         function addSelectedEntities(entities) {
+            if (entities == undefined) {
+                return;
+            }
             for (var i = 0; i < entities.length; ++i) {
                 var entity = entities[i];
                 addEntity(entity.clusterId,
@@ -661,7 +664,9 @@
         function setTimePeriod(timeZone, type, relativeValue, relativeUnit, absoluteFrom, absoluteTo) {
             if (type == TimePeriodType.RELATIVE) {
                 relativeTimePeriodRadioButton.checked = true;
-                wicketAjaxGet(loadTimePeriodSettingsUrl + '&type=relative' + '&timeZone=' + escape(timeZone), function() {}, function() {});
+                wicketAjaxGet(loadTimePeriodSettingsUrl +
+                              '&type=' + TimePeriodType.RELATIVE +
+                              '&timeZone=' + escape(timeZone), function() {}, function() {});
                 relativeTimePeriodTextBox.value = relativeValue;
                 l7.Widget.selectDropDownByValue(relativeTimePeriodUnitDropDown, relativeUnit);
             } else if (type == TimePeriodType.ABSOLUTE) {
@@ -669,7 +674,7 @@
                 var from = deserializeDateTime(absoluteFrom);
                 var to = deserializeDateTime(absoluteTo);
                 wicketAjaxGet(loadTimePeriodSettingsUrl +
-                              '&type=absolute' +
+                              '&type=' + TimePeriodType.ABSOLUTE + 
                               '&timeZone=' + escape(timeZone) +
                               '&absoluteFrom=' + escape(from.toString()) +
                               '&absoluteTo=' + escape(to.toString()), function() {}, function() {});
