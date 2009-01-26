@@ -752,7 +752,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return false;
     }
 
-    public void updateActions(Action[] actions) {
+    public void updateActions(final AssertionTreeNode node, Action[] actions) {
         for (int i = 0; i < actions.length; i++) {
             Action action = actions[i];
             if (action instanceof SavePolicyAction) {
@@ -766,8 +766,153 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             } else if (action instanceof ValidatePolicyAction) {
                 actions[i] = policyEditorToolbar.buttonValidate.getAction();
                 actions[i].setEnabled(policyEditorToolbar.buttonValidate.isEnabled());
+            } else if (action instanceof AssertionMoveUpAction) {
+                actions[i] = getAssertionMoveUpAction(node, action.isEnabled());
+            } else if (action instanceof AssertionMoveDownAction) {
+                actions[i] = getAssertionMoveDownAction(node, action.isEnabled());
+            } else if (action instanceof DeleteAssertionAction) {
+                actions[i] = getDeleteAssertionAction(node, action.isEnabled());
             }
         }
+    }
+
+    /**
+     * Based on the node action enum type, it will determine if the action should be enabled or disabled.
+     * This basically determines whether the selected the node(s) can perform the selected node action in the
+     * tree.  For example, if the top node is selected, then it shouldnt be able to move up in the tree any more.
+     *
+     * @param node      Last selected node
+     * @param nodes     Selected list of nodes, if any
+     * @param action    Action to be performed on the node
+     * @return  TRUE if the action should be enabled, otherwise FALSE.
+     */
+    private boolean canEnableAction(AssertionTreeNode node, AssertionTreeNode[] nodes, Action action) {
+        boolean canEnableAction = false;
+        if (nodes == null) {
+            if (action instanceof AssertionMoveUpAction)
+                canEnableAction = node.canMoveUp();
+            if (action instanceof AssertionMoveDownAction)
+                canEnableAction = node.canMoveDown();
+            if (action instanceof DeleteAssertionAction)
+                canEnableAction = node.canDelete();
+        } else if (nodes.length > 0) {
+            boolean canEnableActionFromAll = true;
+            for (AssertionTreeNode current : nodes) {
+                if ( (current == null)
+                        || (action instanceof AssertionMoveUpAction && !current.canMoveUp())
+                        || (action instanceof AssertionMoveDownAction && !current.canMoveDown())
+                        || (action instanceof DeleteAssertionAction && !current.canDelete()))
+                    canEnableActionFromAll = false;
+            }
+            canEnableAction = canEnableActionFromAll;
+        }
+        return canEnableAction;
+    }
+
+    /**
+     * @param node          Last selected node
+     * @param isEnabled     Previous enabled action value
+     * @return  A new action fitted based on the node selection.
+     */
+    private DeleteAssertionAction getDeleteAssertionAction(final AssertionTreeNode node, boolean isEnabled) {
+        final TreePath[] paths = policyTree.getSelectionPaths();
+        final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
+        DeleteAssertionAction action;
+        if (paths != null && paths.length > 1) {
+            action = new DeleteAssertionAction(node) {
+                @Override
+                protected void performAction() {
+                    nodes = assertionTreeNodes;
+                    super.performAction();
+                    node = null;
+                }
+            };
+        } else {
+            action = new DeleteAssertionAction(node);
+        }
+        action.setEnabled(isEnabled && canEnableAction(node, assertionTreeNodes, action));
+        return action;
+    }
+
+    /**
+     * @param node          Last selected node
+     * @param isEnabled     Previous enabled action value
+     * @return  A new action fitted based on the node selection.
+     */
+    private AssertionMoveUpAction getAssertionMoveUpAction(final AssertionTreeNode node, boolean isEnabled) {
+        final TreePath[] paths = policyTree.getSelectionPaths();
+        final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
+        AssertionMoveUpAction action;
+        if (paths != null && paths.length > 1) {
+            action = new AssertionMoveUpAction(node) {
+                @Override
+                protected void performAction() {
+                    nodes = assertionTreeNodes;
+                    super.performAction();
+                    final JTree tree = policyTree;
+                    if (paths != null && tree != null) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                tree.setSelectionPaths(paths);
+                            }
+                        });
+                    }
+                }
+            };
+        } else {
+            action = new AssertionMoveUpAction(node);
+        }
+        action.setEnabled(isEnabled && canEnableAction(node, assertionTreeNodes, action));
+        return action;
+    }
+
+    /**
+     * @param node          Last selected node
+     * @param isEnabled     Previous enabled action value
+     * @return  A new action fitted based on the node selection.
+     */
+    private AssertionMoveDownAction getAssertionMoveDownAction(final AssertionTreeNode node, boolean isEnabled) {
+        final TreePath[] paths = policyTree.getSelectionPaths();
+        final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
+        AssertionMoveDownAction action;
+        if (paths != null && paths.length > 1) {
+            action = new AssertionMoveDownAction(node) {
+                @Override
+                protected void performAction() {
+                    nodes = assertionTreeNodes;
+                    super.performAction();
+                    final JTree tree = policyTree;
+                    if (paths != null && tree != null) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                tree.setSelectionPaths(paths);
+                            }
+                        });
+                    }
+                }
+            };
+        } else {
+            action = new AssertionMoveDownAction(node);
+        }
+        action.setEnabled(isEnabled && canEnableAction(node, assertionTreeNodes, action));
+        return action;
+    }
+
+    /**
+     * Coverts the given tree paths into an array of assertion tree nodes.
+     *
+     * @param paths The tree path to convert
+     * @return  A list of assertion tree nodes converted, will not return null.
+     */
+    private AssertionTreeNode[] toAssertionTreeNodeArray(TreePath[] paths) {
+        java.util.List<AssertionTreeNode> assertionTreeNodes = new ArrayList<AssertionTreeNode>();
+
+        if (paths != null) {
+            for (TreePath path : paths) {
+                assertionTreeNodes.add((AssertionTreeNode)path.getLastPathComponent());
+            }
+        }
+        return assertionTreeNodes.toArray(new AssertionTreeNode[assertionTreeNodes.size()]);
     }
 
     private void appendToMessageArea(String s) {
