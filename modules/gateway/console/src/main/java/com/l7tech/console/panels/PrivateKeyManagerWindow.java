@@ -507,6 +507,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         int sr = keyTable.getSelectedRow();
         if (sr < 0)
             return null;
+        sr = keyTable.convertRowIndexToModel(sr);
         return keyTable.getRowAt(sr);
     }
 
@@ -830,8 +831,9 @@ public class PrivateKeyManagerWindow extends JDialog {
             if (row < 0) {
                 getSelectionModel().clearSelection();
             } else {
-                getSelectionModel().setSelectionInterval(row, row);
-                scrollRectToVisible(getCellRect(row, 0, true));                
+                int viewRow = this.convertRowIndexToView(row);
+                getSelectionModel().setSelectionInterval(viewRow, viewRow);
+                scrollRectToVisible(getCellRect(viewRow, 0, true));                
             }
         }
 
