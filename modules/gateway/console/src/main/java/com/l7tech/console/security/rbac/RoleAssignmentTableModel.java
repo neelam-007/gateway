@@ -80,13 +80,17 @@ public class RoleAssignmentTableModel  extends AbstractTableModel {
         }catch(IdentityHolder.NoSuchUserException nsue){
             throw new FindException("Can't assign deleted user", nsue);
         }
-        roleAssignments.add(ra);
 
         //check if ra is a duplicate
-        if(this.roleAssignmentToIdentityHolder.containsKey(ra)){
-            String userType = ra.getEntityType();
-            throw new DuplicateObjectException("The "+userType+" \"" + iH.getIdentity().getName() + "\" is already assigned to this role");
+        for (RoleAssignment roleAssignement : roleAssignmentToIdentityHolder.keySet()) {
+            if (roleAssignement.getProviderId() == ra.getProviderId()
+                    && roleAssignement.getIdentityId().equals(ra.getIdentityId())
+                    && roleAssignement.getRole().getOid() == ra.getRole().getOid()) {
+                String userType = ra.getEntityType();
+                throw new DuplicateObjectException("The "+userType+" \"" + iH.getIdentity().getName() + "\" is already assigned to this role");
+            }
         }
+        roleAssignments.add(ra);
         roleAssignmentToIdentityHolder.put(ra, iH);
         this.fireTableDataChanged();
     }
