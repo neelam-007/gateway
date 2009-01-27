@@ -93,16 +93,6 @@ if (!l7.Constants) {
         };
 
         /**
-         * Enum of monitoring property states. Note that the corresponding CSS classes are identically named.
-         * @final
-         */
-        l7.Constants.MONITORING_PROPERTY_STATE = {
-            NOT_APPLICABLE : 'notApplicable',
-            NOT_MONITORED  : 'notMonitored',
-            CRITICAL       : 'critical'
-        };
-
-        /**
          * Enum of notification types.
          * @final
          */
@@ -117,8 +107,8 @@ if (!l7.Constants) {
          * @final
          */
         l7.Constants.NOTIFICATION_EMAIL_PROTOCOL = {
-            PLAIN_SMTP : 'plainSmtp',
-            SMTP_over_SSL : 'sslSmtp',
+            PLAIN_SMTP         : 'plainSmtp',
+            SMTP_over_SSL      : 'sslSmtp',
             SMTP_WITH_STARTTLS : 'startTlsSmtp'
         };
 
@@ -765,6 +755,109 @@ if (!l7.Connection) {
 
             xhr.send(postData || '');
             return xhr;
+        }
+
+        /**
+         * Parses JSON data from AJAX response and pops up appropriate error dialog when neccessary.
+         *
+         * @param {object} response             either an XMLHttpRequest object
+         *                                      or a YAHOO.util.Connect.asyncRequest response object
+         * @param {boolean} displayErrorDialog  true to display error dialog upon HTTP error response
+         *                                      or JSON exception response or JSON parsing error
+         * @param {string} errorDialogMessageHtml               null to use built-in default
+         * @param {string} errorDialogBadJsonMessageHtml        null to use built-in default
+         * @param {string} errorDialogSessionExpiredMessageHtml null to use built-in default
+         * @param {string} errorDialogTitleText                 null to use built-in default
+         * @param {string} errorDialogOkText                    null to use built-in default
+         * @return {object} returned object has these properties:
+         *                      {boolean} success - true if response body is JSON and is not an exception,
+         *                      {boolean} isJson - true if response body is JSON,
+         *                      {boolean} isException - true if response body is a l7-style JSON exception,
+         *                      {object} json - the parsed JSON object
+         */
+        l7.Connection.parseJsonResponse = function(response,
+                                                   displayErrorDialog,
+                                                   errorDialogMessageHtml,
+                                                   errorDialogBadJsonMessageHtml,
+                                                   errorDialogSessionExpiredMessageHtml,
+                                                   errorDialogTitleText,
+                                                   errorDialogOkText) {
+            if (!errorDialogBadJsonMessageHtml) errorDialogBadJsonMessageHtml = 'Unable to parse JSON response from the server.';
+            if (!errorDialogSessionExpiredMessageHtml) errorDialogSessionExpiredMessageHtml = 'Session expired.';
+            if (!errorDialogTitleText) errorDialogTitleText = 'Error';
+            if (!errorDialogOkText) errorDialogOkText = 'OK';
+            var errorDialogTitleHtml = l7.Util.escapeAsText(errorDialogTitleText);
+            var errorDialogOkHtml = l7.Util.escapeAsText(errorDialogOkText);
+
+            var result = {};
+            result.success = true;
+            result.isJson = true;
+            result.isException = false;
+
+            function getResponseHeader(header) {
+                if (typeof response.getResponseHeader == 'function') {
+                    // Response is XmlHttpRequest object.
+                    return response.getResponseHeader(header);
+                } else {
+                    // Response is YAHOO.util.Connect.asyncRequest callback object.
+                    return response.getResponseHeader[header];
+                }
+            }
+
+            var setCookieHeader = getResponseHeader('Set-Cookie');
+            if (setCookieHeader != null && setCookieHeader.indexOf('SESSIONID=') != -1) {
+                // Session expired.
+                var dialog = new YAHOO.widget.SimpleDialog("sessionExpiredDialog", {
+                    buttons     : [
+                        {
+                            text : errorDialogOkText,
+                            handler : function() {
+                                window.location.reload();   // For side effect of getting redirected to login page.
+                            }
+                        }
+                    ],
+                    draggable   : false,
+                    fixedcenter : true,
+                    icon        : YAHOO.widget.SimpleDialog.ICON_WARN,
+                    modal       : true,
+                    visible     : false,
+                    zindex      : 999
+                });
+                dialog.setHeader(errorDialogTitleText);
+                dialog.setBody(errorDialogSessionExpiredMessageHtml);
+                dialog.render(document.body);
+                dialog.show();
+            } else if (response.status == 200) {
+                try {
+                    result.json = YAHOO.lang.JSON.parse(response.responseText);
+                    if (l7.Util.isException(result.json)) {
+                        if (displayErrorDialog) {
+                            l7.Dialog.showExceptionDialog(result.json, errorDialogTitleText, errorDialogMessageHtml, errorDialogOkText);
+                        }
+                        result.success = false;
+                        result.isException = true;
+                    }
+                } catch (e) {
+                    if (displayErrorDialog) {
+                        l7.Dialog.showErrorDialog(errorDialogTitleText,
+                                                  errorDialogMessageHtml + '<div style="margin-top: 1em;">' + errorDialogBadJsonMessageHtml + '</div>',
+                                                  errorDialogOkText);
+                    }
+                    result.success = false;
+                    result.isJson = false;
+                }
+
+            } else {
+                if (displayErrorDialog) {
+                    l7.Dialog.showErrorDialog(errorDialogTitleHtml,
+                                              errorDialogMessageHtml + '<div style="margin-top: 1em;">Server response: ' + response.statusText + ' (' + response.status + ')</div>',
+                                              errorDialogOkHtml);
+                }
+                result.success = false;
+                result.isJson = false;
+            }
+
+            return result;
         }
     })();
 }

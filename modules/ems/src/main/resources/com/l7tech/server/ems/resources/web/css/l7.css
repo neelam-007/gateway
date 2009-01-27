@@ -275,6 +275,13 @@ div.header {
     vertical-align: top;
 }
 
+div.fineRule {
+    border-bottom: 1px solid #808080;
+    border-top: 1px solid #e0e0e0;
+    margin: 10px 0;
+    padding: 0;
+}
+
 .divider {
     background-image: url('../images/divider.png');
     background-repeat: repeat-x;
@@ -604,7 +611,7 @@ table.dataTable td.notMonitored {
     background-color: #a8a8a8;
 }
 
-table.dataTable td.critical {
+table.dataTable td.alert {
     background-color: #ffff00;
     color: #ff0000;
 }

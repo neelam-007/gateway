@@ -118,13 +118,13 @@ if (!l7.EntityTreeTable) {
          *   ipAddress {string} - applicable to SSG Clusters or SSG Nodes
          *   dbHosts {array} - applicable to SSG Clusters; array of database host names
          *   selfHostName {string} - applicable to SSG Nodes
-         *   monitoredProperties {object} - applicable to SSG Clusters or SSG Nodes;
+         *   monitoringProperties {object} - applicable to SSG Clusters or SSG Nodes;
          *                                  for an SSG Cluster the possible properties are l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY values;
          *                                  for an SSG Node the possible properties are l7.Constants.SSG_NODE_MONITORING_PROPERTY values;
          *                                  their property values are object literals with 3 properties:
          *                                    monitored {boolean} (required) -
          *                                    value {string} (optional) - in displayable format
-         *                                    critical {boolean} (optional) - default is false
+         *                                    alert {boolean} (optional) - default is false
          *
          * @public
          * @constructor
@@ -806,9 +806,11 @@ if (!l7.EntityTreeTable) {
                     }
                     entity._monitoredPropertyTds[propertyType] = td;
 
-                    if (entity.monitoredProperties != undefined && entity.monitoredProperties[propertyType] != undefined) { // Optional data on initial load.
-                        var property = entity.monitoredProperties[propertyType];
+                    if (entity.monitoringProperties != undefined && entity.monitoringProperties[propertyType] != undefined) { // Optional data on initial load.
+                        var property = entity.monitoringProperties[propertyType];
                         this.setMonitoredProperty(entity.id, propertyType, property);
+                    } else {
+                        this.setMonitoredProperty(entity.id, propertyType, null);
                     }
                 } else {
                     td.className = 'notApplicable'; // CSS style class.
@@ -1236,31 +1238,32 @@ if (!l7.EntityTreeTable) {
              * Changes the value of a monitored property of an entity.
              * @public
              * @param {string} entityId         ID of an entity
-             * @param {string} propertyName     name of monitored property;
+             * @param {string} propertyType     monitored property type;
              *                                  an l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY or
              *                                  l7.Constants.SSG_NODE_MONITORING_PROPERTY enum value;
              *                                  must be applicable to the entity's type
-             * @param {object} property         the property object literal
+             * @param {object} property         the property object literal; null means no data (yet)
              * @return {boolean} true if successfully applied; false if unchanged because of error
              */
-            this.setMonitoredProperty = function(entityId, propertyName, property) {
+            this.setMonitoredProperty = function(entityId, propertyType, property) {
                 var entity = this._entitiesById[entityId];
-                var td = entity._monitoredPropertyTds[propertyName];
-                var span = entity._monitoredPropertySpans[propertyName];
+                var td = entity._monitoredPropertyTds[propertyType];
+                var span = entity._monitoredPropertySpans[propertyType];
                 if (!td || !span) {
-                    YAHOO.log('Unable to set value of monitored property \"' + propertyName + '\" for entity \"' + entity.name + '\": ' + (td ? 'span' : 'td') + ' element not found', 'warning', 'l7.EntityTreeTable.setMonitoredProperty');
+                    YAHOO.log('Unable to set value of monitored property \"' + propertyType + '\" for entity \"' + entity.name + '\": ' + (td ? 'span' : 'td') + ' element not found', 'warning', 'l7.EntityTreeTable.setMonitoredProperty');
                     return false;
                 }
-                if (property.monitored) {
+                if (property && property.monitored) {
                     if (property.value != undefined && property.value != null) {
                         span.innerHTML = property.value;
+                        if (property.alert) {
+                            td.className = 'right alert'; // CSS style class.
+                        } else {
+                            td.className = 'right'; // CSS style class.
+                        }
                     } else {
+                        td.className = 'center';
                         span.innerHTML = '<img src="' + this._imgFolder + '/busy16.gif' + '"/>';
-                    }
-                    if (property.critical) {
-                        td.className = 'right critical'; // CSS style class.
-                    } else {
-                        td.className = 'right'; // CSS style class.
                     }
                 } else {
                     td.className = 'right notMonitored'; // CSS style class.

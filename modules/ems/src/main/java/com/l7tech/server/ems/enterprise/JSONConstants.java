@@ -46,16 +46,6 @@ public final class JSONConstants {
     }
 
     /**
-     * Enum of monitoring property states.
-     * Defined as l7.Constants.MONITORING_PROPERTY_STATE in l7.js.
-     */
-    public final class MonitoringPropertyState {
-        public static final String NOT_APPLICABLE = "notApplicable";
-        public static final String NOT_MONITORED  = "notMonitored";
-        public static final String CRITICAL       = "critical";
-    }
-
-    /**
      * Enum of SSG Cluster online states.
      * Defined as l7.Constants.SSG_CLUSTER_ONLINE_STATE in l7.js.
      */
@@ -109,19 +99,19 @@ public final class JSONConstants {
     }
 
     // Properties for all entities.
-    public static final String ID        = "id";
-    public static final String RELATED_ID= "relatedId";
-    public static final String PARENT_ID = "parentId";
-    public static final String TYPE      = "type";
-    public static final String NAME      = "name";
+    public static final String ID         = "id";
+    public static final String RELATED_ID = "relatedId";
+    public static final String PARENT_ID  = "parentId";
+    public static final String TYPE       = "type";
+    public static final String NAME       = "name";
 
     // Additional properties for SSG Cluster entities.
-    public static final String CLUSTER_NAME = "clusterName";
+    public static final String CLUSTER_NAME      = "clusterName";
     public static final String CLUSTER_ANCESTORS = "clusterAncestors";
-    public static final String SSL_HOST_NAME = "sslHostName";
-    public static final String ADMIN_PORT    = "adminPort";
+    public static final String SSL_HOST_NAME     = "sslHostName";
+    public static final String ADMIN_PORT        = "adminPort";
     public static final String ADMIN_APPLET_PORT = "adminAppletPort";
-    public static final String DB_HOSTS      = "dbHosts";
+    public static final String DB_HOSTS          = "dbHosts";
 
     // Additional properties for SSG Node entities.
     public static final String SELF_HOST_NAME = "selfHostName";
@@ -130,18 +120,18 @@ public final class JSONConstants {
     public static final String ACCESS_STATUS = "accessStatus";
 
     // Additional properties for SSG Cluster and SSG Node entities.
-    public static final String ONLINE_STATUS = "onlineStatus";
-    public static final String TRUST_STATUS         = "trustStatus";
-    public static final String IP_ADDRESS           = "ipAddress";
-    public static final String MONITORED_PROPERTIES = "monitoredProperties";
+    public static final String ONLINE_STATUS         = "onlineStatus";
+    public static final String TRUST_STATUS          = "trustStatus";
+    public static final String IP_ADDRESS            = "ipAddress";
+    public static final String MONITORING_PROPERTIES = "monitoringProperties";
 
     // Additional properties for enterprise folders, SSG Clusters, service folders, published services or policy fragments.
     public static final String RBAC_CUD = "rbacCUD";
 
-    // Properties within a monitored property.
+    // Properties within a monitored property current value.
     public static final String MONITORED = "monitored";
     public static final String VALUE     = "value";
-    public static final String CRITICAL  = "critical";
+    public static final String ALERT     = "alert";
 
     // Additional properties for SSG Cluster, SSG Node, published service and policy fragment entities.
     public static final String VERSION = "version";
