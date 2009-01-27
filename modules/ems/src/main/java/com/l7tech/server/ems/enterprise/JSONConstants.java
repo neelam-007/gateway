@@ -23,7 +23,7 @@ public final class JSONConstants {
     }
 
     /**
-     * Monitoring property names for SSG Cluster entities.
+     * Enum of monitoring property types for SSG Cluster entities.
      * Defined as l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY in l7.js.
      */
     public static final class SsgClusterMonitoringProperty {
@@ -31,7 +31,7 @@ public final class JSONConstants {
     }
 
     /**
-     * Monitoring property names for SSG Node entities.
+     * Enum of monitoring property types for SSG Node entities.
      * Defined as l7.Constants.SSG_NODE_MONITORING_PROPERTY in l7.js.
      */
     public static final class SsgNodeMonitoringProperty {
@@ -43,6 +43,26 @@ public final class JSONConstants {
         public static final String CPU_USAGE        = "cpuUsage";
         public static final String SWAP_USAGE       = "swapUsage";
         public static final String CLOCK_DRIFT      = "clockDrift";
+    }
+
+    /**
+     * Enum of notifiation types.
+     * Defined as l7.Constants.NOTIFICATION_TYPE in l7.js.
+     */
+    public static final class NotifiationType {
+        public static final String E_MAIL       = "eMail";
+        public static final String SNMP_TRAP    = "snmpTrap";
+        public static final String HTTP_REQUEST = "httpRequest";
+    }
+
+    /**
+     * Enum of protocol types for e-mail notification.
+     * Defined as l7.Constants.NOTIFICATION_EMAIL_PROTOCOL in l7.js.
+     */
+    public static final class NotifiationEMailProtocol {
+        public static final String PLAIN_SMTP         = "plainSmtp";
+        public static final String SMTP_over_SSL      = "sslSmtp";
+        public static final String SMTP_WITH_STARTTLS = "startTlsSmtp";
     }
 
     /**
