@@ -4,15 +4,12 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
-import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
+import com.l7tech.policy.assertion.xmlsec.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 /**
  * The SAML introduction <code>WizardStepPanel</code>
@@ -54,14 +51,14 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
     private void initialize() {
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
 
-        if (issueMode && false) {
+        if (issueMode) {
             authenticationStatementRadioButton = new JCheckBox("Authentication Statement");
             authorizationDecisionStatementRadioButton = new JCheckBox("Authorization Decision Statement");
             attributeStatementRadioButton = new JCheckBox("Attribute Statement");
         } else {
-            authenticationStatementRadioButton = new JRadioButton("Authentication Request");
-            authorizationDecisionStatementRadioButton = new JRadioButton("Authorization Decision Query");
-            attributeStatementRadioButton = new JRadioButton("Attribute Query");
+            authenticationStatementRadioButton = new JRadioButton("Authentication Statement");
+            authorizationDecisionStatementRadioButton = new JRadioButton("Authorization Decision Statement");
+            attributeStatementRadioButton = new JRadioButton("Attribute Statement");
             ButtonGroup bg = new ButtonGroup();
             bg.add(authenticationStatementRadioButton);
             bg.add(authorizationDecisionStatementRadioButton);
