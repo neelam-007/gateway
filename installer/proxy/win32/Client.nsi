@@ -218,7 +218,7 @@ Section "SecureSpan XML VPN Client" SecCopyUI
     IntCmpU $0 0 initOk initFailed initFailed
   initOk:
     ExpandEnvStrings $0 "%systemroot%\System32\Config\SystemProfile"
-    ExecWait '"$INSTDIR\SSXVCService.exe" -install "SecureSpan XML VPN Client" "$INSTDIR\jre\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Client.jar" -Duser.home="$0" -Djava.library.path="$INSTDIR" -server -Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Xms128m -Xmx512m -Xss256k -start com.l7tech.proxy.Main -out "$INSTDIR\ssxvc_out.log" -err "$INSTDIR\ssxvc_err.log" -description "Layer 7 Technologies SecureSpan XML VPN Client"' $0
+    ExecWait '"$INSTDIR\SSXVCService.exe" -install "SecureSpan XML VPN Client" "$INSTDIR\jre\bin\client\jvm.dll" -Djava.class.path="$INSTDIR\Client.jar" -Duser.home="$0" -Djava.library.path="$INSTDIR" -server -Dfile.encoding=UTF-8  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Xms128m -Xmx512m -Xss256k -start com.l7tech.client.Main -out "$INSTDIR\ssxvc_out.log" -err "$INSTDIR\ssxvc_err.log" -description "Layer 7 Technologies SecureSpan XML VPN Client"' $0
     IntCmpU $0 0 regservOk regservFailed regservFailed
   regservOk:
     MessageBox MB_YESNO "Would you like to configure the SecureSpan XML VPN Client now?" IDNO endofserviceinstall

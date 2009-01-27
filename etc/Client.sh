@@ -19,9 +19,9 @@ cd `dirname $0`
 extra="-server -Dcom.l7tech.proxy.listener.maxthreads=300  -Dsun.net.inetaddr.ttl=10 -Dnetworkaddress.cache.ttl=10 -Dfile.encoding=UTF-8"
 
 if [ "$1" = "-bd" ]; then
-	run="-classpath Client.jar com.l7tech.proxy.Main"
+	run="-classpath Client.jar com.l7tech.client.Main"
 elif [ "$1" = "-config" ]; then
-    run="-classpath Client.jar com.l7tech.proxy.cli.Main"
+    run="-classpath Client.jar com.l7tech.client.cli.Main"
 else
 	run="-jar Client.jar"
 fi
