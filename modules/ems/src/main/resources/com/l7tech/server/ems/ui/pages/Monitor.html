@@ -826,7 +826,7 @@
                 notifDlg_eMail_bodyTextArea.value = '${monitoring.context.entityType} : ${monitoring.context.entityPathName}\n'
                                                   + 'Property : ${monitoring.context.propertyType}\n'
                                                   + 'Property State : ${monitoring.context.propertyState}\n'
-                                                  + 'Property Value : ${monitoring.context.propertyValue}\n'
+                                                  + 'Property Value : ${monitoring.context.propertyValue} ${monitoring.context.propertyUnit}\n'
                                                   + 'Trigger Value : ${monitoring.context.triggerValue}';
             } else { // Editing an existing notification rule.
                 var tr = notificationRulesDataTable.getSelectedTrEls()[0];
@@ -1864,6 +1864,7 @@
                                     <option value="${monitoring.context.entityPathName}">Entity Path & Name</option>
                                     <option value="${monitoring.context.propertyType}">Property Type</option>
                                     <option value="${monitoring.context.propertyValue}">Property Value</option>
+                                    <option value="${monitoring.context.propertyUnit}">Property Unit</option>
                                     <option value="${monitoring.context.propertyState}">Property State</option>
                                     <option value="${monitoring.context.triggerValue}">Trigger Value</option>
                                 </select>
@@ -1902,6 +1903,7 @@
                                     <option value="${monitoring.context.entityPathName}">Entity Path & Name</option>
                                     <option value="${monitoring.context.propertyType}">Property Type</option>
                                     <option value="${monitoring.context.propertyValue}">Property Value</option>
+                                    <option value="${monitoring.context.propertyUnit}">Property Unit</option>
                                     <option value="${monitoring.context.propertyState}">Property State</option>
                                     <option value="${monitoring.context.triggerValue}">Trigger Value</option>
                                 </select>
@@ -1958,6 +1960,7 @@
                                     <option value="${monitoring.context.entityPathName}">Entity Path & Name</option>
                                     <option value="${monitoring.context.propertyType}">Property Type</option>
                                     <option value="${monitoring.context.propertyValue}">Property Value</option>
+                                    <option value="${monitoring.context.propertyUnit}">Property Unit</option>
                                     <option value="${monitoring.context.propertyState}">Property State</option>
                                     <option value="${monitoring.context.triggerValue}">Trigger Value</option>
                                 </select>
