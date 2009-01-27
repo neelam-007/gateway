@@ -339,7 +339,9 @@
         <property name="certificateAuthenticator"><null/></property>
         <property name="userManager" ref="internalUserManager"/>
         <property name="groupManager"><null/></property>
-        <property name="logonService" ref="logonService"/>
+        <property name="logonService">
+            <bean class="com.l7tech.server.ems.ui.EsmLogonService"/>
+        </property>
     </bean>
 
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">
@@ -365,13 +367,6 @@
 
     <!-- logon manager handles the persistence of login attempts information to the database layer -->
     <bean id="logonManager" class="com.l7tech.server.logon.LogonInfoManagerImpl" parent="hibernateBean"/>
-
-    <!-- Logon service that monitors the login attempts in the SSM -->
-    <bean id="logonService" class="com.l7tech.server.logon.SSMLogonService">
-        <constructor-arg ref="transactionManager"/>
-        <constructor-arg ref="logonManager"/>
-        <constructor-arg ref="serverConfig"/>
-    </bean>
 
     <!-- password enforcer to enforce the password constraints -->
     <bean id="passwordEnforcerManager" class="com.l7tech.server.security.PasswordEnforcerManager">
