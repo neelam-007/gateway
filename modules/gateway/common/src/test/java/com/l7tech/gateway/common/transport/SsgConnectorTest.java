@@ -1,7 +1,6 @@
 package com.l7tech.gateway.common.transport;
 
 import static com.l7tech.gateway.common.transport.SsgConnector.CLIENT_AUTH_NEVER;
-import com.l7tech.test.BugNumber;
 import static org.junit.Assert.*;
 import org.junit.*;
 
@@ -11,7 +10,6 @@ import org.junit.*;
 public class SsgConnectorTest {
 
     @Test
-    @BugNumber(6421)
     public void testEquals() {
         SsgConnector a = new SsgConnector(1, "foo bar", 8080, "http", false, "MESSAGE_INPUT", CLIENT_AUTH_NEVER, null, null);
         a.putProperty("foo", "bar");
