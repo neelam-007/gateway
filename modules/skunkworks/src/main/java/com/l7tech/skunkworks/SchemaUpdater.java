@@ -20,7 +20,6 @@ public class SchemaUpdater {
         config.setProperty("hibernate.connection.username", "gateway");
         config.setProperty("hibernate.connection.password", "7layer");
         config.addAnnotatedClass(com.l7tech.gateway.common.transport.SsgConnector.class);
-        config.addAnnotatedClass(com.l7tech.gateway.common.transport.SsgConnectorProperty.class);
         config.addAnnotatedClass(com.l7tech.gateway.common.transport.jms.JmsConnection.class);
         config.addAnnotatedClass(com.l7tech.gateway.common.transport.jms.JmsEndpoint.class);
 

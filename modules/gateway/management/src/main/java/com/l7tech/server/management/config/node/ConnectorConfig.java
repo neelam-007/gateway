@@ -4,10 +4,9 @@
 package com.l7tech.server.management.config.node;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.gateway.common.transport.SsgConnectorProperty;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 /** @author alex */
 public class ConnectorConfig extends SsgConnector {
@@ -28,12 +27,13 @@ public class ConnectorConfig extends SsgConnector {
         if (_name != null) sb.append("name=\"").append(_name).append("\" ");
         sb.append("port=\"").append(getPort()).append("\" ");
         sb.append("protocol=\"").append(getScheme()).append("\"");
-        final Set<SsgConnectorProperty> props = getProperties();
+
+        Map<String,String> props = getProperties();
         if (!props.isEmpty()) {
             sb.append("\n        <properties>\n");
-            for (SsgConnectorProperty prop : props) {
+            for (Map.Entry<String,String> prop : props.entrySet()) {
                 sb.append("        <property ");
-                sb.append("id=\"").append(prop.getOid()).append("\">");
+                sb.append("id=\"").append(-1).append("\">");
                 sb.append(prop.getValue());
                 sb.append("        </property>\n");
             }
@@ -57,10 +57,10 @@ public class ConnectorConfig extends SsgConnector {
         setKeystoreOid(sc.getKeystoreOid());
         setKeyAlias(sc.getKeyAlias());
 
-        Set<SsgConnectorProperty> props = new HashSet<SsgConnectorProperty>();
+        Map<String,String> props = new HashMap<String, String>();
         for (String name : sc.getPropertyNames()) {
             String prop = sc.getProperty(name);
-            props.add(new SsgConnectorProperty(this, name, prop));
+            props.put(name, prop);
         }
         setProperties(props);
     }

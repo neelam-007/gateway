@@ -809,10 +809,11 @@ CREATE TABLE shared_keys (
   primary key(encodingid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+--
 -- HTTP and HTTPS listeners and properties
-DROP TABLE IF EXISTS connector_property;
-DROP TABLE IF EXISTS connector;
+--
 
+DROP TABLE IF EXISTS connector;
 CREATE TABLE connector (
   objectid bigint(20) NOT NULL,
   version integer NOT NULL,
@@ -828,13 +829,11 @@ CREATE TABLE connector (
   PRIMARY KEY (objectid)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
+DROP TABLE IF EXISTS connector_property;
 CREATE TABLE connector_property (
-  objectid bigint(20) NOT NULL,
-  version integer NOT NULL,
   connector_oid bigint(20) NOT NULL,
   name varchar(128) NOT NULL,
   value MEDIUMTEXT NOT NULL,
-  PRIMARY KEY (objectid),
   FOREIGN KEY (connector_oid) REFERENCES connector (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 

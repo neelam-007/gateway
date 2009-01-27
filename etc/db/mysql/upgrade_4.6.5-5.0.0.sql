@@ -346,6 +346,9 @@ ALTER TABLE folder ADD COLUMN version int(11) NOT NULL AFTER objectid;
 -- Add flag for enable/disable wss processing to published service
 ALTER TABLE published_service ADD COLUMN wss_processing TINYINT(1) NOT NULL DEFAULT 1 AFTER lax_resolution;
 
+--- Simplified mapping of connector properties
+ALTER TABLE connector_property DROP COLUMN objectid, DROP COLUMN version;
+
 --
 -- Reenable FK at very end of script
 --

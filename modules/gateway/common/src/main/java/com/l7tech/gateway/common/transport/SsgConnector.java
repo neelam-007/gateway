@@ -5,7 +5,7 @@ import com.l7tech.common.io.PortRange;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
-import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CollectionOfElements;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 
 /**
  * Describes a port on which the Gateway will listen for incoming requests.
- * TODO promote port range and bind address from properties to fields (they can still be persisted as properties)
  */
 @Entity
 @Table(name="connector")
@@ -168,7 +167,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     private String keyAlias;
     
     @XmlTransient
-    private Set<SsgConnectorProperty> properties = new HashSet<SsgConnectorProperty>();
+    private Map<String,String> properties = new HashMap<String,String>();
 
     // Fields not saved by hibernate
     private Set<Endpoint> endpointSet;
@@ -345,11 +344,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @return the requested property, or null if it is not set
      */
     public String getProperty(String key) {
-        for (SsgConnectorProperty property : properties) {
-            if (key.equals(property.getName()))
-                return property.getValue();
-        }
-        return null;
+        return properties.get(key);
     }
 
     /**
@@ -359,10 +354,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      */
     @Transient
     public List<String> getPropertyNames() {
-        List<String> propertyNames = new ArrayList<String>();
-        for (SsgConnectorProperty property : properties)
-            propertyNames.add(property.getName());
-        return Collections.unmodifiableList(propertyNames);
+        return new ArrayList<String>(properties.keySet());
     }
 
     /**
@@ -379,26 +371,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
             inetAddress = null;
         }
 
-        SsgConnectorProperty found = null;
-        for (SsgConnectorProperty property : properties) {
-            if (key.equals(property.getName())) {
-                found = property;
-                break;
-            }
-        }
-
-        if (value == null) {
-            // Remove it
-            if (found != null)
-                properties.remove(found);
-            return;
-        }
-
-        // Add or update it
-        if (found == null)
-            properties.add(new SsgConnectorProperty(this, key, value));
-        else
-            found.setValue(value);
+        properties.put(key, value);
     }
 
     /**
@@ -408,12 +381,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     public void removeProperty(String propertyName) {
         if ( isLocked() ) throw new IllegalStateException("readonly");
 
-        for (SsgConnectorProperty property : properties) {
-            if (propertyName.equals(property.getName())) {
-                properties.remove(property);
-                break;
-            }
-        }
+        properties.remove(propertyName);
     }
 
     /**
@@ -512,10 +480,13 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @return a Set containing the extra connector properties.  May be empty but never null.
      */
-    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="connector")
+    @CollectionOfElements(fetch=FetchType.EAGER)
     @Fetch(FetchMode.SUBSELECT)
-    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
-    protected Set<SsgConnectorProperty> getProperties() {
+    @JoinTable(name="connector_property",
+               joinColumns=@JoinColumn(name="connector_oid", referencedColumnName="objectid"))
+    @org.hibernate.annotations.MapKey(columns={@Column(name="name",length=128)})
+    @Column(name="value", nullable=false, length=Integer.MAX_VALUE)
+    protected Map<String,String> getProperties() {
         //noinspection ReturnOfCollectionOrArrayField
         return properties;
     }
@@ -527,7 +498,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *
      * @param properties the properties set to use
      */
-    protected void setProperties(Set<SsgConnectorProperty> properties) {
+    protected void setProperties(Map<String,String> properties) {
         if ( isLocked() ) throw new IllegalStateException("readonly");
 
         inetAddressSet = false;
@@ -620,7 +591,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
             SsgConnector copy = new SsgConnector();
             BeanUtils.copyProperties(this, copy,
                                      BeanUtils.omitProperties(BeanUtils.getProperties(getClass()), "properties"));
-            copy.setProperties(new HashSet<SsgConnectorProperty>(this.getProperties())); // doesn't deep copy the SsgConnectorProperty instances, but they are functionally final
+            copy.setProperties(new HashMap<String, String>(copy.getProperties()));
             copy.setReadOnly();
             return copy;
         } catch (InvocationTargetException e) {
