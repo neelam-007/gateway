@@ -2,19 +2,29 @@ package com.l7tech.server.transport.http;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.util.SyspropUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
+import java.net.NetworkInterface;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.net.SocketException;
 
 /**
  * This class encapsulates the code for initializing the connectors table from the contents of server.xml.
  */
 public class DefaultHttpConnectors {
     protected static final Logger logger = Logger.getLogger(DefaultHttpConnectors.class.getName());
+
+    private static final String PROP_INIT_ADDR = "com.l7tech.server.listener.initaddr";
+    private static final String PROP_INIT_PORT = "com.l7tech.server.listener.initport";
+
     static final String defaultEndpoints = "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS";
     static final String defaultStrongCiphers = "TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA";
+
 
     /**
      * Create connectors from server.xml if possible, or by creating some hardcoded defaults.
@@ -24,38 +34,60 @@ public class DefaultHttpConnectors {
     public static Collection<SsgConnector> getDefaultConnectors() {
         List<SsgConnector> ret = new ArrayList<SsgConnector>();
 
-        SsgConnector http = new SsgConnector();
-        http.setName("Default HTTP (8080)");
-        http.setScheme(SsgConnector.SCHEME_HTTP);
-        http.setEndpoints(defaultEndpoints);
-        http.setPort(8080);
-        http.setEnabled(true);
-        ret.add(http);
+        int initPort = SyspropUtil.getInteger( PROP_INIT_PORT, 0 );
+        if ( initPort > 0 ) {
+            SsgConnector https = new SsgConnector();
+            https.setName("Default HTTPS ("+initPort+")");
+            https.setScheme(SsgConnector.SCHEME_HTTPS);
+            https.setEndpoints(defaultEndpoints);
+            https.setPort(initPort);
+            https.setKeyAlias("SSL");
+            https.setSecure(true);
+            https.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
+            https.setEnabled(true);
 
-        SsgConnector https = new SsgConnector();
-        https.setName("Default HTTPS (8443)");
-        https.setScheme(SsgConnector.SCHEME_HTTPS);
-        https.setEndpoints(defaultEndpoints);
-        https.setPort(8443);
-        https.setKeyAlias("SSL");
-        https.setSecure(true);
-        https.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
-        https.setEnabled(true);
-        ret.add(https);
+            String ipAddr = SyspropUtil.getProperty( PROP_INIT_ADDR );
+            if ( ipAddr != null ) {
+                // Fail if an ip address is specified but does not exist.
+                validateIpAddress( ipAddr );
+                https.putProperty( SsgConnector.PROP_BIND_ADDRESS, ipAddr );
+            }
 
-        SsgConnector httpsNocc = new SsgConnector();
-        httpsNocc.setName("Default HTTPS (9443)");
-        httpsNocc.setScheme(SsgConnector.SCHEME_HTTPS);
-        httpsNocc.setEndpoints(defaultEndpoints);
-        httpsNocc.setPort(9443);
-        httpsNocc.setKeyAlias("SSL");
-        httpsNocc.setSecure(true);
-        httpsNocc.setClientAuth(SsgConnector.CLIENT_AUTH_NEVER);
-        httpsNocc.setEnabled(true);
-        ret.add(httpsNocc);
+            ret.add(https);
+        } else {
+            SsgConnector http = new SsgConnector();
+            http.setName("Default HTTP (8080)");
+            http.setScheme(SsgConnector.SCHEME_HTTP);
+            http.setEndpoints(defaultEndpoints);
+            http.setPort(8080);
+            http.setEnabled(true);
+            ret.add(http);
 
-        SsgConnector nodeHttps = buildNodeHttpsConnector(2124);
-        ret.add(nodeHttps);
+            SsgConnector https = new SsgConnector();
+            https.setName("Default HTTPS (8443)");
+            https.setScheme(SsgConnector.SCHEME_HTTPS);
+            https.setEndpoints(defaultEndpoints);
+            https.setPort(8443);
+            https.setKeyAlias("SSL");
+            https.setSecure(true);
+            https.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
+            https.setEnabled(true);
+            ret.add(https);
+
+            SsgConnector httpsNocc = new SsgConnector();
+            httpsNocc.setName("Default HTTPS (9443)");
+            httpsNocc.setScheme(SsgConnector.SCHEME_HTTPS);
+            httpsNocc.setEndpoints(defaultEndpoints);
+            httpsNocc.setPort(9443);
+            httpsNocc.setKeyAlias("SSL");
+            httpsNocc.setSecure(true);
+            httpsNocc.setClientAuth(SsgConnector.CLIENT_AUTH_NEVER);
+            httpsNocc.setEnabled(true);
+            ret.add(httpsNocc);
+
+            SsgConnector nodeHttps = buildNodeHttpsConnector(2124);
+            ret.add(nodeHttps);
+        }
 
         return ret;
     }
@@ -106,4 +138,25 @@ public class DefaultHttpConnectors {
 
         return exists;
     }
+
+    /**
+     * Validate that the specified IP address actually exists.
+     */
+    private static void validateIpAddress( final String ipAddress ) {
+        if ( ipAddress != null ) {
+            boolean isOk = false;
+            try {
+                isOk = NetworkInterface.getByInetAddress( InetAddress.getByName(ipAddress) ) != null;
+            } catch (UnknownHostException uhe) {
+                // not ok
+            } catch (SocketException e) {
+                // not ok
+            }
+
+            if ( !isOk ) {
+                throw new RuntimeException("Invalid Listener IP addresss '"+ipAddress+"'.");
+            }
+        }
+    }
+
 }
