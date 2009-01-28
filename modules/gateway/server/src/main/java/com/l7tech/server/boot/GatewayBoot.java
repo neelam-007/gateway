@@ -9,6 +9,7 @@ import com.l7tech.server.log.JdkLogConfig;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.JdkLoggerConfigurator;
 import com.mchange.v2.c3p0.C3P0Registry;
 import com.mchange.v2.c3p0.PooledDataSource;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -242,7 +243,7 @@ public class GatewayBoot {
      *
      * Perhaps inspired by JBossJDKLogManager.
      */
-    public static final class GatewayLogManager extends LogManager {
+    public static final class GatewayLogManager extends LogManager implements JdkLoggerConfigurator.ResettableLogManager {
         @Override
         public void reset() throws SecurityException {
         }

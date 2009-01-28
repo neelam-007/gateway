@@ -190,6 +190,10 @@ public class JdkLoggerConfigurator {
         return properties;
     }
 
+    public static interface ResettableLogManager {
+        void resetLogs();
+    }
+
     /**
      * Read log configuration from the given URL to the given manager.
      *
@@ -248,6 +252,9 @@ public class JdkLoggerConfigurator {
 
                 // load configuration
                 bais = new ByteArrayInputStream(configBytes);
+                if ( logManager instanceof ResettableLogManager ) {
+                    ((ResettableLogManager)logManager).resetLogs();
+                }
                 logManager.readConfiguration(bais);
                 updateState(loggerProps);
             }
@@ -338,6 +345,7 @@ public class JdkLoggerConfigurator {
             setDaemon(true);
         }
 
+        @Override
         public void run() {
             Logger logger = Logger.getLogger(loggerName);
             try {
