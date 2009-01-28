@@ -1,11 +1,12 @@
 /**
- * Copyright (C) 2008 Layer 7 Technologies Inc.
+ * Copyright (C) 2008-2009 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.management.config.monitoring;
 
 import com.l7tech.util.ComparisonOperator;
 
 import javax.persistence.Entity;
+import java.io.Serializable;
 
 /**
  * A trigger that directs the monitoring system to periodically sample some property of the subject component, and fire
@@ -14,19 +15,24 @@ import javax.persistence.Entity;
  * @author alex
  */
 @Entity
-public class PropertyTrigger extends Trigger {
-    private String propertyId;
+public class PropertyTrigger<T extends Serializable> extends Trigger {
+    private String propertyName;
     private int samplingInterval;
     private ComparisonOperator operator;
-    private String triggerValue;
+    private T triggerValue;
+    private final Class<? extends T> triggerValueClass;
 
-    /** The ID of the property that's being monitored */
-    public String getPropertyId() {
-        return propertyId;
+    public PropertyTrigger(Class<? extends T> triggerValueClass) {
+        this.triggerValueClass = triggerValueClass;
     }
 
-    public void setPropertyId(String propertyId) {
-        this.propertyId = propertyId;
+    /** The name of the property that's being monitored */
+    public String getPropertyName() {
+        return propertyName;
+    }
+
+    public void setPropertyName(String propertyName) {
+        this.propertyName = propertyName;
     }
 
     /** The interval, in milliseconds, between successive samples */
@@ -48,11 +54,11 @@ public class PropertyTrigger extends Trigger {
     }
 
     /** The value to compare the property value against to determine whether the trigger should fire */
-    public String getTriggerValue() {
+    public T getTriggerValue() {
         return triggerValue;
     }
 
-    public void setTriggerValue(String triggerValue) {
+    public void setTriggerValue(T triggerValue) {
         this.triggerValue = triggerValue;
     }
 
@@ -65,7 +71,7 @@ public class PropertyTrigger extends Trigger {
 
         if (samplingInterval != that.samplingInterval) return false;
         if (operator != null ? !operator.equals(that.operator) : that.operator != null) return false;
-        if (propertyId != null ? !propertyId.equals(that.propertyId) : that.propertyId != null) return false;
+        if (propertyName != null ? !propertyName.equals(that.propertyName) : that.propertyName != null) return false;
         if (triggerValue != null ? !triggerValue.equals(that.triggerValue) : that.triggerValue != null) return false;
 
         return true;
@@ -73,10 +79,24 @@ public class PropertyTrigger extends Trigger {
 
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (propertyId != null ? propertyId.hashCode() : 0);
+        result = 31 * result + (propertyName != null ? propertyName.hashCode() : 0);
         result = 31 * result + samplingInterval;
         result = 31 * result + (operator != null ? operator.hashCode() : 0);
         result = 31 * result + (triggerValue != null ? triggerValue.hashCode() : 0);
         return result;
+    }
+
+    /**
+     * Two PropertyTrigger instances are incompatible if super.isIncompatibleWith(that) is true, or the {@link #propertyName} is
+     * different.
+     */
+    @Override
+    public boolean isIncompatibleWith(PropertyTrigger that) {
+        return super.isIncompatibleWith(that) ||
+                !this.getPropertyName().equals(that.getPropertyName());
+    }
+
+    public Class<? extends T> getTriggerValueClass() {
+        return triggerValueClass;
     }
 }

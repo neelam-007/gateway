@@ -20,7 +20,7 @@ import java.util.List;
 @Entity
 public abstract class Trigger extends NamedEntityImp {
     /** The parent monitoring scheme that owns this trigger */
-    private MonitoringScheme monitoringScheme;
+    private MonitoringConfiguration monitoringConfiguration;
 
     /** The type of the subject component */
     private ComponentType componentType;
@@ -32,12 +32,12 @@ public abstract class Trigger extends NamedEntityImp {
     private List<NotificationRule> notificationRules = new ArrayList<NotificationRule>();
 
     @ManyToOne(cascade=CascadeType.ALL)
-    public MonitoringScheme getMonitoringScheme() {
-        return monitoringScheme;
+    public MonitoringConfiguration getMonitoringScheme() {
+        return monitoringConfiguration;
     }
 
-    public void setMonitoringScheme(MonitoringScheme monitoringScheme) {
-        this.monitoringScheme = monitoringScheme;
+    public void setMonitoringScheme(MonitoringConfiguration monitoringConfiguration) {
+        this.monitoringConfiguration = monitoringConfiguration;
     }
 
     public ComponentType getComponentType() {
@@ -74,18 +74,30 @@ public abstract class Trigger extends NamedEntityImp {
 
         if (componentId != null ? !componentId.equals(trigger.componentId) : trigger.componentId != null) return false;
         if (componentType != trigger.componentType) return false;
-        if (monitoringScheme != null ? !monitoringScheme.equals(trigger.monitoringScheme) : trigger.monitoringScheme != null)
-            return false;
 
         return true;
     }
 
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (monitoringScheme != null ? monitoringScheme.hashCode() : 0);
         result = 31 * result + (componentType != null ? componentType.hashCode() : 0);
         result = 31 * result + (componentId != null ? componentId.hashCode() : 0);
         result = 31 * result + (notificationRules != null ? notificationRules.hashCode() : 0);
         return result;
+    }
+
+    /**
+     * Determines whether another trigger is a suitable replacement for this one.  If any of the following properties 
+     * of the other trigger are different from those of this, they are <em>incompatible</em>:
+     * <ul>
+     * <li>the parent {@link #monitoringConfiguration monitoring scheme}</li>
+     * <li>the {@link #componentType type} or {@link #componentId ID} of the subject component</li>
+     * </ul>
+     */
+    public boolean isIncompatibleWith(PropertyTrigger that) {
+        return that.getOid() != this.getOid() ||
+               that.getComponentType() != this.getComponentType() ||
+               !that.getComponentId().equals(this.getComponentId()) ||
+               !that.getMonitoringScheme().equals(this.getMonitoringScheme());
     }
 }

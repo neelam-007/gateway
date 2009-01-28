@@ -12,7 +12,7 @@ import com.l7tech.server.boot.ShutdownWatcher;
 import com.l7tech.server.management.api.monitoring.NodeStatus;
 import com.l7tech.server.management.api.node.EventSubscription;
 import com.l7tech.server.management.api.node.NodeApi;
-import com.l7tech.server.management.config.monitoring.MonitoringScheme;
+import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.transport.http.HttpTransportModule;
@@ -46,7 +46,7 @@ public class NodeApiImpl implements NodeApi {
     private ShutdownWatcher shutdowner; // Injected by Spring
 
     @Resource
-     private WebServiceContext wscontext; // Injected by CXF to get access to request metadata (e.g. HttpServletRequest)
+    private WebServiceContext wscontext; // Injected by CXF to get access to request metadata (e.g. HttpServletRequest)
 
     @PostConstruct
     private void start() {
@@ -97,12 +97,12 @@ public class NodeApiImpl implements NodeApi {
         return new NodeStatus();
     }
 
-    public void pushMonitoringScheme(MonitoringScheme scheme) throws UpdateException {
+    public void pushMonitoringConfiguration(MonitoringConfiguration configuration) throws UpdateException {
         checkRequest();
-        logger.fine("pushMonitoringScheme");
+        logger.fine("pushMonitoringConfiguration");
     }
 
-    public MonitoringScheme getMonitoringScheme() throws FindException {
+    public MonitoringConfiguration getMonitoringScheme() throws FindException {
         checkRequest();
         logger.fine("getMonitoringScheme");
         return null;

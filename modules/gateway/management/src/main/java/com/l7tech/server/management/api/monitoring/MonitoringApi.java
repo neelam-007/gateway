@@ -4,7 +4,7 @@
 package com.l7tech.server.management.api.monitoring;
 
 import com.l7tech.objectmodel.SaveException;
-import com.l7tech.server.management.config.monitoring.MonitoringScheme;
+import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 
 import java.io.IOException;
 
@@ -28,12 +28,11 @@ public interface MonitoringApi {
     HostStatus getHostStatus() throws IOException;
 
     /**
-     * Uploads a Monitoring Scheme to be stored in the database of the specified Node.
+     * Uploads a new or updated Monitoring Configuration to the PC.
      * 
-     * @param nodeName the name of the Node in whose database the Monitoring Scheme should be saved
-     * @param scheme the new or updated Monitoring Scheme
-     * @throws SaveException if the Node is unable or unwilling to save the Monitoring Scheme
+     * @param config the new or updated Monitoring Scheme
+     * @throws SaveException if the PC is unable or unwilling to save the Monitoring Scheme
      * @throws IOException if Monitoring Scheme could not be transferred to the specified Node
      */
-    void pushMonitoringScheme(String nodeName, MonitoringScheme scheme) throws IOException, SaveException;
+    void pushMonitoringConfiguration(MonitoringConfiguration config) throws IOException, SaveException;
 }
