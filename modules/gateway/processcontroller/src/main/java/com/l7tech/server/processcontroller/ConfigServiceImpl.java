@@ -12,6 +12,7 @@ import com.l7tech.server.management.config.host.IpAddressConfig;
 import com.l7tech.server.management.config.host.PCHostConfig;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.PCNodeConfig;
+import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.Pair;
@@ -302,7 +303,6 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
 
-
     private static class NodeInfo {
         private final PCNodeConfig config;
         private final File nodeConfigFile;
@@ -390,5 +390,10 @@ public class ConfigServiceImpl implements ConfigService {
         if (!info.nodeConfigFile.renameTo(new File(propfile + "-deleted"))) throw new DeleteException("Unable to rename " + propfile);
         nodeInfos.remove(nodeName);
         host.getNodes().remove(nodeName);
+    }
+
+    @Override
+    public MonitoringConfiguration getCurrentMonitoringConfiguration() {
+        return null;
     }
 }

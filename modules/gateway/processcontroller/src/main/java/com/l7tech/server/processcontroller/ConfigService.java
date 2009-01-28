@@ -5,6 +5,7 @@ package com.l7tech.server.processcontroller;
 
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.management.config.host.HostConfig;
+import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.util.Pair;
 
@@ -56,4 +57,9 @@ public interface ConfigService {
     File getJavaBinary();
 
     void deleteNode(String nodeName) throws DeleteException, IOException;
+
+    /**
+     * @return the monitoring configuration that is currently in effect, or null if there isn't one.
+     */
+    MonitoringConfiguration getCurrentMonitoringConfiguration();
 }
