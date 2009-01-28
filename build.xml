@@ -2673,8 +2673,10 @@
         </copy>
         <copy todir="${install.src.ssg.profile}">
             <fileset dir="${src.root}/etc">
+                <include name="ssgnodedefs.sh"/>
                 <include name="ssgruntimedefs.sh"/>
                 <include name="ssg-utilities.sh"/>
+                <include name="xlocaldefs.sh"/>
             </fileset>
         </copy>
 
@@ -2691,8 +2693,7 @@
         <copy todir="${install.src.ssg.bin}">
             <fileset dir="${src.root}/etc">
                 <include name="gateway.sh"/>
-                <include name="install.sh"/>
-                <include name="configure.sh"/>
+                <include name="setup.sh"/>
             </fileset>
         </copy>
 

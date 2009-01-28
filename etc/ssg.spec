@@ -70,8 +70,10 @@ rm -fr %{buildroot}
 %dir /opt/SecureSpan/Gateway/runtime/bin
 /opt/SecureSpan/Gateway/runtime/bin/*
 %dir /opt/SecureSpan/Gateway/runtime/etc/profile.d
-%config(noreplace) /opt/SecureSpan/Gateway/runtime/etc/profile.d/ssgruntimedefs.sh
-%config(noreplace) /opt/SecureSpan/Gateway/runtime/etc/profile.d/ssg-utilities.sh
+/opt/SecureSpan/Gateway/runtime/etc/profile.d/ssgnodedefs.sh
+/opt/SecureSpan/Gateway/runtime/etc/profile.d/ssgruntimedefs.sh
+/opt/SecureSpan/Gateway/runtime/etc/profile.d/ssg-utilities.sh
+%config(noreplace) %attr(755,layer7,layer7) /opt/SecureSpan/Gateway/runtime/etc/profile.d/xlocaldefs.sh 
 
 # Other stuff
 %defattr(0444,layer7,layer7,0755)

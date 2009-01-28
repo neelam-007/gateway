@@ -22,10 +22,16 @@
 
 # Set environment
 umask 0002
+SSGUSER="gateway"
+SSGNODE="default"
+SSGJDK_VERSION="1.6"
+export SSGNODE SSGUSER
 
 # Source profile for standard environment
 cd `dirname $0`
 . ../etc/profile
+
+ensure_JDK "${SSGJDK_VERSION}"
 
 # Process script options
 declare -a SSGARGS
@@ -38,11 +44,14 @@ for OPTION in "$@" ; do
     fi
 done
 
-# Set options
-SSGUSER="gateway"
-SSGNODE="default"
+# Process options
 GATEWAY_PID="${SSG_HOME}/node/${SSGNODE}/var/ssg.pid"
-JAVA_OPTS="-Dcom.l7tech.server.home=${SSG_HOME}/node/${SSGNODE} -Djava.ext.dirs=${SSG_JAVA_HOME}/jre/lib/ext:${SSG_HOME}/runtime/lib/ext"
+JAVA_OPTS="-Dcom.l7tech.server.home=${SSG_HOME}/node/${SSGNODE}"
+if [ -d "${SSG_JAVA_HOME}/jre/lib/ext" ] ; then
+    JAVA_OPTS="${JAVA_OPTS} -Djava.ext.dirs=${SSG_JAVA_HOME}/jre/lib/ext:${SSG_HOME}/runtime/lib/ext"
+else
+    JAVA_OPTS="${JAVA_OPTS} -Djava.ext.dirs=${SSG_JAVA_HOME}/lib/ext:${SSG_HOME}/runtime/lib/ext"
+fi
 if [ "${SSGTARARI}"  == "true" ] && [ -e  /usr/local/Tarari ] ; then
     JAVA_OPTS="-Dcom.l7tech.common.xml.tarari.enable=true ${JAVA_OPTS}"
 fi

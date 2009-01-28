@@ -135,13 +135,15 @@ public class EditInteraction extends ConfigurationInteraction {
                             } else {
                                 throw wne;
                             }
+                        } finally {
+                            println();
                         }
                     }                     
                 }
             } catch ( WizardNavigationException wne ) {
                 // back to main menu
             }
-        }        
+        }
         
         return success;
     }

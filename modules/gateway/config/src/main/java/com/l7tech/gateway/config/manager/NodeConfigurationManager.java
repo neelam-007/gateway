@@ -57,7 +57,7 @@ public class NodeConfigurationManager {
     }
 
     /**
-     * Configure a gateway node properties and create database if required..
+     * Configure a gateway node properties and validate database config if required..
      *
      * @param name The name of the node to configure ("default")
      * @param nodeid The unique identifier to use for the node.
@@ -178,11 +178,13 @@ public class NodeConfigurationManager {
     }
 
     /**
-     * @param nodeName
-     * @param databaseConfig the configuration for the database to be created.
-     * @param extraGrantHosts additional hostnames from which access to the database should be granted
-     * @param adminLogin
-     * @param adminPassword
+     * Create a new database.
+     *
+     * @param nodeName The node the database will be used by
+     * @param databaseConfig The configuration for the database to be created.
+     * @param extraGrantHosts Additional hostnames from which access to the database should be granted
+     * @param adminLogin The SSM admin account username
+     * @param adminPassword The SSM admin account password
      */
     public static void createDatabase(String nodeName, final DatabaseConfig databaseConfig, final Collection<String> extraGrantHosts, String adminLogin, String adminPassword)
         throws IOException {
@@ -211,8 +213,6 @@ public class NodeConfigurationManager {
         }
 
         AccountReset.resetAccount(databaseConfig, adminLogin, adminPassword);
-        // TODO create clusterHostname?
-        // TODO create initialSslPort 
     }
 
     public static NodeConfig loadNodeConfig( final String name, final boolean loadSecrets ) throws IOException {

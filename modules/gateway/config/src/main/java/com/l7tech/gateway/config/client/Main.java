@@ -6,6 +6,7 @@ import com.l7tech.gateway.config.client.beans.StateConfigurationBeanProvider;
 import com.l7tech.gateway.config.client.beans.NodeManagementApiFactory;
 import com.l7tech.gateway.config.client.beans.StatusCodeSource;
 import com.l7tech.gateway.config.client.beans.NodeDeleteConfigurationBeanProvider;
+import com.l7tech.gateway.config.client.beans.SoftwareNodeConfigurationBeanProvider;
 import com.l7tech.config.client.options.OptionSet;
 import com.l7tech.config.client.options.Option;
 import com.l7tech.config.client.ConfigurationException;
@@ -13,10 +14,12 @@ import com.l7tech.config.client.ConfigurationFactory;
 import com.l7tech.config.client.ConfigurationClient;
 import com.l7tech.config.client.InvalidConfigurationStateException;
 import com.l7tech.util.JdkLoggerConfigurator;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.management.NodeStateType;
 
 import java.io.IOException;
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Iterator;
@@ -120,6 +123,8 @@ public class Main {
     private static final Logger logger = Logger.getLogger(Main.class.getName());
 
     private static final String pcUrl = "https://127.0.0.1:8765/services/nodeManagementApi";
+    private static final String PROP_NODE_PROPS = "com.l7tech.server.config.nodePropsPath";
+    private static final String DEFAULT_NODE_PROPS = "../node/default/etc/conf/node.properties";
 
     private static void doGatewayControl( String command ) {
         NodeManagementApiFactory nodeManagementApiFactory = new NodeManagementApiFactory( pcUrl );
@@ -214,7 +219,7 @@ public class Main {
         new ConfigurationType( "software", "configTemplates/GatewaySoftwareConfiguration.xml", true ){
             @Override
             public ConfigurationBeanProvider getProvider() {
-                return new NodeConfigurationBeanProvider( new NodeManagementApiFactory() );
+                return new SoftwareNodeConfigurationBeanProvider(new File(SyspropUtil.getString(PROP_NODE_PROPS, DEFAULT_NODE_PROPS)));
             }
         },
         new ConfigurationType( "status", "configTemplates/NodeStatus.xml", true ){

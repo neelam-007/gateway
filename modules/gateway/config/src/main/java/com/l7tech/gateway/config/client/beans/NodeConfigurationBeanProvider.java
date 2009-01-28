@@ -48,7 +48,9 @@ public class NodeConfigurationBeanProvider extends NodeConfigurationBeanProvider
                 // String newNodeName, String version, Map<DatabaseType, DatabaseConfig> databaseConfigMap
                 NodeConfig config = new NodeConfig();
                 config.setName("default");
-                config.setEnabled((Boolean)getOption("node.enable", configuration));
+                Boolean enable = (Boolean)getOption("node.enable", configuration);
+                if ( enable == null ) enable = true;
+                config.setEnabled(enable);
                 config.setClusterHostname((String)getOption("cluster.host", configuration));
                 config.setClusterPassphrase((String)getOption("cluster.pass", configuration));
                 fromBeans( config, configuration );

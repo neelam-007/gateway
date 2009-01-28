@@ -39,16 +39,16 @@ This step lets you create the administrative listener.</prompt>
     <!--
       Options for Java VM configuration
     -->
-    <option id="" group="java" type="PATH" order="70" name="Java VM Path">
+    <option id="java-path" group="java" type="PATH" order="70" name="Java VM Path">
         <configName>java.path</configName>
-        <configValue>root</configValue>
         <description>Java Virtual Machine Path</description>
         <prompt>Enter the path to the Java Virtual Machine.</prompt>
     </option>
-    <option id="" group="java" type="TEXT" order="71" name="Java VM Options">
-        <configName>java.opts</configName>
-        <description>Java VM Options</description>
-        <prompt>Enter options for the Java VM.</prompt>
+    <option id="java-heap" group="java" type="TEXT" order="71" name="Java VM Memory Allocation" min="256" max="100000">
+        <configName>java.heap</configName>
+        <configValue>512</configValue>
+        <description>Java Memory Allocation in megabytes</description>
+        <prompt>Enter memory for the Java VM (minimum 256).</prompt>
     </option>
 
     <!--
@@ -64,16 +64,16 @@ This step lets you create the administrative listener.</prompt>
       Options for Administrative user account configuration
     -->
     <option id="admin-listener-ip" group="admin-listener" type="IP_ADDRESS" order="202" updatable="false" name="Administrative IP Address">
-        <configName>admin.listenaddr</configName>
+        <configName>initial.admin.listenaddr</configName>
         <configValue>*</configValue>
         <description>Administrative Listener IP Address</description>
         <prompt>Enter the IP address for the administrative listener.</prompt>
     </option>
-    <option id="admin-listener-port" group="admin-listener" type="PORT" order="203" updatable="false" name="Administrative Port">
-        <configName>admin.listenport</configName>
+    <option id="admin-listener-port" group="admin-listener" type="PORT" order="203" updatable="false" name="Administrative Port" min="1024">
+        <configName>initial.admin.listenport</configName>
         <configValue>8443</configValue>
         <description>Administrative Listener Port</description>
-        <prompt>Enter the port for the administrative listener.</prompt>
+        <prompt>Enter the port for the administrative listener (1024-65535).</prompt>
     </option>
 
 </optionSet>

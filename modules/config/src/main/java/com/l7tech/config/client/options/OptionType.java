@@ -44,6 +44,11 @@ public enum OptionType {
     PORT("^(?:6(?:[1-4]\\d{3}|(?:5(?:[0-4]\\d{2}|5(?:[0-2]\\d|3[0-5]))))|[1-5]\\d{4}|(?!0)\\d{2,4}|[1-9])$", false, new DecimalFormat("#0"), Integer.class),   // 1 - 65535
 
     /**
+     * A positive integer
+     */
+    INTEGER("^(?:[12]\\d{9}|[1-9]\\d{0,8}|0)$", false, new DecimalFormat("#0"), Integer.class),   // 0 - MAX
+
+    /**
      * Any text
      */
     TEXT("^[\\p{Graph}\\p{Blank}]{0,10240}$"),

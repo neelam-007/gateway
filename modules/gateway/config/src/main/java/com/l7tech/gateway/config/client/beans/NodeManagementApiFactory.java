@@ -1,6 +1,7 @@
 package com.l7tech.gateway.config.client.beans;
 
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
+import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -31,6 +32,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.UUID;
 
 /**
  *
@@ -109,7 +111,7 @@ public class NodeManagementApiFactory {
     }
 
     private NodeManagementApi buildDirectManagementService() throws IOException {
-        final Collection<Pair<NodeConfig, File>> nodes = NodeConfigurationManager.loadNodeConfigs(true);
+        final Collection<Pair<NodeConfig, File>> nodes = NodeConfigurationManager.loadNodeConfigs(false);
         return new NodeManagementApi(){
             @Override
             public Collection<NodeHeader> listNodes() throws FindException {
@@ -130,10 +132,21 @@ public class NodeManagementApiFactory {
 
             @Override
             public void createDatabase( final String nodeName, final DatabaseConfig dbconfig, final Collection<String> dbHosts, final String adminLogin, final String adminPassword ) throws DatabaseCreationException {
-                try {
-                    NodeConfigurationManager.createDatabase(nodeName, dbconfig, dbHosts, adminLogin, adminPassword);
-                } catch (IOException e) {
-                    throw new DatabaseCreationException("Unable to create database", e);
+                DBActions dbActions = new DBActions();
+                String dbVersion = dbActions.checkDbVersion( dbconfig );
+                if ( dbVersion == null ) {
+                    throw new DatabaseCreationException("Unable to create database, there is an existing incompatible database.");
+                } else if ( BuildInfo.getFormalProductVersion().equals(dbVersion) ) {
+                    // further validate existing db?                    
+                } else if ( "Unknown".equals(dbVersion) ) {
+                    // create new db
+                    try {
+                        NodeConfigurationManager.createDatabase(nodeName, dbconfig, dbHosts, adminLogin, adminPassword);
+                    } catch (IOException e) {
+                        throw new DatabaseCreationException("Unable to create database", e);
+                    }
+                } else {
+                    throw new DatabaseCreationException("Unable to create database, there is an existing incompatible database (version "+dbVersion+").");
                 }
             }
 
@@ -141,7 +154,8 @@ public class NodeManagementApiFactory {
             public NodeConfig createNode( final NodeConfig node) throws SaveException {
                 if ( doGetNode(node.getName()) == null ) {
                     try {
-                        NodeConfigurationManager.configureGatewayNode( node.getName(), null, true, node.getClusterPassphrase(), node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE ), null );
+                        String guid = UUID.randomUUID().toString().replace("-","");
+                        NodeConfigurationManager.configureGatewayNode( node.getName(), guid, true, node.getClusterPassphrase(), node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE ), null );
                     } catch ( NodeConfigurationManager.NodeConfigurationException nce ) {
                         throw new SaveException( ExceptionUtils.getMessage(nce), nce );
                     } catch ( IOException ioe ) {

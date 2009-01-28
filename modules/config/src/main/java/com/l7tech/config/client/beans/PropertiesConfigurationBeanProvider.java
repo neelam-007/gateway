@@ -39,15 +39,9 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
     @Override
     @SuppressWarnings({"unchecked"})
     public Collection<ConfigurationBean> loadConfiguration() throws ConfigurationException {
-        Properties properties = new Properties();
-        try {
-            properties.load( new FileInputStream(propertiesFile) );
-        } catch (IOException ioe) {
-            throw new ConfigurationException("Unable to load configuration from file '"+propertiesFile.getAbsolutePath()+"'.", ioe);
-        }
-        
         List<ConfigurationBean> configuration = new ArrayList<ConfigurationBean>();
-        
+
+        Properties properties = loadPropertiesFromFile();
         for ( String property : Collections.list((Enumeration<String>)properties.propertyNames()) ) {
             String name = unprefix(property);
             if ( name != null ) {
@@ -63,7 +57,7 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
 
     @Override
     public void storeConfiguration( final Collection<ConfigurationBean> configuration ) throws ConfigurationException {
-        Properties properties = new Properties();
+        Properties properties = loadPropertiesFromFile();
         
         for ( ConfigurationBean configBean : configuration ) {
             String toPersist = onPersist(configBean.getConfigName(), configBean.getConfigValue(), configuration);
@@ -149,6 +143,26 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
         }
 
         return value;
+    }
+
+    /**
+     * Load configuration from properties file.
+     *
+     * @return The loaded properties values.
+     * @throws ConfigurationException If an error occurs.
+     */
+    protected Properties loadPropertiesFromFile() throws ConfigurationException {
+        Properties properties = new Properties();
+
+        if ( propertiesFile.isFile() ) {
+            try {
+                properties.load( new FileInputStream(propertiesFile) );
+            }catch (IOException ioe) {
+                throw new ConfigurationException("Unable to load configuration from file '"+propertiesFile.getAbsolutePath()+"'.", ioe);
+            }
+        }
+
+        return properties;
     }
 
     //- PRIVATE

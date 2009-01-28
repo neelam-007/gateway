@@ -1,6 +1,7 @@
 package com.l7tech.server.boot;
 
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.server.LifecycleException;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -19,8 +20,15 @@ public class GatewayMain {
             System.exit(0); // force exit even if there are non-daemon threads created by mistake (Bug #4384)
         } catch (Throwable e) {
             // init logger here to avoid initializing logging framework early on startup
-            Logger.getLogger(GatewayMain.class.getName()).log(Level.WARNING, "Error starting server.", e);
-            e.printStackTrace(System.err);
+            Logger logger = Logger.getLogger(GatewayMain.class.getName());
+            String message = "Error starting server : " + ExceptionUtils.getMessage(e);
+            if ( e instanceof LifecycleException && e.getCause()==null ) {
+                logger.log(Level.WARNING, message, ExceptionUtils.getDebugException(e));
+                System.err.println(message);
+            } else {
+                logger.log(Level.WARNING, message, e);
+                e.printStackTrace(System.err);
+            }
             System.err.println("\n\n\n**** Unable to start the server: " + ExceptionUtils.getMessage(e) + "\n\n\n");
             System.exit(77);
         }

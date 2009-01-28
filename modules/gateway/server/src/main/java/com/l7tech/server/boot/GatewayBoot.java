@@ -8,10 +8,15 @@ import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.log.JdkLogConfig;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import com.mchange.v2.c3p0.C3P0Registry;
 import com.mchange.v2.c3p0.PooledDataSource;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
 import java.sql.SQLException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -20,6 +25,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.InvalidAlgorithmParameterException;
 
 /**
  * Object that represents a complete, running Gateway instance.
@@ -29,6 +37,7 @@ import java.util.logging.LogManager;
 public class GatewayBoot {
     protected static final Logger logger = Logger.getLogger(GatewayBoot.class.getName());
     private static final long DB_CHECK_DELAY = 30;
+    private static final String SYSPROP_STARTUPCHECKS = "com.l7tech.server.performStartupChecks";
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicBoolean destroyRequested = new AtomicBoolean(false);
@@ -97,6 +106,7 @@ public class GatewayBoot {
         final CountDownLatch shutdownlatch = new CountDownLatch(1);
         final CountDownLatch exitLatch = new CountDownLatch(1);
 
+        preFlightCheck();
         start();
         addShutdownHook( shutdownlatch, exitLatch );
         waitForShutdown( shutdownlatch );
@@ -189,6 +199,25 @@ public class GatewayBoot {
                 }                
             }
         }));
+    }
+
+    private void preFlightCheck() throws LifecycleException {
+        if (SyspropUtil.getBoolean(SYSPROP_STARTUPCHECKS, true)) {
+            // check strong crypto is available
+            try {
+                SecretKeySpec key = new SecretKeySpec(new byte[32], 0, 32, "AES");
+                Cipher aes = Cipher.getInstance("AES/CBC/PKCS5Padding");
+                aes.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(new byte[16]));
+            } catch ( InvalidKeyException ike ) {
+                throw new LifecycleException("Strong cryptography not available. Please update JDK to enable strong cryptography.");
+            } catch (NoSuchAlgorithmException nsae) {
+                logger.log(Level.WARNING, "Unexpected error when checking for strong cryptography in JDK '"+ExceptionUtils.getMessage(nsae)+"'.", ExceptionUtils.getDebugException(nsae));
+            } catch (NoSuchPaddingException nspe) {
+                logger.log(Level.WARNING, "Unexpected error when checking for strong cryptography in JDK '"+ExceptionUtils.getMessage(nspe)+"'.", ExceptionUtils.getDebugException(nspe));
+            } catch (InvalidAlgorithmParameterException iape) {
+                logger.log(Level.WARNING, "Unexpected error when checking for strong cryptography in JDK '"+ExceptionUtils.getMessage(iape)+"'.", ExceptionUtils.getDebugException(iape));
+            }
+        }
     }
 
     private static void notifyExit( final CountDownLatch exitSync ){

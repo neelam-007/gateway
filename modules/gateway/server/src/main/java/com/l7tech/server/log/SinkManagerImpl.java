@@ -468,6 +468,8 @@ public class SinkManagerImpl
      * Add a configured console message sink to the sink list.
      *
      * Set a threshold based on the audit detail threshold.
+     *
+     * This ensures that any audits are logged to the console (if there is any console logging)
      */
     private void addConsoleSink( final List<MessageSink> sinks ) {
         SinkConfiguration.SeverityThreshold threshold = SinkConfiguration.SeverityThreshold.INFO;

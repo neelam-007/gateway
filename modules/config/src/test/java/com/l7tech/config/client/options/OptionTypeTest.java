@@ -1,8 +1,7 @@
-package com.l7tech.gateway.config.options;
+package com.l7tech.config.client.options;
 
 import org.junit.Test;
 import org.junit.Assert;
-import com.l7tech.config.client.options.OptionType;
 
 import java.util.regex.Pattern;
 
@@ -20,8 +19,8 @@ public class OptionTypeTest {
         }
     }
 
+    @Test
     public void testPortRegex() {
-        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.PORT.getDefaultRegex(), "0"));
         Assert.assertTrue("Regex passes", Pattern.matches(OptionType.PORT.getDefaultRegex(), "1"));
         Assert.assertTrue("Regex passes", Pattern.matches(OptionType.PORT.getDefaultRegex(), "65535"));
         Assert.assertTrue("Regex passes", Pattern.matches(OptionType.PORT.getDefaultRegex(), "12345"));
@@ -29,11 +28,30 @@ public class OptionTypeTest {
         Assert.assertTrue("Regex passes", Pattern.matches(OptionType.PORT.getDefaultRegex(), "123"));
         Assert.assertTrue("Regex passes", Pattern.matches(OptionType.PORT.getDefaultRegex(), "1239"));
 
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.PORT.getDefaultRegex(), "0"));
         Assert.assertFalse("Regex fails", Pattern.matches(OptionType.PORT.getDefaultRegex(), "-1"));
         Assert.assertFalse("Regex fails", Pattern.matches(OptionType.PORT.getDefaultRegex(), "65536"));
         Assert.assertFalse("Regex fails", Pattern.matches(OptionType.PORT.getDefaultRegex(), "77777"));
         Assert.assertFalse("Regex fails", Pattern.matches(OptionType.PORT.getDefaultRegex(), "B"));
         Assert.assertFalse("Regex fails", Pattern.matches(OptionType.PORT.getDefaultRegex(), ""));
+    }
+
+    @Test
+    public void testIntegerRegex() {
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.INTEGER.getDefaultRegex(), "0"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.INTEGER.getDefaultRegex(), "1"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.INTEGER.getDefaultRegex(), Integer.toString(Integer.MAX_VALUE)));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.INTEGER.getDefaultRegex(), "123456789"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.INTEGER.getDefaultRegex(), "987654321"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.INTEGER.getDefaultRegex(), "12"));
+        Assert.assertTrue("Regex passes", Pattern.matches(OptionType.INTEGER.getDefaultRegex(), "1230"));
+
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.INTEGER.getDefaultRegex(), "-1"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.INTEGER.getDefaultRegex(), "01"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.INTEGER.getDefaultRegex(), Integer.toString(Integer.MAX_VALUE)+"0") );
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.INTEGER.getDefaultRegex(), "3333333333"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.INTEGER.getDefaultRegex(), "B"));
+        Assert.assertFalse("Regex fails", Pattern.matches(OptionType.INTEGER.getDefaultRegex(), ""));
     }
 
     @Test

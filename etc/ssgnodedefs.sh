@@ -1,0 +1,56 @@
+# LAYER 7 TECHNOLOGIES
+# Defines settings for node specific options
+
+extractProperty() {
+    EP_PROP=$1
+    EP_ENV=$2
+    EP_FILE=$3
+    EP_EXPR=$(grep "${EP_PROP}" "${EP_FILE}" | sed "s/[ ]*${EP_PROP}[ ]*=//" )
+    eval "${EP_ENV}"=\"${EP_EXPR}\"
+    unset EP_PROP
+    unset EP_ENV
+    unset EP_FILE
+    unset EP_EXPR
+}
+
+if [ ! -z "${SSGNODE}" ] ; then
+    NODE_PROPS_PATH="${SSG_HOME}/node/${SSGNODE}/etc/conf/node.properties"
+    if [ -f "${NODE_PROPS_PATH}" ] ; then
+        extractProperty "node.java.path" NODE_JAVA_HOME "${NODE_PROPS_PATH}"
+        extractProperty "node.java.heap" NODE_JAVA_HEAP "${NODE_PROPS_PATH}"
+        extractProperty "node.java.opts" NODE_JAVA_OPTS "${NODE_PROPS_PATH}"
+        extractProperty "node.initial.admin.listenaddr" NODE_INIT_LISTEN_ADDR "${NODE_PROPS_PATH}"
+        extractProperty "node.initial.admin.listenport" NODE_INIT_LISTEN_PORT "${NODE_PROPS_PATH}"
+
+        if [ ! -z "${NODE_JAVA_HOME}" ] ; then
+            SSG_JAVA_HOME="${NODE_JAVA_HOME}"       
+            export SSG_JAVA_HOME
+        fi
+
+        NODE_OPTS=""
+        if [ ! -z "${NODE_JAVA_HEAP}" ] || [ ! -z "${NODE_JAVA_OPTS}" ] ; then
+            if [ ! -z "${NODE_JAVA_HEAP}" ] ; then
+                NODE_OPTS="-Xmx${NODE_JAVA_HEAP}m"
+            fi
+            if [ ! -z "${NODE_JAVA_OPTS}" ] ; then
+                NODE_OPTS="${NODE_OPTS} ${NODE_JAVA_OPTS}"
+            fi
+        fi
+
+        if [ ! -z "${NODE_INIT_LISTEN_ADDR}" ] && [ ! -z "${NODE_INIT_LISTEN_PORT}" ] ; then
+            if [ ! -z "${NODE_INIT_LISTEN_ADDR}" ] && [ "${NODE_INIT_LISTEN_ADDR}" != "*" ] && [ "${NODE_INIT_LISTEN_ADDR}" != "0.0.0.0" ]; then
+                NODE_OPTS="${NODE_OPTS} -Dcom.l7tech.server.listener.initaddr=${NODE_INIT_LISTEN_ADDR}"            
+            fi
+
+            if [ ! -z "${NODE_INIT_LISTEN_PORT}" ] ; then
+                NODE_OPTS="${NODE_OPTS} -Dcom.l7tech.server.listener.initport=${NODE_INIT_LISTEN_PORT}"
+            fi
+        fi
+        export NODE_OPTS
+
+        unset NODE_JAVA_HOME
+        unset NODE_JAVA_HEAP
+        unset NODE_JAVA_OPTS
+    fi
+    unset NODE_PROPS_PATH
+fi
