@@ -120,7 +120,6 @@
         var relativeTimePeriodUnitDropDown;
         var absoluteTimePeriodFromHourDropDown;
         var absoluteTimePeriodToHourDropDown;
-        var timePeriodTimeZoneDropDown;
         var timeIntervalUnitDropDown;
 
         var ssgClusterSelectorWindow;
@@ -214,7 +213,7 @@
          * @return {boolean} true if valid
          */
         function validateTimePeriod() {
-            return timePeriodTimeZoneDropDown.value != '' && validateRelativeTimePeriod() && validateAbsoluteTimePeriod();
+            return validateRelativeTimePeriod() && validateAbsoluteTimePeriod();
         }
 
         /**
@@ -839,7 +838,7 @@
                 settings.entities.push(entity);
             }
             settings.timePeriod = {};
-            settings.timePeriod.timeZone = timePeriodTimeZoneDropDown.value;
+            settings.timePeriod.timeZone = document.getElementById('timePeriodTimeZoneDropDown').value;
             settings.timePeriod.type = getTimePeriodType();
             if (settings.timePeriod.type == TimePeriodType.RELATIVE) {
                 settings.timePeriod.numberOfTimeUnits = relativeTimePeriodTextBox.value;
@@ -1510,7 +1509,6 @@
             absoluteTimePeriodToHourDropDown   = document.getElementById('absoluteTimePeriodToHourDropDown');
             absoluteTimePeriodToDateTextBox    = document.getElementById('absoluteTimePeriodToDateTextBox');
             absoluteTimePeriodHint             = document.getElementById('absoluteTimePeriodHint');
-            timePeriodTimeZoneDropDown         = document.getElementById('timePeriodTimeZoneDropDown');
 
             hasTimeIntervalRadioButton = document.getElementById('hasTimeIntervalRadioButton');
             noTimeIntervalRadioButton  = document.getElementById('noTimeIntervalRadioButton');
