@@ -1,18 +1,16 @@
 #!/bin/sh
 
-#Stop the ssg
-[ -f /etc/init.d/ssg ] && /etc/init.d/ssg stop
-
 userdel -r gateway
 if [ ${?} -eq 1 ]; then
 	userdel gateway
 	# handle the dir not being there
 fi
-userdel -r ssgconfig
+userdel -r layer7
 if [ ${?} -eq 1 ]; then
-	userdel ssgconfig
+	userdel layer7
 	# handle the dir not being there, just in case
 fi
 groupdel gateway
+groupdel layer7
 
 exit 0

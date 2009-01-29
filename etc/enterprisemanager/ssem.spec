@@ -1,4 +1,4 @@
-Summary: SecureSpan Enterprise Service Manager, Copyright Layer 7 Technologies 2008
+Summary: SecureSpan Enterprise Service Manager, Copyright Layer 7 Technologies 2009
 Name: ssem
 Version: 0.0
 Release: 0

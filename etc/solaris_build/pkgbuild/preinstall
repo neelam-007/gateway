@@ -1,9 +1,19 @@
 #!/bin/sh
 
 # Detect existing user/group ids
-UID_GATEWAY=`[ -d /ssg ] && ls -nd /ssg | awk '{print $3}'`
-GID_GATEWAY=`[ -d /ssg ] && ls -nd /ssg | awk '{print $4}'`
-UID_SSGCONF=`[ -f /ssg/configwizard/ssgconfig0.log ] && ls -nd /ssg/configwizard/ssgconfig0.log | awk '{print $3}'`
+if [ -d /ssg ] ; then
+    UID_GATEWAY=`[ -d /ssg ] && ls -nd /ssg | awk '{print $3}'`
+    GID_GATEWAY=`[ -d /ssg ] && ls -nd /ssg | awk '{print $4}'`
+    UID_SSGCONF=`[ -f /ssg/configwizard/ssgconfig0.log ] && ls -nd /ssg/configwizard/ssgconfig0.log | awk '{print $3}'`
+    UID_LAYER7=""
+    GID_LAYER7=""
+else
+    UID_GATEWAY=`[ -d /opt/SecureSpan/Gateway ] && ls -nd /opt/SecureSpan/Gateway | awk '{print $3}'`
+    GID_GATEWAY=`[ -d /opt/SecureSpan/Gateway ] && ls -nd /opt/SecureSpan/Gateway | awk '{print $4}'`
+    UID_SSGCONF="";
+    UID_LAYER7=`[ -f /opt/SecureSpan/Gateway/config/config.log ] && ls -nd /opt/SecureSpan/Gateway/config/config.log | awk '{print $3}'`
+    GID_LAYER7=`[ -f /opt/SecureSpan/Gateway/config/config.log ] && ls -nd /opt/SecureSpan/Gateway/config/config.log | awk '{print $4}'`
+fi
 
 if [ "$UID_GATEWAY" = "$UID_SSGCONF" ] ; then
     UID_SSGCONF=""
@@ -39,20 +49,35 @@ else
 	fi
 fi
 
-if [ `grep \^ssgconfig\: /etc/passwd` ]; then
-	echo "user ssgconfig already exists"
+if [ `grep \^layer7\: /etc/group` ]; then
+	echo "group layer7 already exists"
 else
-	echo "adding ssgconfig user"
-    UID_PARAM=""
-    if [ $UID_SSGCONF ] ; then
-        UID_PARAM="-u $UID_SSGCONF"
+	echo "adding layer7 group"
+    GID_PARAM=""
+    if [ $GID_LAYER7 ] ; then
+        GID_PARAM="-g $GID_LAYER7"
     fi
-	# ssgconfig name is too long, swallow the output
-	useradd $UID_PARAM -G gateway -g gateway -d /export/home/ssgconfig -s /usr/bin/bash ssgconfig > /dev/null 2>&1
+	groupadd $GID_PARAM layer7
         if [ ${?} -eq 1 ]; then
-                echo "Error: User ssgconfig failed to add"
+                echo "Error: Group layer7 failed to add"
                 exit 1;
 	fi
 fi
+
+if [ `grep \^layer7\: /etc/passwd` ]; then
+	echo "user layer7 already exists"
+else
+	echo "adding layer7 user"
+    UID_PARAM=""
+    if [ $UID_LAYER7 ] ; then
+        UID_PARAM="-u $UID_LAYER7"
+    fi
+	useradd $UID_PARAM -G gateway -g gateway -d /export/home/layer7 -s /usr/bin/bash layer7
+        if [ ${?} -eq 1 ]; then
+                echo "Error: User layer7 failed to add"
+                exit 1;
+	fi
+fi
+
 echo "SSG Users and Group check: Success"
 exit 0

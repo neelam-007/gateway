@@ -1,4 +1,4 @@
-Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2008
+Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2009
 Name: ssg-appliance
 Version: 0.0
 Release: 0

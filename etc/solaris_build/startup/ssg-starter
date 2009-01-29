@@ -1,9 +1,0 @@
-#!/bin/sh
-# Startup scripts MUST run as sh, not bash
-# Use Logger to inform our logs we've started or stopped
-logger -t SSG-Startup -p info $0 $@
-# Debug info
-# set > /tmp/startup.out
-# since solaris startup , shutdown is so 70's
-# we tee the output so we see it on screen but have a log too
-/bin/bash /ssg/bin/ssg $@ | tee /ssg/logs/last_startup 2>&1

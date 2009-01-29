@@ -2030,7 +2030,6 @@
         <copy todir="${build.dir}/migration">
             <fileset dir="${src.root}/etc">
                 <include name="ssgmigration.sh"/>
-                <include name="ssgmigration.cmd"/>
                 <include name="migrationlogging.properties"/>
             </fileset>
         </copy>
@@ -2070,7 +2069,6 @@
 
         <copy todir="${build.dir}/configwizard">
             <fileset dir="${src.root}/etc">
-                <include name="ssgconfig.cmd"/>
                 <include name="ssgconfig.sh"/>
                 <include name="configlogging.properties"/>
             </fileset>
@@ -2768,32 +2766,28 @@
         <property name="tarball" value="${build.dir}/ssg-b${install.build.number}.tar.gz"/>
         <echo level="info">Creating Software Tarball (${tarball})...</echo>
         <tar destfile="${tarball}" compression="gzip" longfile="gnu">
-            <tarfileset dir="${install.src.ssg}" username="gateway" group="gateway" mode="644" prefix="${install.target.ssg}">
+            <tarfileset dir="${install.src.ssg}" username="layer7" group="layer7" filemode="444" dirmode="755" prefix="${install.target.ssg}">
                 <include name="**/*"/>
-                <exclude name="**/bin/*"/>
+                <exclude name="**/*.sh"/>
+                <exclude name="node/default/etc/conf/*"/>
+                <exclude name="node/default/var"/>
+                <exclude name="node/default/var/**"/>
+                <exclude name="**/*logging.properties"/>
             </tarfileset>
-            <tarfileset dir="${install.src.ssg}" username="gateway" group="gateway" mode="755" prefix="${install.target.ssg}">
-                <include name="**/bin/*"/>
-                <exclude name="**/bin/*.bat"/>
-                <exclude name="**/bin/*.cnf"/>
-                <exclude name="**/bin/*.conf"/>
-                <exclude name="**/bin/*.exe"/>
-                <exclude name="**/bin/*.gz"/>
-                <exclude name="**/bin/*.ini"/>
-                <exclude name="**/bin/*.jar"/>
-                <exclude name="**/bin/*.txt"/>
-                <exclude name="**/bin/*.xml"/>
+            <tarfileset dir="${install.src.ssg}" username="layer7" group="layer7" filemode="555" dirmode="755"  prefix="${install.target.ssg}">
+                <include name="**/*.sh"/>
+                <exclude name="runtime/etc/profile.d/xlocaldefs.sh"/>
             </tarfileset>
-            <tarfileset dir="${install.src.ssg}" username="gateway" group="gateway" mode="644" prefix="${install.target.ssg}">
-                <include name="**/bin/*.bat"/>
-                <include name="**/bin/*.cnf"/>
-                <include name="**/bin/*.conf"/>
-                <include name="**/bin/*.exe"/>
-                <include name="**/bin/*.gz"/>
-                <include name="**/bin/*.ini"/>
-                <include name="**/bin/*.jar"/>
-                <include name="**/bin/*.txt"/>
-                <include name="**/bin/*.xml"/>
+            <tarfileset dir="${install.src.ssg}" username="layer7" group="layer7" filemode="755" dirmode="755"  prefix="${install.target.ssg}">
+                <include name="runtime/etc/profile.d/xlocaldefs.sh"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.ssg}" username="layer7" group="layer7" filemode="644" dirmode="755"  prefix="${install.target.ssg}">
+                <include name="node/default/etc/conf/*"/>
+                <include name="**/*logging.properties"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.ssg}" username="gateway" group="gateway" filemode="444" dirmode="755" prefix="${install.target.ssg}">
+                <include name="node/default/var"/>
+                <include name="node/default/var/**"/>
             </tarfileset>
         </tar>
 
@@ -2811,6 +2805,7 @@
     <!-- Create the TAR used when building the Solaris PKG -->
     <target name="package.solaris.tar" depends="init">
         <echo level="info">Creating Solaris Gateway Build Tar ...</echo>
+        <echo file="${build.etc}/build.version" message="${build.version}"/>
         <tar destfile="${build.dir}/solaris_build.tar.gz" compression="gzip" longfile="gnu">
             <tarfileset dir="${src.root}/etc" username="root" group="root" mode="755">
                 <include name="solaris_build/**/*.sh"/>
@@ -2820,6 +2815,9 @@
                 <include name="solaris_build/**/*"/>
                 <exclude name="**/*.sh"/>
                 <exclude name="**/.svn"/>
+            </tarfileset>
+            <tarfileset dir="${build.etc}" fullpath="solaris_build/build.version" username="root" group="root" mode="644">
+                <include name="build.version"/>
             </tarfileset>
         </tar>
     </target>

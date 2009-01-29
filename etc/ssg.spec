@@ -1,4 +1,4 @@
-Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2008
+Summary: SecureSpan Gateway, Copyright Layer 7 Technologies 2003-2009
 Name: ssg
 Version: 0.0
 Release: 0
@@ -42,7 +42,6 @@ rm -fr %{buildroot}
 %dir /opt/SecureSpan/Gateway/node/default
 %dir /opt/SecureSpan/Gateway/runtime
 %dir /opt/SecureSpan/Gateway/runtime/etc
-/opt/SecureSpan/Gateway/runtime/etc/profile
 /opt/SecureSpan/Gateway/controller/etc/conf
 %dir /opt/SecureSpan/Gateway/node/default/etc
 %config(noreplace) /opt/SecureSpan/Gateway/node/default/etc/conf
@@ -55,6 +54,7 @@ rm -fr %{buildroot}
 %dir /opt/SecureSpan/Gateway/controller/etc/conf
 %attr(0555,layer7,layer7) /opt/SecureSpan/Gateway/controller/bin/*
 /opt/SecureSpan/Gateway/controller/lib
+/opt/SecureSpan/Gateway/runtime/etc/profile
 /opt/SecureSpan/Gateway/runtime/modules
 
 # Gateway process controller writeable files

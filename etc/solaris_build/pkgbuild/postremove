@@ -1,7 +1,2 @@
 #!/bin/sh
 
-# remove all teh startup links
-rm -f /etc/rc3.d/S71SSG_tcptune
-rm -f /etc/rc3.d/S99SSG_ssg
-rm -f /etc/rc0.d/K03SSG_sysconfig
-rm -f /etc/rc0.d/K04SSG_ssg

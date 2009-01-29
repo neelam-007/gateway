@@ -1,13 +1,10 @@
 Instructions to build & install package:
 1. Linux side
 	a. prepare a standard linux tarball, output file is ssg-bNNNN.tar.gz (please note that it should be a tarball from an obfuscated build, and "NNNN" is the build number)
-        b. prepare a tarball of the entire solaris_build dir:
-   		cd UneasyRooster/etc/
-   		tar -czvf solaris_build.tar.gz solaris_build
+    b. prepare a tarball for solaris ./build.sh tar (build/solaris_build.tar.gz)
 	c. copy both tarballs to the solaris build system (if you can't scp at a build machine login session then scp at a solaris package machine login session)
 		cd UneasyRooster/build/
 		scp ssg-bNNNN.tar.gz <user>@<solaris_build_machine>:
-		cd UneasyRooster/etc/
 		scp solaris_build.tar.gz <user>@<solaris_build_machine>:
 
 (eg. where <user> is "build" and <solaris_build_machine> is "buildsolaris" for Layer7 in-house build platform)
@@ -35,7 +32,7 @@ drwxr-xr-x   6 jay      other        512 May 31 16:25 solaris_build
 
 * run the build script, supplying build number: 
 	cd solaris_build
-	./build.sh 4.0m1 
+	./build.sh <OPTIONAL_PACKAGE_VERSION> 
 
 3. Build script 
 	1. makes the overlay tarball
@@ -55,6 +52,3 @@ You can install the package using 'pkgadd -d L7TECHssg.pkg', (the .pkg extension
 
 
 Instruction to remove installed L7TECHssg package: pkgrm L7TECHssg
-
-Bugs:
--> depends on Java 1.5, not 1.6. This may or may not be a problem
