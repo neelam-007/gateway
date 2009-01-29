@@ -8,6 +8,7 @@ import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailListenerState;
+import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationListener;
@@ -211,5 +212,34 @@ public class EmailListenerManagerImpl
                 return null;
             }
         } );
+    }
+
+    @Override
+    public void update(EmailListener entity) throws UpdateException {
+        //need to determine we need to reset the email listener state because the same email listerner ID
+        //was changed to poll a different email server, account, or folder depending on POP/IMAP
+        try {
+            EmailListener oldEmailListener = findByPrimaryKey(entity.getOid());
+            if (oldEmailListener == null) throw new UpdateException("Cannot find updating email listener from database.");
+
+            //decide if we need to update the email listener state
+            boolean isNewListener = false;
+            if (!entity.getHost().equals(oldEmailListener.getHost())) isNewListener = true;
+            if (!entity.getUsername().equals(oldEmailListener.getUsername())) isNewListener = true;
+            if (!entity.getServerType().equals(oldEmailListener.getServerType())
+                    || (entity.getServerType().equals(EmailServerType.IMAP) && !entity.getFolder().equals(oldEmailListener.getFolder())))
+                isNewListener = true;
+
+            logger.log(Level.FINE, "Updates to the email listener require to reset state : " + isNewListener);
+            if (isNewListener) {
+                EmailListenerState state = oldEmailListener.getEmailListenerState();    //state is a transient object 
+                state.setLastMessageId(0L);
+                entity.setEmailListenerState(state);
+                logger.log(Level.FINE, "EmailListener " + entity.getOid() + " state got updated");
+            }
+            super.update(entity);
+        } catch (FindException fe) {
+            throw new UpdateException("Failed to find the updating email listener.", fe);
+        }
     }
 }
