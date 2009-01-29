@@ -5,6 +5,7 @@ package com.l7tech.server.processcontroller.monitoring;
 
 import com.l7tech.server.management.config.monitoring.NotificationRule;
 import com.l7tech.server.management.config.monitoring.Trigger;
+import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 
 import java.util.NavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;

@@ -2,6 +2,8 @@ package com.l7tech.objectmodel;
 
 import javax.persistence.Column;
 import java.lang.reflect.AccessibleObject;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Utility methods for working with entities.
@@ -53,5 +55,13 @@ public class EntityUtil {
         Column column = field.getAnnotation(Column.class);
         if (column == null) return null;
         return column.length();
+    }
+
+    public static <ET extends PersistentEntity> Map<Long, ET> buildEntityMap(Iterable<ET> entities) {
+        final Map<Long, ET> map = new HashMap<Long, ET>();
+        for (ET entity : entities) {
+            map.put(entity.getOid(), entity);
+        }
+        return map;
     }
 }

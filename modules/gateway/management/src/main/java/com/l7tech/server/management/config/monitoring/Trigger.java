@@ -31,6 +31,11 @@ public abstract class Trigger extends NamedEntityImp {
     /** The notification rules that should be invoked when this trigger fires */
     private List<NotificationRule> notificationRules = new ArrayList<NotificationRule>();
 
+    protected Trigger(ComponentType componentType, String componentId) {
+        this.componentType = componentType;
+        this.componentId = componentId;
+    }
+
     @ManyToOne(cascade=CascadeType.ALL)
     public MonitoringConfiguration getMonitoringScheme() {
         return monitoringConfiguration;
@@ -90,6 +95,7 @@ public abstract class Trigger extends NamedEntityImp {
      * Determines whether another trigger is a suitable replacement for this one.  If any of the following properties 
      * of the other trigger are different from those of this, they are <em>incompatible</em>:
      * <ul>
+     * <li>the {@link #_oid OID} </li>
      * <li>the parent {@link #monitoringConfiguration monitoring scheme}</li>
      * <li>the {@link #componentType type} or {@link #componentId ID} of the subject component</li>
      * </ul>

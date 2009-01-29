@@ -8,7 +8,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.management.api.monitoring.NodeStatus;
-import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 
 import javax.jws.WebParam;
 import javax.jws.WebResult;
@@ -38,23 +37,6 @@ public interface NodeApi {
      */
     @WebResult(name="status")
     NodeStatus getNodeStatus();
-
-    /**
-     * Pushes a new monitoring scheme for the SN to write to its database.
-     *
-     * @param configuration a monitoring scheme to save in the SN's database; must not be null.
-     * @throws SaveException if the monitoring scheme cannot be updated
-     */
-    void pushMonitoringConfiguration(@WebParam(name="configuration") MonitoringConfiguration configuration) throws UpdateException;
-
-    /**
-     * Gets the current MonitoringScheme from the SN's database.
-     *
-     * @return the MonitoringScheme from the SN's database; may be the default scheme but never null.
-     * @throws FindException if the current monitoring scheme cannot be found
-     */
-    @WebResult(name="scheme")
-    MonitoringConfiguration getMonitoringScheme() throws FindException;
 
     /**
      * Asks the SN to register subscriptions for events with the provided IDs

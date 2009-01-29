@@ -62,4 +62,11 @@ public interface ConfigService {
      * @return the monitoring configuration that is currently in effect, or null if there isn't one.
      */
     MonitoringConfiguration getCurrentMonitoringConfiguration();
+
+    /**
+     * Is this PC responsible for monitoring cluster-wide properties?
+     * 
+     * @return true if this PC node is responsible for monitoring cluster-wide properties; false if not.
+     */
+    boolean isResponsibleForClusterMonitoring();
 }

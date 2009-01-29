@@ -396,4 +396,9 @@ public class ConfigServiceImpl implements ConfigService {
     public MonitoringConfiguration getCurrentMonitoringConfiguration() {
         return null;
     }
+
+    @Override
+    public boolean isResponsibleForClusterMonitoring() {
+        return false;
+    }
 }

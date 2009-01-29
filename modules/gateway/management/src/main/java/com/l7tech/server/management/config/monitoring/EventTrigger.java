@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2008 Layer 7 Technologies Inc.
+ * Copyright (C) 2008-2009 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.management.config.monitoring;
 
@@ -22,6 +22,12 @@ public class EventTrigger extends Trigger {
      * indicate that there's no minimum time period in which sufficient events must be observed to fire the trigger.
      */
     private Integer period;
+
+    protected EventTrigger(ComponentType componentType, String componentId, int count, Integer period) {
+        super(componentType, componentId);
+        this.count = count;
+        this.period = period;
+    }
 
     @Basic(optional=false)
     public String getEventId() {

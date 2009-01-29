@@ -3,12 +3,16 @@
  */
 package com.l7tech.server.management.api.monitoring;
 
-import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 
 import java.io.IOException;
+import java.util.List;
 
-/** @author alex */
+/**
+ * Published by the PC for use (primarily) by the EM
+ *
+ * @author alex
+ */
 public interface MonitoringApi {
     /**
      * Gets the status of the named Node; never null.
@@ -20,19 +24,20 @@ public interface MonitoringApi {
     NodeStatus getNodeStatus(String nodeName) throws IOException;
 
     /**
-     * Gets the status of the Host on which the receiving PC is running; never null.
-     *
-     * @return the status of the current Host
-     * @throws IOException if the Host's status cannot be retrieved
-     */
-    HostStatus getHostStatus() throws IOException;
-
-    /**
      * Uploads a new or updated Monitoring Configuration to the PC.
      * 
      * @param config the new or updated Monitoring Scheme
-     * @throws SaveException if the PC is unable or unwilling to save the Monitoring Scheme
-     * @throws IOException if Monitoring Scheme could not be transferred to the specified Node
+     * @param responsibleForClusterProperties <code>true</code> if this PC should take responsibility for monitoring
+     *                                        cluster-wide properties; <code>false</code> if it's Someone Else's 
+     *                                        Problem.
+     * @throws IOException if Monitoring Scheme could not be saved to disk
      */
-    void pushMonitoringConfiguration(MonitoringConfiguration config) throws IOException, SaveException;
+    void pushMonitoringConfiguration(MonitoringConfiguration config, boolean responsibleForClusterProperties) throws IOException;
+
+    /**
+     * Gets the status of all the properties being monitored by this PC under the direction of the
+     * {@link MonitoringConfiguration} with the specified OID at the present time.
+     * @return the list of PropertyStatus objects; TODO in any useful order?
+     */
+    List<MonitoredPropertyStatus> getCurrentPropertyStatuses(long monitoringConfigurationOid);
 }

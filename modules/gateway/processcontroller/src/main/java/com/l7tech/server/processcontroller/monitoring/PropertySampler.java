@@ -3,7 +3,7 @@
  */
 package com.l7tech.server.processcontroller.monitoring;
 
-import com.l7tech.server.management.config.monitoring.PropertyTrigger;
+import com.l7tech.server.management.config.monitoring.ComponentType;
 
 import java.io.Closeable;
 import java.io.Serializable;
@@ -19,11 +19,14 @@ import java.io.Serializable;
  * @param <V> the type of the sampled property values
  */
 public abstract class PropertySampler<V extends Serializable> implements Closeable {
-    /** The trigger that holds this sampler's configuration */
-    protected final PropertyTrigger<V> trigger;
+    protected final ComponentType componentType;
+    protected final String componentId;
+    protected final String propertyName;
 
-    protected PropertySampler(PropertyTrigger<V> trigger) {
-        this.trigger = trigger;
+    protected PropertySampler(ComponentType componentType, String componentId, String propertyName) {
+        this.componentType = componentType;
+        this.componentId = componentId;
+        this.propertyName = propertyName;
     }
 
     /**
