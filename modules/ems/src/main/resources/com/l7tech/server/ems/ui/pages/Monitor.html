@@ -176,6 +176,9 @@
         var notifDlg_eMail_portWarningIcon;
         var notifDlg_eMail_requiresAuthenticationCheckBox;
         var notifDlg_eMail_userNameTextBox;
+        var notifDlg_eMail_passwordChoiceConfig;
+        var notifDlg_eMail_useOldPasswordRadioButton;
+        var notifDlg_eMail_useNewPasswordRadioButton;
         var notifDlg_eMail_passwordTextBox;
         var notifDlg_eMail_toTextBox;
         var notifDlg_eMail_ccTextBox;
@@ -449,10 +452,14 @@
                 }
                 if (notifDlg_eMail_requiresAuthenticationCheckBox.checked) {
                     notifDlg_eMail_userNameTextBox.disabled = false;
-                    notifDlg_eMail_passwordTextBox.disabled = false;
+                    notifDlg_eMail_useOldPasswordRadioButton.disabled = false;
+                    notifDlg_eMail_useNewPasswordRadioButton.disabled = false;
+                    notifDlg_eMail_passwordTextBox.disabled = !notifDlg_eMail_useNewPasswordRadioButton.checked;
                     if (l7.Util.isBlankOnly(notifDlg_eMail_userNameTextBox.value)) valid = false;
                 } else {
                     notifDlg_eMail_userNameTextBox.disabled = true;
+                    notifDlg_eMail_useOldPasswordRadioButton.disabled = true;
+                    notifDlg_eMail_useNewPasswordRadioButton.disabled = true;
                     notifDlg_eMail_passwordTextBox.disabled = true;
                 }
                 if (l7.Util.isBlankOnly(notifDlg_eMail_toTextBox.value) &&
@@ -620,7 +627,9 @@
                 settings.params.requiresAuthentication = notifDlg_eMail_requiresAuthenticationCheckBox.checked;
                 if (settings.params.requiresAuthentication) {
                     settings.params.userName = notifDlg_eMail_userNameTextBox.value;
-                    settings.params.password = notifDlg_eMail_passwordTextBox.value;
+                    if (notifDlg_eMail_useNewPasswordRadioButton.checked) {
+                        settings.params.password = notifDlg_eMail_passwordTextBox.value;
+                    }
                 }
                 settings.params.to = notifDlg_eMail_toTextBox.value;
                 settings.params.cc = notifDlg_eMail_ccTextBox.value;
@@ -820,6 +829,9 @@
 
             if (isAdd) {
                 notifDlg_id.value = '';
+                notifDlg_eMail_passwordChoiceConfig.style.display = 'none';
+                notifDlg_eMail_useNewPasswordRadioButton.checked = true;
+
                 // Populate some fields with default values.
                 onChangeNotifDlg_eMail_protocol();  // For side effect of populating the e-mail server default port number.
                 notifDlg_eMail_subjectTextBox.value = 'ESM monitoring notification';
@@ -844,7 +856,8 @@
                     notifDlg_eMail_portTextBox.value = params.port;
                     notifDlg_eMail_requiresAuthenticationCheckBox.checked = params.requiresAuthentication;
                     notifDlg_eMail_userNameTextBox.value = params.userName;
-                    notifDlg_eMail_passwordTextBox.value = params.password;
+                    notifDlg_eMail_passwordChoiceConfig.style.display = '';
+                    notifDlg_eMail_useOldPasswordRadioButton.checked = true;
                     notifDlg_eMail_toTextBox.value = params.to;
                     notifDlg_eMail_ccTextBox.value = params.cc;
                     notifDlg_eMail_bccTextBox.value = params.bcc;
@@ -1401,6 +1414,9 @@
             notifDlg_eMail_portWarningIcon = document.getElementById('notifDlg_eMail_portWarningIcon');
             notifDlg_eMail_requiresAuthenticationCheckBox = document.getElementById('notifDlg_eMail_requiresAuthenticationCheckBox');
             notifDlg_eMail_userNameTextBox = document.getElementById('notifDlg_eMail_userNameTextBox');
+            notifDlg_eMail_passwordChoiceConfig = document.getElementById('notifDlg_eMail_passwordChoiceConfig');
+            notifDlg_eMail_useOldPasswordRadioButton = document.getElementById('notifDlg_eMail_useOldPasswordRadioButton');
+            notifDlg_eMail_useNewPasswordRadioButton = document.getElementById('notifDlg_eMail_useNewPasswordRadioButton');
             notifDlg_eMail_passwordTextBox = document.getElementById('notifDlg_eMail_passwordTextBox');
             notifDlg_eMail_toTextBox = document.getElementById('notifDlg_eMail_toTextBox');
             notifDlg_eMail_ccTextBox = document.getElementById('notifDlg_eMail_ccTextBox');
@@ -1831,27 +1847,33 @@
                 </tr>
                 <tr>
                     <th>User Name:</th>
-                    <td><input id="notifDlg_eMail_userNameTextBox" type="text" size="64" maxlength="32" onkeyup="validateNotificationRuleDialog();"/></td>
+                    <td><input id="notifDlg_eMail_userNameTextBox" type="text" size="48" maxlength="32" onkeyup="validateNotificationRuleDialog();"/></td>
                 </tr>
                 <tr>
                     <th>Password:</th>
-                    <td><input id="notifDlg_eMail_passwordTextBox" type="password" size="64" maxlength="128"/></td>
+                    <td>
+                        <span id="notifDlg_eMail_passwordChoiceConfig">
+                            <input id="notifDlg_eMail_useOldPasswordRadioButton" name="notifDlg_eMail_passwordChoice" type="radio" checked onclick="validateNotificationRuleDialog();"/> <label for="notifDlg_eMail_useOldPasswordRadioButton">Keep existing</label>
+                            <input id="notifDlg_eMail_useNewPasswordRadioButton" name="notifDlg_eMail_passwordChoice" type="radio" class="indent" onclick="validateNotificationRuleDialog();"/> <label for="notifDlg_eMail_useNewPasswordRadioButton">Re-enter :</label>
+                        </span>
+                        <input id="notifDlg_eMail_passwordTextBox" type="password" size="48" maxlength="128"/>
+                    </td>
                 </tr>
                 <tr>
                     <th>To:</th>
-                    <td><input id="notifDlg_eMail_toTextBox" type="text" maxlength="128" style="width: 98%" onkeyup="validateNotificationRuleDialog();"/></td>
+                    <td><input id="notifDlg_eMail_toTextBox" type="text" maxlength="128" style="width: 98%;" onkeyup="validateNotificationRuleDialog();"/></td>
                 </tr>
                 <tr>
                     <th>CC:</th>
-                    <td><input id="notifDlg_eMail_ccTextBox" type="text" maxlength="128" style="width: 98%" onkeyup="validateNotificationRuleDialog();"/></td>
+                    <td><input id="notifDlg_eMail_ccTextBox" type="text" maxlength="128" style="width: 98%;" onkeyup="validateNotificationRuleDialog();"/></td>
                 </tr>
                 <tr>
                     <th>BCC:</th>
-                    <td><input id="notifDlg_eMail_bccTextBox" type="text" maxlength="128" style="width: 98%" onkeyup="validateNotificationRuleDialog();"/></td>
+                    <td><input id="notifDlg_eMail_bccTextBox" type="text" maxlength="128" style="width: 98%;" onkeyup="validateNotificationRuleDialog();"/></td>
                 </tr>
                 <tr>
                     <th>Subject:</th>
-                    <td><input id="notifDlg_eMail_subjectTextBox" type="text" maxlength="128" style="width: 98%" onkeyup="validateNotificationRuleDialog();"/></td>
+                    <td><input id="notifDlg_eMail_subjectTextBox" type="text" maxlength="128" style="width: 98%;" onkeyup="validateNotificationRuleDialog();"/></td>
                 </tr>
                 <tr>
                     <th class="top">Body Text:</th>
@@ -1890,7 +1912,7 @@
                 </tr>
                 <tr>
                     <th>Community:</th>
-                    <td><input id="notifDlg_snmpTrap_communityTextBox" type="text" maxlength="128" style="width: 98%"/></td>
+                    <td><input id="notifDlg_snmpTrap_communityTextBox" type="text" maxlength="128" style="width: 98%;"/></td>
                 </tr>
                 <tr>
                     <th class="top">Text to Send:</th>
