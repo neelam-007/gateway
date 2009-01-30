@@ -3,13 +3,17 @@
  */
 package com.l7tech.server.processcontroller.monitoring;
 
-import com.l7tech.server.management.config.monitoring.ComponentType;
-import com.l7tech.server.management.config.monitoring.PropertyTrigger;
-
 /**
  * Thrown to indicate that a property sample could not be obtained.
  */
 public class PropertySamplingException extends Exception {
+    public PropertySamplingException() {
+    }
+
+    public PropertySamplingException(String message) {
+        super(message);
+    }
+
     public PropertySamplingException(String message, Throwable cause) {
         super(message, cause);
     }
