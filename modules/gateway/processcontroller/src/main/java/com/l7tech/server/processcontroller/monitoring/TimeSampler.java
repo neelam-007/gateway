@@ -5,7 +5,7 @@ import java.io.IOException;
 /**
  * Sampler of the PC node's current system time, so the ESM can display relative clock skew.
  */
-public class TimeSampler extends NodePropertySampler {
+public class TimeSampler extends HostPropertySampler {
     protected TimeSampler(String componentId) {
         super(componentId, "time");
     }

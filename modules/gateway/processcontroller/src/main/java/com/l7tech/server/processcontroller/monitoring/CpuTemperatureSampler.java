@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 /**
  *
  */
-public class CpuTemperatureSampler extends NodePropertySampler<Long> {
+public class CpuTemperatureSampler extends HostPropertySampler<Long> {
     private static final String PROC_TEMP = "cat /proc/acpi/thermal_zone/THRM/temperature";
     private static final Pattern TEMP_MATCHER = Pattern.compile("^temperature:\\s*(\\d+)\\s*C\\s*$");
 

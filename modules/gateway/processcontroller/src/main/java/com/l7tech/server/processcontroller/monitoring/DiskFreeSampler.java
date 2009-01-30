@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 /**
  *
  */
-public class DiskFreeSampler extends NodePropertySampler<Long> {
+public class DiskFreeSampler extends HostPropertySampler<Long> {
     private static final Pattern DF_MATCHER = Pattern.compile("(?m)\\d+\\s+\\d+\\s+(\\d+)\\s*%\\s+/\\s*$");
     private static final String DF_PATH = "/bin/df";
 

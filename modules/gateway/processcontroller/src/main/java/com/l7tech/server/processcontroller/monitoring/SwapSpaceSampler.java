@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 /**
  *
  */
-public class SwapSpaceSampler extends NodePropertySampler<Long> {
+public class SwapSpaceSampler extends HostPropertySampler<Long> {
     private static final Pattern SWAPFREE_MATCHER = Pattern.compile("^SwapFree:\\s*(\\d+)\\s*kB$", Pattern.MULTILINE);
 
     public SwapSpaceSampler(String componentId) {
