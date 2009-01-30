@@ -15,15 +15,11 @@ public class PropertySamplingException extends Exception {
     private final String componentId;
     private final String propertyName;
 
-    public PropertySamplingException(PropertyTrigger trigger, String message, Throwable cause) {
+    public PropertySamplingException(final ComponentType componentType, final String componentId, final String propertyName, String message, Throwable cause) {
         super(message, cause);
-        this.componentType = trigger.getComponentType();
-        this.componentId = trigger.getComponentId();
-        this.propertyName = trigger.getPropertyName();
-    }
-
-    public PropertySamplingException(PropertyTrigger trigger, Throwable cause) {
-        this(trigger, null, cause);
+        this.componentType = componentType;
+        this.componentId = componentId;
+        this.propertyName = propertyName;
     }
 
     /** The type of the component whose property was to be sampled */
