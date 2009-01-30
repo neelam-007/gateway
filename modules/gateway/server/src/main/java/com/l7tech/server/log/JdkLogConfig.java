@@ -157,7 +157,7 @@ public class JdkLogConfig {
             // fallback to default configuration
             try {
                 logFileConfigurations.add( new LogFileConfiguration(
-                        LogUtils.getLogFilePattern(serverConfig, SyspropUtil.getString(PARAM_LOG_DEFAULT_NAME, DEFAULT_NAME), null),
+                        LogUtils.getLogFilePattern(serverConfig, SyspropUtil.getString(PARAM_LOG_DEFAULT_NAME, DEFAULT_NAME), null, true),
                         SyspropUtil.getInteger(PARAM_LOG_DEFAULT_LIMIT, DEFAULT_LIMIT),
                         SyspropUtil.getInteger(PARAM_LOG_DEFAULT_COUNT, DEFAULT_COUNT),
                         SyspropUtil.getBoolean(PARAM_LOG_DEFAULT_APPEND, DEFAULT_APPEND),

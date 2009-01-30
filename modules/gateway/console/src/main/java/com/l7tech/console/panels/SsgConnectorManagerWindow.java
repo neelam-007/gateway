@@ -243,7 +243,7 @@ public class SsgConnectorManagerWindow extends JDialog {
         if (connector == null) return false;
 
         ConnectorTableModel model = (ConnectorTableModel)connectorTable.getModel();
-        boolean conflict = model.conflictChecking(connector);
+        boolean conflict = model.conflictChecking(connector, true);
         if (! conflict)  return false;
 
         String title = "Port Conflict";
@@ -631,14 +631,20 @@ public class SsgConnectorManagerWindow extends JDialog {
         /**
          * Check if there exists any port same as the port for the given connector.
          * @param connector: the given connector to check
+         * @param onlyEnabled: true to only check enabled connectors
          * @return true if there exist a conflict port, false otherwise.
          */
-        public boolean conflictChecking(SsgConnector connector) {
-            for (ConnectorTableRow row: rows) {
-                int port = row.getConnector().getPort();
-                long oid = row.getConnector().getOid();
-                if (oid != connector.getOid() && port == connector.getPort()) {
-                    return true;
+        public boolean conflictChecking(SsgConnector connector, boolean onlyEnabled) {
+            if ( !onlyEnabled || connector.isEnabled() ) {
+                for (ConnectorTableRow row: rows) {
+                    if ( onlyEnabled && !row.getConnector().isEnabled() )
+                        continue;
+
+                    int port = row.getConnector().getPort();
+                    long oid = row.getConnector().getOid();
+                    if (oid != connector.getOid() && port == connector.getPort()) {
+                        return true;
+                    }
                 }
             }
             return false;

@@ -74,11 +74,10 @@ echo "Making Prototype (pkg manifest file)"
 
 # home dirs
 du -a ./export/home/gateway | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/gateway gateway/" >> ../pkgbuild/Prototype
-du -a ./export/home/layer7 | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/layer7 gateway/" >> ../pkgbuild/Prototype
-### Main /ssg
-du -a ./ssg | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/gateway gateway/" >> ../pkgbuild/Prototype
-### Startups Note the permissions
-#du -a ./etc | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/root sys/" >> ../pkgbuild/Prototype
+du -a ./export/home/layer7  | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/layer7 layer7/"   >> ../pkgbuild/Prototype
+# main gateway software
+du -a ./opt/SecureSpan/Gateway | grep -v "node/default/var" | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/layer7 layer7/"   >> ../pkgbuild/Prototype
+du -a ./opt/SecureSpan/Gateway/node/default/var             | awk '{print $2}' | pkgproto | sed -e "s/$CURRENT_OWNER/gateway gateway/" >> ../pkgbuild/Prototype
 
 echo Done
 

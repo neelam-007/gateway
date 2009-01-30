@@ -69,6 +69,10 @@ for OPT in "${SSGOPTS[@]}"; do
     fi
 done
 
+# this puts the necessary "id" that supports -u first in the path on Solaris, and is a noop on other OSes
+OLDPATH=$PATH
+PATH="/usr/xpg4/bin:$PATH"
+
 # Sanity checks
 if [ -z "${SSG_JAVA_HOME}" ] ; then
     echo "Java is not configured for gateway."
@@ -78,7 +82,7 @@ if [ ! -x "${SSG_JAVA_HOME}/bin/java" ] ; then
     echo "Java not found: ${SSG_JAVA_HOME}"
     exit 13
 fi
-if [ "$(whoami)" != "${SSGUSER}" ] ; then
+if [ "$(id -u)" != "$(id -u ${SSGUSER})" ] ; then
     echo "Please run as the user: ${SSGUSER}"
     exit 13
 fi

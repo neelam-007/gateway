@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.ExceptionUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.hibernate.HibernateException;
@@ -19,6 +20,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.InetAddress;
 
 /**
  * 
@@ -119,9 +123,44 @@ public class ClusterIDManager extends HibernateDaoSupport {
             }
         }
 
+        // get mac from java
+        if (output.isEmpty()) {
+            output.addAll(getJavaMac());
+            if (output.isEmpty()) {
+                logger.fine("Cannot get mac address from Java.");
+            }
+        }
+
         logger.config("Using mac addresses: " + output);
 
         return output;
+    }
+
+    /**
+     * Get the "first" ip address for the given mac
+     *
+     * @param mac The mac "AB:CD:EF...", null for any
+     * @return The IP address or null
+     */
+    static String getIpForMac( final String mac ) {
+        String ip = null;
+        try {
+            for ( NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces()) ) {
+                byte[] macAddr = networkInterface.getHardwareAddress();
+                if ( macAddr != null ) {
+                    if ( mac==null || mac.equals(formatMac(macAddr)) ) {
+                        Collection<InetAddress> addresses = Collections.list(networkInterface.getInetAddresses());
+                        if ( !addresses.isEmpty() ) {
+                            ip = addresses.iterator().next().getHostAddress();
+                        }
+                        if (mac!=null) break;
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            logger.log( Level.FINE, "Error getting network interfaces '" + e.getMessage() + "'.", ExceptionUtils.getDebugException(e));
+        }
+        return ip;
     }
 
     static String[] breakIntoLines(String in) {
@@ -168,6 +207,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
     private ClusterNodeInfo getNodeStatusFromDB(final String nodeIdentifer) {
         try {
             return (ClusterNodeInfo) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Query q = session.createQuery(HQL_FIND_BY_ID);
                     q.setString(0, nodeIdentifer);
@@ -206,9 +246,9 @@ public class ClusterIDManager extends HibernateDaoSupport {
                     up.destroy();
             }
         } catch (IOException e) {
-            logger.log(Level.FINE, "Error getting ifconfig - perhaps not running on linux.", e);
+            logger.log( Level.FINE, "Error getting ipconfig '" + e.getMessage() + "' (not linux?).", ExceptionUtils.getDebugException(e));
         } catch (InterruptedException e) {
-            logger.log(Level.FINE, "Error getting ifconfig - perhaps not running on linux", e);
+            logger.log( Level.FINE, "Error getting ipconfig '" + e.getMessage() + "' (not linux?).", ExceptionUtils.getDebugException(e));
         }
         // ifconfig output pattern
         //eth0    Link encap:Ethernet  HWaddr 00:0C:6E:69:8D:CA
@@ -263,9 +303,9 @@ public class ClusterIDManager extends HibernateDaoSupport {
                     up.destroy();
             }
         } catch (IOException e) {
-            logger.fine("error getting ipconfig: " + e.getMessage());
+            logger.log( Level.FINE, "Error getting ipconfig '" + e.getMessage() + "'.", ExceptionUtils.getDebugException(e));
         } catch (InterruptedException e) {
-            logger.fine("error getting ipconfig: " + e.getMessage());
+            logger.log( Level.FINE, "Error getting ipconfig '" + e.getMessage() + "'.", ExceptionUtils.getDebugException(e));
         }
         // ipconfig output
         // ... stuff
@@ -282,6 +322,35 @@ public class ClusterIDManager extends HibernateDaoSupport {
             }
         }
         return output;
+    }
+
+    private static Collection<String> getJavaMac() {
+        ArrayList<String> output = new ArrayList<String>();
+
+        try {
+            for ( NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces()) ) {
+                byte[] macAddr = networkInterface.getHardwareAddress();
+                if ( macAddr != null ) {
+                    output.add(formatMac(macAddr));
+                }
+            }
+        } catch (SocketException e) {
+            logger.log( Level.FINE, "Error getting network interfaces '" + e.getMessage() + "'.", ExceptionUtils.getDebugException(e));
+        }
+
+        return output;
+    }
+
+    private static String formatMac( final byte[] macAddr ) {
+        String hex = HexUtils.hexDump(macAddr).toUpperCase();
+        StringBuilder hexBuilder = new StringBuilder();
+        for ( int i=0; i < hex.length(); i++ ) {
+            if ( i>0 && i%2==0 ) {
+                hexBuilder.append(':');
+            }
+            hexBuilder.append(hex.charAt(i));
+        }
+        return hexBuilder.toString();
     }
 
     /**

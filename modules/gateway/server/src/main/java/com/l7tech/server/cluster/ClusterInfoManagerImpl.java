@@ -210,7 +210,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         if (clusterNodeInfo != null) {
 
             if ( !isInfoChecked() ) {
-                String newIpAddress = getIPAddress(); // Load of IP is used to track if info is checked
+                String newIpAddress = getIPAddress(null); // Load of IP is used to track if info is checked
                 if (!isValidIPAddress(clusterNodeInfo.getAddress())) {
                     int newClusterPort = getClusterPort();
                     clusterNodeInfo.setAddress(newIpAddress);
@@ -292,7 +292,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     @SuppressWarnings({"deprecation"})
     private ClusterNodeInfo selfPopulateClusterDB(String nodeid, String macid) {
         ClusterNodeInfo newClusterInfo = new ClusterNodeInfo();
-        newClusterInfo.setAddress(getIPAddress());
+        newClusterInfo.setAddress(getIPAddress(macid));
         newClusterInfo.setNodeIdentifier(nodeid);
         newClusterInfo.setMac(macid);
         newClusterInfo.setBootTime(rememberedBootTime);
@@ -360,6 +360,10 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
         }
     }
 
+    private String getIpAddress( final String mac ) {
+        return ClusterIDManager.getIpForMac( mac );    
+    }
+
     private String getIfConfigIpAddress() {
         Process up = null;
         InputStream got = null;
@@ -417,7 +421,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
      *
      * @return IP address string, or null if we were unable to find one by any method.
      */
-    private synchronized String getIPAddress() {
+    private synchronized String getIPAddress( final String mac ) {
         if (thisNodeIPAddress == null) {
             thisNodeIPAddress = getConfiguredIPAddress();
 
@@ -432,6 +436,11 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
                     logger.log(Level.FINEST, "problem getting address with InetAddress.getLocalHost().getHostAddress()", e);
                 }
             }
+
+            if (thisNodeIPAddress == null) {
+                thisNodeIPAddress = getIpAddress(mac);
+            }
+
         }
         return thisNodeIPAddress;
     }

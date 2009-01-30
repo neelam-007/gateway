@@ -34,8 +34,10 @@ public class DefaultHttpConnectors {
     public static Collection<SsgConnector> getDefaultConnectors() {
         List<SsgConnector> ret = new ArrayList<SsgConnector>();
 
+        boolean enableOtherConnectors = true;
         int initPort = SyspropUtil.getInteger( PROP_INIT_PORT, 0 );
         if ( initPort > 0 ) {
+            enableOtherConnectors = false;
             SsgConnector https = new SsgConnector();
             https.setName("Default HTTPS ("+initPort+")");
             https.setScheme(SsgConnector.SCHEME_HTTPS);
@@ -55,14 +57,6 @@ public class DefaultHttpConnectors {
 
             ret.add(https);
         } else {
-            SsgConnector http = new SsgConnector();
-            http.setName("Default HTTP (8080)");
-            http.setScheme(SsgConnector.SCHEME_HTTP);
-            http.setEndpoints(defaultEndpoints);
-            http.setPort(8080);
-            http.setEnabled(true);
-            ret.add(http);
-
             SsgConnector https = new SsgConnector();
             https.setName("Default HTTPS (8443)");
             https.setScheme(SsgConnector.SCHEME_HTTPS);
@@ -71,23 +65,32 @@ public class DefaultHttpConnectors {
             https.setKeyAlias("SSL");
             https.setSecure(true);
             https.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
-            https.setEnabled(true);
+            https.setEnabled(enableOtherConnectors);
             ret.add(https);
-
-            SsgConnector httpsNocc = new SsgConnector();
-            httpsNocc.setName("Default HTTPS (9443)");
-            httpsNocc.setScheme(SsgConnector.SCHEME_HTTPS);
-            httpsNocc.setEndpoints(defaultEndpoints);
-            httpsNocc.setPort(9443);
-            httpsNocc.setKeyAlias("SSL");
-            httpsNocc.setSecure(true);
-            httpsNocc.setClientAuth(SsgConnector.CLIENT_AUTH_NEVER);
-            httpsNocc.setEnabled(true);
-            ret.add(httpsNocc);
-
-            SsgConnector nodeHttps = buildNodeHttpsConnector(2124);
-            ret.add(nodeHttps);
         }
+
+        SsgConnector http = new SsgConnector();
+        http.setName("Default HTTP (8080)");
+        http.setScheme(SsgConnector.SCHEME_HTTP);
+        http.setEndpoints(defaultEndpoints);
+        http.setPort(8080);
+        http.setEnabled(true);
+        ret.add(http);
+
+        SsgConnector httpsNocc = new SsgConnector();
+        httpsNocc.setName("Default HTTPS (9443)");
+        httpsNocc.setScheme(SsgConnector.SCHEME_HTTPS);
+        httpsNocc.setEndpoints(defaultEndpoints);
+        httpsNocc.setPort(9443);
+        httpsNocc.setKeyAlias("SSL");
+        httpsNocc.setSecure(true);
+        httpsNocc.setClientAuth(SsgConnector.CLIENT_AUTH_NEVER);
+        httpsNocc.setEnabled(enableOtherConnectors);
+        ret.add(httpsNocc);
+
+        SsgConnector nodeHttps = buildNodeHttpsConnector(2124);
+        nodeHttps.setEnabled(enableOtherConnectors);
+        ret.add(nodeHttps);
 
         return ret;
     }
@@ -119,7 +122,6 @@ public class DefaultHttpConnectors {
         nodeHttps.setSecure(true);
         nodeHttps.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
         nodeHttps.putProperty(SsgConnector.PROP_CIPHERLIST, defaultStrongCiphers);
-        nodeHttps.setEnabled(true);
         return nodeHttps;
     }
 

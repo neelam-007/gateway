@@ -23,6 +23,7 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
 
     //- PUBLIC
 
+    @Override
     public void close() throws IOException {
         handler.setErrorManager( new ErrorUnManager() );
         handler.close();
@@ -37,6 +38,7 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
         this.handler = buildHandler( logFileConfiguration );
     }
 
+    @Override
     void processMessage( final MessageCategory category, final LogRecord record ) {
         handler.publish( record );
     }
@@ -74,7 +76,7 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
         String format = configuration.getProperty( SinkConfiguration.PROP_FILE_FORMAT );
 
         try {
-            String filepat = LogUtils.getLogFilePattern( serverConfig, name, filepath );
+            String filepat = LogUtils.getLogFilePattern( serverConfig, name, filepath, false );
             int limit = parseIntWithDefault( "log file limit for " + name, filelim, 1024 ) * 1024;
             int count = parseIntWithDefault( "log file count for " + name, filenum, 2 );
             boolean append = true;

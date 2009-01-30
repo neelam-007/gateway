@@ -23,7 +23,8 @@ class LogUtils {
      */
     static String getLogFilePattern( final ServerConfig serverConfig,
                                      final String filenamepart,
-                                     final String filepath ) throws IOException {
+                                     final String filepath,
+                                     final boolean useDefaultTemplate ) throws IOException {
         // get log directory, build from home if necessary
         String ssgLogs = filepath != null ?
                 filepath :
@@ -45,7 +46,7 @@ class LogUtils {
             ssgLogs += "/";
         }
 
-        String filePatternTemplate = serverConfig.getProperty( ServerConfig.PARAM_SSG_LOG_FILE_PATTERN_TEMPLATE );
+        String filePatternTemplate = useDefaultTemplate ? null : serverConfig.getProperty( ServerConfig.PARAM_SSG_LOG_FILE_PATTERN_TEMPLATE );
         if ( filePatternTemplate == null ) {
             filePatternTemplate = DEFAULT_FILE_PATTERN_TEMPLATE;
         }
