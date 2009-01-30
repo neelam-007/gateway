@@ -178,6 +178,10 @@ public class CertManagerWindow extends JDialog {
                         JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.delete.error"),
                                                       resources.getString("save.error.title"),
                                                       JOptionPane.ERROR_MESSAGE);
+                    } catch(ConstraintViolationException cve) {
+                        JOptionPane.showMessageDialog(CertManagerWindow.this, resources.getString("cert.constraint.error"),
+                                                      resources.getString("delete.error.title"),
+                                                      JOptionPane.ERROR_MESSAGE);
                     }
                 }
             }

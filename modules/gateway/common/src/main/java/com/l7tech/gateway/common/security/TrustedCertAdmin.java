@@ -78,9 +78,10 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @param oid the oid of the {@link TrustedCert} to be deleted
      * @throws FindException if the {@link TrustedCert} cannot be found
      * @throws DeleteException if the {@link TrustedCert} cannot be deleted
+     * @throws ConstraintViolationException if the {@link TrustedCert} cannot be deleted
      */
     @Secured(stereotype= DELETE_BY_ID)
-    public void deleteCert(long oid) throws FindException, DeleteException;
+    public void deleteCert(long oid) throws FindException, DeleteException, ConstraintViolationException;
 
     /**
      * Retrieves all {@link RevocationCheckPolicy}s from the database.
