@@ -21,6 +21,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.objectmodel.DuplicateObjectException;
 
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -472,8 +473,31 @@ public class ServicePropertiesDialog extends JDialog {
             }
         }
 
-        wasoked = true;
-        cancel();
+        //attempt to save the changes
+        try {
+            Collection<ServiceDocument> documents = getServiceDocuments();
+            if (documents == null)
+                Registry.getDefault().getServiceManager().savePublishedService(subject);
+            else
+                Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(subject, documents);
+
+            //we are good to close the dialog
+            wasoked = true;
+            cancel();
+
+        } catch (DuplicateObjectException e) {
+            JOptionPane.showMessageDialog(this,
+                    "Unable to save the service '" + subject.getName() + "'\n" +
+                            "because an existing service is already using the URI " + subject.getRoutingUri(),
+                    "Service already exists",
+                    JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            String msg = "Error while changing service properties";
+            logger.log(Level.INFO, msg, e);
+            String errorMessage = e.getMessage();
+            if (errorMessage != null) msg += ":\n" + errorMessage;
+            JOptionPane.showMessageDialog(this, msg);
+        }
     }
 
     private boolean uriConflictsWithServiceOIDResolver(String newURI) {

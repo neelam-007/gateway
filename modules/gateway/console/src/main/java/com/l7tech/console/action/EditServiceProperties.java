@@ -64,10 +64,13 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
             throw new RuntimeException(e);
         }
 
-        Functions.UnaryVoid<Boolean> callback = new Functions.UnaryVoid<Boolean>() {
-            public void call(Boolean changed) {
-                if (changed) {
-                    serviceNode.clearCachedEntities();
+        final Frame mw = TopComponents.getInstance().getTopParent();
+        final ServicePropertiesDialog dlg = new ServicePropertiesDialog(mw, svc, hasUpdatePermission);
+        dlg.pack();
+        Utilities.centerOnScreen(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            public void run() {
+                if (dlg.wasOKed()) {
                     serviceNode.reloadChildren();
 
                     final ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
@@ -114,43 +117,7 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
                         logger.log(Level.WARNING, "problem modifying policy editor title");
                     }
                 }
-            }
-        };
-        editServiceProperties(svc, callback, hasUpdatePermission);
-    }
-
-    private void editServiceProperties(final PublishedService svc, final Functions.UnaryVoid<Boolean> resultCallback, boolean hasUpdatePermission) {
-        final Frame mw = TopComponents.getInstance().getTopParent();
-        final ServicePropertiesDialog dlg = new ServicePropertiesDialog(mw, svc, hasUpdatePermission);
-        dlg.pack();
-        Utilities.centerOnScreen(dlg);
-        DialogDisplayer.display(dlg, new Runnable() {
-            public void run() {
-                if (dlg.wasOKed()) {
-                    try {
-                        Collection<ServiceDocument> documents = dlg.getServiceDocuments();
-                        if (documents == null)
-                            Registry.getDefault().getServiceManager().savePublishedService(svc);
-                        else
-                            Registry.getDefault().getServiceManager().savePublishedServiceWithDocuments(svc, documents);
-
-                    } catch (DuplicateObjectException e) {
-                        JOptionPane.showMessageDialog(mw,
-                              "Unable to save the service '" + svc.getName() + "'\n" +
-                              "because an existing service is already using the URI " + svc.getRoutingUri(),
-                              "Service already exists",
-                              JOptionPane.ERROR_MESSAGE);
-                    } catch (Exception e) {
-                        String msg = "Error while changing service properties";
-                        logger.log(Level.INFO, msg, e);
-                        String errorMessage = e.getMessage();
-                        if (errorMessage != null) msg += ":\n" + errorMessage;
-                        JOptionPane.showMessageDialog(mw, msg);
-                    }
-                    resultCallback.call(true);
-                    return;
-                }
-                resultCallback.call(false);
+                serviceNode.clearCachedEntities();
             }
         });
     }
