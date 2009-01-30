@@ -61,6 +61,9 @@ else
 fi
 export JAVA_HOME;
 
+export SSG_JAVA_HOME="${JAVA_HOME}"
+ensure_JDK 1.6
+
 #
 # Menu
 #
