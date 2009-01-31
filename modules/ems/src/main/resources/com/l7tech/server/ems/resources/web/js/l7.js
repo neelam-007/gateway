@@ -387,11 +387,20 @@ if (!l7.Util) {
          * @param {string} s         the text to escape
          * @return {string} a string with all special character properly esacped
          */
-        l7.Util.escapeAsText = function(s) {
-            s.replace('<', '&lt;');
-            s.replace('>', '&gt;');
-            s.replace('&', '&amp;');
-            return s;
+        l7.Util.escapeHtmlText = function(s) {
+            var result = '';
+            for (var i = 0; i < s.length; ++i) {
+                var charCode = s.charCodeAt(i);
+                if (   charCode == 38   // ampersand
+                    || charCode == 60   // less-than sign
+                    || charCode == 62   // greater-than sign
+                   ) {
+                    result += '&#' + charCode + ';';
+                } else {
+                    result += s.charAt(i);
+                }
+            }
+            return result;
         };
 
         /**
@@ -763,7 +772,8 @@ if (!l7.Connection) {
          * @param {object} response             either an XMLHttpRequest object
          *                                      or a YAHOO.util.Connect.asyncRequest response object
          * @param {boolean} displayErrorDialog  true to display error dialog upon HTTP error response
-         *                                      or JSON exception response or JSON parsing error
+         *                                      or JSON exception response or JSON parsing error; note
+         *                                      that session timeout dialog is always displayed
          * @param {string} errorDialogMessageHtml               null to use built-in default
          * @param {string} errorDialogBadJsonMessageHtml        null to use built-in default
          * @param {string} errorDialogSessionExpiredMessageHtml null to use built-in default
@@ -786,8 +796,8 @@ if (!l7.Connection) {
             if (!errorDialogSessionExpiredMessageHtml) errorDialogSessionExpiredMessageHtml = 'Session expired.';
             if (!errorDialogTitleText) errorDialogTitleText = 'Error';
             if (!errorDialogOkText) errorDialogOkText = 'OK';
-            var errorDialogTitleHtml = l7.Util.escapeAsText(errorDialogTitleText);
-            var errorDialogOkHtml = l7.Util.escapeAsText(errorDialogOkText);
+            var errorDialogTitleHtml = l7.Util.escapeHtmlText(errorDialogTitleText);
+            var errorDialogOkHtml = l7.Util.escapeHtmlText(errorDialogOkText);
 
             var result = {};
             result.success = true;
@@ -805,14 +815,16 @@ if (!l7.Connection) {
             }
 
             var setCookieHeader = getResponseHeader('Set-Cookie');
-            if (setCookieHeader != null && setCookieHeader.indexOf('SESSIONID=') != -1) {
-                // Session expired.
-                var dialog = new YAHOO.widget.SimpleDialog("sessionExpiredDialog", {
+            if (setCookieHeader != undefined &&
+                setCookieHeader != null &&
+                setCookieHeader.indexOf('SESSIONID=') != -1) {
+                // Session timed out.
+                var dialog = new YAHOO.widget.SimpleDialog("sessionTimeoutDialog", {
                     buttons     : [
                         {
                             text : errorDialogOkText,
                             handler : function() {
-                                window.location.reload();   // For side effect of getting redirected to login page.
+                                window.top.location.reload();   // For side effect of getting redirected to login page.
                             }
                         }
                     ],
@@ -1389,7 +1401,7 @@ if (!l7.Dialog) {
             var tippyId = divId + '_tippy';
             var stackTraceTrIdPrefix = 'l7_Dialog_stackTrace_';
             var body = beginBody
-                     + '<div style="margin-top: 10px;">' + l7.Util.escapeAsText(o.localizedMessage == null ? o.message : o.localizedMessage) + '</div>'
+                     + '<div style="margin-top: 10px;">' + l7.Util.escapeHtmlText(o.localizedMessage == null ? o.message : o.localizedMessage) + '</div>'
                      + '<div class="tippy" style="margin: 10px 0 4px 0; width: 600px;">'
                      +     '<img id="' + tippyId + '" class="tippy" src="../images/tippyCollapsed.png" alt="" onclick="l7.Tippy.toggleTippy(this, \'' + divId + '\')" />'
                      +     '<span class="clickable" onclick="l7.Tippy.toggleTippy(\'' + tippyId + '\', \'' + divId + '\')">Details</span>'
@@ -1406,18 +1418,18 @@ if (!l7.Dialog) {
                      +         '</tr>';
             for (var e = o, i = 0; e != null || e != undefined; e = e.cause, ++i) {
                 if (e !== o) body += '<tr><th colspan="2" style="background-color: #d0d0d0;">Caused By:</th></tr>';
-                body += '<tr><th class="top">Exception:</th><td width="100%">' + l7.Util.escapeAsText(e.exception) + '</td></tr>';
+                body += '<tr><th class="top">Exception:</th><td width="100%">' + l7.Util.escapeHtmlText(e.exception) + '</td></tr>';
                 if (e.message) {
-                    body += '<tr><th class="top">Message:</th><td class="wrap">' + l7.Util.escapeAsText(e.message) + '</td></tr>';
+                    body += '<tr><th class="top">Message:</th><td class="wrap">' + l7.Util.escapeHtmlText(e.message) + '</td></tr>';
                 }
                 if (e.localizedMessage && e.localizedMessage != e.message) {
-                    body += '<tr><th class="top">Localized Message:</th><td class="wrap">' + l7.Util.escapeAsText(e.localizedMessage) + '</td></tr>';
+                    body += '<tr><th class="top">Localized Message:</th><td class="wrap">' + l7.Util.escapeHtmlText(e.localizedMessage) + '</td></tr>';
                 }
                 var stackTraceTrId = stackTraceTrIdPrefix + i;
                 body += '<tr id="' + stackTraceTrId + '" style="display: none;"><th class="top">Stack Trace:</th><td>';
                 if (e.stackTrace) {
                     for (var j in e.stackTrace) {
-                        body += '<div>' + l7.Util.escapeAsText(e.stackTrace[j]) + '</div>';
+                        body += '<div>' + l7.Util.escapeHtmlText(e.stackTrace[j]) + '</div>';
                     }
                 } else {
                     body += '(none)';

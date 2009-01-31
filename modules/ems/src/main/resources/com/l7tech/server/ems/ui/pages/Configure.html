@@ -347,7 +347,7 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
             function onClickDeleteFolder(event) {
                 var entity = entityTreeTable.getHighlightedEntity();
                 document.getElementById('deleteFolderDialog_id').value = entity.id;
-                document.getElementById('deleteFolderDialog_name').innerHTML = l7.Util.escapeAsText(entity.name);
+                document.getElementById('deleteFolderDialog_name').innerHTML = l7.Util.escapeHtmlText(entity.name);
                 deleteFolderDialog.center();
                 deleteFolderDialog.show();
             }
@@ -355,7 +355,7 @@ alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
             function onClickDeleteSSGCluster(event) {
                 var entity = entityTreeTable.getHighlightedEntity();
                 document.getElementById('deleteSSGClusterDialog_id').value = entity.id;
-                document.getElementById('deleteSSGClusterDialog_name').innerHTML = l7.Util.escapeAsText(entity.name);
+                document.getElementById('deleteSSGClusterDialog_name').innerHTML = l7.Util.escapeHtmlText(entity.name);
                 deleteSSGClusterDialog.center();
                 deleteSSGClusterDialog.show();
             }
@@ -413,7 +413,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                         var result = l7.Dialog.parseJSON(
                                 o.responseText,
                                 localizedStrings.ERROR,
-                                '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_START_SSG_NODE) + '</p>',
+                                '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_START_SSG_NODE) + '</p>',
                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                                 localizedStrings.OK);
                         if (!l7.Util.isException(result)) {
@@ -440,7 +440,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                         var result = l7.Dialog.parseJSON(
                                 o.responseText,
                                 localizedStrings.ERROR,
-                                '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_STOP_SSG_NODE) + '</p>',
+                                '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_STOP_SSG_NODE) + '</p>',
                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                                 localizedStrings.OK);
                         if (!l7.Util.isException(result)) {
@@ -604,7 +604,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_ADD_FOLDER) + '</p>',
+                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_ADD_FOLDER) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (typeof result == 'object' && !l7.Util.isException(result)) {
@@ -647,7 +647,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_EDIT_FOLDER) + '</p>',
+                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_EDIT_FOLDER) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
@@ -689,7 +689,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DELETE_FOLDER) + '</p>',
+                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DELETE_FOLDER) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
@@ -731,7 +731,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_ADD_SSG_CLUSTER) + '</p>',
+                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_ADD_SSG_CLUSTER) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (typeof result == 'object' && !l7.Util.isException(result)) {
@@ -781,7 +781,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_EDIT_SSG_CLUSTER) + '</p>',
+                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_EDIT_SSG_CLUSTER) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
@@ -823,7 +823,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DELETE_SSG_CLUSTER) + '</p>',
+                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DELETE_SSG_CLUSTER) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
@@ -870,7 +870,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DELETE_SSG_CLUSTER) + '</p>',
+                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DELETE_SSG_CLUSTER) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
@@ -970,7 +970,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
             function launchReconfirmSSGClusterDeletionDialog() {
                 var entity = entityTreeTable.getHighlightedEntity();
                 document.getElementById('reconfirmSSGClusterDeletionDialog_id').value = entity.id;
-                document.getElementById('reconfirmSSGClusterDeletionDialog_name').innerHTML = l7.Util.escapeAsText(entity.name);
+                document.getElementById('reconfirmSSGClusterDeletionDialog_name').innerHTML = l7.Util.escapeHtmlText(entity.name);
                 reconfirmSSGClusterDeletionDialog.center();
                 reconfirmSSGClusterDeletionDialog.show();
             }
@@ -984,7 +984,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                         var result = l7.Dialog.parseJSON(
                                 o.responseText,
                                 localizedStrings.ERROR,
-                                '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_GET_DATA_TO_ESTABLISH_TRUST) + '</p>',
+                                '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_GET_DATA_TO_ESTABLISH_TRUST) + '</p>',
                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                                 localizedStrings.OK);
                         if (typeof result == 'object' && !l7.Util.isException(result)) {
@@ -1029,7 +1029,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                         var result = l7.Dialog.parseJSON(
                                 o.responseText,
                                 localizedStrings.ERROR,
-                                '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT) + '</p>',
+                                '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT) + '</p>',
                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                                 localizedStrings.OK);
                         if (typeof result == 'object' && !l7.Util.isException(result)) {
@@ -1065,7 +1065,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                         var result = l7.Dialog.parseJSON(
                                 o.responseText,
                                 localizedStrings.ERROR,
-                                '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT) + '</p>',
+                                '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT) + '</p>',
                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                                 localizedStrings.OK);
                         if (typeof result == 'object' && !l7.Util.isException(result)) {

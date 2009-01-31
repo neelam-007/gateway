@@ -182,7 +182,7 @@
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA) + '</p>',
+                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA) + '</p>',
                             localizedStrings.CANNOT_PARSE_ENTITY_DATA,
                             localizedStrings.OK);
                     if (typeof result == 'object' && !l7.Util.isException(result)) {

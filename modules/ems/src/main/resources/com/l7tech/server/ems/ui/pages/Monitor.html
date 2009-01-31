@@ -148,6 +148,7 @@
         var samplingIntervalTextBoxes = {};         // map key is property type
         var samplingIntervalWarningIcons = {};      // map key is property type
         var defaultTriggerValueTextBoxes = {};      // map key is property type
+        var defaultTriggerUnitLabels = {};         // map key is property type
         var defaultTriggerValueWarningIcons = {};   // map key is property type
 
         var saveMonitoringSetupButton;
@@ -222,6 +223,7 @@
         var monDlg_triggerEnabledCheckBox;
         var monDlg_triggerConfigs = {};         // map key is property type
         var monDlg_triggerValueTextBoxes = {};  // map key is property type
+        var monDlg_triggerValueUnitLabels = {}; // map key is property type
         var monDlg_triggerValueWarningIcon;
         var monDlg_useDefaultTriggerValueButton;
         var monDlg_notificationEnabledCheckBox;
@@ -667,7 +669,7 @@
                 var result = l7.Dialog.parseJSON(
                         xhr.responseText,
                         localizedStrings.ERROR,
-                        '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_SAVE_NOTIFICATION_RULE) + '</p>',
+                        '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_SAVE_NOTIFICATION_RULE) + '</p>',
                         localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                         localizedStrings.OK);
                 if (!l7.Util.isException(result)) {
@@ -675,7 +677,7 @@
                         l7.Dialog.showInfoDialog(localizedStrings.NOTIFICATION_RULE_SAVED_TITLE, localizedStrings.NOTIFICATION_RULE_SAVED, localizedStrings.OK);
                         loadNotificationRules();
                     } else if (result.reconfirm != undefined && result.reconfirm == true) {
-                        document.getElementById('saveNotificationRuleOverwriteDialog_name').innerHTML = l7.Util.escapeAsText(settings.name);
+                        document.getElementById('saveNotificationRuleOverwriteDialog_name').innerHTML = l7.Util.escapeHtmlText(settings.name);
                         saveNotificationRuleOverwriteDialog.show();
                     }
                 }
@@ -694,7 +696,7 @@
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_SAVE_MONITORING_SETTINGS) + '</p>',
+                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_SAVE_MONITORING_SETTINGS) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
@@ -766,7 +768,7 @@
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_SAVE_MONITORING_SETUP) + '</p>',
+                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_SAVE_MONITORING_SETUP) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
@@ -844,7 +846,7 @@
                 var tr = notificationRulesDataTable.getSelectedTrEls()[0];
                 var record = notificationRulesDataTable.getRecord(tr);
                 notifDlg_id.value = record.getData('id');
-                notifDlg_nameTextBox.value = l7.Util.escapeAsText(record.getData('name'));
+                notifDlg_nameTextBox.value = l7.Util.escapeHtmlText(record.getData('name'));
                 var notificationType = record.getData('type');
                 l7.Widget.selectDropDownByValue(notifDlg_typeDropDown, notificationType);
 
@@ -897,7 +899,7 @@
             var tr = notificationRulesDataTable.getSelectedTrEls()[0];
             var record = notificationRulesDataTable.getRecord(tr);
             document.getElementById('deleteNotificationRuleDialog_id').value = record.getData('id');
-            document.getElementById('deleteNotificationRuleDialog_name').innerHTML = l7.Util.escapeAsText(record.getData('name'));
+            document.getElementById('deleteNotificationRuleDialog_name').innerHTML = l7.Util.escapeHtmlText(record.getData('name'));
             deleteNotificationRuleDialog.center();
             deleteNotificationRuleDialog.show();
         }
@@ -934,7 +936,7 @@
                 var settings = l7.Dialog.parseJSON(
                         xhr.responseText,
                         localizedStrings.ERROR,
-                        '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DOWNLOAD_MONITORING_PROPERTY_SETTING) + '</p>',
+                        '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DOWNLOAD_MONITORING_PROPERTY_SETTING) + '</p>',
                         localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                         localizedStrings.OK);
                 if (l7.Util.isException(settings)) {
@@ -972,6 +974,9 @@
                 } else {
                     triggerValueTextBox.value = '';
                 }
+            }
+            if (settings.unit) {
+                monDlg_triggerValueUnitLabels[propertyType].innerHTML = l7.Util.escapeHtmlText(settings.unit);
             }
 
             monDlg_notificationEnabledCheckBox.checked = settings.notificationEnabled;
@@ -1031,7 +1036,7 @@
                 currentSetup = l7.Dialog.parseJSON(
                         xhr.responseText,
                         localizedStrings.ERROR,
-                        '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DOWNLOAD_MONITORING_SETUP) + '</p>',
+                        '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DOWNLOAD_MONITORING_SETUP) + '</p>',
                         localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                         localizedStrings.OK);
                 if (l7.Util.isException(currentSetup)) {
@@ -1048,8 +1053,11 @@
                 if (propertySetup.defaultTriggerValue) {
                     defaultTriggerValueTextBoxes[propertyType].value = propertySetup.defaultTriggerValue;
                 }
+                if (propertySetup.unit) {
+                    defaultTriggerUnitLabels[propertyType].innerHTML = l7.Util.escapeHtmlText(propertySetup.unit);
+                }
                 if (propertyType == l7.Constants.SSG_NODE_MONITORING_PROPERTY.CLOCK_DRIFT) {
-                    ntpServersTextArea.value = l7.Util.escapeAsText(propertySetup.ntpServers.join('\n'));
+                    ntpServersTextArea.value = l7.Util.escapeHtmlText(propertySetup.ntpServers.join('\n'));
                 }
             }
 
@@ -1338,7 +1346,7 @@
                 var result = l7.Dialog.parseJSON(
                         o.responseText,
                         localizedStrings.ERROR,
-                        '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DELETE_NOTIFICATION_RULE) + '</p>',
+                        '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DELETE_NOTIFICATION_RULE) + '</p>',
                         localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                         localizedStrings.OK);
                 if (!l7.Util.isException(result)) {
@@ -1468,9 +1476,11 @@
                 samplingIntervalTextBoxes[propertyType] = document.getElementById(propertyType + 'SamplingIntervalTextBox');
                 samplingIntervalWarningIcons[propertyType] = document.getElementById(propertyType + 'SamplingIntervalWarningIcon');
                 defaultTriggerValueTextBoxes[propertyType] = document.getElementById(propertyType + 'DefaultTriggerValueTextBox');
+                defaultTriggerUnitLabels[propertyType] = document.getElementById(propertyType + 'DefaultTriggerUnitLabel');
                 defaultTriggerValueWarningIcons[propertyType] = document.getElementById(propertyType + 'DefaultTriggerValueWarningIcon');
                 monDlg_triggerConfigs[propertyType] = document.getElementById('monDlg_' + propertyType + 'TriggerConfig');
                 monDlg_triggerValueTextBoxes[propertyType] = document.getElementById('monDlg_' + propertyType + 'TriggerValueTextBox');
+                monDlg_triggerValueUnitLabels[propertyType] = document.getElementById('monDlg_' + propertyType + 'TriggerValueUnitLabel');
             }
 
             l7.Tippy.toggleTippy('setupPanelTippy', 'setupPanel');  // collapsed on page load
@@ -1607,7 +1617,7 @@
                                                 <tr>
                                                     <td>audit size</td>
                                                     <td class="center"><input id="auditSizeSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="auditSizeSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
-                                                    <td>&ge; <input id="auditSizeDefaultTriggerValueTextBox" class="right" type="text" size="13" maxlength="13" onkeyup="validateSetup();"/> audit events <img id="auditSizeDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
+                                                    <td>&ge; <input id="auditSizeDefaultTriggerValueTextBox" class="right" type="text" size="13" maxlength="13" onkeyup="validateSetup();"/> <span id="auditSizeDefaultTriggerUnitLabel"></span> <img id="auditSizeDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
                                                 </tr>
                                                 <tr>
                                                     <td>operating status</td>
@@ -1617,12 +1627,12 @@
                                                 <tr>
                                                     <td>log file size</td>
                                                     <td class="center"><input id="logSizeSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="logSizeSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
-                                                    <td>&ge; <input id="logSizeDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateSetup();"/> MB <img id="logSizeDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
+                                                    <td>&ge; <input id="logSizeDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateSetup();"/> <span id="logSizeDefaultTriggerUnitLabel"></span> <img id="logSizeDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
                                                 </tr>
                                                 <tr>
                                                     <td>disk usage</td>
                                                     <td class="center"><input id="diskUsageSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="diskUsageSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
-                                                    <td>&ge; <input id="diskUsageDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="4" onkeyup="validateSetup();"/> % <img id="diskUsageDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
+                                                    <td>&ge; <input id="diskUsageDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="4" onkeyup="validateSetup();"/> <span id="diskUsageDefaultTriggerUnitLabel"></span> <img id="diskUsageDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
                                                 </tr>
                                                 <tr>
                                                     <td>RAID status</td>
@@ -1632,17 +1642,17 @@
                                                 <tr>
                                                     <td>CPU temperature</td>
                                                     <td class="center"><input id="cpuTempSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="cpuTempSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
-                                                    <td>&ge; <input id="cpuTempDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="4" onkeyup="validateSetup();"/> &deg;C <img id="cpuTempDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
+                                                    <td>&ge; <input id="cpuTempDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="4" onkeyup="validateSetup();"/> <span id="cpuTempDefaultTriggerUnitLabel"></span> <img id="cpuTempDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
                                                 </tr>
                                                 <tr>
                                                     <td>CPU usage</td>
                                                     <td class="center"><input id="cpuUsageSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="cpuUsageSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
-                                                    <td>&ge; <input id="cpuUsageDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="4" onkeyup="validateSetup();"/> % <img id="cpuUsageDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
+                                                    <td>&ge; <input id="cpuUsageDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="4" onkeyup="validateSetup();"/> <span id="cpuUsageDefaultTriggerUnitLabel"></span> <img id="cpuUsageDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
                                                 </tr>
                                                 <tr>
                                                     <td>swap space used</td>
                                                     <td class="center"><input id="swapUsageSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="swapUsageSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
-                                                    <td>&ge; <input id="swapUsageDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateSetup();"/> MB <img id="swapUsageDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
+                                                    <td>&ge; <input id="swapUsageDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateSetup();"/> <span id="swapUsageDefaultTriggerUnitLabel"></span> <img id="swapUsageDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
                                                 </tr>
                                                 <tr>
                                                     <td>
@@ -1654,7 +1664,7 @@
                                                     </td>
                                                     <td class="center top"><input id="clockDriftSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="clockDriftSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
                                                     <td class="top">
-                                                        &ge; <input id="clockDriftDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="4" onkeyup="validateSetup();"/> sec <img id="clockDriftDefaultTriggerValueWarningIcon" src="../images/warning.png"/>
+                                                        &ge; <input id="clockDriftDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="4" onkeyup="validateSetup();"/> <span id="clockDriftDefaultTriggerUnitLabel"></span> <img id="clockDriftDefaultTriggerValueWarningIcon" src="../images/warning.png"/>
                                                     </td>
                                                 </tr>
                                             </tbody>
@@ -2054,15 +2064,15 @@
                         </td>
                         <td>
                             <!-- Only the matching one will be shown: -->
-                            <div id="monDlg_auditSizeTriggerConfig">&ge; <input id="monDlg_auditSizeTriggerValueTextBox" class="right" type="text" size="13" maxlength="13" onkeyup="validateMonitoringPropertyDialog();"/> audit events</div>
+                            <div id="monDlg_auditSizeTriggerConfig">&ge; <input id="monDlg_auditSizeTriggerValueTextBox" class="right" type="text" size="13" maxlength="13" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_auditSizeTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_operatingStatusTriggerConfig">upon failure</div>
-                            <div id="monDlg_logSizeTriggerConfig">&ge; <input id="monDlg_logSizeTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateMonitoringPropertyDialog();"/> MB</div>
-                            <div id="monDlg_diskUsageTriggerConfig">&ge; <input id="monDlg_diskUsageTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> %</div>
+                            <div id="monDlg_logSizeTriggerConfig">&ge; <input id="monDlg_logSizeTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_logSizeTriggerValueUnitLabel"></span></div>
+                            <div id="monDlg_diskUsageTriggerConfig">&ge; <input id="monDlg_diskUsageTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_diskUsageTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_raidStatusTriggerConfig">upon failure</div>
-                            <div id="monDlg_cpuTempTriggerConfig">&ge; <input id="monDlg_cpuTempTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> &deg;C</div>
-                            <div id="monDlg_cpuUsageTriggerConfig">&ge; <input id="monDlg_cpuUsageTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> %</div>
-                            <div id="monDlg_swapUsageTriggerConfig">&ge; <input id="monDlg_swapUsageTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateMonitoringPropertyDialog();"/> MB</div>
-                            <div id="monDlg_clockDriftTriggerConfig">&ge; <input id="monDlg_clockDriftTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> sec</div>
+                            <div id="monDlg_cpuTempTriggerConfig">&ge; <input id="monDlg_cpuTempTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_cpuTempTriggerValueUnitLabel"></span></div>
+                            <div id="monDlg_cpuUsageTriggerConfig">&ge; <input id="monDlg_cpuUsageTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_cpuUsageTriggerValueUnitLabel"></span></div>
+                            <div id="monDlg_swapUsageTriggerConfig">&ge; <input id="monDlg_swapUsageTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_swapUsageTriggerValueUnitLabel"></span></div>
+                            <div id="monDlg_clockDriftTriggerConfig">&ge; <input id="monDlg_clockDriftTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_clockDriftTriggerValueUnitLabel"></span></div>
                         </td>
                         <td><img id="monDlg_triggerValueWarningIcon" src="../images/warning.png"/></td>
                         <td><button id="monDlg_useDefaultTriggerValueButton" type="button" title="Reset to system-wide default">Use Default</button></td>

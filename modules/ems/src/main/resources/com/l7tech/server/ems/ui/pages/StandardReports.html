@@ -772,9 +772,9 @@
             }
 
             if (errMsgs.length > 0) {
-                var bodyHtml = '<div style="max-width: 600px;">' + l7.Util.escapeAsText(localizedStrings.INVALID_GROUPINGS_REMOVED) + '<ul style="margin-left: 1.5em; margin-top: 1em;">';
+                var bodyHtml = '<div style="max-width: 600px;">' + l7.Util.escapeHtmlText(localizedStrings.INVALID_GROUPINGS_REMOVED) + '<ul style="margin-left: 1.5em; margin-top: 1em;">';
                 for (var j = 0; j < errMsgs.length; ++j) {
-                    bodyHtml += '<li style="display: list-item;">' + l7.Util.escapeAsText(errMsgs[j]) + '</li>';
+                    bodyHtml += '<li style="display: list-item;">' + l7.Util.escapeHtmlText(errMsgs[j]) + '</li>';
                 }
                 bodyHtml += '</ul></div>';
                 l7.Dialog.showErrorDialog(localizedStrings.WARNING, bodyHtml, localizedStrings.OK);
@@ -894,7 +894,7 @@
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST) + '</p>',
+                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
@@ -961,7 +961,7 @@
                 var result = l7.Dialog.parseJSON(
                         xhr.responseText,
                         localizedStrings.ERROR,
-                        '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST) + '</p>',
+                        '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST) + '</p>',
                         localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                         localizedStrings.OK);
                 if (!l7.Util.isException(result) && result instanceof Array) {
@@ -1090,7 +1090,7 @@
                             bodyHtml += '<ul style="margin-left: 1.5em; margin-top: 1em;">'
                             for (var i = 0; i < result.warningItems.length; ++i) {
                                 var warningItem = result.warningItems[i];
-                                bodyHtml += '<li style="display: list-item;">' + l7.Util.escapeAsText(warningItem) + '</li>';
+                                bodyHtml += '<li style="display: list-item;">' + l7.Util.escapeHtmlText(warningItem) + '</li>';
                             }
                             bodyHtml += '</ul>';
                             bodyHtml += '</div>';
@@ -1122,7 +1122,7 @@
         function onClickDeleteSettings() {
             var selected = settingsListDropDown.options[settingsListDropDown.selectedIndex];
             document.getElementById('deleteSettingsDialog_id').value = selected.value;
-            document.getElementById('deleteSettingsDialog_name').innerHTML = l7.Util.escapeAsText(selected.text);
+            document.getElementById('deleteSettingsDialog_name').innerHTML = l7.Util.escapeHtmlText(selected.text);
             deleteSettingsDialog.center();
             deleteSettingsDialog.show();
         }
@@ -1256,7 +1256,7 @@
                     var result = l7.Dialog.parseJSON(
                             o.responseText,
                             localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_SUBMIT_GENERATE_REPORT) + '</p>',
+                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_SUBMIT_GENERATE_REPORT) + '</p>',
                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                             localizedStrings.OK);
                     if (!l7.Util.isException(result)) {
@@ -1325,7 +1325,7 @@
                 var result = l7.Dialog.parseJSON(
                         xhr.responseText,
                         localizedStrings.ERROR,
-                        '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_SAVE_SETTINGS) + '</p>',
+                        '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_SAVE_SETTINGS) + '</p>',
                         localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                         localizedStrings.OK);
                 if (!l7.Util.isException(result)) {
@@ -1335,7 +1335,7 @@
                         populateSettingsListDropDown();    // Refreshes to show added settings.
                     } else if (result.reconfirm != undefined && result.reconfirm == true) {
                         document.getElementById('saveSettingsOverwriteForm_name').value = name;
-                        document.getElementById('saveSettingsOverwriteDialog_name').innerHTML = l7.Util.escapeAsText(name);
+                        document.getElementById('saveSettingsOverwriteDialog_name').innerHTML = l7.Util.escapeHtmlText(name);
                         saveSettingsOverwriteDialog.center();
                         saveSettingsOverwriteDialog.show();
                     }
@@ -1471,7 +1471,7 @@
                 var result = l7.Dialog.parseJSON(
                         o.responseText,
                         localizedStrings.ERROR,
-                        '<p>' + l7.Util.escapeAsText(localizedStrings.CANNOT_DELETE_SETTINGS) + '</p>',
+                        '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DELETE_SETTINGS) + '</p>',
                         localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                         localizedStrings.OK);
                 if (!l7.Util.isException(result)) {

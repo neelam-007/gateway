@@ -1255,7 +1255,12 @@ if (!l7.EntityTreeTable) {
                 }
                 if (property && property.monitored) {
                     if (property.value != undefined && property.value != null) {
-                        span.innerHTML = property.value;
+                        span.innerHTML = l7.Util.escapeHtmlText(property.value);
+                        if (propertyType != l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY.AUDIT_SIZE) { // Unit label for audit size is too long.
+                            if (property.unit != undefined && property.unit != null) {
+                                span.innerHTML += ' ' + l7.Util.escapeHtmlText(property.unit);
+                            }
+                        }
                         if (property.alert) {
                             td.className = 'right alert'; // CSS style class.
                         } else {
