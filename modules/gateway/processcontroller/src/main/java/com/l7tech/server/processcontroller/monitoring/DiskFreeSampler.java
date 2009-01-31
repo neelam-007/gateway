@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 /**
  *
  */
-public class DiskFreeSampler extends HostPropertySampler<Long> {
+class DiskFreeSampler extends HostPropertySampler<Long> {
     private static final Pattern DF_MATCHER = Pattern.compile("(?m)\\d+\\s+\\d+\\s+(\\d+)\\s*%\\s+/\\s*$");
     private static final String DF_PATH = "/bin/df";
 
@@ -21,7 +21,7 @@ public class DiskFreeSampler extends HostPropertySampler<Long> {
     Long sample() throws PropertySamplingException {
         try {
             ProcResult result = ProcUtils.exec(new File(DF_PATH));
-            return matchNumber(new String(result.getOutput()), DF_PATH, DF_MATCHER);
+            return matchNumber(new String(result.getOutput()), "output from " + DF_PATH, DF_MATCHER);
         } catch (IOException e) {
             throw new PropertySamplingException(e);
         }

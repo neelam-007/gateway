@@ -8,7 +8,7 @@ import java.io.IOException;
 /**
  *
  */
-public class NodeStateSampler extends PropertySampler<NodeStateType> {
+class NodeStateSampler extends PropertySampler<NodeStateType> {
     protected NodeStateSampler(ComponentType componentType, String componentId) {
         super(componentType, componentId, "nodeState");
     }

@@ -10,13 +10,13 @@ import java.util.regex.Pattern;
 /**
  *
  */
-public class LogFileSampler extends HostPropertySampler<Long> {
+class LogFileSampler extends HostPropertySampler<Long> {
     private static final String SH_PATH = "/bin/sh";
     private static final String DU_COMMAND = "du -k -c /opt/SecureSpan/Gateway/node/*/var/logs | tail -n1 | cut -f1";
     private static final Pattern NUMBER_PATTERN = Pattern.compile("^\\s*(\\d+)\\s*$");
 
-    public LogFileSampler(String componentId, String propertyName) {
-        super(componentId, propertyName);
+    public LogFileSampler(String componentId) {
+        super(componentId, "logFileSize");
     }
 
     Long sample() throws PropertySamplingException {

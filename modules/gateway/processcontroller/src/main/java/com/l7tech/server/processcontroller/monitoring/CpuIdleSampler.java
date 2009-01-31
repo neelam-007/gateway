@@ -12,7 +12,7 @@ import java.io.StringReader;
 /**
  *
  */
-public class CpuIdleSampler extends HostPropertySampler<Integer> {
+class CpuIdleSampler extends HostPropertySampler<Integer> {
     public CpuIdleSampler(String componentId) {
         super(componentId, "cpuIdle");
     }

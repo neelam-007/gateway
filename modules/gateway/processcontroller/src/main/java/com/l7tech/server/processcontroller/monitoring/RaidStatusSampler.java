@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 /**
  *
  */
-public class RaidStatusSampler extends HostPropertySampler<RaidStatus> {
+class RaidStatusSampler extends HostPropertySampler<RaidStatus> {
     private static final String PATH_MDSTAT = "/proc/mdstat";
 
     private static final Pattern ANY_ARRAYS_PRESENT_PATTERN =

@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 /**
  * Superclass for property samplers that sample properties specific to the node managed by a single PC instance.
  */
-public abstract class HostPropertySampler<V extends Serializable> extends PropertySampler<V> {
+abstract class HostPropertySampler<V extends Serializable> extends PropertySampler<V> {
     public HostPropertySampler(String componentId, String propertyName) {
         super(ComponentType.HOST, componentId, propertyName);
     }
