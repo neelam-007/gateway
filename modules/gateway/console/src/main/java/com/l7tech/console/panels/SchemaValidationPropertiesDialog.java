@@ -380,8 +380,18 @@ public class SchemaValidationPropertiesDialog extends JDialog {
                 }
             }
             schemaNames.add(NOTSET);
+
+            //before we update the model we need to remember what was the old selection for global schema
+            String previousSchemaSelection;
+            previousSchemaSelection = (String) globalSchemaCombo.getSelectedItem();
             globalSchemaCombo.setModel(new DefaultComboBoxModel(schemaNames.toArray(new String[]{})));
-            globalSchemaCombo.setSelectedItem(NOTSET);
+
+            //set back the selected item if in the new list
+            if (previousSchemaSelection != null && schemaNames.contains(previousSchemaSelection)) {
+                globalSchemaCombo.setSelectedItem(previousSchemaSelection);
+            } else {
+                globalSchemaCombo.setSelectedItem(NOTSET);
+            }
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Cannot get global schemas", e);
         }
