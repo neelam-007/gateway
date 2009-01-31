@@ -12,8 +12,8 @@ unset default_java_opts
 
 export SSG_JAVA_OPTS
 
-if ! echo $LD_LIBRARY_PATH | /bin/egrep -s "(^|:)$SSG_HOME/lib($|:)" >/dev/null ; then
-	LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SSG_HOME/lib
+if ! echo $LD_LIBRARY_PATH | /bin/egrep -s "(^|:)$SSG_HOME/runtime/lib($|:)" >/dev/null ; then
+	LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SSG_HOME/runtime/lib
 fi
 
 export LD_LIBRARY_PATH

@@ -4,6 +4,7 @@ import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.ClassLoaderObjectInputStream;
 import com.l7tech.policy.assertion.UnknownAssertion;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -113,47 +114,13 @@ class SerializedJavaClassMapping extends BeanTypeMapping {
      */
     private Object base64ToObject(String str) throws IOException, ClassNotFoundException {
         ByteArrayInputStream bis = new ByteArrayInputStream(HexUtils.decodeBase64(str, true));
-        ObjectInputStream ois = new ClassLoaderObjectInputStream(bis);
+        ObjectInputStream ois = new ClassLoaderObjectInputStream(bis, classLoader);
 
-        Object obj = (Object)ois.readObject();
+        Object obj = ois.readObject();
         ois.close();
         bis.close();
         return obj;
     }
 
-    private static final class ClassLoaderObjectInputStream extends ObjectInputStream {
-        protected Class resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
-            Class clazz = null;
-            ClassNotFoundException recnfe = null;
-            try {
-                //Note that the classes version is checked later so no need to do so here
-                clazz = classLoader!=null ? classLoader.loadClass(desc.getName()) : null;
-            }
-            catch(ClassNotFoundException cnfe) {
-                recnfe = cnfe;
-            }
 
-            if (clazz == null) {
-                try {
-                    clazz = super.resolveClass(desc);
-                }
-                catch(ClassNotFoundException cnfe) {
-                    // ignore
-                }
-            }
-
-            if (clazz == null) {
-                if (recnfe != null)
-                    throw recnfe;
-                else
-                    throw new ClassNotFoundException(desc.getName());
-            }
-
-            return clazz;
-        }
-
-        public ClassLoaderObjectInputStream(InputStream in) throws IOException {
-            super(in);
-        }
-    }
 }

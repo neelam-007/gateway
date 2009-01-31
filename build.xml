@@ -2575,6 +2575,8 @@
         <mkdir dir="${install.src.ssg.profile}"/>        
         <mkdir dir="${install.src.ssg.profilebase}"/>
         <mkdir dir="${install.src.ssg.aarmods}"/>
+        <mkdir dir="${install.src.ssg.calibs}"/>
+        <mkdir dir="${install.src.ssg.caconf}"/>
         <mkdir dir="${install.src.ssg.sql}"/>
         <mkdir dir="${install.src.ssg.web}"/>
     </target>

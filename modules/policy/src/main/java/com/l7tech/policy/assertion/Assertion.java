@@ -13,6 +13,8 @@ import com.l7tech.policy.assertion.annotation.ProcessesMultipart;
 import com.l7tech.util.ClassUtils;
 
 import java.io.Serializable;
+import java.io.ObjectInputStream;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -39,7 +41,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     protected transient CompositeAssertion parent;
     private transient int ordinal;
     private transient Long ownerPolicyOid = null;
-    private transient boolean enabled = true;
+    private boolean enabled = true;
 
     // 2.1 CustomAssertion compatibility
     private static final long serialVersionUID = -2639281346815614287L;
@@ -743,6 +745,11 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     public void updateTemporaryData(Assertion assertion) {
+    }
+
+    private void readObject( final ObjectInputStream in ) throws ClassNotFoundException, IOException {
+        ObjectInputStream.GetField fields = in.readFields();
+        enabled = fields.get("enabled", true);
     }
 }
 
