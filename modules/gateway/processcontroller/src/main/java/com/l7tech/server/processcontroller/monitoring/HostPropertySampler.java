@@ -2,6 +2,7 @@ package com.l7tech.server.processcontroller.monitoring;
 
 import com.l7tech.common.io.IOUtils;
 import com.l7tech.server.management.config.monitoring.ComponentType;
+import com.l7tech.util.ExceptionUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,11 +30,21 @@ public abstract class HostPropertySampler<V extends Serializable> extends Proper
      *            the regex contains no capture groups, or the captured match value can't be converted to a long.
      */
     protected long matchNumberFromFile(String path, Pattern regex) throws PropertySamplingException {
+        return matchNumber(readFile(path), path, regex);
+    }
+
+    /**
+     * Slurp a file and convert it to a String using the default file encoding.
+     *
+     * @param path path of the file to read.  Required.
+     * @return the entire contents of the file as a String.  Never null.
+     * @throws PropertySamplingException if the file isn't found or can't be read.
+     */
+    protected String readFile(String path) throws PropertySamplingException {
         try {
-            String fileContent = new String(IOUtils.slurpFile(new File(path)));
-            return matchNumber(fileContent, path, regex);
+            return new String(IOUtils.slurpFile(new File(path)));
         } catch (IOException e) {
-            throw new PropertySamplingException(e);
+            throw new PropertySamplingException("Unable to read file: " + path + ": " + ExceptionUtils.getMessage(e), e);
         }
     }
 
@@ -62,5 +73,8 @@ public abstract class HostPropertySampler<V extends Serializable> extends Proper
             // Regex only passes digits, so this can only happen if free swap exceeps 2^64
             throw new PropertySamplingException(e);
         }
+    }
+
+    public void close() throws IOException {
     }
 }

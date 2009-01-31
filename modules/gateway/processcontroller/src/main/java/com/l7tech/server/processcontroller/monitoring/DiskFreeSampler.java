@@ -26,7 +26,4 @@ public class DiskFreeSampler extends HostPropertySampler<Long> {
             throw new PropertySamplingException(e);
         }
     }
-
-    public void close() throws IOException {
-    }
 }

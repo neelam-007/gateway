@@ -1,6 +1,5 @@
 package com.l7tech.server.processcontroller.monitoring;
 
-import java.io.IOException;
 import java.util.regex.Pattern;
 
 /**
@@ -15,8 +14,5 @@ public class SwapSpaceSampler extends HostPropertySampler<Long> {
 
     Long sample() throws PropertySamplingException {
         return matchNumberFromFile("/proc/meminfo", SWAPFREE_MATCHER);
-    }
-
-    public void close() throws IOException {
     }
 }

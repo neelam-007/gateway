@@ -1,7 +1,8 @@
 package com.l7tech.server.processcontroller.monitoring;
 
 import com.l7tech.common.io.ProcResult;
-import com.l7tech.common.io.ProcUtils;
+import static com.l7tech.common.io.ProcUtils.args;
+import static com.l7tech.common.io.ProcUtils.exec;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -18,7 +19,7 @@ public class CpuIdleSampler extends HostPropertySampler<Integer> {
 
     Integer sample() throws PropertySamplingException {
         try {
-            ProcResult result = ProcUtils.exec(new File("/usr/bin/vmstat"), ProcUtils.args("1", "2"));
+            ProcResult result = exec(new File("/usr/bin/vmstat"), args("1", "2"));
             String out = new String(result.getOutput());
             return parseVmstatOutput(out);
         } catch (NumberFormatException nfe) {
@@ -28,6 +29,7 @@ public class CpuIdleSampler extends HostPropertySampler<Integer> {
         }
     }
 
+    // If I could get multiline matches to work properly, this class would be a whole lot shorter 
     static Integer parseVmstatOutput(String out) throws IOException {
         BufferedReader reader = new BufferedReader(new StringReader(out));
         String line;
@@ -65,8 +67,5 @@ public class CpuIdleSampler extends HostPropertySampler<Integer> {
             }
         }
         return null;
-    }
-
-    public void close() throws IOException {
     }
 }
