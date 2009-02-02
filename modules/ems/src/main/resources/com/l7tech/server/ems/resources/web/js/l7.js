@@ -89,7 +89,7 @@ if (!l7.Constants) {
             CPU_TEMP         : 'cpuTemp',
             CPU_USAGE        : 'cpuUsage',
             SWAP_USAGE       : 'swapUsage',
-            CLOCK_DRIFT      : 'clockDrift'
+            NTP_STATUS       : 'ntpStatus'
         };
 
         /**

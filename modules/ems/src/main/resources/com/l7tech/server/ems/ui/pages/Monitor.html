@@ -102,7 +102,7 @@
             CPU_TEMP : 'CPU temperature',
             CPU_USAGE : 'CPU usage',
             SWAP_USAGE : 'swap space usage',
-            CLOCK_DRIFT : 'clock drift',
+            NTP_STATUS : 'NTP status',
             E_MAIL : 'e-Mail',
             SNMP_TRAP : 'SNMP Trap',
             HTTP_REQUEST : 'HTTP Request',
@@ -141,9 +141,6 @@
         var DEFAULT_MONITORING_PROPERTIES_REFRESH_INTERVAL = 10000;
 
         var ALL_PROPERTY_TYPES = l7.Util.getPropertyValues(l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY, l7.Constants.SSG_NODE_MONITORING_PROPERTY);
-
-        var ntpServersTextArea;
-        var ntpServersWarningIcon;
 
         var samplingIntervalTextBoxes = {};         // map key is property type
         var samplingIntervalWarningIcons = {};      // map key is property type
@@ -277,8 +274,8 @@
                 return localizedStrings.CPU_USAGE;
             } else if (type == l7.Constants.SSG_NODE_MONITORING_PROPERTY.SWAP_USAGE) {
                 return localizedStrings.SWAP_USAGE;
-            } else if (type == l7.Constants.SSG_NODE_MONITORING_PROPERTY.CLOCK_DRIFT) {
-                return localizedStrings.CLOCK_DRIFT;
+            } else if (type == l7.Constants.SSG_NODE_MONITORING_PROPERTY.NTP_STATUS) {
+                return localizedStrings.NTP_STATUS;
             }
             return null;
         }
@@ -296,22 +293,6 @@
                 return localizedStrings.HTTP_REQUEST;
             }
             return null;
-        }
-
-        /**
-         * Parses the lines in the NTP Servers input text area into an array of host names.
-         * @return {array} may be empty but never null
-         */
-        function parseNtpServersTextArea() {
-            var result = [];
-            var lines = ntpServersTextArea.value.replace('\r\n', '\n').replace('\r', '\n').split('\n');
-            for (var j = 0; j < lines.length; ++j) {
-                var hostName = lines[j].replace(/^\s+/, '').replace(/\s+$/, '');
-                if (hostName.length > 0) {
-                    result.push(hostName);
-                }
-            }
-            return result;
         }
 
         /**
@@ -403,16 +384,6 @@
                         valid = false;
                     }
                 }
-            }
-
-            var ntpServers = parseNtpServersTextArea();
-            if (ntpServers.length < 1) {
-                ntpServersWarningIcon.style.visibility = 'visible';
-                ntpServersWarningIcon.title = 'Must have at least one host name';
-                valid = false;
-            } else {
-                ntpServersWarningIcon.style.visibility = 'hidden';
-                ntpServersWarningIcon.title = '';
             }
 
             saveMonitoringSetupButton.set('disabled', !valid);
@@ -753,9 +724,6 @@
                 if (defaultTriggerValueTextBoxes[propertyType]) {
                     data.propertySetup[propertyType].defaultTriggerValue = defaultTriggerValueTextBoxes[propertyType].value;
                 }
-                if (propertyType == l7.Constants.SSG_NODE_MONITORING_PROPERTY.CLOCK_DRIFT) {
-                    data.propertySetup[propertyType].ntpServers = parseNtpServersTextArea();
-                }
             }
             data.disableAllNotifications = disableAllNotificationCheckBox.checked;
             data.auditUponAlertState = auditUponAlertStateCheckBox.checked;
@@ -1056,9 +1024,6 @@
                 if (propertySetup.unit) {
                     defaultTriggerUnitLabels[propertyType].innerHTML = l7.Util.escapeHtmlText(propertySetup.unit);
                 }
-                if (propertyType == l7.Constants.SSG_NODE_MONITORING_PROPERTY.CLOCK_DRIFT) {
-                    ntpServersTextArea.value = l7.Util.escapeHtmlText(propertySetup.ntpServers.join('\n'));
-                }
             }
 
             disableAllNotificationCheckBox.checked = currentSetup.disableAllNotifications;
@@ -1178,7 +1143,7 @@
                     l7.EntityTreeTable.COLUMN.MONITORING_CPU_TEMP,
                     l7.EntityTreeTable.COLUMN.MONITORING_CPU_USAGE,
                     l7.EntityTreeTable.COLUMN.MONITORING_SWAP_USAGE,
-                    l7.EntityTreeTable.COLUMN.MONITORING_CLOCK_DRIFT
+                    l7.EntityTreeTable.COLUMN.MONITORING_NTP_STATUS
                 ],
                 onClickMonitoringPropertyDialogButton : onClickMonitoringPropertyDialogButton
             };
@@ -1405,8 +1370,6 @@
             debugLogReader.hide();   // Initially hidden.
 
             // Precomputes UI element references for efficiency.
-            ntpServersTextArea = document.getElementById('ntpServersTextArea');
-            ntpServersWarningIcon = document.getElementById('ntpServersWarningIcon');
             disableAllNotificationCheckBox = document.getElementById('disableAllNotificationCheckBox');
             auditUponAlertStateCheckBox = document.getElementById('auditUponAlertStateCheckBox');
             auditUponNormalStateCheckBox = document.getElementById('auditUponNormalStateCheckBox');
@@ -1655,17 +1618,9 @@
                                                     <td>&ge; <input id="swapUsageDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateSetup();"/> <span id="swapUsageDefaultTriggerUnitLabel"></span> <img id="swapUsageDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
                                                 </tr>
                                                 <tr>
-                                                    <td>
-                                                        clock drift
-                                                        <br/>
-                                                        using NTP servers: <img id="ntpServersWarningIcon" src="../images/warning.png"/>
-                                                        <br/>
-                                                        <textarea id="ntpServersTextArea" rows="3" cols="24" onkeyup="validateSetup();"></textarea>
-                                                    </td>
-                                                    <td class="center top"><input id="clockDriftSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="clockDriftSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
-                                                    <td class="top">
-                                                        &ge; <input id="clockDriftDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="4" onkeyup="validateSetup();"/> <span id="clockDriftDefaultTriggerUnitLabel"></span> <img id="clockDriftDefaultTriggerValueWarningIcon" src="../images/warning.png"/>
-                                                    </td>
+                                                    <td>NTP status</td>
+                                                    <td class="center"><input id="ntpStatusSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="ntpStatusSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
+                                                    <td>upon failure</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -1726,7 +1681,7 @@
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">CPU temperature</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">CPU usage</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">swap space usage</div></th>
-                                        <th class="group1">clock drift</th>
+                                        <th class="group1">NTP status</th>
                                     </tr>
                                 </thead>
                                 <thead id="steppedHeaders" style="display: none;">
@@ -1799,7 +1754,7 @@
                                         <th class="group1 bottomStep group1bottomStep"> </th>
                                         <th class="group1 bottomStep group1bottomStep"> </th>
                                         <th class="group1 bottomStep group1bottomStep"> </th>
-                                        <th class="group1">clock drift</th>
+                                        <th class="group1">NTP status</th>
                                     </tr>
                                 </thead>
                                 <tbody id="entityTreeTableBody">
@@ -2055,7 +2010,7 @@
                     <label for="monDlg_enabledCheckBox">Enable monitoring</label>
                     &nbsp;<span class="note">(sampling interval = <span id="monDlg_samplingIntervalLabel"></span> sec)</span>
                 </div>
-                <table> <!-- Use table to middle-align YAHOO button. -->
+                <table>
                     <tr>
                         <td>
                             <input type="checkbox" style="visibility: hidden;"/> <!-- For indentation only. -->
@@ -2072,7 +2027,7 @@
                             <div id="monDlg_cpuTempTriggerConfig">&ge; <input id="monDlg_cpuTempTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_cpuTempTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_cpuUsageTriggerConfig">&ge; <input id="monDlg_cpuUsageTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_cpuUsageTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_swapUsageTriggerConfig">&ge; <input id="monDlg_swapUsageTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_swapUsageTriggerValueUnitLabel"></span></div>
-                            <div id="monDlg_clockDriftTriggerConfig">&ge; <input id="monDlg_clockDriftTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_clockDriftTriggerValueUnitLabel"></span></div>
+                            <div id="monDlg_ntpStatusTriggerConfig">upon failure</div>
                         </td>
                         <td><img id="monDlg_triggerValueWarningIcon" src="../images/warning.png"/></td>
                         <td><button id="monDlg_useDefaultTriggerValueButton" type="button" title="Reset to system-wide default">Use Default</button></td>
