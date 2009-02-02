@@ -25,6 +25,8 @@ public class CustomAccessControlNode extends AbstractTreeNode {
 
     private CustomAssertionsRegistrar registrar;
     private Image defaultImageIcon;
+    private String name;
+    private String description;
 
     /**
      * construct the <CODE>CustomAccessControlNode</CODE> instance for a given
@@ -70,7 +72,13 @@ public class CustomAccessControlNode extends AbstractTreeNode {
      * @return the assertion this node represents
      */
     public Assertion asAssertion() {
-        return (Assertion) super.getUserObject();
+        Assertion assertion = (Assertion) super.getUserObject();
+
+        if ( assertion != null ) {
+            assertion = assertion.getCopy();
+        }
+
+        return assertion;
     }
 
     /**
@@ -80,11 +88,14 @@ public class CustomAccessControlNode extends AbstractTreeNode {
     }
 
     public String getName() {
-        CustomAssertionHolder cha = (CustomAssertionHolder)asAssertion();
-        final CustomAssertion ca = cha.getCustomAssertion();
-        String name = ca.getName();
-        if (name == null) {
-            name = "Unspecified custom assertion (class '" + ca.getClass() + "')";
+        if ( name == null ) {
+            CustomAssertionHolder cha = (CustomAssertionHolder)asAssertion();
+            final CustomAssertion ca = cha.getCustomAssertion();
+            String assName = ca.getName();
+            if (assName == null) {
+                assName = "Unspecified custom assertion (class '" + ca.getClass() + "')";
+            }
+            name = assName;
         }
         return name;
     }
@@ -149,6 +160,10 @@ public class CustomAccessControlNode extends AbstractTreeNode {
     }
 
     public String getDescriptionText() {
-        return ((CustomAssertionHolder)asAssertion()).getDescriptionText();
+        if ( description == null ) {
+            String assDesc = ((CustomAssertionHolder)asAssertion()).getDescriptionText();
+            description = assDesc == null ? "" : assDesc;
+        }
+        return description;
     }
 }

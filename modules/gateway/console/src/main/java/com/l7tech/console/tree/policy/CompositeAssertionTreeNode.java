@@ -59,8 +59,7 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
         if (tree != null) {
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             Assertion[] nass = node.asAssertions();
-            for (Assertion ass : nass) {
-                Assertion assertion = (Assertion) ass.clone();
+            for (Assertion assertion : nass) {
                 if(assertion instanceof AssertionServiceChangeListener) {
                     try {
                         if (getService() != null) {
