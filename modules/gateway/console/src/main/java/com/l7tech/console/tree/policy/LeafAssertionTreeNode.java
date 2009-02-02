@@ -63,7 +63,7 @@ public abstract class LeafAssertionTreeNode<AT extends Assertion> extends Assert
             Assertion[] nass = node.asAssertions();
             if (nass != null) {
                 for (int i = 0; i < nass.length; i++) {
-                    Assertion nas = nass[i];
+                    Assertion nas = (Assertion) nass[i].clone();
                     AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(nas);
                     final MutableTreeNode parent = (MutableTreeNode)getParent();
                     int index = parent.getIndex(this);

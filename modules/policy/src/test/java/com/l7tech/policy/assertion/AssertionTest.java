@@ -13,6 +13,8 @@ import java.io.ByteArrayInputStream;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.util.HexUtils;
 import org.junit.Test;
@@ -110,5 +112,50 @@ public class AssertionTest {
         ObjectInputStream in = new ObjectInputStream( new ByteArrayInputStream(HexUtils.decodeBase64(ASSERTION_PRE_50)) );
         Assertion assertion = (Assertion) in.readObject();
         Assert.assertTrue("Assertion is enabled", assertion.isEnabled());
+    }
+
+    @Test
+    public void testCloneCustomAssertion() {
+        final CustomAssertionHolder holder = new CustomAssertionHolder();
+        final TestCustomAssertion holderAssertion = new TestCustomAssertion("test");
+
+        holder.setCustomAssertion( holderAssertion );
+        holder.setDescriptionText("Description");
+        holder.setCategory(Category.ACCESS_CONTROL);
+
+        final CustomAssertionHolder cloneHolder = (CustomAssertionHolder) holder.getCopy();
+        final TestCustomAssertion cloneHolderAssertion = (TestCustomAssertion)cloneHolder.getCustomAssertion();
+
+        Assert.assertEquals("Assertion bean property", holderAssertion.getTestValue(), cloneHolderAssertion.getTestValue());
+        Assert.assertEquals("Assertion category", holder.getCategory(), cloneHolder.getCategory());
+        Assert.assertEquals("Assertion description", holder.getDescriptionText(), cloneHolder.getDescriptionText());
+
+        // Test that we have a deep copy of the CAH (ensure the CustomAssertion instance is not the same in the clone)
+        cloneHolderAssertion.setTestValue("Updated");
+
+        Assert.assertNotSame("Assertion bean property", holderAssertion.getTestValue(), cloneHolderAssertion.getTestValue());
+    }
+
+    public static class TestCustomAssertion implements CustomAssertion {
+        private String testValue;
+
+        public TestCustomAssertion() {
+        }
+
+        public TestCustomAssertion( final String value ) {
+            testValue = value;
+        }
+
+        public String getName() {
+            return "Test";
+        }
+
+        public String getTestValue() {
+            return testValue;
+        }
+
+        public void setTestValue(String testValue) {
+            this.testValue = testValue;
+        }
     }
 }

@@ -7,18 +7,11 @@ import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.console.util.Registry;
-import com.l7tech.common.io.ClassLoaderObjectInputStream;
-import com.l7tech.util.ResourceUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 
 /**
  * The class represents an custom access control gui node element in the
@@ -77,35 +70,7 @@ public class CustomAccessControlNode extends AbstractTreeNode {
      * @return the assertion this node represents
      */
     public Assertion asAssertion() {
-        CustomAssertionHolder source = (CustomAssertionHolder) super.getUserObject();
-
-        // Attempt serialization round trip to avoid returning the same instance
-        // every time ... note that custom assertion data objects are NOT cloneable
-        ObjectInputStream in = null;
-        ObjectOutputStream out = null;
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            out = new ObjectOutputStream(baos);
-            out.writeObject(source);
-            out.flush();
-            in = new ClassLoaderObjectInputStream(
-                    new ByteArrayInputStream(baos.toByteArray()),
-                    source.getCustomAssertion().getClass().getClassLoader());
-            source = (CustomAssertionHolder) in.readObject();
-        } catch (IOException e) {
-            logger.log( Level.FINE, "Error serializing assertion.", e);
-        } catch (ClassNotFoundException e) {
-            logger.log( Level.FINE, "Error serializing assertion.", e);
-        } catch (SecurityException se) {
-            logger.log( Level.FINE, "Permission denied when serializing assertion.");
-        } catch (RuntimeException re) {
-            logger.log( Level.FINE, "Unexpected error when serializing assertion.", re);
-        } finally {
-            ResourceUtils.closeQuietly(in);
-            ResourceUtils.closeQuietly(out);
-        }
-
-        return source;
+        return (Assertion) super.getUserObject();
     }
 
     /**
