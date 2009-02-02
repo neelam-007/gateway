@@ -34,12 +34,12 @@ public abstract class Syntax {
     /**
      * Finds the longest period-delimited subname of the provided name that matches at least one of the known names
      * in the provided Set, or null if no match can be found.
-     * @param name the full name to search for
+     * @param name the full name to search for (all leading and trailing spaces will be trimmed)
      * @param names the set of names to search within
      * @return the longest subset of the provided Name that matches one of the Set members, or null if no match is found 
      */
     public static String getMatchingName(String name, Set names) {
-        return getMatchingName(name, names, false);
+        return getMatchingName(name, names, false, true);
     }
 
     /**
@@ -48,10 +48,13 @@ public abstract class Syntax {
      * @param name the full name to search for
      * @param names the set of names to search within
      * @param preserveCase whether to preserve the case of the provided variable name
+     * @param trim whether to trim out trailing and leading spaces
      * @return the longest subset of the provided Name that matches one of the Set members, or null if no match is found
      */
-    public static String getMatchingName(String name, Set names, boolean preserveCase) {
-        final String lname = preserveCase ? name : name.toLowerCase();
+    public static String getMatchingName(String name, Set names, boolean preserveCase, boolean trim) {
+        String mutateName = preserveCase ? name : name.toLowerCase();
+        mutateName = trim ? mutateName.trim() : mutateName;
+        final String lname = mutateName;
         if (names.contains(lname)) return lname;
 
         int pos = lname.length();

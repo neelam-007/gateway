@@ -163,7 +163,7 @@ public class SetVariableAssertionDialog extends JDialog {
                 }
                 assertion.setLineBreak(lineBreak);
 
-                final String expression = TextUtils.convertLineBreaks(_expressionTextArea.getText(), lineBreak.getCharacters());
+                final String expression = TextUtils.convertLineBreaks(_expressionTextArea.getText(), lineBreak.getCharacters()).trim();
                     // Conversion necessary? Can a CR be pasted into a JTextArea and returned by getText()?
                 assertion.setExpression(expression);
 
@@ -181,7 +181,7 @@ public class SetVariableAssertionDialog extends JDialog {
         _contentTypeTextField.setText(assertion.getContentType());
 
         // JTextArea likes all line break to be LF.
-        final String expression = TextUtils.convertLineBreaks(assertion.expression(), "\n");
+        final String expression = TextUtils.convertLineBreaks(assertion.expression(), "\n").trim();
         _expressionTextArea.setText(expression);
 
         if (assertion.getLineBreak() == LineBreak.LF) {
@@ -306,7 +306,7 @@ public class SetVariableAssertionDialog extends JDialog {
         final java.util.List<String> badNames = new LinkedList<String>();
         for (String name : names) {
             if (BuiltinVariables.getMetadata(name) == null &&
-                Syntax.getMatchingName(name, _predecessorVariables, true) == null) {
+                Syntax.getMatchingName(name, _predecessorVariables, true, true) == null) {
                 badNames.add(name);
             }
         }
