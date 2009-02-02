@@ -121,6 +121,7 @@ public interface GatewayApi {
     @XmlRootElement(name="EntityInfo", namespace="http://www.layer7tech.com/management/gateway")
     static final class EntityInfo implements Serializable, Comparable {
         private String id;
+        private String externalId;
         private String relatedId; // Store the OID of a real published service / policy fragment if the entity is an alias.  relatedId = null if the entity is not an alias.
         private String parentId;
         private String name;
@@ -132,12 +133,14 @@ public interface GatewayApi {
         }
 
         public EntityInfo( final EntityType entityType,
+                           final String externalId,
                            final String id,
                            final String relatedId,
                            final String name,
                            final String parentId,
                            final Integer version ) {
             this.entityType = entityType;
+            this.externalId = externalId;
             this.id = id;
             this.relatedId = relatedId;
             this.name = name;
@@ -161,6 +164,15 @@ public interface GatewayApi {
 
         public void setEntityType(EntityType entityType) {
             this.entityType = entityType;
+        }
+
+        @XmlAttribute(name="externalId")
+        public String getExternalId() {
+            return externalId;
+        }
+
+        public void setExternalId(String externalId) {
+            this.externalId = externalId;
         }
 
         @XmlAttribute(name="id")

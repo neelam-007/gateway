@@ -100,7 +100,7 @@ public class SSGClusterContentSelector extends EsmBaseWebPage {
         List<SsgClusterContent> contentList = new ArrayList<SsgClusterContent>();
         for (GatewayApi.EntityInfo info: sortedEntitiesInfo) {
             // Add this entity content
-            contentList.add(new SsgClusterContent(info.getId(), info.getRelatedId(), info.getParentId(), info.getEntityType(), info.getName(), info.getVersion()));
+            contentList.add(new SsgClusterContent(info.getExternalId(), info.getRelatedId(), info.getParentId(), info.getEntityType(), info.getName(), info.getVersion()));
 
             // Add operation contents if the entity has operations
             if (info.getOperations() != null && info.getOperations().length > 0) {

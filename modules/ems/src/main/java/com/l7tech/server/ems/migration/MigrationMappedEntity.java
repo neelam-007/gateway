@@ -2,8 +2,7 @@ package com.l7tech.server.ems.migration;
 
 
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.ExternalEntityHeader;
 
 import javax.persistence.Embeddable;
 import javax.persistence.Column;
@@ -32,22 +31,22 @@ public class MigrationMappedEntity {
         this.entityType = entityType;
     }
 
-    @Column(name="entity_provider_id")
-    public Long getEntityProviderId() {
-        return entityProviderId;
-    }
-
-    public void setEntityProviderId(Long entityProviderId) {
-        this.entityProviderId = entityProviderId;
-    }
-
-    @Column(name="entity_id", length=512) 
+    @Column(name="entity_id", length=512)
     public String getEntityId() {
         return entityId;
     }
 
     public void setEntityId(String entityId) {
         this.entityId = entityId;
+    }
+
+    @Column(name="external_id", length=512)
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
     }
 
     @Column(name="entity_value", length=1024) //TODO increase if required
@@ -87,31 +86,14 @@ public class MigrationMappedEntity {
     }
 
     @SuppressWarnings({"deprecation"})
-    public static EntityHeader asEntityHeader( final MigrationMappedEntity entity ) {
-        EntityHeader header;
-        if ( entity.getEntityProviderId() != null ) {
-            IdentityHeader identityHeader = new IdentityHeader();
-            identityHeader.setProviderOid( entity.getEntityProviderId() );
-            header = identityHeader;
-        } else {
-            header = new EntityHeader();
-        }
-
-        header.setType( entity.getEntityType() );
-        header.setStrId( entity.getEntityId() );
-        header.setName( entity.getEntityName() );
-        header.setDescription( entity.getEntityDescription() );
-        header.setVersion( entity.getEntityVersion() );
-
-        return header;
+    public static ExternalEntityHeader asEntityHeader( final MigrationMappedEntity entity ) {
+        return new ExternalEntityHeader(entity.getExternalId(), entity.getEntityType(), entity.getEntityId(), entity.getEntityName(), entity.getEntityDescription(), entity.getEntityVersion());
     }
-
-
 
     //- PRIVATE
 
     private EntityType entityType;
-    private Long entityProviderId; // TODO get rid of this hack
+    private String externalId;
     private String entityId;
     private String entityValue;
     private Integer entityVersion;

@@ -1,6 +1,6 @@
 package com.l7tech.objectmodel.migration;
 
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.ExternalEntityHeader;
 
 import java.util.Set;
 import java.util.Map;
@@ -32,7 +32,7 @@ public interface PropertyResolver {
      *                     e.g. in the case where structured names are required
      * @return a map with migration mappings as values, keyed on the (target) dependency header.
      */
-    public Map<EntityHeader, Set<MigrationDependency>> getDependencies(EntityHeader source, Object entity, final Method property, String propertyName)
+    public Map<ExternalEntityHeader, Set<MigrationDependency>> getDependencies(ExternalEntityHeader source, Object entity, final Method property, String propertyName)
         throws PropertyResolverException;
 
     /**
@@ -42,7 +42,7 @@ public interface PropertyResolver {
      * @param propName the property of the sourceEntity for which a new value is set.
      * @param targetEntity the new value that is set for the sourceEntity's propName
      */
-    public void applyMapping(Object sourceEntity, String propName, EntityHeader targetHeader, Object targetValue, EntityHeader originalHeader)
+    public void applyMapping(Object sourceEntity, String propName, ExternalEntityHeader targetHeader, Object targetValue, ExternalEntityHeader originalHeader)
         throws PropertyResolverException;
 
     /**

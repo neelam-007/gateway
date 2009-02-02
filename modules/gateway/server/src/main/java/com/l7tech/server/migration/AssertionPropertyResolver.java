@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.migration.PropertyResolverException;
 import com.l7tech.objectmodel.migration.MigrationUtils;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.server.EntityHeaderUtils;
 
 import java.util.logging.Level;
@@ -21,14 +22,15 @@ public class AssertionPropertyResolver extends DefaultEntityPropertyResolver {
         super(factory);
     }
 
-    public void applyMapping(Object assertion, String propName, EntityHeader targetHeader, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
+    @Override
+    public void applyMapping(Object assertion, String propName, ExternalEntityHeader targetHeader, Object targetValue, ExternalEntityHeader originalHeader) throws PropertyResolverException {
 
         logger.log(Level.FINEST, "Applying mapping for assertion {0} : {1}.", new Object[]{assertion, propName});
         try {
             Method setter;
             if ("EntitiesUsed".equals(propName)) {
                 setter = MigrationUtils.setterForPropertyName(assertion, "replaceEntity", EntityHeader.class, EntityHeader.class);
-                setter.invoke(assertion, originalHeader, EntityHeaderUtils.fromEntity( (Entity)targetValue));
+                setter.invoke(assertion, EntityHeaderUtils.fromExternal(originalHeader), EntityHeaderUtils.fromEntity( (Entity)targetValue));
             } else {
                 setter = MigrationUtils.setterForPropertyName(assertion, propName, targetValue.getClass());
                 setter.invoke(assertion, targetValue);

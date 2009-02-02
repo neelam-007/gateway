@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.migration.MigrationUtils;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Include;
+import com.l7tech.server.EntityHeaderUtils;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -24,7 +25,7 @@ public class ValueReferencePropertyResolver extends AbstractPropertyResolver {
         super(factory);
     }
 
-    public Map<EntityHeader, Set<MigrationDependency>> getDependencies(final EntityHeader source, Object entity, final Method property, final String propertyName) throws PropertyResolverException {
+    public Map<ExternalEntityHeader, Set<MigrationDependency>> getDependencies(final ExternalEntityHeader source, Object entity, Method property, final String propertyName) throws PropertyResolverException {
 
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
@@ -37,13 +38,13 @@ public class ValueReferencePropertyResolver extends AbstractPropertyResolver {
             throw new PropertyResolverException("Error getting property value for entity: " + entity, e);
         }
 
-        return new HashMap<EntityHeader, Set<MigrationDependency>>() {{
-            ValueReferenceEntityHeader dependencyHeader = new ValueReferenceEntityHeader(source, propertyName);
+        return new HashMap<ExternalEntityHeader, Set<MigrationDependency>>() {{
+            ValueReferenceEntityHeader dependencyHeader = new ValueReferenceEntityHeader(EntityHeaderUtils.toExternal(source), propertyName);
             put(dependencyHeader, Collections.singleton(new MigrationDependency(source, dependencyHeader, propertyName, type, exported)));
         }};
     }
 
-    public void applyMapping(Object sourceEntity, String propName, EntityHeader targetHeader, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
+    public void applyMapping(Object sourceEntity, String propName, ExternalEntityHeader targetHeader, Object targetValue, ExternalEntityHeader originalHeader) throws PropertyResolverException {
         if ( !(targetHeader instanceof ValueReferenceEntityHeader) )
             throw new PropertyResolverException("Cannot apply mapping for non ValueReferenceEntityHeader target type: " + targetHeader);
 

@@ -34,7 +34,7 @@ public abstract class AbstractOidPropertyResolver extends AbstractPropertyResolv
     public abstract EntityType getTargetType();
 
     // gets a persistent entity's header out of a long/OID property and its type
-    public final Map<EntityHeader, Set<MigrationDependency>> getDependencies(final EntityHeader source, Object entity, Method property, String propertyName) throws PropertyResolverException {
+    public Map<ExternalEntityHeader, Set<MigrationDependency>> getDependencies(ExternalEntityHeader source, Object entity, Method property, String propertyName) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
         final MigrationMappingType type = MigrationUtils.getMappingType(property);
@@ -48,9 +48,9 @@ public abstract class AbstractOidPropertyResolver extends AbstractPropertyResolv
             throw new PropertyResolverException("Error getting property value for entity: " + entity, e);
         }
 
-        Map<EntityHeader,Set<MigrationDependency>> result = new HashMap<EntityHeader, Set<MigrationDependency>>();
+        Map<ExternalEntityHeader,Set<MigrationDependency>> result = new HashMap<ExternalEntityHeader, Set<MigrationDependency>>();
         try {
-            EntityHeader idpHeader = entityFinder.findHeader(targetType, oid);
+            ExternalEntityHeader idpHeader = EntityHeaderUtils.toExternal(entityFinder.findHeader(targetType, oid));
             result.put(idpHeader, Collections.singleton(new MigrationDependency(source, idpHeader, propertyName, type, exported)));
         } catch (FindException e) {
             logger.log(Level.FINE, "No entity found for type: {0} oid: {1}.", new Object[]{targetType, oid});
@@ -59,7 +59,7 @@ public abstract class AbstractOidPropertyResolver extends AbstractPropertyResolv
     }
 
     // assigns the targetEntity's OID to the sourceEntity's property
-    public void applyMapping(Object sourceEntity, String propName, EntityHeader targetHeader, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
+    public void applyMapping(Object sourceEntity, String propName, ExternalEntityHeader targetHeader, Object targetValue, ExternalEntityHeader originalHeader) throws PropertyResolverException {
         if (! (sourceEntity instanceof Entity))
             throw new PropertyResolverException("Cannot handle non-entities; received: " + (sourceEntity == null ? null : sourceEntity.getClass()));
 

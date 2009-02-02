@@ -1,7 +1,7 @@
 package com.l7tech.server.management.migration.bundle;
 
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.ExternalEntityHeader;
 
 import javax.xml.bind.annotation.*;
 
@@ -15,22 +15,22 @@ import javax.xml.bind.annotation.*;
 @XmlType(propOrder={"header", "value"})
 public class ExportedItem {
 
-    private EntityHeader header;
+    private ExternalEntityHeader header;
     private Entity value;
     private Entity mappedValue;
 
     protected ExportedItem() {}
 
-    public ExportedItem(EntityHeader header, Entity value) {
+    public ExportedItem(ExternalEntityHeader header, Entity value) {
         this.header = header;
         this.value = value;
     }
 
-    public EntityHeader getHeader() {
+    public ExternalEntityHeader getHeader() {
         return header;
     }
 
-    public void setHeader(EntityHeader header) {
+    public void setHeader(ExternalEntityHeader header) {
         this.header = header;
     }
 

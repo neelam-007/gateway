@@ -1,10 +1,6 @@
 package com.l7tech.server.ems.migration;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.objectmodel.EntityHeaderRef;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
@@ -19,7 +15,7 @@ import java.util.Arrays;
  *
  */
 @Transactional(rollbackFor=Throwable.class)
-public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<MigrationMappingRecord, EntityHeader> implements MigrationMappingRecordManager {
+public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<MigrationMappingRecord, ExternalEntityHeader> implements MigrationMappingRecordManager {
 
     //- PUBLIC
 
@@ -29,7 +25,7 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
 
     @Override
     public MigrationMappingRecord findByMapping( final String sourceClusterGuid,
-                                                 final EntityHeaderRef sourceEntityHeader,
+                                                 final ExternalEntityHeader sourceEntityHeader,
                                                  final String targetClusterGuid ) throws FindException {
         SsgCluster sourceCluster;
         SsgCluster targetCluster;
@@ -51,10 +47,10 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
     }
 
     @Override
-    public EntityHeader findEntityHeaderForMapping( final String sourceClusterId,
-                                                    final EntityHeaderRef sourceEntityHeader,
+    public ExternalEntityHeader findEntityHeaderForMapping( final String sourceClusterId,
+                                                    final ExternalEntityHeader sourceEntityHeader,
                                                     final String targetClusterId ) throws FindException {
-        EntityHeader entityHeader = null;
+        ExternalEntityHeader entityHeader = null;
 
         MigrationMappingRecord record = findByMapping( sourceClusterId, sourceEntityHeader, targetClusterId );
         if ( record != null ) {
@@ -66,9 +62,9 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
 
     @Override
     public long persistMapping( final String sourceClusterGuid,
-                                final EntityHeader sourceEntityHeader,
+                                final ExternalEntityHeader sourceEntityHeader,
                                 final String targetClusterGuid,
-                                final EntityHeader targetEntityHeader,
+                                final ExternalEntityHeader targetEntityHeader,
                                 final boolean sameEntity ) throws SaveException {
         MigrationMappingRecord mapping = new MigrationMappingRecord();
         try {
@@ -87,21 +83,17 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
                 mapping.setTimestamp( System.currentTimeMillis() );
 
                 MigrationMappedEntity sourceEntity = new MigrationMappedEntity();
+                sourceEntity.setExternalId(sourceEntityHeader.getExternalId());
                 sourceEntity.setEntityType( sourceEntityHeader.getType() );
                 sourceEntity.setEntityId( sourceEntityHeader.getStrId() );
-                if ( sourceEntityHeader instanceof IdentityHeader) {
-                    sourceEntity.setEntityProviderId( ((IdentityHeader)sourceEntityHeader).getProviderOid() );
-                }
                 sourceEntity.setEntityName( sourceEntityHeader.getName() );
                 sourceEntity.setEntityDescription( sourceEntityHeader.getDescription() );
                 sourceEntity.setEntityVersion( sourceEntityHeader.getVersion() );
 
                 MigrationMappedEntity targetEntity = new MigrationMappedEntity();
+                targetEntity.setExternalId(targetEntityHeader.getExternalId());
                 targetEntity.setEntityType( targetEntityHeader.getType() );
                 targetEntity.setEntityId( targetEntityHeader.getStrId() );
-                if ( targetEntityHeader instanceof IdentityHeader ) {
-                    targetEntity.setEntityProviderId( ((IdentityHeader)targetEntityHeader).getProviderOid() );
-                }
                 targetEntity.setEntityName( targetEntityHeader.getName() );
                 targetEntity.setEntityDescription( targetEntityHeader.getDescription() );
                 targetEntity.setEntityVersion( targetEntityHeader.getVersion() );

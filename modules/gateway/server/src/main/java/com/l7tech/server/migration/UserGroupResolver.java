@@ -1,7 +1,7 @@
 package com.l7tech.server.migration;
 
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.objectmodel.migration.MigrationDependency;
 import com.l7tech.objectmodel.migration.PropertyResolverException;
 import com.l7tech.objectmodel.migration.MigrationMappingType;
@@ -28,10 +28,10 @@ public class UserGroupResolver extends AssertionPropertyResolver {
     }
 
     @Override
-    public Map<EntityHeader, Set<MigrationDependency>> getDependencies(EntityHeader source, Object entity, Method property, String propertyName) throws PropertyResolverException {
-        Map<EntityHeader, Set<MigrationDependency>> result = new HashMap<EntityHeader, Set<MigrationDependency>>();
-        Map<EntityHeader, Set<MigrationDependency>> dependencies = super.getDependencies(source, entity, property, propertyName);
-        for(EntityHeader header : dependencies.keySet()) {
+    public Map<ExternalEntityHeader, Set<MigrationDependency>> getDependencies(ExternalEntityHeader source, Object entity, Method property, String propertyName) throws PropertyResolverException {
+        Map<ExternalEntityHeader, Set<MigrationDependency>> result = new HashMap<ExternalEntityHeader, Set<MigrationDependency>>();
+        Map<ExternalEntityHeader, Set<MigrationDependency>> dependencies = super.getDependencies(source, entity, property, propertyName);
+        for(ExternalEntityHeader header : dependencies.keySet()) {
             if (header.getType() == EntityType.USER || header.getType() == EntityType.GROUP) {
                 for (MigrationDependency dep : dependencies.get(header)) {
                     dep.setMappingType(new MigrationMappingType(MigrationMappingSelection.REQUIRED, MigrationMappingSelection.REQUIRED));

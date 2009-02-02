@@ -267,7 +267,7 @@ public class LogRecordRingBuffer implements PropertyChangeListener {
                 for (int i = 0; i < params.length; i++) {
                     if (params[i] != null) {
                         String paramValue = params[i].toString();
-                        if ( paramValue.length() > paramSizeLimit ) {
+                        if ( paramValue != null && paramValue.length() > paramSizeLimit ) {
                             paramValue = paramValue.substring( 0, paramSizeLimit );
                         }
                         truncParams[i] = paramValue;

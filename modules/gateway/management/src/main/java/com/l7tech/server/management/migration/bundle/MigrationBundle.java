@@ -7,7 +7,6 @@ import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.server.management.api.node.MigrationApi;
-import com.l7tech.util.Pair;
 
 import javax.xml.bind.annotation.*;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
@@ -43,7 +42,7 @@ public class MigrationBundle {
 
     private MigrationMetadata metadata;
     
-    private Map<EntityHeader,ExportedItem> exportedItems = new HashMap<EntityHeader, ExportedItem>();
+    private Map<ExternalEntityHeader,ExportedItem> exportedItems = new HashMap<ExternalEntityHeader, ExportedItem>();
 
     protected MigrationBundle() {}
 
@@ -60,20 +59,20 @@ public class MigrationBundle {
     }
 
     @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class)
-    public Map<EntityHeader, ExportedItem> getExportedItems() {
+    public Map<ExternalEntityHeader, ExportedItem> getExportedItems() {
         return exportedItems;
     }
 
-    public void setExportedItems(Map<EntityHeader, ExportedItem> exportedItems) {
+    public void setExportedItems(Map<ExternalEntityHeader, ExportedItem> exportedItems) {
         this.exportedItems = exportedItems;
     }
 
 
-    public boolean hasItem(EntityHeader header) {
+    public boolean hasItem(ExternalEntityHeader header) {
         return exportedItems.containsKey(header);
     }
 
-    public ExportedItem getExportedItem(EntityHeader header) {
+    public ExportedItem getExportedItem(ExternalEntityHeader header) {
         return exportedItems.get(header);
     }
 
@@ -83,7 +82,7 @@ public class MigrationBundle {
 
     // --- mapping operations ---
 
-    public void mapValue(EntityHeader dependency, Entity newValue) throws MigrationApi.MigrationException {
+    public void mapValue(ExternalEntityHeader dependency, Entity newValue) throws MigrationApi.MigrationException {
 
         Set<MigrationDependency> dependants = metadata.getDependants(dependency);
 
@@ -109,7 +108,7 @@ public class MigrationBundle {
         Set<MigrationDependency> result = new HashSet<MigrationDependency>();
         for(MigrationDependency m : metadata.getDependencies()) {
             MigrationMappingType type = m.getMappingType();
-            EntityHeader targetHeaderRef = m.getDependency();
+            ExternalEntityHeader targetHeaderRef = m.getDependency();
             ExportedItem targetItem = getExportedItem(targetHeaderRef);
             boolean hasSourceValue = targetItem != null && targetItem.getSourceValue() != null;
             boolean hasMappedValue = targetItem != null && targetItem.getMappedValue() != null;
@@ -152,15 +151,15 @@ public class MigrationBundle {
         return result;
     }
 
-    public Map<EntityHeader, Entity> getExportedEntities() {
-        Map<EntityHeader, Entity> result = new HashMap<EntityHeader, Entity>();
-        for (Map.Entry<EntityHeader, ExportedItem> itemEntry : getExportedItems().entrySet()) {
+    public Map<ExternalEntityHeader, Entity> getExportedEntities() {
+        Map<ExternalEntityHeader, Entity> result = new HashMap<ExternalEntityHeader, Entity>();
+        for (Map.Entry<ExternalEntityHeader, ExportedItem> itemEntry : getExportedItems().entrySet()) {
             result.put(itemEntry.getKey(), itemEntry.getValue().getValue());
         }
         return result;
     }
 
-    public Entity getExportedEntity(EntityHeader header) {
+    public Entity getExportedEntity(ExternalEntityHeader header) {
         return hasItem(header) ? getExportedItem(header).getValue() : null;
     }
 }

@@ -4,8 +4,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.objectmodel.migration.*;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -37,7 +37,7 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
     }
 
     @Override
-    public Map<EntityHeader, Set<MigrationDependency>> getDependencies(EntityHeader source, Object entity, final Method property, String propertyName) throws PropertyResolverException {
+    public Map<ExternalEntityHeader, Set<MigrationDependency>> getDependencies(ExternalEntityHeader source, Object entity, final Method property, String propertyName) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
         Policy policy;
@@ -56,7 +56,7 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
             throw new PropertyResolverException("Error getting root assertion from policy.", e);
         }
 
-        Map<EntityHeader, Set<MigrationDependency>> result = new HashMap<EntityHeader, Set<MigrationDependency>>();
+        Map<ExternalEntityHeader, Set<MigrationDependency>> result = new HashMap<ExternalEntityHeader, Set<MigrationDependency>>();
         getHeadersRecursive(source, assertion, result, propertyName);
 
         logger.log(Level.FINE, "Found {0} headers for property {1}.", new Object[] { result.size(), property });
@@ -64,7 +64,8 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
         return result;
     }
 
-    public void applyMapping(Object sourceEntity, String propName, EntityHeader targetHeader, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
+    @Override
+    public void applyMapping(Object sourceEntity, String propName, ExternalEntityHeader targetHeader, Object targetValue, ExternalEntityHeader originalHeader) throws PropertyResolverException {
         if (! (sourceEntity instanceof Entity))
             throw new PropertyResolverException("Cannot handle non-entities; received: " + (sourceEntity == null ? null : sourceEntity.getClass()));
 
@@ -90,7 +91,7 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
         }
     }
 
-    private void applyMappingToPolicy(Policy policy, String propName, EntityHeader targetHeader, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
+    private void applyMappingToPolicy(Policy policy, String propName, ExternalEntityHeader targetHeader, Object targetValue, ExternalEntityHeader originalHeader) throws PropertyResolverException {
 
         Assertion assertion = MigrationUtils.getAssertion(policy, propName);
 
@@ -113,7 +114,7 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
         }
     }
 
-    private void getHeadersRecursive(EntityHeader source, Assertion assertion, Map<EntityHeader, Set<MigrationDependency>> result, String topPropertyName) throws PropertyResolverException {
+    private void getHeadersRecursive(ExternalEntityHeader source, Assertion assertion, Map<ExternalEntityHeader, Set<MigrationDependency>> result, String topPropertyName) throws PropertyResolverException {
 
         logger.log(Level.FINE, "Getting headers for assertion: " + assertion);
 
@@ -123,8 +124,8 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
                 PropertyResolver resolver = getResolver(method);
                 // use assertion's ordinal to identify where in the policy xml each dependency can be mapped
                 String propertyName = topPropertyName + ":" + Integer.toString(assertion.getOrdinal()) + ":" + MigrationUtils.propertyNameFromGetter(method.getName());
-                Map<EntityHeader, Set<MigrationDependency>> deps = resolver.getDependencies(source, assertion, method, propertyName);
-                for (EntityHeader depHeader : deps.keySet()) {
+                Map<ExternalEntityHeader, Set<MigrationDependency>> deps = resolver.getDependencies(source, assertion, method, propertyName);
+                for (ExternalEntityHeader depHeader : deps.keySet()) {
                     for (MigrationDependency dep : deps.get(depHeader)) {
                         addToResult(depHeader, dep, result);
                     }

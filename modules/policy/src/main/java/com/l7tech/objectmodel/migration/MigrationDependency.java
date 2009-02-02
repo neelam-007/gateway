@@ -1,6 +1,6 @@
 package com.l7tech.objectmodel.migration;
 
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.ExternalEntityHeader;
 
 import javax.xml.bind.annotation.*;
 
@@ -24,8 +24,8 @@ import javax.xml.bind.annotation.*;
 @XmlType(propOrder = {"dependant", "propName", "mappingType", "dependency"})
 public class MigrationDependency {
 
-    private EntityHeader dependant;
-    private EntityHeader dependency;
+    private ExternalEntityHeader dependant;
+    private ExternalEntityHeader dependency;
 
     private String propName;
     private MigrationMappingType mappingType;
@@ -33,7 +33,7 @@ public class MigrationDependency {
 
     protected MigrationDependency() {}
 
-    public MigrationDependency(EntityHeader dependant, EntityHeader dependency, String propName, MigrationMappingType mappingType, boolean export) {
+    public MigrationDependency(ExternalEntityHeader dependant, ExternalEntityHeader dependency, String propName, MigrationMappingType mappingType, boolean export) {
         this.dependant = dependant;
         this.dependency = dependency;
         this.propName = propName;
@@ -42,20 +42,20 @@ public class MigrationDependency {
     }
 
     @XmlElement(name = "dependant")
-    public EntityHeader getDependant() {
+    public ExternalEntityHeader getDependant() {
         return dependant;
     }
 
-    public void setDependant(EntityHeader dependant) {
+    public void setDependant(ExternalEntityHeader dependant) {
         this.dependant = dependant;
     }
 
     @XmlElement(name = "dependency")
-    public EntityHeader getDependency() {
+    public ExternalEntityHeader getDependency() {
         return dependency;
     }
 
-    public void setDependency(EntityHeader dependency) {
+    public void setDependency(ExternalEntityHeader dependency) {
         this.dependency = dependency;
     }
 

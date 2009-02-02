@@ -34,33 +34,33 @@ public class MigrationMetadata {
     /**
      * Headers for all the items in the Migration Bundle.
      */
-    private Set<EntityHeader> headers = new HashSet<EntityHeader>();
+    private Set<ExternalEntityHeader> headers = new HashSet<ExternalEntityHeader>();
 
     private Set<MigrationDependency> dependencies = new HashSet<MigrationDependency>();
-    private Map<EntityHeader, Set<MigrationDependency>> dependenciesBySource;
-    private Map<EntityHeader, Set<MigrationDependency>> dependenciesByTarget;
+    private Map<ExternalEntityHeader, Set<MigrationDependency>> dependenciesBySource;
+    private Map<ExternalEntityHeader, Set<MigrationDependency>> dependenciesByTarget;
 
-    private Map<EntityHeader, EntityHeader> mappings = new HashMap<EntityHeader, EntityHeader>();
-    private Map<EntityHeader, EntityHeader> copies = new HashMap<EntityHeader, EntityHeader>();
+    private Map<ExternalEntityHeader, ExternalEntityHeader> mappings = new HashMap<ExternalEntityHeader, ExternalEntityHeader>();
+    private Map<ExternalEntityHeader, ExternalEntityHeader> copies = new HashMap<ExternalEntityHeader, ExternalEntityHeader>();
 
     @XmlElementRef
-    public Set<EntityHeader> getHeaders() {
+    public Set<ExternalEntityHeader> getHeaders() {
         return headers;
     }
 
-    public void setHeaders(Set<EntityHeader> headers) {
+    public void setHeaders(Set<ExternalEntityHeader> headers) {
         this.headers = headers;
     }
 
-    public void addHeader(EntityHeader header) {
+    public void addHeader(ExternalEntityHeader header) {
         headers.add(header);
     }
 
-    public void removeHeader(EntityHeader header) {
+    public void removeHeader(ExternalEntityHeader header) {
         headers.remove(header);
     }
 
-    public boolean hasHeader(EntityHeader header) {
+    public boolean hasHeader(ExternalEntityHeader header) {
         return headers.contains(header);
     }
 
@@ -83,27 +83,27 @@ public class MigrationMetadata {
     }
 
     @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class)
-    public Map<EntityHeader, EntityHeader> getMappings() {
+    public Map<ExternalEntityHeader, ExternalEntityHeader> getMappings() {
         return mappings;
     }
 
-    public void setMappings(Map<EntityHeader, EntityHeader> mappings) {
+    public void setMappings(Map<ExternalEntityHeader, ExternalEntityHeader> mappings) {
         this.mappings = mappings;
     }
 
-    public Collection<EntityHeader> getMappedHeaders() {
+    public Collection<ExternalEntityHeader> getMappedHeaders() {
         return mappings.values();
     }
 
-    public EntityHeader getMapping(EntityHeader header) {
+    public ExternalEntityHeader getMapping(ExternalEntityHeader header) {
         return mappings.get(header);
     }
 
-    public boolean isMapped(EntityHeader header) {
+    public boolean isMapped(ExternalEntityHeader header) {
         return mappings.containsKey(header);
     }
 
-    public void addMappingOrCopy(EntityHeader source, EntityHeader target, boolean isCopy) {
+    public void addMappingOrCopy(ExternalEntityHeader source, ExternalEntityHeader target, boolean isCopy) {
         if (isCopy) {
             copies.put(source, target);
             mappings.remove(source);
@@ -113,7 +113,7 @@ public class MigrationMetadata {
         }
     }
 
-    public EntityHeader getCopiedOrMapped(EntityHeader header) {
+    public ExternalEntityHeader getCopiedOrMapped(ExternalEntityHeader header) {
         if (wasCopied(header))
             return getCopied(header);
         else if (isMapped(header))
@@ -123,29 +123,29 @@ public class MigrationMetadata {
     }
 
     @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class)
-    public Map<EntityHeader, EntityHeader> getCopies() {
+    public Map<ExternalEntityHeader, ExternalEntityHeader> getCopies() {
         return copies;
     }
 
-    public void setCopies(Map<EntityHeader, EntityHeader> copies) {
+    public void setCopies(Map<ExternalEntityHeader, ExternalEntityHeader> copies) {
         this.copies = copies;
     }
 
-    public Collection<EntityHeader> getCopiedHeaders() {
+    public Collection<ExternalEntityHeader> getCopiedHeaders() {
         return copies.values();
     }
 
-    public EntityHeader getCopied(EntityHeader header) {
+    public ExternalEntityHeader getCopied(ExternalEntityHeader header) {
         return copies.get(header);
     }
 
-    public boolean wasCopied(EntityHeader header) {
+    public boolean wasCopied(ExternalEntityHeader header) {
         return copies.containsKey(header);
     }
 
     private void initDependenciesCache()  {
-        dependenciesBySource = new HashMap<EntityHeader, Set<MigrationDependency>>();
-        dependenciesByTarget = new HashMap<EntityHeader, Set<MigrationDependency>>();
+        dependenciesBySource = new HashMap<ExternalEntityHeader, Set<MigrationDependency>>();
+        dependenciesByTarget = new HashMap<ExternalEntityHeader, Set<MigrationDependency>>();
         for (MigrationDependency dependency : this.dependencies) {
             addDependencies(dependency.getDependant(), Collections.singleton(dependency));
             addDependants(dependency.getDependency(), Collections.singleton(dependency));
@@ -153,15 +153,15 @@ public class MigrationMetadata {
         logger.log(Level.FINEST, "Dependencies cache initialized.");
     }
 
-    private void addDependencies(EntityHeader source, Set<MigrationDependency> deps) {
+    private void addDependencies(ExternalEntityHeader source, Set<MigrationDependency> deps) {
         getDependencies(source).addAll(deps);
     }
 
-    private void addDependants(EntityHeader target, Set<MigrationDependency> deps) {
+    private void addDependants(ExternalEntityHeader target, Set<MigrationDependency> deps) {
         getDependants(target).addAll(deps);
     }
 
-    public Set<MigrationDependency> getDependencies(EntityHeader source)  {
+    public Set<MigrationDependency> getDependencies(ExternalEntityHeader source)  {
         if (dependenciesBySource == null) initDependenciesCache();
 
         if ( ! dependenciesBySource.containsKey(source))
@@ -170,7 +170,7 @@ public class MigrationMetadata {
         return dependenciesBySource.get(source);
     }
 
-    public Set<MigrationDependency> getDependants(EntityHeader target) {
+    public Set<MigrationDependency> getDependants(ExternalEntityHeader target) {
         if (dependenciesByTarget == null) initDependenciesCache();
 
         if ( ! dependenciesByTarget.containsKey(target))
@@ -179,7 +179,7 @@ public class MigrationMetadata {
         return dependenciesByTarget.get(target);
     }
 
-    public boolean isMappingRequired(EntityHeader header) throws MigrationApi.MigrationException {
+    public boolean isMappingRequired(ExternalEntityHeader header) throws MigrationApi.MigrationException {
         for (MigrationDependency dependency : getDependants(header)) {
             if ( dependency.getMappingType().getNameMapping() == MigrationMappingSelection.REQUIRED ||
                  dependency.getMappingType().getValueMapping() == MigrationMappingSelection.REQUIRED)
@@ -188,7 +188,7 @@ public class MigrationMetadata {
         return false;
     }
 
-    public boolean includeInExport(EntityHeader header) throws MigrationApi.MigrationException {
+    public boolean includeInExport(ExternalEntityHeader header) throws MigrationApi.MigrationException {
         if (isMappingRequired(header)) {
             return false;
         } else {
@@ -206,8 +206,8 @@ public class MigrationMetadata {
         }
     }
 
-    public Set<EntityHeader> getMappableDependencies() {
-        Set<EntityHeader> result = new HashSet<EntityHeader>();
+    public Set<ExternalEntityHeader> getMappableDependencies() {
+        Set<ExternalEntityHeader> result = new HashSet<ExternalEntityHeader>();
         for(MigrationDependency dep : dependencies) {
             if (dep.getMappingType().getNameMapping() != NONE || dep.getMappingType().getValueMapping() != NONE)
                 result.add(dep.getDependency());

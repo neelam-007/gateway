@@ -27,7 +27,7 @@ public class ServiceDocumentResolver extends AbstractPropertyResolver {
         this.documentManager = documentManager;
     }
 
-    public final Map<EntityHeader, Set<MigrationDependency>> getDependencies(final EntityHeader source, Object entity, Method property, String propertyName) throws PropertyResolverException {
+    public Map<ExternalEntityHeader, Set<MigrationDependency>> getDependencies(ExternalEntityHeader source, Object entity, Method property, String propertyName) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
         final Long serviceOid;
@@ -37,10 +37,10 @@ public class ServiceDocumentResolver extends AbstractPropertyResolver {
             throw new PropertyResolverException("Error getting property value for entity: " + entity, e);
         }
 
-        Map<EntityHeader,Set<MigrationDependency>> result = new HashMap<EntityHeader, Set<MigrationDependency>>();
+        Map<ExternalEntityHeader,Set<MigrationDependency>> result = new HashMap<ExternalEntityHeader, Set<MigrationDependency>>();
         try {
             for (ServiceDocument doc : documentManager.findByServiceId(serviceOid)) {
-                    EntityHeader docHeader = EntityHeaderUtils.fromEntity(doc);
+                    ExternalEntityHeader docHeader = EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(doc));
                     result.put(docHeader, Collections.<MigrationDependency>singleton(null));
                 }
         } catch (FindException e) {
@@ -49,7 +49,7 @@ public class ServiceDocumentResolver extends AbstractPropertyResolver {
         return result;
     }
 
-    public void applyMapping(Object sourceEntity, String propName, EntityHeader targetHeader, Object targetValue, EntityHeader originalHeader) throws PropertyResolverException {
+    public void applyMapping(Object sourceEntity, String propName, ExternalEntityHeader targetHeader, Object targetValue, ExternalEntityHeader originalHeader) throws PropertyResolverException {
         // nothing to do here; this is an inverse dependency: the service entity is applied as a property of the service document
     }
 }

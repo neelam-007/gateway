@@ -1,8 +1,8 @@
 package com.l7tech.server.management.api.node;
 
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.MigratedItem;
@@ -22,24 +22,24 @@ import java.util.*;
 public interface MigrationApi {
 
     @WebMethod(operationName="ListEntities")
-    Collection<EntityHeader> listEntities(  @WebParam(name="EntityClass") Class<? extends Entity> clazz ) throws MigrationException;
+    Collection<ExternalEntityHeader> listEntities(  @WebParam(name="EntityClass") Class<? extends Entity> clazz ) throws MigrationException;
 
     @WebMethod(operationName="CheckHeaders")
-    Collection<EntityHeader> checkHeaders( @WebParam(name="EntityHeaders") Collection<EntityHeader> headers);
+    Collection<ExternalEntityHeader> checkHeaders( @WebParam(name="ExternalEntityHeaders") Collection<ExternalEntityHeader> headers);
 
     @WebMethod(operationName="FindDependencies")
-    MigrationMetadata findDependencies( @WebParam(name="EntityHeaders") Collection<EntityHeader> headers ) throws MigrationException;
+    MigrationMetadata findDependencies( @WebParam(name="ExternalEntityHeaders") Collection<ExternalEntityHeader> headers ) throws MigrationException;
 
     @WebMethod(operationName="ExportBundle")
-    MigrationBundle exportBundle( @WebParam(name="EntityHeaders") Collection<EntityHeader> headers ) throws MigrationException;
+    MigrationBundle exportBundle( @WebParam(name="ExternalEntityHeaders") Collection<ExternalEntityHeader> headers ) throws MigrationException;
 
     @WebMethod(operationName="RetrieveMappingCandidates")
-    Collection<MappingCandidate> retrieveMappingCandidates( @WebParam(name="EntityHeaders") Collection<EntityHeader> mappables,
+    Collection<MappingCandidate> retrieveMappingCandidates( @WebParam(name="ExternalEntityHeaders") Collection<ExternalEntityHeader> mappables,
                                                             @WebParam(name="Filter") String filter ) throws MigrationException;
 
     @WebMethod(operationName="ImportBundle")
     Collection<MigratedItem> importBundle( @WebParam(name="Bundle") MigrationBundle bundle,
-                       @WebParam(name="TargetFolder") EntityHeader targetFolder,
+                       @WebParam(name="TargetFolder") ExternalEntityHeader targetFolder,
                        @WebParam(name="FlattenFolders") boolean flattenFolders,
                        @WebParam(name="OverwriteExisting") boolean overwriteExisting,
                        @WebParam(name="EnableServices") boolean enableServices,
@@ -48,38 +48,38 @@ public interface MigrationApi {
 
     @XmlRootElement(name="MappingCandidate", namespace="http://www.layer7tech.com/management/migration")
     final class MappingCandidate {
-        private EntityHeader header;
-        private EntityHeaderSet candidates;
+        private ExternalEntityHeader header;
+        private EntityHeaderSet<ExternalEntityHeader> candidates;
 
         public MappingCandidate() {
         }
 
-        public MappingCandidate( final EntityHeader header, final EntityHeaderSet candidates ) {
+        public MappingCandidate( final ExternalEntityHeader header, final EntityHeaderSet<ExternalEntityHeader> candidates ) {
             this.header = header;
             this.candidates = candidates;
         }
 
-        public EntityHeader getHeader() {
+        public ExternalEntityHeader getHeader() {
             return header;
         }
 
-        public void setHeader(EntityHeader header) {
+        public void setHeader(ExternalEntityHeader header) {
             this.header = header;
         }
 
-        public EntityHeaderSet getCandidates() {
+        public EntityHeaderSet<ExternalEntityHeader> getCandidates() {
             return candidates;
         }
 
-        public void setCandidates(EntityHeaderSet candidates) {
+        public void setCandidates(EntityHeaderSet<ExternalEntityHeader> candidates) {
             this.candidates = candidates;
         }
 
-        public static Collection<MappingCandidate> asCandidates( final Map<EntityHeader,EntityHeaderSet> map ) {
+        public static Collection<MappingCandidate> asCandidates( final Map<ExternalEntityHeader,EntityHeaderSet<ExternalEntityHeader>> map ) {
             Collection<MappingCandidate> candidates = new ArrayList<MappingCandidate>();
 
             if ( map != null ) {
-                for ( Map.Entry<EntityHeader,EntityHeaderSet> entry : map.entrySet() ) {
+                for ( Map.Entry<ExternalEntityHeader,EntityHeaderSet<ExternalEntityHeader>> entry : map.entrySet() ) {
                     candidates.add( new MappingCandidate( entry.getKey(), entry.getValue() ) );
                 }
             }
@@ -87,8 +87,8 @@ public interface MigrationApi {
             return candidates;
         }
 
-        public static Map<EntityHeader,EntityHeaderSet> fromCandidates( final Collection<MappingCandidate> candidates ) {
-            final Map<EntityHeader,EntityHeaderSet> map = new LinkedHashMap<EntityHeader,EntityHeaderSet>();
+        public static Map<ExternalEntityHeader,EntityHeaderSet<ExternalEntityHeader>> fromCandidates( final Collection<MappingCandidate> candidates ) {
+            final Map<ExternalEntityHeader,EntityHeaderSet<ExternalEntityHeader>> map = new LinkedHashMap<ExternalEntityHeader,EntityHeaderSet<ExternalEntityHeader>>();
 
             if ( candidates != null ) {
                 for ( MappingCandidate candidate : candidates ) {

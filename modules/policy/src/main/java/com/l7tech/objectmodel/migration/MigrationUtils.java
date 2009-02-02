@@ -2,9 +2,6 @@ package com.l7tech.objectmodel.migration;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.NamedEntity;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.Policy;
 
@@ -143,20 +140,6 @@ public class MigrationUtils {
      */
     public static boolean isEntityOrHeader(Class clazz) {
         return EntityHeader.class.isAssignableFrom(clazz) || Entity.class.isAssignableFrom(clazz);
-    }
-
-    /**
-     * Retrives an EntityHeader from the given Entity parameter.
-     */
-    public static EntityHeader getHeaderFromEntity(Entity entity) {
-        final String name = entity instanceof NamedEntity ? ((NamedEntity)entity).getName() : null;
-        final EntityType type = EntityType.findTypeByEntity(entity.getClass());
-        if ( entity instanceof PersistentEntity ) {
-            PersistentEntity persistentEntity = (PersistentEntity) entity;
-            return new EntityHeader(persistentEntity.getOid(), type, name, "", persistentEntity.getVersion());
-        } else {
-            return new EntityHeader(entity.getId(), type, name, "");
-        }
     }
 
     /**

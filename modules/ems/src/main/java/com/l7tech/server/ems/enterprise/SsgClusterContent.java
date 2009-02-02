@@ -10,7 +10,7 @@ package com.l7tech.server.ems.enterprise;
 public class SsgClusterContent extends JSONSupport {
     private static final String ROOT = "Root Node";
 
-    private String id;
+    private String externalId;
     private String relatedId;  // Store the OID of a real published service / policy fragment if the entity is an alias.  relatedId = null if the entity is not an alias.
     private String parentId;
     private com.l7tech.objectmodel.EntityType entityType;
@@ -18,8 +18,8 @@ public class SsgClusterContent extends JSONSupport {
     private Integer version;
     private boolean isOperation;
 
-    public SsgClusterContent(String id, String relatedId, String parentId, com.l7tech.objectmodel.EntityType entityType, String name, Integer version) {
-        this.id = id;
+    public SsgClusterContent(String externalId, String relatedId, String parentId, com.l7tech.objectmodel.EntityType entityType, String name, Integer version) {
+        this.externalId = externalId;
         this.relatedId = relatedId;
         this.parentId = parentId;
         this.entityType = entityType;
@@ -28,8 +28,8 @@ public class SsgClusterContent extends JSONSupport {
     }
 
     // Constructor for operations.
-    public SsgClusterContent(String id, String parentId, String name) {
-        this.id = id;
+    public SsgClusterContent(String externalId, String parentId, String name) {
+        this.externalId = externalId;
         this.parentId = parentId;
         this.name = ROOT.equals(name) && (parentId==null||parentId.isEmpty()) ? "/" : name;
         isOperation = true;
@@ -37,7 +37,7 @@ public class SsgClusterContent extends JSONSupport {
 
     @Override
     protected void writeJson() {
-        add(JSONConstants.ID, id);
+        add(JSONConstants.ID, externalId);
         add(JSONConstants.RELATED_ID, relatedId);
         add(JSONConstants.PARENT_ID, parentId);
         add(JSONConstants.TYPE, findType(entityType, isOperation));

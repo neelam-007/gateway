@@ -1,6 +1,6 @@
 package com.l7tech.server.management.migration.bundle;
 
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.ExternalEntityHeader;
 
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -11,32 +11,32 @@ import javax.xml.bind.annotation.XmlRootElement;
  */
 @XmlRootElement
 public class MigratedItem {
-    private EntityHeader sourceHeader;
-    private EntityHeader targetHeader;
+    private ExternalEntityHeader sourceHeader;
+    private ExternalEntityHeader targetHeader;
     public static enum ImportOperation { CREATE, UPDATE, IGNORE }
     private ImportOperation operation;
 
     public MigratedItem() {}
 
-    public MigratedItem(EntityHeader sourceHeader, EntityHeader targetHeader, ImportOperation operation) {
+    public MigratedItem(ExternalEntityHeader sourceHeader, ExternalEntityHeader targetHeader, ImportOperation operation) {
         this.sourceHeader = sourceHeader;
         this.targetHeader = targetHeader;
         this.operation = operation;
     }
 
-    public EntityHeader getTargetHeader() {
+    public ExternalEntityHeader getTargetHeader() {
         return targetHeader;
     }
 
-    public void setTargetHeader(EntityHeader targetHeader) {
+    public void setTargetHeader(ExternalEntityHeader targetHeader) {
         this.targetHeader = targetHeader;
     }
 
-    public EntityHeader getSourceHeader() {
+    public ExternalEntityHeader getSourceHeader() {
         return sourceHeader;
     }
 
-    public void setSourceHeader(EntityHeader sourceHeader) {
+    public void setSourceHeader(ExternalEntityHeader sourceHeader) {
         this.sourceHeader = sourceHeader;
     }
 

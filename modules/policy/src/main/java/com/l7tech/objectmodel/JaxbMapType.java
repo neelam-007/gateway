@@ -5,7 +5,7 @@ import javax.xml.bind.annotation.XmlElement;
 import java.util.*;
 
 /**
- * JAXB HashMap serialization.
+ * JAXB Map serialization.
  *
  * @author jbufu
  */

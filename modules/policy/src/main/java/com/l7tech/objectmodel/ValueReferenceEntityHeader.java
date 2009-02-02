@@ -1,42 +1,42 @@
 package com.l7tech.objectmodel;
 
+import com.l7tech.util.HexUtils;
+
 import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlAttribute;
+import java.nio.charset.Charset;
 
 /**
  * @author jbufu
  */
 @XmlRootElement
-public class ValueReferenceEntityHeader extends EntityHeader {
+public class ValueReferenceEntityHeader extends ExternalEntityHeader {
 
-    private EntityType ownertype;
-    private String propertyName;
+    private final static String OWNER_TYPE = "ownerType";
 
     public ValueReferenceEntityHeader() {
-        this.ownertype = EntityType.ANY;
     }
 
-    public ValueReferenceEntityHeader(EntityHeader owner, String propertyName) {
-        super(owner.getStrId(), EntityType.VALUE_REFERENCE, owner.getName() + " : " + propertyName, "");
-        this.ownertype = owner.getType();
-        this.propertyName = propertyName;
+    public ValueReferenceEntityHeader(ExternalEntityHeader owner, String propertyName) {
+        super(HexUtils.encodeBase64(propertyName.getBytes(Charset.forName("UTF-8"))) + ":" + owner.getExternalId(), owner);
+        setName(getName() + " : " + propertyName);
+        addProperty(OWNER_TYPE, owner.getType().name());
+        this.type = EntityType.VALUE_REFERENCE;
     }
 
-    @XmlAttribute
-    public EntityType getOwnertype() {
-        return ownertype;
+    public ValueReferenceEntityHeader(ExternalEntityHeader other) {
+        super(other.getExternalId(), other);
+        setExtraProperties(other.getExtraProperties());
     }
 
-    public void setOwnertype(EntityType ownertype) {
-        this.ownertype = ownertype;
+    public EntityType getOwnerType() {
+        return EntityType.valueOf(getProperty(OWNER_TYPE));
     }
 
-    @XmlAttribute
+    public String getOwnwerId() {
+        return getExternalId().substring(getExternalId().indexOf(":")+1);
+    }
+
     public String getPropertyName() {
-        return propertyName;
-    }
-
-    public void setPropertyName(String propertyName) {
-        this.propertyName = propertyName;
+        return HexUtils.decodeUtf8(HexUtils.decodeBase64(getExternalId().substring(0, getExternalId().indexOf(":"))));
     }
 }

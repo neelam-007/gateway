@@ -22,7 +22,7 @@ public class FolderHeader extends EntityHeader {
     public FolderHeader( final long objectid,
                          final String name,
                          final Long parentFolderOid,
-                         final int version ) {
+                         final Integer version) {
         super(objectid, EntityType.FOLDER, name, name, version);
         this.parentFolderOid = parentFolderOid;
     }

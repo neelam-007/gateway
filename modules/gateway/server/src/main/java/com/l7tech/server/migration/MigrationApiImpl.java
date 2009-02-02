@@ -6,12 +6,10 @@ import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.MigratedItem;
 import com.l7tech.server.management.migration.MigrationManager;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.util.ExceptionUtils;
 
-import javax.jws.WebMethod;
-import javax.jws.WebParam;
 import java.util.Collection;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -32,7 +30,7 @@ public class MigrationApiImpl implements MigrationApi {
     }
 
     @Override
-    public Collection<EntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException {
+    public Collection<ExternalEntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException {
         try {
             return manager.listEntities(clazz);
         } catch ( RuntimeException re ) {
@@ -42,7 +40,7 @@ public class MigrationApiImpl implements MigrationApi {
     }
 
     @Override
-    public Collection<EntityHeader> checkHeaders(Collection<EntityHeader> headers) {
+    public Collection<ExternalEntityHeader> checkHeaders(Collection<ExternalEntityHeader> headers) {
         try {
             return manager.checkHeaders(headers);
         } catch ( Exception e ) {
@@ -52,7 +50,7 @@ public class MigrationApiImpl implements MigrationApi {
     }
 
     @Override
-    public MigrationMetadata findDependencies(Collection<EntityHeader> headers) throws MigrationException {
+    public MigrationMetadata findDependencies(Collection<ExternalEntityHeader> headers) throws MigrationException {
         try {
             return manager.findDependencies(headers);
         } catch ( RuntimeException re ) {
@@ -62,7 +60,7 @@ public class MigrationApiImpl implements MigrationApi {
     }
 
     @Override
-    public MigrationBundle exportBundle(Collection<EntityHeader> headers) throws MigrationException {
+    public MigrationBundle exportBundle(Collection<ExternalEntityHeader> headers) throws MigrationException {
         try {
             return manager.exportBundle(headers);
         } catch ( MigrationException e ) {
@@ -75,7 +73,7 @@ public class MigrationApiImpl implements MigrationApi {
     }
 
     @Override
-    public Collection<MappingCandidate> retrieveMappingCandidates(Collection<EntityHeader> mappables, String filter) throws MigrationException {
+    public Collection<MappingCandidate> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, String filter) throws MigrationException {
         try {
             return MigrationApi.MappingCandidate.asCandidates(manager.retrieveMappingCandidates(mappables, filter));
         } catch ( RuntimeException re ) {
@@ -85,7 +83,7 @@ public class MigrationApiImpl implements MigrationApi {
     }
 
     @Override
-    public Collection<MigratedItem> importBundle(MigrationBundle bundle, EntityHeader targetFolder,
+    public Collection<MigratedItem> importBundle(MigrationBundle bundle, ExternalEntityHeader targetFolder,
                                                  boolean flattenFolders, boolean overwriteExisting, boolean enableServices, boolean dryRun) throws MigrationException {
         boolean oldSystem = auditContext.isSystem();
         try {
