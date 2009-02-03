@@ -513,14 +513,14 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     /**
-     * Check if the given assertion has a child of the given type.
+     * Check if the given assertion has a child of the given type.  It will ignore disabled assertions.
      *
      * @param in The assertion to check
      * @param assertionClass The type to find
      * @return true if the given assertion or one of its children is the correct type
      */
     public static boolean contains(Assertion in, Class assertionClass) {
-        return contains(in, assertionClass, false);
+        return contains(in, assertionClass, true);
     }
 
     /**
@@ -531,12 +531,13 @@ public abstract class Assertion implements Cloneable, Serializable {
      *
      * @param in: the assertion to check.  If null, this method returns false.
      * @param assertionClass: the type to find
-     * @param considerAssertionDisable: a flag indicates if it is needed to consider the checked assertion is disabled or not.
+     * @param ignoreDisabledAssertion  TRUE if would like to ignore disabled assertions,
+     *                                 otherwise FALSE to include disabled assertions as part of the search
      * @return true if the given assertion or one of its children is the correct type and also is enabled if consierDisable
      *         is set to ture.
      */
-    public static boolean contains(Assertion in, Class assertionClass, boolean considerAssertionDisable) {
-        return null != find(in, assertionClass, considerAssertionDisable);
+    public static boolean contains(Assertion in, Class assertionClass, boolean ignoreDisabledAssertion) {
+        return null != find(in, assertionClass, ignoreDisabledAssertion);
     }
 
     /**
@@ -547,12 +548,13 @@ public abstract class Assertion implements Cloneable, Serializable {
      *
      * @param in the assertion to search.  If null, this method returns null.
      * @param assertionClass the assertion class to search for.  Required.
-     * @param considerAssertionDisable true to match even disabled assertions; false to ignore disabled assertions.
+     * @param ignoreDisabledAssertion TRUE if would like to ignore disabled assertions, FALSE to include disabled assertions
+     *                                in part of the searching
      * @return the first matching assertion, which may be the assertion passed in, or null if no match.
      */
-    public static <T extends Assertion> T find(Assertion in, Class<T> assertionClass, boolean considerAssertionDisable) {
+    public static <T extends Assertion> T find(Assertion in, Class<T> assertionClass, boolean ignoreDisabledAssertion) {
         if (assertionClass.isInstance(in)) {
-            if (! considerAssertionDisable || in.isEnabled())
+            if (! ignoreDisabledAssertion || in.isEnabled())
                 return (T)in;
         } else if (in instanceof CompositeAssertion) {
             CompositeAssertion comp = (CompositeAssertion) in;
@@ -560,7 +562,7 @@ public abstract class Assertion implements Cloneable, Serializable {
             for (Iterator iterator = kids.iterator(); iterator.hasNext();) {
                 Assertion assertion = (Assertion) iterator.next();
 
-                T result = find(assertion, assertionClass, considerAssertionDisable);
+                T result = find(assertion, assertionClass, ignoreDisabledAssertion);
                 if (result != null)
                     return result;
             }

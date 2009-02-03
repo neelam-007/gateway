@@ -21,6 +21,9 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.wssp.WsspWriter;
+import com.l7tech.policy.PolicyPathBuilder;
+import com.l7tech.policy.PolicyPathBuilderFactory;
+import com.l7tech.policy.Policy;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
@@ -93,6 +96,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private SoapActionResolver sactionResolver;
     private UrnResolver nsResolver;
     private ServiceDocumentManager serviceDocumentManager;
+    private PolicyPathBuilder policyPathBuilder;
 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
@@ -106,6 +110,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         clientPolicyFilterManager = (FilterManager)appcontext.getBean("policyFilterManager", FilterManager.class);
         wsspFilterManager = (FilterManager)appcontext.getBean("wsspolicyFilterManager", FilterManager.class);
         serviceDocumentManager = (ServiceDocumentManager)appcontext.getBean("serviceDocumentManager", ServiceDocumentManager.class);
+        PolicyPathBuilderFactory pathBuilderFactory = (PolicyPathBuilderFactory) appcontext.getBean("policyPathBuilderFactory", PolicyPathBuilderFactory.class);
+        policyPathBuilder = pathBuilderFactory.makePathBuilder();
 
         sactionResolver = new SoapActionResolver(appcontext);
         nsResolver = new UrnResolver(appcontext);
@@ -493,11 +499,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
 
         try{
-            Assertion rootassertion = wspReader.parsePermissively(svc.getPolicy().getXml());
+            Assertion rootassertion = Policy.simplify(policyPathBuilder.inlineIncludes(wspReader.parsePermissively(svc.getPolicy().getXml()), null, false));
 
-            // Set the parameter considerDisable to be true, since WsspAssertion is a key to determine if a security
-            // policy content will be added into the wsdl.  If the WsspAssertion is disabled, even thought rootassertion
-            // contains WsspAssertion, the program won't go further to add the security policy content in the wsdl.
+            //we should ignore wssp assertion if the wssp assertion is disabled
             WsspAssertion wsspAssertion = Assertion.find(rootassertion, WsspAssertion.class, true);
             if (wsspAssertion == null) {
                 logger.fine("No WSSP Assertion in policy, not adding policy to WSDL.");

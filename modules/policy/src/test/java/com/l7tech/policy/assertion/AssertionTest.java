@@ -7,6 +7,7 @@
 package com.l7tech.policy.assertion;
 
 import java.util.Arrays;
+import java.util.List;
 import java.io.ObjectInputStream;
 import java.io.ByteArrayInputStream;
 
@@ -157,5 +158,28 @@ public class AssertionTest {
         public void setTestValue(String testValue) {
             this.testValue = testValue;
         }
+    }
+
+    /**
+     * Tests that disable assertions are checked accordingly.
+     */
+    @Test
+    public void testSearchingEnableDisableAssertions() {
+        FalseAssertion falseAssertion = new FalseAssertion();
+        falseAssertion.setEnabled(false);
+        final List kids = Arrays.asList(new Assertion[]{new TrueAssertion(), falseAssertion});
+        CompositeAssertion rootAssertion = new AllAssertion(kids);
+
+        //should not contain the false assertion because it's disabled
+        Assert.assertFalse("Disabled false assertion is not contained", Assertion.contains(rootAssertion, FalseAssertion.class));
+        Assert.assertTrue("Enabled true assertion is contained", Assertion.contains(rootAssertion, TrueAssertion.class));
+
+        //should find or contains the disabled assertion
+        Assert.assertTrue("Disabled false assertion is found", Assertion.contains(rootAssertion, FalseAssertion.class, false));
+        Assert.assertTrue("Disabled false assertion is found", Assertion.find(rootAssertion, FalseAssertion.class, false) != null);
+
+        //should not find or contain the disabled assertion
+        Assert.assertFalse("Disabled false assertion is NOT found (ignored)", Assertion.contains(rootAssertion, FalseAssertion.class, true));
+        Assert.assertFalse("Disabled false assertion is NOT found (ignored)", Assertion.find(rootAssertion, FalseAssertion.class, true) != null);
     }
 }
