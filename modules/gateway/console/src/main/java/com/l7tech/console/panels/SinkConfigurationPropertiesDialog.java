@@ -608,6 +608,9 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         sinkConfiguration.setProperty(SinkConfiguration.PROP_FILE_MAX_SIZE, fileMaxSizeField.getValue().toString());
         sinkConfiguration.setProperty(SinkConfiguration.PROP_FILE_LOG_COUNT, fileLogCount.getValue().toString());
         sinkConfiguration.setProperty(SinkConfiguration.PROP_FILE_FORMAT, (String)fileFormatField.getSelectedItem());
+        
+        if (!sinkConfiguration.syslogHostList().isEmpty())
+            sinkConfiguration.syslogHostList().clear();
     }
 
     /**
