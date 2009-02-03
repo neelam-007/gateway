@@ -37,7 +37,7 @@ if [ "$MCA" ] ; then
 	MCA_DRIVER_VERSION="`echo $MCA | cut -d ' ' -f 6`"
 	echo "Driver version is $MCA_DRIVER_VERSION"
 	MCA_DRIVER_MINOR_VERSION="`echo $MCA_DRIVER_VERSION | cut -f 3 -d '.'`"
-	if [ ! $MCA_DRIVER_MINOR_VERSION -ge 8 ] ; then
+	if [ $MCA_DRIVER_MINOR_VERSION -lt 8 ] ; then
 		echo "ERROR - SSL Card has old firmware on it, update by running $0 scaupgrade"
 	fi
 else 
@@ -170,6 +170,7 @@ if [ $ERROR -eq 1 ] ; then
 	echo "scroll up and check to see if this was in fact a fatal error or not."
 	echo "* * * * * * * WARNING * * * * * * * * * "
 	echo ""
+	exit
 fi 
 
 ;;
@@ -334,19 +335,16 @@ else
 		echo "SSL Card loaded:"
 		echo $MCA
 		MCA_DRIVER_VERSION="`echo $MCA | cut -d ' ' -f 6`"
-		echo "Driver version is $MCA_DRIVER_VERSION"
 		MCA_DRIVER_MINOR_VERSION="`echo $MCA_DRIVER_VERSION | cut -f 3 -d '.'`"
-		if [ ! $MCA_DRIVER_MINOR_VERSION -lt 8 ] ; then
-			echo "Upgrade is required."
+		if [ "$MCA_DRIVER_MINOR_VERSION" -lt 8 ] ; then
+			echo "Upgrade is required (Minor = $MCA_DRIVER_MINOR_VERSION)."
 			UPGRADE_REQUIRED=1
 		fi
 	else 
 		echo "SSL Card NOT loaded, can't determine firmware version."
 	fi
 
-
-
-	if [ $UPGRADE_REQUIRED -eq 1 ] ; then 
+	if [ "$UPGRADE_REQUIRED" -eq 1 ] ; then 
 		echo "Upgrading... please ignore any errors or kernel dumps due to interrupts"
 		service sca start
 		# you can ignore errors here about '1 file already exists', this means that the service is already running
