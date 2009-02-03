@@ -47,15 +47,20 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
     }
 
     /**
-     * Put includes inline
+     * Put includes inline.
+     *
+     * @param assertion The assertion to process
+     * @param includedPolicyGuids The GUIDs of already included policy fragments
+     * @param inlineDisabled True to inline disabled assertions
+     * @return The assertion with inlined policy include fragments
      */
     @Override
-    public Assertion inlineIncludes(final Assertion assertion, final Set<String> includedPolicyGuids) throws  PolicyAssertionException, InterruptedException {
+    public Assertion inlineIncludes(final Assertion assertion, final Set<String> includedPolicyGuids, final boolean inlineDisabled) throws  PolicyAssertionException, InterruptedException {
         final Assertion rootWithIncludes;
 
         if ( Assertion.contains(assertion, Include.class) ) {
             Set<String> guids = includedPolicyGuids==null ? new HashSet<String>() : includedPolicyGuids;
-            final AssertionTranslator translator = new IncludeAssertionDereferenceTranslator(policyFinder, guids, false);
+            final AssertionTranslator translator = new IncludeAssertionDereferenceTranslator(policyFinder, guids, false, inlineDisabled);
             try {
                 rootWithIncludes = Assertion.translate(WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(assertion)), translator);
             } catch (IOException e) {
@@ -104,7 +109,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
 
         //list of PolicyAssertionExceptions collected so far
         List<PolicyAssertionException> policyExceptions = new ArrayList<PolicyAssertionException>();
-        IncludeAssertionDereferenceTranslator iadt = new IncludeAssertionDereferenceTranslator(policyFinder, new HashSet<String>(), false);
+        IncludeAssertionDereferenceTranslator iadt = new IncludeAssertionDereferenceTranslator(policyFinder, new HashSet<String>(), false, true);
 
         //determine if this is a composite assertion, if so, then there will be more assertions to traverse.  Recursively
         //call this method on the composite assertion children
@@ -142,7 +147,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
     private Set<AssertionPath> generatePaths(Assertion assertion, boolean processIncludes) throws InterruptedException, PolicyAssertionException {
         Set<AssertionPath> assertionPaths = new LinkedHashSet<AssertionPath>();
         Iterator preorder = processIncludes ?
-                assertion.preorderIterator(new IncludeAssertionDereferenceTranslator(policyFinder, new HashSet<String>(), false)) :
+                assertion.preorderIterator(new IncludeAssertionDereferenceTranslator(policyFinder, new HashSet<String>(), false, true)) :
                 assertion.preorderIterator();
         final AssertionPath initPath = new AssertionPath(new Assertion[]{(Assertion)preorder.next()});
         assertionPaths.add(initPath);

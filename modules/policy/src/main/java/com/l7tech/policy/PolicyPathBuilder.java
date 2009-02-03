@@ -35,9 +35,10 @@ public abstract class PolicyPathBuilder {
      *
      * @param assertion The assertion to modify
      * @param includedGuids Set of included policy oids (optional)
+     * @oparam includeDisabled True to inline policies even for disabled include assertions
      * @return the modified assertion.
      */
-    public abstract Assertion inlineIncludes(Assertion assertion, Set<String> includedGuids) throws InterruptedException, PolicyAssertionException;
+    public abstract Assertion inlineIncludes(Assertion assertion, Set<String> includedGuids, boolean includeDisabled) throws InterruptedException, PolicyAssertionException;
 
     /**
      * Generate the policy path result (policy assertion paths for

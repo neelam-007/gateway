@@ -48,7 +48,7 @@ public class AddIncludeAdvice implements Advice {
                             if ( thisPolicy != null && thisPolicy.getType() == PolicyType.INCLUDE_FRAGMENT && thisPolicy.getOid()>=0 ) {
                                 Set<String> policyGuids = new HashSet<String>();
                                 policyGuids.add(thisPolicy.getGuid());
-                                Registry.getDefault().getPolicyPathBuilderFactory().makePathBuilder().inlineIncludes( subject, policyGuids );
+                                Registry.getDefault().getPolicyPathBuilderFactory().makePathBuilder().inlineIncludes( subject, policyGuids, true );
                             }
 
                             pc.proceed();

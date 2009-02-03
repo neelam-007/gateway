@@ -532,7 +532,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                     Set<String> policyGuids = new HashSet<String>();
                     policyGuids.add(thisPolicy.getGuid());
                     try {
-                        Registry.getDefault().getPolicyPathBuilderFactory().makePathBuilder().inlineIncludes( include, policyGuids );
+                        Registry.getDefault().getPolicyPathBuilderFactory().makePathBuilder().inlineIncludes( include, policyGuids, true );
                     } catch(PolicyAssertionException e) {
                         logger.warning("Refusing to create circular reference to policy #" + thisPolicy.getGuid() + ", not accepting drag of " + draggingNode.getClass().getSimpleName() + " into " + this.getClass().getSimpleName());
                         return true;

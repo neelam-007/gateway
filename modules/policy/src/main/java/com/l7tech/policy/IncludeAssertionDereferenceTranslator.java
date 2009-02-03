@@ -26,23 +26,30 @@ public class IncludeAssertionDereferenceTranslator implements AssertionTranslato
     private final GuidBasedEntityManager<Policy> policyGetter;
     private final Set<String> policyGuids;
     private final boolean readOnly;
+    private final boolean inlineDisabled;
 
     public IncludeAssertionDereferenceTranslator(final GuidBasedEntityManager<Policy> policyGetter) {
-        this(policyGetter, new HashSet<String>(), true);
+        this(policyGetter, new HashSet<String>(), true, true);
     }
 
     public IncludeAssertionDereferenceTranslator(final GuidBasedEntityManager<Policy> policyGetter,
                                                  final Set<String> includedPolicyGuids,
-                                                 final boolean readOnly) {
+                                                 final boolean readOnly,
+                                                 final boolean inlineDisabled ) {
         this.policyGetter = policyGetter;
         this.policyGuids = includedPolicyGuids;
         this.readOnly = readOnly;
+        this.inlineDisabled = inlineDisabled;
     }
 
     public Assertion translate(Assertion sourceAssertion) throws PolicyAssertionException {
         if (!(sourceAssertion instanceof Include)) return sourceAssertion;
 
         Include include = (Include) sourceAssertion;
+        if ( !inlineDisabled && !include.isEnabled() ) {
+            return sourceAssertion;            
+        }
+
         Policy policy = include.retrieveFragmentPolicy();
 
         if(!policyGuids.add(include.getPolicyGuid())) {

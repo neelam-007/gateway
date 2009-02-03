@@ -225,7 +225,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                             // process if not already initialized
                             if (policy == null) {
                                 try {
-                                    policy = Policy.simplify(policyPathBuilder.inlineIncludes(servicePolicy, null));
+                                    policy = Policy.simplify(policyPathBuilder.inlineIncludes(servicePolicy, null, false));
                                 } catch (InterruptedException e) {
                                     throw new RuntimeException(e); // Not possible on server side (hopefully)
                                 }

@@ -431,7 +431,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
         if ( Assertion.contains(assertion, Include.class) ) {
             Set<String> guids = new HashSet<String>();
-            final AssertionTranslator translator = new IncludeAssertionDereferenceTranslator(policyManager, guids, false);
+            final AssertionTranslator translator = new IncludeAssertionDereferenceTranslator(policyManager, guids, false, false);
             try {
                 rootWithIncludes = Assertion.translate(WspReader.getDefault().parsePermissively(WspWriter.getPolicyXml(assertion)), translator);
             } catch (IOException e) {
