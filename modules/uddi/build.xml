@@ -1,4 +1,5 @@
 <project name="layer7-uddi" default="compile">
+    <property name="module.package.root" value="com/l7tech/uddi"/>
     <import file="../../etc/build/build-common.xml"/>
 </project>
 

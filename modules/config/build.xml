@@ -1,3 +1,4 @@
 <project name="layer7-config" default="compile">
+    <property name="module.package.root" value="com/l7tech/config"/>
     <import file="../../etc/build/build-common.xml"/>
 </project>

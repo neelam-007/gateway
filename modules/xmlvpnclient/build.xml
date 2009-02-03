@@ -1,4 +1,5 @@
 <project name="layer7-xmlvpnclient" default="compile">
     <property name="module.main" value="com.l7tech.client.gui.Main"/>
+    <property name="module.package.root" value="com/l7tech/client"/>    
     <import file="../../etc/build/build-common.xml"/>
 </project>

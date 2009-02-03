@@ -1,3 +1,4 @@
 <project name="layer7-gateway-management" default="compile">
+    <property name="module.package.root" value="com/l7tech/server/management"/>
     <import file="../../../etc/build/build-common.xml"/>
 </project>

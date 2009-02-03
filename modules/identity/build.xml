@@ -1,3 +1,4 @@
 <project name="layer7-identity" default="compile">
+    <property name="module.package.root" value="com/l7tech/identity"/>
     <import file="../../etc/build/build-common.xml"/>
 </project>

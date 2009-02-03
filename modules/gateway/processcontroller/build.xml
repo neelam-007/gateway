@@ -1,5 +1,6 @@
 <project name="layer7-gateway-processcontroller" default="compile">
     <property name="module.main" value="com.l7tech.server.processcontroller.ProcessControllerDaemon"/>
+    <property name="module.package.root" value="com/l7tech/server/processcontroller"/>
 
     <import file="../../../etc/build/build-common.xml"/>
 </project>

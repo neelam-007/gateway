@@ -1,3 +1,4 @@
 <project name="layer7-gui" default="compile">
+    <property name="module.package.root" value="com/l7tech/gui"/>
     <import file="../../etc/build/build-common.xml"/>
 </project>

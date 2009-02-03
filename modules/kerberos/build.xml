@@ -1,4 +1,5 @@
 <project name="layer7-kerberos" default="compile">
+    <property name="module.package.root" value="com/l7tech/kerberos"/>
     <import file="../../etc/build/build-common.xml"/>
 </project>
 

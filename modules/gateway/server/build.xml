@@ -1,4 +1,5 @@
 <project name="layer7-gateway-server" default="compile">
     <property name="module.main" value="com.l7tech.server.boot.GatewayMain"/>
+    <property name="module.package.root" value="com/l7tech/server"/>
     <import file="../../../etc/build/build-common.xml"/>
 </project>

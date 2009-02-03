@@ -1,3 +1,4 @@
 <project name="layer7-proxy" default="compile">
+    <property name="module.package.root" value="com/l7tech/proxy"/>
     <import file="../../etc/build/build-common.xml"/>
 </project>

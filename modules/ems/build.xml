@@ -4,6 +4,7 @@
 
     <!-- Module properties -->
     <property name="module.main" value="com.l7tech.server.ems.EsmMain"/>
+    <property name="module.package.root" value="com/l7tech/server/ems"/>    
     <property name="module.version.target" value="${build.em.version}"/>
 
     <!-- Standard build -->

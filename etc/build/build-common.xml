@@ -39,6 +39,7 @@
     <property name="module.compile.optimize" value="off"/>
     <property name="module.compile.excludes" value=""/>
     <property name="module.jar.index" value="false"/>
+    <property name="module.package.root" value="."/>
 
     <!--
       Classpath for Idea form compiler
@@ -284,6 +285,20 @@
         <ivy:cachepath pathid="lib.path.id" conf="compile"/>
         <pathconvert property="lib.path.text" targetos="unix" pathsep="${line.separator}" refid="lib.path.id"/>
         <echo level="debug">Resolved compilation path:${line.separator}${lib.path.text}</echo>
+        <path id="module.invalid.source.filepath">
+            <fileset dir="${src.main.java.dir}">
+                <exclude name="${module.package.root}/**/*"/>
+            </fileset>
+        </path>
+        <condition property="module.invalid.package">
+            <and>
+                <not>
+                    <equals arg1="${module.package.root}" arg2="."/>
+                </not>
+                <resourcecount refid="module.invalid.source.filepath" when="greater" count="0" />
+            </and>
+        </condition>
+        <fail if="module.invalid.package">Invalid source found, this module should only have sources under : ${module.package.root}</fail>
     </target>
     <target name="compile-main-java" if="module.source.available" depends="compile-main-init">
         <module-javac srcdir="${src.main.java.dir}" destdir="${classes.main.dir}"/>
