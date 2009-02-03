@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 /**
  *
  */
-public class SnmpNotifier extends Notifier {
+class SnmpNotifier extends Notifier {
     private static final Logger logger = Logger.getLogger(SnmpNotifier.class.getName());
 
     public static final int[] OID_BASE = new int[] {1,3,6,1,4,1,17304,7,3};

@@ -16,6 +16,7 @@ public class EmailNotificationRule extends NotificationRule {
     private int port = 25;
     private CryptoType cryptoType = CryptoType.PLAIN;
     private AuthInfo authInfo = null;
+    private String from = "nomailbox@NOWHERE";
     private List<String> to = new ArrayList<String>();
     private List<String> cc = new ArrayList<String>();
     private List<String> bcc = new ArrayList<String>();
@@ -64,6 +65,14 @@ public class EmailNotificationRule extends NotificationRule {
 
     public void setAuthInfo(AuthInfo authInfo) {
         this.authInfo = authInfo;
+    }
+
+    public String getFrom() {
+        return from;
+    }
+
+    public void setFrom(String from) {
+        this.from = from;
     }
 
     public List<String> getTo() {
