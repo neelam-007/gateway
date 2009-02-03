@@ -195,6 +195,14 @@ seal)
   # Remove any left over traces if we happened to ssh anywhere
   rm -rf ~/.ssh
 
+  # Remove mysql history file
+  rm ~/.mysql_history
+
+  # Remove any SCA keys that are stored on the system
+  rm -rf /var/opt/sun/sca6000/log/*
+  rm -rf /var/opt/sun/sca6000/lock/*
+  rm -rf /var/opt/sun/sca6000/keydata/*
+
   # Remove Layer7 rpms.
   rm -rf /root/rpms
 
