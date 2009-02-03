@@ -6,7 +6,7 @@
 package com.l7tech.skunkworks.tarari;
 
 import com.l7tech.common.io.EmptyInputStream;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.message.TarariMessageContextFactory;
 import com.l7tech.test.BenchmarkRunner;

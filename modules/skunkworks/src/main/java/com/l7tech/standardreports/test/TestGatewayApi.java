@@ -9,7 +9,6 @@ package com.l7tech.standardreports.test;
 import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.standardreports.*;
 import com.l7tech.server.management.api.node.ReportApi;
-import com.l7tech.common.io.IOUtils;
 import org.junit.*;
 import org.mortbay.util.ajax.JSON;
 
@@ -20,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.io.FileOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public class TestGatewayApi {

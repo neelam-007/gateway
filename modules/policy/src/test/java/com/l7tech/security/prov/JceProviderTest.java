@@ -15,7 +15,7 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.WssDecoratorTest;
 import com.l7tech.security.keys.AesKey;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.junit.Assert;

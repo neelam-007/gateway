@@ -4,7 +4,7 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;

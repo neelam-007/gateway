@@ -16,7 +16,7 @@ import java.util.*;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.view.JasperViewer;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.standardreports.UsageSummaryAndSubReportHelper;
 import com.l7tech.gateway.standardreports.UsageReportHelper;
 import com.l7tech.gateway.standardreports.Utilities;

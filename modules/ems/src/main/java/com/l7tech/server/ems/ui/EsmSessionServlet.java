@@ -7,7 +7,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import java.io.IOException;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 
 /**
  * Servlet for handling logon.

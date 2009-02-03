@@ -4,7 +4,7 @@
 package com.l7tech.server.identity.cert;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.*;

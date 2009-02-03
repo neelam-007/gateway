@@ -9,7 +9,7 @@ import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.console.SsmApplication;

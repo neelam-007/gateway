@@ -1,6 +1,6 @@
 package com.l7tech.server.identity.ldap;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.util.ResourceUtils;

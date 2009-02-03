@@ -13,7 +13,7 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 
 /**
  * @author: ghuang

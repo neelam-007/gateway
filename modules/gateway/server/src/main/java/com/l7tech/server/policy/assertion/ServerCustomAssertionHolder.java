@@ -15,7 +15,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.PartIterator;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;

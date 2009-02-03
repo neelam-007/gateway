@@ -6,6 +6,7 @@ import com.l7tech.common.io.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.IOUtils;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;

@@ -1,6 +1,6 @@
 package com.l7tech.security.cert;
 
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
 

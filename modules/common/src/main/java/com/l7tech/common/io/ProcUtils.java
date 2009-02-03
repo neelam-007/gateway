@@ -2,6 +2,7 @@ package com.l7tech.common.io;
 
 import com.l7tech.common.io.ProcResult;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.IOUtils;
 
 import java.io.File;
 import java.io.IOException;

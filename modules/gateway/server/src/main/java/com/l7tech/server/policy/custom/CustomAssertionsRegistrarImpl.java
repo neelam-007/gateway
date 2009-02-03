@@ -2,7 +2,7 @@ package com.l7tech.server.policy.custom;
 
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.custom.CustomAssertionDescriptor;
 import com.l7tech.policy.assertion.Assertion;

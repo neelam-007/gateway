@@ -11,6 +11,8 @@ import junit.framework.TestSuite;
 
 import java.util.logging.Logger;
 
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+
 /**
  * @author mike
  */

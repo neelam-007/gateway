@@ -1,6 +1,6 @@
 package com.l7tech.skunkworks.uddi;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.uddi.guddiv3.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;

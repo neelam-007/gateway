@@ -1,6 +1,6 @@
 package com.l7tech.skunkworks.kerberos;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.HexUtils;
 import org.ietf.jgss.Oid;

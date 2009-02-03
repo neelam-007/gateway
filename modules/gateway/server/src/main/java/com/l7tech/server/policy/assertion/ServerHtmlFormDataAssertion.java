@@ -4,7 +4,7 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.HttpRequestKnob;

@@ -4,7 +4,7 @@
 package com.l7tech.common.http.prov.jdk;
 
 import com.l7tech.common.http.*;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.util.ExceptionUtils;

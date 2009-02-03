@@ -10,8 +10,10 @@ package com.l7tech.common.mime;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.CausedIllegalStateException;
 import com.l7tech.util.ResourceUtils;
+ import com.l7tech.util.IOUtils;
+ import com.l7tech.util.BufferPoolByteArrayOutputStream;
 
-import java.io.ByteArrayInputStream;
+ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;

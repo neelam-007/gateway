@@ -1,7 +1,7 @@
 package com.l7tech.message;
 
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;

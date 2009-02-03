@@ -28,7 +28,7 @@ import java.io.*;
 import java.text.MessageFormat;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.ResourceMapEntityResolver;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.JasperCompileManager;

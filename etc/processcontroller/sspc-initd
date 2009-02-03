@@ -19,10 +19,10 @@ fi
 # Config
 PID_FILE="sspcd"
 PC_USER="layer7"
-PC_SCRIPT="/opt/SecureSpan/Gateway/controller/bin/processcontroller.sh"
+PC_SCRIPT="/opt/SecureSpan/Appliance/controller/bin/processcontroller.sh"
 PC_FIREWALL_CONTROL="/opt/SecureSpan/Appliance/libexec/update_firewall"
-PC_FIREWALL_RULES="/opt/SecureSpan/Gateway/controller/var/firewall_rules"
-PC_CONFIG="/opt/SecureSpan/Gateway/controller/etc/host.properties"
+PC_FIREWALL_RULES="/opt/SecureSpan/Appliance/controller/var/firewall_rules"
+PC_CONFIG="/opt/SecureSpan/Appliance/controller/etc/host.properties"
 
 start() {
         if [ ! -x "${PC_SCRIPT}" ] ; then

@@ -3,7 +3,7 @@
  */
 package com.l7tech.server.policy.variable;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.audit.Audit;

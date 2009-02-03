@@ -2,7 +2,7 @@ package com.l7tech.external.assertions.ipm.server;
 
 import com.l7tech.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.ipm.IpmAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;

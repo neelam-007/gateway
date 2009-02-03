@@ -1,6 +1,6 @@
 package com.l7tech.kerberos;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 
 import javax.security.auth.kerberos.KerberosKey;

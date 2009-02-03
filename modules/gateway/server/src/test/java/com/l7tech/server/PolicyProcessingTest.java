@@ -4,7 +4,7 @@ import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpHeaders;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpHeader;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.service.PublishedService;

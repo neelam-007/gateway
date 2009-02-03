@@ -10,7 +10,7 @@ import com.l7tech.gateway.common.InvalidLicenseException;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.util.*;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.internal.license.LicenseSpec;
 import com.l7tech.server.GatewayFeatureSet;
 import com.l7tech.server.GatewayFeatureSets;

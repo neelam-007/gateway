@@ -6,7 +6,7 @@ package com.l7tech.common.http.prov.apache;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.util.CausedIOException;

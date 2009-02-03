@@ -5,7 +5,7 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.ssl.CertLoader;
 import com.l7tech.proxy.ssl.CurrentSslPeer;

@@ -7,7 +7,7 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.common.http.HttpHeader;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.MimeUtility;

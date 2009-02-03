@@ -2,7 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.io.IOExceptionThrowingReader;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.event.WsdlEvent;

@@ -4,12 +4,11 @@
 package com.l7tech.message;
 
 import com.l7tech.common.http.*;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.IteratorEnumeration;
 import com.l7tech.xml.soap.SoapUtil;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.MalformedURLException;

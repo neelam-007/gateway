@@ -1,7 +1,7 @@
 package com.l7tech.skunkworks;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.util.HexUtils;
 

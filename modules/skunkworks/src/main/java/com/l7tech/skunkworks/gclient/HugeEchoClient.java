@@ -2,7 +2,7 @@ package com.l7tech.skunkworks.gclient;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.common.io.TeeInputStream;
 import com.l7tech.common.io.TeeOutputStream;

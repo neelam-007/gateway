@@ -1,8 +1,7 @@
 package com.l7tech.server.tomcat;
 
-import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;

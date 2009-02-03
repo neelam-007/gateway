@@ -4,7 +4,7 @@ import com.l7tech.message.MimeKnob;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.util.CausedIOException;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerRoutingAssertion;

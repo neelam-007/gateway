@@ -1,7 +1,7 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 
 import java.io.Closeable;

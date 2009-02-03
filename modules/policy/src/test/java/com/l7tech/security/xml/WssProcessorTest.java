@@ -20,7 +20,7 @@ import com.l7tech.common.TestDocuments;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.test.BugNumber;
 import junit.framework.Test;
 import junit.framework.TestCase;

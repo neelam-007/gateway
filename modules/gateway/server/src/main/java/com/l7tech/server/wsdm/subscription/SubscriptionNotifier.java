@@ -5,7 +5,7 @@ package com.l7tech.server.wsdm.subscription;
 
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.message.HttpRequestKnobAdapter;
 import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;

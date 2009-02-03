@@ -5,7 +5,7 @@
 
 package com.l7tech.xml.tarari;
 
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.xpath.CompiledXpath;

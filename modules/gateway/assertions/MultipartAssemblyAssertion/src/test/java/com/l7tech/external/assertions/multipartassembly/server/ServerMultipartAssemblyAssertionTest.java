@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.multipartassembly.server;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.*;
 import com.l7tech.external.assertions.multipartassembly.MultipartAssemblyAssertion;
 import com.l7tech.message.Message;

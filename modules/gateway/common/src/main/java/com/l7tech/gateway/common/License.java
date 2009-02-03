@@ -11,7 +11,7 @@ import com.l7tech.util.*;
 import com.l7tech.util.TooManyChildElementsException;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;

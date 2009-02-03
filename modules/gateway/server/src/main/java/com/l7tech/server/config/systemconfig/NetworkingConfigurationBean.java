@@ -1,7 +1,7 @@
 package com.l7tech.server.config.systemconfig;
 
 import com.l7tech.server.config.beans.BaseConfigurationBean;
-import com.l7tech.server.config.OSDetector;
+import com.l7tech.server.config.OSSpecificFunctions;
 import org.apache.commons.lang.StringUtils;
 
 import java.net.InterfaceAddress;
@@ -85,7 +85,7 @@ public class NetworkingConfigurationBean extends BaseConfigurationBean {
     private void getExistingInterfaces() {
         logger.info("Determining existing interface information.");
         try {
-            networkingConfigs  = OSDetector.getOSSpecificFunctions().getNetworkConfigs(false, false);
+            networkingConfigs  = OSSpecificFunctions.getOSSpecificFunctions().getNetworkConfigs(false, false);
         } catch (SocketException e) {
             logger.warning("Error while determining the IP Addresses for this machine:" + e.getMessage());
         }

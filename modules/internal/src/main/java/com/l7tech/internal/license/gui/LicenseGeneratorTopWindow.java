@@ -8,7 +8,7 @@ package com.l7tech.internal.license.gui;
 import com.japisoft.xmlpad.XMLContainer;
 import com.l7tech.gateway.common.License;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.console.panels.EulaDialog;
 import com.l7tech.console.panels.LicensePanel;
 import com.l7tech.gui.util.Utilities;

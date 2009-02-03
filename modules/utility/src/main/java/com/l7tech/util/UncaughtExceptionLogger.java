@@ -1,4 +1,4 @@
-package com.l7tech.server.util;
+package com.l7tech.util;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;

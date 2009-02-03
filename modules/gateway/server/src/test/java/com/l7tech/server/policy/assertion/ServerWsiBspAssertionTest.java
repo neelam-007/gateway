@@ -13,7 +13,7 @@ import junit.framework.TestCase;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 
 import org.w3c.dom.Document;
 

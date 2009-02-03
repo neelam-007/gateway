@@ -7,7 +7,7 @@ package com.l7tech.internal.license;
 
 import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.util.DomUtils;

@@ -37,29 +37,17 @@ rm -fr %{buildroot}
 
 # Group writable config files
 %defattr(0644,layer7,layer7,0755)
-%dir /opt/SecureSpan/Gateway/controller
 %dir /opt/SecureSpan/Gateway/node
 %dir /opt/SecureSpan/Gateway/node/default
 %dir /opt/SecureSpan/Gateway/runtime
 %dir /opt/SecureSpan/Gateway/runtime/etc
-/opt/SecureSpan/Gateway/controller/etc/conf
 %dir /opt/SecureSpan/Gateway/node/default/etc
 %config(noreplace) /opt/SecureSpan/Gateway/node/default/etc/conf
 
 # Group directories and files
 %defattr(0444,layer7,layer7,0755)
-/opt/SecureSpan/Gateway/controller/Controller.jar
-%dir /opt/SecureSpan/Gateway/controller/bin
-%dir /opt/SecureSpan/Gateway/controller/etc
-%dir /opt/SecureSpan/Gateway/controller/etc/conf
-%attr(0555,layer7,layer7) /opt/SecureSpan/Gateway/controller/bin/*
-/opt/SecureSpan/Gateway/controller/lib
 /opt/SecureSpan/Gateway/runtime/etc/profile
 /opt/SecureSpan/Gateway/runtime/modules
-
-# Gateway process controller writeable files
-%defattr(0644,layer7,layer7,0755)
-/opt/SecureSpan/Gateway/controller/var
 
 # The main Gateway jar
 %defattr(0444,layer7,layer7,0755)
@@ -88,7 +76,6 @@ rm -fr %{buildroot}
 %dir /opt/SecureSpan/Gateway/config
 /opt/SecureSpan/Gateway/config/*.properties
 %defattr(0444,layer7,layer7,0755)
-/opt/SecureSpan/Gateway/config/lib
 /opt/SecureSpan/Gateway/config/*.jar
 %defattr(0555,layer7,layer7,0755)
 /opt/SecureSpan/Gateway/config/*.sh
@@ -98,7 +85,6 @@ rm -fr %{buildroot}
 /opt/SecureSpan/Gateway/config/migration/cfg
 /opt/SecureSpan/Gateway/config/migration/*.properties
 %defattr(0444,layer7,layer7,0755)
-/opt/SecureSpan/Gateway/config/migration/lib
 /opt/SecureSpan/Gateway/config/migration/*.jar
 %defattr(0555,layer7,layer7,0755)
 /opt/SecureSpan/Gateway/config/migration/*.sh
@@ -123,8 +109,6 @@ fi
 
 # Chown any files that have been left behind by a previous installation
 [ ! -d %{prefix}/config ] || chown -R layer7.layer7 %{prefix}/config
-[ ! -d %{prefix}/controller/etc ] || chown -R layer7.layer7 %{prefix}/controller/etc
-[ ! -d %{prefix}/controller/var ] || chown -R layer7.layer7 %{prefix}/controller/var
 [ ! -d %{prefix}/node/default/etc/conf ] || chown -R layer7.layer7 %{prefix}/node/default/etc/conf
 [ ! -d %{prefix}/node/default/var ] || chown -R gateway.gateway %{prefix}/node/default/var
 

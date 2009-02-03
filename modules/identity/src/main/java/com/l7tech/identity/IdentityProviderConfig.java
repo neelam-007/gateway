@@ -1,6 +1,6 @@
 package com.l7tech.identity;
 
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.util.HexUtils;

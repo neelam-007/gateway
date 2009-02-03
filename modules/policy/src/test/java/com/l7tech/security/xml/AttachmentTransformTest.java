@@ -1,6 +1,6 @@
 package com.l7tech.security.xml;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeHeaders;
 import com.l7tech.common.mime.MimeUtil;

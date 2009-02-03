@@ -3,7 +3,7 @@
  */
 package com.l7tech.server.processcontroller;
 
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.server.management.NodeStateType;
 import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.management.config.node.PCNodeConfig;

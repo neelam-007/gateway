@@ -15,6 +15,7 @@ import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 
 import java.io.*;
 import java.security.GeneralSecurityException;
@@ -31,7 +32,7 @@ import java.util.logging.Logger;
 /** @author alex */
 public class TrustInterviewer {
     private static final Logger logger = Logger.getLogger(TrustInterviewer.class.getName());
-    private static final String FS = System.getProperty("file.separator");
+    private static final String PCHOME = SyspropUtil.getString("com.l7tech.server.controller.home", "/opt/SecureSpan/Appliance/controller");
 
     // TODO find some place to put these where we can share them with ConfigService
     static String HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_FILE = "host.controller.remoteNodeManagement.truststore.file";
@@ -44,7 +45,7 @@ public class TrustInterviewer {
     private static final String DEFAULT_REMOTE_MANAGEMENT_TRUSTSTORE_FILENAME = "remoteNodeManagementTruststore.jks";
     public static void main(String[] args) {
         JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
-        final File pcHomeDir = new File(".." + FS + "controller");
+        final File pcHomeDir = new File(PCHOME);
         final File etcDirectory = new File(pcHomeDir, "etc");
         final File etcConfDirectory = new File(etcDirectory, "conf");
 

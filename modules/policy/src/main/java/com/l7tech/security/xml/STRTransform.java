@@ -15,7 +15,7 @@ import com.l7tech.util.DomUtils;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.TooManyChildElementsException;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 
 import com.ibm.xml.dsig.Transform;
 import com.ibm.xml.dsig.TransformContext;

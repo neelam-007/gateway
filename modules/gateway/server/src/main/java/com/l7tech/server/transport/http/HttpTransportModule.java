@@ -1,6 +1,6 @@
 package com.l7tech.server.transport.http;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;

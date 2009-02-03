@@ -16,7 +16,7 @@ import org.hibernate.HibernateException;
 import org.hibernate.usertype.UserType;
 
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 
 /**
  * A Hibernate UserType that stores Strings as (Compressed) a blob/byte[].

@@ -3,7 +3,7 @@ package com.l7tech.server.log;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.Syntax;

@@ -7,7 +7,7 @@ package com.l7tech.proxy;
 
 import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.HttpResponseKnob;

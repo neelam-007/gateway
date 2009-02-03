@@ -9,31 +9,10 @@ package com.l7tech.gateway.standardreports;
 import java.util.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.text.MessageFormat;
-import java.io.*;
 
 import org.junit.Test;
 import org.junit.Assert;
-import org.w3c.dom.*;
-import org.xml.sax.InputSource;
-import org.xml.sax.EntityResolver;
-import com.l7tech.common.io.IOUtils;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.ResourceMapEntityResolver;
 import com.l7tech.server.management.api.node.ReportApi;
-
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.xpath.XPathFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-
-import net.sf.jasperreports.engine.JasperReport;
-import net.sf.jasperreports.engine.JasperCompileManager;
 
 /**
  * Test coverage for class Utilities

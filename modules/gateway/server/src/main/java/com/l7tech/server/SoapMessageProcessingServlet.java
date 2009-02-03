@@ -5,7 +5,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;

@@ -9,7 +9,7 @@ import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.NonCloseableOutputStream;
 
 import javax.persistence.Table;

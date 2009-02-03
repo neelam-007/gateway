@@ -7,10 +7,10 @@ package com.l7tech.xml;
 
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.xml.xpath.CompiledXpath;
 import com.l7tech.xml.xpath.DomCompiledXpath;
 import com.l7tech.xml.xpath.XpathResult;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.XmlUtil;
 import org.w3c.dom.*;
 

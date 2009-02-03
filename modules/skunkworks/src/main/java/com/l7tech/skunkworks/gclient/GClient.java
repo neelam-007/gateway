@@ -26,6 +26,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.wsdl.PrettyGoodWSDLLocator;
 import com.l7tech.xml.soap.SoapMessageGenerator;

@@ -6,7 +6,7 @@ import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.external.assertions.ipm.server.resources.CompiledTemplate;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

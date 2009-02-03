@@ -14,7 +14,7 @@ import org.mortbay.util.ajax.JSON;
 
 import javax.servlet.ServletInputStream;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.server.ems.enterprise.JSONException;
 
 import java.io.IOException;

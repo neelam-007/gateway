@@ -6,7 +6,6 @@ package com.l7tech.server.processcontroller;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.server.config.OSDetector;
 import com.l7tech.server.management.config.host.HostConfig;
 import com.l7tech.server.management.config.host.IpAddressConfig;
 import com.l7tech.server.management.config.host.PCHostConfig;
@@ -15,6 +14,7 @@ import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.MasterPasswordManager;
+import com.l7tech.util.OSDetector;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 
@@ -62,7 +62,7 @@ public class ConfigServiceImpl implements ConfigService {
         String s = System.getProperty("com.l7tech.server.processcontroller.nodeBaseDirectory");
         if (s == null) {
             File parent = processControllerHomeDirectory.getParentFile();
-            nodeBaseDirectory = new File(parent, "node");
+            nodeBaseDirectory = new File(parent, ".."+SLASH+"Gateway"+SLASH+"node");
         } else {
             nodeBaseDirectory = new File(s);
         }

@@ -1,6 +1,6 @@
 package com.l7tech.xml.xslt;
 
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.tarari.TarariMessageContext;

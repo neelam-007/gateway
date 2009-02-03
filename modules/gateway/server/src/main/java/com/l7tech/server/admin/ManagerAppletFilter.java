@@ -10,7 +10,7 @@ import com.l7tech.gateway.common.admin.AdminLoginResult;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;

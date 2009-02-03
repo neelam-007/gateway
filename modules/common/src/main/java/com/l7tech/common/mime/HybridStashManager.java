@@ -8,7 +8,7 @@ package com.l7tech.common.mime;
 
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.BufferPool;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 
 import java.io.*;
 

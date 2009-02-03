@@ -8,7 +8,7 @@ package com.l7tech.server.audit;
 
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.TestDocuments;
 
@@ -23,7 +23,6 @@ import java.io.FileOutputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.DriverManager;
-import java.util.logging.Logger;
 import java.util.zip.ZipFile;
 
 /**

@@ -3,7 +3,7 @@ package com.l7tech.server.policy;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IteratorEnumeration;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;

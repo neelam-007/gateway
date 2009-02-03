@@ -7,7 +7,7 @@ package com.l7tech.server.util;
 import com.l7tech.util.UptimeMetrics;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ShutdownExceptionHandler;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.server.ServerConfig;
 
 import java.io.BufferedInputStream;

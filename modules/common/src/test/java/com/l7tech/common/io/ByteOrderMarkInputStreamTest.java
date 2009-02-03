@@ -5,6 +5,7 @@
 package com.l7tech.common.io;
 
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.IOUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;

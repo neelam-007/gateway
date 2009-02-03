@@ -5,7 +5,7 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.PartIterator;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.external.assertions.stripparts.StripPartsAssertion;
 import com.l7tech.external.assertions.stripparts.console.StripPartsPropertiesDialog;
 import com.l7tech.policy.assertion.AssertionMetadata;

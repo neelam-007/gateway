@@ -2,7 +2,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.AssertionMessages;

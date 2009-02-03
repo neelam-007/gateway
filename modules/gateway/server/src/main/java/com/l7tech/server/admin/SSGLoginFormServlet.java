@@ -1,6 +1,6 @@
 package com.l7tech.server.admin;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;

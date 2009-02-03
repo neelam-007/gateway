@@ -25,9 +25,11 @@ import java.util.logging.Logger;
 public class NodeConfigurationManager {
 
     private static final Logger logger = Logger.getLogger(NodeConfigurationManager.class.getName());
-    private static final String nodesPath = "../node";
-    private static final String configPath = nodesPath + "/{0}/etc/conf";
+
+    private static final File gatewayDir = new File(SyspropUtil.getString("com.l7tech.gateway.home","/opt/SecureSpan/Gateway"));
+    private static final File nodesDir = new File(gatewayDir, "node");
     private static final String sqlPath = "../config/etc/sql/ssg.sql";
+    private static final String configPath = "{0}/etc/conf";
 
     private static final String NODE_PROPS_FILE = "node.properties";
 
@@ -207,7 +209,7 @@ public class NodeConfigurationManager {
 
         String pathToSqlScript = MessageFormat.format( sqlPath, nodeName );
 
-        DBActions.DBActionsResult res = dbActions.createDb(localConfig, hosts, new File(pathToSqlScript).getAbsolutePath(), false);
+        DBActions.DBActionsResult res = dbActions.createDb(localConfig, hosts, new File(nodesDir,pathToSqlScript).getAbsolutePath(), false);
         if ( res.getStatus() != DBActions.StatusType.SUCCESS) {
             throw new CausedIOException(MessageFormat.format("Cannot create database ''{0}''", res.getErrorMessage()), res.getThrown());
         }
@@ -222,7 +224,7 @@ public class NodeConfigurationManager {
     public static Collection<Pair<NodeConfig, File>> loadNodeConfigs( final boolean throwOnError ) throws IOException {
         Collection<Pair<NodeConfig, File>> nodeConfigs = new ArrayList<Pair<NodeConfig, File>>();
 
-        File nodeBaseDirectory = new File(nodesPath);
+        File nodeBaseDirectory = nodesDir;
         for ( String nodeConfigName : nodeBaseDirectory.list() ) {
             try {
                 final File nodePropsFile = new File(getConfigurationDirectory(nodeConfigName), NODE_PROPS_FILE);
@@ -348,7 +350,7 @@ public class NodeConfigurationManager {
 
     private static File getConfigurationDirectory( final String nodeName ) throws IOException {
         String path = MessageFormat.format( configPath, nodeName );
-        return new File( path ).getCanonicalFile();
+        return new File( nodesDir, path ).getCanonicalFile();
     }
 
     private static void setPropertyIfNotNull( final PropertiesConfiguration props, final String propName, final Object propValue ) {

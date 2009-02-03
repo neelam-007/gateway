@@ -5,7 +5,7 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.http.HttpCookie;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;

@@ -1,6 +1,6 @@
 package com.l7tech.server.util;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 
 import java.net.URL;
 import java.io.InputStream;

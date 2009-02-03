@@ -27,7 +27,7 @@ import com.l7tech.kerberos.KerberosException;
 import com.l7tech.kerberos.Keytab;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.objectmodel.EntityType;
 
 /**
@@ -244,7 +244,7 @@ public class KerberosDialog extends JDialog {
 
     private void doUpload(  final File keytabFile  ) {
         try {
-            byte[] fileData =IOUtils.slurpFile(keytabFile);
+            byte[] fileData = IOUtils.slurpFile(keytabFile);
 
             KerberosAdmin kerberosAdmin = Registry.getDefault().getKerberosAdmin();
             kerberosAdmin.installKeytab( fileData );

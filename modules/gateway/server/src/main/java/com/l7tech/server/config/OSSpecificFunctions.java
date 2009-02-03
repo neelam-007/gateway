@@ -1,6 +1,8 @@
 package com.l7tech.server.config;
 
 import com.l7tech.server.config.systemconfig.NetworkingConfigurationBean;
+import com.l7tech.server.config.exceptions.UnsupportedOsException;
+import com.l7tech.util.OSDetector;
 
 import java.util.List;
 import java.net.SocketException;
@@ -63,6 +65,13 @@ public abstract class OSSpecificFunctions {
 
     public String getTimeZonesDir() {
         return timeZonesDir;
+    }
+
+    public static OSSpecificFunctions getOSSpecificFunctions() throws UnsupportedOsException {
+        if (!OSDetector.isLinux())
+            throw new UnsupportedOsException(OSDetector.getOSName() + " is not a supported operating system.");
+
+        return new LinuxSpecificFunctions(OSDetector.getOSName());
     }
 
     public static class OsSpecificFunctionUnavailableException extends Exception {

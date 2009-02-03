@@ -6,7 +6,7 @@
 
 package com.l7tech.common.mime;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.RandomInputStream;
 import junit.framework.Test;
 import junit.framework.TestCase;

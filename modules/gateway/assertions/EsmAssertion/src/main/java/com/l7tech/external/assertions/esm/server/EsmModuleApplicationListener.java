@@ -3,7 +3,7 @@
  */
 package com.l7tech.external.assertions.esm.server;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.external.assertions.esm.EsmMetricsAssertion;
 import com.l7tech.external.assertions.esm.EsmSubscriptionAssertion;
 import com.l7tech.external.assertions.esm.EsmConstants;
@@ -19,7 +19,6 @@ import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
 import com.l7tech.server.policy.AssertionModuleUnregistrationEvent;
 import com.l7tech.server.service.ServiceTemplateManager;
 import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.server.wsdm.subscription.Subscription;
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gateway.common.service.ServiceType;
 import com.l7tech.util.ExceptionUtils;

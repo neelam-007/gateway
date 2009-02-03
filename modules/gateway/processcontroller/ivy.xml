@@ -24,9 +24,7 @@
         <dependency name="layer7-gateway-common" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-gateway-config" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-gateway-management" rev="latest.integration" force="true" conf="core"/>
-        <dependency name="layer7-gateway-server" rev="latest.integration" force="true" conf="core">
-            <exclude org="org.apache.tomcat" module="annotations-api" name="*" type="*" ext="*" conf="" matcher="exact"/>
-        </dependency>
+        <dependency name="layer7-gateway-server" rev="latest.integration" force="true" conf="core->master"/>
         <dependency name="layer7-common" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-utility" rev="latest.integration" force="true" conf="core"/>
 
@@ -37,12 +35,13 @@
     	<dependency org="org.mortbay.jetty" name="jetty" rev="6.1.8" force="true" conf="core"/>
         <dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.8" force="true" conf="core"/>
 
-        <dependency org="org.springframework" name="spring-jdbc" rev="2.5.6" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-orm" rev="2.5.6" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-context-support" rev="2.5.6" force="true" conf="core"/>
-        <dependency org="org.springframework" name="spring-tx" rev="2.5.6" force="true" conf="core"/>
-        <dependency org="cglib" name="cglib-nodep" rev="2.1_3" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-api" rev="1.5.2" force="true" conf="core"/>
+        <dependency org="org.slf4j" name="slf4j-jdk14" rev="1.5.2" force="true" conf="core"/>
         <dependency org="org.snmp4j" name="snmp4j" rev="1.0.4b" force="true" conf="core"/>
+
+        <!-- Hibernate annotations used on SSG common beans -->
+        <dependency org="org.hibernate" name="hibernate-annotations" rev="3.4.0.GA" force="true" conf="compile->master"/>
+        <dependency org="org.hibernate" name="hibernate-commons-annotations" rev="3.1.0.GA" force="true" conf="compile->master"/>
 
         <override org="org.mortbay.jetty" module="jetty" matcher="exact" rev="6.1.8"/>
     </dependencies>

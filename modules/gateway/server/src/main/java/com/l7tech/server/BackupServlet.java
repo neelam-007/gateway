@@ -4,7 +4,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.http.*;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.ProcUtils;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.LicenseException;

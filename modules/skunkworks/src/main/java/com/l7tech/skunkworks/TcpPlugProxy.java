@@ -3,7 +3,7 @@ package com.l7tech.skunkworks;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 
 import java.io.Closeable;
 import java.io.IOException;

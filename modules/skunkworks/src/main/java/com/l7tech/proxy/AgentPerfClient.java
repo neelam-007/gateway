@@ -8,7 +8,7 @@ package com.l7tech.proxy;
 
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.JdkLoggerConfigurator;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.proxy.datamodel.Ssg;
 import org.w3c.dom.Document;

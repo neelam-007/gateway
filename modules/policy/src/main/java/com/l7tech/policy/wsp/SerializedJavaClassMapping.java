@@ -2,7 +2,7 @@ package com.l7tech.policy.wsp;
 
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.ClassLoaderObjectInputStream;
 import com.l7tech.policy.assertion.UnknownAssertion;

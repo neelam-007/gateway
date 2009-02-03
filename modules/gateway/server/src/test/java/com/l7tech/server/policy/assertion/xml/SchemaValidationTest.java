@@ -1,7 +1,7 @@
 package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.wsdl.WsdlSchemaAnalizer;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;

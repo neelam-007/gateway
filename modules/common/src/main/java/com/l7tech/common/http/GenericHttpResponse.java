@@ -7,7 +7,7 @@
 package com.l7tech.common.http;
 
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 
 import java.io.InputStream;
 import java.io.IOException;

@@ -7,8 +7,8 @@
 package com.l7tech.proxy;
 
 import com.l7tech.common.http.HttpHeader;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.proxy.datamodel.Policy;

@@ -2,7 +2,7 @@ package com.l7tech.wsdl;
 
 import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.common.io.IOExceptionThrowingReader;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;

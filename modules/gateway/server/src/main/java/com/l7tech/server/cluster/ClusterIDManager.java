@@ -1,6 +1,6 @@
 package com.l7tech.server.cluster;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.HexUtils;

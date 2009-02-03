@@ -146,7 +146,7 @@
 
     <bean id="timerLife" class="com.l7tech.server.ManagedTimerLifecycle"/>
 
-    <bean id="exceptionLogger" class="com.l7tech.server.util.UncaughtExceptionLogger" factory-method="createAndInstall"/>
+    <bean id="exceptionLogger" class="com.l7tech.util.UncaughtExceptionLogger" factory-method="createAndInstall"/>
 
     <!--
     * singleton using the factory method. This is transitional, as it is referencef from

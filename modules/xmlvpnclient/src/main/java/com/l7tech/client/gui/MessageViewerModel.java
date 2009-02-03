@@ -4,7 +4,7 @@ import com.l7tech.gui.widgets.ContextMenuTextArea;
 import com.l7tech.common.http.GenericHttpHeaders;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.http.HttpHeaders;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.HttpHeadersKnob;
 import com.l7tech.message.Message;

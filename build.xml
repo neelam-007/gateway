@@ -2082,8 +2082,8 @@
         <jar jarfile="${build.dir}/configwizard/ConfigWizard.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
-                <attribute name="Class-Path" value="lib/layer7-utility-${module.utility.version}.jar"/>
-                <attribute name="X-Layer7-Jar" value="lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
+                <attribute name="Class-Path" value="../runtime/lib/layer7-utility-${module.utility.version}.jar"/>
+                <attribute name="X-Layer7-Jar" value="../runtime/lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.client.Main"/>
             </manifest>
         </jar>
@@ -2091,8 +2091,8 @@
         <jar jarfile="${build.dir}/configwizard/ConfigMasterPassphrase.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
-                <attribute name="Class-Path" value="lib/layer7-utility-${module.utility.version}.jar"/>
-                <attribute name="X-Layer7-Jar" value="lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
+                <attribute name="Class-Path" value="../runtime/lib/layer7-utility-${module.utility.version}.jar"/>
+                <attribute name="X-Layer7-Jar" value="../runtime/lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.manager.MasterPassphraseChanger"/>
             </manifest>
         </jar>
@@ -2100,8 +2100,8 @@
         <jar jarfile="${build.dir}/configwizard/ConfigClusterPassphrase.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
-                <attribute name="Class-Path" value="lib/layer7-utility-${module.utility.version}.jar"/>
-                <attribute name="X-Layer7-Jar" value="lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
+                <attribute name="Class-Path" value="../runtime/lib/layer7-utility-${module.utility.version}.jar"/>
+                <attribute name="X-Layer7-Jar" value="../runtime/lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.manager.ClusterPassphraseChanger"/>
             </manifest>
         </jar>
@@ -2109,8 +2109,8 @@
         <jar jarfile="${build.dir}/configwizard/ConfigProcessController.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
-                <attribute name="Class-Path" value="lib/layer7-utility-${module.utility.version}.jar"/>
-                <attribute name="X-Layer7-Jar" value="lib/layer7-gateway-config-${module.gateway.config.version}.jar"/> 
+                <attribute name="Class-Path" value="../runtime/lib/layer7-utility-${module.utility.version}.jar"/>
+                <attribute name="X-Layer7-Jar" value="../runtime/lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.client.beans.trust.TrustInterviewer"/>
             </manifest>
         </jar>
@@ -2118,8 +2118,8 @@
         <jar jarfile="${build.dir}/configwizard/DatabaseUpgrader.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
-                <attribute name="Class-Path" value="lib/layer7-utility-${module.utility.version}.jar"/>
-                <attribute name="X-Layer7-Jar" value="lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
+                <attribute name="Class-Path" value="../runtime/lib/layer7-utility-${module.utility.version}.jar"/>
+                <attribute name="X-Layer7-Jar" value="../runtime/lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.manager.DatabaseUpgrader"/>
             </manifest>
         </jar>
@@ -2551,6 +2551,12 @@
         <mkdir dir="${install.src.app.ssgconfig}"/>
         <mkdir dir="${install.src.app.ssgprofile}"/>
         <mkdir dir="${install.src.app.sysconfigwizard}"/>
+        <mkdir dir="${install.src.app.control}"/>
+        <mkdir dir="${install.src.app.controlbin}"/>
+        <mkdir dir="${install.src.app.controletc}"/>
+        <mkdir dir="${install.src.app.controletc}/conf"/>
+        <mkdir dir="${install.src.app.controllib}"/>
+        <mkdir dir="${install.src.app.controllogs}"/>
 
         <!-- Gateway directories -->
         <mkdir dir="${install.src.ssg.applet}"/>
@@ -2560,12 +2566,6 @@
         <mkdir dir="${install.src.ssg.bin}"/>
         <mkdir dir="${install.src.ssg.conf}"/>
         <mkdir dir="${install.src.ssg.configwizard}"/>
-        <mkdir dir="${install.src.ssg.control}"/>
-        <mkdir dir="${install.src.ssg.controlbin}"/>
-        <mkdir dir="${install.src.ssg.controletc}"/>
-        <mkdir dir="${install.src.ssg.controletc}/conf"/>
-        <mkdir dir="${install.src.ssg.controllib}"/>
-        <mkdir dir="${install.src.ssg.controllogs}"/>
         <mkdir dir="${install.src.ssg.etc}"/>
         <mkdir dir="${install.src.ssg.flasher}"/>
         <mkdir dir="${install.src.ssg.help}"/>
@@ -2589,6 +2589,8 @@
         <copy todir="${install.src.ssg.configwizard}">
             <fileset dir="${build.dir}/configwizard">
                 <include name="**/*"/>
+                <exclude name="lib"/>
+                <exclude name="lib/**"/>
             </fileset>
         </copy>
 
@@ -2620,23 +2622,23 @@
     -->
     <target name="INTERNAL-ssg-install" depends="INTERNAL-ssg-install-init, INTERNAL-ssg-install-main" if="ssg.install.enabled">
         <!-- Copy Controller.jar -->
-        <copy todir="${install.src.ssg.control}">
+        <copy todir="${install.src.app.control}">
             <fileset dir="${build.dir}" includes="Controller.jar"/>
         </copy>
 
         <!-- Copy Controller libs -->
-        <copy todir="${install.src.ssg.controllib}" flatten="true">
+        <copy todir="${install.src.app.controllib}" flatten="true">
             <fileset dir="${build.dir}/processcontrollerlibs" casesensitive="yes">
                 <include name="*.jar"/>
             </fileset>
         </copy>
 
         <!-- Copy Controller bin -->
-        <copy todir="${install.src.ssg.controlbin}">
+        <copy todir="${install.src.app.controlbin}">
             <fileset dir="${src.root}/etc/processcontroller" includes="processcontroller.sh"/>
         </copy>
 
-        <copy file="${src.root}/etc/omp.dat" tofile="${install.src.ssg.controletc}/conf/omp.dat"/>
+        <copy file="${src.root}/etc/omp.dat" tofile="${install.src.app.controletc}/conf/omp.dat"/>
 
         <!-- Copy Gateway.jar -->
         <copy todir="${install.src.ssg.base}">
@@ -2646,6 +2648,13 @@
         <!-- Copy Gateway libs -->
         <copy todir="${install.src.ssg.lib}" flatten="true">
             <fileset dir="${build.dir}/gatewaylibs" casesensitive="yes">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+
+        <!-- Copy config libs to runtime/libs to avoid duplication -->
+        <copy todir="${install.src.ssg.lib}" flatten="true">
+            <fileset dir="${build.dir}/configwizard/lib" casesensitive="yes">
                 <include name="*.jar"/>
             </fileset>
         </copy>

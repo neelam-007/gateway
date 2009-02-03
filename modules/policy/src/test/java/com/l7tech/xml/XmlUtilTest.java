@@ -9,7 +9,7 @@ import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathResultNodeSet;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.TooManyChildElementsException;

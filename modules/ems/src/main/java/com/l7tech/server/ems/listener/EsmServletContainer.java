@@ -66,6 +66,7 @@ import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.server.util.FirewallUtils;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.ServerConfig;
@@ -74,7 +75,6 @@ import com.l7tech.server.ems.enterprise.MappingFilter;
 import com.l7tech.server.ems.ui.EsmApplication;
 import com.l7tech.server.ems.ui.EsmSecurityFilter;
 import com.l7tech.server.ems.ui.EsmSessionServlet;
-import com.l7tech.common.io.IOUtils;
 
 /**
  * An embedded servlet container that the ESM uses to host itself.

@@ -1,6 +1,6 @@
 package com.l7tech.server.processcontroller.monitoring;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.server.management.config.monitoring.ComponentType;
 import com.l7tech.util.ExceptionUtils;
 

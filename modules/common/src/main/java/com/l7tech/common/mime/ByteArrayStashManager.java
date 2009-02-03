@@ -6,8 +6,8 @@
 
 package com.l7tech.common.mime;
 
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.BufferPool;
 
 import java.io.ByteArrayInputStream;

@@ -14,9 +14,9 @@ import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
 
 /**
  * Test the rules defined for WS-I SAML Token Profile validation.

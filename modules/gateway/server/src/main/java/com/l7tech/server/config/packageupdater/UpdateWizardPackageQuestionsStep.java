@@ -3,7 +3,7 @@ package com.l7tech.server.config.packageupdater;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.server.config.exceptions.WizardNavigationException;
 import com.l7tech.server.config.wizard.BaseConsoleStep;
 import com.l7tech.server.config.wizard.ConfigurationWizard;

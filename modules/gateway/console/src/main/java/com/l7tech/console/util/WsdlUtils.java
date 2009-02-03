@@ -1,6 +1,6 @@
 package com.l7tech.console.util;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.wsdl.Wsdl;
 

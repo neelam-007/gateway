@@ -1,7 +1,7 @@
 package com.l7tech.gui.util;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;

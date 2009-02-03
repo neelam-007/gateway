@@ -16,7 +16,7 @@ import com.l7tech.message.TcpKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.AuthenticationResult;

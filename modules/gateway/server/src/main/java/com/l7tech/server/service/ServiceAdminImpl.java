@@ -1,7 +1,7 @@
 package com.l7tech.server.service;
 
 import com.l7tech.common.io.ByteLimitInputStream;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.service.*;

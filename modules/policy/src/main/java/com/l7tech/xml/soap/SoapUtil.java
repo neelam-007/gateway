@@ -4,7 +4,7 @@
 
 package com.l7tech.xml.soap;
 
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;

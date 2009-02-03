@@ -9,7 +9,7 @@ import com.tarari.xml.rax.schema.SchemaResolver;
 import com.tarari.xml.rax.RaxDocument;
 import com.tarari.xml.XmlSource;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 
 /**
  * Utility for testing tarari schema validation.

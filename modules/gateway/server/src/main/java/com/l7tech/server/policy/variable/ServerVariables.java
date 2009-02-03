@@ -15,7 +15,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.HexUtils;
 

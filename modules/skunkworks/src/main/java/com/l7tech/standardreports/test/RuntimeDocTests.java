@@ -18,7 +18,7 @@ import java.io.*;
 import com.l7tech.gateway.standardreports.Utilities;
 import com.l7tech.gateway.standardreports.RuntimeDocUtilities;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.standardreports.ReportApp;
 import com.l7tech.server.management.api.node.ReportApi;
 

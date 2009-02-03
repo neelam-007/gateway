@@ -3,7 +3,7 @@
  */
 package com.l7tech.server;
 
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.LicenseException;

@@ -2,7 +2,7 @@ package com.l7tech.common;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 

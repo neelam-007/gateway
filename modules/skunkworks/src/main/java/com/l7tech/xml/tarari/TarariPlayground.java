@@ -10,7 +10,7 @@ import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContext;
 import com.l7tech.xml.tarari.GlobalTarariContextImpl;
 //import com.l7tech.common.TestDocuments;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;

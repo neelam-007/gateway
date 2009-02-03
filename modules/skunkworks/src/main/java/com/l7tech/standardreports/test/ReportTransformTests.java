@@ -9,7 +9,7 @@ package com.l7tech.standardreports.test;
 import java.io.*;
 import java.util.*;
 
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.gateway.standardreports.RuntimeDocUtilities;

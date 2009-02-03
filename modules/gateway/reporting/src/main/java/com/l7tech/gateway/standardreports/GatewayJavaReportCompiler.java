@@ -16,7 +16,7 @@ import java.util.ArrayList;
 
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 
 import javax.tools.Diagnostic;
 

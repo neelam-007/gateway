@@ -67,7 +67,7 @@ public class ConfigurationWizard {
 
     private void init(InputStream in, PrintStream out) {
         initLogging();
-        osFunctions = OSDetector.getOSSpecificFunctions();
+        osFunctions = OSSpecificFunctions.getOSSpecificFunctions();
         wizardUtils = ConsoleWizardUtils.getInstance(in, out);
         commands = new LinkedHashSet<ConfigurationCommand>();
     }
@@ -175,7 +175,7 @@ public class ConfigurationWizard {
     }
 
     public OSSpecificFunctions getOsFunctions() {
-        return OSDetector.getOSSpecificFunctions();
+        return OSSpecificFunctions.getOSSpecificFunctions();
     }
 
     public void setOsFunctions(OSSpecificFunctions osFunctions) {

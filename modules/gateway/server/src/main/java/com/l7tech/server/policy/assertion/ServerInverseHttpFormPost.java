@@ -2,8 +2,8 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.common.io.BufferPoolByteArrayOutputStream;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.IOUtils;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.common.mime.ContentTypeHeader;

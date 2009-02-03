@@ -1,7 +1,7 @@
 package com.l7tech.server.hpsoam;
 
 import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.common.io.IOUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
