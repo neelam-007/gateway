@@ -6,11 +6,11 @@ package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.*;
-import com.l7tech.util.HexUtils;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.util.HexUtils;
 
 import javax.crypto.Cipher;
 import java.io.ByteArrayOutputStream;
@@ -203,8 +203,13 @@ public class AuditContextImpl implements AuditContext {
                 }
             }
 
+            /*
+             * 5.0 Audit Log Formatter will be passed into the listener
+             */
+            AuditLogFormatter formatter = new AuditLogFormatter(logFormatContextVariables);
+
             currentRecord.setLevel(highestLevelYetSeen);
-            listener.notifyRecordFlushed(currentRecord, true);
+            listener.notifyRecordFlushed(currentRecord, formatter, true);
 
             Set<AuditDetail> detailsToSave = new HashSet<AuditDetail>();
             for (List<AuditDetailWithInfo> list : details.values()) {
@@ -229,13 +234,14 @@ public class AuditContextImpl implements AuditContext {
                                 getSource(detailWithInfo.source, "com.l7tech.server.audit"),
                                 message,
                                 detailWithInfo.detail.getParams(),
+                                formatter,
                                 detailWithInfo.exception);
                     }
                 }
             }
 
             currentRecord.setDetails(detailsToSave);
-            listener.notifyRecordFlushed(currentRecord, false);
+            listener.notifyRecordFlushed(currentRecord, formatter, false);
 
             if (isSignAudits()) {
                 signRecord(currentRecord);
@@ -267,6 +273,22 @@ public class AuditContextImpl implements AuditContext {
             update = false;
             //system = false;
         }
+    }
+
+    /**
+     * @see com.l7tech.server.audit.AuditContext#getContextVariablesUsed()
+     */
+    @Override
+    public String[] getContextVariablesUsed() {
+        return this.logFormatter.getContextVariablesUsed();
+    }
+
+    /**
+     * @see com.l7tech.server.audit.AuditContext#setContextVariables(java.util.Map)
+     */
+    @Override
+    public void setContextVariables(Map<String, Object> variables) {
+        this.logFormatContextVariables = variables;
     }
 
     private void signRecord(AuditRecord signatureSubject) {
@@ -456,6 +478,8 @@ public class AuditContextImpl implements AuditContext {
     private final AuditRecordManager auditRecordManager;
     private DefaultKey keystore;
     private AuditLogListener listener;
+    private AuditLogFormatter logFormatter;
+    private Map<String, Object> logFormatContextVariables;
 
     private Level currentMessageThreshold;
     private Level currentAdminThreshold;

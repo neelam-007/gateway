@@ -74,6 +74,14 @@ public class AuditContextStub implements AuditContextStubInt {
         return lastRecord;
     }
 
+    public String[] getContextVariablesUsed() {
+        return new String[0];
+    }
+
+    public void setContextVariables(Map<String, Object> variables) {
+        // do nothing
+    }
+
     //- PRIVATE
 
     private AuditRecord lastRecord;

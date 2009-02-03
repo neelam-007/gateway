@@ -125,7 +125,16 @@
                             </list>
                         </entry>
                         <entry key="sinkManager"><list><value>logLevels</value></list></entry>
-                        <entry key="auditLogListenerTarget"><list><value>auditBatchExternal</value></list></entry>
+                        <entry key="auditLogListenerTarget">
+                            <list>
+                                <value>auditBatchExternal</value>
+                                <value>auditLogFormatServiceHeader</value>
+                                <value>auditLogFormatServiceFooter</value>
+                                <value>auditLogFormatServiceDetail</value>
+                                <value>auditLogFormatOther</value>
+                                <value>auditLogFormatOtherDetail</value>
+                            </list>
+                        </entry>
                         <entry key="schemaManager">
                             <list>
                                 <value>schemaMaxCacheEntries</value>

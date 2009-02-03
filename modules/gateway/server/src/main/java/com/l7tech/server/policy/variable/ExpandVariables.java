@@ -3,14 +3,16 @@
  */
 package com.l7tech.server.policy.variable;
 
+import com.l7tech.gateway.common.DefaultSyntaxErrorHandler;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.CommonMessages;
-import com.l7tech.gateway.common.DefaultSyntaxErrorHandler;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.ServerConfig;
 
 import java.text.MessageFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 
 /**
@@ -162,7 +164,7 @@ public final class ExpandVariables {
     }
 
     public static String process(String s, Map vars, Audit audit) {
-        return process(s, vars, audit, strict());
+        return process(s, vars, audit, strict(), null);
     }
 
     /**
@@ -177,6 +179,22 @@ public final class ExpandVariables {
      * @return the message with expanded/resolved varialbes
      */
     public static String process(String s, Map vars, Audit audit, boolean strict) {
+        return process(s, vars, audit, strict, null);
+    }
+
+    /**
+     * Process the input string and expand the variables using the supplied
+     * user variables map. If the varaible is not found in variables map
+     * then the default variables map is consulted.
+     *
+     * @param s the input message as a message
+     * @param vars the caller supplied varialbes map that is consulted first
+     * @param audit an audit instance to catch warnings
+     * @param strict true if failures to resolve variables should throw exceptions rather than log warnings
+     * @param varLengthLimit the length limit of each replacement context variable value, use null if no limit is applied
+     * @return the message with expanded/resolved varialbes
+     */
+    public static String process(String s, Map vars, Audit audit, boolean strict, Integer varLengthLimit) {
         if (s == null) throw new IllegalArgumentException();
 
         Matcher matcher = Syntax.regexPattern.matcher(s);
@@ -200,7 +218,12 @@ public final class ExpandVariables {
             }
 
             replacement = makeDollarExplicit(replacement); // bugzilla 3022
-            matcher.appendReplacement(sb, replacement);
+
+            // 5.0 Audit Request Id enhancement imposes a limit to the length of each ctx variable replacement
+            if (varLengthLimit != null && replacement.length() > varLengthLimit)
+                matcher.appendReplacement(sb, replacement.substring(0, varLengthLimit));
+            else
+                matcher.appendReplacement(sb, replacement);
         }
         matcher.appendTail(sb);
 

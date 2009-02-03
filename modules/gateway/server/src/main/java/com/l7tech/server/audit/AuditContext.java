@@ -161,4 +161,20 @@ public interface AuditContext {
      * @return an unmodifiable Map&lt;Object, List&lt;AuditDetail&gt;&gt; of this AuditContext's details.
      */
     Map<Object, List<AuditDetail>> getDetails();
+
+    /**
+     * Returns the list of context variables used by the audit log formatter.
+     *
+     * @return list of context variables referenced by the audit formatter, an empty array (String[0]) should be returned if context variables are not needed
+     * @see com.l7tech.server.audit.AuditLogFormatter;
+     */
+    String[] getContextVariablesUsed();
+
+    /**
+     * Sets the context variables Map that will be used in the audit log formatter.
+     *
+     * @param variables the Map for the context variables values
+     * @see com.l7tech.server.audit.AuditLogFormatter
+     */
+    void setContextVariables(Map<String, Object> variables);
 }

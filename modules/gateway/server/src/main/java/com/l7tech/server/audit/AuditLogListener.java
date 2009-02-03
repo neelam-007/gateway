@@ -16,9 +16,10 @@ public interface AuditLogListener {
      * @param source The detail source
      * @param message The detail message
      * @param params The detail parameters (may be null)
+     * @param formatter The audit log formatter
      * @param thrown The exception (may be null)
      */
-    void notifyDetailCreated(String source, AuditDetailMessage message, String[] params, Throwable thrown);
+    void notifyDetailCreated(String source, AuditDetailMessage message, String[] params, AuditLogFormatter formatter, Throwable thrown);
 
     /**
      * Notification of persistence of an audit detail.
@@ -26,15 +27,17 @@ public interface AuditLogListener {
      * @param source The detail source
      * @param message The detail message
      * @param params The detail parameters (may be null)
+     * @param formatter The audit log formatter
      * @param thrown The exception (may be null)
      */
-    void notifyDetailFlushed(String source, AuditDetailMessage message, String[] params, Throwable thrown);
+    void notifyDetailFlushed(String source, AuditDetailMessage message, String[] params, AuditLogFormatter formatter, Throwable thrown);
 
     /**
      * Notification of persistence of and audit record.
      *
      * @param record the record being persisted.
+     * @param formatter The audit log formatter
      * @param header true if header
      */
-    void notifyRecordFlushed(AuditRecord record, boolean header);
+    void notifyRecordFlushed(AuditRecord record, AuditLogFormatter formatter, boolean header);
 }

@@ -1,19 +1,20 @@
 package com.l7tech.server.log;
 
-import java.util.logging.LogRecord;
-import java.util.logging.Level;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
-
-import com.l7tech.server.audit.AuditLogListener;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.gateway.common.audit.AdminAuditRecord;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.MessageSummaryAuditRecord;
-import com.l7tech.gateway.common.audit.AdminAuditRecord;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.AuditLogFormatter;
+import com.l7tech.server.audit.AuditLogListener;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.JdkLoggerConfigurator;
+
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
 /**
  * AuditLogListener that passes audit information to a MessageSink.
@@ -21,6 +22,17 @@ import com.l7tech.util.JdkLoggerConfigurator;
  * <p>This listener will filter out details that are passed at either creation
  * or flush time (depending on configuration)</p>
  *
+ * <p>5.0 bug# 5181 - Request Id enhancement to enable audit log formatting to be defined by
+ * the following cluster properties:
+ * <ul>
+ * <li>audit.log.service.headerFormat</li>
+ * <li>audit.log.service.footerFormat</li>
+ * <li>audit.log.service.detailFormat</li>
+ * <li>audit.log.other.format</li>
+ * <li>audit.log.other.detailFormat</li>
+ * <li></li>
+ * </ul>
+ * 
  * @author Steve Jones
  */
 public class FilteringAuditLogListener implements AuditLogListener, PropertyChangeListener {
@@ -49,9 +61,10 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
     public void notifyDetailCreated(final String source,
                                     final AuditDetailMessage message,
                                     final String[] params,
+                                    final AuditLogFormatter formatter,
                                     final Throwable thrown) {
         if ( auditOnCreate.get() ) {
-            LogRecord record = generateMessage(source, message, params, thrown);
+            LogRecord record = generateMessage(source, message, params, formatter, thrown);
             processMessage(record);
         }
     }
@@ -67,9 +80,10 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
     public void notifyDetailFlushed(final String source,
                                     final AuditDetailMessage message,
                                     final String[] params,
+                                    final AuditLogFormatter formatter,
                                     final Throwable thrown) {
         if ( !auditOnCreate.get() ) {
-            LogRecord record = generateMessage(source, message, params, thrown);
+            LogRecord record = generateMessage(source, message, params, formatter, thrown);
             processMessage(record);
         }
     }
@@ -80,8 +94,8 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
      * @param audit The audit record
      * @param header True if is header
      */
-    public void notifyRecordFlushed(final AuditRecord audit, final boolean header) {
-        LogRecord record = generateMessage(audit, header);
+    public void notifyRecordFlushed(final AuditRecord audit, final AuditLogFormatter formatter, final boolean header) {
+        LogRecord record = generateMessage(audit, formatter, header);
         if ( record != null )
             processMessage(record);
     }
@@ -95,6 +109,8 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
         if ( PROP_BATCH.equals( evt.getPropertyName() ) ) {
             auditOnCreate.set(!Boolean.parseBoolean((String)evt.getNewValue()));
         }
+        // check formatter properties
+        AuditLogFormatter.notifyPropertyChange(evt.getPropertyName());
     }
 
     //- PRIVATE
@@ -106,13 +122,23 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
     private final AtomicBoolean auditOnCreate = new AtomicBoolean(PROP_BATCH_DEFAULT);
 
     /**
-     * Generate a LogRecord
+     * Generate a LogRecord for the AuditDetailMessage.
+     *
+     * @param source source that generated the log
+     * @param message the audit detail message
+     * @param params message parameters
+     * @param formatter the logging formatter to handle the message formatting
+     * @param thrown the exception that occurred
+     * @return audit log record that can be sent to the log sink
      */
+    @SuppressWarnings("unchecked")
     private LogRecord generateMessage(final String source,
                                       final AuditDetailMessage message,
                                       final String[] params,
+                                      final AuditLogFormatter formatter,
                                       final Throwable thrown) {
-        AuditLogRecord record = new AuditLogRecord(message.getLevel(), message.getId() + ": " + message.getMessage());
+//        AuditLogRecord record = new AuditLogRecord(message.getLevel(), message.getId() + ": " + message.getMessage());
+        AuditLogRecord record = new AuditLogRecord(message.getLevel(), formatter.formatDetail(message));
 
         record.setLoggerName(source);
         if (thrown != null)
@@ -146,25 +172,20 @@ public class FilteringAuditLogListener implements AuditLogListener, PropertyChan
 
     /**
      * Generate a LogRecord
+     *
+     * @param audit the audit record to generate
+     * @param formatter the logging formatter to handle the message formatting
+     * @param header flag specifying whether the message is for the audit header vs footer
+     * @return audit log record that can be sent to the log sink
      */
-    private LogRecord generateMessage(final AuditRecord audit, final boolean header) {
+    @SuppressWarnings("unchecked")
+    private LogRecord generateMessage(final AuditRecord audit, final AuditLogFormatter formatter, final boolean header) {
+
         AuditLogRecord record = null;
-
-        if ( header ) {
-            if ( audit instanceof MessageSummaryAuditRecord) {
-                PolicyEnforcementContext pec = PolicyEnforcementContext.getCurrent();
-
-                if ( pec != null && pec.getService() != null ) {
-                    String serviceDesc = pec.getService().getName();
-                    if ( pec.getService().getRoutingUri() != null ) {
-                        serviceDesc += " [" + pec.getService().getRoutingUri() + "]";
-                    }
-                    record = new AuditLogRecord(Level.INFO, "Processing request for service: " + serviceDesc);
-                }
-            }
-        } else {
-            record = new AuditLogRecord(audit.getLevel(), audit.getMessage());
-        }
+        if (header && audit instanceof MessageSummaryAuditRecord)
+            record = new AuditLogRecord(Level.INFO, formatter.format(audit, header));
+        else if (!header)
+            record = new AuditLogRecord(audit.getLevel(), formatter.format(audit, header));
 
         if ( record != null ) {
             // TODO move this to the AuditRecord subclasses

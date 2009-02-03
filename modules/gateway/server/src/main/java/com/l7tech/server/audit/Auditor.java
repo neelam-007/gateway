@@ -20,6 +20,7 @@ public class Auditor implements Audit {
     private final Logger logger;
     private final AuditLogListener listener;
     private final AuditDetailFilter filter;
+    private final AuditLogFormatter formatter;
 
     /**
      * Create an Auditor that will only log and which has no message source.
@@ -32,6 +33,7 @@ public class Auditor implements Audit {
         this.logger = logger;
         this.listener = null;
         this.filter = null;
+        this.formatter = new AuditLogFormatter();
     }
 
     /**
@@ -98,6 +100,7 @@ public class Auditor implements Audit {
         this.logger = logger;
         this.listener = auditLogListener;
         this.filter = auditDetailFilter;
+        this.formatter = new AuditLogFormatter();
     }
 
     public void logAndAudit(AuditDetailMessage msg, String[] params, Throwable e) {
@@ -120,9 +123,9 @@ public class Auditor implements Audit {
     protected void log(AuditDetailMessage msg, String[] params, Throwable e) {
         if (logger.isLoggable(msg.getLevel())) {
             if ( listener != null ) {
-                listener.notifyDetailCreated( logger.getName(), msg, params, e );
+                listener.notifyDetailCreated( logger.getName(), msg, params, formatter, e );
             } else {
-                LogRecord record = new LogRecord(msg.getLevel(), msg.getMessage());
+                LogRecord record = new LogRecord(msg.getLevel(), formatter.formatDetail(msg));
                 record.setParameters(params);
                 record.setThrown(e);
                 record.setSourceClassName("");

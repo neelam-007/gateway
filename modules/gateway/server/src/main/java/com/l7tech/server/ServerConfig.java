@@ -7,10 +7,10 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.cluster.ClusterPropertyListener;
+import com.l7tech.util.Config;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeUnit;
-import com.l7tech.util.Config;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
@@ -80,6 +80,12 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThreshold";
     public static final String PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThresholdRespected";
 
+    public static final String PARAM_AUDIT_LOG_FORMAT_SERVICE_HEADER = "auditLogFormatServiceHeader";
+    public static final String PARAM_AUDIT_LOG_FORMAT_SERVICE_FOOTER = "auditLogFormatServiceFooter";
+    public static final String PARAM_AUDIT_LOG_FORMAT_SERVICE_DETAIL = "auditLogFormatServiceDetail";
+    public static final String PARAM_AUDIT_LOG_FORMAT_OTHER = "auditLogFormatOther";
+    public static final String PARAM_AUDIT_LOG_FORMAT_OTHER_DETAIL = "auditLogFormatOtherDetail";
+    
     public static final String PARAM_AUDIT_ARCHIVER_TIMER_PERIOD = "auditArchiverTimerPeriod";
     public static final String PARAM_AUDIT_ARCHIVER_SHUTDOWN_THRESHOLD = "auditArchiverShutdownThreshold";
     public static final String PARAM_AUDIT_ARCHIVER_START_THRESHOLD = "auditArchiverStartThreshold";

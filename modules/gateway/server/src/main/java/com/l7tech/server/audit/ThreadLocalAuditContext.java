@@ -71,6 +71,14 @@ public class ThreadLocalAuditContext implements AuditContext, ApplicationContext
         threadLocalDelegate.get().setSystem(system);
     }
 
+    public String[] getContextVariablesUsed() {
+        return threadLocalDelegate.get().getContextVariablesUsed();
+    }
+
+    public void setContextVariables(Map<String, Object> variables) {
+        threadLocalDelegate.get().setContextVariables(variables);
+    }
+
     //- PRIVATE
 
     private String targetId;

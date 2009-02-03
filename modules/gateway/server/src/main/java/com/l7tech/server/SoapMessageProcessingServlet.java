@@ -51,10 +51,10 @@ import java.io.OutputStream;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.util.Set;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Receives SOAP requests via HTTP POST, passes them into the <code>MessageProcessor</code>
@@ -358,6 +358,14 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
         } finally {
             try {
+                /*
+                 * 5.0 Audit Request Id
+                 * need to extract the required context variables from PEC used in the audit logging
+                 */
+                String[] ctxVariables = auditContext.getContextVariablesUsed();
+                if (ctxVariables != null && ctxVariables.length > 0) {
+                    auditContext.setContextVariables(context.getVariableMap(ctxVariables, auditor));
+                }
                 auditContext.flush();
             }
             catch(Exception e) {
