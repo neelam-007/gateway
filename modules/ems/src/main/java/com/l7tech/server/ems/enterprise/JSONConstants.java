@@ -23,6 +23,18 @@ public final class JSONConstants {
     }
 
     /**
+     * Enum of system monitoring setup settings.
+     */
+    public static final class SystemMonitoringSetup {
+        public static final String PROPERTY_SETUP                = "propertySetup";
+        public static final String SAMPLING_INTERVAL_LOWER_LIMIT = "samplingIntervalLowerLimit";
+        public static final String DISABLE_ALL_NOTIFICATIONS     = "disableAllNotifications";
+        public static final String AUDIT_UPON_ALERT_STATE        = "auditUponAlertState";
+        public static final String AUDIT_UPON_NORMAL_STATE       = "auditUponNormalState";
+        public static final String AUDIT_UPON_NOTIFICATION       = "auditUponNotification";
+    }
+
+    /**
      * Enum of monitoring property types for SSG Cluster entities.
      * Defined as l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY in l7.js.
      */
@@ -42,7 +54,18 @@ public final class JSONConstants {
         public static final String CPU_TEMP         = "cpuTemp";
         public static final String CPU_USAGE        = "cpuUsage";
         public static final String SWAP_USAGE       = "swapUsage";
-        public static final String CLOCK_DRIFT      = "clockDrift";
+        public static final String NTP_STATUS       = "ntpStatus";
+    }
+
+    /**
+     * Enum of settings of each propertySetup.
+     */
+    public static final class MonitoringPropertySettings {
+        public static final String SAMPLING_INTERVAL         = "samplingInterval";
+        public static final String DEFAULT_TRIGGER_VALUE     = "defaultTriggerValue";
+        public static final String TRIGGER_VALUE_LOWER_LIMIT = "triggerValueLowerLimit";
+        public static final String TRIGGER_VALUE_UPPER_LIMIT = "triggerValueUpperLimit";
+        public static final String UNIT                      = "unit";
     }
 
     /**

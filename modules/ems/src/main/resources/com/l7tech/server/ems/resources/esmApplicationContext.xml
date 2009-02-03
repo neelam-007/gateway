@@ -461,11 +461,15 @@
     <bean id="ssgNodeManager" class="com.l7tech.server.ems.enterprise.SsgNodeManagerImpl" parent="hibernateBean"/>
 
     <!-- Migration Manager -->
-    <bean id="migrationRecordManager" class="com.l7tech.server.ems.migration.MigrationRecordManagerImpl" parent="hibernateBean">
-    </bean>
+    <bean id="migrationRecordManager" class="com.l7tech.server.ems.migration.MigrationRecordManagerImpl" parent="hibernateBean"/>
 
     <!-- Standard Report Settings Manager -->
-    <bean id="standardReportSettingsManager" class="com.l7tech.server.ems.standardreports.StandardReportSettingsManagerImpl" parent="hibernateBean">
+    <bean id="standardReportSettingsManager" class="com.l7tech.server.ems.standardreports.StandardReportSettingsManagerImpl" parent="hibernateBean"/>
+
+    <!-- System Monitoring Managers -->
+    <bean id="systemMonitoringSetupSettingsManager" class="com.l7tech.server.ems.monitoring.SystemMonitoringSetupSettingsManagerImpl">
+        <constructor-arg index="0" ref="clusterPropertyManager"/>
+        <constructor-arg index="1" ref="serverConfig"/>
     </bean>
 
     <bean id="migrationMappingManager" class="com.l7tech.server.ems.migration.MigrationMappingRecordManagerImpl" parent="hibernateBean">

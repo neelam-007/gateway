@@ -751,11 +751,10 @@
                 }
             };
             var postData = YAHOO.lang.JSON.stringify(data);
-            // TODO Set saveMonitoringSetupUrl using Wicket.
             l7.Dialog.showWaitDialog(localizedStrings.SAVING_MONITORING_SETUP + '...');
             YAHOO.util.Connect.setDefaultPostHeader(false);
             YAHOO.util.Connect.initHeader('Content-Type', 'application/json; charset=utf-8');
-            YAHOO.util.Connect.asyncRequest('POST', saveMonitoringSetupUrl, callback, postData);
+            YAHOO.util.Connect.asyncRequest('POST', saveSystemMonitoringSetupSettingsUrl, callback, postData);
             YAHOO.util.Connect.setDefaultPostHeader(true);
         }
 
@@ -998,8 +997,7 @@
         }
 
         function loadMonitoringSetup() {
-            // TODO Set getMonitoringSetupUrl using Wicket.
-            var xhr = l7.Connection.syncRequest('GET', getMonitoringSetupUrl, null, false);
+            var xhr = l7.Connection.syncRequest('GET', getSystemMonitoringSetupSettingsUrl, null, false);
             if (xhr.status == 200) {
                 currentSetup = l7.Dialog.parseJSON(
                         xhr.responseText,
@@ -2055,6 +2053,9 @@
         </form>
     </div>
 </div>
+                <div wicket:id="getSystemMonitoringSetupSettings"/>
+                <div wicket:id="saveSystemMonitoringSetupSettings"/>
+
                 </wicket:extend>
 
             </div>

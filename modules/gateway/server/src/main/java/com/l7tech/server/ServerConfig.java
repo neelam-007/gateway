@@ -213,6 +213,69 @@ public class ServerConfig implements ClusterPropertyListener, Config {
             ? "/ssg/etc/conf/serverconfig_override.properties"
             : System.getProperty("com.l7tech.server.home") + File.separator + "etc" + File.separator + "conf" + File.separator + "serverconfig_override.properties";
 
+    public static final String PARAM_SYSTEM_MONITORING_SETUP_SETTINGS = "system.monitoring.setup.settings";
+
+    public static final String PARAM_MONITORING_TRIGGER_SSGAUDITSIZE = "trigger.ssgAuditSize";
+    public static final String PARAM_MONITORING_TRIGGER_SSGLOGSIZE = "trigger.ssgLogSize";
+    public static final String PARAM_MONITORING_TRIGGER_DISKUSAGE = "trigger.diskUsage";
+    public static final String PARAM_MONITORING_TRIGGER_CPUTEMPERATURE = "trigger.cpuTemperature";
+    public static final String PARAM_MONITORING_TRIGGER_CPUUSAGE = "trigger.cpuUsage";
+    public static final String PARAM_MONITORING_TRIGGER_SWAPUSAGE = "trigger.swapUsage";
+
+    public static final String PARAM_MONITORING_INTERVAL_SSGAUDITSIZE = "interval.ssgAuditSize";
+    public static final String PARAM_MONITORING_INTERVAL_OPERATINGSTATUS = "interval.operatingStatus";
+    public static final String PARAM_MONITORING_INTERVAL_SSGLOGSIZE = "interval.ssgLogSize";
+    public static final String PARAM_MONITORING_INTERVAL_DISKUSAGE = "interval.diskUsage";
+    public static final String PARAM_MONITORING_INTERVAL_RAIDSTATUS = "interval.raidStatus";
+    public static final String PARAM_MONITORING_INTERVAL_CPUTEMPERATURE = "interval.cpuTemperature";
+    public static final String PARAM_MONITORING_INTERVAL_CPUUSAGE = "interval.cpuUsage";
+    public static final String PARAM_MONITORING_INTERVAL_SWAPUSAGE = "interval.swapUsage";
+    public static final String PARAM_MONITORING_INTERVAL_NTPSTATUS = "interval.ntpStatus";
+
+    public static final String PARAM_MONITORING_DISABLEALLNOTIFICATIONS = "disableAllNotifications";
+    public static final String PARAM_MONITORING_AUDITUPONALERTSTATE = "auditUponAlertState";
+    public static final String PARAM_MONITORING_AUDITUPONNORMALSTATE = "auditUponNormalState";
+    public static final String PARAM_MONITORING_AUDITUPONNOTIFICATION = "auditUponNotification";
+
+    public static final String PARAM_MONITORING_INIT_TRIGGER_SSGAUDITSIZE = "monitoring.ssgCluster.initAlertTrigger.ssgAuditSize";
+    public static final String PARAM_MONITORING_INIT_TRIGGER_SSGLOGSIZE = "monitoring.ssgNode.initAlertTrigger.ssgLogSize";
+    public static final String PARAM_MONITORING_INIT_TRIGGER_DISKUSAGE = "monitoring.ssgNode.initAlertTrigger.diskUsage";
+    public static final String PARAM_MONITORING_INIT_TRIGGER_CPUTEMPERATURE = "monitoring.ssgNode.initAlertTrigger.cpuTemperature";
+    public static final String PARAM_MONITORING_INIT_TRIGGER_CPUUSAGE = "monitoring.ssgNode.initAlertTrigger.cpuUsage";
+    public static final String PARAM_MONITORING_INIT_TRIGGER_SWAPUSAGE = "monitoring.ssgNode.initAlertTrigger.swapUsage";
+
+    public static final String PARAM_MONITORING_INIT_INTERVAL_SSGAUDITSIZE = "monitoring.ssgCluster.initSamplingInterval.ssgAuditSize";
+    public static final String PARAM_MONITORING_INIT_INTERVAL_OPERATINGSTATUS = "monitoring.ssgNode.initSamplingInterval.operatingStatus";
+    public static final String PARAM_MONITORING_INIT_INTERVAL_SSGLOGSIZE = "monitoring.ssgNode.initSamplingInterval.ssgLogSize";
+    public static final String PARAM_MONITORING_INIT_INTERVAL_DISKUSAGE = "monitoring.ssgNode.initSamplingInterval.diskUsage";
+    public static final String PARAM_MONITORING_INIT_INTERVAL_RAIDSTATUS = "monitoring.ssgNode.initSamplingInterval.raidStatus";
+    public static final String PARAM_MONITORING_INIT_INTERVAL_CPUTEMPERATURE = "monitoring.ssgNode.initSamplingInterval.cpuTemperature";
+    public static final String PARAM_MONITORING_INIT_INTERVAL_CPUUSAGE = "monitoring.ssgNode.initSamplingInterval.cpuUsage";
+    public static final String PARAM_MONITORING_INIT_INTERVAL_SWAPUSAGE = "monitoring.ssgNode.initSamplingInterval.swapUsage";
+    public static final String PARAM_MONITORING_INIT_INTERVAL_NTPSTATUS = "monitoring.ssgNode.initSamplingInterval.ntpStatus";
+
+    public static final String PARAM_MONITORING_INIT_DISABLEALLNOTIFICATIONS = "monitoring.initStatus.disableAllNotifications";
+    public static final String PARAM_MONITORING_INIT_AUDITUPONALERTSTATE = "monitoring.initStatus.auditUponAlertState";
+    public static final String PARAM_MONITORING_INIT_AUDITUPONNORMALSTATE = "monitoring.initStatus.auditUponNormalState";
+    public static final String PARAM_MONITORING_INIT_AUDITUPONNOTIFICATION = "monitoring.initStatus.auditUponNotification";
+
+    public static final String PARAM_MONITORING_SAMPLINGINTERVAL_LOWERLIMIT = "monitoring.samplingInterval.lowerLimit";
+    public static final String PARAM_MONITORING_SSGCLUSTER_SSGAUDITSIZE_LOWERLIMIT = "monitoring.ssgCluster.ssgAuditSize.lowerLimit";
+    public static final String PARAM_MONITORING_SSGNODE_SSGLOGSIZE_LOWERLIMIT = "monitoring.ssgNode.ssgLogSize.lowerLimit";
+    public static final String PARAM_MONITORING_SSGNODE_DISKUSAGE_LOWERLIMIT = "monitoring.ssgNode.diskUsage.lowerLimit";
+    public static final String PARAM_MONITORING_SSGNODE_DISKUSAGE_UPPERLIMIT = "monitoring.ssgNode.diskUsage.upperLimit";
+    public static final String PARAM_MONITORING_SSGNODE_CPUTEMPERATURE_LOWERLIMIT = "monitoring.ssgNode.cpuTemperature.lowerLimit";
+    public static final String PARAM_MONITORING_SSGNODE_CPUUSAGE_LOWERLIMIT = "monitoring.ssgNode.cpuUsage.lowerLimit";
+    public static final String PARAM_MONITORING_SSGNODE_CPUUSAGE_UPPERLIMIT = "monitoring.ssgNode.cpuUsage.upperLimit";
+    public static final String PARAM_MONITORING_SSGNODE_SWAPUSAGE_LOWERLIMIT = "monitoring.ssgNode.swapUsage.lowerLimit";
+
+    public static final String PARAM_MONITORING_SSGCLUSTER_SSGAUDITSIZE_UNIT = "monitoring.ssgCluster.ssgAuditSize.unit";
+    public static final String PARAM_MONITORING_SSGNODE_SSGLOGSIZE_UNIT = "monitoring.ssgNode.ssgLogSize.unit";
+    public static final String PARAM_MONITORING_SSGNODE_DISKUSAGE_UNIT = "monitoring.ssgNode.diskUsage.unit";
+    public static final String PARAM_MONITORING_SSGNODE_CPUTEMPERATURE_UNIT = "monitoring.ssgNode.cpuTemperature.unit";
+    public static final String PARAM_MONITORING_SSGNODE_CPUUSAGE_UNIT = "monitoring.ssgNode.cpuUsage.unit";
+    public static final String PARAM_MONITORING_SSGNODE_SWAPUSAGE_UNIT = "monitoring.ssgNode.swapUsage.unit";
+
     private static final String SUFFIX_JNDI = ".jndi";
     private static final String SUFFIX_SYSPROP = ".systemProperty";
     private static final String SUFFIX_SETSYSPROP = ".setSystemProperty";
