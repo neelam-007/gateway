@@ -16,17 +16,18 @@ import java.io.Serializable;
  * @author alex
  */
 @Entity
-public class PropertyTrigger<T extends Serializable> extends Trigger {
+public class PropertyTrigger<T extends Serializable> extends Trigger<MonitorableProperty> {
     private String propertyName;
-    private long samplingInterval;
+    private long maxSamplingInterval;
     private ComparisonOperator operator;
     private T triggerValue;
     private Class<? extends Serializable> propertyValueClass;
 
-    public PropertyTrigger(MonitorableProperty property, long samplingInterval, String componentId, T triggerValue) {
-        super(property.getComponentType(), componentId);
+    public PropertyTrigger(MonitorableProperty property, String componentId, ComparisonOperator operator, T triggerValue, long maxSamplingInterval) {
+        super(property, componentId);
         this.propertyName = property.getName();
-        this.samplingInterval = samplingInterval;
+        this.maxSamplingInterval = maxSamplingInterval;
+        this.operator = operator;
         this.triggerValue = triggerValue;
         this.propertyValueClass = triggerValue.getClass();
     }
@@ -41,12 +42,12 @@ public class PropertyTrigger<T extends Serializable> extends Trigger {
     }
 
     /** The interval, in milliseconds, between successive samples */
-    public long getSamplingInterval() {
-        return samplingInterval;
+    public long getMaxSamplingInterval() {
+        return maxSamplingInterval;
     }
 
-    public void setSamplingInterval(long samplingInterval) {
-        this.samplingInterval = samplingInterval;
+    public void setMaxSamplingInterval(long maxSamplingInterval) {
+        this.maxSamplingInterval = maxSamplingInterval;
     }
 
     /** The operator to use in comparing the sampled property value against the {@link #triggerValue} */
@@ -72,12 +73,11 @@ public class PropertyTrigger<T extends Serializable> extends Trigger {
     }
 
     /**
-     * Two PropertyTrigger instances are incompatible if super.isIncompatibleWith(that) is true, or the {@link #propertyName} is
-     * different.
+     * {@link #propertyName} cannot be changed; other properties are OK
      */
     @Override
-    public boolean isIncompatibleWith(PropertyTrigger that) {
+    public boolean isIncompatibleWith(Trigger that) {
         return super.isIncompatibleWith(that) ||
-                !this.getPropertyName().equals(that.getPropertyName());
+                !this.getPropertyName().equals(((PropertyTrigger)that).getPropertyName());
     }
 }

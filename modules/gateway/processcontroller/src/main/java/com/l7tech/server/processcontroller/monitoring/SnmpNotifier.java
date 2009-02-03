@@ -82,7 +82,7 @@ public class SnmpNotifier extends Notifier {
         auditor = new LogOnlyAuditor(logger);
     }
 
-    public void doNotification(Long timestamp, Trigger trigger) throws IOException {
+    public void doNotification(Long timestamp, Object value, Trigger trigger) throws IOException {
         PDU pdu = new PDU();
         pdu.setType(PDU.TRAP);
         UptimeMetrics um = UptimeMonitor.getLastUptime();

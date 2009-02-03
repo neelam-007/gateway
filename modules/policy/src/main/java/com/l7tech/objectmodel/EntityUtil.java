@@ -2,8 +2,10 @@ package com.l7tech.objectmodel;
 
 import javax.persistence.Column;
 import java.lang.reflect.AccessibleObject;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Utility methods for working with entities.
@@ -63,5 +65,50 @@ public class EntityUtil {
             map.put(entity.getOid(), entity);
         }
         return map;
+    }
+
+    public static class CreatedUpdatedDeleted<T extends PersistentEntity> {
+        public final Map<Long, T> created;
+        public final Map<Long, T> updated;
+        public final Set<Long> deleted;
+
+        public CreatedUpdatedDeleted(Map<Long, T> created, Map<Long, T> updated, Set<Long> deleted) {
+            this.created = created;
+            this.updated = updated;
+            this.deleted = deleted;
+        }
+    }
+
+    /**
+     * Given two Map&lt;Long, T&gt;, finds those that have been created, updated or deleted, and returns those in a
+     * Map&lt;Long, T&gt;, a Map&lt;Long, T&gt; and a Set&lt;Long&gt;, respectively.
+     * 
+     * @param before the previous entities
+     * @param after the new entities
+     * @param <T> the type of entity
+     * @return a Triple consisting of the created entities, the updated entities, and the OIDs of the deleted entities.
+     */
+    public static <T extends PersistentEntity> CreatedUpdatedDeleted<T> findCreatedUpdatedDeleted(Map<Long, T> before, Map<Long, T> after) {
+        final Map<Long, T> creates = new HashMap<Long, T>();
+        final Map<Long, T> updates = new HashMap<Long, T>();
+        for (Map.Entry<Long, T> entry : after.entrySet()) {
+            final Long oid = entry.getKey();
+            final T newb = entry.getValue();
+            if (!before.containsKey(oid)) {
+                creates.put(oid, newb);
+            } else {
+                T old = before.get(oid);
+                if (old.getVersion() != newb.getVersion()) {
+                    updates.put(oid, newb);
+                }
+            }
+        }
+
+        final Set<Long> deletes = new HashSet<Long>();
+        for (Long oid : before.keySet()) {
+            if (!after.containsKey(oid)) deletes.add(oid);
+        }
+
+        return new CreatedUpdatedDeleted<T>(creates, updates, deletes);
     }
 }

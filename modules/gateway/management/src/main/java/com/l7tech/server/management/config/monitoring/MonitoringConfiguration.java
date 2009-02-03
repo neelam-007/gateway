@@ -19,7 +19,7 @@ import java.util.Set;
  * @author alex
  */
 @Entity
-public class MonitoringConfiguration extends NamedEntityImp {
+public final class MonitoringConfiguration extends NamedEntityImp {
     private Set<Trigger> triggers = new HashSet<Trigger>();
     private Set<NotificationRule> notificationRules = new HashSet<NotificationRule>();
 

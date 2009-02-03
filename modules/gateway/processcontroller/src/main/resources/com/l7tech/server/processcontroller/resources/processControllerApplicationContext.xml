@@ -10,4 +10,9 @@
     <bean id="processController" class="com.l7tech.server.processcontroller.ProcessController"/>
 
     <bean id="configService" class="com.l7tech.server.processcontroller.ConfigServiceImpl"/>
+
+    <!--
+    <bean id="monitoringKernel" class="com.l7tech.server.processcontroller.monitoring.MonitoringKernelImpl"/>
+    <bean id="propertySamplerFactory" class="com.l7tech.server.processcontroller.monitoring.PropertySamplerFactory"/>
+    -->
 </beans>

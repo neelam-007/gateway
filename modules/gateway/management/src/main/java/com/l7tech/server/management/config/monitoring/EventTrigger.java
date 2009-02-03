@@ -3,6 +3,8 @@
  */
 package com.l7tech.server.management.config.monitoring;
 
+import com.l7tech.server.management.api.monitoring.MonitorableEvent;
+
 import javax.persistence.Basic;
 
 /**
@@ -10,7 +12,7 @@ import javax.persistence.Basic;
  *  
  * @author alex
  */
-public class EventTrigger extends Trigger {
+public class EventTrigger extends Trigger<MonitorableEvent> {
     /** A string identifying the event that's being monitored.  Type and format depends on the subject component type.  Required. */
     private String eventId;
 
@@ -23,8 +25,9 @@ public class EventTrigger extends Trigger {
      */
     private Integer period;
 
-    protected EventTrigger(ComponentType componentType, String componentId, int count, Integer period) {
-        super(componentType, componentId);
+    public EventTrigger(MonitorableEvent event, String componentId, int count, Integer period) {
+        super(event, componentId);
+        this.eventId = event.getName();
         this.count = count;
         this.period = period;
     }
@@ -53,6 +56,12 @@ public class EventTrigger extends Trigger {
 
     public void setPeriod(Integer period) {
         this.period = period;
+    }
+
+    /** {@link #count} and {@link #period} can be changed */
+    @Override
+    public boolean isIncompatibleWith(Trigger that) {
+        return super.isIncompatibleWith(that) || !this.eventId.equals(((EventTrigger)that).eventId);
     }
 
     public boolean equals(Object o) {

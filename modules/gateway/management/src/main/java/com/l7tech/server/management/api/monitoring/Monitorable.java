@@ -10,8 +10,6 @@ import com.l7tech.server.management.config.monitoring.ComponentType;
  * <p/>
  * Instances should be read on startup into some registry, maybe from properties files or a hard-coded list that can be
  * shared between the EM and PC.
- * <p/>
- * TODO consider replacing the "header" of Trigger with a Monitorable instance
  */
 public abstract class Monitorable {
     protected final ComponentType componentType;
@@ -49,5 +47,9 @@ public abstract class Monitorable {
         int result = componentType != null ? componentType.hashCode() : 0;
         result = 31 * result + (name != null ? name.hashCode() : 0);
         return result;
+    }
+
+    public String toString() {
+        return componentType + "." + name;
     }
 }

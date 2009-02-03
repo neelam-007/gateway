@@ -23,10 +23,11 @@ public abstract class Notifier implements Closeable {
      * Do the notification.
      *
      * @param timestamp the time when the trigger fired (usually quite recent)
+     * @param value the value that was observed
      * @param trigger the trigger that fired
      * @throws IOException if the notification could be done
      */
-    public abstract void doNotification(Long timestamp, Trigger trigger) throws IOException;
+    public abstract void doNotification(Long timestamp, Object value, Trigger trigger) throws IOException;
 
     @Override
     public void close() { }

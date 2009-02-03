@@ -4,6 +4,7 @@
 package com.l7tech.server.management.config.monitoring;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.server.management.api.monitoring.Monitorable;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -18,7 +19,7 @@ import java.util.List;
  * @author alex
  */
 @Entity
-public abstract class Trigger extends NamedEntityImp {
+public abstract class Trigger<MT extends Monitorable> extends NamedEntityImp {
     /** The parent monitoring scheme that owns this trigger */
     private MonitoringConfiguration monitoringConfiguration;
 
@@ -28,12 +29,19 @@ public abstract class Trigger extends NamedEntityImp {
     /** The unique ID of the subject component (usually a URI or GUID) */
     private String componentId;
 
+    private final MT monitorable;
+
     /** The notification rules that should be invoked when this trigger fires */
     private List<NotificationRule> notificationRules = new ArrayList<NotificationRule>();
 
-    protected Trigger(ComponentType componentType, String componentId) {
-        this.componentType = componentType;
+    protected Trigger(MT monitorable, String componentId) {
         this.componentId = componentId;
+        this.componentType = monitorable.getComponentType();
+        this.monitorable = monitorable;
+    }
+
+    public MT getMonitorable() {
+        return monitorable;
     }
 
     @ManyToOne(cascade=CascadeType.ALL)
@@ -92,18 +100,23 @@ public abstract class Trigger extends NamedEntityImp {
     }
 
     /**
-     * Determines whether another trigger is a suitable replacement for this one.  If any of the following properties 
+     * Determines whether another trigger is a suitable replacement for this one.  If any of the following properties
      * of the other trigger are different from those of this, they are <em>incompatible</em>:
      * <ul>
-     * <li>the {@link #_oid OID} </li>
+     * <li>the class or {@link #_oid OID} </li>
      * <li>the parent {@link #monitoringConfiguration monitoring scheme}</li>
      * <li>the {@link #componentType type} or {@link #componentId ID} of the subject component</li>
      * </ul>
+     *
+     * Note that this is intentionally much weaker than {@link #equals}--we want successively updated versions of the same
+     * entity to be considered "equal enough" that one can replace another without necessatiating the invalidation of
+     * historical values.
      */
-    public boolean isIncompatibleWith(PropertyTrigger that) {
-        return that.getOid() != this.getOid() ||
+    public boolean isIncompatibleWith(Trigger that) {
+        return that.getClass() != this.getClass() ||
+               that.getOid() != this.getOid() ||
+               that.getMonitoringScheme().getOid() != this.getMonitoringScheme().getOid() ||
                that.getComponentType() != this.getComponentType() ||
-               !that.getComponentId().equals(this.getComponentId()) ||
-               !that.getMonitoringScheme().equals(this.getMonitoringScheme());
+               !that.getComponentId().equals(this.getComponentId());
     }
 }
