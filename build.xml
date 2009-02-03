@@ -2023,24 +2023,26 @@
 
     <!-- Package the ssg flasher utility -->
     <target name="package.ssgflasher" unless="ssg.only" depends="package.jars">
-        <mkdir dir="${build.dir}/migration"/>
-        <mkdir dir="${build.dir}/migration/lib"/>
-        <mkdir dir="${build.dir}/migration/cfg"/>
+        <mkdir dir="${build.dir}/backup"/>
+        <mkdir dir="${build.dir}/backup/lib"/>
+        <mkdir dir="${build.dir}/backup/cfg"/>
 
-        <copy todir="${build.dir}/migration">
+        <copy todir="${build.dir}/backup">
             <fileset dir="${src.root}/etc">
-                <include name="ssgmigration.sh"/>
-                <include name="migrationlogging.properties"/>
+                <include name="ssgbackup.sh"/>
+                <include name="ssgrestore.sh"/>
+                <include name="backuputilitylogging.properties"/>
             </fileset>
         </copy>
 
-        <chmod file="${build.dir}/migration/ssgmigration.sh" perm="755"/>
+        <chmod file="${build.dir}/backup/ssgbackup.sh" perm="755"/>
+        <chmod file="${build.dir}/backup/ssgrestore.sh" perm="755"/>
 
         <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-gateway-config" showprogress="false" conf="default" log="quiet"/>
         <ivy:findrevision organisation="com.l7tech" module="layer7-utility" revision="latest.integration" property="module.utility.version"/>
         <ivy:findrevision organisation="com.l7tech" module="layer7-gateway-config" revision="latest.integration" property="module.gateway.config.version"/>
 
-        <jar jarfile="${build.dir}/migration/SSGMigration.jar">
+        <jar jarfile="${build.dir}/backup/SSGBackupUtility.jar">
             <manifest>
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
                 <attribute name="Class-Path" value="../lib/layer7-utility-${module.utility.version}.jar"/>
@@ -2049,7 +2051,7 @@
             </manifest>
         </jar>
 
-        <copy todir="${build.dir}/migration/lib">
+        <copy todir="${build.dir}/backup/lib">
             <fileset dir="modules/utility/build">
                 <include name="layer7-utility-*.jar"/>
             </fileset>
@@ -2603,7 +2605,7 @@
 
         <!--copy the ssg flasher -->
         <copy todir="${install.src.ssg.flasher}">
-            <fileset dir="${build.dir}/migration">
+            <fileset dir="${build.dir}/backup">
                 <include name="**/*"/>
             </fileset>
         </copy>

@@ -4,12 +4,10 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.sql.*;
 import java.util.logging.Logger;
+import java.util.ArrayList;
 
 /**
  * Methods for dumping
@@ -18,42 +16,72 @@ import java.util.logging.Logger;
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
- * Date: Nov 8, 2006<br/>ma
+ * Date: Nov 8, 2006<br/>
  */
 class DBDumpUtil {
 
     private static final Logger logger = Logger.getLogger(DBDumpUtil.class.getName());
-    public static final String DBDUMPFILENAME_CLONE = "dbdump_restore.sql";
+    //public static final String DBDUMPFILENAME_CLONE = "dbdump_restore.sql";
+    public static final String MAIN_BACKUP_FILENAME = "main_backup.sql";
+    public static final String AUDIT_BACKUP_FILENAME = "audit_backup.sql";
     public static final String LICENCEORIGINALID = "originallicenseobjectid.txt";
-    private static final String[] TABLE_NEVER_EXPORT = {"cluster_info", "message_id", "service_metrics", "service_metrics_details", "service_usage"};
+    //private static final String[] TABLE_NEVER_EXPORT = {"cluster_info", "message_id", "service_metrics", "service_metrics_details", "service_usage"};
+
+    //configuration files
+    private static final String AUDIT_TABLES_CONFIG = "./cfg/backup_tables_audit";
+    private static final String EXCLUDED_TABLES_CONFIG = "./cfg/backup_tables_excluded";
+    private static final String MAPPING_EXCLUDED_TABLES_CONFIG = "./cfg/backup_tables_mapping_excluded";
 
     /**
      * outputs database dump files
-     * @param config database configuration
-     * @param includeAudit whether or not audit tables should be included
+     *
+     * @param config          database configuration
+     * @param includeAudit    whether or not audit tables should be included
+     * @param mappingEnabled  whether or not mapping option "-it" was used
      * @param outputDirectory the directory path where the dump files should go to
-     * @param stdout    stream for verbose output; <code>null</code> for no verbose output
+     * @param stdout          stream for verbose output; <code>null</code> for no verbose output
      * @throws java.sql.SQLException problem getting data out of db
-     * @throws java.io.IOException problem with dump files
+     * @throws java.io.IOException   problem with dump files
      */
-    public static void dump( final DatabaseConfig config,
-                             final boolean includeAudit,
-                             final String outputDirectory,
-                             final PrintStream stdout) throws SQLException, IOException {
+    public static void dump(final DatabaseConfig config,
+                            final boolean includeAudit,
+                            final boolean mappingEnabled,
+                            final String outputDirectory,
+                            final PrintStream stdout) throws SQLException, IOException {
         DBActions dba = new DBActions();
         Connection c = dba.getConnection(config, false);
         DatabaseMetaData metadata = c.getMetaData();
+
+        //read all configuration file data in to arrays
+        String[] auditTables = parseConfigFile(AUDIT_TABLES_CONFIG);
+        String[] excludedTables;
+        
+        if(mappingEnabled){
+            excludedTables = parseConfigFile(MAPPING_EXCLUDED_TABLES_CONFIG);
+        }else{
+            excludedTables = parseConfigFile(EXCLUDED_TABLES_CONFIG);
+        }
+
         String[] tableTypes = {
                 "TABLE"
         };
         ResultSet tableNames = metadata.getTables(null, "%", "%", tableTypes);
-        FileOutputStream cloneoutput = new FileOutputStream(outputDirectory + File.separator + DBDUMPFILENAME_CLONE);
+
+        FileOutputStream mainOutput = new FileOutputStream(outputDirectory + File.separator + MAIN_BACKUP_FILENAME);
+        mainOutput.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
+
+        FileOutputStream auditOutput = null;
+        if (includeAudit) {
+            auditOutput = new FileOutputStream(outputDirectory + File.separator + AUDIT_BACKUP_FILENAME);
+            auditOutput.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
+        }
+
         if (stdout != null) stdout.print("Dumping database to " + outputDirectory + " ..");
-        cloneoutput.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
         while (tableNames.next()) {
             String tableName = tableNames.getString("TABLE_NAME");
+
             // drop and recreate table
-            cloneoutput.write(("DROP TABLE IF EXISTS " + tableName + ";\n").getBytes());
+            mainOutput.write(("DROP TABLE IF EXISTS " + tableName + ";\n").getBytes());
             Statement getCreateTablesStmt = c.createStatement();
             ResultSet createTables = getCreateTablesStmt.executeQuery("show create table " + tableName);
             while (createTables.next()) {
@@ -61,12 +89,18 @@ class DBDumpUtil {
                 s = s.replace("\r", " ");
                 s = s.replace("\n", " ");
                 s = s.replace("`", "");
-                cloneoutput.write((s + ";\n").getBytes());
+                mainOutput.write((s + ";\n").getBytes());
             }
-            if (tableInList(tableName, TABLE_NEVER_EXPORT)) continue;
+            if (tableInList(tableName, excludedTables)){
+                continue;
+            }
+
             if (!includeAudit) {
-                if (tableName.startsWith("audit_")) continue;
+                if (tableInList(tableName, auditTables)/*tableName.startsWith("audit_")*/) {
+                    continue;
+                }
             }
+
             Statement tdata = c.createStatement();
             ResultSet tdataList = tdata.executeQuery("select * from " + tableName);
             while (tdataList.next()) {
@@ -139,13 +173,23 @@ class DBDumpUtil {
                     }
                 }
                 insertStatementToRecord.append(");\n");
-                cloneoutput.write(insertStatementToRecord.toString().getBytes());
+                if(includeAudit && tableInList(tableName, auditTables)){
+                    auditOutput.write(insertStatementToRecord.toString().getBytes());
+                }else{
+                    mainOutput.write(insertStatementToRecord.toString().getBytes());
+                }
             }
             tdataList.close();
         }
         c.close();
-        cloneoutput.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
-        cloneoutput.close();
+        mainOutput.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
+        mainOutput.close();
+        
+        if(includeAudit){
+            auditOutput.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
+            auditOutput.close();
+        }
+
         if (stdout != null) stdout.println(". Done");
     }
 
@@ -164,4 +208,22 @@ class DBDumpUtil {
         return false;
     }
 
+    private static String[] parseConfigFile(String filename) throws IOException {
+        ArrayList<String> parsedElements = new ArrayList<String>();
+        File configFile = new File(filename);
+        if (configFile.isFile()) {
+            FileReader fr = new FileReader(configFile);
+            BufferedReader br = new BufferedReader(fr);
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (!line.startsWith("#")) {//ignore comments
+                    String tableName = line.trim();
+                    if (!parsedElements.contains(tableName)) {//no duplicates
+                        parsedElements.add(tableName);
+                    }
+                }
+            }
+        }
+        return parsedElements.toArray(new String[parsedElements.size()]);
+    }
 }

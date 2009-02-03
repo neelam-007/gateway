@@ -126,7 +126,7 @@ sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf
 /home/ssgconfig
 
 # Appliance migration configuration
-%attr(0644,layer7,layer7) /opt/SecureSpan/Gateway/config/migration/cfg/grandmaster_flash
+%attr(0644,layer7,layer7) /opt/SecureSpan/Gateway/config/backup/cfg/backup_manifest
 
 %pre
 

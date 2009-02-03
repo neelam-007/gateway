@@ -81,13 +81,13 @@ rm -fr %{buildroot}
 /opt/SecureSpan/Gateway/config/*.sh
 
 %defattr(0644,layer7,layer7,0755)
-%dir /opt/SecureSpan/Gateway/config/migration
-/opt/SecureSpan/Gateway/config/migration/cfg
-/opt/SecureSpan/Gateway/config/migration/*.properties
+%dir /opt/SecureSpan/Gateway/config/backup
+/opt/SecureSpan/Gateway/config/backup/cfg
+/opt/SecureSpan/Gateway/config/backup/*.properties
 %defattr(0444,layer7,layer7,0755)
-/opt/SecureSpan/Gateway/config/migration/*.jar
+/opt/SecureSpan/Gateway/config/backup/*.jar
 %defattr(0555,layer7,layer7,0755)
-/opt/SecureSpan/Gateway/config/migration/*.sh
+/opt/SecureSpan/Gateway/config/backup/*.sh
 
 %pre
 grep -q ^gateway: /etc/group || groupadd gateway

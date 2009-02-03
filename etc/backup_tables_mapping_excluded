@@ -1,0 +1,17 @@
+# -----------------------------------------------------------------------------
+# LAYER 7 TECHNOLOGIES
+# November 2008
+#
+# Backup utility config file
+#
+# controls which database tables are excluded from the image when the -it option
+# is used
+#
+# should not be edited unless instructed to
+# -----------------------------------------------------------------------------
+cluster_info
+email_listener_state
+message_id
+service_metrics
+service_metrics_details
+service_usage

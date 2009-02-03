@@ -1,0 +1,19 @@
+# -----------------------------------------------------------------------------
+# LAYER 7 TECHNOLOGIES
+# November 2008
+#
+# Backup utility config file
+#
+# controls which database tables are included in the image when the -ia option
+# is used
+#
+# should not be edited unless instructed to
+# -----------------------------------------------------------------------------
+audit_admin
+audit_detail
+audit_detail_params
+audit_main
+audit_message
+audit_system
+message_context_mapping_keys
+message_context_mapping_values

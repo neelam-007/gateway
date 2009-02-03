@@ -23,7 +23,7 @@ public class FlashUtilityLauncher {
     public static final String EOL_CHAR = System.getProperty("line.separator");
     /** System property used as base directory for all relative paths. */
     private static final String BASE_DIR_PROPERTY = "com.l7tech.server.flasher.basedir";
-    private static final String LOGCONFIG_NAME = "migrationlogging.properties";
+    private static final String LOGCONFIG_NAME = "backuputilitylogging.properties";
     private static final Logger logger = Logger.getLogger(FlashUtilityLauncher.class.getName());
     private static ArrayList<CommandLineOption> allRuntimeOptions = null;
     private static int argparseri = 0;

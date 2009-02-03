@@ -1,8 +1,8 @@
 # -----------------------------------------------------------------------------
 # LAYER 7 TECHNOLOGIES
-# November 2006
+# November 2008
 #
-# flasher utility config file
+# Backup utility config file
 #
 # controls which os level files are included in ssg image and overwritten at
 # import time when specifying the -os option
@@ -10,8 +10,13 @@
 # should not be edited unless instructed to
 # -----------------------------------------------------------------------------
 /etc/hosts
+/etc/ntp.conf
+/etc/ntp/step-tickers
+/etc/resolv.conf
+/etc/snmp/snmpd.conf
 /etc/sysconfig/network
 /etc/sysconfig/network-scripts/ifcfg-eth0
 /etc/sysconfig/network-scripts/ifcfg-eth1
-/etc/ntp.conf
-/etc/ntp/step-tickers 
+/etc/sysconfig/network-scripts/ifcfg-eth2
+/etc/sysconfig/network-scripts/ifcfg-eth3
+/etc/sysconfig/static-routes

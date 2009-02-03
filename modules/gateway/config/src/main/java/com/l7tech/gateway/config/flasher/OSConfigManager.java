@@ -23,8 +23,8 @@ import java.util.logging.Logger;
  */
 class OSConfigManager {
     private static final Logger logger = Logger.getLogger(OSConfigManager.class.getName());
-    private static final String SETTINGS_PATH = "./cfg/grandmaster_flash";
-    private static final String SYSTMP_PATH = "../migration/configfiles";
+    private static final String SETTINGS_PATH = "./cfg/backup_manifest";
+    private static final String SYSTMP_PATH = "../backup/configfiles";
     private static final String SUBDIR = File.separator + "os";
     private final String tmpDirPath;
     private File flasherHome;

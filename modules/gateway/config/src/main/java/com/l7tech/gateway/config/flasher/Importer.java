@@ -47,8 +47,10 @@ class Importer {
     public static final CommandLineOption OS_OVERWRITE = new CommandLineOption("-os",
                                                                                "overwrite os level config files (only allowed in cloning mode and on non-partitioned systems)",
                                                                                false, true);
+    public static final CommandLineOption CONFIG_ONLY = new CommandLineOption("-config", "only restore configuration files, no database restore", false, true);
+    public static final CommandLineOption CLUSTER_PASSPHRASE = new CommandLineOption("-cp", "the cluster passphrase for the (resulting) database");
 
-    public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, MAPPING_PATH, DB_HOST_NAME, DB_NAME, DB_PASSWD, DB_USER, OS_OVERWRITE};
+    public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, MAPPING_PATH, DB_HOST_NAME, DB_NAME, DB_PASSWD, DB_USER, OS_OVERWRITE, Exporter.AUDIT, CONFIG_ONLY, CLUSTER_PASSPHRASE};
 
     private static final String CONFIG_PATH = "../../node/default/etc/conf/";
     private static final String[] CONFIG_FILES = new String[]{
@@ -72,9 +74,9 @@ class Importer {
             logger.info("Error, no image provided for import");
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ". i don't know what to import");
         }
-        if ( arguments.get("-mode")!=null && !"restore".equals(arguments.get("-mode").toLowerCase()) ) {
-            throw new FlashUtilityLauncher.InvalidArgumentException("-mode is not supported");
-        }
+//        if ( arguments.get("-mode")!=null && !"restore".equals(arguments.get("-mode").toLowerCase()) ) {
+//            throw new FlashUtilityLauncher.InvalidArgumentException("-mode is not supported");
+//        }
 
         // uncompress image to temp folder, look for Exporter.DBDUMP_FILENAME
         tempDirectory = Exporter.createTmpDirectory();
@@ -82,7 +84,7 @@ class Importer {
         try {
             System.out.println("Reading SecureSpan image file " + inputpathval);
             unzipToDir(inputpathval, tempDirectory);
-            if (!(new File(tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_CLONE)).exists()) {
+            if (!(new File(tempDirectory + File.separator + DBDumpUtil.MAIN_BACKUP_FILENAME)).exists()) {
                 logger.info("Error, the image provided does not contain an expected file and is therefore suspicious");
                 throw new IOException("the file " + inputpathval + " does not appear to be a valid SSG flash image");
             }
@@ -102,11 +104,11 @@ class Importer {
             logger.info("Proceeding with image");
             System.out.println("SecureSpan image file recognized.");
 
-            //parititons have names like "dev", "prod" etc. so we'll use that instead of integers.
-            String partName = arguments.get("-p");
-            if ( partName!=null && !"default_".equals(partName) ) {
-                throw new FlashUtilityLauncher.InvalidArgumentException("Partitions are no longer supported.");
-            }
+//            //parititons have names like "dev", "prod" etc. so we'll use that instead of integers.
+//            String partName = arguments.get("-p");
+//            if ( partName!=null && !"default_".equals(partName) ) {
+//                throw new FlashUtilityLauncher.InvalidArgumentException("Partitions are no longer supported.");
+//            }
 
             rootDBUsername = arguments.get(DB_USER.name);
             rootDBPasswd = arguments.get(DB_PASSWD.name);
@@ -362,7 +364,7 @@ class Importer {
     }
 
     private void loadDumpFromExplodedImage() throws IOException, SQLException {
-        String dumpFilePath = tempDirectory + File.separator + DBDumpUtil.DBDUMPFILENAME_CLONE;
+        String dumpFilePath = tempDirectory + File.separator + DBDumpUtil.MAIN_BACKUP_FILENAME;
 
         // create temporary database copy to test the import
         System.out.print("Creating copy of target database for testing import ..");

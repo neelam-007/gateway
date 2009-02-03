@@ -57,6 +57,7 @@ public class Exporter {
 
     private boolean includeAudit = false;
     private String tmpDirectory;
+    private boolean mappingEnabled = false;
 
     /** Home directory of the Flasher; <code>null</code> if the JVM was launched from there already. */
     private File flasherHome;
@@ -117,11 +118,14 @@ public class Exporter {
             includeAudit = true;
         }
 
-        //parititons have names like "dev", "prod" etc. so we'll use that instead of integers.
-        String partName = arguments.get("-p");
-        if ( partName!=null && !"default_".equals(partName) ) {
-            throw new FlashUtilityLauncher.InvalidArgumentException("Partitions are no longer supported.");
-        }
+        //check whether mapping option was used
+        if(arguments.get(MAPPING_PATH.name) != null) mappingEnabled = true;
+
+//        //parititons have names like "dev", "prod" etc. so we'll use that instead of integers.
+//        String partName = arguments.get("-p");
+//        if ( partName!=null && !"default_".equals(partName) ) {
+//            throw new FlashUtilityLauncher.InvalidArgumentException("Partitions are no longer supported.");
+//        }
 
         File confDir = new File(flasherHome, "../../node/default/etc/conf");
         tmpDirectory = createTmpDirectory();
@@ -152,7 +156,7 @@ public class Exporter {
 
                 // dump the database
                 try {
-                    DBDumpUtil.dump(config, includeAudit, tmpDirectory, stdout);
+                    DBDumpUtil.dump(config, includeAudit, mappingEnabled, tmpDirectory, stdout);
                 } catch (SQLException e) {
                     logger.log(Level.INFO, "exception dumping database", e);
                     throw new IOException("cannot dump the database " + e.getMessage());
