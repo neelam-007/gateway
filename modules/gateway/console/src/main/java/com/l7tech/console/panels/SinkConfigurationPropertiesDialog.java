@@ -339,6 +339,19 @@ public class SinkConfigurationPropertiesDialog extends JDialog {
         syslogHostUp.addActionListener(new SyslogHostListActionListener(ACTION_UP));
         syslogHostDown.addActionListener(new SyslogHostListActionListener(ACTION_DOWN));
 
+        // add validator rule for Syslog hosts
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            public String getValidationError() {
+                // check for empty host list
+                if (SinkConfiguration.SinkType.SYSLOG.equals(typeField.getSelectedItem()) &&
+                    syslogHostList.getModel().getSize() <= 0)
+                {
+                    return resources.getString("syslogSettings.host.errors.empty");
+                }
+                return null;
+            }
+        });
+
         // SSL Keystore combo box
         if (syslogSSLKeystoreComboBox.getModel().getSize() == 0)
             syslogSSLKeystoreComboBox.repopulate();
