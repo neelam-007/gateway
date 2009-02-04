@@ -113,10 +113,14 @@ public abstract class ManagedSyslog implements Closeable {
                                final int maxLength){
             this.format = new MessageFormat(format == null ? DEFAULT_LOG_PATTERN : format);
             this.timeZone = timeZone == null ? TimeZone.getDefault() : TimeZone.getTimeZone(timeZone);
-            this.charset = charset == null ? Charset.forName("UTF-8") : Charset.forName(charset);
+            // bug #6564 - bad charset name for LATIN-1
+            if ("LATIN-1".equalsIgnoreCase(charset)) {
+                this.charset = Charset.forName("ISO8859-1");
+            } else {
+                this.charset = charset == null ? Charset.forName("UTF-8") : Charset.forName(charset);
+            }
             this.delimiter = delimiter == null ? "\n" : delimiter;
             this.maxLength = maxLength;
-
             installFormats(this.format);
         }
 
