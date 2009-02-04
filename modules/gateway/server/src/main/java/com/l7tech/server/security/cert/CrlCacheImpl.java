@@ -53,6 +53,8 @@ public class CrlCacheImpl implements CrlCache {
     private final HttpObjectCache<X509CRL> httpObjectCache;
     private final ServerConfig serverConfig;
     private static final long MAX_CACHE_AGE_VALUE = 30000;
+    private static final int DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE = 1000;
+    private static final String MAX_HTTP_CACHE_OBJECTS_PROP = "com.l7tech.server.security.cert.httpCacheObjectsSize";
 
     public CrlCacheImpl(HttpClientFactory httpClientFactory, ServerConfig serverConfig) throws Exception {
         this.crlCache = WhirlycacheFactory.createCache(CrlCache.class.getSimpleName() + ".crlCache", 100, 1800, WhirlycacheFactory.POLICY_LRU);
@@ -64,7 +66,12 @@ public class CrlCacheImpl implements CrlCache {
         long connectTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_CONNECTION_TIMEOUT, MAX_CACHE_AGE_VALUE);
         long readTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_READ_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT, MAX_CACHE_AGE_VALUE);
         ldapUrlObjectCache = new LdapUrlObjectCache<X509CRL>(300000, AbstractUrlObjectCache.WAIT_LATEST, null, null, connectTimeout, readTimeout, true);
-        httpObjectCache = new HttpObjectCache<X509CRL>(300000, 30000, httpClientFactory, new CrlHttpObjectFactory(), AbstractUrlObjectCache.WAIT_INITIAL);
+
+        int httpObjectCacheSize = SyspropUtil.getInteger(MAX_HTTP_CACHE_OBJECTS_PROP, DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE) ;
+        if (httpObjectCacheSize <= 0 || httpObjectCacheSize < DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE) {
+            httpObjectCacheSize = DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE;
+        }
+        httpObjectCache = new HttpObjectCache<X509CRL>(httpObjectCacheSize, 30000, httpClientFactory, new CrlHttpObjectFactory(), AbstractUrlObjectCache.WAIT_INITIAL);
     }
 
     private static class CrlHttpObjectFactory implements AbstractUrlObjectCache.UserObjectFactory<X509CRL> {
