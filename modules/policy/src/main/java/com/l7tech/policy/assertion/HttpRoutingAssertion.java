@@ -10,6 +10,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
 import org.apache.commons.lang.StringUtils;
 
@@ -393,6 +394,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.usesDefaultKeyStore = usesDefault;
     }
 
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
     public long getNonDefaultKeystoreId() {
         return nonDefaultKeystoreId;
     }

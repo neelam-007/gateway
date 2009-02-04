@@ -6,6 +6,7 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.gateway.common.security.keystore.SsgKeyHeader;
 import com.l7tech.identity.*;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.*;
@@ -109,10 +110,8 @@ public final class EntityHeaderUtils {
             return new ExternalEntityHeader(((PolicyHeader)header).getGuid(), header);
         } else if (header instanceof IdentityHeader) {
             return new ExternalEntityHeader(((IdentityHeader)header).getProviderOid() + ":" + header.getStrId(), header);
-/*
-        } else if (header instanceof FolderHeader) {
-            return new ExternalEntityHeader(header.getStrId() + ":" + ((FolderHeader)header).getParentFolderOid(), header);
-*/
+        } else if (header instanceof SsgKeyHeader) {
+            return new ExternalEntityHeader(((SsgKeyHeader)header).getKeystoreId() + ":" + ((SsgKeyHeader)header).getAlias(), header);
         } else {
             return new ExternalEntityHeader(header.getStrId(), header);
         }
@@ -142,19 +141,16 @@ public final class EntityHeaderUtils {
                     eh.getVersion());
                 break;
 
-/*
-            case FOLDER:
+            case SSG_KEY_ENTRY:
                 if (!eh.getExternalId().contains(":"))
-                    throw new IllegalArgumentException("Invalid external ID found for external header of type " + eh.getType() + " : " + eh.getExternalId());
+                    throw new IllegalArgumentException("Invalid ID found for external header of type " + eh.getType() + " : " + eh.getExternalId());
                 sepIndex = eh.getExternalId().indexOf(":");
-                String parentOid = eh.getExternalId().substring(sepIndex+1);
-                header = new FolderHeader(
+                header = new SsgKeyHeader(
+                    eh.getStrId(),
                     Long.parseLong(eh.getExternalId().substring(0,sepIndex)),
-                    eh.getName(),
-                    "null".equals(parentOid) ? null : Long.parseLong(parentOid),
-                    eh.getVersion());
+                    eh.getExternalId().substring(sepIndex+1),
+                    eh.getName());
                 break;
-*/
 
             case VALUE_REFERENCE:
                 header = new ValueReferenceEntityHeader(eh);

@@ -19,7 +19,8 @@ public interface PropertyResolver {
         ASSERTION,
         ID_PROVIDER_CONFIG,
         USERGROUP,
-        VALUE_REFERENCE
+        VALUE_REFERENCE,
+        SSGKEY
     }
 
     /**

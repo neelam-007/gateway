@@ -3,6 +3,7 @@ package com.l7tech.server.migration;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.service.ServiceDocumentManager;
 
 import java.util.Map;
@@ -14,12 +15,14 @@ import java.util.HashMap;
 public class PropertyResolverFactory {
 
     private EntityFinder entityFinder;
+    private SsgKeyStoreManager keyManager;
     private ServiceDocumentManager serviceDocumentManager;
 
     private Map<PropertyResolver.Type, PropertyResolver> registry = new HashMap<PropertyResolver.Type, PropertyResolver>();
 
-    public PropertyResolverFactory(EntityFinder entityFinder, ServiceDocumentManager serviceDocumentManager) {
+    public PropertyResolverFactory(EntityFinder entityFinder, ServiceDocumentManager serviceDocumentManager, SsgKeyStoreManager keyManager) {
         this.entityFinder = entityFinder;
+        this.keyManager = keyManager;
         this.serviceDocumentManager = serviceDocumentManager;
         initRegistry();
     }
@@ -38,6 +41,7 @@ public class PropertyResolverFactory {
         });
         registry.put(PropertyResolver.Type.USERGROUP, new UserGroupResolver(this));
         registry.put(PropertyResolver.Type.VALUE_REFERENCE, new ValueReferencePropertyResolver(this));
+        registry.put(PropertyResolver.Type.SSGKEY, new SsgKeyResolver(this, keyManager));
     }
 
     /**

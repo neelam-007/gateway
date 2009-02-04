@@ -470,6 +470,9 @@ public class PolicyMigration extends EsmStandardWebPage {
             case VALUE_REFERENCE:
                 type = "value reference";
                 break;
+            case SSG_KEY_ENTRY:
+                type = "private key";
+                break;
             default:
                 type = entityType.toString();
                 break;

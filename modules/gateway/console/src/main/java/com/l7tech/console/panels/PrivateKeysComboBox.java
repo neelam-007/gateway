@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * @author rmak
  */
 public class PrivateKeysComboBox extends JComboBox {
-    private static final Logger _logger = Logger.getLogger(AssertionKeyAliasEditor.class.getName());
+    private static final Logger _logger = Logger.getLogger(PrivateKeysComboBox.class.getName());
 
     /** An item in the combo box. */
     private static class PrivateKeyItem {

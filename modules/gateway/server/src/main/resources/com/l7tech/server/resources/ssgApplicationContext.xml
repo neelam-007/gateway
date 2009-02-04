@@ -963,6 +963,13 @@
         <property name="identityProviderFactory" ref="identityProviderFactory" />
         <property name="sessionFactory" ref="sessionFactory"/>
         <property name="policyManager" ref="policyManager"/>
+        <property name="keyStoreManager">
+            <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                <constructor-arg value="ssgKeyStoreManager"/>
+                <constructor-arg value="com.l7tech.server.security.keystore.SsgKeyStoreManager"/>
+            </bean>
+        </property>
+
     </bean>
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy">
@@ -1331,6 +1338,7 @@
 
   <bean id="propertyResolverFactory" class="com.l7tech.server.migration.PropertyResolverFactory">
       <constructor-arg ref="entityFinder"/>
+      <constructor-arg ref="ssgKeyStoreManager"/>
       <constructor-arg ref="serviceDocumentManager"/>
   </bean>
 
