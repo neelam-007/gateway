@@ -1,13 +1,14 @@
 package com.l7tech.server.ems.ui;
 
+import com.l7tech.util.IOUtils;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import java.io.IOException;
-import com.l7tech.util.IOUtils;
 
 /**
  * Servlet for handling logon.
@@ -32,6 +33,7 @@ public class EsmSessionServlet extends HttpServlet {
         httpServletResponse.setHeader("Expires", "Mon, 26 Jul 1997 05:00:00 GMT");
         httpServletResponse.setHeader("Cache-Control", "no-cache, must-revalidate");
         httpServletResponse.setHeader("Pragma", "no-cache");
+        httpServletResponse.setHeader("Content-Location", "/Login");    // AJAX requests use this to detect session timeout.
         IOUtils.copyStream( EsmSessionServlet.class.getResourceAsStream("pages/Login.html"), httpServletResponse.getOutputStream() );
     }
 

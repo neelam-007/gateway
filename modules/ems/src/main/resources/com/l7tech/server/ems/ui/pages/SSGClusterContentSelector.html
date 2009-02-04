@@ -43,8 +43,9 @@
             ACCESSING_SERVER : 'Accessing server...',
             OK : 'OK',
             ERROR : 'Error',
-            CANNOT_DOWNLOAD_ENTITY_DATA : 'Unable to retrieve array of SSG Cluster entities from the server.',
-            CANNOT_PARSE_ENTITY_DATA : 'Unable to parse array of SSG Cluster entities retrieved from the server: '
+            SESSION_TIMEOUT : 'Your session has timed out.',
+            CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server.',
+            CANNOT_DOWNLOAD_ENTITY_DATA : 'Unable to retrieve array of SSG Cluster entities from the server.'
         };
     </script>
     <script type="text/javascript">
@@ -179,17 +180,19 @@
             var callback = {
                 success : function(o) {
                     l7.Dialog.hideWaitDialog();
-                    var result = l7.Dialog.parseJSON(
-                            o.responseText,
-                            localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA) + '</p>',
-                            localizedStrings.CANNOT_PARSE_ENTITY_DATA,
-                            localizedStrings.OK);
-                    if (typeof result == 'object' && !l7.Util.isException(result)) {
-                        if (  result.message != undefined && result.message != null ) {
-                            entityTreeTable.displayDataError(result.message);
+                    var result = l7.Connection.parseJsonResponse(o,
+                                                                 true,
+                                                                 localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA,
+                                                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                                 localizedStrings.SESSION_TIMEOUT,
+                                                                 localizedStrings.ERROR,
+                                                                 localizedStrings.OK);
+                    if (result.success) {
+                        if (result.json.message != undefined && result.json.message != null) {
+                            entityTreeTable.displayDataError(result.json.message);
                         } else {
-                            entityTreeTable.load(result);
+                            var entities = result.json;
+                            entityTreeTable.load(entities);
                             entityTreeTable.collapseAll();
                         }
                     } else {

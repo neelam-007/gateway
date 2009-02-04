@@ -113,11 +113,14 @@
             CLOSE : 'Close',
             ERROR : 'Error',
             SAVE : 'Save',
+            SESSION_TIMEOUT : 'Your session has timed out.',
             CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server.',
             CANNOT_DOWNLOAD_ENTITY_DATA : 'Unable to retrieve array of enterprise entities from the server.',
             CANNOT_PARSE_ENTITY_DATA : 'Unable to parse array of enterprise entities retrieved from the server.',
             ENTITY_DATA_ERROR : 'Data error.',
             SAVING_MONITORING_SETUP : 'Saving monitoring setup',
+            SAVED_MONITORING_SETUP_TITLE : 'Save Monitoring Setup',
+            SAVED_MONITORING_SETUP : 'Monitoring setup is saved.',
             CANNOT_SAVE_MONITORING_SETUP : 'Unable to save monitoring setup.',
             CANNOT_DOWNLOAD_MONITORING_SETUP : 'Unable to retrieve monitoring setup from the server.',
             SAVING_NOTIFICATION_RULE : 'Saving notification rule',
@@ -637,18 +640,22 @@
             var url = overwrite ? saveNotificationRuleOverwriteUrl : saveNotificationRuleUrl;
             var xhr = l7.Connection.syncRequest('POST', url, postData, true);
             if (xhr.status == 200) {
-                var result = l7.Dialog.parseJSON(
-                        xhr.responseText,
-                        localizedStrings.ERROR,
-                        '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_SAVE_NOTIFICATION_RULE) + '</p>',
-                        localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                        localizedStrings.OK);
-                if (!l7.Util.isException(result)) {
-                    if (result == null) {
+                var result = l7.Connection.parseJsonResponse(xhr,
+                                                             true,
+                                                             localizedStrings.CANNOT_SAVE_NOTIFICATION_RULE,
+                                                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                             localizedStrings.SESSION_TIMEOUT,
+                                                             localizedStrings.ERROR,
+                                                             localizedStrings.OK);
+                if (result.success) {
+                    if (result.json == null) {
+                        // No response JSON object expected if successfully saved.
                         l7.Dialog.showInfoDialog(localizedStrings.NOTIFICATION_RULE_SAVED_TITLE, localizedStrings.NOTIFICATION_RULE_SAVED, localizedStrings.OK);
                         loadNotificationRules();
-                    } else if (result.reconfirm != undefined && result.reconfirm == true) {
-                        document.getElementById('saveNotificationRuleOverwriteDialog_name').innerHTML = l7.Util.escapeHtmlText(settings.name);
+                    } else if (result.json.reconfirm != undefined && result.json.reconfirm == true) {
+                        // Server is asking for reconfirmation because name already exists.
+                        // Launch the dialog to reconfirm the SSG Cluster deletion.
+                        document.getElementById('saveNotificationRuleOverwriteDialog_name').innerHTML = l7.Util.escapeAsText(settings.name);
                         saveNotificationRuleOverwriteDialog.show();
                     }
                 }
@@ -664,14 +671,15 @@
         function saveMonitoringPropertySettings() {
             var callback = {
                 success : function(o) {
-                    var result = l7.Dialog.parseJSON(
-                            o.responseText,
-                            localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_SAVE_MONITORING_SETTINGS) + '</p>',
-                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                            localizedStrings.OK);
-                    if (!l7.Util.isException(result)) {
-                        // No return object expected.
+                    var result = l7.Connection.parseJsonResponse(o,
+                                                                 true,
+                                                                 localizedStrings.CANNOT_SAVE_MONITORING_SETTINGS,
+                                                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                                 localizedStrings.SESSION_TIMEOUT,
+                                                                 localizedStrings.ERROR,
+                                                                 localizedStrings.OK);
+                    if (result.success) {
+                        // No response JSON object expected.
                     }
                 },
                 failure : function(o) {
@@ -733,15 +741,16 @@
             var callback = {
                 success : function(o) {
                     l7.Dialog.hideWaitDialog();
-                    var result = l7.Dialog.parseJSON(
-                            o.responseText,
-                            localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_SAVE_MONITORING_SETUP) + '</p>',
-                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                            localizedStrings.OK);
-                    if (!l7.Util.isException(result)) {
-                        // No return object expected.
-                        l7.Dialog.showInfoDialog('Save Monitoring Setup', 'Monitoring setup is saved.', localizedStrings.OK);
+                    var result = l7.Connection.parseJsonResponse(o,
+                                                                 true,
+                                                                 localizedStrings.CANNOT_SAVE_MONITORING_SETUP,
+                                                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                                 localizedStrings.SESSION_TIMEOUT,
+                                                                 localizedStrings.ERROR,
+                                                                 localizedStrings.OK);
+                    if (result.success) {
+                        // No response JSON object expected.
+                        l7.Dialog.showInfoDialog(localizedStrings.SAVED_MONITORING_SETUP_TITLE, localizedStrings.SAVED_MONITORING_SETUP, localizedStrings.OK);
                         loadMonitoringSetup();
                     }
                 },
@@ -893,6 +902,7 @@
             var entity = args.entity;
             var propertyType = args.propertyType;
 
+            var settings;
             // Get the current settings from server.
             var postData = 'entityType=' + encodeURIComponent(entity.type)
                          + '&entityId=' + encodeURIComponent(entity.id)
@@ -900,13 +910,16 @@
             // TODO Set getMonitoringPropertySettingsUrl using Wicket.
             var xhr = l7.Connection.syncRequest('POST', getMonitoringPropertySettingsUrl, postData, false);
             if (xhr.status == 200) {
-                var settings = l7.Dialog.parseJSON(
-                        xhr.responseText,
-                        localizedStrings.ERROR,
-                        '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DOWNLOAD_MONITORING_PROPERTY_SETTING) + '</p>',
-                        localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                        localizedStrings.OK);
-                if (l7.Util.isException(settings)) {
+                var result = l7.Connection.parseJsonResponse(xhr,
+                                                             true,
+                                                             localizedStrings.CANNOT_DOWNLOAD_MONITORING_PROPERTY_SETTING,
+                                                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                             localizedStrings.SESSION_TIMEOUT,
+                                                             localizedStrings.ERROR,
+                                                             localizedStrings.OK);
+                if (result.success) {
+                    settings = result.json;
+                } else {
                     return;
                 }
             } else {
@@ -999,13 +1012,16 @@
         function loadMonitoringSetup() {
             var xhr = l7.Connection.syncRequest('GET', getSystemMonitoringSetupSettingsUrl, null, false);
             if (xhr.status == 200) {
-                currentSetup = l7.Dialog.parseJSON(
-                        xhr.responseText,
-                        localizedStrings.ERROR,
-                        '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DOWNLOAD_MONITORING_SETUP) + '</p>',
-                        localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                        localizedStrings.OK);
-                if (l7.Util.isException(currentSetup)) {
+                var result = l7.Connection.parseJsonResponse(xhr,
+                                                             true,
+                                                             localizedStrings.CANNOT_DOWNLOAD_MONITORING_SETUP,
+                                                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                             localizedStrings.SESSION_TIMEOUT,
+                                                             localizedStrings.ERROR,
+                                                             localizedStrings.OK);
+                if (result.success) {
+                    currentSetup = result.json;
+                } else {
                     return;
                 }
             } else {
@@ -1061,14 +1077,18 @@
 
             var callback = {
                 success : function(o) {
-                    var entities;
-                    try {
-                        entities = YAHOO.lang.JSON.parse(o.responseText);
-                    } catch (e) {
+                    var result = l7.Connection.parseJsonResponse(o,
+                                                                 true,
+                                                                 localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA,
+                                                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                                 localizedStrings.SESSION_TIMEOUT,
+                                                                 localizedStrings.ERROR,
+                                                                 localizedStrings.OK);
+                    if (!result.success) {
                         displayError();
-                        l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_PARSE_ENTITY_DATA + '<br/><br/>' + e, localizedStrings.OK);
                         return;
                     }
+                    var entities = result.json;
                     entityTreeTable.load(entities);
                     resetCollapsedHeaderWidths();
                     setTimeout('refreshMonitoringProperties()', 0);
@@ -1306,14 +1326,15 @@
             });
             deleteNotificationRuleDialog.render();
             deleteNotificationRuleDialog.callback.success = function(o) {
-                var result = l7.Dialog.parseJSON(
-                        o.responseText,
-                        localizedStrings.ERROR,
-                        '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DELETE_NOTIFICATION_RULE) + '</p>',
-                        localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                        localizedStrings.OK);
-                if (!l7.Util.isException(result)) {
-                    // No return object expected.
+                var result = l7.Connection.parseJsonResponse(o,
+                                                             true,
+                                                             localizedStrings.CANNOT_DELETE_NOTIFICATION_RULE,
+                                                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                             localizedStrings.SESSION_TIMEOUT,
+                                                             localizedStrings.ERROR,
+                                                             localizedStrings.OK);
+                if (result.success) {
+                    // No response JSON object expected.
                     loadNotificationRules();    // Reloads to show notification rule gone.
                 }
             }

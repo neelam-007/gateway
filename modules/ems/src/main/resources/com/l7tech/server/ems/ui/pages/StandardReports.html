@@ -55,6 +55,7 @@
             NO : 'No',
             WARNING: 'Warning',
             ERROR : 'Error',
+            SESSION_TIMEOUT : 'Your session has timed out.',
             CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server.',
             CANNOT_SAVE_SETTINGS : 'Unable to save settings.',
             CANNOT_DELETE_SETTINGS : 'Unable to delete settings &ldquo;{0}&rdquo;.',
@@ -673,7 +674,7 @@
                 var from = deserializeDateTime(absoluteFrom);
                 var to = deserializeDateTime(absoluteTo);
                 wicketAjaxGet(loadTimePeriodSettingsUrl +
-                              '&type=' + TimePeriodType.ABSOLUTE + 
+                              '&type=' + TimePeriodType.ABSOLUTE +
                               '&timeZone=' + escape(timeZone) +
                               '&absoluteFrom=' + escape(from.toString()) +
                               '&absoluteTo=' + escape(to.toString()), function() {}, function() {});
@@ -891,17 +892,19 @@
 
             var callback = {
                 success : function(o) {
-                    var result = l7.Dialog.parseJSON(
-                            o.responseText,
-                            localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST) + '</p>',
-                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                            localizedStrings.OK);
-                    if (!l7.Util.isException(result)) {
-                        for (var i = 0; i < result.length; ++i) {
+                    var result = l7.Connection.parseJsonResponse(o,
+                                                                 true,
+                                                                 localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST,
+                                                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                                 localizedStrings.SESSION_TIMEOUT,
+                                                                 localizedStrings.ERROR,
+                                                                 localizedStrings.OK);
+                    if (result.success) {
+                        var settings = result.json; // Array of settings.
+                        for (var i = 0; i < settings.length; ++i) {
                             var option = document.createElement('option');
-                            option.value = result[i].id
-                            option.innerHTML = result[i].name;
+                            option.value = settings[i].id
+                            option.innerHTML = settings[i].name;
                             settingsListDropDown.appendChild(option); // Note: HTMLSelectElement.add(option, null) doesn't work in IE7.
                         }
                     }
@@ -958,14 +961,15 @@
             }
             var xhr = l7.Connection.syncRequest('POST', jsonMappingUrl, postData, false);
             if (xhr.status == 200) {
-                var result = l7.Dialog.parseJSON(
-                        xhr.responseText,
-                        localizedStrings.ERROR,
-                        '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST) + '</p>',
-                        localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                        localizedStrings.OK);
-                if (!l7.Util.isException(result) && result instanceof Array) {
-                    availableMessageContext = result;
+                var result = l7.Connection.parseJsonResponse(xhr,
+                                                             true,
+                                                             localizedStrings.CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST,
+                                                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                             localizedStrings.SESSION_TIMEOUT,
+                                                             localizedStrings.ERROR,
+                                                             localizedStrings.OK);
+                if (result.success) {
+                    availableMessageContext = result.json;
                 }
             } else {
                 l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST + '<br/><br/>' + xhr.status + ' ' + xhr.statusText, localizedStrings.OK);
@@ -1078,25 +1082,30 @@
             var callback = {
                 success : function(o) {
                     l7.Dialog.hideWaitDialog();
-                    var result = l7.Dialog.parseJSON(
-                            o.responseText,
-                            localizedStrings.ERROR,
-                            l7.Util.formatMessage(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS, settingsName),
-                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                            localizedStrings.OK);
-                    if (!l7.Util.isException(result)) {
-                        if (result.warningItems && result.warningItems instanceof Array && result.warningItems.length > 0) {
+                    var result = l7.Connection.parseJsonResponse(o,
+                                                                 true,
+                                                                 l7.Util.formatMessage(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS, settingsName),
+                                                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                                 localizedStrings.SESSION_TIMEOUT,
+                                                                 localizedStrings.ERROR,
+                                                                 localizedStrings.OK);
+                    if (result.success) {
+                        var settings = result.json;
+                        if (settings.warningItems != undefined &&
+                            settings.warningItems != null &&
+                            settings.warningItems instanceof Array &&
+                            settings.warningItems.length > 0) {
                             var bodyHtml = '<div style="max-width: 600px;">' + localizedStrings.DOWNLOAD_SAVED_SETTINGS_WARNING;
                             bodyHtml += '<ul style="margin-left: 1.5em; margin-top: 1em;">'
-                            for (var i = 0; i < result.warningItems.length; ++i) {
-                                var warningItem = result.warningItems[i];
-                                bodyHtml += '<li style="display: list-item;">' + l7.Util.escapeHtmlText(warningItem) + '</li>';
+                            for (var i = 0; i < settings.warningItems.length; ++i) {
+                                var warningItem = settings.warningItems[i];
+                                bodyHtml += '<li style="display: list-item;">' + l7.Util.escapeAsText(warningItem) + '</li>';
                             }
                             bodyHtml += '</ul>';
                             bodyHtml += '</div>';
                             l7.Dialog.showErrorDialog(localizedStrings.WARNING, bodyHtml, localizedStrings.OK);
                         }
-                        setFieldsFromSettings(result);
+                        setFieldsFromSettings(settings);
                         document.getElementById('saveSettingsDialog_name').value = settingsName;
                     }
                 },
@@ -1253,14 +1262,15 @@
             var callback = {
                 success : function(o) {
                     l7.Dialog.hideWaitDialog();
-                    var result = l7.Dialog.parseJSON(
-                            o.responseText,
-                            localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_SUBMIT_GENERATE_REPORT) + '</p>',
-                            localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                            localizedStrings.OK);
-                    if (!l7.Util.isException(result)) {
-                        // No return object expected.
+                    var result = l7.Connection.parseJsonResponse(o,
+                                                                 true,
+                                                                 localizedStrings.CANNOT_SUBMIT_GENERATE_REPORT,
+                                                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                                 localizedStrings.SESSION_TIMEOUT,
+                                                                 localizedStrings.ERROR,
+                                                                 localizedStrings.OK);
+                    if (result.success) {
+                        // No response JSON object expected.
                         l7.Dialog.showInfoDialog('Standard Report', 'Request for standard report has been submitted for generation.', localizedStrings.OK);
                     }
                 },
@@ -1322,18 +1332,20 @@
             var url = overwrite ? saveSettingsOverwriteUrl : saveSettingsUrl;
             var xhr = l7.Connection.syncRequest('POST', url, postData, true);
             if (xhr.status == 200) {
-                var result = l7.Dialog.parseJSON(
-                        xhr.responseText,
-                        localizedStrings.ERROR,
-                        '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_SAVE_SETTINGS) + '</p>',
-                        localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                        localizedStrings.OK);
-                if (!l7.Util.isException(result)) {
-                    if (result == null) {
-                        // No return object expected.
+                var result = l7.Connection.parseJsonResponse(xhr,
+                                                             true,
+                                                             localizedStrings.CANNOT_SAVE_SETTINGS,
+                                                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                             localizedStrings.SESSION_TIMEOUT,
+                                                             localizedStrings.ERROR,
+                                                             localizedStrings.OK);
+                if (result.success) {
+                    if (result.json == null) {
+                        // No response JSON object expected if successfully saved.
                         l7.Dialog.showInfoDialog(localizedStrings.SETTINGS_SAVED_TITLE, localizedStrings.SETTINGS_SAVED, localizedStrings.OK);
                         populateSettingsListDropDown();    // Refreshes to show added settings.
-                    } else if (result.reconfirm != undefined && result.reconfirm == true) {
+                    } else if (result.json.reconfirm != undefined && result.json.reconfirm == true) {
+                        // Server is asking for reconfirmation because name already exists.
                         document.getElementById('saveSettingsOverwriteForm_name').value = name;
                         document.getElementById('saveSettingsOverwriteDialog_name').innerHTML = l7.Util.escapeHtmlText(name);
                         saveSettingsOverwriteDialog.center();
@@ -1468,14 +1480,15 @@
             });
             deleteSettingsDialog.render();
             deleteSettingsDialog.callback.success = function(o) {
-                var result = l7.Dialog.parseJSON(
-                        o.responseText,
-                        localizedStrings.ERROR,
-                        '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DELETE_SETTINGS) + '</p>',
-                        localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
-                        localizedStrings.OK);
-                if (!l7.Util.isException(result)) {
-                    // No return object expected.
+                var result = l7.Connection.parseJsonResponse(o,
+                                                             true,
+                                                             localizedStrings.CANNOT_DELETE_SETTINGS,
+                                                             localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                             localizedStrings.SESSION_TIMEOUT,
+                                                             localizedStrings.ERROR,
+                                                             localizedStrings.OK);
+                if (result.success) {
+                    // No response JSON object expected.
                     populateSettingsListDropDown();    // Refreshes to show deleted settings.
                 }
             }

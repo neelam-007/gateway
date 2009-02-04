@@ -51,6 +51,8 @@
         var localizedStrings = {
             OK : 'OK',
             ERROR : 'Error',
+            SESSION_TIMEOUT : 'Your session has timed out.',
+            CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server.',
             CANNOT_DOWNLOAD_ENTITY_DATA : 'Unable to retrieve array of enterprise entities from the server.',
             CANNOT_PARSE_ENTITY_DATA : 'Unable to parse array of enterprise entities retrieved from the server: '
         };
@@ -113,14 +115,16 @@
         function loadEntityTreeTable() {
             var callback = {
                 success : function(o) {
-                    var result = l7.Dialog.parseJSON(
-                            o.responseText,
-                            localizedStrings.ERROR,
-                            '<p>' + l7.Util.escapeHtmlText(localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA) + '</p>',
-                            localizedStrings.CANNOT_PARSE_ENTITY_DATA,
-                            localizedStrings.OK);
-                    if (typeof result == 'object' && !l7.Util.isException(result)) {
-                        entityTreeTable.load(result);
+                    var result = l7.Connection.parseJsonResponse(o,
+                                                                 true,
+                                                                 localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA,
+                                                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                                 localizedStrings.SESSION_TIMEOUT,
+                                                                 localizedStrings.ERROR,
+                                                                 localizedStrings.OK);
+                    if (result.success) {
+                        var entities = result.json;
+                        entityTreeTable.load(entities);
                     } else {
                         entityTreeTable.displayDataError();
                     }

@@ -814,10 +814,8 @@ if (!l7.Connection) {
                 }
             }
 
-            var setCookieHeader = getResponseHeader('Set-Cookie');
-            if (setCookieHeader != undefined &&
-                setCookieHeader != null &&
-                setCookieHeader.indexOf('SESSIONID=') != -1) {
+            var contentLocationHeader = getResponseHeader('Content-Location');
+            if (contentLocationHeader == '/Login') {
                 // Session timed out.
                 var dialog = new YAHOO.widget.SimpleDialog("sessionTimeoutDialog", {
                     buttons     : [
@@ -839,6 +837,8 @@ if (!l7.Connection) {
                 dialog.setBody(errorDialogSessionExpiredMessageHtml);
                 dialog.render(document.body);
                 dialog.show();
+                result.success = false;
+                result.isJson = false;
             } else if (response.status == 200) {
                 try {
                     result.json = YAHOO.lang.JSON.parse(response.responseText);
@@ -1456,39 +1456,6 @@ if (!l7.Dialog) {
                 l7.Dialog.showExceptionDialog(o, header, beginBody, okText);
             }
             return result;
-        }
-
-        /**
-         * Parses JSON text and displays a simple error dialog if the JSON is malformed
-         * or if it is parsed into a l7-style exception object.
-         *
-         * @public
-         * @param {string} s                 the text to parse as JSON
-         * @param {string} errHeader         header text to use as header of error dialog
-         * @param {string} htmlIfException   HTML to display at the top of the error dialog if the JSON
-         *                                   text is parsed into a l7-style exception
-         * @param {string} htmlIfBadJSON     HTML to display in error dialog if the JSON text is malformed
-         * @param {string} errOk             text to label the button in error dialog
-         * @return {string|object} the input string if it contains white spaces only;
-         *                         or the resulting object literal if parsed successfully
-         *                         which can be a l7-style exception object;
-         *                         or the input string if it cannot be parsed as JSON
-         */
-        l7.Dialog.parseJSON = function(s, errHeader, htmlIfException, htmlIfBadJSON, errOk) {
-            if (s.search(/\S/) == -1) { // white spaces only
-                return s;
-            } else {
-                try {
-                    var o = YAHOO.lang.JSON.parse(s);
-                    if (l7.Util.isException(o)) {
-                        l7.Dialog.showExceptionDialog(o, errHeader, htmlIfException, errOk);
-                    }
-                    return o;
-                } catch (e) {
-                    l7.Dialog.showErrorDialog(errHeader, htmlIfBadJSON + '<br/><br/>' + e, errOk);
-                    return s;
-                }
-            }
         }
     })();
 }
