@@ -82,7 +82,7 @@ rm -fr %{buildroot}
 
 %defattr(0644,layer7,layer7,0755)
 %dir /opt/SecureSpan/Gateway/config/backup
-/opt/SecureSpan/Gateway/config/backup/cfg
+/opt/SecureSpan/Gateway/config/backup/cfg/*
 /opt/SecureSpan/Gateway/config/backup/*.properties
 %defattr(0444,layer7,layer7,0755)
 /opt/SecureSpan/Gateway/config/backup/*.jar
