@@ -54,7 +54,7 @@ public class CrlCacheImpl implements CrlCache {
     private final ServerConfig serverConfig;
     private static final long MAX_CACHE_AGE_VALUE = 30000;
     private static final int DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE = 1000;
-    private static final String MAX_HTTP_CACHE_OBJECTS_PROP = "com.l7tech.server.security.cert.httpCacheObjectsSize";
+    private static final String MAX_HTTP_CACHE_OBJECTS_PROP = "com.l7tech.server.security.cert.crlCacheSize";
 
     public CrlCacheImpl(HttpClientFactory httpClientFactory, ServerConfig serverConfig) throws Exception {
         this.crlCache = WhirlycacheFactory.createCache(CrlCache.class.getSimpleName() + ".crlCache", 100, 1800, WhirlycacheFactory.POLICY_LRU);
