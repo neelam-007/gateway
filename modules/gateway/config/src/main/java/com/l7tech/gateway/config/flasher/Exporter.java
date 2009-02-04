@@ -40,7 +40,7 @@ public class Exporter {
                                                                              true,
                                                                              false);
     public static final CommandLineOption AUDIT = new CommandLineOption("-ia",
-                                                                        "to include audit tables in resulting image",
+                                                                        "to include audit tables",
                                                                         false,
                                                                         true);
     public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-it",

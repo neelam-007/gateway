@@ -35,18 +35,18 @@ class Importer {
     private static final Logger logger = Logger.getLogger(Importer.class.getName());
     // importer options
     public static final CommandLineOption IMAGE_PATH = new CommandLineOption("-image",
-                                                                             "location of image file to import",
-                                                                             true, false);
+            "location of image file to import",
+            true, false);
     public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-mapping",
-                                                                               "location of the mapping template file",
-                                                                               true, false);
+            "location of the mapping template file",
+            true, false);
     public static final CommandLineOption DB_HOST_NAME = new CommandLineOption("-dbh", "database host name");
     public static final CommandLineOption DB_NAME = new CommandLineOption("-db", "database name");
     public static final CommandLineOption DB_PASSWD = new CommandLineOption("-dbp", "database root password");
     public static final CommandLineOption DB_USER = new CommandLineOption("-dbu", "database root username");
     public static final CommandLineOption OS_OVERWRITE = new CommandLineOption("-os",
-                                                                               "overwrite os level config files (only allowed in cloning mode and on non-partitioned systems)",
-                                                                               false, true);
+            "overwrite os level config files (only allowed in cloning mode and on non-partitioned systems)",
+            false, true);
     public static final CommandLineOption CONFIG_ONLY = new CommandLineOption("-config", "only restore configuration files, no database restore", false, true);
     public static final CommandLineOption CLUSTER_PASSPHRASE = new CommandLineOption("-cp", "the cluster passphrase for the (resulting) database");
 
@@ -54,8 +54,8 @@ class Importer {
 
     private static final String CONFIG_PATH = "../../node/default/etc/conf/";
     private static final String[] CONFIG_FILES = new String[]{
-        "ssglog.properties",
-        "system.properties",
+            "ssglog.properties",
+            "system.properties",
     };
 
     private String tempDirectory;
@@ -66,6 +66,7 @@ class Importer {
     private String dbHost;
     private String dbPort;
     private String dbName;
+    private boolean includeAudit = false;
 
     // do the import
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
@@ -78,6 +79,12 @@ class Importer {
 //            throw new FlashUtilityLauncher.InvalidArgumentException("-mode is not supported");
 //        }
 
+        String clusterPassphrase = arguments.get(CLUSTER_PASSPHRASE.name);
+        if (clusterPassphrase == null) {
+            logger.info("Error, no cluster passphrase provided for import");
+            throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + CLUSTER_PASSPHRASE.name + ".");
+        }
+
         // uncompress image to temp folder, look for Exporter.DBDUMP_FILENAME
         tempDirectory = Exporter.createTmpDirectory();
         logger.info("Uncompressing image to temporary directory " + tempDirectory);
@@ -89,16 +96,32 @@ class Importer {
                 throw new IOException("the file " + inputpathval + " does not appear to be a valid SSG flash image");
             }
 
+            // check whether or not we are expected to include audits
+            String auditval = arguments.get(Exporter.AUDIT.name);
+            if (auditval != null && !auditval.toLowerCase().equals("no") && !auditval.toLowerCase().equals("false")) {
+                //check if an audit backup file exists in the image
+                if (new File(tempDirectory + File.separator + DBDumpUtil.AUDIT_BACKUP_FILENAME).exists()) {
+                    includeAudit = true;
+                }
+            }
+
+            boolean configOnly = false;
+            //check if we are only importing config
+            if (arguments.get(CONFIG_ONLY.name) != null) {
+                logger.info("Configuration only option requested.  Database will not be imported.");
+                configOnly = true;
+            }
+
             // compare version of the image with version of the target system
-            FileInputStream fis =  new FileInputStream(tempDirectory + File.separator + Exporter.VERSIONFILENAME);
+            FileInputStream fis = new FileInputStream(tempDirectory + File.separator + Exporter.VERSIONFILENAME);
             byte[] buf = new byte[512];
             int read = fis.read(buf);
             String imgversion = new String(buf, 0, read);
             if (!BuildInfo.getProductVersion().equals(imgversion)) {
                 logger.info("Cannot import image because target system is running version " +
-                            BuildInfo.getProductVersion() + " while image to import is of version " + imgversion);
+                        BuildInfo.getProductVersion() + " while image to import is of version " + imgversion);
                 throw new IOException("the version of this image is incompatible with this target system (" + imgversion +
-                                      " instead of " + BuildInfo.getProductVersion() + ")");
+                        " instead of " + BuildInfo.getProductVersion() + ")");
             }
 
             logger.info("Proceeding with image");
@@ -114,7 +137,7 @@ class Importer {
             rootDBPasswd = arguments.get(DB_PASSWD.name);
             if (rootDBUsername == null) {
                 throw new FlashUtilityLauncher.InvalidArgumentException("Please provide options: " + DB_USER.name +
-                                " and " + DB_PASSWD.name);
+                        " and " + DB_PASSWD.name);
             }
             if (rootDBPasswd == null) rootDBPasswd = ""; // totally legit
 
@@ -122,9 +145,9 @@ class Importer {
             dbHost = arguments.get(DB_HOST_NAME.name);
             if (dbHost == null) {
                 throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_HOST_NAME.name);
-            } else if (dbHost.indexOf(':')>0) {
-                dbHost = dbHost.split(":",2)[0];
-                dbPort = dbHost.split(":",2)[1];
+            } else if (dbHost.indexOf(':') > 0) {
+                dbHost = dbHost.split(":", 2)[0];
+                dbPort = dbHost.split(":", 2)[1];
             } else {
                 dbPort = "3306";
             }
@@ -134,167 +157,200 @@ class Importer {
                 throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_NAME.name);
             }
 
-            MasterPasswordManager mpm = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(new File(CONFIG_PATH), "omp.dat") ) );
+            boolean cleanRestore = false;
+            MasterPasswordManager mpm = new MasterPasswordManager(new DefaultMasterPasswordFinder(new File(new File(CONFIG_PATH), "omp.dat")));
             String databaseUser = "gateway";
             String databasePass = rootDBPasswd;
             File nodePropsFile = new File(new File(CONFIG_PATH), "node.properties");
             try {
                 final PropertiesConfiguration dbConfig = new PropertiesConfiguration();
                 dbConfig.setAutoSave(false);
-                dbConfig.setListDelimiter((char)0);
+                dbConfig.setListDelimiter((char) 0);
 
-                if ( nodePropsFile.exists() ) {
+                if (nodePropsFile.exists()) {
                     dbConfig.load(nodePropsFile);
-                    databaseUser = dbConfig.getString("node.db.config.main.user")==null ? databaseUser : dbConfig.getString("node.db.config.main.user");
-                    databasePass = dbConfig.getString("node.db.config.main.pass")==null ? databasePass : dbConfig.getString("node.db.config.main.pass");
+                    databaseUser = dbConfig.getString("node.db.config.main.user") == null ? databaseUser : dbConfig.getString("node.db.config.main.user");
+                    databasePass = dbConfig.getString("node.db.config.main.pass") == null ? databasePass : dbConfig.getString("node.db.config.main.pass");
                     databasePass = new String(mpm.decryptPasswordIfEncrypted(databasePass));
                 } else {
-                    dbConfig.setProperty("node.id", UUID.randomUUID().toString().replace("-",""));
+                    dbConfig.setProperty("node.id", UUID.randomUUID().toString().replace("-", ""));
                     dbConfig.setProperty("node.db.config.main.user", databaseUser);
                     dbConfig.setProperty("node.db.config.main.pass", mpm.encryptPassword(databasePass.toCharArray()));
+                    cleanRestore = true;
                 }
 
                 dbConfig.setProperty("node.db.config.main.host", dbHost);
                 dbConfig.setProperty("node.db.config.main.port", dbPort);
                 dbConfig.setProperty("node.db.config.main.name", dbName);
+                dbConfig.setProperty("node.cluster.pass", mpm.encryptPassword(clusterPassphrase.toCharArray()));
 
-                dbConfig.save(nodePropsFile);                
+                dbConfig.save(nodePropsFile);
             } catch (ConfigurationException e) {
                 throw new IOException("Cannot replace database settings in \"" + nodePropsFile.getAbsolutePath() + "\".", e);
             }
 
-            if (dbHost.equalsIgnoreCase(InetAddress.getLocalHost().getCanonicalHostName()) ||
-                dbHost.equals(InetAddress.getLocalHost().getHostAddress())) {
-                // The database server is on local machine. So use "localhost" instead of
-                // FQDN in case user (such as "root") access is restricted to localhost.
-                logger.fine("Recognizing \"" + dbHost + "\" as \"localhost\".");
-                dbHost = "localhost";
-            }
-
-            boolean newDatabaseCreated = false;
-            logger.info("Checking if we can already connect to target database using image db properties");
-            // if clone mode, check if we can already get connection from the target database
-
-            boolean databasepresentandkosher = false;
-            try {
-                Connection c = getConnection();
-                try {
-                    Statement s = c.createStatement();
-                    ResultSet rs = s.executeQuery("select * from hibernate_unique_key");
-                    if (rs.next()) {
-                        databasepresentandkosher = true;
-                    }
-                    rs.close();
-                    s.close();
-                } finally {
-                    c.close();
+            //todo begin database import section
+            if (!configOnly) {
+                if (dbHost.equalsIgnoreCase(InetAddress.getLocalHost().getCanonicalHostName()) ||
+                        dbHost.equals(InetAddress.getLocalHost().getHostAddress())) {
+                    // The database server is on local machine. So use "localhost" instead of
+                    // FQDN in case user (such as "root") access is restricted to localhost.
+                    logger.fine("Recognizing \"" + dbHost + "\" as \"localhost\".");
+                    dbHost = "localhost";
                 }
-            } catch (SQLException e) {
-                databasepresentandkosher = false;
-            }
-            System.out.println("Using database host " + dbHost);
-            System.out.println("Using database port " + dbPort);
-            System.out.println("Using database name " + dbName);
 
-            // if the database needs to be created, do it
-            if (databasepresentandkosher) {
-                logger.info("The database already exists on this system");
-                System.out.println("Existing target database detected");
-            } else {
-                logger.info("database need to be created");
-                System.out.print("The target database does not exist. Creating it now ...");
-                DBActions dba = new DBActions();
-                DatabaseConfig config = new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, databaseUser, databasePass);
-                config.setDatabaseAdminUsername( rootDBUsername );
-                config.setDatabaseAdminPassword( rootDBPasswd );
-                DBActions.DBActionsResult res = dba.createDb( config, null, "../etc/sql/ssg.sql", false );
-                if ( res.getStatus() != DBActions.StatusType.SUCCESS) {
-                    throw new IOException("cannot create database " + res.getErrorMessage());
-                }
-                newDatabaseCreated = true;
-                System.out.println(" DONE");
-            }
+                boolean newDatabaseCreated = false;
+                logger.info("Checking if we can already connect to target database using image db properties");
+                // if clone mode, check if we can already get connection from the target database
 
-            // check that target db is not currently used by an SSG
-            if (!newDatabaseCreated) {
+                boolean databasepresentandkosher = false;
                 try {
-                    String connectedNode = checkSSGConnectedToDatabase();
-                    if (StringUtils.isNotEmpty(connectedNode)) {
-                        logger.info("cannot import on this database because it is being used by a SSG");
-                        throw new IOException("A SecureSpan Gateway is currently running " +
-                                              "and connected to the database. Please shutdown " + connectedNode);
+                    Connection c = getConnection();
+                    try {
+                        Statement s = c.createStatement();
+                        ResultSet rs = s.executeQuery("select * from hibernate_unique_key");
+                        if (rs.next()) {
+                            databasepresentandkosher = true;
+                        }
+                        rs.close();
+                        s.close();
+                    } finally {
+                        c.close();
                     }
                 } catch (SQLException e) {
-                    logger.log(Level.WARNING, "Cannot connect to target database", e);
-                    throw new IOException("Cannot connect to database");
-                }  catch (InterruptedException e) {
-                    logger.log(Level.WARNING, "Error looking for database use ", e);
-                    throw new IOException("interrupted!" + e.getMessage());
+                    databasepresentandkosher = false;
                 }
-            }
-            
-            // load mapping if requested
-            String mappingPath = FlashUtilityLauncher.getAbsolutePath(arguments.get(MAPPING_PATH.name));
-            if (mappingPath != null) {
-                logger.info("loading mapping file " + mappingPath);
-                System.out.print("Reading mapping file " + mappingPath);
-                try {
-                    mapping = MappingUtil.loadMapping(mappingPath);
-                } catch (SAXException e) {
-                    throw new IOException("Problem loading " + MAPPING_PATH.name + ". Invalid Format. " + e.getMessage());
-                }
-                System.out.println(". DONE");
-            }
+                System.out.println("Using database host " + dbHost);
+                System.out.println("Using database port " + dbPort);
+                System.out.println("Using database name " + dbName);
 
-            if (!newDatabaseCreated) {
-                // actually go on with the import
-                logger.info("saving existing license");
+                // if the database needs to be created, do it
+                if (databasepresentandkosher) {
+                    logger.info("The database already exists on this system");
+                    System.out.println("Existing target database detected");
+                } else {
+                    logger.info("database need to be created");
+                    System.out.print("The target database does not exist. Creating it now ...");
+                    DBActions dba = new DBActions();
+                    DatabaseConfig config = new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, databaseUser, databasePass);
+                    config.setDatabaseAdminUsername(rootDBUsername);
+                    config.setDatabaseAdminPassword(rootDBPasswd);
+                    DBActions.DBActionsResult res = dba.createDb(config, null, "../etc/sql/ssg.sql", false);
+                    if (res.getStatus() != DBActions.StatusType.SUCCESS) {
+                        throw new IOException("cannot create database " + res.getErrorMessage());
+                    }
+                    newDatabaseCreated = true;
+                    System.out.println(" DONE");
+                }
+
+                // check that target db is not currently used by an SSG
+                if (!newDatabaseCreated) {
+                    try {
+                        String connectedNode = checkSSGConnectedToDatabase();
+                        if (StringUtils.isNotEmpty(connectedNode)) {
+                            logger.info("cannot import on this database because it is being used by a SSG");
+                            throw new IOException("A SecureSpan Gateway is currently running " +
+                                    "and connected to the database. Please shutdown " + connectedNode);
+                        }
+                    } catch (SQLException e) {
+                        logger.log(Level.WARNING, "Cannot connect to target database", e);
+                        throw new IOException("Cannot connect to database");
+                    } catch (InterruptedException e) {
+                        logger.log(Level.WARNING, "Error looking for database use ", e);
+                        throw new IOException("interrupted!" + e.getMessage());
+                    }
+                }
+
+                // load mapping if requested
+                String mappingPath = FlashUtilityLauncher.getAbsolutePath(arguments.get(MAPPING_PATH.name));
+                if (mappingPath != null) {
+                    if (!cleanRestore) {
+                        logger.info("loading mapping file " + mappingPath);
+                        System.out.print("Reading mapping file " + mappingPath);
+                        try {
+                            mapping = MappingUtil.loadMapping(mappingPath);
+                        } catch (SAXException e) {
+                            throw new IOException("Problem loading " + MAPPING_PATH.name + ". Invalid Format. " + e.getMessage());
+                        }
+                        System.out.println(". DONE");
+                    } else {
+                        logger.info("restoring to an unconfigured system, mapping option will be ignored");
+                    }
+                }
+
+                if (!newDatabaseCreated) {
+                    // actually go on with the import
+                    logger.info("saving existing license");
+                    try {
+                        saveExistingLicense();
+                    } catch (SQLException e) {
+                        throw new IOException("cannot save existing license from database " + e.getMessage());
+                    }
+                } else {
+                    logger.info("not trying to save license because new database");
+                }
+
+                // load database dump
+                logger.info("loading database dump");
                 try {
-                    saveExistingLicense();
+                    loadDumpFromExplodedImage();
                 } catch (SQLException e) {
-                    throw new IOException("cannot save existing license from database " + e.getMessage());
+                    throw new IOException(e);
                 }
-            } else {
-                logger.info("not trying to save license because new database");
-            }
 
-            // load database dump
-            logger.info("loading database dump");
-            try {
-                loadDumpFromExplodedImage();
-            } catch (SQLException e) {
-                throw new IOException(e);
-            }
+                // apply mapping if applicable
+                if (mapping != null) {
+                    logger.info("applying mappings requested");
+                    try {
+                        DatabaseConfig config = new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, rootDBUsername, rootDBPasswd);
+                        MappingUtil.applyMappingChangesToDB(config, mapping);
+                    } catch (SQLException e) {
+                        logger.log(Level.WARNING, "error mapping target", e);
+                        throw new IOException("error mapping staging values " + e.getMessage());
+                    }
+                }
 
+                // reload license if applicable
+                try {
+                    reloadLicense();
+                } catch (SQLException e) {
+                    logger.log(Level.WARNING, "error resetting license", e);
+                    throw new IOException("error resetting license " + e.getMessage());
+                }
+            }
+            //todo end database import section
 
             // copy all config files to the right place
             logger.info("copying system files from image to target system");
             copySystemConfigFiles();
 
             if (arguments.get(OS_OVERWRITE.name) != null) {
-                // overwrite os level system files
-                OSConfigManager.restoreOSConfigFilesToTmpTarget(tempDirectory);
-            }
-
-            // apply mapping if applicable
-            if (mapping != null) {
-                logger.info("applying mappings requested");
-                try {
-                    DatabaseConfig config = new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, rootDBUsername, rootDBPasswd);
-                    MappingUtil.applyMappingChangesToDB(config, mapping);
-                } catch (SQLException e) {
-                    logger.log(Level.WARNING, "error mapping target", e);
-                    throw new IOException("error mapping staging values " + e.getMessage());
+                if (new File("/opt/SecureSpan/Appliance").exists()) {
+                    // overwrite os level system files
+                    OSConfigManager.restoreOSConfigFilesToTmpTarget(tempDirectory);
+                } else {
+                    logger.info("OS configuration files can only be restored on an appliance.  This option will be ignored.");
                 }
             }
+//            // apply mapping if applicable
+//            if (mapping != null) {
+//                logger.info("applying mappings requested");
+//                try {
+//                    DatabaseConfig config = new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, rootDBUsername, rootDBPasswd);
+//                    MappingUtil.applyMappingChangesToDB(config, mapping);
+//                } catch (SQLException e) {
+//                    logger.log(Level.WARNING, "error mapping target", e);
+//                    throw new IOException("error mapping staging values " + e.getMessage());
+//                }
+//            }
 
-            // reload license if applicable
-            try {
-                reloadLicense();
-            } catch (SQLException e) {
-                logger.log(Level.WARNING, "error resetting license", e);
-                throw new IOException("error resetting license " + e.getMessage());
-            }
+//            // reload license if applicable
+//            try {
+//                reloadLicense();
+//            } catch (SQLException e) {
+//                logger.log(Level.WARNING, "error resetting license", e);
+//                throw new IOException("error resetting license " + e.getMessage());
+//            }
 
         } finally {
             logger.info("deleting temp files at " + tempDirectory);
@@ -325,22 +381,46 @@ class Importer {
         }
     }
 
-    private void doLoadDump(Connection c, String dumpFilePath, String msg) throws IOException, SQLException {
+    private void doLoadDump(Connection c, /*String dumpFilePath,*/ String msg) throws IOException, SQLException {
         System.out.print(msg + " [please wait] ..");
-        FileReader fr = new FileReader(dumpFilePath);
-        BufferedReader reader = new BufferedReader(fr);
+
+        String mainDumpFilePath = tempDirectory + File.separator + DBDumpUtil.MAIN_BACKUP_FILENAME;
+        String auditDumpFilePath = tempDirectory + File.separator + DBDumpUtil.AUDIT_BACKUP_FILENAME;
+
+        FileReader auditFileReader = null;
+        BufferedReader auditBackupReader = null;
+        if (includeAudit) {
+            auditFileReader = new FileReader(auditDumpFilePath);
+            auditBackupReader = new BufferedReader(auditFileReader);
+        }
+
+        FileReader mainFileReader = new FileReader(mainDumpFilePath);
+        BufferedReader mainBackupReader = new BufferedReader(mainFileReader);
         String tmp;
         try {
             c.setAutoCommit(false);
             Statement stmt = c.createStatement();
             try {
-                while((tmp = reader.readLine()) != null) {
+                //always test importing the main backup
+                while ((tmp = mainBackupReader.readLine()) != null) {
                     if (tmp.endsWith(";")) {
-                        stmt.executeUpdate(tmp.substring(0, tmp.length()-1));
+                        stmt.executeUpdate(tmp.substring(0, tmp.length() - 1));
                     } else {
                         throw new SQLException("unexpected statement " + tmp);
                     }
                 }
+
+                //do the audit backup if its asked for
+                if (includeAudit) {
+                    while ((tmp = auditBackupReader.readLine()) != null) {
+                        if (tmp.endsWith(";")) {
+                            stmt.executeUpdate(tmp.substring(0, tmp.length() - 1));
+                        } else {
+                            throw new SQLException("unexpected statement " + tmp);
+                        }
+                    }
+                }
+
                 // commit at the end if everything updated correctly
                 logger.info("Database dump import loaded succesfully, committing now.");
                 c.commit();
@@ -357,28 +437,34 @@ class Importer {
                 c.setAutoCommit(true);
             }
         } finally {
-            reader.close();
-            fr.close();
+            mainBackupReader.close();
+            mainFileReader.close();
+
+            if (includeAudit) {
+                auditBackupReader.close();
+                auditFileReader.close();
+            }
         }
         System.out.println(". DONE");
     }
 
     private void loadDumpFromExplodedImage() throws IOException, SQLException {
-        String dumpFilePath = tempDirectory + File.separator + DBDumpUtil.MAIN_BACKUP_FILENAME;
+//        String mainDumpFilePath = tempDirectory + File.separator + DBDumpUtil.MAIN_BACKUP_FILENAME;
+//        String auditDumpFilePath = tempDirectory + File.separator + DBDumpUtil.AUDIT_BACKUP_FILENAME;
 
         // create temporary database copy to test the import
         System.out.print("Creating copy of target database for testing import ..");
         String testdbname = "TstDB_" + System.currentTimeMillis();
 
         DatabaseConfig sourceConfig = new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, rootDBUsername, rootDBPasswd);
-        sourceConfig.setDatabaseAdminUsername( rootDBUsername );
-        sourceConfig.setDatabaseAdminPassword( rootDBPasswd );
+        sourceConfig.setDatabaseAdminUsername(rootDBUsername);
+        sourceConfig.setDatabaseAdminPassword(rootDBPasswd);
 
         DatabaseConfig targetConfig = new DatabaseConfig(sourceConfig);
         targetConfig.setName(testdbname);
 
         DBActions dba = new DBActions();
-        dba.copyDatabase( sourceConfig, targetConfig, true, null);
+        dba.copyDatabase(sourceConfig, targetConfig, true, null);
         System.out.println(" DONE");
 
         try {
@@ -386,7 +472,7 @@ class Importer {
             String msg = "Loading image on temporary database";
             Connection c = dba.getConnection(targetConfig, true, false);
             try {
-                doLoadDump(c, dumpFilePath, msg);
+                doLoadDump(c, /*mainDumpFilePath,*/ msg);
             } finally {
                 c.close();
             }
@@ -411,7 +497,7 @@ class Importer {
         String msg = "Loading image on target database";
         Connection c = getConnection();
         try {
-            doLoadDump(c, dumpFilePath, msg);
+            doLoadDump(c, /*mainDumpFilePath,*/ msg);
         } finally {
             c.close();
         }
@@ -420,7 +506,7 @@ class Importer {
     private void copySystemConfigFiles() throws IOException {
         System.out.print("Cloning SecureSpan Gateway settings ..");
 
-        for ( String file : CONFIG_FILES ) {
+        for (String file : CONFIG_FILES) {
             restoreConfigFile(CONFIG_PATH + file);
         }
 
@@ -431,10 +517,10 @@ class Importer {
         File toFile = new File(destination);
         File fromFile = new File(tempDirectory + File.separator + toFile.getName());
         if (fromFile.exists()) {
-            if (toFile.getParentFile()==null || !toFile.getParentFile().exists() ) {
+            if (toFile.getParentFile() == null || !toFile.getParentFile().exists()) {
                 logger.warning("the parent directory for the target file " + toFile.getPath() + " does not " +
-                               "exist on this target system. perhaps this system is not configured properly. " +
-                               "trying to create directory");
+                        "exist on this target system. perhaps this system is not configured properly. " +
+                        "trying to create directory");
                 FileUtils.ensurePath(toFile.getParentFile());
             }
             if (toFile.exists()) {
