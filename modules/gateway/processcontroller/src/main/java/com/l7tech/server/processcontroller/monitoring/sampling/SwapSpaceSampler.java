@@ -1,4 +1,7 @@
-package com.l7tech.server.processcontroller.monitoring;
+/*
+ * Copyright (C) 2009 Layer 7 Technologies Inc.
+ */
+package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import java.util.regex.Pattern;
 
@@ -12,7 +15,7 @@ class SwapSpaceSampler extends HostPropertySampler<Long> {
         super(componentId, "swapSpace");
     }
 
-    Long sample() throws PropertySamplingException {
+    public Long sample() throws PropertySamplingException {
         return matchNumberFromFile("/proc/meminfo", SWAPFREE_MATCHER);
     }
 }

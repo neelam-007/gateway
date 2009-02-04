@@ -1,4 +1,7 @@
-package com.l7tech.server.processcontroller.monitoring;
+/*
+ * Copyright (C) 2009 Layer 7 Technologies Inc.
+ */
+package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import com.l7tech.common.io.ProcResult;
 import com.l7tech.common.io.ProcUtils;
@@ -18,7 +21,7 @@ class DiskFreeSampler extends HostPropertySampler<Long> {
         super(componentId, "diskFree");
     }
 
-    Long sample() throws PropertySamplingException {
+    public Long sample() throws PropertySamplingException {
         try {
             ProcResult result = ProcUtils.exec(new File(DF_PATH));
             return matchNumber(new String(result.getOutput()), "output from " + DF_PATH, DF_MATCHER);

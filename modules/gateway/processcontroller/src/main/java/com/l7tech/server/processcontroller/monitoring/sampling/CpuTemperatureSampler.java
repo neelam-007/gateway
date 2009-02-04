@@ -1,4 +1,7 @@
-package com.l7tech.server.processcontroller.monitoring;
+/*
+ * Copyright (C) 2009 Layer 7 Technologies Inc.
+ */
+package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import java.util.regex.Pattern;
 
@@ -13,7 +16,7 @@ class CpuTemperatureSampler extends HostPropertySampler<Long> {
         super(componentId, "cpuTemperature");
     }
 
-    Long sample() throws PropertySamplingException {
+    public Long sample() throws PropertySamplingException {
         return matchNumberFromFile(PROC_TEMP, TEMP_MATCHER);
     }
 }

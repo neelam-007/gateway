@@ -1,4 +1,7 @@
-package com.l7tech.server.processcontroller.monitoring;
+/*
+ * Copyright (C) 2009 Layer 7 Technologies Inc.
+ */
+package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import com.l7tech.common.io.ProcResult;
 import com.l7tech.common.io.ProcUtils;
@@ -19,7 +22,7 @@ class LogFileSampler extends HostPropertySampler<Long> {
         super(componentId, "logFileSize");
     }
 
-    Long sample() throws PropertySamplingException {
+    public Long sample() throws PropertySamplingException {
         try {
             ProcResult result = ProcUtils.exec(new File(SH_PATH), ProcUtils.args("-c", DU_COMMAND));
             return matchNumber(new String(result.getOutput()), "du output", NUMBER_PATTERN) * 1024L;

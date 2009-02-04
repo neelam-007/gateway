@@ -1,4 +1,7 @@
-package com.l7tech.server.processcontroller.monitoring;
+/*
+ * Copyright (C) 2009 Layer 7 Technologies Inc.
+ */
+package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import com.l7tech.common.io.ProcResult;
 import static com.l7tech.common.io.ProcUtils.args;
@@ -17,7 +20,7 @@ class CpuIdleSampler extends HostPropertySampler<Integer> {
         super(componentId, "cpuIdle");
     }
 
-    Integer sample() throws PropertySamplingException {
+    public Integer sample() throws PropertySamplingException {
         try {
             ProcResult result = exec(new File("/usr/bin/vmstat"), args("1", "2"));
             String out = new String(result.getOutput());

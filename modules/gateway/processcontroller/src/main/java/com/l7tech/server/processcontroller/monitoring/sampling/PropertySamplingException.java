@@ -1,7 +1,7 @@
-/**
+/*
  * Copyright (C) 2009 Layer 7 Technologies Inc.
  */
-package com.l7tech.server.processcontroller.monitoring;
+package com.l7tech.server.processcontroller.monitoring.sampling;
 
 /**
  * Thrown to indicate that a property sample could not be obtained.

@@ -1,7 +1,7 @@
 /**
  * Copyright (C) 2009 Layer 7 Technologies Inc.
  */
-package com.l7tech.server.processcontroller.monitoring;
+package com.l7tech.server.processcontroller.monitoring.notification;
 
 import com.l7tech.server.management.config.monitoring.NotificationRule;
 import com.l7tech.server.management.config.monitoring.Trigger;
@@ -12,10 +12,10 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
 
-public abstract class Notifier implements Closeable {
-    protected final NotificationRule rule;
+public abstract class Notifier<RT extends NotificationRule> implements Closeable {
+    protected final RT rule;
 
-    protected Notifier(NotificationRule rule) {
+    protected Notifier(RT rule) {
         this.rule = rule;
     }
 

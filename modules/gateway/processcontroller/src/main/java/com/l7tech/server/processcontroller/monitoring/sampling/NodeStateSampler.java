@@ -1,4 +1,7 @@
-package com.l7tech.server.processcontroller.monitoring;
+/*
+ * Copyright (C) 2009 Layer 7 Technologies Inc.
+ */
+package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import com.l7tech.server.management.NodeStateType;
 import com.l7tech.server.management.config.monitoring.ComponentType;
@@ -13,7 +16,7 @@ class NodeStateSampler extends PropertySampler<NodeStateType> {
         super(componentType, componentId, "nodeState");
     }
 
-    NodeStateType sample() throws PropertySamplingException {
+    public NodeStateType sample() throws PropertySamplingException {
         // TODO not clear if we want a PropertySampler to deal with this
         return NodeStateType.UNKNOWN;
     }

@@ -9,18 +9,19 @@ import java.util.Collections;
 import java.util.NavigableSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.io.IOException;
 
 public class EventState extends MonitorState<MonitorableEvent> {
     // TODO is there some kind of payload for the event...?
     private final NavigableSet<Long> eventHistory;
 
-    protected EventState(MonitorableEvent monitorable, String componentId) {
-        super(monitorable, componentId);
+    protected EventState(MonitorableEvent monitorable, String componentId, final Set<Long> triggerOids) {
+        super(monitorable, componentId, triggerOids);
         this.eventHistory = new ConcurrentSkipListSet<Long>();
     }
 
-    protected EventState(EventState oldState) {
-        super(oldState.getMonitorable(), oldState.getComponentId());
+    protected EventState(EventState oldState, final Set<Long> triggerOids) {
+        super(oldState.getMonitorable(), oldState.getComponentId(), triggerOids);
         this.eventHistory = oldState.eventHistory;
     }
 
@@ -36,4 +37,7 @@ public class EventState extends MonitorState<MonitorableEvent> {
     void expireHistory(Long retainNewerThan) {
         eventHistory.headSet(retainNewerThan).clear();
     }
+
+    @Override
+    public void close() throws IOException { }
 }

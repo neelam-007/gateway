@@ -1,4 +1,7 @@
-package com.l7tech.server.processcontroller.monitoring;
+/*
+ * Copyright (C) 2009 Layer 7 Technologies Inc.
+ */
+package com.l7tech.server.processcontroller.monitoring.notification;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
@@ -7,7 +10,6 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.management.config.monitoring.AuthInfo;
 import com.l7tech.server.management.config.monitoring.HttpNotificationRule;
-import com.l7tech.server.management.config.monitoring.NotificationRule;
 import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.Pair;
@@ -24,36 +26,34 @@ import java.util.logging.Logger;
 /**
  *
  */
-class HttpNotifier extends Notifier {
+class HttpNotifier extends Notifier<HttpNotificationRule> {
     private static final Logger logger = Logger.getLogger(HttpNotifier.class.getName());
 
     private final Auditor auditor = new LogOnlyAuditor(logger);
-    private final HttpNotificationRule httpRule;
     private final GenericHttpClient httpClient;
     private final HttpMethod httpMethod;
     private final ContentTypeHeader contentType;
     private final List<Pair<String, String>> extraHeaders;
     private final AuthInfo authInfo;
 
-    protected HttpNotifier(NotificationRule rule) {
+    protected HttpNotifier(HttpNotificationRule rule) {
         super(rule);
-        httpRule = (HttpNotificationRule) rule;
         httpClient = new UrlConnectionHttpClient();
-        httpMethod = httpRule.getMethod();
-        authInfo = httpRule.getAuthInfo();
-        final List<Pair<String, String>> heads = httpRule.getExtraHeaders();
+        httpMethod = this.rule.getMethod();
+        authInfo = this.rule.getAuthInfo();
+        final List<Pair<String, String>> heads = this.rule.getExtraHeaders();
         extraHeaders = heads == null ? new ArrayList<Pair<String, String>>() : heads;
         try {
-            contentType = ContentTypeHeader.parseValue(httpRule.getContentType());
+            contentType = ContentTypeHeader.parseValue(this.rule.getContentType());
         } catch (IOException e) {
             throw new IllegalArgumentException("HTTP notifier: Bad content type: " + e);
         }
     }
 
     public void doNotification(Long timestamp, Object value, Trigger trigger) throws IOException {
-        String bodyText = ExpandVariables.process(httpRule.getRequestBody(), getMonitoringVariables(trigger), auditor);
+        String bodyText = ExpandVariables.process(rule.getRequestBody(), getMonitoringVariables(trigger), auditor);
 
-        GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(httpRule.getUrl()));
+        GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(rule.getUrl()));
         params.setContentType(contentType);
         for (Pair<String, String> header : extraHeaders)
             params.addExtraHeader(new GenericHttpHeader(header));

@@ -1,7 +1,7 @@
-/**
+/*
  * Copyright (C) 2009 Layer 7 Technologies Inc.
  */
-package com.l7tech.server.processcontroller.monitoring;
+package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import com.l7tech.server.management.config.monitoring.ComponentType;
 
@@ -36,5 +36,5 @@ public abstract class PropertySampler<V extends Serializable> implements Closeab
      * @return the sampled property value.  Never null.
      * @throws PropertySamplingException if the property cannot be sampled (e.g. due to an IOException)
      */
-    abstract V sample() throws PropertySamplingException;
+    public abstract V sample() throws PropertySamplingException;
 }

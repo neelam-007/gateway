@@ -1,8 +1,10 @@
-package com.l7tech.server.processcontroller.monitoring;
+/*
+ * Copyright (C) 2009 Layer 7 Technologies Inc.
+ */
+package com.l7tech.server.processcontroller.monitoring.notification;
 
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
-import com.l7tech.server.management.config.monitoring.NotificationRule;
 import com.l7tech.server.management.config.monitoring.SnmpTrapNotificationRule;
 import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -31,7 +33,7 @@ import java.util.logging.Logger;
 /**
  *
  */
-class SnmpNotifier extends Notifier {
+class SnmpNotifier extends Notifier<SnmpTrapNotificationRule> {
     private static final Logger logger = Logger.getLogger(SnmpNotifier.class.getName());
 
     public static final int[] OID_BASE = new int[] {1,3,6,1,4,1,17304,7,3};
@@ -46,7 +48,7 @@ class SnmpNotifier extends Notifier {
     private final int snmpPort;
     private final String text;
 
-    protected SnmpNotifier(NotificationRule rule) {
+    protected SnmpNotifier(SnmpTrapNotificationRule rule) {
         super(rule);
         dispatcher = new MessageDispatcherImpl();
         dispatcher.addMessageProcessingModel(new MPv2c());
@@ -58,14 +60,12 @@ class SnmpNotifier extends Notifier {
         }
         SecurityProtocols.getInstance().addDefaultProtocols();
 
-        SnmpTrapNotificationRule snmpRule = (SnmpTrapNotificationRule)rule;
-
         int[] trapOi = new int[OID_BASE.length + 1];
         int[] msgOi = new int[OID_BASE.length + 1];
         System.arraycopy(OID_BASE, 0, trapOi, 0, OID_BASE.length);
         System.arraycopy(OID_BASE, 0, msgOi, 0, OID_BASE.length);
 
-        int lastPart = snmpRule.getOidSuffix();
+        int lastPart = rule.getOidSuffix();
         if (lastPart == 0)
             throw new IllegalArgumentException("OID suffix must not be zero");
 
@@ -73,10 +73,10 @@ class SnmpNotifier extends Notifier {
         msgOi[msgOi.length - 1] = 0;
         trapOid = new OID(trapOi);
         messageOid = new OID(msgOi);
-        communityBytes = snmpRule.getCommunity().getBytes();
-        snmpHost = snmpRule.getSnmpHost();
-        snmpPort = snmpRule.getPort();
-        text = snmpRule.getText();
+        communityBytes = rule.getCommunity().getBytes();
+        snmpHost = rule.getSnmpHost();
+        snmpPort = rule.getPort();
+        text = rule.getText();
         if (text == null)
             throw new IllegalArgumentException("text must be non-null");
         auditor = new LogOnlyAuditor(logger);

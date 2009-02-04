@@ -1,11 +1,13 @@
-package com.l7tech.server.processcontroller.monitoring;
+/*
+ * Copyright (C) 2009 Layer 7 Technologies Inc.
+ */
+package com.l7tech.server.processcontroller.monitoring.notification;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.management.config.monitoring.AuthInfo;
 import com.l7tech.server.management.config.monitoring.EmailNotificationRule;
-import com.l7tech.server.management.config.monitoring.NotificationRule;
 import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.transport.email.EmailUtils;
@@ -27,11 +29,10 @@ import java.util.logging.Logger;
 /**
  *
  */
-class EmailNotifier extends Notifier {
+class EmailNotifier extends Notifier<EmailNotificationRule> {
     private static final Logger logger = Logger.getLogger(EmailNotifier.class.getName());
 
     private final Auditor auditor;
-    private final EmailNotificationRule emailRule;
     private final Map<String, String> propertyMap;
     private final InternetAddress[] toAddresses;
     private final InternetAddress[] ccAddresses;
@@ -44,19 +45,18 @@ class EmailNotifier extends Notifier {
 
     private static final String SOCKET_FACTORY_CLASSNAME = SslClientSocketFactory.class.getName();
 
-    protected EmailNotifier(NotificationRule rule) {
+    protected EmailNotifier(EmailNotificationRule rule) {
         super(rule);
         auditor = new LogOnlyAuditor(logger);
-        emailRule = (EmailNotificationRule)rule;
 
         long connectTimeout = SyspropUtil.getLong( "com.l7tech.server.processcontroller.monitoring.ioMailConnectTimeout", 60000);
         long readTimeout = SyspropUtil.getLong( "com.l7tech.server.processcontroller.monitoringioMailReadTimeout", 60000);
-        propertyMap = buildProperties( emailRule, connectTimeout, readTimeout );
+        propertyMap = buildProperties( rule, connectTimeout, readTimeout );
 
         try {
-            toAddresses = parseAddresses(emailRule.getTo());
-            ccAddresses = parseAddresses(emailRule.getCc());
-            bccAddresses = parseAddresses(emailRule.getBcc());
+            toAddresses = parseAddresses(rule.getTo());
+            ccAddresses = parseAddresses(rule.getCc());
+            bccAddresses = parseAddresses(rule.getBcc());
         } catch (AddressException e) {
             throw new IllegalArgumentException(e);
         }
@@ -86,7 +86,7 @@ class EmailNotifier extends Notifier {
 
         InternetAddress fromaddr;
         try {
-            fromaddr = new InternetAddress(emailRule.getFrom());
+            fromaddr = new InternetAddress(rule.getFrom());
         } catch (AddressException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     "Unable to initialize EmailAlertAssert: invalid destination email address: " + ExceptionUtils.getMessage(e));
@@ -168,15 +168,15 @@ class EmailNotifier extends Notifier {
         message.addRecipients(javax.mail.Message.RecipientType.BCC, bccAddresses);
         message.setFrom(fromAddress);
         message.setSentDate(new java.util.Date());
-        message.setSubject(emailRule.getSubject());
+        message.setSubject(rule.getSubject());
         message.setText(body);
         message.saveChanges();
 
-        Transport tr = session.getTransport(emailRule.getCryptoType() == EmailNotificationRule.CryptoType.SSL ? "smtps" : "smtp");
-        final AuthInfo authInfo = emailRule.getAuthInfo();
+        Transport tr = session.getTransport(rule.getCryptoType() == EmailNotificationRule.CryptoType.SSL ? "smtps" : "smtp");
+        final AuthInfo authInfo = rule.getAuthInfo();
         final String username = authInfo == null ? null : authInfo.getUsername();
         final String pass = authInfo == null ? null : new String(authInfo.getPassword());
-        tr.connect(emailRule.getSmtpHost(), emailRule.getPort(), username, pass);
+        tr.connect(rule.getSmtpHost(), rule.getPort(), username, pass);
         tr.sendMessage(message, recipients);
     }
 
@@ -184,7 +184,7 @@ class EmailNotifier extends Notifier {
     public void doNotification(Long timestamp, Object value, Trigger trigger) throws IOException {
         try {
             final Session session = getSession();
-            final String body = ExpandVariables.process(emailRule.getText(), getMonitoringVariables(trigger), auditor);
+            final String body = ExpandVariables.process(rule.getText(), getMonitoringVariables(trigger), auditor);
 
             sendMessage( session, body );
 

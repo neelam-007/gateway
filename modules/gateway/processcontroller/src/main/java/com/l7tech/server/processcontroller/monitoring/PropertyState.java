@@ -4,13 +4,12 @@
 package com.l7tech.server.processcontroller.monitoring;
 
 import com.l7tech.server.management.api.monitoring.MonitorableProperty;
+import com.l7tech.server.processcontroller.monitoring.sampling.PropertySampler;
+import com.l7tech.server.processcontroller.monitoring.sampling.PropertySamplingException;
 import com.l7tech.util.Pair;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
@@ -30,8 +29,8 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
     /**
      * Create a new PropertyState with no history
      */
-    protected PropertyState(MonitorableProperty property, String componentId, long samplingInterval, final PropertySampler<V> sampler) {
-        super(property, componentId);
+    protected PropertyState(MonitorableProperty property, String componentId, final Set<Long> triggerOids, long samplingInterval, final PropertySampler<V> sampler) {
+        super(property, componentId, triggerOids);
         this.lastSamples = new ConcurrentSkipListMap<Long,Pair<V, PropertySamplingException>>();
         this.samplingInterval = samplingInterval;
         this.sampler = sampler;
@@ -48,9 +47,9 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
         };
     }
 
-    protected PropertyState(PropertyState<V> oldState, long newSamplingInterval) {
+    protected PropertyState(PropertyState<V> oldState, Set<Long> triggerOids, long newSamplingInterval) {
         // TODO can the sampler itself ever change its configuration?
-        this(oldState.getMonitorable(), oldState.getComponentId(), Math.min(newSamplingInterval, oldState.getSamplingInterval()), oldState.getSampler());
+        this(oldState.getMonitorable(), oldState.getComponentId(), triggerOids, Math.min(newSamplingInterval, oldState.getSamplingInterval()), oldState.getSampler());
         lastSamples.putAll(oldState.lastSamples);
     }
 
@@ -98,7 +97,12 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
         return lastFailure;
     }
 
-    public TimerTask getTask() {
-        return task;
+    @Override
+    public void close() {
+        task.cancel();
+    }
+
+    void schedule(Timer samplerTimer) {
+        samplerTimer.scheduleAtFixedRate(task, 0, samplingInterval);
     }
 }

@@ -1,11 +1,11 @@
-package com.l7tech.server.processcontroller.monitoring;
+/*
+ * Copyright (C) 2009 Layer 7 Technologies Inc.
+ */
+package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import java.io.File;
 import java.util.regex.Pattern;
 
-/**
- *
- */
 class RaidStatusSampler extends HostPropertySampler<RaidStatus> {
     private static final String PATH_MDSTAT = "/proc/mdstat";
 
@@ -22,7 +22,7 @@ class RaidStatusSampler extends HostPropertySampler<RaidStatus> {
         super(componentId, "raidStatus");
     }
 
-    RaidStatus sample() throws PropertySamplingException {
+    public RaidStatus sample() throws PropertySamplingException {
         if (!new File(PATH_MDSTAT).exists())
             return RaidStatus.NOT_RAID;
 

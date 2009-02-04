@@ -16,7 +16,7 @@ import java.io.Serializable;
  * @author alex
  */
 @Entity
-public class PropertyTrigger<T extends Serializable> extends Trigger<MonitorableProperty> {
+public class PropertyTrigger<T extends Serializable & Comparable> extends Trigger<MonitorableProperty> {
     private String propertyName;
     private long maxSamplingInterval;
     private ComparisonOperator operator;
