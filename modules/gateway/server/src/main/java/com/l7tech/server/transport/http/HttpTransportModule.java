@@ -11,7 +11,7 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -87,7 +87,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     private final ServerConfig serverConfig;
-    private final AuditContext auditContext;
     private final MasterPasswordManager masterPasswordManager;
     private final SsgKeyStoreManager ssgKeyStoreManager;
     private final DefaultKey defaultKeyManager;
@@ -101,7 +100,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private StandardThreadExecutor executor;
 
     public HttpTransportModule( final ServerConfig serverConfig,
-                                final AuditContext context,
                                 final MasterPasswordManager masterPasswordManager,
                                 final DefaultKey defaultKeyManager,
                                 final SsgKeyStoreManager ssgKeyStoreManager,
@@ -111,7 +109,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     {
         super("HTTP Transport Module", logger, GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
         this.serverConfig = serverConfig;
-        this.auditContext = context;
         this.masterPasswordManager = masterPasswordManager;
         this.defaultKeyManager = defaultKeyManager;
         this.ssgKeyStoreManager = ssgKeyStoreManager;
@@ -380,9 +377,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     private void startInitialConnectors(boolean actuallyStartThem) throws ListenerException {
-        final boolean wasSystem = auditContext.isSystem();
+        final boolean wasSystem = AuditContextUtils.isSystem();
         try {
-            auditContext.setSystem(true);
+            AuditContextUtils.setSystem(true);
             Collection<SsgConnector> connectors = ssgConnectorManager.findAll();
             boolean foundHttp = false;
             for (SsgConnector connector : connectors) {
@@ -411,7 +408,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         } catch (FindException e) {
             throw new ListenerException("Unable to find initial connectors: " + ExceptionUtils.getMessage(e), e);
         } finally {
-            auditContext.setSystem(wasSystem);
+            AuditContextUtils.setSystem(wasSystem);
         }
     }
 

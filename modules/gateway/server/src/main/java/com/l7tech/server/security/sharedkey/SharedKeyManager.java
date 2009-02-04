@@ -21,10 +21,29 @@ import com.l7tech.objectmodel.FindException;
  * Date: May 18, 2007<br/>
  */
 public interface SharedKeyManager {
+    
     /**
      * Get the shared key
+     *
      * @return byte[64] containing the shared symmetric key (raw, unencrypted)
      * @throws com.l7tech.objectmodel.FindException if there was a problem finding or creating the key
      */
     byte[] getSharedKey() throws FindException;
+
+    /**
+     * Get the shared key encrypted for the given identifier.
+     *
+     * @param identifier The encryption identifier.
+     * @return The Base64 encoded encrypted shared key.
+     * @throws FindException If the key cannot be found.
+     */
+    String getEncrytpedSharedKey( String identifier ) throws FindException;
+
+    /**
+     * Save the given shared key.
+     *
+     * @param key The key to save
+     * @throws FindException If an error occurs.
+     */
+    void saveAndEncryptSharedKey( final byte[] key ) throws FindException;
 }

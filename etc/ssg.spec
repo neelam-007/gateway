@@ -112,10 +112,15 @@ fi
 [ ! -d %{prefix}/node/default/etc/conf ] || chown -R layer7.layer7 %{prefix}/node/default/etc/conf
 [ ! -d %{prefix}/node/default/var ] || chown -R gateway.gateway %{prefix}/node/default/var
 
+%post
+if [ -d "/ssg" ] ; then
+    %{prefix}/runtime/bin/upgrade.sh 2>&1 >> %{prefix}/config/upgrade.log
+fi
+
 %preun
 # Modifications to handle upgrades properly
 if [ "$1" = "0" ] ; then
-    # $1 is  on last uninstall, ie, package remove, not upgrade
+    # $1 is 0 on last uninstall, ie, package remove, not upgrade
 
     if grep -q '^gateway:' /etc/passwd; then userdel -r gateway; fi
     if grep -q '^layer7:' /etc/passwd; then userdel -r layer7; fi

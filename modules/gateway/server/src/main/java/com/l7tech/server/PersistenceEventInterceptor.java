@@ -26,7 +26,7 @@ import com.l7tech.identity.cert.CertEntryRow;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.PolicyVersion;
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.*;
 import com.l7tech.server.event.admin.*;
 import com.l7tech.server.logon.LogonInfo;
@@ -57,7 +57,7 @@ import java.util.logging.Logger;
 public class PersistenceEventInterceptor extends ApplicationObjectSupport implements Interceptor {
     private static Logger logger = Logger.getLogger(PersistenceEventInterceptor.class.getName());
 
-    public PersistenceEventInterceptor( final AuditContext context ) {
+    public PersistenceEventInterceptor() {
         // High traffic entities that should neither generate application events nor be audited
         ignoredClassNames = new HashSet<String>();
         ignoredClassNames.add(SSGLogRecord.class.getName());
@@ -86,20 +86,17 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         noAuditClassNames.add(FolderPredicate.class.getName());
         noAuditClassNames.add(EntityFolderAncestryPredicate.class.getName());
         noAuditClassNames.add(ResolutionParameters.class.getName());
-
-        auditContext = context;
     }
 
     private final Set<String> ignoredClassNames; // don't fire an event at all
     private final Set<String> noAuditClassNames; // fire an event, but mark it "system" so it doesn't get audited
-    private final AuditContext auditContext;
 
     private boolean ignored(Object entity) {
         return !(entity instanceof PersistentEntity) || ignoredClassNames.contains(entity.getClass().getName());
     }
 
     private AdminEvent setsys(Object entity, AdminEvent event) {
-        if (auditContext.isSystem() || noAuditClassNames.contains(entity.getClass().getName())) {
+        if (AuditContextUtils.isSystem() || noAuditClassNames.contains(entity.getClass().getName())) {
             event.setSystem(true);
         }
         return event;

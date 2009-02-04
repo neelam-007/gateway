@@ -240,18 +240,6 @@ UPDATE revocation_check_policy SET revocation_policy_xml =
 --
 DROP TABLE IF EXISTS config_data;
 
-
---
--- Delete the existing keystores since we don't yet upgrade the cluster shared key.
---
--- TODO REMOVE THIS WHEN UPGRADE IS IMPLEMENTED
--- TODO REMOVE THIS WHEN UPGRADE IS IMPLEMENTED
--- TODO REMOVE THIS WHEN UPGRADE IS IMPLEMENTED
--- TODO REMOVE THIS WHEN UPGRADE IS IMPLEMENTED
--- TODO REMOVE THIS WHEN UPGRADE IS IMPLEMENTED
---
-delete from keystore_file;
-
 --
 -- Bug 5884: Moved email listener state information out of the email_listener table and into the email_listener_state table
 -- 1) Create the new email_listener_state table
@@ -334,11 +322,18 @@ UPDATE policy JOIN published_service ON published_service.policy_oid=policy.obje
 ALTER TABLE rbac_role DROP KEY entity_info;
 
 --
+-- Upgrade task for keystore import
+--
+INSERT INTO cluster_properties
+    (objectid, version, propkey, propvalue)
+    values (-500000, 0, "upgrade.task.500000", "com.l7tech.server.upgrade.Upgrade465To50UpgradeKeystores");
+
+--
 -- Upgrade task for folder roles
 --
 INSERT INTO cluster_properties
     (objectid, version, propkey, propvalue)
-    values (-500000, 0, "upgrade.task.500000", "com.l7tech.server.upgrade.Upgrade465To50UpdateRoles");
+    values (-500001, 0, "upgrade.task.500001", "com.l7tech.server.upgrade.Upgrade465To50UpdateRoles");
 
 -- Add version column to the Folders table
 ALTER TABLE folder ADD COLUMN version int(11) NOT NULL AFTER objectid; 
@@ -348,6 +343,9 @@ ALTER TABLE published_service ADD COLUMN wss_processing TINYINT(1) NOT NULL DEFA
 
 --- Simplified mapping of connector properties
 ALTER TABLE connector_property DROP COLUMN objectid, DROP COLUMN version;
+
+-- Add properties to keystore files
+ALTER TABLE keystore_file ADD COLUMN properties mediumtext AFTER databytes;
 
 --
 -- Reenable FK at very end of script

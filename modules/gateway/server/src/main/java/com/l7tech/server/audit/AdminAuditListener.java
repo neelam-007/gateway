@@ -196,7 +196,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                 msg.append(" (").append(note).append(")");
             }
 
-            AdminInfo info = AdminInfo.find(!auditContext.isSystem());
+            AdminInfo info = AdminInfo.find(!AuditContextUtils.isSystem());
             if (info == null) return null;
 
             long oid = PersistentEntity.DEFAULT_OID;
@@ -223,7 +223,7 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
                                         event.getClientAddr());
         } else if (genericEvent instanceof AdminEvent) {
             AdminEvent event = (AdminEvent)genericEvent;
-            AdminInfo info = AdminInfo.find(!auditContext.isSystem());
+            AdminInfo info = AdminInfo.find(!AuditContextUtils.isSystem());
             if (info == null) return null;
 
             return new AdminAuditRecord(level(event), nodeId, 0, "<none>", "", AdminAuditRecord.ACTION_OTHER, event.getNote(), info.identityProviderOid, info.login, info.id, info.ip);

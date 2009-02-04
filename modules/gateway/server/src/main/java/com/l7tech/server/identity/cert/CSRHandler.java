@@ -18,7 +18,7 @@ import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.system.CertificateSigningServiceEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.transport.TransportModule;
@@ -47,7 +47,6 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         super.init(config);
         defaultKey = (DefaultKey)getApplicationContext().getBean("defaultKey", DefaultKey.class);
         providerConfigManager = (IdentityProviderConfigManager)getApplicationContext().getBean("identityProviderConfigManager", IdentityProviderConfigManager.class);
-        auditContext = (AuditContext)getApplicationContext().getBean("auditContext", AuditContext.class);
     }
 
     @Override
@@ -172,8 +171,8 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         }
 
         // record new cert
-        final boolean wasSystem = auditContext.isSystem();
-        auditContext.setSystem(true);
+        final boolean wasSystem = AuditContextUtils.isSystem();
+        AuditContextUtils.setSystem(true);
         try {
             clientCertManager.recordNewUserCert(authenticatedUser, cert, authResult.isCertSignedByStaleCA());
             final String message = buildIssuedMessage(authenticatedUser);
@@ -187,7 +186,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             logger.log(Level.SEVERE, msg, e);
             return;
         } finally {
-            auditContext.setSystem(wasSystem);
+            AuditContextUtils.setSystem(wasSystem);
         }
         
         // send cert back
@@ -255,7 +254,6 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
     private DefaultKey defaultKey;
     private IdentityProviderConfigManager providerConfigManager;
-    private AuditContext auditContext;
 
     public static final String AUTH_HEADER_NAME = "Authorization";
     public static final String ROUTED_FROM_PEER = "Routed-From-Peer";

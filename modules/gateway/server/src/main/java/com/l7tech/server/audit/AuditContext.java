@@ -126,20 +126,6 @@ public interface AuditContext {
     void setUpdate(boolean update);
 
     /**
-     * Is the current record a system generated record?
-     *
-     * @return true if system
-     */
-    boolean isSystem();
-
-    /**
-     * Sets whether the current record is a system generated record.
-     *
-     * @param system true if system.
-     */
-    void setSystem(boolean system);
-
-    /**
      * Get the currently acumulated hints.
      *
      * @return the Set of AuditDetailMessage.Hint's

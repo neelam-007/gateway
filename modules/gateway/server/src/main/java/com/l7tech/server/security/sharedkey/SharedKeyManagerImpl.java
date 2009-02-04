@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionCallback;
 
 import javax.crypto.*;
@@ -30,7 +29,6 @@ import java.security.SecureRandom;
 import java.security.spec.InvalidParameterSpecException;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -118,19 +116,38 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
         return generateAndSaveNewKey();
     }
 
-    private byte[] generateAndSaveNewKey() throws FindException {
-        logger.info("Shared key does not yet exist, attempting to create one");
-        final SharedKeyRecord sharedKeyToSave = new SharedKeyRecord();
-        final byte[] theKey = generate64RandomBytes();
+    public String getEncrytpedSharedKey( final String identifier ) throws FindException {
+        // try to get record from the database
+        final String query = " from shared_keys in class " + SharedKeyRecord.class.getName() +
+                             " where shared_keys.encodingID = ?";
 
-        try {
-            sharedKeyToSave.setEncodingID(CLUSTER_WIDE_IDENTIFIER);
-            sharedKeyToSave.setB64edKey(encryptKey(theKey));
-        } catch (Exception e) {
-            throw new FindException("could not encrypt new shared key: " + ExceptionUtils.getMessage(e), e);
+        final Collection res = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+            public Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                Query q = session.createQuery(query);
+                q.setString(0, identifier);
+                return q.list();
+            }});
+
+
+        if ( res.isEmpty() ) {
+            throw new FindException( "Shared key not found for identifier '"+identifier+"'." );
+        } else if ( res.size() > 1 ) {
+            throw new FindException( "Multiple shared keys found for identifier '"+identifier+"'." );
         }
 
-        logger.info("new shared created, saving it");
+        return ((SharedKeyRecord)res.iterator().next()).getB64edKey();
+    }
+
+    public void saveAndEncryptSharedKey( final byte[] key ) throws FindException {
+        final SharedKeyRecord sharedKeyToSave = new SharedKeyRecord();
+        try {
+            sharedKeyToSave.setEncodingID(CLUSTER_WIDE_IDENTIFIER);
+            sharedKeyToSave.setB64edKey(encryptKey(key));
+        } catch (Exception e) {
+            throw new FindException("Could not encrypt new shared key: " + ExceptionUtils.getMessage(e), e);
+        }
+
+        logger.info("Saving shared key.");
 
         try {
             transactionIfAvailable(new Functions.Nullary<Object>(){
@@ -142,6 +159,13 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
         } catch (DataAccessException e) {
             throw new FindException("Unable to save new key: " + ExceptionUtils.getMessage(e), e);
         }
+    }
+
+    private byte[] generateAndSaveNewKey() throws FindException {
+        logger.info("Shared key does not yet exist, attempting to create one");
+        final byte[] theKey = generate64RandomBytes();
+
+        saveAndEncryptSharedKey( theKey );
 
         logger.info("new shared key saved, returning it");
         return theKey;

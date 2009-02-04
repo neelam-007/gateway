@@ -11,7 +11,7 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
@@ -25,7 +25,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.security.auth.x500.X500Principal;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -45,11 +44,9 @@ import java.util.logging.Logger;
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class ClientCertManagerImp extends HibernateDaoSupport implements ClientCertManager {
     private final DefaultKey defaultKey;
-    private final AuditContext context;
 
-    public ClientCertManagerImp(DefaultKey defaultKey, AuditContext context) {
+    public ClientCertManagerImp(DefaultKey defaultKey) {
         this.defaultKey = defaultKey;
-        this.context = context;
     }
 
     @Transactional(propagation=Propagation.SUPPORTS)
@@ -253,8 +250,8 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
     public void forbidCertReset(User user) throws UpdateException {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("forbidCertReset for " + getName(user));
-        boolean wasSystem = context.isSystem();
-        context.setSystem(true);
+        boolean wasSystem = AuditContextUtils.isSystem();
+        AuditContextUtils.setSystem(true);
         try {
             CertEntryRow currentdata;
             try {
@@ -282,7 +279,7 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
                 throw new UpdateException(msg);
             }
         } finally {
-            context.setSystem(wasSystem);
+            AuditContextUtils.setSystem(wasSystem);
         }
     }
 

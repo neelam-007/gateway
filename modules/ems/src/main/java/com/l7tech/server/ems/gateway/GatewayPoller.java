@@ -14,7 +14,7 @@ import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.management.api.node.NodeManagementApi;
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
@@ -37,27 +37,25 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
 
     public GatewayPoller( final PlatformTransactionManager transactionManager,
                           final Timer timer,
-                          final AuditContext auditContext,
                           final SsgClusterManager ssgClusterManager,
                           final GatewayContextFactory gatewayContextFactory,
                           final UserPropertyManager userPropertyManager ) {
         this.transactionManager = transactionManager;
         this.timer = timer;
-        this.auditContext = auditContext;
         this.ssgClusterManager = ssgClusterManager;
         this.gatewayContextFactory = gatewayContextFactory;
         this.userPropertyManager = userPropertyManager;
         this.timerTask = new TimerTask(  ) {
             @Override
             public void run() {
-                boolean isSystem = auditContext.isSystem();
+                boolean isSystem = AuditContextUtils.isSystem();
                 try {
-                    auditContext.setSystem( true );
+                    AuditContextUtils.setSystem( true );
                     pollGateways();
                 } catch ( Exception e ) {
                     logger.log( Level.WARNING, "Error polling gateways", e );
                 } finally {
-                    auditContext.setSystem( isSystem );
+                    AuditContextUtils.setSystem( isSystem );
                 }
             }
         };
@@ -84,14 +82,14 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
         timer.schedule( new TimerTask() {
             @Override
             public void run() {
-                boolean isSystem = auditContext.isSystem();
+                boolean isSystem = AuditContextUtils.isSystem();
                 try {
-                    auditContext.setSystem( true );
+                    AuditContextUtils.setSystem( true );
                     pollUserAccess( user );
                 } catch ( Exception e ) {
                     logger.log( Level.WARNING, "Error polling gateways", e );
                 } finally {
-                    auditContext.setSystem( isSystem );
+                    AuditContextUtils.setSystem( isSystem );
                 }
             }
         }, 0);
@@ -103,7 +101,6 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
 
     private final PlatformTransactionManager transactionManager;
     private final Timer timer;
-    private final AuditContext auditContext;
     private final SsgClusterManager ssgClusterManager;
     private final GatewayContextFactory gatewayContextFactory;
     private final UserPropertyManager userPropertyManager;

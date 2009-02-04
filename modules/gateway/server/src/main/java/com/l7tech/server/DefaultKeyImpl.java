@@ -10,7 +10,7 @@ import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 
@@ -47,7 +47,6 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private static final SsgKeyEntry NULL_ENTRY = new SsgKeyEntry(Long.MIN_VALUE, null, null, null);
 
     private final ServerConfig serverConfig;
-    private final AuditContext auditContext;
     private final ClusterPropertyManager clusterPropertyManager;
     private final SsgKeyStoreManager keyStoreManager;
     private final PlatformTransactionManager transactionManager;
@@ -56,12 +55,10 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private static final String SC_PROP_SSL_KEY = ServerConfig.PARAM_KEYSTORE_DEFAULT_SSL_KEY;
 
     public DefaultKeyImpl( final ServerConfig serverConfig,
-                           final AuditContext auditContext,
                            final ClusterPropertyManager clusterPropertyManager,
                            final SsgKeyStoreManager keyStoreManager,
                            final PlatformTransactionManager transactionManager) {
         this.serverConfig = serverConfig;
-        this.auditContext = auditContext;
         this.clusterPropertyManager = clusterPropertyManager;
         this.keyStoreManager = keyStoreManager;
         this.transactionManager = transactionManager;
@@ -106,15 +103,15 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private SsgKeyEntry generateSelfSignedSslCert() throws IOException {
         logger.log(Level.INFO, "No default SSL private key is designated, or the designated SSL private key is not found; " +
                 "creating new self-signed SSL private key and certificate chain");
-        final boolean wasSystem = auditContext.isSystem();
-        auditContext.setSystem(true);
+        final boolean wasSystem = AuditContextUtils.isSystem();
+        AuditContextUtils.setSystem(true);
         try {
             String alias = findUnusedAlias(SC_PROP_SSL_KEY, "SSL");
             SsgKeyStore sks = findFirstMutableKeystore();
             generateKeyPair(sks, alias);
             return configureAsDefaultSslCert(sks, alias);
         } finally {
-            auditContext.setSystem(wasSystem);
+            AuditContextUtils.setSystem(wasSystem);
         }
     }
 

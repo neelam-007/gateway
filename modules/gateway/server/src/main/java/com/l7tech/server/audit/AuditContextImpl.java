@@ -99,16 +99,6 @@ public class AuditContextImpl implements AuditContext {
         this.update = update;
     }
 
-    @Override
-    public boolean isSystem() {
-        return system;
-    }
-
-    @Override
-    public void setSystem(boolean system) {
-        this.system = system;
-    }
-
     public void setKeystore(final DefaultKey keystore) {
         this.keystore = keystore;
     }
@@ -491,7 +481,6 @@ public class AuditContextImpl implements AuditContext {
     private AuditRecord currentRecord;
     /** Indicates if {@link #currentRecord} is to be inserted or updated. */
     private boolean update;
-    private boolean system;
     private Level highestLevelYetSeen = Level.ALL;
     private volatile int ordinal = 0;
 

@@ -6,7 +6,7 @@ import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayException;
 import com.l7tech.server.ems.gateway.GatewayContext;
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
@@ -40,14 +40,12 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
                               final StandardReportManager reportManager,
                               final SsgClusterManager clusterManager,
                               final GatewayContextFactory contextFactory,
-                              final Timer timer,
-                              final AuditContext auditContext ) {
+                              final Timer timer  ) {
         this.transactionManager = transactionManager;
         this.reportManager = reportManager;
         this.clusterManager = clusterManager;
         this.contextFactory = contextFactory;
         this.timer = timer;
-        this.auditContext = auditContext;
     }
 
     /**
@@ -126,11 +124,10 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
     private final SsgClusterManager clusterManager;
     private final GatewayContextFactory contextFactory;
     private final Timer timer;
-    private final AuditContext auditContext;
 
     private void processReport() {
-        boolean wasSystem = auditContext.isSystem();
-        auditContext.setSystem(true);
+        boolean wasSystem = AuditContextUtils.isSystem();
+        AuditContextUtils.setSystem(true);
         try {
             TransactionTemplate template = new TransactionTemplate(transactionManager);
             template.execute( new TransactionCallbackWithoutResult(){
@@ -140,7 +137,7 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
                 }
             } );
         } finally {
-            auditContext.setSystem(wasSystem);
+            AuditContextUtils.setSystem(wasSystem);
         }
     }
 

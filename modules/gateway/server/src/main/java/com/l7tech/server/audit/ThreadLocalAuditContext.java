@@ -63,14 +63,6 @@ public class ThreadLocalAuditContext implements AuditContext, ApplicationContext
         threadLocalDelegate.get().setUpdate(update);
     }
 
-    public boolean isSystem() {
-        return threadLocalDelegate.get().isSystem();
-    }
-
-    public void setSystem(boolean system) {
-        threadLocalDelegate.get().setSystem(system);
-    }
-
     public String[] getContextVariablesUsed() {
         return threadLocalDelegate.get().getContextVariablesUsed();
     }

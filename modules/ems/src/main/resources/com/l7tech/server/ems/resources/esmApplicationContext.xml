@@ -387,9 +387,8 @@
         <constructor-arg index="3" ref="identityProviderConfigManager"/>
         <constructor-arg index="4" ref="roleManager"/>
         <constructor-arg index="5" ref="enterpriseFolderManager" />
-        <constructor-arg index="6" ref="auditContext"/>
-        <constructor-arg index="7" ref="keystoreFileManager"/>
-        <constructor-arg index="8" ref="clusterPropertyManager"/>
+        <constructor-arg index="6" ref="keystoreFileManager"/>
+        <constructor-arg index="7" ref="clusterPropertyManager"/>
         <property name="keyStoreManager" ref="ssgKeyStoreManager"/>
     </bean>
 
@@ -479,10 +478,9 @@
     <!-- keystore root cert and ssl config  -->
     <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl">
         <constructor-arg index="0" ref="serverConfig"/>
-        <constructor-arg index="1" ref="auditContext"/>
-        <constructor-arg index="2" ref="clusterPropertyManager"/>
-        <constructor-arg index="3" ref="ssgKeyStoreManager"/>
-        <constructor-arg index="4" ref="transactionManager"/>
+        <constructor-arg index="1" ref="clusterPropertyManager"/>
+        <constructor-arg index="2" ref="ssgKeyStoreManager"/>
+        <constructor-arg index="3" ref="transactionManager"/>
     </bean>
 
     <bean id="keystoreMutatorSwitch" class="com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore$StartupListener"/>
@@ -512,10 +510,9 @@
                 <constructor-arg value="Gateway poller timer"/>
             </bean>
         </constructor-arg>
-        <constructor-arg index="2" ref="auditContext" />
-        <constructor-arg index="3" ref="ssgClusterManager" />
-        <constructor-arg index="4" ref="gatewayContextFactory" />
-        <constructor-arg index="5" ref="userPropertyManager" />
+        <constructor-arg index="2" ref="ssgClusterManager" />
+        <constructor-arg index="3" ref="gatewayContextFactory" />
+        <constructor-arg index="4" ref="userPropertyManager" />
     </bean>
 
     <bean id="standardReportManager" class="com.l7tech.server.ems.standardreports.StandardReportManagerImpl" parent="hibernateBean">
@@ -532,7 +529,6 @@
                 <constructor-arg value="Report service timer"/>
             </bean>
         </constructor-arg>
-        <constructor-arg index="5" ref="auditContext" />
     </bean>
 
     <bean id="eventPublisher" class="com.l7tech.server.ems.util.ApplicationEventPublisherImpl"/>

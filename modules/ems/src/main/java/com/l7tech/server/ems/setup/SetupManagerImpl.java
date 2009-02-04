@@ -10,7 +10,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.ems.enterprise.EnterpriseFolder;
 import com.l7tech.server.ems.enterprise.EnterpriseFolderManager;
 import com.l7tech.server.ems.listener.ListenerConfigurationUpdatedEvent;
@@ -70,7 +70,6 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
                             final IdentityProviderConfigManager identityProviderConfigManager,
                             final RoleManager roleManager,
                             final EnterpriseFolderManager enterpriseFolderManager,
-                            final AuditContext context,
                             final KeystoreFileManager keystoreFileManager,
                             final ClusterPropertyManager clusterPropertyManager
     ) {
@@ -80,7 +79,6 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
         this.identityProviderConfigManager = identityProviderConfigManager;
         this.roleManager = roleManager;
         this.enterpriseFolderManager = enterpriseFolderManager;
-        this.auditContext = context;
         this.keystoreFileManager = keystoreFileManager;
         this.clusterPropertyManager = clusterPropertyManager;
     }
@@ -222,9 +220,9 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
     public void afterPropertiesSet() {
         final String[] uuidHolder = new String[1];
 
-        final boolean wasSystem = auditContext.isSystem();
+        final boolean wasSystem = AuditContextUtils.isSystem();
         try {
-            auditContext.setSystem(true);
+            AuditContextUtils.setSystem(true);
 
             TransactionTemplate template = new TransactionTemplate(transactionManager);
             template.execute( new TransactionCallbackWithoutResult(){
@@ -320,7 +318,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
                 }
             });
         } finally {
-            auditContext.setSystem( wasSystem );
+            AuditContextUtils.setSystem( wasSystem );
         }
 
         if ( uuidHolder[0] != null ) {
@@ -347,7 +345,6 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
     private final IdentityProviderConfigManager identityProviderConfigManager;
     private final RoleManager roleManager;
     private final EnterpriseFolderManager enterpriseFolderManager;
-    private final AuditContext auditContext;
     private final KeystoreFileManager keystoreFileManager;
     private final ClusterPropertyManager clusterPropertyManager;
     private SsgKeyStoreManager keyStoreManager;

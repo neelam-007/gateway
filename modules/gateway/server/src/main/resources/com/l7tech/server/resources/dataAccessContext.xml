@@ -180,8 +180,6 @@
     </bean>
 
     <!-- The audit events hibernate interceptor -->
-    <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor">
-        <constructor-arg index="0" ref="auditContext"/>
-    </bean>
+    <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor"/>
 
 </beans>

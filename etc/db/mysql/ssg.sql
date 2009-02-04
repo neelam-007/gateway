@@ -789,18 +789,19 @@ CREATE TABLE keystore_file (
   name varchar(128) NOT NULL,
   format varchar(128) NOT NULL,
   databytes mediumblob,
+  properties mediumtext,
   PRIMARY KEY (objectid),
   UNIQUE(name)
 ) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
 
 -- placeholder, never loaded or saved
-insert into keystore_file values (0, 0, "Software Static", "ss", null);
+insert into keystore_file values (0, 0, "Software Static", "ss", null, null);
 
 -- tar.gz of items in sca 6000 keydata directory
-insert into keystore_file values (1, 0, "HSM", "hsm.sca.targz", null);
+insert into keystore_file values (1, 0, "HSM", "hsm.sca.targz", null, null);
 
 -- bytes of a PKCS#12 keystore
-insert into keystore_file values (2, 0, "Software DB", "sdb.pkcs12", null);
+insert into keystore_file values (2, 0, "Software DB", "sdb.pkcs12", null, null);
 
 DROP TABLE IF EXISTS shared_keys;
 CREATE TABLE shared_keys (

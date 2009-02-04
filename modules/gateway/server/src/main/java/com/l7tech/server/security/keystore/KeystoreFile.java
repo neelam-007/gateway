@@ -1,6 +1,8 @@
 package com.l7tech.server.security.keystore;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.common.io.NonCloseableOutputStream;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -9,6 +11,12 @@ import javax.persistence.Basic;
 import javax.persistence.FetchType;
 import javax.persistence.Lob;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.HashMap;
+import java.beans.XMLDecoder;
+import java.beans.XMLEncoder;
+import java.io.ByteArrayInputStream;
+import java.io.UnsupportedEncodingException;
 
 /**
  * Represents raw keystore data stored in a row of the "keystore" table.
@@ -23,11 +31,13 @@ import java.util.Arrays;
 @Table(name="keystore_file")
 public class KeystoreFile extends NamedEntityImp {
     private static final long serialVersionUID = 7293792837442132345L;
+    private static final String PROPERTIES_ENCODING = "UTF-8";
 
     @Column(name="format", nullable=false, length=128)
     private String format;
     private byte[] databytes;
-
+    private transient String xmlProperties;
+    private Map<String, String> properties;
 
     public String getFormat() {
         return format;
@@ -47,6 +57,65 @@ public class KeystoreFile extends NamedEntityImp {
     public void setDatabytes(byte[] databytes) {
         this.databytes = databytes;
     }
+
+    @Column(name="properties",length=Integer.MAX_VALUE)
+    @Lob
+    public String getXmlProperties() {
+        if ( xmlProperties == null ) {
+            Map<String, String> properties = this.properties;
+            if ( properties == null ) return null;
+            BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
+            try {
+                XMLEncoder xe = new XMLEncoder(new NonCloseableOutputStream(baos));
+                xe.writeObject(properties);
+                xe.close();
+                xmlProperties = baos.toString(PROPERTIES_ENCODING);
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e); // Can't happen
+            } finally {
+                baos.close();
+            }
+        }
+        return xmlProperties;
+    }
+
+    public void setXmlProperties( final String xml ) {
+        if (xml != null && xml.equals(xmlProperties)) return;
+        this.xmlProperties = xml;
+        if ( xml != null && xml.length() > 0 ) {
+            try {
+                XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
+                //noinspection unchecked
+                this.properties = (Map<String, String>)xd.readObject();
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e); // Can't happen
+            }
+        }
+    }
+
+    public String getProperty( final String propertyName ) {
+        String propertyValue = null;
+
+        Map<String,String> properties = this.properties;
+        if (properties != null) {
+            propertyValue = properties.get(propertyName);
+        }
+
+        return propertyValue;
+    }
+
+    public void setProperty( final String propertyName, final String propertyValue ) {
+        Map<String,String> properties = this.properties;
+        if (properties == null) {
+            properties = new HashMap<String, String>();
+            this.properties = properties;
+        }
+
+        properties.put(propertyName, propertyValue);
+
+        // invalidate cached properties
+        xmlProperties = null;
+    }    
 
     /** @noinspection RedundantIfStatement*/
     public boolean equals(Object o) {

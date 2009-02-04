@@ -41,13 +41,6 @@ public class AuditContextStub implements AuditContextStubInt {
     public void setUpdate(boolean update) {
     }
 
-    public boolean isSystem() {
-        return false;
-    }
-
-    public void setSystem(boolean system) {
-    }
-
     public Set<AuditDetailMessage.Hint> getHints() {
         return Collections.emptySet();
     }

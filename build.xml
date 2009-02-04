@@ -2705,6 +2705,7 @@
             <fileset dir="${src.root}/etc">
                 <include name="gateway.sh"/>
                 <include name="setup.sh"/>
+                <include name="upgrade.sh"/>
             </fileset>
         </copy>
 

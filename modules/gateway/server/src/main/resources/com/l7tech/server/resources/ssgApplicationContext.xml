@@ -637,7 +637,6 @@
     <!-- server side client cert manager -->
     <bean id="clientCertManager" class="com.l7tech.server.identity.cert.ClientCertManagerImp">
         <constructor-arg ref="defaultKey"/>
-        <constructor-arg ref="auditContext"/>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
@@ -694,10 +693,9 @@
     <!-- keystore root cert and ssl config  -->
     <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl">
         <constructor-arg index="0" ref="serverConfig"/>
-        <constructor-arg index="1" ref="auditContext"/>
-        <constructor-arg index="2" ref="clusterPropertyManager"/>
-        <constructor-arg index="3" ref="ssgKeyStoreManager"/>
-        <constructor-arg index="4" ref="transactionManager"/>
+        <constructor-arg index="1" ref="clusterPropertyManager"/>
+        <constructor-arg index="2" ref="ssgKeyStoreManager"/>
+        <constructor-arg index="3" ref="transactionManager"/>
     </bean>
     <bean id="keystoreMutatorSwitch" class="com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore$StartupListener"/>
 
@@ -850,7 +848,6 @@
     <bean id="gatewaySanityChecker" class="com.l7tech.server.util.GatewaySanityChecker">
         <constructor-arg ref="transactionManager"/>
         <constructor-arg ref="clusterPropertyManager"/>
-        <constructor-arg ref="auditContext"/>
         <property name="earlyTasks">
             <list>
                 <bean class="com.l7tech.server.security.keystore.DefaultKeystoreFilePopulator">
@@ -1086,7 +1083,6 @@
 
     <bean id="httpTransportModule" class="com.l7tech.server.transport.http.HttpTransportModule" depends-on="systemAuditListener">
         <constructor-arg ref="serverConfig"/>
-        <constructor-arg ref="auditContext"/>
         <constructor-arg ref="masterPasswordManager"/>
         <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="ssgKeyStoreManager"/>
@@ -1219,7 +1215,6 @@
 
     <bean id="migrationApiImpl" class="com.l7tech.server.migration.MigrationApiImpl">
         <constructor-arg index="0" ref="migrationManager"/>
-        <constructor-arg index="1" ref="auditContext"/>
     </bean>
 
     <bean id="systemClassLoader" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">

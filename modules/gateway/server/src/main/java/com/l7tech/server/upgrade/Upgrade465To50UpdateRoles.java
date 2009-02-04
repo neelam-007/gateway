@@ -35,22 +35,21 @@ public class Upgrade465To50UpdateRoles implements UpgradeTask {
      * Get a bean safely.
      *
      * @param name the bean to get.  Must not be null.
+     * @param beanClass the class of the bean to get. Must not be null.
      * @return the requested bean.  Never null.
      * @throws com.l7tech.server.upgrade.FatalUpgradeException  if there is no application context or the requested bean was not found
      */
-    private Object getBean( final String name ) throws FatalUpgradeException {
+    private Object getBean( final String name, final Class beanClass ) throws FatalUpgradeException {
         if (applicationContext == null) throw new FatalUpgradeException("ApplicationContext is required");
-        Object bean = applicationContext.getBean(name);
-        if (bean == null) throw new FatalUpgradeException("No bean " + name + " is available");
-        return bean;
+        return applicationContext.getBean(name, beanClass);
     }
 
     @Override
     public void upgrade( final ApplicationContext applicationContext ) throws FatalUpgradeException, NonfatalUpgradeException {
         this.applicationContext = applicationContext;
 
-        FolderManager folderManager = (FolderManager)getBean("folderManager");
-        RoleManager roleManager = (RoleManager)getBean("roleManager");
+        FolderManager folderManager = (FolderManager)getBean("folderManager",FolderManager.class);
+        RoleManager roleManager = (RoleManager)getBean("roleManager",RoleManager.class);
 
         try {
             addRolesForFolders(folderManager, roleManager);
