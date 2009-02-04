@@ -266,7 +266,7 @@ public class GlobalSchemaDialog extends JDialog {
             if (err != null) {
                 String text = "Unable to save schema entry: " + ExceptionUtils.getMessage(err);
                 logger.log(Level.WARNING, text, err);
-                showErrorMessage(text);
+                JOptionPane.showMessageDialog(this, text, "Unable to save schema entry", JOptionPane.ERROR_MESSAGE);
             }
 
             // pickup all changes from gateway
