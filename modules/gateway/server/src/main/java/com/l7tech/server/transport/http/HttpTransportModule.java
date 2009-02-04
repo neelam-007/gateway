@@ -882,6 +882,19 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     /**
+     * Asserts that the specified servlet request arrived over a connector is using the specified key alias.
+     *
+     * @param req   The http servlet request to be examined.  Required.
+     * @param keyAlias  The key alias to be compared with.  Required.
+     * @return  TRUE if the specified servlet request is using the specified key.  Otherwise FALSE.
+     */
+    public static boolean isKeyActive(HttpServletRequest req, String keyAlias) {
+        if (keyAlias == null) return false;
+        SsgConnector connector = getConnector(req);
+        return connector != null && keyAlias.equalsIgnoreCase(connector.getKeyAlias());
+    }
+
+    /**
      * Get the SsgKeyStoreManager instance made available for SSL connectors created by this transport module.
      *
      * @return an SsgKeyStoreManager instance.  Should never be null.

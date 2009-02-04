@@ -8,6 +8,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
@@ -23,6 +24,7 @@ import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SslCertificateSniffer;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -231,6 +233,11 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             SsgKeyStore store = keyFinder.getKeyStore();
             if (store == null)
                 throw new DeleteException("Unable to delete key: keystore id " + keystoreId + " is read-only");
+
+            //check if key is in use
+            if (HttpTransportModule.isKeyActive(RemoteUtils.getHttpServletRequest(), keyAlias))
+                throw new DeleteException("Key '" + keyAlias + "' is in use");
+
             Future<Boolean> result = store.deletePrivateKeyEntry(keyAlias);
             // Force it to be synchronous (Bug #3852)
             result.get();
