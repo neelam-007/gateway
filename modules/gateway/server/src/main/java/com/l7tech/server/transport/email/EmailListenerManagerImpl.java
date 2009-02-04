@@ -167,7 +167,7 @@ public class EmailListenerManagerImpl
 
                     long now = System.currentTimeMillis();
                     List<EmailListener> results = crit.list();
-                    if (results != null || results.size() > 0) {
+                    if (results != null && results.size() > 0) {
                         List<EmailListener> newResults = new ArrayList<EmailListener>();
                         for (EmailListener emailListener : results) {
                             if (emailListener.getEmailListenerState() != null && now - emailListener.getPollInterval() * 5 * 1000 > emailListener.getEmailListenerState().getLastPollTime()) {

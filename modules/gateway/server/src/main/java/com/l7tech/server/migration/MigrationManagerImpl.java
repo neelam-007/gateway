@@ -196,13 +196,13 @@ public class MigrationManagerImpl implements MigrationManager {
                         boolean overwriteExisting, boolean enableServices, boolean dryRun, boolean isRecursing)
         throws MigrationApi.MigrationException, UpdateException, SaveException {
 
+        MigrationMetadata metadata = bundle.getMetadata();
+
         if (result.containsKey(header)) {
-            if (isRecursing)
+            if (isRecursing && ! metadata.hasHeader(header))
                 logger.log(Level.WARNING, "Circular dependency reached during entity upload for header {0}.", header);
             return;
         }
-
-        MigrationMetadata metadata = bundle.getMetadata();
 
         // determine the upload operation
         MigratedItem.ImportOperation op = metadata.wasCopied(header) ?

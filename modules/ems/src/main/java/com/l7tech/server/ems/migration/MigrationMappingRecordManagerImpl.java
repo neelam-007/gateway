@@ -140,27 +140,21 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
     private final SsgClusterManager ssgClusterManager;
 
     private MigrationMappingRecord findByMapping( final SsgCluster sourceCluster,
-                                                  final EntityHeaderRef sourceEntityHeader,
+                                                  final ExternalEntityHeader sourceEntityHeader,
                                                   final SsgCluster targetCluster,
-                                                  final EntityHeaderRef targetEntityHeader ) throws FindException {
+                                                  final ExternalEntityHeader targetEntityHeader ) throws FindException {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put( "sourceCluster", sourceCluster );
         map.put( "targetCluster", targetCluster );
 
         if ( sourceEntityHeader != null  ) {
             map.put("source.entityType", sourceEntityHeader.getType());
-            if ( sourceEntityHeader instanceof IdentityHeader ) {
-                map.put("source.entityProviderId", ((IdentityHeader)sourceEntityHeader).getProviderOid());
-            }
-            map.put("source.entityId", sourceEntityHeader.getStrId());
+            map.put("source.entityId", sourceEntityHeader.getExternalId());
         }
 
         if ( targetEntityHeader != null  ) {
             map.put("target.entityType", targetEntityHeader.getType());
-            if ( targetEntityHeader instanceof IdentityHeader ) {
-                map.put("target.entityProviderId", ((IdentityHeader)targetEntityHeader).getProviderOid());
-            }
-            map.put("target.entityId", targetEntityHeader.getStrId());
+            map.put("target.entityId", targetEntityHeader.getExternalId());
         }
 
         List<MigrationMappingRecord> result = findMatching(Arrays.asList(map));
