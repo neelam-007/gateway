@@ -474,6 +474,11 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         boolean allIdentitiesAreFederated = true;
         while (it.hasNext()) {
             Assertion a = (Assertion)it.next();
+            if (!a.isEnabled()) {
+                logger.fine("Assertion is disabled, ignore assertion.");
+                continue;
+            }
+
             if (a instanceof CustomAssertionHolder) {
                 CustomAssertionHolder ca = (CustomAssertionHolder)a;
                 if (Category.ACCESS_CONTROL.equals(ca.getCategory())) {
