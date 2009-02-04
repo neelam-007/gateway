@@ -121,12 +121,6 @@ public class Exporter {
         //check whether mapping option was used
         if(arguments.get(MAPPING_PATH.name) != null) mappingEnabled = true;
 
-//        //parititons have names like "dev", "prod" etc. so we'll use that instead of integers.
-//        String partName = arguments.get("-p");
-//        if ( partName!=null && !"default_".equals(partName) ) {
-//            throw new FlashUtilityLauncher.InvalidArgumentException("Partitions are no longer supported.");
-//        }
-
         File confDir = new File(flasherHome, "../../node/default/etc/conf");
         tmpDirectory = createTmpDirectory();
 
@@ -222,7 +216,7 @@ public class Exporter {
             return false;
         }
         (new File(path)).delete();
-        logger.info("tested write permission for " + path);
+        logger.info("successfully tested write permission for " + path);
         return true;
     }
 
