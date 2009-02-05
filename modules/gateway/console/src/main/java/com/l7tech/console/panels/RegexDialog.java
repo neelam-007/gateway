@@ -342,7 +342,7 @@ public class RegexDialog extends JDialog {
         replaceTextArea.setEnabled(rep);
         testResultLabel.setText(rep
                 ? "Test Result (After Replace)"
-                : "Test Result (Showing Matches)");
+                : "Test Result (Highlighting Matches)");
     }
 
     private void updatePattern() {
