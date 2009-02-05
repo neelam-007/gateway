@@ -145,6 +145,8 @@
 
         var ALL_PROPERTY_TYPES = l7.Util.getPropertyValues(l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY, l7.Constants.SSG_NODE_MONITORING_PROPERTY);
 
+        var monitoringSetup;
+
         var samplingIntervalTextBoxes = {};         // map key is property type
         var samplingIntervalWarningIcons = {};      // map key is property type
         var defaultTriggerValueTextBoxes = {};      // map key is property type
@@ -213,6 +215,7 @@
         var deleteNotificationRuleDialog;
 
         var monDlg;
+        var monDlg_readOnly;
         var monDlg_entityId;
         var monDlg_propertyType;
         var monDlg_entityTypeLabel;
@@ -240,6 +243,7 @@
          * @type array
          */
         var availableNotificationRules = [];
+        var availableNotificationRulesReadOnly = false;
 
         /**
          * The enterpries tree table object.
@@ -342,6 +346,8 @@
         function validateSetup() {
             var valid = true;
 
+            l7.Util.setInputFieldsEnabled(monitoringSetup, !currentSetup.readOnly);
+
             for (var i = 0; i < ALL_PROPERTY_TYPES.length; ++i) {
                 var propertyType = ALL_PROPERTY_TYPES[i];
 
@@ -389,7 +395,8 @@
                 }
             }
 
-            saveMonitoringSetupButton.set('disabled', !valid);
+            saveMonitoringSetupButton.set('disabled', !valid || currentSetup.readOnly);
+            revertMonitoringSetupButton.set('disabled', currentSetup.readOnly);
             return valid;
         }
 
@@ -398,6 +405,8 @@
          */
         function validateNotificationRuleDialog() {
             var valid = true;
+
+            l7.Util.setInputFieldsEnabled(addOrEditNotificationRuleDialog.body, !availableNotificationRulesReadOnly);
 
             if (l7.Util.isBlankOnly(notifDlg_nameTextBox.value)) valid = false;
 
@@ -427,10 +436,10 @@
                     notifDlg_eMail_portWarningIcon.title = '';
                 }
                 if (notifDlg_eMail_requiresAuthenticationCheckBox.checked) {
-                    notifDlg_eMail_userNameTextBox.disabled = false;
-                    notifDlg_eMail_useOldPasswordRadioButton.disabled = false;
-                    notifDlg_eMail_useNewPasswordRadioButton.disabled = false;
-                    notifDlg_eMail_passwordTextBox.disabled = !notifDlg_eMail_useNewPasswordRadioButton.checked;
+                    notifDlg_eMail_userNameTextBox.disabled = availableNotificationRulesReadOnly;
+                    notifDlg_eMail_useOldPasswordRadioButton.disabled = availableNotificationRulesReadOnly;
+                    notifDlg_eMail_useNewPasswordRadioButton.disabled = availableNotificationRulesReadOnly;
+                    notifDlg_eMail_passwordTextBox.disabled = !notifDlg_eMail_useNewPasswordRadioButton.checked || availableNotificationRulesReadOnly;
                     if (l7.Util.isBlankOnly(notifDlg_eMail_userNameTextBox.value)) valid = false;
                 } else {
                     notifDlg_eMail_userNameTextBox.disabled = true;
@@ -445,7 +454,7 @@
                 }
             } else if (selectedType == l7.Constants.NOTIFICATION_TYPE.SNMP_TRAP) {
                 if (l7.Util.isBlankOnly(notifDlg_snmpTrap_hostTextBox.value)) valid = false;
-                notifDlg_snmpTrap_customPortTextBox.disabled = !notifDlg_snmpTrap_customPortRadioButton.checked;
+                notifDlg_snmpTrap_customPortTextBox.disabled = !notifDlg_snmpTrap_customPortRadioButton.checked || availableNotificationRulesReadOnly;
                 if (notifDlg_snmpTrap_customPortRadioButton.checked) {
                     if (l7.Util.isBlankOnly(notifDlg_snmpTrap_customPortTextBox.value)) {
                         notifDlg_snmpTrap_customPortWarningIcon.style.display = 'none';
@@ -486,16 +495,16 @@
             } else if (selectedType == l7.Constants.NOTIFICATION_TYPE.HTTP_REQUEST) {
                 if (l7.Util.isBlankOnly(notifDlg_httpRequest_urlTextBox.value)) valid = false;
                 var isPost = notifDlg_httpRequest_methodDropDown.value == 'POST';
-                notifDlg_httpRequest_standardContentTypeRadioButton.disabled = !isPost;
-                notifDlg_httpRequest_standardContentTypeDropDown.disabled = !isPost;
-                notifDlg_httpRequest_customContentTypeRadioButton.disabled = !isPost;
-                notifDlg_httpRequest_customContentTypeTextBox.disabled = !isPost;
-                notifDlg_httpRequest_insertButton.set('disabled', !isPost);
-                notifDlg_httpRequest_insertDropDown.disabled = !isPost;
-                notifDlg_httpRequest_bodyTextArea.disabled = !isPost;
+                notifDlg_httpRequest_standardContentTypeRadioButton.disabled = !isPost || availableNotificationRulesReadOnly;
+                notifDlg_httpRequest_standardContentTypeDropDown.disabled = !isPost || availableNotificationRulesReadOnly;
+                notifDlg_httpRequest_customContentTypeRadioButton.disabled = !isPost || availableNotificationRulesReadOnly;
+                notifDlg_httpRequest_customContentTypeTextBox.disabled = !isPost || availableNotificationRulesReadOnly;
+                notifDlg_httpRequest_insertButton.set('disabled', !isPost || availableNotificationRulesReadOnly);
+                notifDlg_httpRequest_insertDropDown.disabled = !isPost || availableNotificationRulesReadOnly;
+                notifDlg_httpRequest_bodyTextArea.disabled = !isPost || availableNotificationRulesReadOnly;
                 if (notifDlg_httpRequest_methodDropDown.value == 'POST') {
-                    notifDlg_httpRequest_standardContentTypeDropDown.disabled = !notifDlg_httpRequest_standardContentTypeRadioButton.checked;
-                    notifDlg_httpRequest_customContentTypeTextBox.disabled = !notifDlg_httpRequest_customContentTypeRadioButton.checked;
+                    notifDlg_httpRequest_standardContentTypeDropDown.disabled = !notifDlg_httpRequest_standardContentTypeRadioButton.checked || availableNotificationRulesReadOnly;
+                    notifDlg_httpRequest_customContentTypeTextBox.disabled = !notifDlg_httpRequest_customContentTypeRadioButton.checked || availableNotificationRulesReadOnly;
                     if (!notifDlg_httpRequest_customContentTypeTextBox.disabled &&
                         l7.Util.isBlankOnly(notifDlg_httpRequest_customContentTypeTextBox.value)) valid = false;
                 }
@@ -504,7 +513,7 @@
             }
 
             var saveButton = addOrEditNotificationRuleDialog.getButtons()[0];
-            saveButton.set('disabled', !valid);
+            saveButton.set('disabled', !valid || availableNotificationRulesReadOnly);
             return valid;
         }
 
@@ -514,14 +523,16 @@
         function validateMonitoringPropertyDialog() {
             var valid = true;
 
-            monDlg_triggerEnabledCheckBox.disabled = !monDlg_enabledCheckBox.checked;
+            l7.Util.setInputFieldsEnabled(monDlg.body, !monDlg_readOnly);
+
+            monDlg_triggerEnabledCheckBox.disabled = !monDlg_enabledCheckBox.checked || monDlg_readOnly;
             var triggerValueTextBox = monDlg_triggerValueTextBoxes[monDlg_propertyType.value];
             if (triggerValueTextBox) {
                 var triggerEnabled = !monDlg_triggerEnabledCheckBox.disabled &&
                                      monDlg_triggerEnabledCheckBox.checked;
-                triggerValueTextBox.disabled = !triggerEnabled;
+                triggerValueTextBox.disabled = !triggerEnabled || monDlg_readOnly;
                 monDlg_useDefaultTriggerValueButton.setStyle('display', '');
-                monDlg_useDefaultTriggerValueButton.set('disabled', !triggerEnabled);
+                monDlg_useDefaultTriggerValueButton.set('disabled', !triggerEnabled || monDlg_readOnly);
                 if (triggerEnabled) {
                     if (l7.Util.isIntString(triggerValueTextBox.value)) {
                         var triggerValue = parseInt(triggerValueTextBox.value, 10);
@@ -561,15 +572,16 @@
                                                           !monDlg_triggerEnabledCheckBox.checked;
 
             var saveButton = monDlg.getButtons()[0];
-            saveButton.set('disabled', !valid);
+            saveButton.set('disabled', !valid || monDlg_readOnly);
             return true;
         }
 
         function updateNotificationRuleButtons() {
             var selectedRows = notificationRulesDataTable.getSelectedTrEls();
             var hasSelectedRows = (selectedRows != null) && (selectedRows.length != 0);
+            addNotificationRuleButton.set('disabled', availableNotificationRulesReadOnly);
             editNotificationRuleButton.set('disabled', !hasSelectedRows);
-            deleteNotificationRuleButton.set('disabled', !hasSelectedRows);
+            deleteNotificationRuleButton.set('disabled', !hasSelectedRows || availableNotificationRulesReadOnly);
         }
 
         /**
@@ -655,7 +667,7 @@
                     } else if (result.json.reconfirm != undefined && result.json.reconfirm == true) {
                         // Server is asking for reconfirmation because name already exists.
                         // Launch the dialog to reconfirm the SSG Cluster deletion.
-                        document.getElementById('saveNotificationRuleOverwriteDialog_name').innerHTML = l7.Util.escapeAsText(settings.name);
+                        document.getElementById('saveNotificationRuleOverwriteDialog_name').innerHTML = l7.Util.escapeHtmlText(settings.name);
                         saveNotificationRuleOverwriteDialog.show();
                     }
                 }
@@ -822,7 +834,7 @@
                 var tr = notificationRulesDataTable.getSelectedTrEls()[0];
                 var record = notificationRulesDataTable.getRecord(tr);
                 notifDlg_id.value = record.getData('id');
-                notifDlg_nameTextBox.value = l7.Util.escapeHtmlText(record.getData('name'));
+                notifDlg_nameTextBox.value = record.getData('name');
                 var notificationType = record.getData('type');
                 l7.Widget.selectDropDownByValue(notifDlg_typeDropDown, notificationType);
 
@@ -927,6 +939,7 @@
                 return;
             }
 
+            monDlg_readOnly = settings.readOnly;
             monDlg_entityId.value = entity.id;
             monDlg_propertyType.value = propertyType;
             monDlg_entityTypeLabel.innerHTML = '';
@@ -1122,7 +1135,10 @@
                             {key:'type'},
                             {key:'params'}
                         ],
-                        metaFields  : {totalRecords:'totalRecords'}
+                        metaFields  : {
+                            readOnly     : 'readOnly',
+                            totalRecords : 'totalRecords'
+                        }
                     }
                 });
 
@@ -1134,8 +1150,12 @@
                 });
             notificationRulesDataTable.set('selectionMode', 'single');
             notificationRulesDataTable.subscribe('rowClickEvent', notificationRulesDataTable.onEventSelectRow);
+            notificationRulesDataTable.handleDataReturnPayload = function(oRequest, oResponse, oPayload) {
+                availableNotificationRulesReadOnly = oResponse.meta.readOnly;
+                return oPayload;
+            }
 
-            // Subscribes to user account selection changes for enabling/disabling toolbar buttons.
+            // Subscribes to selection changes for enabling/disabling toolbar buttons.
             notificationRulesDataTable.subscribe("rowSelectEvent", updateNotificationRuleButtons);
             notificationRulesDataTable.subscribe("rowUnSelectEvent", updateNotificationRuleButtons);
 
@@ -1389,6 +1409,8 @@
             debugLogReader.hide();   // Initially hidden.
 
             // Precomputes UI element references for efficiency.
+            monitoringSetup = document.getElementById('monitoringSetup');
+
             disableAllNotificationCheckBox = document.getElementById('disableAllNotificationCheckBox');
             auditUponAlertStateCheckBox = document.getElementById('auditUponAlertStateCheckBox');
             auditUponNormalStateCheckBox = document.getElementById('auditUponNormalStateCheckBox');
@@ -1583,7 +1605,7 @@
                     <div class="panelTitle tippy"><img id="setupPanelTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'setupPanel'); notificationRulesDataTable.render();" /><span class="clickable" onclick="l7.Tippy.toggleTippy('setupPanelTippy', 'setupPanel'); notificationRulesDataTable.render();">Monitoring Setup</span></div>
                     <div id="setupPanel">
                         <div class="panelContent">
-                            <table class="spaced">
+                            <table id="monitoringSetup" class="spaced">
                                 <tr>
                                     <th class="top">Property Settings:</th>
                                     <td>

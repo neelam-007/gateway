@@ -381,6 +381,38 @@ if (!l7.Util) {
         }
 
         /**
+         * Enables/Disables all input fields including <input>, <button>, <select> and <textarea> elements
+         * inside a given starting element.
+         * @param {HTMLElement} startElement    the element to start searching from
+         * @param {boolean} enabled             true to enable; false to disable
+         */
+        l7.Util.setInputFieldsEnabled = function(startElement, enabled) {
+            var fields = startElement.getElementsByTagName('input');
+            for (var i = 0; i < fields.length; ++i) {
+                fields[i].disabled = !enabled;
+            }
+            fields = startElement.getElementsByTagName('button');
+            for (i = 0; i < fields.length; ++i) {
+                // Could be a plain button or used to construct a YUI button.
+                if (fields[i].id &&
+                    fields[i].id.match(/-button$/) &&
+                    YAHOO.widget.Button.getButton(fields[i].id.replace(/-button$/, ''))) {
+                    YAHOO.widget.Button.getButton(fields[i].id.replace(/-button$/, '')).set('disabled', !enabled);
+                } else {
+                    fields[i].disabled = !enabled;
+                }
+            }
+            fields = startElement.getElementsByTagName('select');
+            for (i = 0; i < fields.length; ++i) {
+                fields[i].disabled = !enabled;
+            }
+            fields = startElement.getElementsByTagName('textarea');
+            for (i = 0; i < fields.length; ++i) {
+                fields[i].disabled = !enabled;
+            }
+        }
+
+        /**
          * Returns a string with all special character properly esacped for use as HTML text.
          *
          * @static
