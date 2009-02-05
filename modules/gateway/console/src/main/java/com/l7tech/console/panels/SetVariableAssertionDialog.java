@@ -181,7 +181,10 @@ public class SetVariableAssertionDialog extends JDialog {
         _contentTypeTextField.setText(assertion.getContentType());
 
         // JTextArea likes all line break to be LF.
-        final String expression = TextUtils.convertLineBreaks(assertion.expression(), "\n").trim();
+        String expression = TextUtils.convertLineBreaks(assertion.expression(), "\n");
+        if (expression != null)
+            expression = expression.trim();
+
         _expressionTextArea.setText(expression);
 
         if (assertion.getLineBreak() == LineBreak.LF) {
