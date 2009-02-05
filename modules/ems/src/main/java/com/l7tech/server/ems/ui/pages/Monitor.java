@@ -5,14 +5,24 @@ import com.l7tech.server.ems.enterprise.JSONException;
 import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.server.ems.monitoring.SystemMonitoringSetupSettingsManager;
 import com.l7tech.server.ems.monitoring.InvalidMonitoringSetupSettingException;
+import com.l7tech.server.ems.monitoring.SystemMonitoringNotificationRule;
+import com.l7tech.server.ems.monitoring.SystemMonitoringNotificationRulesManager;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.objectmodel.*;
+import com.l7tech.util.ExceptionUtils;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Collection;
 
 import org.apache.wicket.spring.injection.annot.SpringBean;
+import org.apache.wicket.markup.html.form.HiddenField;
+import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.model.Model;
 import org.mortbay.util.ajax.JSON;
 
 /**
@@ -28,12 +38,67 @@ public class Monitor extends EsmStandardWebPage {
     @SpringBean(name="systemMonitoringSetupSettingsManager")
     private SystemMonitoringSetupSettingsManager systemMonitoringSetupSettingsManager;
 
+    @SpringBean(name="systemMonitoringNotificationRulesManager")
+    private SystemMonitoringNotificationRulesManager systemMonitoringNotificationRulesManager;
+
+    @SpringBean
+    private RoleManager roleManager;
+
+    private boolean isReadOnly;
+
     public Monitor() {
+        isReadOnly = checkReadOnly();
+
         // Wicket component for getting system monitoring setup settings
         add(new JsonInteraction("getSystemMonitoringSetupSettings", "getSystemMonitoringSetupSettingsUrl", new GettingSystemMonitoringSetupSettingsDataProvider()));
 
         // Wicket component for saving system monitoring setup settings
         add(new JsonPostInteraction("saveSystemMonitoringSetupSettings", "saveSystemMonitoringSetupSettingsUrl", new SavingSystemMonitoringSetupSettingsDataProvider()));
+
+        // Wicket component for getting system monitoring notification rules
+        add(new JsonInteraction("getSystemMonitoringNotificationRules", "getSystemMonitoringNotificationRulesUrl", new GettingSystemMonitoringNotificationRulesDataProvider()));
+
+        // Wicket component for saving/editing a system monitoring notification rule
+        add(new JsonPostInteraction("saveSystemMonitoringNotificationRule", "saveSystemMonitoringNotificationRuleUrl", new SavingSystemMonitoringNotificationRuleDataProvider()));
+
+        // Wicket component for deleting a system monitoring notification rule
+        final HiddenField deleteNotificationRuleDialog_id = new HiddenField("deleteNotificationRuleDialog_id", new Model(""));
+        Form deleteNotificationRuleForm = new JsonDataResponseForm("deleteNotificationRuleForm") {
+            @Override
+            protected Object getJsonResponseData() {
+                String guid = (String)deleteNotificationRuleDialog_id.getConvertedInput();
+                try {
+                    systemMonitoringNotificationRulesManager.deleteByGuid(guid);
+                    logger.fine("Deleting a system monitoring notification rule (GUID = "+ guid + ").");
+                    return null;    // No response object expected if successful.
+                } catch (Exception e) {
+                    String errmsg = "Cannot delete the system monitoring notification rule (GUID = '" + guid + "').";
+                    logger.warning(errmsg);
+                    return new JSONException(new Exception(errmsg, e));
+                }
+            }
+        };
+        deleteNotificationRuleForm.add(deleteNotificationRuleDialog_id);
+        add(deleteNotificationRuleForm);
+    }
+
+    /**
+     * Check if the user has read permission in the Monitor Page.
+     * @return true if the user has only read permission.
+     */
+    private boolean checkReadOnly() {
+        boolean readonly = true;
+        try {
+            for (Role role: roleManager.getAssignedRoles(getUser())) {
+                if (role.getTag().equals(Role.Tag.ADMIN)) {
+                    readonly = false;
+                    break;
+                }
+            }
+        } catch (FindException e) {
+            logger.warning("Cannot find roles for the user (NAME = '" + getUser().getName() + "').");
+        }
+        return readonly;
     }
 
     /**
@@ -47,7 +112,6 @@ public class Monitor extends EsmStandardWebPage {
                 Map<String, Object> setupSettings = systemMonitoringSetupSettingsManager.findSetupSettings();
                 return toJsonFormat(setupSettings);
             } catch (Exception e) {
-                e.printStackTrace();
                 return new JSONException(new Exception("Cannot load the settings of the system monitoring setup.", e));
             }
         }
@@ -62,6 +126,79 @@ public class Monitor extends EsmStandardWebPage {
      * Data provider for saving system monitoring setup settings.
      */
     private final class SavingSystemMonitoringSetupSettingsDataProvider implements JsonDataProvider {
+        private Object returnValue;
+
+        @Override
+        public Object getData() {
+            return returnValue;
+        }
+
+        @Override
+        public void setData(Object jsonData) {
+            if (jsonData instanceof JSONException ){
+                //some exception happened whilst trying to retrieve the payload from upload
+                returnValue = jsonData;
+            } else if (jsonData instanceof String) {
+                Object jsonDataObj;
+                try {
+                    jsonDataObj = JSON.parse(jsonData.toString());
+                } catch(Exception e){
+                    logger.log(Level.FINER, "Cannot parse uploaded JSON data", e.getCause());
+                    returnValue = new JSONException(new Exception("Cannot parse uploaded JSON data", e.getCause()));
+                    return;
+                }
+
+                if (!(jsonDataObj instanceof Map)) {
+                    logger.log(Level.FINER, "Incorrect JSON data. Not convertible to a Map");
+                    returnValue = new JSONException(new Exception("Incorrect JSON data. Not convertible to a Map"));
+                    return;
+                }
+
+                Map<String, Object> jsonFormatMap = (Map<String, Object>) jsonDataObj;
+
+                try {
+                    Map<String, Object> clusterPropertyFormatMap = toClusterPropertyFormat(jsonFormatMap);
+                    systemMonitoringSetupSettingsManager.saveSetupSettings(clusterPropertyFormatMap);
+                } catch (Exception e) {
+                    returnValue = new JSONException(new Exception("Cannot save the system monitoring setup settings.", e));
+                }
+            } else {
+                returnValue = new JSONException(new IllegalArgumentException("jsonData must be either a JSONException or a JSON formatted String"));
+            }
+        }
+    }
+
+    /**
+     * Data provider for getting system monitoring setup settings.
+     */
+    private final class GettingSystemMonitoringNotificationRulesDataProvider implements JsonDataProvider {
+
+        @Override
+        public Object getData() {
+            try {
+                Collection<SystemMonitoringNotificationRule> notificationRules = systemMonitoringNotificationRulesManager.findAll();
+                Map<String, Object> jsonDataMap = new HashMap<String, Object>();
+                if (notificationRules != null && !notificationRules.isEmpty()) {
+                    jsonDataMap.put(JSONConstants.READONLY, isReadOnly);
+                    jsonDataMap.put(JSONConstants.NotifiationRule.RECORDS, notificationRules);
+                }
+
+                return jsonDataMap;
+            } catch (Exception e) {
+                return new JSONException(new Exception("Cannot load the system monitoring notification rules.", e));
+            }
+        }
+
+        @Override
+        public void setData(Object jsonData) {
+            // No data expected from the browser.
+        }
+    }
+
+    /**
+     * Data provider for saving system monitoring notification rules.
+     */
+    private final class SavingSystemMonitoringNotificationRuleDataProvider implements JsonDataProvider {
         private Object returnValue;
 
         @Override
@@ -90,14 +227,50 @@ public class Monitor extends EsmStandardWebPage {
                     return;
                 }
 
-                Map<String, Object> jsonFormatMap = (Map<String, Object>) jsonDataObj;
+                Map<String, Object> jsonDataMap = (Map<String, Object>) jsonDataObj;
+                String guid = (String) jsonDataMap.get(JSONConstants.ID);
+                String name = (String) jsonDataMap.get(JSONConstants.NAME);
+                String type = (String) jsonDataMap.get(JSONConstants.TYPE);
+                Map<String, Object> params = (Map<String, Object>) jsonDataMap.get(JSONConstants.NotifiationRule.PARAMS);
 
-                try {
-                    Map<String, Object> clusterPropertyFormatMap = toClusterPropertyFormat(jsonFormatMap);
-                    systemMonitoringSetupSettingsManager.saveSetupSettings(clusterPropertyFormatMap);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    returnValue = new JSONException(new Exception("Cannot save the system monitoring setup settings.", e));
+                String errmsg = null;
+                Throwable err = null;
+                // Case 1: to save a new notification rule.
+                if (guid == null) {
+                    SystemMonitoringNotificationRule newNotificationRule = new SystemMonitoringNotificationRule(name, type, params);
+                    try {
+                        systemMonitoringNotificationRulesManager.save(newNotificationRule);
+                    } catch (DuplicateObjectException e) {
+                        errmsg = "There already exists a system monitoring notification rule with the same name, '" + name + "'.";
+                        err = e;
+                    } catch (SaveException e) {
+                        errmsg = "Cannot save a system monitoring notification rule.";
+                        err = e;
+                    }
+                }
+                // Case 2: to edit and save an existing notification rule.
+                else {
+                    try {
+                        SystemMonitoringNotificationRule notificationRule = systemMonitoringNotificationRulesManager.findByGuid(guid);
+                        notificationRule.copyFrom(name, type, params);
+                        systemMonitoringNotificationRulesManager.update(notificationRule);
+                    } catch (FindException e) {
+                        errmsg = "Cannot find the system monitoring notification rule (GUID = '" + guid + "').";
+                        err = e;
+                    } catch (UpdateException e) {
+                        errmsg = ExceptionUtils.causedBy(e, DuplicateObjectException.class)?
+                            "There already exists a system monitoring notification rule with the same name, '" + name + "'." :
+                            "Cannot update the system monitoring notification rule (GUID = '" + guid + "').";
+                        err = e;
+                    }
+                }
+
+                if (errmsg != null) {
+                    logger.warning(errmsg);
+                    returnValue = new JSONException(new Exception(errmsg, err));
+                } else {
+                    // Return null if saving is successful.
+                    returnValue = null;
                 }
             } else {
                 returnValue = new JSONException(new IllegalArgumentException("jsonData must be either a JSONException or a JSON formatted String"));
@@ -182,6 +355,7 @@ public class Monitor extends EsmStandardWebPage {
         propertySetupMap.put(JSONConstants.SsgNodeMonitoringProperty.NTP_STATUS,             ntpStatusMap);
 
         // Fill up jsonFormatMap
+        jsonFormatMap.put(JSONConstants.READONLY, isReadOnly);
         jsonFormatMap.put(JSONConstants.SystemMonitoringSetup.PROPERTY_SETUP,                propertySetupMap);
         jsonFormatMap.put(JSONConstants.SystemMonitoringSetup.SAMPLING_INTERVAL_LOWER_LIMIT, Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SAMPLINGINTERVAL_LOWERLIMIT)));
         jsonFormatMap.put(JSONConstants.SystemMonitoringSetup.DISABLE_ALL_NOTIFICATIONS,     clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_DISABLEALLNOTIFICATIONS));

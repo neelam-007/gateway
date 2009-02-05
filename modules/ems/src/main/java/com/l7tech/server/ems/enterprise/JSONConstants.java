@@ -70,6 +70,14 @@ public final class JSONConstants {
 
     /**
      * Enum of notifiation types.
+     */
+    public static final class NotifiationRule {
+        public static final String RECORDS = "records";
+        public static final String PARAMS  = "params";
+    }
+
+    /**
+     * Enum of notifiation types.
      * Defined as l7.Constants.NOTIFICATION_TYPE in l7.js.
      */
     public static final class NotifiationType {
@@ -147,6 +155,7 @@ public final class JSONConstants {
     public static final String PARENT_ID  = "parentId";
     public static final String TYPE       = "type";
     public static final String NAME       = "name";
+    public static final String READONLY   = "readOnly";
 
     // Additional properties for SSG Cluster entities.
     public static final String CLUSTER_NAME      = "clusterName";

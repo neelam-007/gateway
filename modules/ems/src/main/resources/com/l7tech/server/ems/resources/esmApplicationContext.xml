@@ -96,6 +96,9 @@
                 <value>com.l7tech.server.ems.migration.MigrationRecord</value>
                 <value>com.l7tech.server.ems.migration.MigrationMappingRecord</value>
 
+                <!-- Remote System Monitoring -->
+                <value>com.l7tech.server.ems.monitoring.SystemMonitoringNotificationRule</value>
+
                 <!-- General -->
                 <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
                 <value>com.l7tech.identity.internal.InternalUser</value>
@@ -468,6 +471,8 @@
         <constructor-arg index="0" ref="clusterPropertyManager"/>
         <constructor-arg index="1" ref="serverConfig"/>
     </bean>
+
+    <bean id="systemMonitoringNotificationRulesManager" class="com.l7tech.server.ems.monitoring.SystemMonitoringNotificationRulesManagerImpl" parent="hibernateBean"/>
 
     <bean id="migrationMappingManager" class="com.l7tech.server.ems.migration.MigrationMappingRecordManagerImpl" parent="hibernateBean">
         <constructor-arg index="0" ref="ssgClusterManager"/>

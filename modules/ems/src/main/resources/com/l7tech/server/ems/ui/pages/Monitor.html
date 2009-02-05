@@ -648,8 +648,7 @@
             }
 
             var postData = YAHOO.lang.JSON.stringify(settings);
-            // TODO Set saveNotificationRuleUrl using Wicket.
-            var xhr = l7.Connection.syncRequest('POST', saveNotificationRuleUrl, postData, true);
+            var xhr = l7.Connection.syncRequest('POST', saveSystemMonitoringNotificationRuleUrl, postData, true);
             if (xhr.status == 200) {
                 var result = l7.Connection.parseJsonResponse(xhr,
                                                              true,
@@ -1057,7 +1056,7 @@
          * Downloads the list of defined notification rules, use it to populate the table and sets availableNotificationRules.
          */
         function loadNotificationRules() {
-            notificationRulesDataSource.sendRequest('', {
+            notificationRulesDataSource.sendRequest(getSystemMonitoringNotificationRulesUrl, {
                 success : function(sRequest , oResponse , oPayload) {
                     notificationRulesDataTable.onDataReturnInitializeTable(sRequest , oResponse , oPayload);
                     notificationRulesDataTable.sortColumn(notificationRulesDataTable.getColumn('name'), YAHOO.widget.DataTable.CLASS_ASC);
@@ -1116,7 +1115,7 @@
                 {key:'type', label:'Type', resizeable:true, sortable:true, className:['nowrap'], formatter: formatType}
             ];
 
-            notificationRulesDataSource = new YAHOO.util.DataSource('dataSource/monitoring/notificationRules.json', {
+            notificationRulesDataSource = new YAHOO.util.DataSource('', {
                     connXhrMode     : 'cancelStaleRequests',
                     responseType    : YAHOO.util.DataSource.TYPE_JSON,
                     responseSchema  : {
@@ -1966,8 +1965,8 @@
 <div id="deleteNotificationRuleDialog">
     <div class="hd">Delete Notification Rule</div>
     <div class="bd">
-        <form name="deleteNotificationRuleForm" action="action/monitoring/deleteNotificationRule">
-            <input id="deleteNotificationRuleDialog_id" type="hidden" name="id" />
+        <form name="deleteNotificationRuleForm" wicket:id="deleteNotificationRuleForm" method="POST">
+            <input id="deleteNotificationRuleDialog_id" wicket:id="deleteNotificationRuleDialog_id" type="hidden" name="id" />
             Delete notification rule &ldquo;<span id="deleteNotificationRuleDialog_name"></span>&rdquo;?
         </form>
     </div>
@@ -2043,6 +2042,8 @@
 </div>
                 <div wicket:id="getSystemMonitoringSetupSettings"/>
                 <div wicket:id="saveSystemMonitoringSetupSettings"/>
+                <div wicket:id="getSystemMonitoringNotificationRules"/>
+                <div wicket:id="saveSystemMonitoringNotificationRule"/>
 
                 </wicket:extend>
 
