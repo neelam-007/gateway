@@ -39,7 +39,7 @@ class MinaSyslogHandler extends IoHandlerAdapter {
      */
     @Override
     public void sessionOpened(final IoSession session) throws Exception {
-        sessionCallback.call(session);
+        sessionCallback.call(session, session.toString());
     }
 
     /**
@@ -47,7 +47,7 @@ class MinaSyslogHandler extends IoHandlerAdapter {
      */
     @Override
     public void sessionClosed(final IoSession session) throws Exception {
-        sessionCallback.call(null);
+        sessionCallback.call(null, session.toString());
     }
 
     /**
@@ -76,7 +76,7 @@ class MinaSyslogHandler extends IoHandlerAdapter {
      *
      * @param sessionCallback The session open/close callback
      */
-    MinaSyslogHandler(final Functions.UnaryVoid<IoSession> sessionCallback) {
+    MinaSyslogHandler(final Functions.BinaryVoid<IoSession, String> sessionCallback) {
         this.sessionCallback = sessionCallback;
     }
 
@@ -84,7 +84,7 @@ class MinaSyslogHandler extends IoHandlerAdapter {
 
     private static IoFilter CODEC_FILTER = new ProtocolCodecFilter( new SyslogCodecFactory() );
 
-    private final Functions.UnaryVoid<IoSession> sessionCallback;
+    private final Functions.BinaryVoid<IoSession, String> sessionCallback;
 
     /**
      * Syslog codec factory

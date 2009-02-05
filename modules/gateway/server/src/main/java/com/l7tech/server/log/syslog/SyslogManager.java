@@ -139,7 +139,11 @@ public class SyslogManager implements Closeable {
         return this.getSyslog(protocol, addresses, format, timeZone, facility, host, charset, delimiter, null, null);
     }
 
-
+    /**
+     * Get a syslog for sending messages to the given address.
+     *
+     * @return The existing or newly created Syslog
+     */
     Syslog getSyslog(final SyslogProtocol protocol,
                      final SocketAddress[] addresses,
                      final String format,
@@ -231,7 +235,7 @@ public class SyslogManager implements Closeable {
         ManagedSyslog syslog;
 
         synchronized (syslogLock) {
-            SyslogKey key = new SyslogKey(protocol, addresses[0]);
+            SyslogKey key = new SyslogKey(protocol, addresses);
             syslog = syslogs.get(key);
 
             if (syslog == null) {
@@ -281,11 +285,11 @@ public class SyslogManager implements Closeable {
      */
     private static final class SyslogKey {
         private final SyslogProtocol protocol;
-        private final SocketAddress address;
+        private final SocketAddress[] addresses;
 
-        SyslogKey(final SyslogProtocol protocol, final SocketAddress address) {
+        SyslogKey(final SyslogProtocol protocol, final SocketAddress[] addresses) {
             this.protocol = protocol;
-            this.address = address;
+            this.addresses = addresses;
         }
 
         @SuppressWarnings({"RedundantIfStatement"})
@@ -296,9 +300,11 @@ public class SyslogManager implements Closeable {
 
             SyslogKey syslogKey = (SyslogKey) o;
 
-            if (!address.equals(syslogKey.address)) return false;
             if (protocol != syslogKey.protocol) return false;
-
+            if (addresses.length != syslogKey.addresses.length) return false;
+            for (int i=0; i<addresses.length; i++) {
+                if (!addresses[i].equals(syslogKey.addresses[i])) return false;
+            }
             return true;
         }
 
@@ -306,7 +312,8 @@ public class SyslogManager implements Closeable {
         public int hashCode() {
             int result;
             result = protocol.hashCode();
-            result = 31 * result + address.hashCode();
+            for (SocketAddress addr : addresses)
+                result = 31 * result + addr.hashCode();
             return result;
         }
     }

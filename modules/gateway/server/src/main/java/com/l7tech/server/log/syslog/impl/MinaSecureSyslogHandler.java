@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.SSLFilter;
@@ -30,6 +31,8 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
     private static final Logger logger = Logger.getLogger(MinaSecureSyslogHandler.class.getName());
     /** Separator char for errorMessages */
     private static final String ERROR_SEP = "; ";
+    /** The idle time set for each IoSession managed by this handler */
+    private static final int IDLE_TIME = 60 * 2; // seconds
 
     /** SSL filter */
     private SSLFilter SSL_FILTER;
@@ -49,7 +52,7 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
      * @param sslKeystoreAlias the keystore alias name to use for the SSL KeyManager
      * @param sslKeystoreId the keystore Id to use for the SSL KeyManager
      */
-    MinaSecureSyslogHandler(Functions.UnaryVoid<IoSession> sessionCallback, String sslKeystoreAlias, Long sslKeystoreId) {
+    MinaSecureSyslogHandler(Functions.BinaryVoid<IoSession, String> sessionCallback, String sslKeystoreAlias, Long sslKeystoreId) {
         super(sessionCallback);
         this.errorMessages = new StringBuffer();
 
@@ -82,11 +85,8 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
                         SsgKeyEntry entry = SyslogSslClientSupport.getSsgKeyStoreManager().lookupKeyByKeyAlias(sslKeystoreAlias, sslKeystoreId);
                         KeyManager keyManager = new SingleCertX509KeyManager(entry.getCertificateChain(), entry.getPrivateKey());
                         km = new KeyManager[] { keyManager };
-
                     } else {
-
-                        return null; // for now
-
+                        return null;
                     }
                 } catch (GeneralSecurityException e) {
                     return null;
@@ -131,6 +131,8 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
     @Override
     public void sessionOpened(IoSession session) throws Exception {
         this.sessionOpened = (session.isConnected() && !session.isClosing());
+        // set the idle time
+        session.setIdleTime(IdleStatus.WRITER_IDLE, IDLE_TIME);
         super.sessionOpened(session);
     }
 
@@ -141,8 +143,29 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
             logger.log(Level.WARNING, "SSL session closed with errors: {0}", errorMessages.toString());
             errorMessages = new StringBuffer();
         }
-        logger.log(Level.INFO, "Session closed after (ms): {0}", System.currentTimeMillis() - session.getCreationTime());
+        logger.log(Level.FINE, "Session closed after (ms): {0}", System.currentTimeMillis() - session.getCreationTime());
         super.sessionClosed(session);
+    }
+
+    @Override
+    public void sessionIdle(IoSession ioSession, IdleStatus idleStatus) throws Exception {
+
+        if (IdleStatus.WRITER_IDLE.equals(idleStatus)) {
+//            StringBuffer sb = new StringBuffer("closing idle session: ").append("\n");
+//            sb.append("Idle count: ").append(ioSession.getIdleCount(IdleStatus.WRITER_IDLE)).append("\n");
+//            sb.append("Idle time (sec): ").append(ioSession.getIdleTime(IdleStatus.WRITER_IDLE)).append("\n");
+//            sb.append("Attribs: ").append(ioSession.getAttributeKeys()).append("\n");
+//            sb.append("Remote Addr: ").append(ioSession.getRemoteAddress()).append("\n");
+//            sb.append("Local Addr: ").append(ioSession.getLocalAddress()).append("\n");
+//            sb.append("Create time: ").append(ioSession.getCreationTime()).append("\n");
+//            sb.append("Last IO: ").append(ioSession.getLastIoTime()).append("\n");
+//            sb.append("Since last IO: ").append(System.currentTimeMillis() - ioSession.getLastIoTime()).append("\n");
+//            sb.append("Written Req: ").append(ioSession.getWrittenWriteRequests()).append("\n");
+//            sb.append("written Msg: ").append(ioSession.getWrittenMessages());
+//            System.out.println(sb.toString());
+            ioSession.close();
+        }
+        super.sessionIdle(ioSession, idleStatus);
     }
 
     @Override

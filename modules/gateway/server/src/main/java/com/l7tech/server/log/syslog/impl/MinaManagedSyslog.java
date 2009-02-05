@@ -232,11 +232,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
             this.isSSL = SyslogProtocol.SSL.equals(protocol);
 
             // create IO handler
-            Functions.UnaryVoid<IoSession> callback = new Functions.UnaryVoid<IoSession>() {
-                public void call(final IoSession session) {
-                    setSession(session);
-                }
-            };
+            Functions.BinaryVoid<IoSession, String> callback = getCallback();
 
             // create the handler and connector instances
             if (isSSL) {
@@ -322,9 +318,16 @@ public class MinaManagedSyslog extends ManagedSyslog {
          * If set to null an attempt is made to reconnect to the
          * server. 
          */
-        private void setSession(final IoSession session) {
-            sessionRef.set(session);
+        private void setSession(final IoSession session, final String sessionId) {
+
+            // this check is in place to handle closing off sessions is not currently in use
+            if (session == null && sessionRef.get() != null && !sessionId.equals(sessionRef.get().toString())) {
+                // fireDisconnected();
+                return; // do not reconnect
+            }
+
             if ( session == null ) {
+                sessionRef.set(session);
                 fireDisconnected();
                 try {
                     Thread.sleep(getAndIncReconnectSleep());
@@ -333,7 +336,13 @@ public class MinaManagedSyslog extends ManagedSyslog {
                     Thread.currentThread().interrupt();
                 }
             } else {
-                fireConnected();
+                if (sessionRef.get() != null) {
+                    // strict replacement
+                    sessionRef.set(session);
+                } else {
+                    sessionRef.set(session);
+                    fireConnected();
+                }
             }
         }
 
@@ -450,17 +459,15 @@ public class MinaManagedSyslog extends ManagedSyslog {
          * Initiate SSL connection to the syslog host
          */
         private void connectSSL() {
-            // reset flag
+
+            if (sessionRef.get() != null) {
+                sessionRef.get().close();
+            }
+
             if (connector == null) {
                 if (SyslogSslClientSupport.isInitialized()) {
-
-                    Functions.UnaryVoid<IoSession> callback = new Functions.UnaryVoid<IoSession>() {
-                        public void call(final IoSession session) {
-                            setSession(session);
-                        }
-                    };
-
-                    MinaSecureSyslogHandler sslHandler = new MinaSecureSyslogHandler(callback, sslKeystoreAlias, sslKeystoreId);
+                    MinaSecureSyslogHandler sslHandler =
+                            new MinaSecureSyslogHandler(getCallback(), sslKeystoreAlias, sslKeystoreId);
                     this.handler = sslHandler;
                     this.connector = new SocketConnector();
                     sslHandler.setupConnectorForSSL(this.connector);
@@ -469,6 +476,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
                 }
             }
 
+            // reset flag
             reconnect.set( false );
 
             // build connector config
@@ -566,7 +574,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
                                 messageQueue.drainTo(dropList, DROP_BATCH_SIZE);
                                 dropList.clear();
                             } else {
-                                Thread.sleep(1);
+                                Thread.sleep(15L);
                             }
                         }
                     } catch (InterruptedException ie) {
@@ -677,6 +685,20 @@ public class MinaManagedSyslog extends ManagedSyslog {
          */
         private SocketAddress getAddress() {
             return addressList[syslogIndex];
+        }
+
+        /**
+         * Create the syslog handler callback function.
+         *
+         * @return the callback function to be passed into the SyslogHandler
+         */
+        private Functions.BinaryVoid<IoSession, String> getCallback() {
+
+            return new Functions.BinaryVoid<IoSession, String>() {
+                public void call(final IoSession session, final String sessionId) {
+                    setSession(session, sessionId);
+                }
+            };
         }
     }
 }
