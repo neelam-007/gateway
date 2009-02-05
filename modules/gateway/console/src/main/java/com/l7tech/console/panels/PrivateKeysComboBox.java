@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -68,12 +69,12 @@ public class PrivateKeysComboBox extends JComboBox {
 
     private void populate() {
         try {
-            final java.util.List<TrustedCertAdmin.KeystoreInfo> keystores = getTrustedCertAdmin().findAllKeystores(_includeHardwareKeystore);
+            final java.util.List<KeystoreFileEntityHeader> keystores = getTrustedCertAdmin().findAllKeystores(_includeHardwareKeystore);
             final List<PrivateKeyItem> items = new ArrayList<PrivateKeyItem>();
             items.add(ITEM_DEFAULT_SSL);
-            for (TrustedCertAdmin.KeystoreInfo keystore : keystores) {
-                for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.id)) {
-                    items.add(new PrivateKeyItem(keystore.id, keystore.name, entry.getAlias()));
+            for (KeystoreFileEntityHeader keystore : keystores) {
+                for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.getOid())) {
+                    items.add(new PrivateKeyItem(keystore.getOid(), keystore.getName(), entry.getAlias()));
                 }
             }
             setModel(new DefaultComboBoxModel(items.toArray()));

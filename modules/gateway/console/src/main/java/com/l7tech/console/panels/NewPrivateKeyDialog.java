@@ -6,6 +6,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.PleaseWaitDialog;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.console.util.Registry;
@@ -61,7 +62,7 @@ public class NewPrivateKeyDialog extends JDialog {
     private static final KeySize RSA1280 = new KeySize(1280, "1280 bit RSA", 60 * 7, 10);
     private static final KeySize RSA2048 = new KeySize(2048, "2048 bit RSA", 60 * 20, 17);
 
-    private final TrustedCertAdmin.KeystoreInfo keystoreInfo;
+    private final KeystoreFileEntityHeader keystoreInfo;
 
     private JPanel rootPanel;
     private JTextField dnField;
@@ -90,7 +91,7 @@ public class NewPrivateKeyDialog extends JDialog {
      * @param keystoreInfo describes a keystore on the current Gateway which is not read-only.  Required.
      * @throws HeadlessException if running headless
      */
-    public NewPrivateKeyDialog(Frame owner, TrustedCertAdmin.KeystoreInfo keystoreInfo) throws HeadlessException {
+    public NewPrivateKeyDialog(Frame owner, KeystoreFileEntityHeader keystoreInfo) throws HeadlessException {
         super(owner, TITLE, true);
         this.keystoreInfo = keystoreInfo;
         initialize();
@@ -103,7 +104,7 @@ public class NewPrivateKeyDialog extends JDialog {
      * @param keystoreInfo describes a keystore on the current Gateway which is not read-only.  Required.
      * @throws HeadlessException if running headless
      */
-    public NewPrivateKeyDialog(Dialog owner, TrustedCertAdmin.KeystoreInfo keystoreInfo) throws HeadlessException {
+    public NewPrivateKeyDialog(Dialog owner, KeystoreFileEntityHeader keystoreInfo) throws HeadlessException {
         super(owner, TITLE, true);
         this.keystoreInfo = keystoreInfo;
         initialize();
@@ -186,7 +187,7 @@ public class NewPrivateKeyDialog extends JDialog {
                 RSA2048
         ));
 
-        if (keystoreInfo.type != null && keystoreInfo.type.toLowerCase().contains("pkcs11"))
+        if (keystoreInfo.getKeyStoreType() != null && keystoreInfo.getKeyStoreType().toLowerCase().contains("pkcs11"))
             usingHsm = true;
 
         cbKeyType.setModel(new DefaultComboBoxModel(sizes.toArray()));
@@ -225,7 +226,7 @@ public class NewPrivateKeyDialog extends JDialog {
 
             Callable<Object> callable = new Callable<Object>() {
                 public Object call() throws Exception {
-                    keypairJobId = getCertAdmin().generateKeyPair(keystoreInfo.id, alias, dn, keybits, expiryDays, makeCaCert);
+                    keypairJobId = getCertAdmin().generateKeyPair(keystoreInfo.getOid(), alias, dn, keybits, expiryDays, makeCaCert);
                     newAlias = alias;
                     return null;
                 }

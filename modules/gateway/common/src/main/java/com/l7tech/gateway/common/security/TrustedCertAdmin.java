@@ -6,6 +6,7 @@ package com.l7tech.gateway.common.security;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.admin.Administrative;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import static com.l7tech.objectmodel.EntityType.*;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
 import com.l7tech.gateway.common.security.rbac.Secured;
@@ -178,24 +179,6 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     public X509Certificate getSSGSslCert() throws IOException, CertificateException;
 
     /**
-     * Represents general information about a Keystore instance available on this Gateway.
-     */
-    public static class KeystoreInfo implements Serializable {
-        private static final long serialVersionUID = 2340872398471981L;
-        public final long id;
-        public final String name;
-        public final String type;
-        public final boolean readonly;
-
-        public KeystoreInfo(long id, String name, String type, boolean readonly) {
-            this.id = id;
-            this.name = name;
-            this.type = type;
-            this.readonly = readonly;
-        }
-    }
-
-    /**
      * Find all keystore instances available on this Gateway.
      *
      * @param includeHardware   whether to include hardware keystores
@@ -206,7 +189,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Transactional(propagation=Propagation.SUPPORTS)
     @Secured(stereotype=FIND_ENTITIES)
-    public List<KeystoreInfo> findAllKeystores(boolean includeHardware) throws IOException, FindException, KeyStoreException;
+    public List<KeystoreFileEntityHeader> findAllKeystores(boolean includeHardware) throws IOException, FindException, KeyStoreException;
 
     /**
      * Retrieves all SsgKeyEntry instances available in the specified keystore.

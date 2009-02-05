@@ -9,6 +9,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.DeleteException;
@@ -96,7 +97,7 @@ public class PrivateKeyManagerWindow extends JDialog {
     private static long lastJobPollTime = 0;
     private static long minJobPollInterval = 1011;
 
-    private TrustedCertAdmin.KeystoreInfo mutableKeystore = null;
+    private KeystoreFileEntityHeader mutableKeystore = null;
     private Component keypairJobViewportView;
     private PermissionFlags flags;
     private KeyTable keyTable = null;
@@ -205,10 +206,10 @@ public class PrivateKeyManagerWindow extends JDialog {
     }
 
     private void doRemove(KeyTableRow certHolder) {
-        final TrustedCertAdmin.KeystoreInfo keystore = certHolder.getKeystore();
+        final KeystoreFileEntityHeader keystore = certHolder.getKeystore();
         String alias = certHolder.getAlias();
         try {
-            getTrustedCertAdmin().deleteKey(keystore.id, alias);
+            getTrustedCertAdmin().deleteKey(keystore.getOid(), alias);
         } catch (IOException e) {
             showErrorMessage("Deletion Failed", "Unable to delete key: " + ExceptionUtils.getMessage(e), e);
         } catch (CertificateException e) {
@@ -363,7 +364,7 @@ public class PrivateKeyManagerWindow extends JDialog {
     private void doImport() {
         if (mutableKeystore == null)
             return;
-        final long mutableKeystoreId = mutableKeystore.id;
+        final long mutableKeystoreId = mutableKeystore.getOid();
 
         GuiCertUtil.ImportedData imported;
         try {
@@ -587,9 +588,9 @@ public class PrivateKeyManagerWindow extends JDialog {
 
         try {
             java.util.List<KeyTableRow> keyList = new ArrayList<KeyTableRow>();
-            for (TrustedCertAdmin.KeystoreInfo keystore : getTrustedCertAdmin().findAllKeystores(true)) {
-                if (mutableKeystore == null && !keystore.readonly) mutableKeystore = keystore;
-                for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.id)) {
+            for (KeystoreFileEntityHeader keystore : getTrustedCertAdmin().findAllKeystores(true)) {
+                if (mutableKeystore == null && !keystore.isReadonly()) mutableKeystore = keystore;
+                for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.getOid())) {
                     keyList.add(new KeyTableRow(keystore, entry, isDefaultSslCert(entry), isDefaultCaCert(entry)));
                 }
             }
@@ -599,7 +600,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             enableOrDisableButtons();
 
             if (activeKeypairJobAlias != null && mutableKeystore != null) {
-                keyTable.setSelectedKeyEntry(mutableKeystore.id, activeKeypairJobAlias);
+                keyTable.setSelectedKeyEntry(mutableKeystore.getOid(), activeKeypairJobAlias);
                 activeKeypairJobAlias = null;
             }
 
@@ -683,7 +684,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                                                   "Key Generation Failed",
                                                   JOptionPane.ERROR_MESSAGE);
                 } else if (result.result != null && mutableKeystore != null && activeKeypairJobAlias != null) {
-                    keyTable.setSelectedKeyEntry(mutableKeystore.id, activeKeypairJobAlias);
+                    keyTable.setSelectedKeyEntry(mutableKeystore.getOid(), activeKeypairJobAlias);
                     activeKeypairJobAlias = null;
                 }
                 return false;
@@ -713,14 +714,14 @@ public class PrivateKeyManagerWindow extends JDialog {
 
     /** Represents a row in the Manage Private Keys table. */
     public static class KeyTableRow {
-        private final TrustedCertAdmin.KeystoreInfo keystoreInfo;
+        private final KeystoreFileEntityHeader keystoreInfo;
         private SsgKeyEntry keyEntry;
         private String keyType = null;
         private boolean defaultSsl;
         private boolean defaultCa;
         private boolean certCaCapable;
 
-        public KeyTableRow(TrustedCertAdmin.KeystoreInfo keystoreInfo, SsgKeyEntry keyEntry, boolean defaultSsl, boolean defaultCa) {
+        public KeyTableRow(KeystoreFileEntityHeader keystoreInfo, SsgKeyEntry keyEntry, boolean defaultSsl, boolean defaultCa) {
             this.keystoreInfo = keystoreInfo;
             this.keyEntry = keyEntry;
             this.defaultSsl = defaultSsl;
@@ -728,7 +729,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             this.certCaCapable = keyEntry != null && CertUtils.isCertCaCapable(keyEntry.getCertificate());
         }
 
-        public TrustedCertAdmin.KeystoreInfo getKeystore() {
+        public KeystoreFileEntityHeader getKeystore() {
             return keystoreInfo;
         }
 
@@ -902,7 +903,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                     new Col("Location", 60, 90, 90) {
                         @Override
                         Object getValueForRow(KeyTableRow row) {
-                            return row.getKeystore().name;
+                            return row.getKeystore().getName();
                         }
                     },
 
@@ -969,7 +970,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 KeyTableRow[] rowsArray = rows.toArray(new KeyTableRow[rows.size()]);
                 for (int i = 0; i < rowsArray.length; i++) {
                     KeyTableRow row = rowsArray[i];
-                    if (row.getKeystore().id == keystoreId && row.getAlias().equals(newAlias))
+                    if (row.getKeystore().getOid() == keystoreId && row.getAlias().equals(newAlias))
                         return i;
                 }
                 return -1;

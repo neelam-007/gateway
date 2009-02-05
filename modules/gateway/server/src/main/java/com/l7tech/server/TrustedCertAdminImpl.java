@@ -13,6 +13,7 @@ import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
@@ -191,18 +192,18 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         return defaultKey.getSslInfo().getCertificate();
     }
 
-    public List<KeystoreInfo> findAllKeystores(boolean includeHardware) throws IOException, FindException, KeyStoreException {
+    public List<KeystoreFileEntityHeader> findAllKeystores(boolean includeHardware) throws IOException, FindException, KeyStoreException {
         List<SsgKeyFinder> finders = ssgKeyStoreManager.findAll();
-        List<KeystoreInfo> list = new ArrayList<KeystoreInfo>();
-        for (SsgKeyFinder finder : finders) {
-            if (!includeHardware && finder.getType() == SsgKeyFinder.SsgKeyStoreType.PKCS11_HARDWARE) {
+        List<KeystoreFileEntityHeader> list = new ArrayList<KeystoreFileEntityHeader>();
+        for (SsgKeyFinder ssgKeyFinder : finders) {
+            if (!includeHardware && ssgKeyFinder.getType() == SsgKeyFinder.SsgKeyStoreType.PKCS11_HARDWARE) {
                 continue;   // skip
             }
-            long id = finder.getOid();
-            String name = finder.getName();
-            SsgKeyFinder.SsgKeyStoreType type = finder.getType();
-            boolean readonly = !finder.isMutable();
-            list.add(new KeystoreInfo(id, name, type.toString(), readonly));
+            list.add(new KeystoreFileEntityHeader(
+                    ssgKeyFinder.getOid(),
+                    ssgKeyFinder.getName(),
+                    ssgKeyFinder.getType().toString(),
+                    !ssgKeyFinder.isMutable()));
         }
         return list;
     }

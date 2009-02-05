@@ -26,11 +26,11 @@ public class KeystoreFileManagerImpl
 {
     public KeystoreFileManagerImpl() {}
 
-    public Class getImpClass() {
+    public Class<KeystoreFile> getImpClass() {
         return KeystoreFile.class;
     }
 
-    public Class getInterfaceClass() {
+    public Class<KeystoreFile> getInterfaceClass() {
         return KeystoreFile.class;
     }
 

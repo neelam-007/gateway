@@ -1087,6 +1087,8 @@ INSERT INTO rbac_permission VALUES (-656,1,-650,'DELETE',NULL,'JMS_ENDPOINT');
 INSERT INTO rbac_permission VALUES (-657,1,-650,'UPDATE',NULL,'JMS_ENDPOINT');
 INSERT INTO rbac_permission VALUES (-658,1,-650,'READ',NULL,'JMS_ENDPOINT');
 INSERT INTO rbac_permission VALUES (-659,1,-650,'READ',NULL,'SERVICE');
+INSERT INTO rbac_permission VALUES (-660,1,-650,'READ',NULL,'SSG_KEYSTORE');
+INSERT INTO rbac_permission VALUES (-661,1,-650,'READ',NULL,'SSG_KEY_ENTRY');
 
 INSERT INTO rbac_role VALUES (-700,0,'Manage Cluster Properties', null,null,null, 'Users assigned to the {0} role have the ability to read, create, update and delete cluster properties.');
 INSERT INTO rbac_permission VALUES (-701,0,-700,'READ',NULL,'CLUSTER_PROPERTY');

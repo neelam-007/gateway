@@ -12,6 +12,7 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
@@ -143,8 +144,8 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             }
         });
         aliasField.setText(subject.getAlias());
-        String location = subject.getKeystore().name;
-        if (subject.getKeystore().readonly)
+        String location = subject.getKeystore().getName();
+        if (subject.getKeystore().isReadonly())
             location = location + "  (Read-Only)";
         locationField.setText(location);
         typeField.setText(subject.getKeyType().toString());
@@ -170,8 +171,8 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         certList.setSelectedIndex(0);
         viewCertificateButton.setEnabled(true);
 
-        TrustedCertAdmin.KeystoreInfo keystore = subject.getKeystore();
-        if (keystore.readonly) {
+        KeystoreFileEntityHeader keystore = subject.getKeystore();
+        if (keystore.isReadonly()) {
             destroyPrivateKeyButton.setEnabled(false);
             replaceCertificateChainButton.setEnabled(false);
             generateCSRButton.setEnabled(false);
@@ -351,7 +352,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 }
                 final byte[] csr;
                 try {
-                    csr = admin.generateCSR(subject.getKeystore().id, subject.getAlias(), dn.getName());
+                    csr = admin.generateCSR(subject.getKeystore().getOid(), subject.getAlias(), dn.getName());
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "cannot get csr from ssg", e);
                     DialogDisplayer.showMessageDialog(generateCSRButton, "Error getting CSR " + e.getMessage(),
@@ -441,9 +442,9 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     for (int i = 0; i < certChain.length; i++) {
                         pemchain[i] = CertUtils.encodeAsPEM(certChain[i]);
                     }
-                    admin.assignNewCert(subject.getKeystore().id, subject.getAlias(), pemchain);
+                    admin.assignNewCert(subject.getKeystore().getOid(), subject.getAlias(), pemchain);
                     //re-get the entry from the ssg after assigning (weird but see bzilla #3852)
-                    List<SsgKeyEntry> tmp = admin.findAllKeys(subject.getKeystore().id);
+                    List<SsgKeyEntry> tmp = admin.findAllKeys(subject.getKeystore().getOid());
                     for (SsgKeyEntry ske : tmp) {
                         if (ske.getAlias().equals(subject.getAlias())) {
                             subject.setKeyEntry(ske);
@@ -477,7 +478,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
     private void exportKey() {
         final SsgKeyEntry entry = subject.getKeyEntry();
-        final boolean hardwareHint = "PKCS11_HARDWARE".equals(subject.getKeystore().type);
+        final boolean hardwareHint = "PKCS11_HARDWARE".equals(subject.getKeystore().getKeyStoreType());
 
         final PasswordDoubleEntryDialog passDlg = new PasswordDoubleEntryDialog(this, "Enter Export Passphrase");
         DialogDisplayer.display(passDlg, new Runnable() {
@@ -542,8 +543,8 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
     private void delete() {
 
-        final TrustedCertAdmin.KeystoreInfo keystore = subject.getKeystore();
-        if (keystore.readonly) {
+        final KeystoreFileEntityHeader keystore = subject.getKeystore();
+        if (keystore.isReadonly()) {
             JOptionPane.showMessageDialog(this, "This keystore is read-only.", "Unable to Remove Key", JOptionPane.INFORMATION_MESSAGE);
             return;
         }

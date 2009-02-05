@@ -4,6 +4,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.PrivateKeyable;
@@ -145,15 +146,15 @@ public class AssertionKeyAliasEditor extends JDialog {
     private void populateCombobox() {
         //PrivateKeyManagerWindow
         try {
-            java.util.List<TrustedCertAdmin.KeystoreInfo> keystores = getTrustedCertAdmin().findAllKeystores(true);
+            java.util.List<KeystoreFileEntityHeader> keystores = getTrustedCertAdmin().findAllKeystores(true);
             if (keystores != null) {
                 java.util.List<ComboEntry> comboEntries = new ArrayList<ComboEntry>();
                 ComboEntry toSelect = null;
-                for (TrustedCertAdmin.KeystoreInfo ksi : keystores) {
-                    for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(ksi.id)) {
-                        ComboEntry comboEntry = new ComboEntry(ksi.id, ksi.name, entry.getAlias());
+                for (KeystoreFileEntityHeader kfeh : keystores) {
+                    for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(kfeh.getOid())) {
+                        ComboEntry comboEntry = new ComboEntry(kfeh.getOid(), kfeh.getName(), entry.getAlias());
                         comboEntries.add(comboEntry);
-                        if (assertion.getNonDefaultKeystoreId() == ksi.id && entry.getAlias().equals(assertion.getKeyAlias()))
+                        if (assertion.getNonDefaultKeystoreId() == kfeh.getOid() && entry.getAlias().equals(assertion.getKeyAlias()))
                             toSelect = comboEntry;
                     }
                 }
