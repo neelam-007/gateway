@@ -75,12 +75,9 @@ class Importer {
             logger.info("Error, no image provided for import");
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ". i don't know what to import");
         }
-//        if ( arguments.get("-mode")!=null && !"restore".equals(arguments.get("-mode").toLowerCase()) ) {
-//            throw new FlashUtilityLauncher.InvalidArgumentException("-mode is not supported");
-//        }
 
-        String clusterPassphrase = arguments.get(CLUSTER_PASSPHRASE.name);
-        if (clusterPassphrase == null) {
+        String suppliedClusterPassphrase = arguments.get(CLUSTER_PASSPHRASE.name);
+        if (suppliedClusterPassphrase == null) {
             logger.info("Error, no cluster passphrase provided for import");
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + CLUSTER_PASSPHRASE.name + ".");
         }
@@ -102,6 +99,9 @@ class Importer {
                 //check if an audit backup file exists in the image
                 if (new File(tempDirectory + File.separator + DBDumpUtil.AUDIT_BACKUP_FILENAME).exists()) {
                     includeAudit = true;
+                }else{
+                    System.out.println("Ignoring " + Exporter.AUDIT.name + " option...");
+                    logger.info(Exporter.AUDIT.name + " option was requested but no audit backup exists in image; the option will be ignored");
                 }
             }
 
@@ -126,12 +126,6 @@ class Importer {
 
             logger.info("Proceeding with image");
             System.out.println("SecureSpan image file recognized.");
-
-//            //parititons have names like "dev", "prod" etc. so we'll use that instead of integers.
-//            String partName = arguments.get("-p");
-//            if ( partName!=null && !"default_".equals(partName) ) {
-//                throw new FlashUtilityLauncher.InvalidArgumentException("Partitions are no longer supported.");
-//            }
 
             rootDBUsername = arguments.get(DB_USER.name);
             rootDBPasswd = arguments.get(DB_PASSWD.name);
@@ -172,24 +166,31 @@ class Importer {
                     databaseUser = dbConfig.getString("node.db.config.main.user") == null ? databaseUser : dbConfig.getString("node.db.config.main.user");
                     databasePass = dbConfig.getString("node.db.config.main.pass") == null ? databasePass : dbConfig.getString("node.db.config.main.pass");
                     databasePass = new String(mpm.decryptPasswordIfEncrypted(databasePass));
+
+                    //verify the supplied cluster passphrase matches that in node.properties
+                    String propertiesPassphrase = dbConfig.getString("node.cluster.pass");
+                    propertiesPassphrase = new String(mpm.decryptPasswordIfEncrypted(propertiesPassphrase));
+                    if(!propertiesPassphrase.equals(suppliedClusterPassphrase)){
+                        throw new FlashUtilityLauncher.InvalidArgumentException("The supplied cluster passphrase does not match the configured cluster passphrase.");
+                    }
+
                 } else {
                     dbConfig.setProperty("node.id", UUID.randomUUID().toString().replace("-", ""));
                     dbConfig.setProperty("node.db.config.main.user", databaseUser);
                     dbConfig.setProperty("node.db.config.main.pass", mpm.encryptPassword(databasePass.toCharArray()));
+                    dbConfig.setProperty("node.cluster.pass", mpm.encryptPassword(suppliedClusterPassphrase.toCharArray()));
                     cleanRestore = true;
                 }
 
                 dbConfig.setProperty("node.db.config.main.host", dbHost);
                 dbConfig.setProperty("node.db.config.main.port", dbPort);
-                dbConfig.setProperty("node.db.config.main.name", dbName);
-                dbConfig.setProperty("node.cluster.pass", mpm.encryptPassword(clusterPassphrase.toCharArray()));
+                dbConfig.setProperty("node.db.config.main.name", dbName);                
 
                 dbConfig.save(nodePropsFile);
             } catch (ConfigurationException e) {
                 throw new IOException("Cannot replace database settings in \"" + nodePropsFile.getAbsolutePath() + "\".", e);
             }
 
-            //todo begin database import section
             if (!configOnly) {
                 if (dbHost.equalsIgnoreCase(InetAddress.getLocalHost().getCanonicalHostName()) ||
                         dbHost.equals(InetAddress.getLocalHost().getHostAddress())) {
@@ -318,7 +319,6 @@ class Importer {
                     throw new IOException("error resetting license " + e.getMessage());
                 }
             }
-            //todo end database import section
 
             // copy all config files to the right place
             logger.info("copying system files from image to target system");
