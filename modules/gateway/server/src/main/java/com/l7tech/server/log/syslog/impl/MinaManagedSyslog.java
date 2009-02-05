@@ -238,7 +238,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
             if (isSSL) {
 
                 if (SyslogSslClientSupport.isInitialized()) {
-                    this.handler = new MinaSecureSyslogHandler(callback, sslKeystoreAlias, sslKeystoreId);
+                    this.handler = new MinaSecureSyslogHandler(callback, getCurrentySessionCallback(), sslKeystoreAlias, sslKeystoreId);
                     this.connector = new SocketConnector();
                     MinaSecureSyslogHandler.class.cast(this.handler).setupConnectorForSSL(this.connector);
                 }
@@ -414,7 +414,6 @@ public class MinaManagedSyslog extends ManagedSyslog {
 
                 // reset reconnect sleep
                 reconnectSleep = DEFAULT_RECONNECT_SLEEP;
-                reconnect.set(true);
 
                 logger.log(Level.WARNING, "Syslog failover: {0} ===> {1}", new Object[] {oldSender, toString()});
             }
@@ -467,7 +466,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
             if (connector == null) {
                 if (SyslogSslClientSupport.isInitialized()) {
                     MinaSecureSyslogHandler sslHandler =
-                            new MinaSecureSyslogHandler(getCallback(), sslKeystoreAlias, sslKeystoreId);
+                            new MinaSecureSyslogHandler(getCallback(), getCurrentySessionCallback(), sslKeystoreAlias, sslKeystoreId);
                     this.handler = sslHandler;
                     this.connector = new SocketConnector();
                     sslHandler.setupConnectorForSSL(this.connector);
@@ -697,6 +696,21 @@ public class MinaManagedSyslog extends ManagedSyslog {
             return new Functions.BinaryVoid<IoSession, String>() {
                 public void call(final IoSession session, final String sessionId) {
                     setSession(session, sessionId);
+                }
+            };
+        }
+
+        /**
+         * Create the syslog handler callback function that checks an IoSession against the one
+         * held in sessionRef.
+         *
+         * @return the callback function to be passed into the SyslogHandler
+         */
+        private Functions.Unary<Boolean, IoSession> getCurrentySessionCallback() {
+
+            return new Functions.Unary<Boolean, IoSession>() {
+                public Boolean call(final IoSession session) {
+                    return (sessionRef.get() != null && sessionRef.get().equals(session));
                 }
             };
         }

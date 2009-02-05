@@ -44,16 +44,22 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
     private StringBuffer errorMessages;
     /** Flag indicating whether the currently held session has been open */
     private boolean sessionOpened;
+    /** Callback function to the syslog to check to check the IoSession */
+    private final Functions.Unary<Boolean, IoSession> currentSessionCheckCallback;
 
     /**
      * Default constructor.
      *
      * @param sessionCallback the callback function to perform
+     * @param currentSessionChecker the callback function to check for the referenced IoSession
      * @param sslKeystoreAlias the keystore alias name to use for the SSL KeyManager
      * @param sslKeystoreId the keystore Id to use for the SSL KeyManager
      */
-    MinaSecureSyslogHandler(Functions.BinaryVoid<IoSession, String> sessionCallback, String sslKeystoreAlias, Long sslKeystoreId) {
+    MinaSecureSyslogHandler(Functions.BinaryVoid<IoSession, String> sessionCallback,
+                            Functions.Unary<Boolean, IoSession> currentSessionChecker,
+                            String sslKeystoreAlias, Long sslKeystoreId) {
         super(sessionCallback);
+        this.currentSessionCheckCallback = currentSessionChecker;
         this.errorMessages = new StringBuffer();
 
         if (SSL_FILTER == null) {
@@ -138,7 +144,8 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
 
     @Override
     public void sessionClosed(IoSession session) throws Exception {
-        this.sessionOpened = false;
+        if (currentSessionCheckCallback.call(session))
+            this.sessionOpened = false;
         if (errorMessages.length() > 0) {
             logger.log(Level.WARNING, "SSL session closed with errors: {0}", errorMessages.toString());
             errorMessages = new StringBuffer();
@@ -150,7 +157,8 @@ public class MinaSecureSyslogHandler extends MinaSyslogHandler {
     @Override
     public void sessionIdle(IoSession ioSession, IdleStatus idleStatus) throws Exception {
 
-        if (IdleStatus.WRITER_IDLE.equals(idleStatus)) {
+        // Close any IoSessions that is not currently referenced by the ManagedSyslog
+        if (IdleStatus.WRITER_IDLE.equals(idleStatus) && !currentSessionCheckCallback.call(ioSession)) {
 //            StringBuffer sb = new StringBuffer("closing idle session: ").append("\n");
 //            sb.append("Idle count: ").append(ioSession.getIdleCount(IdleStatus.WRITER_IDLE)).append("\n");
 //            sb.append("Idle time (sec): ").append(ioSession.getIdleTime(IdleStatus.WRITER_IDLE)).append("\n");
