@@ -99,7 +99,7 @@ class Importer {
                 //check if an audit backup file exists in the image
                 if (new File(tempDirectory + File.separator + DBDumpUtil.AUDIT_BACKUP_FILENAME).exists()) {
                     includeAudit = true;
-                }else{
+                } else {
                     System.out.println("Ignoring " + Exporter.AUDIT.name + " option...");
                     logger.info(Exporter.AUDIT.name + " option was requested but no audit backup exists in image; the option will be ignored");
                 }
@@ -129,25 +129,27 @@ class Importer {
 
             rootDBUsername = arguments.get(DB_USER.name);
             rootDBPasswd = arguments.get(DB_PASSWD.name);
-            if (rootDBUsername == null && !configOnly) {
+            if (!configOnly && rootDBUsername == null) {
                 throw new FlashUtilityLauncher.InvalidArgumentException("Please provide options: " + DB_USER.name +
                         " and " + DB_PASSWD.name);
             }
             if (rootDBPasswd == null) rootDBPasswd = ""; // totally legit
 
-            // Replace database host name and database name in URL by those from command line options.
-            dbHost = arguments.get(DB_HOST_NAME.name);
-            if (dbHost == null && !configOnly) {
-                throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_HOST_NAME.name);
-            } else if (dbHost.indexOf(':') > 0) {
-                dbHost = dbHost.split(":", 2)[0];
-                dbPort = dbHost.split(":", 2)[1];
-            } else {
-                dbPort = "3306";
+            if (!configOnly) {
+                // Replace database host name and database name in URL by those from command line options.
+                dbHost = arguments.get(DB_HOST_NAME.name);
+                if (dbHost == null) {
+                    throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_HOST_NAME.name);
+                } else if (dbHost.indexOf(':') > 0) {
+                    dbHost = dbHost.split(":", 2)[0];
+                    dbPort = dbHost.split(":", 2)[1];
+                } else {
+                    dbPort = "3306";
+                }
             }
 
             dbName = arguments.get(DB_NAME.name);
-            if (dbName == null && !configOnly) {
+            if (!configOnly && dbName == null) {
                 throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_NAME.name);
             }
 
@@ -170,7 +172,7 @@ class Importer {
                     //verify the supplied cluster passphrase matches that in node.properties
                     String propertiesPassphrase = dbConfig.getString("node.cluster.pass");
                     propertiesPassphrase = new String(mpm.decryptPasswordIfEncrypted(propertiesPassphrase));
-                    if(!propertiesPassphrase.equals(suppliedClusterPassphrase)){
+                    if (!propertiesPassphrase.equals(suppliedClusterPassphrase)) {
                         throw new FlashUtilityLauncher.InvalidArgumentException("The supplied cluster passphrase does not match the configured cluster passphrase.");
                     }
 
@@ -184,7 +186,7 @@ class Importer {
 
                 dbConfig.setProperty("node.db.config.main.host", dbHost);
                 dbConfig.setProperty("node.db.config.main.port", dbPort);
-                dbConfig.setProperty("node.db.config.main.name", dbName);                
+                dbConfig.setProperty("node.db.config.main.name", dbName);
 
                 dbConfig.save(nodePropsFile);
             } catch (ConfigurationException e) {
