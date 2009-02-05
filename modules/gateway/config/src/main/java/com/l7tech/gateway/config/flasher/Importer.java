@@ -129,7 +129,7 @@ class Importer {
 
             rootDBUsername = arguments.get(DB_USER.name);
             rootDBPasswd = arguments.get(DB_PASSWD.name);
-            if (rootDBUsername == null) {
+            if (rootDBUsername == null && !configOnly) {
                 throw new FlashUtilityLauncher.InvalidArgumentException("Please provide options: " + DB_USER.name +
                         " and " + DB_PASSWD.name);
             }
@@ -137,7 +137,7 @@ class Importer {
 
             // Replace database host name and database name in URL by those from command line options.
             dbHost = arguments.get(DB_HOST_NAME.name);
-            if (dbHost == null) {
+            if (dbHost == null && !configOnly) {
                 throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_HOST_NAME.name);
             } else if (dbHost.indexOf(':') > 0) {
                 dbHost = dbHost.split(":", 2)[0];
@@ -147,7 +147,7 @@ class Importer {
             }
 
             dbName = arguments.get(DB_NAME.name);
-            if (dbName == null) {
+            if (dbName == null && !configOnly) {
                 throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_NAME.name);
             }
 
