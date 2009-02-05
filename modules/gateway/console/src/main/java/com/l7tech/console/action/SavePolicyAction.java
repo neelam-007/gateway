@@ -164,6 +164,13 @@ public class SavePolicyAction extends EntityWithPolicyNodeAction<PolicyEntityNod
                       "The policy was modified by another user.",
                       "Policy not updated.",
                       JOptionPane.ERROR_MESSAGE);
+            } else if (ExceptionUtils.causedBy(ome, FindException.class)) {
+                //got deleted somehow
+                JOptionPane.showMessageDialog(
+                        TopComponents.getInstance().getTopParent(),
+                        "The service or policy was deleted, cannot save changes.  \n Please refresh the service and policy tree.",
+                        "Failed to save",
+                        JOptionPane.ERROR_MESSAGE);
             } else {
                 throw new RuntimeException("Error saving service and policy", ome);                
             }
@@ -180,7 +187,7 @@ public class SavePolicyAction extends EntityWithPolicyNodeAction<PolicyEntityNod
             throws FindException, UpdateException, SaveException, PolicyAssertionException {
         Policy policy = Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey(policyOid);
         if (policy == null)
-            throw new SaveException("Unable to save policy -- this policy no longer exists");
+            throw new FindException("Unable to save policy -- this policy no longer exists");
         if (version != policy.getVersion())
             throw new StaleUpdateException("Unable to save policy, the policy was edited by another user.");
 
