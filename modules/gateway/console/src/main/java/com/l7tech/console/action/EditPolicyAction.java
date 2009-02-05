@@ -2,6 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.panels.HomePagePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
@@ -130,8 +131,10 @@ public class EditPolicyAction extends NodeAction {
                 log.log(Level.SEVERE, "cannot get service or policy", e);
                 throw new RuntimeException(e);
             } catch (FindException e) {
-                log.log(Level.SEVERE, "cannot get service or policy", e);
-                throw new RuntimeException(e);
+                wpanel.setComponent(new HomePagePanel());
+                log.log(Level.INFO, "cannot get service or policy", ExceptionUtils.getMessage(e));
+                JOptionPane.showMessageDialog(null, "Service or policy does not exist.", "Cannot find service or policy", JOptionPane.ERROR_MESSAGE);
+                return;
             }
 
             PolicyEditorPanel.PolicyEditorSubject subject = new PolicyEditorPanel.PolicyEditorSubject() {
