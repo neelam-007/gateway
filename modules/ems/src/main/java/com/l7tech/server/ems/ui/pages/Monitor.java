@@ -176,13 +176,24 @@ public class Monitor extends EsmStandardWebPage {
         @Override
         public Object getData() {
             try {
+                // Get a list of notification rules.
                 Collection<SystemMonitoringNotificationRule> notificationRules = systemMonitoringNotificationRulesManager.findAll();
+
+                // Remove password for those E-mail notification rules.
+                for (SystemMonitoringNotificationRule rule: notificationRules) {
+                    if (rule.getType().equals(JSONConstants.NotifiationType.E_MAIL)) {
+                        rule.obtainParamsProps().remove(JSONConstants.NotifiationEMailParams.PASSWORD);
+                    }
+                }
+
+                // Form the JSON content map
                 Map<String, Object> jsonDataMap = new HashMap<String, Object>();
                 if (notificationRules != null && !notificationRules.isEmpty()) {
                     jsonDataMap.put(JSONConstants.READONLY, isReadOnly);
                     jsonDataMap.put(JSONConstants.NotifiationRule.RECORDS, notificationRules);
                 }
 
+                // Return the JSON data back to the browser.
                 return jsonDataMap;
             } catch (Exception e) {
                 return new JSONException(new Exception("Cannot load the system monitoring notification rules.", e));
@@ -251,7 +262,25 @@ public class Monitor extends EsmStandardWebPage {
                 // Case 2: to edit and save an existing notification rule.
                 else {
                     try {
+                        // Get the notification rule by GUID
                         SystemMonitoringNotificationRule notificationRule = systemMonitoringNotificationRulesManager.findByGuid(guid);
+
+                        // Update the password for the E-mail notification rule.
+                        if (notificationRule.getType().equals(JSONConstants.NotifiationType.E_MAIL)) {
+                            boolean requiresAuth = (Boolean) params.get(JSONConstants.NotifiationEMailParams.REQUIRES_AUTHENTICATION);
+                            if (requiresAuth) {
+                                String oldPassword = (String) notificationRule.getParamProp(JSONConstants.NotifiationEMailParams.PASSWORD);
+                                String newPassword = (String) params.get(JSONConstants.NotifiationEMailParams.PASSWORD);
+                                if (newPassword == null) {
+                                    params.put(JSONConstants.NotifiationEMailParams.PASSWORD, oldPassword);
+                                }
+                            } else {
+                                params.remove(JSONConstants.NotifiationEMailParams.USERNAME);
+                                params.remove(JSONConstants.NotifiationEMailParams.PASSWORD);
+                            }
+                        }
+
+                        // Update this notification rule.
                         notificationRule.copyFrom(name, type, params);
                         systemMonitoringNotificationRulesManager.update(notificationRule);
                     } catch (FindException e) {

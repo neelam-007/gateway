@@ -42,15 +42,16 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
 
     public SystemMonitoringNotificationRule(String name, String type, Map<String, Object> paramsProps) {
         setGuid(UUID.randomUUID().toString());
-        this._name = name;
+        _name = name;
         this.type = type;
         this.paramsProps = paramsProps;
     }
 
     public void copyFrom(String name, String type, Map<String, Object> paramsProps) {
-        this._name = name;
+        _name = name;
         this.type = type;
         this.paramsProps = paramsProps;
+        paramsPropsXml = null;
     }
 
     @Column(name="guid", length=36, unique=true, nullable=false)

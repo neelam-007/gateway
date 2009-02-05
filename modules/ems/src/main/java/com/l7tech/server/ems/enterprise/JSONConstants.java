@@ -87,6 +87,15 @@ public final class JSONConstants {
     }
 
     /**
+     * Enum of parameters for e-mail notification.
+     */
+    public static final class NotifiationEMailParams {
+        public static final String REQUIRES_AUTHENTICATION = "requiresAuthentication";
+        public static final String USERNAME                = "userName";
+        public static final String PASSWORD                = "password";
+    }
+
+    /**
      * Enum of protocol types for e-mail notification.
      * Defined as l7.Constants.NOTIFICATION_EMAIL_PROTOCOL in l7.js.
      */
