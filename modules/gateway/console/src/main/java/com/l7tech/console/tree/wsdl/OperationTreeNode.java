@@ -15,7 +15,7 @@ public class OperationTreeNode extends WsdlTreeNode {
         this.operation = o;
     }
 
-    protected void loadChildren() {
+    protected void doLoadChildren() {
     }
 
     /**

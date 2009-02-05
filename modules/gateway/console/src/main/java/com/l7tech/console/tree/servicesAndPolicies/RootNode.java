@@ -285,7 +285,7 @@ public final class RootNode extends FolderNode {
      * load the service and policy folder children
      */
     @Override
-    protected void loadChildren() {
+    protected void doLoadChildren() {
         try {
 
             //download all servics and policies the user can view

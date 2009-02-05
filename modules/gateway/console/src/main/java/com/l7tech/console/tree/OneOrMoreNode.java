@@ -57,7 +57,7 @@ public class OneOrMoreNode extends AbstractAssertionPaletteNode {
     /**
      * subclasses override this method
      */
-    protected void loadChildren() {}
+    protected void doLoadChildren() {}
 
    /**
      * specify this node image resource

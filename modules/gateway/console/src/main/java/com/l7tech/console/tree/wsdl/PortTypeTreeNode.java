@@ -17,7 +17,7 @@ public class PortTypeTreeNode extends WsdlTreeNode {
         this.portType = p;
     }
 
-    protected void loadChildren() {
+    protected void doLoadChildren() {
         int index = 0;
         children = null;
         for (Iterator i = portType.getOperations().iterator(); i.hasNext();) {

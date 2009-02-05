@@ -23,7 +23,7 @@ public class XmlSecurityFolderNode extends AbstractPaletteFolderNode {
     /**
      * subclasses override this method
      */
-    protected void loadChildren() {
+    protected void doLoadChildren() {
         int index = 0;
         insert(new RequestWssIntegrityNode(), index++);
         insert(new RequestWssConfidentialityNode(), index++);

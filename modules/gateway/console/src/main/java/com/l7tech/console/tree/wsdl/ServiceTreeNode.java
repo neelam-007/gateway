@@ -15,7 +15,7 @@ public class ServiceTreeNode extends WsdlTreeNode {
         this.service = s;
     }
 
-    protected void loadChildren() {
+    protected void doLoadChildren() {
     }
 
     /**

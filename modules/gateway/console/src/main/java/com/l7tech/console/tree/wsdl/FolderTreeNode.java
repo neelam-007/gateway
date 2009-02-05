@@ -20,7 +20,7 @@ class FolderTreeNode extends WsdlTreeNode {
         this.lister = l;
     }
 
-    protected void loadChildren() {
+    protected void doLoadChildren() {
         int index = 0;
         children = null;
         for (Iterator i = lister.list().iterator(); i.hasNext();) {

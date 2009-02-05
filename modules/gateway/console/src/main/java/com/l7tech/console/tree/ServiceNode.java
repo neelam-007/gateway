@@ -126,7 +126,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
      * subclasses override this method
      */
     @Override
-    protected void loadChildren() {
+    protected void doLoadChildren() {
         try {
             PublishedService s = getEntity();
             if (s != null && s.isSoap()) {

@@ -31,7 +31,7 @@ public class MessageTreeNode extends WsdlTreeNode {
     /**
      * load the message parts if specifid in the options
      */
-    protected void loadChildren() {
+    protected void doLoadChildren() {
         if (wsdlOptions.isShowMessageParts()) {
             int index = 0;
             children = null;

@@ -26,7 +26,7 @@ public class XmlElementTreeNode extends WsdlTreeNode {
         return name;
     }
 
-    protected void loadChildren() {
+    protected void doLoadChildren() {
     }
 
     /**

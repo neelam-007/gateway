@@ -36,7 +36,7 @@ public class DefinitionsTreeNode extends WsdlTreeNode {
         return "com/l7tech/console/resources/folder.gif";
     }
 
-    protected void loadChildren() {
+    protected void doLoadChildren() {
         int index = 0;
         children = null;
         if (wsdlOptions.isShowMessages()) {

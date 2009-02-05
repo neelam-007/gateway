@@ -65,7 +65,7 @@ public class PolicyTemplatesFolderNode extends AbstractPaletteFolderNode {
     /**
      * subclasses override this method
      */
-    protected void loadChildren() {
+    protected void doLoadChildren() {
         // This folder does not allow modular assertions to invite themselves into it, so we don't call
         // insertMatchingModularAssertions here.
         try {

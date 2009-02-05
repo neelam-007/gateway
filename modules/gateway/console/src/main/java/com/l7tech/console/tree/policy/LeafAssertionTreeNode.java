@@ -33,7 +33,7 @@ public abstract class LeafAssertionTreeNode<AT extends Assertion> extends Assert
         super(assertion);
     }
 
-    protected void loadChildren() {
+    protected void doLoadChildren() {
     }
 
     @Override

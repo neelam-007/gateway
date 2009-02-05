@@ -84,7 +84,7 @@ public class CustomAccessControlNode extends AbstractTreeNode {
     /**
      * subclasses override this method
      */
-    protected void loadChildren() {
+    protected void doLoadChildren() {
     }
 
     public String getName() {

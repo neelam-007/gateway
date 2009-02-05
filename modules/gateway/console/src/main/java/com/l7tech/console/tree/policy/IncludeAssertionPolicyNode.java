@@ -40,7 +40,7 @@ public class IncludeAssertionPolicyNode extends AssertionTreeNode<Include> {
     }
 
     @Override
-    protected void loadChildren() {
+    protected void doLoadChildren() {
         Policy policy = getPolicy();
         if (policy == null) return;
         try {

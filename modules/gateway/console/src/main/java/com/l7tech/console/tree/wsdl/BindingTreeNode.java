@@ -22,7 +22,7 @@ public class BindingTreeNode extends WsdlTreeNode {
         return binding;
     }
 
-    protected void loadChildren() {
+    protected void doLoadChildren() {
         int index = 0;
         children = null;
         for (Iterator i = binding.getBindingOperations().iterator(); i.hasNext();) {

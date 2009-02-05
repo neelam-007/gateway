@@ -24,7 +24,7 @@ public class MessagePartTreeNode extends WsdlTreeNode {
         return messagePart;
     }
 
-    protected void loadChildren() {
+    protected void doLoadChildren() {
     }
 
     /**

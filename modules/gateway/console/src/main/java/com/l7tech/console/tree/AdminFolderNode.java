@@ -49,7 +49,7 @@ public class AdminFolderNode extends AbstractTreeNode {
     /**
      * subclasses override this method
      */
-    protected void loadChildren() {
+    protected void doLoadChildren() {
     }
 
     /**

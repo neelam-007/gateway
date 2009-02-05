@@ -19,7 +19,7 @@ public class BindingOperationTreeNode extends WsdlTreeNode {
         this.setAllowsChildren(wsdlOptions.isShowInputMessages() || wsdlOptions.isShowOutputMessages());
     }
 
-    protected void loadChildren() {
+    protected void doLoadChildren() {
         children = null;
         int index = 0;
         if (wsdlOptions.isShowInputMessages()) {

@@ -55,7 +55,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
     /**
      * subclasses override this method
      */
-    protected void loadChildren() {
+    protected void doLoadChildren() {
         IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
         List nodeList = new ArrayList();
         Enumeration e = TreeNodeFactory.

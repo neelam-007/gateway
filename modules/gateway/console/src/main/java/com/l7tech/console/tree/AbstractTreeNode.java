@@ -40,6 +40,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     };
 
     protected boolean hasLoadedChildren;
+    private boolean isLoadingChildren = false;
     protected WeakPropertyChangeSupport propChangeSupport = new WeakPropertyChangeSupport();
     private java.util.List<Cookie> cookies = new ArrayList<Cookie>();
     protected String tooltip = null;
@@ -153,12 +154,10 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     }
 
     private void checkInitChildren() {
-        if (!hasLoadedChildren) {
-            if (getAllowsChildren()) {
-                loadChildren();
-                hasLoadedChildren = true;
-                filterChildren();
-            }
+        if (!hasLoadedChildren && !isLoadingChildren && getAllowsChildren()) {
+            loadChildren();
+            hasLoadedChildren = true;
+            filterChildren();
         }
     }
 
@@ -227,11 +226,19 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         filterChildren();
     }
 
+    protected final void loadChildren() {
+        isLoadingChildren = true;
+        try {
+            doLoadChildren();
+        } finally {
+            isLoadingChildren = false;
+        }
+    }
 
     /**
      * subclasses may override this method
      */
-    protected void loadChildren(){}
+    protected void doLoadChildren(){}
 
     /**
      * Subclasses may override this method to take some action immediately after loadChildren is called.

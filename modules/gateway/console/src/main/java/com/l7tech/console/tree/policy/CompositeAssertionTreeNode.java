@@ -80,7 +80,7 @@ public abstract class CompositeAssertionTreeNode<AT extends CompositeAssertion> 
     }
 
     @Override
-    protected void loadChildren() {
+    protected void doLoadChildren() {
         CompositeAssertion assertion = (CompositeAssertion)getUserObject();
         children = null;
         LoadChildrenStrategy loader = LoadChildrenStrategy.newStrategy(this);

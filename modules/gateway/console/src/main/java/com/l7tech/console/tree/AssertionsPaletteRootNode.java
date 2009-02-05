@@ -27,7 +27,7 @@ public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
     /**
      * subclasses override this method
      */
-    protected void loadChildren() {
+    protected void doLoadChildren() {
         // We don't allow modular assertions to invite themselves into this folder, so we don't call
         // insertMatchingModularAssertions here.
 

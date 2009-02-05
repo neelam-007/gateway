@@ -23,7 +23,7 @@ public class MiscFolderNode extends AbstractPaletteFolderNode {
     /**
      * subclasses override this method
      */
-    protected void loadChildren() {
+    protected void doLoadChildren() {
         int index = 0;
         children = null;
         insert( new TimeRangePaletteNode(), index++ );

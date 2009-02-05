@@ -132,7 +132,7 @@ public abstract class EntityHeaderNode<HT extends EntityHeader> extends Abstract
     /**
      * subclasses override this method
      */
-    protected void loadChildren() {
+    protected void doLoadChildren() {
     }
 
     public String getName() {
