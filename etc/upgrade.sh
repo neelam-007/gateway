@@ -54,7 +54,7 @@ function extractProperty() {
     declare EP_ENV=$2
     declare EP_FILE=$3
     declare EP_EXPR=$(grep "${EP_PROP}" "${EP_FILE}" | sed "s/[ ]*${EP_PROP}[ ]*=//" )
-    export "${EP_ENV}"="${EP_EXPR}"
+    export "${EP_ENV}"="$(echo ${EP_EXPR} | sed 's/^[ ]*//g')"
 }
 
 function extractPort() {
@@ -93,6 +93,13 @@ function fail() {
     exit 0
 }
 
+function domove() {
+    echo "Moving file ${1} to ${2}"
+    mv -f "${1}" "${2}"
+}
+
+MV="domove"
+
 # Create upgrade directory
 mkdir "${INSTALL_DIR}/node/default/var/upgrade"
 [ ${?} -eq 0 ] || fail "Error creating upgrade directory."
@@ -103,23 +110,23 @@ echo "Starting upgrade at $(date)"
 
 # Upgrade configuration files
 echo "Upgrading configuration.";
-[ ! -f "/ssg/etc/conf/partitions/default_/omp.dat" ]              || mv -fv "/ssg/etc/conf/partitions/default_/omp.dat"              "${INSTALL_DIR}/node/default/etc/conf/omp.dat"
-[ ! -f "/ssg/etc/conf/partitions/default_/system.properties" ]    || mv -fv "/ssg/etc/conf/partitions/default_/system.properties"    "${INSTALL_DIR}/node/default/etc/conf/system.properties"
-[ ! -f "/ssg/etc/conf/partitions/default_/ssglog.properties" ]    || mv -fv "/ssg/etc/conf/partitions/default_/ssglog.properties"    "${INSTALL_DIR}/node/default/etc/conf/ssglog.properties"
-[ ! -f "/ssg/etc/conf/partitions/default_/keystore.properties" ]  || mv -fv "/ssg/etc/conf/partitions/default_/keystore.properties"  "${INSTALL_DIR}/node/default/var/upgrade/keystore.properties"
+[ ! -f "/ssg/etc/conf/partitions/default_/omp.dat" ]              || ${MV} "/ssg/etc/conf/partitions/default_/omp.dat"              "${INSTALL_DIR}/node/default/etc/conf/omp.dat"
+[ ! -f "/ssg/etc/conf/partitions/default_/system.properties" ]    || ${MV} "/ssg/etc/conf/partitions/default_/system.properties"    "${INSTALL_DIR}/node/default/etc/conf/system.properties"
+[ ! -f "/ssg/etc/conf/partitions/default_/ssglog.properties" ]    || ${MV} "/ssg/etc/conf/partitions/default_/ssglog.properties"    "${INSTALL_DIR}/node/default/etc/conf/ssglog.properties"
+[ ! -f "/ssg/etc/conf/partitions/default_/keystore.properties" ]  || ${MV} "/ssg/etc/conf/partitions/default_/keystore.properties"  "${INSTALL_DIR}/node/default/var/upgrade/keystore.properties"
 
 # copy hibernate.properties to new location but comment out everything, also copy to upgrade directory for processing
 if [ -f "/ssg/etc/conf/partitions/default_/hibernate.properties" ] && [ ! -f "${INSTALL_DIR}/node/default/etc/conf/hibernate.properties" ] ; then
     echo "Migrating /ssg/etc/conf/partitions/default_/hibernate.properties to ${INSTALL_DIR}/node/default/etc/conf/"
     cat "/ssg/etc/conf/partitions/default_/hibernate.properties" | sed '/#/!s/^/#/' > "${INSTALL_DIR}/node/default/etc/conf/hibernate.properties"
 fi
-[ ! -f "/ssg/etc/conf/partitions/default_/hibernate.properties" ] || mv -fv "/ssg/etc/conf/partitions/default_/hibernate.properties" "${INSTALL_DIR}/node/default/var/upgrade/hibernate.properties"
+[ ! -f "/ssg/etc/conf/partitions/default_/hibernate.properties" ] || ${MV} "/ssg/etc/conf/partitions/default_/hibernate.properties" "${INSTALL_DIR}/node/default/var/upgrade/hibernate.properties"
 
 # Upgrade configuration artifacts
-[ ! -f "/ssg/etc/conf/partitions/default_/kerberos.keytab" ] || mv -fv "/ssg/etc/conf/partitions/default_/kerberos.keytab" "${INSTALL_DIR}/node/default/var/"
+[ ! -f "/ssg/etc/conf/partitions/default_/kerberos.keytab" ] || ${MV} "/ssg/etc/conf/partitions/default_/kerberos.keytab" "${INSTALL_DIR}/node/default/var/"
 if [ -d "/ssg/etc/conf/partitions/default_/keys" ] ; then
     echo "Migrating keystore files.";
-    find "/ssg/etc/conf/partitions/default_/keys" -name '*.ks' -exec cp -pfv {} "${INSTALL_DIR}/node/default/var/upgrade/" \;
+    find "/ssg/etc/conf/partitions/default_/keys" -name '*.ks' -print -exec cp -fp {} "${INSTALL_DIR}/node/default/var/upgrade/" \;
 else
     echo "Not migrating keystore files.";
 fi
@@ -127,7 +134,7 @@ fi
 # Upgrade runtime files
 if [ -d "/ssg/logs" ] ; then
     echo "Upgrading runtime files.";
-    find "/ssg/logs" -name '*.log' -exec mv -fv {} "${INSTALL_DIR}/node/default/var/logs/" \;
+    find "/ssg/logs" -name '*.log' -exec ${MV} {} "${INSTALL_DIR}/node/default/var/logs/" \;
 else
     echo "Not upgrading runtime files.";
 fi
@@ -139,7 +146,7 @@ if [ -d "/ssg/lib/ext" ] ; then
         JARNAME=$(basename ${JARPATH})
         notIgnore "${JARNAME}" "${IGNORE_EXT}"
         if [ ${?} -eq 0 ] ; then
-            mv -fv "${JARPATH}" "${INSTALL_DIR}/runtime/lib/ext/"
+            ${MV} "${JARPATH}" "${INSTALL_DIR}/runtime/lib/ext/"
         else
             echo "Ignoring lib/ext Jar : ${JARNAME}"
         fi
@@ -155,7 +162,7 @@ if [ -d "/ssg/modules/lib" ] ; then
         ASSNAME=$(basename ${ASSPATH})
         notIgnore "${ASSNAME}" "${IGNORE_ASS}"
         if [ ${?} -eq 0 ] ; then
-            mv -fv "${ASSPATH}" "${INSTALL_DIR}/runtime/modules/lib/"
+            ${MV} "${ASSPATH}" "${INSTALL_DIR}/runtime/modules/lib/"
         else
             echo "Ignoring Custom Assertion (or other module) Jar : ${ASSNAME}"
         fi
@@ -188,26 +195,31 @@ if [ -f "${INSTALL_DIR}/node/default/var/upgrade/hibernate.properties" ] && [ -f
     if [ -f "${INSTALL_DIR}/node/default/etc/conf/system.properties" ] ; then
         extractProperty "com.l7tech.cluster.macAddress" NODE_MAC "${INSTALL_DIR}/node/default/etc/conf/system.properties"
     fi
-    if [ -z "${NODE_MAC}" ] ; then
+    if [ ! -z "${NODE_MAC}" ] ; then
+        echo "Using MAC address from system.properties for Node ID generation (${NODE_MAC})."
+    else
         /sbin/ifconfig -a | grep ether &>/dev/null
         if [ ${?} -eq 0 ] ; then
             # Solaris
             NODE_MAC=$(/sbin/ifconfig $(/sbin/route -n get default | awk '/interface/ {print $2}') | awk '/ether/ {print $2}')
+            echo "Using MAC address from Solaris system information (${NODE_MAC})."
         else
             # Linux
             /sbin/ifconfig -a | grep eth0 &>/dev/null
             if [ ${?} -eq 0 ] ; then
                 NODE_MAC=$(/sbin/ifconfig eth0 | grep HWaddr | awk '{print $5}')
+                echo "Using MAC address from eth0 (${NODE_MAC})."
             else
                 NODE_MAC=$(/sbin/ifconfig | head -1 | grep HWaddr | awk '{print $5}')
+                echo "Using MAC address from first interface (${NODE_MAC})."   
             fi
         fi
     fi
     calculateNodeId "${NODE_MAC}" NODE_ID
 
     extractProperty "sslkspasswd" KEYSTORE_SSL_PASS "${INSTALL_DIR}/node/default/var/upgrade/keystore.properties"
-    HIBERNATE_URL_HOSTS=$(echo -n "${HIBERNATE_URL}" | sed 's/[\/\?&=]/ /g' | awk '{print $2}')
-    HIBERNATE_URL_DB=$(echo -n "${HIBERNATE_URL}" | sed 's/[\/\?&=]/ /g' | awk '{print $3}')
+    HIBERNATE_URL_HOSTS=$(echo "${HIBERNATE_URL}" | sed 's/[\/\?&=]/ /g' | awk '{print $2}')
+    HIBERNATE_URL_DB=$(echo "${HIBERNATE_URL}" | sed 's/[\/\?&=]/ /g' | awk '{print $3}')
     echo -n "${HIBERNATE_URL_HOSTS}" | grep "," &>/dev/null
     if [ ${?} -ne 0 ] ; then
         # Single host configuration
@@ -253,6 +265,19 @@ ENDOFNODEPROPERTIES
 
     # cleanup 
     rm -f "${INSTALL_DIR}/node/default/var/upgrade/hibernate.properties"
+fi
+
+JAVA_PROFILE=""
+if [ -f "/ssg/etc/profile.d/java.sh.rpmsave" ] && [ ! -d "/ssg/appliance" ] ; then
+    JAVA_PROFILE="/ssg/etc/profile.d/java.sh.rpmsave"
+fi
+if [ -f "/ssg/etc/profile.d/java.sh" ] && [ ! -d "/ssg/appliance" ] ; then
+    JAVA_PROFILE="/ssg/etc/profile.d/java.sh"
+fi
+if [ ! -z "${JAVA_PROFILE}" ] ; then
+    echo "Importing Java VM configuration from ${JAVA_PROFILE}."
+    source "${JAVA_PROFILE}"
+    echo "node.java.path = ${SSG_JAVA_HOME}" >> "${INSTALL_DIR}/node/default/etc/conf/node.properties"
 fi
 
 echo "Setting permissions on modified files"

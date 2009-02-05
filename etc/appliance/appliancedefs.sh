@@ -8,7 +8,7 @@ function extractProperty() {
     declare EP_ENV=$2
     declare EP_FILE=$3
     declare EP_EXPR=$(grep "${EP_PROP}" "${EP_FILE}" | sed "s/[ ]*${EP_PROP}[ ]*=//" )
-    export "${EP_ENV}"="${EP_EXPR}"
+    export "${EP_ENV}"="$(echo ${EP_EXPR} | sed 's/^[ ]*//g')"
 }
 
 # add to path
