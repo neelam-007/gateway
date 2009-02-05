@@ -617,7 +617,10 @@ public class SinkManagerImpl
 
                     if ( valid ) {
                         String charset = configuration.getProperty( SinkConfiguration.PROP_SYSLOG_CHAR_SET );
-                        valid = Charset.isSupported( charset );
+                        if ("LATIN-1".equals(charset))
+                            valid = Charset.isSupported("ISO-8859-1");
+                        else
+                            valid = Charset.isSupported(charset);
                     }
 
                     break;

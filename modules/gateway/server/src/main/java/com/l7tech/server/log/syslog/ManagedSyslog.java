@@ -115,7 +115,7 @@ public abstract class ManagedSyslog implements Closeable {
             this.timeZone = timeZone == null ? TimeZone.getDefault() : TimeZone.getTimeZone(timeZone);
             // bug #6564 - bad charset name for LATIN-1
             if ("LATIN-1".equalsIgnoreCase(charset)) {
-                this.charset = Charset.forName("ISO8859-1");
+                this.charset = Charset.forName("ISO-8859-1");
             } else {
                 this.charset = charset == null ? Charset.forName("UTF-8") : Charset.forName(charset);
             }
