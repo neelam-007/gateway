@@ -21,19 +21,13 @@ public class ExternalEntityHeader extends EntityHeader {
     public ExternalEntityHeader() {
     }
 
-    public ExternalEntityHeader(String externalId, EntityType type, String name) {
-        super(null, type, name, null);
-        this.externalId = externalId;
-    }
-
     public ExternalEntityHeader(String externalId, EntityType type, String id, String name, String description, Integer version) {
         super(id, type, name, description, version);
         this.externalId = externalId;
     }
 
     public ExternalEntityHeader(String externalId, EntityHeader header) {
-        super(header.getStrId(), header.getType(), header.getName(), header.getDescription(), header.getVersion());
-        this.externalId = externalId;
+        this(externalId, header.getType(), header.getStrId(), header.getName(), header.getDescription(), header.getVersion());
     }
 
     public String getExternalId() {
@@ -67,14 +61,18 @@ public class ExternalEntityHeader extends EntityHeader {
 
         ExternalEntityHeader that = (ExternalEntityHeader) o;
 
-        return type == that.type && !(externalId != null ? !externalId.equals(that.externalId) : that.externalId != null);
+        if (type != that.type) return false;
+        if (this.version != null ? !version.equals(that.version) : that.version != null) return false;
+        if (externalId != null ? !externalId.equals(that.externalId) : that.externalId != null) return false;
 
+        return true;
     }
 
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (externalId != null ? externalId.hashCode() : 0);
         result = 31 * result + (type != null ? type.hashCode() : 0);
+        result = 31 * result + (version != null ? version.hashCode() : 0);
         return result;
     }
 }

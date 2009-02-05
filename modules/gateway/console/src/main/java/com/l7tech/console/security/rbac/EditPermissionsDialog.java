@@ -43,7 +43,7 @@ public class EditPermissionsDialog extends JDialog {
             if (type.isDisplayedInGui()) types.add(type);
         }
 
-        typeSelection.setModel(new DefaultComboBoxModel(types.toArray(new EntityType[0])));
+        typeSelection.setModel(new DefaultComboBoxModel(types.toArray(new EntityType[types.size()])));
         EntityType etype = permission.getEntityType();
         if (etype != null) typeSelection.setSelectedItem(etype);
 
@@ -52,7 +52,7 @@ public class EditPermissionsDialog extends JDialog {
             if (opType != OperationType.NONE && opType != OperationType.OTHER)
                 values.add(opType);
         }
-        operationSelection.setModel(new DefaultComboBoxModel(values.toArray(new OperationType[0])));
+        operationSelection.setModel(new DefaultComboBoxModel(values.toArray(new OperationType[values.size()])));
 
         OperationType op = permission.getOperation();
         if (op != null) operationSelection.setSelectedItem(op);
@@ -130,7 +130,7 @@ public class EditPermissionsDialog extends JDialog {
                 }
 
                 if (header != null) {
-                    scopeField.setText(sd.getSpecificEntity().toString());
+                    scopeField.setText(sd.getSpecificEntity().getName());
                 } else
                     scopeField.setText(getScopeString(sd.getPermission()));
             }

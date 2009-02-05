@@ -868,7 +868,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     ExternalEntityHeader targetFolderHeader = null;
                     for ( GatewayApi.EntityInfo info : folders ) {
                         if ( targetFolderId.equals( info.getId() ) ) {
-                            targetFolderHeader = new ExternalEntityHeader(info.getExternalId(), com.l7tech.objectmodel.EntityType.FOLDER, info.getName());
+                            targetFolderHeader = new ExternalEntityHeader(info.getExternalId(), com.l7tech.objectmodel.EntityType.FOLDER, null, info.getName(), null, info.getVersion());
                         }
                     }
 
@@ -1106,7 +1106,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             for ( DependencyItem entity : entities ) {
                 com.l7tech.objectmodel.EntityType type = JSONConstants.EntityType.ENTITY_TYPE_MAP.get( entity.type );
                 if ( type != null ) {
-                    headers.add( new ExternalEntityHeader( entity.id, type, entity.name) );
+                    headers.add( new ExternalEntityHeader( entity.id, type, null, entity.name, null, entity.getVersion()) );
                 } else {
                     logger.warning("Entity with unknown type '"+entity.type+"' requested.");
                 }
@@ -1220,6 +1220,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             id = (String)data.get("id");
             type = (String)data.get("type");
             name = (String)data.get("name");
+            version = Integer.parseInt((String)data.get("version"));
         }
 
         @SuppressWarnings({"RedundantIfStatement"})
@@ -1256,6 +1257,10 @@ public class PolicyMigration extends EsmStandardWebPage {
 
         public ExternalEntityHeader asEntityHeader() {
             return entityHeader;
+        }
+
+        public Integer getVersion() {
+            return version;
         }
     }
 

@@ -76,10 +76,10 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
 
         long oid;
         try {
-            MigrationMappingRecord exisingMapping =
+            MigrationMappingRecord existingMapping =
                     findByMapping( mapping.getSourceCluster(), sourceEntityHeader,
                                    mapping.getTargetCluster(), targetEntityHeader );
-            if ( exisingMapping == null ) {
+            if ( existingMapping == null ) {
                 mapping.setTimestamp( System.currentTimeMillis() );
 
                 MigrationMappedEntity sourceEntity = new MigrationMappedEntity();
@@ -104,7 +104,7 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
 
                 oid = super.save( mapping );
             } else {
-                oid = exisingMapping.getOid();
+                oid = existingMapping.getOid();
             }
         } catch ( FindException fe ) {
             throw new SaveException( "Error checking for existing mapping saving.", fe );
@@ -149,12 +149,14 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
 
         if ( sourceEntityHeader != null  ) {
             map.put("source.entityType", sourceEntityHeader.getType());
-            map.put("source.entityId", sourceEntityHeader.getExternalId());
+            map.put("source.externalId", sourceEntityHeader.getExternalId());
+            // source version not included in mapping lookup
         }
 
         if ( targetEntityHeader != null  ) {
             map.put("target.entityType", targetEntityHeader.getType());
-            map.put("target.entityId", targetEntityHeader.getExternalId());
+            map.put("target.externalId", targetEntityHeader.getExternalId());
+            map.put("target.entityVersion", targetEntityHeader.getVersion());
         }
 
         List<MigrationMappingRecord> result = findMatching(Arrays.asList(map));

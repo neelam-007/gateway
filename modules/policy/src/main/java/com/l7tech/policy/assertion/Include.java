@@ -82,7 +82,7 @@ public class Include extends Assertion implements UsesEntities, PolicyReference 
 
     @Override
     public EntityHeader[] getEntitiesUsed() {
-        GuidEntityHeader header = new GuidEntityHeader(policyGuid, EntityType.POLICY, policyName, null);
+        GuidEntityHeader header = new GuidEntityHeader(policyGuid, EntityType.POLICY, policyName, null, fragmentPolicy == null ? null : fragmentPolicy.getVersion());
         header.setGuid( policyGuid );
         return new EntityHeader[] {
             header

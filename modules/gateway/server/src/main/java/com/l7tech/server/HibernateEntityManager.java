@@ -185,9 +185,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     protected List<ET> findMatching(final Collection<Map<String, Object>> maps) throws FindException {
         List<ET> result = new ArrayList<ET>();
         try {
-            maps: for (final Map<String, Object> map : maps) {
-                for (Object o : map.values())
-                    if (o == null) continue maps;
+            for (final Map<String, Object> map : maps) {
 
                 //noinspection unchecked
                 result.addAll(getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
@@ -195,6 +193,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                         Criteria crit = session.createCriteria(getImpClass());
                         for (Map.Entry<String, ?> entry : map.entrySet()) {
+                            if (entry.getValue() == null) continue;
                             crit.add(Restrictions.eq(entry.getKey(), entry.getValue()));
                         }
                         return crit.list();

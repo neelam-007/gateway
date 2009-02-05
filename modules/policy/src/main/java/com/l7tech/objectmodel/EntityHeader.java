@@ -98,7 +98,7 @@ public class EntityHeader extends EntityHeaderRef {
 
     @Override
     public String toString() {
-        return name;
+        return name + " : " + type + " : " + version;
     }
 
     @Override
@@ -119,7 +119,7 @@ public class EntityHeader extends EntityHeaderRef {
 
     protected String name;
     private String description;
-    private Integer version;
+    Integer version;
 
     @Override
     public int compareTo(Object o) {
