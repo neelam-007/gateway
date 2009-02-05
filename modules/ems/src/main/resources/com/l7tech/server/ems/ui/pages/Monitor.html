@@ -137,11 +137,11 @@
     </script>
     <script type="text/javascript">
         /**
-         * Default interval in milliseconds to refresh monitoring property values.
+         * Default interval in seconds to refresh monitoring property values.
          * Applies when previous refresh failed.
          * @final
          */
-        var DEFAULT_MONITORING_PROPERTIES_REFRESH_INTERVAL = 10000;
+        var DEFAULT_MONITORING_PROPERTIES_REFRESH_INTERVAL = 10;
 
         var ALL_PROPERTY_TYPES = l7.Util.getPropertyValues(l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY, l7.Constants.SSG_NODE_MONITORING_PROPERTY);
 
@@ -1010,7 +1010,7 @@
                     nextRefreshInterval = result.json.nextRefreshInterval;
                 }
             }
-            setTimeout('refreshMonitoringProperties()', nextRefreshInterval);
+            setTimeout('refreshMonitoringProperties()', 1000 * nextRefreshInterval);
         }
 
         function loadMonitoringSetup() {
