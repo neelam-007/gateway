@@ -122,9 +122,7 @@
         <constructor-arg index="1" value="var/db/esm.sql"/>
     </bean>
 
-    <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor">
-        <constructor-arg index="0" ref="auditContext"/>
-    </bean>
+    <bean id="persistenceEventInterceptor" class="com.l7tech.server.PersistenceEventInterceptor"/>
 
     <bean id="managedBackgroundTimer" class="com.l7tech.server.util.ManagedTimer">
         <constructor-arg value="Background timer"/>
