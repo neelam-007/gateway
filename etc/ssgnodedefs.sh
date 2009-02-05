@@ -1,16 +1,12 @@
 # LAYER 7 TECHNOLOGIES
 # Defines settings for node specific options
 
-extractProperty() {
-    EP_PROP=$1
-    EP_ENV=$2
-    EP_FILE=$3
-    EP_EXPR=$(grep "${EP_PROP}" "${EP_FILE}" | sed "s/[ ]*${EP_PROP}[ ]*=//" )
-    eval "${EP_ENV}"=\"${EP_EXPR}\"
-    unset EP_PROP
-    unset EP_ENV
-    unset EP_FILE
-    unset EP_EXPR
+function extractProperty() {
+    declare EP_PROP=$1
+    declare EP_ENV=$2
+    declare EP_FILE=$3
+    declare EP_EXPR=$(grep "${EP_PROP}" "${EP_FILE}" | sed "s/[ ]*${EP_PROP}[ ]*=//" )
+    export "${EP_ENV}"="${EP_EXPR}"
 }
 
 if [ ! -z "${SSGNODE}" ] ; then

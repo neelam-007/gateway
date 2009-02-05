@@ -52,8 +52,11 @@ if [ -d "${SSG_JAVA_HOME}/jre/lib/ext" ] ; then
 else
     JAVA_OPTS="${JAVA_OPTS} -Djava.ext.dirs=${SSG_JAVA_HOME}/lib/ext:${SSG_HOME}/runtime/lib/ext"
 fi
-if [ "${SSGTARARI}"  == "true" ] && [ -e  /usr/local/Tarari ] ; then
+if [ "${SSGTARARI}" == "true" ] && [ -e /usr/local/Tarari ] ; then
     JAVA_OPTS="-Dcom.l7tech.common.xml.tarari.enable=true ${JAVA_OPTS}"
+fi
+if [ "${SSGSCA}" == "true" ] && [ -s /opt/sun/sca6000/sbin/scadiag ] ; then
+    JAVA_OPTS="-Dcom.l7tech.server.sca.enable=true ${JAVA_OPTS}"
 fi
 if [ -n "${SSG_JAVA_OPTS}" ] ; then
   JAVA_OPTS="${JAVA_OPTS} ${SSG_JAVA_OPTS}"

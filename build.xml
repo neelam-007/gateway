@@ -2696,7 +2696,6 @@
         <!--</copy>-->
 
         <!-- conf files -->
-        <copy file="${src.root}/etc/ssg-java.security" tofile="${install.src.ssg.conf}/java.security"/>
         <copy file="${src.root}/etc/system.properties" todir="${install.src.ssg.conf}"/>
         <copy file="${src.root}/etc/ssglog.template.properties" tofile="${install.src.ssg.conf}/ssglog.properties"/>
 

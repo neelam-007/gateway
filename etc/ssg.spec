@@ -42,7 +42,8 @@ rm -fr %{buildroot}
 %dir /opt/SecureSpan/Gateway/runtime
 %dir /opt/SecureSpan/Gateway/runtime/etc
 %dir /opt/SecureSpan/Gateway/node/default/etc
-%config(noreplace) /opt/SecureSpan/Gateway/node/default/etc/conf
+%dir /opt/SecureSpan/Gateway/node/default/etc/conf
+%config(noreplace) /opt/SecureSpan/Gateway/node/default/etc/conf/*
 
 # Group directories and files
 %defattr(0444,layer7,layer7,0755)

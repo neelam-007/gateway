@@ -1,6 +1,23 @@
-if [ -e  /usr/local/Tarari ]; then
+# LAYER 7 TECHNOLOGIES
+# Defines TARARIROOT, SSGTARARI,  etc
+
+function extractProperty() {
+    declare EP_PROP=$1
+    declare EP_ENV=$2
+    declare EP_FILE=$3
+    declare EP_EXPR=$(grep "${EP_PROP}" "${EP_FILE}" | sed "s/[ ]*${EP_PROP}[ ]*=//" )
+    export "${EP_ENV}"="${EP_EXPR}"
+}
+
+if [ -e /usr/local/Tarari ]; then
 	TARARIROOT=/usr/local/Tarari
-	SSGTARARI=true
+    SSGTARARI=""
+    if [ -f "/opt/SecureSpan/Appliance/controller/etc/host.properties" ] ; then
+        extractProperty "host.tarari" SSGTARARI "/opt/SecureSpan/Appliance/controller/etc/host.properties"
+    fi
+    if [ -z "${SSGTARARI}" ] ; then
+        SSGTARARI="true"
+    fi
 
     if ! echo $PATH | /bin/egrep -q "(^|:)$TARARIROOT/bin($|:)" ; then
         PATH=$TARARIROOT/bin:$PATH

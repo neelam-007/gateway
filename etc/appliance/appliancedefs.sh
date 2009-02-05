@@ -3,6 +3,14 @@
 
 ulimit -s 2048
 
+function extractProperty() {
+    declare EP_PROP=$1
+    declare EP_ENV=$2
+    declare EP_FILE=$3
+    declare EP_EXPR=$(grep "${EP_PROP}" "${EP_FILE}" | sed "s/[ ]*${EP_PROP}[ ]*=//" )
+    export "${EP_ENV}"="${EP_EXPR}"
+}
+
 # add to path
 if [ -z "${PATH}" ] ; then
         PATH="SSG_HOME/runtime/bin"
@@ -33,9 +41,18 @@ SSG_JAVA_HOME="/opt/SecureSpan/JDK"
 # Setting larger permsize for java 1.6
 NODE_OPTS="-Xmx${java_ram}k -XX:MaxPermSize=128M -Xss256k"
 
+SSGSCA=""
+if [ -f "/opt/SecureSpan/Appliance/controller/etc/host.properties" ] ; then
+    extractProperty "host.sca" SSGSCA "/opt/SecureSpan/Appliance/controller/etc/host.properties"
+fi
+if [ -z "${SSGSCA}" ] ; then
+   SSGSCA="false"
+fi
+
 export SSG_JAVA_HOME
 export NODE_OPTS
 export PATH
+export SSGSCA
 
 unset system_ram
 unset multiplier
