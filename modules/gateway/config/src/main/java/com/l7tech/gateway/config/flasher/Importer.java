@@ -129,27 +129,25 @@ class Importer {
 
             rootDBUsername = arguments.get(DB_USER.name);
             rootDBPasswd = arguments.get(DB_PASSWD.name);
-            if (!configOnly && rootDBUsername == null) {
+            if (rootDBUsername == null) {
                 throw new FlashUtilityLauncher.InvalidArgumentException("Please provide options: " + DB_USER.name +
                         " and " + DB_PASSWD.name);
             }
             if (rootDBPasswd == null) rootDBPasswd = ""; // totally legit
 
-            if (!configOnly) {
-                // Replace database host name and database name in URL by those from command line options.
-                dbHost = arguments.get(DB_HOST_NAME.name);
-                if (dbHost == null) {
-                    throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_HOST_NAME.name);
-                } else if (dbHost.indexOf(':') > 0) {
-                    dbHost = dbHost.split(":", 2)[0];
-                    dbPort = dbHost.split(":", 2)[1];
-                } else {
-                    dbPort = "3306";
-                }
+            // Replace database host name and database name in URL by those from command line options.
+            dbHost = arguments.get(DB_HOST_NAME.name);
+            if (!configOnly && dbHost == null) {
+                throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_HOST_NAME.name);
+            } else if (dbHost.indexOf(':') > 0) {
+                dbHost = dbHost.split(":", 2)[0];
+                dbPort = dbHost.split(":", 2)[1];
+            } else {
+                dbPort = "3306";
             }
 
             dbName = arguments.get(DB_NAME.name);
-            if (!configOnly && dbName == null) {
+            if (dbName == null) {
                 throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_NAME.name);
             }
 
