@@ -66,7 +66,7 @@ public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode {
         if (assertion == null)
             return false;
         String url = assertion.getProtectedServiceUrl();
-        return url != null && url.toLowerCase().startsWith("https:");
+        return url != null && !url.toLowerCase().startsWith("http:");
     }
 
     /**
