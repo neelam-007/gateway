@@ -598,9 +598,9 @@
          *
          * Note: This uses a synchronous call.
          *
-         * @param {boolean} overwrite   applies if adding new notification rule: true to overwrite existing settings with same name without confirmation dialog
+         * @return {boolean} true if success; false if failure
          */
-        function saveNotificationRule(overwrite) {
+        function saveNotificationRule() {
             var settings = {};
             if (notifDlg_id.value != '') {
                 settings.id = notifDlg_id.value;    // Existence indicates editing an existing notification rule.
@@ -648,9 +648,8 @@
             }
 
             var postData = YAHOO.lang.JSON.stringify(settings);
-            // TODO Set saveNotificationRuleUrl and saveNotificationRuleOverwrite using Wicket.
-            var url = overwrite ? saveNotificationRuleOverwriteUrl : saveNotificationRuleUrl;
-            var xhr = l7.Connection.syncRequest('POST', url, postData, true);
+            // TODO Set saveNotificationRuleUrl using Wicket.
+            var xhr = l7.Connection.syncRequest('POST', saveNotificationRuleUrl, postData, true);
             if (xhr.status == 200) {
                 var result = l7.Connection.parseJsonResponse(xhr,
                                                              true,
@@ -660,20 +659,13 @@
                                                              localizedStrings.ERROR,
                                                              localizedStrings.OK);
                 if (result.success) {
-                    if (result.json == null) {
-                        // No response JSON object expected if successfully saved.
-                        l7.Dialog.showInfoDialog(localizedStrings.NOTIFICATION_RULE_SAVED_TITLE, localizedStrings.NOTIFICATION_RULE_SAVED, localizedStrings.OK);
-                        loadNotificationRules();
-                    } else if (result.json.reconfirm != undefined && result.json.reconfirm == true) {
-                        // Server is asking for reconfirmation because name already exists.
-                        // Launch the dialog to reconfirm the SSG Cluster deletion.
-                        document.getElementById('saveNotificationRuleOverwriteDialog_name').innerHTML = l7.Util.escapeHtmlText(settings.name);
-                        saveNotificationRuleOverwriteDialog.show();
-                    }
+                    // No response JSON object expected if successfully saved.
                 }
             } else {
                 l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_SAVE_NOTIFICATION_RULE + '<br/><br/>' + xhr.status + ' ' + xhr.statusText, localizedStrings.OK);
             }
+
+            return result.success;
         }
 
         /**
@@ -1264,9 +1256,11 @@
                     {
                         text      : localizedStrings.SAVE,
                         handler   : function() {
-                            this.hide();
-                            saveNotificationRule(false);
-                            loadNotificationRules();
+                            if (saveNotificationRule()) {
+                                l7.Dialog.showInfoDialog(localizedStrings.NOTIFICATION_RULE_SAVED_TITLE, localizedStrings.NOTIFICATION_RULE_SAVED, localizedStrings.OK);
+                                this.hide();
+                                loadNotificationRules();
+                            } // else keep dialog for user to fix up
                         },
                         isDefault : true
                     },
@@ -1283,41 +1277,7 @@
                 modal       : true,
                 visible     : false
             });
-            addOrEditNotificationRuleDialog.manualSubmitEvent.subscribe(function() {
-                if (validateMonitoringPropertyDialog()) {
-                    saveNotificationRule(false);
-                    loadNotificationRules();
-                } // else treat as cancel
-            }); // To handle ENTER key press.
             addOrEditNotificationRuleDialog.render();
-        }
-
-        function initSaveNotificationRuleOverwriteDialog() {
-            saveNotificationRuleOverwriteDialog = new YAHOO.widget.Dialog('saveNotificationRuleOverwriteDialog', {
-                buttons     : [
-                    {
-                        text      : localizedStrings.SAVE,
-                        handler   : function() {
-                            this.hide();
-                            saveNotificationRule(true);
-                            loadNotificationRules();
-                        },
-                        isDefault : true
-                    },
-                    {
-                        text      : localizedStrings.CANCEL,
-                        handler   : function() {
-                            this.hide();
-                        }
-                    }
-                ],
-                close       : true,
-                draggable   : true,
-                fixedcenter : true,
-                modal       : true,
-                visible     : false
-            });
-            saveNotificationRuleOverwriteDialog.render();
         }
 
         function initDeleteNotificationRuleDialog() {
@@ -1399,7 +1359,6 @@
 
         function initDialogs() {
             initAddOrEditNotificationRuleDialog();
-            initSaveNotificationRuleOverwriteDialog();
             initDeleteNotificationRuleDialog();
             initMonitoringPropertySettingsDialog();
         }
@@ -1999,20 +1958,6 @@
                     </td>
                 </tr>
             </table>
-        </form>
-    </div>
-</div>
-
-<!-- Dialog to confirm overwrite existing notification rule. -->
-<div id="saveNotificationRuleOverwriteDialog">
-    <div class="hd">Duplicate Notification Rule Name</div>
-    <div class="bd">
-        <form>
-            A notification rule with the name &ldquo;<span id="saveNotificationRuleOverwriteDialog_name"></span>&rdquo;
-            already exists.
-            <br/>
-            <br/>
-            Overwrite?
         </form>
     </div>
 </div>
