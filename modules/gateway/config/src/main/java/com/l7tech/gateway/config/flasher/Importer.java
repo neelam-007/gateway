@@ -137,7 +137,7 @@ class Importer {
 
             // Replace database host name and database name in URL by those from command line options.
             dbHost = arguments.get(DB_HOST_NAME.name);
-            if (!configOnly && dbHost == null) {
+            if (dbHost == null) {
                 throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_HOST_NAME.name);
             } else if (dbHost.indexOf(':') > 0) {
                 dbHost = dbHost.split(":", 2)[0];
