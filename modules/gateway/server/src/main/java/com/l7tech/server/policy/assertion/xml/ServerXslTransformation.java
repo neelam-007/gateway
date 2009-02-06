@@ -344,8 +344,9 @@ public class ServerXslTransformation
             return AssertionStatus.BAD_REQUEST;
         } catch (TransformerException e) {
             String msg = "error transforming document";
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
-            throw new PolicyAssertionException(assertion, msg, e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, ExceptionUtils.getDebugException(e));
+            // bug #6486 - Do not re-throw transform exception as a PolicyAssertionException
+            return AssertionStatus.SERVER_ERROR;
         }
     }
 
