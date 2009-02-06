@@ -5,6 +5,7 @@ import org.apache.wicket.markup.html.panel.EmptyPanel;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.HiddenField;
+import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -37,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -70,11 +72,7 @@ public class StandardReportsManagementPanel extends Panel {
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
                 String reportIdentifier = (String)form.get("reportId").getModel().getObject();
                 if ( reportIdentifier != null && reportIdentifier.length() > 0 ) {
-                    ValueMap vm = new ValueMap();
-                    vm.add("reportId", reportIdentifier);
-                    vm.add("type", "application/pdf");
-                    ResourceReference logReference = new ResourceReference("reportResource");
-                    ajaxRequestTarget.appendJavascript("window.open('" + RequestCycle.get().urlFor(logReference, vm).toString() + "', '_blank');");
+                    ajaxRequestTarget.appendJavascript("window.open('/reports/" + reportIdentifier + "/', '_blank');");
                 }
             }
         };
@@ -83,13 +81,14 @@ public class StandardReportsManagementPanel extends Panel {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
                 String reportIdentifier = (String)form.get("reportId").getModel().getObject();
+                String reportFormat = (String)form.get("reportFormat").getModel().getObject();
                 if ( reportIdentifier != null && reportIdentifier.length() > 0 ) {
                     ValueMap vm = new ValueMap();
                     vm.add("reportId", reportIdentifier);
-                    vm.add("type", "application/pdf");
+                    vm.add("type", reportFormat==null || !reportFormat.equals("HTML") ? "application/pdf" : "application/zip");
                     vm.add("disposition", "attachment");
-                    ResourceReference logReference = new ResourceReference("reportResource");
-                    ajaxRequestTarget.appendJavascript("window.location = '" + RequestCycle.get().urlFor(logReference, vm).toString() + "';");
+                    ResourceReference resourceReference = new ResourceReference("reportResource");
+                    ajaxRequestTarget.appendJavascript("window.location = '" + RequestCycle.get().urlFor(resourceReference, vm).toString() + "';");
                 }
             }
         };
@@ -143,9 +142,11 @@ public class StandardReportsManagementPanel extends Panel {
 
         HiddenField hidden = new HiddenField("reportId", new Model(""));
 
+
         viewButton.setEnabled(false);
         downloadButton.setEnabled(false);
 
+        pageForm.add( new DropDownChoice( "reportFormat", new Model("PDF"), Arrays.asList("HTML", "PDF") ) );
         pageForm.add( viewButton.setOutputMarkupId(true) );
         pageForm.add( downloadButton.setOutputMarkupId(true) );
         pageForm.add( deleteButton );

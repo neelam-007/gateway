@@ -354,6 +354,10 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
                                         artifacts.put( type, generator.generateReportOutput( filledHandle[0], type.toString() ) );
                                         logger.info("Report artifact of type '"+type+"' created for id '"+reportId.toString()+"'.");
                                         break;
+                                    case HTML:
+                                        artifacts.put( type, generator.generateReportOutput( filledHandle[0], type.toString() ) );
+                                        logger.info("Report artifact of type '"+type+"' created for id '"+reportId.toString()+"'.");
+                                        break;
                                     default:
                                         throw new ReportException( "Report output type not supported '"+type+"'." );
                                 }

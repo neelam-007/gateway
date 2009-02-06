@@ -10,6 +10,8 @@ import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.ArrayList;
+import java.util.zip.ZipOutputStream;
+import java.util.zip.ZipEntry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.*;
@@ -38,6 +40,8 @@ import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperExportManager;
+import net.sf.jasperreports.engine.export.JRHtmlExporter;
+import net.sf.jasperreports.engine.export.JRHtmlExporterParameter;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -61,7 +65,7 @@ public class ReportGenerator {
 
         //
         Map<String, Object> reportParams = new HashMap<String,Object>( reportParameters );
-        reportParams.putAll( getParameters(reportType) );
+        reportParams.putAll( getParameters() );
         processReportParameters( reportType, connection, reportParams );
 
         //
@@ -72,7 +76,7 @@ public class ReportGenerator {
         try {
             // Compile sub-reports
             for ( ReportTemplate subReportTemplate : template.getSubReports() ) {
-                Document runtimeDocument = null;
+                Document runtimeDocument;
                 Map<String, Object> transformParameterMap = null;
                 //only usage sub reports require transormation, all require compilation
                 if(subReportTemplate.isTransformedRequired()){
@@ -116,13 +120,51 @@ public class ReportGenerator {
     public byte[] generateReportOutput( final ReportHandle handle,
                                         final String type ) throws ReportGenerationException {
         if ( handle.getJasperPrint()==null ) throw new ReportGenerationException( "ReportHandle not filled." );
-        if ( !"PDF".equals( type ) ) throw new ReportGenerationException( "Unsupported report type '"+type+"'." );
 
         byte[] report;
-        try {
-            report = JasperExportManager.exportReportToPdf( handle.getJasperPrint() );
-        } catch ( JRException jre ) {
-            throw new ReportGenerationException( "Error creating report output.", jre );        
+        if ( "PDF".equals( type ) ) {
+            try {
+                report = JasperExportManager.exportReportToPdf( handle.getJasperPrint() );
+            } catch ( JRException jre ) {
+                throw new ReportGenerationException( "Error creating report output.", jre );
+            }
+        } else if ( "HTML".equals( type ) ) {
+            try {
+                ByteArrayOutputStream output = new ByteArrayOutputStream( 20000 );
+                Map<String,byte[]> imagesMap = new HashMap<String,byte[]>();
+                JRHtmlExporter exporter = new JRHtmlExporter();
+                exporter.setParameter( JRHtmlExporterParameter.JASPER_PRINT, handle.getJasperPrint() );                
+                exporter.setParameter( JRHtmlExporterParameter.IMAGES_MAP, imagesMap );
+                exporter.setParameter( JRHtmlExporterParameter.IMAGES_URI, "images/" );
+                exporter.setParameter( JRHtmlExporterParameter.IS_OUTPUT_IMAGES_TO_DIR, Boolean.FALSE );
+                exporter.setParameter( JRHtmlExporterParameter.OUTPUT_STREAM, output );
+                exporter.exportReport();
+
+                // Build ZIP file with report html and images.
+                byte[] htmlData = output.toByteArray();
+                ByteArrayOutputStream reportOut = new ByteArrayOutputStream( 20000 );
+                ZipOutputStream zipOut = new ZipOutputStream( reportOut );
+                zipOut.putNextEntry( new ZipEntry("report.html") );
+                zipOut.write( htmlData );
+                zipOut.closeEntry();
+
+                for ( Map.Entry<String,byte[]> entry : imagesMap.entrySet() ) {
+                    logger.info( "Writing zip entry '"+entry.getKey()+"' " + entry.getValue().getClass().getName() );
+                    zipOut.putNextEntry( new ZipEntry( "images/" + entry.getKey()) );
+                    zipOut.write( entry.getValue() );
+                    zipOut.closeEntry();
+                }
+                
+                zipOut.close();
+
+                report = reportOut.toByteArray();
+            } catch ( JRException jre ) {
+                throw new ReportGenerationException( "Error creating report output.", jre );
+            } catch ( IOException ioe ) {
+                throw new ReportGenerationException( "Error creating report output.", ioe );
+            }
+        } else {
+            throw new ReportGenerationException( "Unsupported report type '"+type+"'." );
         }
 
         return report;
@@ -212,7 +254,7 @@ public class ReportGenerator {
         reportTemplates = Collections.unmodifiableMap( templates );
     }
 
-    private Map<String, Object> getParameters(ReportApi.ReportType reportType ) throws ReportGenerationException {
+    private Map<String, Object> getParameters() throws ReportGenerationException {
         Map<String, Object> parameters = new HashMap<String, Object>();
 
         //Required
@@ -246,8 +288,8 @@ public class ReportGenerator {
         Boolean isRelative = (Boolean) reportParams.get(ReportApi.ReportParameters.IS_RELATIVE);
 
         String timeZone = (String) reportParams.get(ReportApi.ReportParameters.SPECIFIC_TIME_ZONE);
-        Long startTimeInPast = null;
-        Long endTimeInPast = null;
+        Long startTimeInPast;
+        Long endTimeInPast;
 
         if(isRelative){
             int numRelativeTimeUnits = (Integer)reportParams.get(ReportApi.ReportParameters.RELATIVE_NUM_OF_TIME_UNITS);
@@ -452,7 +494,7 @@ public class ReportGenerator {
         final JasperReport report;
         try {
 
-            InputStream inputStream = null;
+            InputStream inputStream;
             if(template.isTransformedRequired()){
                 Transformer transformer = transformerFactory.newTransformer( template.getReportXslSource() );
 

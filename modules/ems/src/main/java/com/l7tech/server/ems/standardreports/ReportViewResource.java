@@ -13,12 +13,13 @@ import java.io.ByteArrayInputStream;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.Date;
-import java.text.SimpleDateFormat;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipEntry;
 
 import com.l7tech.server.ems.ui.SecureResource;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -27,16 +28,16 @@ import com.l7tech.identity.User;
 /**
  * Web resource for report downloads.
  *
- * TODO remove ownership based access check and restore rbac checks. 
+ * TODO remove ownership based access check and restore rbac checks.
  */
-public class ReportResource extends SecureResource {
+public class ReportViewResource extends SecureResource {
 
     //- PUBLIC
 
     /**
      *
      */
-    public ReportResource() {
+    public ReportViewResource() {
         super( null );//new AttemptedReadAny(EntityType.ESM_STANDARD_REPORT) );
     }
 
@@ -47,10 +48,12 @@ public class ReportResource extends SecureResource {
         IResourceStream resource = null;
         ValueMap parameters = getParameters();
 
-        if ( parameters.containsKey("reportId") &&
-             parameters.containsKey("type")) {
+        if ( parameters.containsKey("reportId") ) {
             String id = parameters.getString("reportId");
-            String type = parameters.getString("type");
+            String file = "report.html";
+            if ( parameters.containsKey("file") ) {
+                file = parameters.getString("file");
+            }
 
             if ( !hasPermission( new AttemptedReadSpecific(EntityType.ESM_STANDARD_REPORT, id) ) &&
                  !isOwner(id) ) {
@@ -63,7 +66,7 @@ public class ReportResource extends SecureResource {
                         StandardReportArtifact typedArtifact = null;
                         if ( report != null ) {
                             for ( StandardReportArtifact artifact : report.getArtifacts() ) {
-                                if ( artifact.getContentType().equals(type) ) {
+                                if ( artifact.getContentType().equals("application/zip") ) {
                                     typedArtifact = artifact;
                                     break;
                                 }
@@ -74,30 +77,54 @@ public class ReportResource extends SecureResource {
 
                         final StandardReportArtifact resourceArtifact = typedArtifact;
                         if ( resourceArtifact != null ) {
-                            final ByteArrayInputStream in = new ByteArrayInputStream( resourceArtifact.getReportData() );
-                            resource = new AbstractResourceStream(){
-                                @Override
-                                public String getContentType() {
-                                    return resourceArtifact.getContentType();
-                                }
+                            byte[] data = null;
+                            ZipInputStream zipIn = null;
 
-                                @Override
-                                public InputStream getInputStream() throws ResourceStreamNotFoundException {
-                                    return in;
+                            try {
+                                zipIn = new ZipInputStream( new ByteArrayInputStream(resourceArtifact.getReportData()) );
+                                ZipEntry entry;
+                                while( (entry = zipIn.getNextEntry()) != null) {
+                                    if ( file.equals(entry.getName()) ) {
+                                        data = IOUtils.slurpStream( zipIn );
+                                        break;
+                                    }
                                 }
+                            } catch (IOException e) {
+                                logger.log(Level.WARNING, "Report artifact part read error when accessing report resource '"+id+"', file '"+file+"'.", e);
+                            } finally {
+                                ResourceUtils.closeQuietly( zipIn );
+                            }
 
-                                @Override
-                                public void close() throws IOException {
-                                    ResourceUtils.closeQuietly( in );
-                                }
+                            if ( data == null ) {
+                                logger.warning("Report artifact part not found when accessing report resource '"+id+"', file '"+file+"'.");
+                                resource = new StringResourceStream( "" );
+                            } else {
+                                final String contentType = file.startsWith("images/") ? "image/gif" : "text/html";
+                                final ByteArrayInputStream in = new ByteArrayInputStream( data );
+                                resource = new AbstractResourceStream(){
+                                    @Override
+                                    public String getContentType() {
+                                        return contentType;
+                                    }
 
-                                @Override
-                                public Time lastModifiedTime() {
-                                    return Time.milliseconds( report.getStatusTime() );
-                                }
-                            };
+                                    @Override
+                                    public InputStream getInputStream() throws ResourceStreamNotFoundException {
+                                        return in;
+                                    }
+
+                                    @Override
+                                    public void close() throws IOException {
+                                        ResourceUtils.closeQuietly( in );
+                                    }
+
+                                    @Override
+                                    public Time lastModifiedTime() {
+                                        return Time.milliseconds( report.getStatusTime() );
+                                    }
+                                };
+                            }
                         } else {
-                            logger.warning("Report artifact not found when accessing report resource '"+id+"', type '"+type+"'.");
+                            logger.warning("Report artifact not found when accessing report resource '"+id+"', file '"+file+"'.");
                             resource = new StringResourceStream( "" );
                         }
                     } catch ( NumberFormatException nfe ) {
@@ -118,56 +145,6 @@ public class ReportResource extends SecureResource {
         return resource;
     }
 
-    @Override
-    protected String getFilename() {
-        String name = null;
-
-        ValueMap parameters = getParameters();
-        if ( parameters.containsKey("reportId") &&
-             parameters.containsKey("type")) {
-            String id = parameters.getString("reportId");
-            String type = parameters.getString("type");
-
-            String reportName = null;
-            long reportTime = 0;
-            String clusterName = null;
-            StandardReportManager manager = getStandardReportManager();
-            if ( manager != null ) {
-                try {
-                    final StandardReport report = manager.findByPrimaryKey( Long.parseLong( id ) );
-                    if ( report != null ) {
-                        reportName = report.getName();
-                        reportTime = report.getStatusTime();
-                        clusterName = report.getSsgCluster().getName();
-                    }
-                } catch ( NumberFormatException nfe ) {
-                    logger.warning("Invalid report id when accessing report resource '"+id+"'.");
-                } catch (FindException e) {
-                    logger.log( Level.WARNING, "Error finding report for filename.", e );
-                }
-            }
-
-            if ( "application/pdf".equals(type) ) {
-                if ( reportName == null ) {
-                    name = "report_" + id + ".pdf";
-                } else {
-                    SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd HHmmss");
-                    name = format.format( new Date(reportTime) ) + "_" + reportName + "_" + clusterName + ".pdf";
-                }
-            } else if ( "application/zip".equals(type) ) {
-                if ( reportName == null ) {
-                    name = "report_" + id + ".zip";
-                } else {
-                    SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd HHmmss");
-                    name = format.format( new Date(reportTime) ) + "_" + reportName + "_" + clusterName + ".zip";
-                }
-            }
-
-        }
-
-        return name;
-    }
-
     //- PACKAGE
 
     static StandardReportManager getStandardReportManager() {
@@ -180,7 +157,7 @@ public class ReportResource extends SecureResource {
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(ReportResource.class.getName());
+    private static final Logger logger = Logger.getLogger(ReportViewResource.class.getName());
 
     private static AtomicReference<StandardReportManager> StandardReportManagerRef = new AtomicReference<StandardReportManager>();
 

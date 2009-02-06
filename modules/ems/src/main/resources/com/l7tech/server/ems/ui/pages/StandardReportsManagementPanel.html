@@ -13,8 +13,9 @@
             <form wicket:id="form">
                 <div class="panelToolbar">
                     Output Format:
-                    <select>
-                        <option>PDF</option>
+                    <select wicket:id="reportFormat">
+                        <option>HTML</option>
+                        <option selected="selected">PDF</option>
                     </select>
                     <button wicket:id="viewReportButton" title="View Report">View</button>
                     <button wicket:id="downloadReportButton" title="Download Report">Download</button>

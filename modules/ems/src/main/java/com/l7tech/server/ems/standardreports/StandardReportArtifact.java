@@ -10,6 +10,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.JoinColumn;
 import javax.persistence.Basic;
 import javax.persistence.FetchType;
+import java.util.Arrays;
 
 /**
  * 
@@ -48,6 +49,29 @@ public class StandardReportArtifact extends PersistentEntityImp {
 
     public void setReportData( final byte[] reportData ) {
         this.reportData = reportData;
+    }
+
+    @SuppressWarnings({"RedundantIfStatement"})
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        StandardReportArtifact that = (StandardReportArtifact) o;
+
+        if (contentType != null ? !contentType.equals(that.contentType) : that.contentType != null) return false;
+        if (report != null ? !report.equals(that.report) : that.report != null) return false;
+        if (!Arrays.equals(reportData, that.reportData)) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (report != null ? report.hashCode() : 0);
+        result = 31 * result + (contentType != null ? contentType.hashCode() : 0);
+        result = 31 * result + (reportData != null ? Arrays.hashCode(reportData) : 0);
+        return result;
     }
 
     //- PRIVATE

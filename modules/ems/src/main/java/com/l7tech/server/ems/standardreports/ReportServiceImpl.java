@@ -86,7 +86,7 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
         try {
             GatewayContext context = contextFactory.getGatewayContext( user, cluster.getGuid(), host, port );
             ReportApi reportApi = context.getReportApi();
-            submissionId = reportApi.submitReport( reportSubmission, Arrays.asList( ReportApi.ReportOutputType.PDF ) );
+            submissionId = reportApi.submitReport( reportSubmission, Arrays.asList( ReportApi.ReportOutputType.PDF, ReportApi.ReportOutputType.HTML ) );
         } catch ( GatewayException ge ) {
             throw new ReportException( "Error submtting report to gateway '"+(host+":"+port)+"'.", ge );
         } catch ( ReportApi.ReportException re ) {
@@ -197,6 +197,16 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
                                         result.getData().writeTo( out );
                                         artifact.setReportData( out.toByteArray() );
                                         report.getArtifacts().add( artifact );
+
+                                        ReportApi.ReportResult resultHtml = reportApi.getReportResult( report.getSubmissionId(), ReportApi.ReportOutputType.HTML );
+                                        StandardReportArtifact artifactHtml = new StandardReportArtifact();
+                                        artifactHtml.setContentType( "application/zip" );
+                                        artifactHtml.setReport( report );
+                                        ByteArrayOutputStream outHtml = new ByteArrayOutputStream( 4094 );
+                                        resultHtml.getData().writeTo( outHtml );
+                                        artifactHtml.setReportData( outHtml.toByteArray() );
+                                        report.getArtifacts().add( artifactHtml );
+
                                         report.setStatus( ReportApi.ReportStatus.Status.COMPLETED.toString() );
                                         report.setStatusTime( System.currentTimeMillis() );
                                     } catch ( IOException e ) {

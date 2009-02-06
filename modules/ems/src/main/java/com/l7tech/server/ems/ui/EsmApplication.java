@@ -2,6 +2,8 @@ package com.l7tech.server.ems.ui;
 
 import com.l7tech.server.ems.ui.pages.*;
 import com.l7tech.server.ems.standardreports.ReportResource;
+import com.l7tech.server.ems.standardreports.ReportViewResource;
+import com.l7tech.server.ems.standardreports.ReportViewCodingStrategy;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.identity.User;
@@ -138,6 +140,8 @@ public class EsmApplication extends WebApplication {
         getSharedResources().add("auditResource", new AuditResource());
         getSharedResources().add("logResource", new LogResource());
         getSharedResources().add("reportResource", new ReportResource());
+        getSharedResources().add("reportViewResource", new ReportViewResource());        
+        mount( new ReportViewCodingStrategy("reports") );
 
         IMarkupSettings markupSettings = getMarkupSettings();
         markupSettings.setStripWicketTags(true);
