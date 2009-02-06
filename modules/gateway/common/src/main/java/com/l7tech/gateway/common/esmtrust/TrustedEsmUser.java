@@ -4,10 +4,13 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 
 import javax.persistence.*;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * Represents a mapping of an ESM user ID (on some Trusted ESM) to a local user ID on this Gateway cluster.
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="trusted_esm_user")
 public class TrustedEsmUser extends PersistentEntityImp {
     private transient TrustedEsm trustedEsm;

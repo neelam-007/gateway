@@ -75,24 +75,30 @@ public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsm
             if ( !PERMIT_MAPPING_UPDATE )
                 throw new MappingAlreadyExistsException("A mapping already exists for the specified user on the specified ESM instance.");
 
-            trustedEsmUser.setSsgUserId(user.getId());
-            trustedEsmUser.setProviderOid(user.getProviderId());
+            //if not mapping to a different user, then we just return
+            if (trustedEsmUser.getSsgUserId().equals(user.getId()) && trustedEsmUser.getProviderOid() == user.getProviderId())
+                return trustedEsmUser;
 
             if (esmUserDisplayName != null && trustedEsmUser.getEsmUserDisplayName() == null)
                 trustedEsmUser.setEsmUserDisplayName(esmUserDisplayName);
 
-            update(trustedEsmUser);
-        } else {
-            trustedEsmUser = new TrustedEsmUser();
-            trustedEsmUser.setTrustedEsm(trustedEsm);
-            trustedEsmUser.setSsgUserId(user.getId());
-            trustedEsmUser.setProviderOid(user.getProviderId());
-            trustedEsmUser.setEsmUserId(esmUsername);
-            trustedEsmUser.setEsmUserDisplayName(esmUserDisplayName);
-
-            long oid = save(trustedEsmUser);
-            trustedEsmUser.setOid(oid);
+            try {
+                //delete the old mapping
+                delete(trustedEsmUser);
+            } catch (DeleteException de) {
+                //fall through to create the new mapping?
+            }
         }
+
+        trustedEsmUser = new TrustedEsmUser();
+        trustedEsmUser.setTrustedEsm(trustedEsm);
+        trustedEsmUser.setSsgUserId(user.getId());
+        trustedEsmUser.setProviderOid(user.getProviderId());
+        trustedEsmUser.setEsmUserId(esmUsername);
+        trustedEsmUser.setEsmUserDisplayName(esmUserDisplayName);
+
+        long oid = save(trustedEsmUser);
+        trustedEsmUser.setOid(oid);
 
         return trustedEsmUser;
     }
@@ -165,5 +171,10 @@ public class TrustedEsmUserManagerImpl extends HibernateEntityManager<TrustedEsm
         if (result.size() > 1)
             throw new FindException("Found more than one user on esm " + trustedEsm.getName() + " with username " + esmUsername);
         return result.size() == 1 ? result.get(0) : null;
+    }
+
+    @Override
+    public void delete(long oid) throws DeleteException, FindException {
+        findAndDelete(oid);
     }
 }
