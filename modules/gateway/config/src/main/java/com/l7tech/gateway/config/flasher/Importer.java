@@ -68,6 +68,8 @@ class Importer {
     private String dbPort;
     private String dbName;
     private boolean includeAudit = false;
+    private String suppliedClusterPassphrase;
+    private boolean newDatabaseCreated = false;
 
     // do the import
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
@@ -77,7 +79,7 @@ class Importer {
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ". i don't know what to import");
         }
 
-        String suppliedClusterPassphrase = arguments.get(CLUSTER_PASSPHRASE.name);
+        suppliedClusterPassphrase = arguments.get(CLUSTER_PASSPHRASE.name);
         if (suppliedClusterPassphrase == null) {
             logger.info("Error, no cluster passphrase provided for import");
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + CLUSTER_PASSPHRASE.name + ".");
@@ -157,11 +159,11 @@ class Importer {
             String databaseUser = "gateway";
             String databasePass = rootDBPasswd;
             File nodePropsFile = new File(new File(CONFIG_PATH), "node.properties");
-            try {
-                final PropertiesConfiguration nodeConfig = new PropertiesConfiguration();
-                nodeConfig.setAutoSave(false);
-                nodeConfig.setListDelimiter((char) 0);
 
+            final PropertiesConfiguration nodeConfig = new PropertiesConfiguration();
+            nodeConfig.setAutoSave(false);
+            nodeConfig.setListDelimiter((char) 0);
+            try {
                 if (nodePropsFile.exists()) {
                     nodeConfig.load(nodePropsFile);
                     databaseUser = nodeConfig.getString("node.db.config.main.user") == null ? databaseUser : nodeConfig.getString("node.db.config.main.user");
@@ -172,23 +174,16 @@ class Importer {
                     nodeConfig.setProperty("node.id", UUID.randomUUID().toString().replace("-", ""));
                     nodeConfig.setProperty("node.db.config.main.user", databaseUser);
                     nodeConfig.setProperty("node.db.config.main.pass", mpm.encryptPassword(databasePass.toCharArray()));
-                    nodeConfig.setProperty("node.cluster.pass", mpm.encryptPassword(suppliedClusterPassphrase.toCharArray()));
                     cleanRestore = true;
                 }
 
+                //write the nodeConfig properties but do not save yet
                 nodeConfig.setProperty("node.db.config.main.host", dbHost);
                 nodeConfig.setProperty("node.db.config.main.port", dbPort);
                 nodeConfig.setProperty("node.db.config.main.name", dbName);
-
-                //verify the supplied cluster passphrase is correct
-                ClusterPassphraseManager cpm = new ClusterPassphraseManager(new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, databaseUser, databasePass));
-                if(cpm.getDecryptedSharedKey(suppliedClusterPassphrase) == null){
-                    throw new FlashUtilityLauncher.InvalidArgumentException("Incorrect cluster passphrase.");
-                }
-
-                nodeConfig.save(nodePropsFile);
+                nodeConfig.setProperty("node.cluster.pass", mpm.encryptPassword(suppliedClusterPassphrase.toCharArray()));
             } catch (ConfigurationException e) {
-                throw new IOException("Cannot replace database settings in \"" + nodePropsFile.getAbsolutePath() + "\".", e);
+                throw new IOException("Cannot update settings in \"" + nodePropsFile.getAbsolutePath() + "\".", e);
             }
 
             if (!configOnly) {
@@ -200,7 +195,7 @@ class Importer {
                     dbHost = "localhost";
                 }
 
-                boolean newDatabaseCreated = false;
+                //boolean newDatabaseCreated = false;
                 logger.info("Checking if we can already connect to target database using image db properties");
                 // if clone mode, check if we can already get connection from the target database
 
@@ -324,6 +319,12 @@ class Importer {
             logger.info("copying system files from image to target system");
             copySystemConfigFiles();
 
+            try {
+                //if we've made it this far we can save the node.properties file
+                nodeConfig.save(nodePropsFile);
+            } catch (ConfigurationException e) {
+                throw new IOException("Cannot update settings in \"" + nodePropsFile.getAbsolutePath() + "\".", e);
+            }
             if (arguments.get(OS_OVERWRITE.name) != null) {
                 if (new File("/opt/SecureSpan/Appliance").exists()) {
                     if (new File(tempDirectory + "os").exists()) {
@@ -433,10 +434,7 @@ class Importer {
         System.out.println(". DONE");
     }
 
-    private void loadDumpFromExplodedImage() throws IOException, SQLException {
-//        String mainDumpFilePath = tempDirectory + File.separator + DBDumpUtil.MAIN_BACKUP_FILENAME;
-//        String auditDumpFilePath = tempDirectory + File.separator + DBDumpUtil.AUDIT_BACKUP_FILENAME;
-
+    private void loadDumpFromExplodedImage() throws IOException, SQLException, FlashUtilityLauncher.InvalidArgumentException {
         // create temporary database copy to test the import
         System.out.print("Creating copy of target database for testing import ..");
         String testdbname = "TstDB_" + System.currentTimeMillis();
@@ -457,7 +455,15 @@ class Importer {
             String msg = "Loading image on temporary database";
             Connection c = dba.getConnection(targetConfig, true, false);
             try {
-                doLoadDump(c, /*mainDumpFilePath,*/ msg);
+                doLoadDump(c, msg);
+
+                //if not a new DB, verify the supplied cluster passphrase is correct
+                if (!newDatabaseCreated) {
+                    ClusterPassphraseManager cpm = new ClusterPassphraseManager(targetConfig);
+                    if (cpm.getDecryptedSharedKey(suppliedClusterPassphrase) == null) {
+                        throw new FlashUtilityLauncher.InvalidArgumentException("Incorrect cluster passphrase.");
+                    }
+                }
             } finally {
                 c.close();
             }
@@ -482,7 +488,7 @@ class Importer {
         String msg = "Loading image on target database";
         Connection c = getConnection();
         try {
-            doLoadDump(c, /*mainDumpFilePath,*/ msg);
+            doLoadDump(c, msg);
         } finally {
             c.close();
         }

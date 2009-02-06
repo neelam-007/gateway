@@ -65,7 +65,6 @@ public class ClusterPassphraseManager {
             //TODO [steve] need to validate this key (decrypt a keystore?)
         } catch (GeneralSecurityException gse) {
             logger.log(Level.INFO, "Unable to decrypt shared key (incorrect password?)", ExceptionUtils.getDebugException(gse));
-//            System.out.println("Incorrect cluster passphrase, please try again.");
         }
 
         setSharedKey(sk);
@@ -83,6 +82,7 @@ public class ClusterPassphraseManager {
      * @throws CausedIOException if there is an error saving the shared key or
      */
     public void saveAndEncryptSharedKey(final String newPassphrase) throws CausedIOException {
+        //TODO assume shared key has been retrived and is not == null?
         SecretKey newSharedKeyDecryptionKey;
         try {
             SecretKeyFactory skf = SecretKeyFactory.getInstance(CIPHER);
