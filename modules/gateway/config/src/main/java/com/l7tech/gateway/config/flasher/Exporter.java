@@ -191,8 +191,13 @@ public class Exporter {
                 }
             }
 
-            // copy system config files
-            OSConfigManager.saveOSConfigFiles(tmpDirectory, flasherHome);
+            //restore OS files if this is an appliance
+            if (new File("/opt/SecureSpan/Appliance").exists()) {
+                // copy system config files
+                OSConfigManager.saveOSConfigFiles(tmpDirectory, flasherHome);
+            } else {
+                logger.info("OS configuration files can only be restored on an appliance.  This option will be ignored.");
+            }
     
             // zip the temp directory into the requested image file (outputpathval)
             logger.info("compressing image into " + outputpathval);

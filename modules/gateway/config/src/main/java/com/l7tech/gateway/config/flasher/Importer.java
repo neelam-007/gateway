@@ -5,6 +5,7 @@ import com.l7tech.util.FileUtils;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.gateway.config.manager.db.DBActions;
+import com.l7tech.gateway.config.manager.ClusterPassphraseManager;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -157,36 +158,35 @@ class Importer {
             String databasePass = rootDBPasswd;
             File nodePropsFile = new File(new File(CONFIG_PATH), "node.properties");
             try {
-                final PropertiesConfiguration dbConfig = new PropertiesConfiguration();
-                dbConfig.setAutoSave(false);
-                dbConfig.setListDelimiter((char) 0);
+                final PropertiesConfiguration nodeConfig = new PropertiesConfiguration();
+                nodeConfig.setAutoSave(false);
+                nodeConfig.setListDelimiter((char) 0);
 
                 if (nodePropsFile.exists()) {
-                    dbConfig.load(nodePropsFile);
-                    databaseUser = dbConfig.getString("node.db.config.main.user") == null ? databaseUser : dbConfig.getString("node.db.config.main.user");
-                    databasePass = dbConfig.getString("node.db.config.main.pass") == null ? databasePass : dbConfig.getString("node.db.config.main.pass");
+                    nodeConfig.load(nodePropsFile);
+                    databaseUser = nodeConfig.getString("node.db.config.main.user") == null ? databaseUser : nodeConfig.getString("node.db.config.main.user");
+                    databasePass = nodeConfig.getString("node.db.config.main.pass") == null ? databasePass : nodeConfig.getString("node.db.config.main.pass");
                     databasePass = new String(mpm.decryptPasswordIfEncrypted(databasePass));
 
-                    //verify the supplied cluster passphrase matches that in node.properties
-                    String propertiesPassphrase = dbConfig.getString("node.cluster.pass");
-                    propertiesPassphrase = new String(mpm.decryptPasswordIfEncrypted(propertiesPassphrase));
-                    if (!propertiesPassphrase.equals(suppliedClusterPassphrase)) {
-                        throw new FlashUtilityLauncher.InvalidArgumentException("The supplied cluster passphrase does not match the configured cluster passphrase.");
-                    }
-
                 } else {
-                    dbConfig.setProperty("node.id", UUID.randomUUID().toString().replace("-", ""));
-                    dbConfig.setProperty("node.db.config.main.user", databaseUser);
-                    dbConfig.setProperty("node.db.config.main.pass", mpm.encryptPassword(databasePass.toCharArray()));
-                    dbConfig.setProperty("node.cluster.pass", mpm.encryptPassword(suppliedClusterPassphrase.toCharArray()));
+                    nodeConfig.setProperty("node.id", UUID.randomUUID().toString().replace("-", ""));
+                    nodeConfig.setProperty("node.db.config.main.user", databaseUser);
+                    nodeConfig.setProperty("node.db.config.main.pass", mpm.encryptPassword(databasePass.toCharArray()));
+                    nodeConfig.setProperty("node.cluster.pass", mpm.encryptPassword(suppliedClusterPassphrase.toCharArray()));
                     cleanRestore = true;
                 }
 
-                dbConfig.setProperty("node.db.config.main.host", dbHost);
-                dbConfig.setProperty("node.db.config.main.port", dbPort);
-                dbConfig.setProperty("node.db.config.main.name", dbName);
+                nodeConfig.setProperty("node.db.config.main.host", dbHost);
+                nodeConfig.setProperty("node.db.config.main.port", dbPort);
+                nodeConfig.setProperty("node.db.config.main.name", dbName);
 
-                dbConfig.save(nodePropsFile);
+                //verify the supplied cluster passphrase is correct
+                ClusterPassphraseManager cpm = new ClusterPassphraseManager(new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, databaseUser, databasePass));
+                if(cpm.getDecryptedSharedKey(suppliedClusterPassphrase) == null){
+                    throw new FlashUtilityLauncher.InvalidArgumentException("Incorrect cluster passphrase.");
+                }
+
+                nodeConfig.save(nodePropsFile);
             } catch (ConfigurationException e) {
                 throw new IOException("Cannot replace database settings in \"" + nodePropsFile.getAbsolutePath() + "\".", e);
             }
@@ -326,31 +326,16 @@ class Importer {
 
             if (arguments.get(OS_OVERWRITE.name) != null) {
                 if (new File("/opt/SecureSpan/Appliance").exists()) {
-                    // overwrite os level system files
-                    OSConfigManager.restoreOSConfigFilesToTmpTarget(tempDirectory);
+                    if (new File(tempDirectory + "os").exists()) {
+                        // overwrite os level system files
+                        OSConfigManager.restoreOSConfigFilesToTmpTarget(tempDirectory);
+                    } else {
+                        logger.info("No OS files are available in the image.  This option will be ignored.");
+                    }
                 } else {
                     logger.info("OS configuration files can only be restored on an appliance.  This option will be ignored.");
                 }
             }
-//            // apply mapping if applicable
-//            if (mapping != null) {
-//                logger.info("applying mappings requested");
-//                try {
-//                    DatabaseConfig config = new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, rootDBUsername, rootDBPasswd);
-//                    MappingUtil.applyMappingChangesToDB(config, mapping);
-//                } catch (SQLException e) {
-//                    logger.log(Level.WARNING, "error mapping target", e);
-//                    throw new IOException("error mapping staging values " + e.getMessage());
-//                }
-//            }
-
-//            // reload license if applicable
-//            try {
-//                reloadLicense();
-//            } catch (SQLException e) {
-//                logger.log(Level.WARNING, "error resetting license", e);
-//                throw new IOException("error resetting license " + e.getMessage());
-//            }
 
         } finally {
             logger.info("deleting temp files at " + tempDirectory);
