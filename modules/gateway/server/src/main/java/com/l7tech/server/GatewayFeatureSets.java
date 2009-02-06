@@ -117,6 +117,14 @@ public class GatewayFeatureSets {
             "Everything that used to be enabled by the catchall Feature.ADMIN",
             misc(SERVICE_ADMIN, "All admin APIs, over all admin API transports", null),
             misc(SERVICE_REMOTE_MANAGEMENT, "Gateway Remote Management", null));
+        
+        GatewayFeatureSet adminAndEms =
+        fsr("set:adminAndEms", "All admin APIs, over all admin API transports",
+            "Everything that used to be enabled by the catchall Feature.ADMIN",
+            misc(SERVICE_ADMIN, "All admin APIs, over all admin API transports", null),
+            misc(SERVICE_REMOTE_MANAGEMENT, "Gateway Remote Management", null),
+            misc(SERVICE_EMS, "Ability to be managed remotely by an Enterprise Manager Server",
+                "Includes the ability to view and modify Trusted EMS registrations and EMS user mappings, both in the SSM and using the bootstrap web page."));
 
         GatewayFeatureSet branching =
         fsr("set:policy:branching", "Support for branching policies",
@@ -469,7 +477,7 @@ public class GatewayFeatureSets {
         fsr("set:Profile:IPS", "SecureSpan XML IPS",
             "DEPRECATED -- present for license compat only",
             fs(core),
-            fs(admin),
+            fs(adminAndEms),
             fs(routingIps),
             fs(threatIps),
             fs(availabilityFw),
@@ -487,7 +495,7 @@ public class GatewayFeatureSets {
         fsp("set:Profile:Datascreen", "SecureSpan Data Screen",
             "HTTP/HTML/AJAX/JSON/XML gateway",
             fs(core),
-            fs(admin),
+            fs(adminAndEms),
             fs(routingAccel),
             fs(threatIps),
             fs(availabilityFw),
@@ -502,7 +510,7 @@ public class GatewayFeatureSets {
         fsp("set:Profile:Accel", "SecureSpan Accelerator",
             "XML acceleration features",
             fs(core),
-            fs(admin),
+            fs(adminAndEms),
             fs(xmlsecAccel),
             fs(validationAccel),
             fs(routingAccel),
@@ -518,7 +526,7 @@ public class GatewayFeatureSets {
             fsp("set:Profile:Firewall", "SecureSpan Firewall",
             "XML firewall with custom assertions.  No BRA, no JMS, no special XML VPN Client support",
             fs(core),
-            fs(admin),
+            fs(adminAndEms),
             fs(accessFw),
             fs(xmlsecFw),
             fs(validationFw),
@@ -536,7 +544,7 @@ public class GatewayFeatureSets {
             "All features enabled.",
             misc("bundle:Bridge", "Bundled SecureSpan XML VPN Client", "No effect on Gateway license code -- only purpose is to distinguish two otherwise-identical feature sets"),
             fs(core),
-            fs(admin),
+            fs(adminAndEms),
             fs(accessGateway),
             fs(xmlsecFw),
             fs(validationGateway),
@@ -550,8 +558,7 @@ public class GatewayFeatureSets {
             fs(modularAssertions),
             fs(samlpAssertions),
             fs(uiFw),
-            fs(wssp),
-            fs(ems));
+            fs(wssp));
 
         fsp("set:Profile:PolicyIntegrationPoint", "SecureSpan Policy Integration Point",
             "Same as SecureSpan Gateway.",
@@ -567,7 +574,7 @@ public class GatewayFeatureSets {
         fsp("set:Profile:Federal", "SecureSpan Federal",
             "Exactly the same features as SecureSpan Gateway, but XML VPN Client software is not bundled.",
             fs(core),
-            fs(admin),
+            fs(adminAndEms),
             fs(accessGateway),
             fs(xmlsecFw),
             fs(validationGateway),
