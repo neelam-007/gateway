@@ -4,7 +4,7 @@
  * Date: Oct 23, 2008
  * Time: 12:14:10 PM
  */
-package com.l7tech.standardreports.test;
+package com.l7tech.skunkworks.standardreports.test;
 
 import java.io.*;
 import java.util.*;

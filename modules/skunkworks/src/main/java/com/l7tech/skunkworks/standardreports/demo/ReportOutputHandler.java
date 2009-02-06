@@ -4,7 +4,7 @@
  * Date: Oct 16, 2008
  * Time: 11:22:08 AM
  */
-package com.l7tech.standardreports.demo;
+package com.l7tech.skunkworks.standardreports.demo;
 
 import org.mortbay.jetty.handler.AbstractHandler;
 import org.mortbay.jetty.Request;
@@ -16,9 +16,6 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.Collections;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 public class ReportOutputHandler extends AbstractHandler {

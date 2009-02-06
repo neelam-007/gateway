@@ -4,13 +4,13 @@
  * Date: Nov 27, 2008
  * Time: 6:22:50 PM
  */
-package com.l7tech.standardreports.test;
+package com.l7tech.skunkworks.standardreports.test;
 
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.server.ems.standardreports.JsonReportParameterConvertor;
 import com.l7tech.server.ems.standardreports.JsonReportParameterConvertorFactory;
 import com.l7tech.server.ems.standardreports.ReportSubmissionClusterBean;
-import com.l7tech.standardreports.ReportApp;
+import com.l7tech.skunkworks.standardreports.ReportApp;
 import com.l7tech.gateway.standardreports.ReportGenerator;
 
 import java.util.*;
@@ -18,7 +18,6 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.SQLException;
 import java.io.InputStream;
-import java.io.FileInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 
@@ -52,7 +51,7 @@ public class TestGatewayReportCompileAndFill {
     @Before
     public void setUp() throws Exception {
         prop = new Properties();
-        InputStream is = new FileInputStream(new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/report.properties"));
+        InputStream is = TestGatewayReportCompileAndFill.class.getResourceAsStream("report.properties");
         prop.load(is);
         conn = ReportApp.getConnection(prop);
         stmt = conn.createStatement();
@@ -220,12 +219,12 @@ public class TestGatewayReportCompileAndFill {
         ReportGenerator.ReportHandle fillReport = reportGenerator.fillReport( reportHandle, ReportApp.getConnection(prop));
 
         Map<ReportApi.ReportOutputType,byte[]> artifacts = new HashMap<ReportApi.ReportOutputType,byte[]>();
-        artifacts.put( ReportApi.ReportOutputType.PDF, reportGenerator.generateReportOutput( fillReport, ReportApi.ReportOutputType.PDF.toString()) );
+        artifacts.put( ReportApi.ReportOutputType.HTML, reportGenerator.generateReportOutput( fillReport, ReportApi.ReportOutputType.HTML.toString()) );
 
-        byte[] reportData = artifacts.get(ReportApi.ReportOutputType.PDF);
+        byte[] reportData = artifacts.get(ReportApi.ReportOutputType.HTML);
 
         DataHandler dataHandler = new DataHandler(new ByteArrayDataSource( reportData, "application/octet-stream" ));
-        dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".pdf")));
+        dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".zip")));
     }
 
     @Test
@@ -299,9 +298,9 @@ public class TestGatewayReportCompileAndFill {
         ReportGenerator.ReportHandle fillReport = reportGenerator.fillReport( reportHandle, ReportApp.getConnection(prop));
 
         Map<ReportApi.ReportOutputType,byte[]> artifacts = new HashMap<ReportApi.ReportOutputType,byte[]>();
-        artifacts.put( ReportApi.ReportOutputType.PDF, reportGenerator.generateReportOutput( fillReport, ReportApi.ReportOutputType.PDF.toString()) );
+        artifacts.put( ReportApi.ReportOutputType.HTML, reportGenerator.generateReportOutput( fillReport, ReportApi.ReportOutputType.HTML.toString()) );
 
-        byte[] reportData = artifacts.get(ReportApi.ReportOutputType.PDF);
+        byte[] reportData = artifacts.get(ReportApi.ReportOutputType.HTML);
 
         DataHandler dataHandler = new DataHandler(new ByteArrayDataSource( reportData, "application/octet-stream" ));
         dataHandler.writeTo(new FileOutputStream(new File("ReportOutput_"+submission.getName()+".pdf")));
@@ -399,19 +398,22 @@ public class TestGatewayReportCompileAndFill {
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"listOrders\"" +
+            "            \"operation\"          : \"listOrders\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "    ]," +
             "    \"timePeriod\" : {" +
@@ -450,19 +452,22 @@ public class TestGatewayReportCompileAndFill {
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"listOrders\"" +
+            "            \"operation\"          : \"listOrders\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "    ]," +
             "    \"timePeriod\" : {" +
@@ -499,19 +504,22 @@ public class TestGatewayReportCompileAndFill {
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"listOrders\"" +
+            "            \"operation\"          : \"listOrders\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "    ]," +
             "    \"timePeriod\" : {" +
@@ -550,19 +558,22 @@ public class TestGatewayReportCompileAndFill {
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"listOrders\"" +
+            "            \"operation\"          : \"listOrders\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "    ]," +
             "    \"timePeriod\" : {" +
@@ -599,19 +610,22 @@ public class TestGatewayReportCompileAndFill {
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "    ]," +
             "    \"timePeriod\" : {" +
@@ -640,27 +654,30 @@ public class TestGatewayReportCompileAndFill {
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
-            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceId\" : \"360451\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"\"" +
+            "            \"operation\"          : \"\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "    ]," +
             "    \"timePeriod\" : {" +
-            "        \"type\"     : \"relative\"," +
+            "        \"type\"     : \"absolute\"," +
             "        \"numberOfTimeUnits\"    : \"1\"," +
             "        \"unitOfTime\"     : \"DAY\"," +
-            "        \"start\"    : \"2008-07-31 13:00:00\"," +
-            "        \"end\"      : \"2008-07-31 13:00:00\"," +
+            "        \"start\"    : \"2009/01/15 00:00\"," +
+            "        \"end\"      : \"2009/01/16 00:00\"," +
             "        \"timeZone\" : \"Canada/Pacific\"" +
             "    }," +
             "    \"timeInterval\" : {" +
@@ -671,13 +688,13 @@ public class TestGatewayReportCompileAndFill {
             "        {" +
             "            \"clusterId\"         : \""+clusterId+"\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
-            "            \"constraint\"        : \"127.0.0.*\"" +
-            "        }," +
-            "        {" +
-            "            \"clusterId\"         : \""+clusterId+"\"," +
-            "            \"messageContextKey\" : \"CUSTOMER\"," +
-            "            \"constraint\"        : \"GOLD\"" +
-            "        }," +
+            "            \"constraint\"        : \"\"" +
+            "        }" +
+//            "        {" +
+//            "            \"clusterId\"         : \""+clusterId+"\"," +
+//            "            \"messageContextKey\" : \"CUSTOMER\"," +
+//            "            \"constraint\"        : \"GOLD\"" +
+//            "        }," +
             "    ]," +
             "    \"summaryChart\" : true," +
             "    \"summaryReport\" : true," +
@@ -691,19 +708,22 @@ public class TestGatewayReportCompileAndFill {
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"listOrders\"" +
+            "            \"operation\"          : \"listOrders\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "    ]," +
             "    \"timePeriod\" : {" +
@@ -740,27 +760,30 @@ public class TestGatewayReportCompileAndFill {
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
-            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceId\" : \"360451\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "    ]," +
             "    \"timePeriod\" : {" +
             "        \"type\"     : \"relative\"," +
-            "        \"numberOfTimeUnits\"    : \"1\"," +
+            "        \"numberOfTimeUnits\"    : \"7\"," +
             "        \"unitOfTime\"     : \"DAY\"," +
-            "        \"start\"    : \"2008-07-31 13:00:00\"," +
-            "        \"end\"      : \"2008-07-31 13:00:00\"," +
+            "        \"start\"    : \"2009-01-30 13:00:00\"," +
+            "        \"end\"      : \"2009-01-31 13:00:00\"," +
             "        \"timeZone\" : \"Canada/Pacific\"" +
             "    }," +
             "    \"timeInterval\" : {" +
@@ -791,19 +814,22 @@ public class TestGatewayReportCompileAndFill {
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
-            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceId\" : \"360451\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"listOrders\"" +
+            "            \"operation\"          : \"listOrders\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "    ]," +
             "    \"timePeriod\" : {" +
@@ -842,19 +868,22 @@ public class TestGatewayReportCompileAndFill {
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"listOrders\"" +
+            "            \"operation\"          : \"listOrders\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "    ]," +
             "    \"timePeriod\" : {" +
@@ -893,19 +922,22 @@ public class TestGatewayReportCompileAndFill {
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
-            "            \"operation\"          : \"listProducts\"" +
+            "            \"operation\"          : \"listProducts\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
             "            \"clusterId\"          : \""+clusterId+"\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
-            "            \"operation\"          : \"listOrders\"" +
+            "            \"operation\"          : \"listOrders\"," +
+            "            \"relatedId\"          : null" +
             "        }," +
             "    ]," +
             "    \"timePeriod\" : {" +

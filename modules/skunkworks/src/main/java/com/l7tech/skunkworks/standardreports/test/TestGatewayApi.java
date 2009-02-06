@@ -4,7 +4,7 @@
  * Date: Nov 27, 2008
  * Time: 11:51:32 AM
  */
-package com.l7tech.standardreports.test;
+package com.l7tech.skunkworks.standardreports.test;
 
 import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.standardreports.*;

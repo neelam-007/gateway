@@ -4,7 +4,7 @@
  * Date: Oct 23, 2008
  * Time: 6:51:47 PM
  */
-package com.l7tech.standardreports.test;
+package com.l7tech.skunkworks.standardreports.test;
 
 import org.junit.*;
 import org.w3c.dom.Document;
@@ -19,7 +19,7 @@ import com.l7tech.gateway.standardreports.Utilities;
 import com.l7tech.gateway.standardreports.RuntimeDocUtilities;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.IOUtils;
-import com.l7tech.standardreports.ReportApp;
+import com.l7tech.skunkworks.standardreports.ReportApp;
 import com.l7tech.server.management.api.node.ReportApi;
 
 public class RuntimeDocTests {
@@ -29,8 +29,7 @@ public class RuntimeDocTests {
     private Properties prop;
 
     private String getResAsString(String path) throws IOException {
-        File f = new File(path);
-        InputStream is = new FileInputStream(f);
+        InputStream is = RuntimeDocTests.class.getResourceAsStream(path);
         try{
             byte[] resbytes = IOUtils.slurpStream(is, 100000);
             return new String(resbytes);
@@ -42,7 +41,7 @@ public class RuntimeDocTests {
     @Before
     public void setUp() throws Exception {
         prop = new Properties();
-        String propData = getResAsString("modules/skunkworks/src/main/java/com/l7tech/standardreports/report.properties");
+        String propData = getResAsString("report.properties");
         StringReader sr = new StringReader(propData);
         prop.load(sr);
         conn = ReportApp.getConnection(prop);

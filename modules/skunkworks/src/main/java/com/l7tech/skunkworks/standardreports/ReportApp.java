@@ -5,7 +5,7 @@
  * Time: 1:58:00 PM
  * ReportApp is a CLI program to test jasper reports. Depends on report.properties being in the same directory
  */
-package com.l7tech.standardreports;
+package com.l7tech.skunkworks.standardreports;
 import java.io.*;
 import java.sql.Connection;
 import java.sql.DriverManager;

@@ -4,7 +4,7 @@
  * Date: Oct 14, 2008
  * Time: 12:37:43 PM
  */
-package com.l7tech.standardreports.test;
+package com.l7tech.skunkworks.standardreports.test;
 
 import org.junit.*;
 
@@ -15,7 +15,7 @@ import java.util.*;
 import java.sql.*;
 
 import com.l7tech.gateway.standardreports.Utilities;
-import com.l7tech.standardreports.ReportApp;
+import com.l7tech.skunkworks.standardreports.ReportApp;
 import com.l7tech.server.management.api.node.ReportApi;
 
 public class CheckTestData{

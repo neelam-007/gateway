@@ -4,7 +4,7 @@
  * Date: Oct 15, 2008
  * Time: 4:18:48 PM
  */
-package com.l7tech.standardreports.demo;
+package com.l7tech.skunkworks.standardreports.demo;
 
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.Connector;

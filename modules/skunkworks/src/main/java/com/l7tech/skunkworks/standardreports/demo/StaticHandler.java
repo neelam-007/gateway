@@ -4,7 +4,7 @@
  * Date: Oct 15, 2008
  * Time: 4:30:36 PM
  */
-package com.l7tech.standardreports.demo;
+package com.l7tech.skunkworks.standardreports.demo;
 
 import org.mortbay.jetty.handler.AbstractHandler;
 import org.mortbay.jetty.Request;

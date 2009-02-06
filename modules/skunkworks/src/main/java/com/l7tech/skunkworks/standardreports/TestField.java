@@ -5,7 +5,7 @@
  * Time: 1:52:46 PM
  * Implementation of JRField which stores one property 'name', used for testing {@link TimePeriodDataSource}
  */
-package com.l7tech.standardreports;
+package com.l7tech.skunkworks.standardreports;
 import net.sf.jasperreports.engine.JRField;
 import net.sf.jasperreports.engine.JRPropertiesHolder;
 import net.sf.jasperreports.engine.JRPropertiesMap;

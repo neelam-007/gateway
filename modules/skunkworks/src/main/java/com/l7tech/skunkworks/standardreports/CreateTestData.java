@@ -8,7 +8,7 @@
  * If the unit of time supplied is DAY, then 12 months of daily metric bins are created. There is an output file
  * per service
  */
-package com.l7tech.standardreports;
+package com.l7tech.skunkworks.standardreports;
 
 import com.l7tech.gateway.standardreports.Utilities;
 
@@ -386,9 +386,9 @@ public class CreateTestData {
      */
     public static void main(String [] args) throws Exception{
         System.out.println("Starting");
-        FileInputStream fileInputStream = new FileInputStream("testdata.properties");
+        InputStream inputStream = CreateTestData.class.getResourceAsStream("testdata.properties");
         Properties prop = new Properties();
-        prop.load(fileInputStream);
+        prop.load(inputStream);
 
         LinkedHashMap<String, String> nameToId = ReportApp.loadMapFromProperties(ReportApp.SERVICE_ID_TO_NAME, ReportApp.SERVICE_ID_TO_NAME_OID, prop);
 

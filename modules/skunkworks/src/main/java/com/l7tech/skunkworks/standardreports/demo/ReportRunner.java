@@ -4,7 +4,7 @@
  * Date: Oct 15, 2008
  * Time: 3:52:31 PM
  */
-package com.l7tech.standardreports.demo;
+package com.l7tech.skunkworks.standardreports.demo;
 
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JRException;
