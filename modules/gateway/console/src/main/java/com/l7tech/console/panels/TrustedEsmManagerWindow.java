@@ -116,7 +116,9 @@ public class TrustedEsmManagerWindow extends JDialog {
             return;
 
         DialogDisplayer.showConfirmDialog(this,
-                "Are you sure you wish to delete the mapping for user " + user.getEsmUserId() + " from ESM " + esm.getName() + "?",
+                "Are you sure you wish to delete the mapping for user " + user.getEsmUserDisplayName()
+                        + " (" + user.getEsmUserId() + ") \nfrom ESM " + esm.getName()
+                        + " (" + esm.getTrustedCert().getCertificate().getSubjectDN().getName() + ") ?",
                 "Delete User Mapping",
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE,
@@ -141,7 +143,9 @@ public class TrustedEsmManagerWindow extends JDialog {
             return;
 
         DialogDisplayer.showConfirmDialog(this,
-                "Are you sure you wish to remove the registration for ESM " + esm.getName() + "?\nThis will also delete all its user mappings.",
+                "Are you sure you wish to remove the registration for ESM " + esm.getName()
+                        + "\n (" + esm.getTrustedCert().getCertificate().getSubjectDN().getName()
+                        + ") ?\nThis will also delete all its user mappings.",
                 "Remove ESM Registration And Delete User Mappings",
                 JOptionPane.OK_CANCEL_OPTION,
                 JOptionPane.WARNING_MESSAGE,
