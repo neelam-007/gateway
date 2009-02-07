@@ -1,10 +1,20 @@
 package com.l7tech.server.cluster;
 
 import com.l7tech.server.management.api.node.ReportApi;
+import com.l7tech.server.security.rbac.RbacServices;
+import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.TimeUnit;
+import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ResolvingComparator;
+import com.l7tech.util.Resolver;
 import com.l7tech.gateway.standardreports.ReportGenerator;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 
 import javax.activation.DataHandler;
 import javax.mail.util.ByteArrayDataSource;
@@ -23,22 +33,27 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.jmx.export.annotation.ManagedResource;
+import org.springframework.jmx.export.annotation.ManagedAttribute;
+import org.springframework.jmx.export.annotation.ManagedOperation;
+import org.springframework.aop.framework.Advised;
+import org.springframework.aop.support.AopUtils;
 import org.hibernate.Session;
 import org.hibernate.HibernateException;
 import org.hibernate.jdbc.Work;
 
 /**
  * Gateway implementation for Report API.
- *
- * TODO [steve] access control, who can generate reports?
  */
 public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
 
     //- PUBLIC
 
     public ReportApiImpl( final PlatformTransactionManager transactionManager,
+                          final RbacServices rbacServices,
                           final Timer reportTimer ) {
         this.transactionManager = transactionManager;
+        this.rbacServices = rbacServices;
         this.reportTimer = reportTimer;
     }
 
@@ -54,6 +69,7 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
 
     @Override
     public String submitReport( final ReportSubmission submission, final Collection<ReportOutputType> types ) throws ReportException {
+        checkPermitted();
         final Map<String,Object> reportParameters = buildReportParameters( submission.getParameters() );
 
         String [] expectedParams = ReportApi.ReportType.getApplicableParameters(submission.getType());
@@ -171,9 +187,77 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
         return keys;
     }
 
+    /**
+     *
+     */
+    @ManagedResource(description="Reporting Service", objectName="l7tech:type=ReportService")
+    public static class ManagedReportApiImpl {
+        private final ReportApiImpl reportApiImpl;
+
+        protected ManagedReportApiImpl( final ReportApi reportApi ) {
+            this.reportApiImpl = unwrapProxy(reportApi);
+        }
+
+        @ManagedAttribute(description="Active Reports", currencyTimeLimit=30)
+        public int getActiveReportCount() {
+            synchronized( reportApiImpl.reports ) {
+                return reportApiImpl.reports.size();
+            }
+        }
+
+        @ManagedAttribute(description="Maximum Report Age", currencyTimeLimit=30)
+        public long getReportMaxAge() {
+            return MAX_REPORT_AGE;
+        }
+
+        @ManagedAttribute(description="Maximum Active Reports", currencyTimeLimit=30)
+        public int getMaxActiveReports() {
+            return MAX_REPORTS;
+        }
+
+        @ManagedAttribute(description="Active Report Ids", currencyTimeLimit=30)
+        public Set<String> getActiveReportIdentifiers() {
+            synchronized( reportApiImpl.reports ) {
+                Set<String> keys = new TreeSet<String>();
+                keys.addAll(reportApiImpl.reports.keySet());
+                return keys;
+            }
+        }
+
+        @ManagedOperation(description="Clear Active Reports", currencyTimeLimit=30)
+        public void clearActiveReports() {
+            synchronized( reportApiImpl.reports ) {
+                reportApiImpl.reports.clear();
+            }
+        }
+
+        private ReportApiImpl unwrapProxy( final ReportApi bean ) {
+            if ( AopUtils.isAopProxy(bean) && bean instanceof Advised ) {
+                Advised advised = (Advised) bean;
+                try {
+                    return (ReportApiImpl) advised.getTargetSource().getTarget();
+                } catch ( Exception e ) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            return (ReportApiImpl) bean;
+        }
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected void initDao() throws Exception {
+        reportTimer.schedule( new ReportCleanupTask(), 32951, 27371 );
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger( ReportApiImpl.class.getName() );
+
+    private static final int MAX_REPORTS = SyspropUtil.getInteger("com.l7tech.server.reports.max", 50);
+    private static final long MAX_REPORT_AGE = SyspropUtil.getLong("com.l7tech.server.reports.expiry", TimeUnit.MINUTES.toMillis(30));
 
     private static final String MAPPING_SQL =
             "SELECT mapping1_key FROM message_context_mapping_keys WHERE mapping1_type='CUSTOM_MAPPING' UNION\n" +
@@ -182,10 +266,29 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
             "SELECT mapping4_key FROM message_context_mapping_keys WHERE mapping4_type='CUSTOM_MAPPING' UNION\n" +
             "SELECT mapping5_key FROM message_context_mapping_keys WHERE mapping5_type='CUSTOM_MAPPING'";
 
-    //TODO [steve] implement gateway report storage / retrieval
-    private Map<String,ReportData> reports = Collections.synchronizedMap(new HashMap<String,ReportData>());
+    //TODO implement gateway DB report storage / retrieval
+    private final Map<String,ReportData> reports = Collections.synchronizedMap(new HashMap<String,ReportData>());
     private final PlatformTransactionManager transactionManager;
+    private final RbacServices rbacServices;
     private final Timer reportTimer;
+
+    private void checkPermitted() throws ReportException {
+        User user = JaasUtils.getCurrentUser();
+        if ( user == null ) {
+            throw new ReportException( "Permission denied." );
+        }
+
+        try {
+            if ( !rbacServices.isPermittedForAnyEntityOfType(user, OperationType.READ, EntityType.SERVICE) ||
+                 !rbacServices.isPermittedForAnyEntityOfType(user, OperationType.READ, EntityType.METRICS_BIN) ||
+                 !rbacServices.isPermittedForAnyEntityOfType(user, OperationType.READ, EntityType.SERVICE) ) {
+                throw new ReportException( "Permission denied." );
+            }
+        } catch (FindException fe) {
+            logger.log( Level.WARNING, "Error when checking permissions to run report.", fe);
+            throw new ReportException( "Permission denied." );
+        }
+    }
 
     private Map<String,Object> buildReportParameters( final Collection<ReportSubmission.ReportParam> parameters ) {
         Map<String,Object> params = new HashMap<String,Object>();
@@ -259,8 +362,50 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
         public Long getStartedTime() {
             return startedTime;
         }
+
+        public boolean isExpired( long checkTime ) {
+            return (time+MAX_REPORT_AGE) < checkTime;
+        }
     }
 
+    /**
+     * Cleanup task, kick out expired reports, or the oldest if there are too many reports.
+     */
+    private final class ReportCleanupTask extends TimerTask {
+        @SuppressWarnings({"unchecked"})
+        public void run() {
+            synchronized( reports ) {
+                long time = System.currentTimeMillis();
+
+                // evict any expired
+                Iterator<Map.Entry<String, ReportData>> reportEntryIterator = reports.entrySet().iterator();
+                while ( reportEntryIterator.hasNext() ) {
+                    Map.Entry<String,ReportData> entry = reportEntryIterator.next();
+                    if ( entry.getValue().isExpired( time ) ) {
+                        reportEntryIterator.remove();
+                    }
+                }
+
+                // evict oldest
+                int removalCount = reports.size() - MAX_REPORTS;
+                if ( removalCount > 0 ) {
+                    List<ReportData> dataList = new ArrayList<ReportData>();
+                    dataList.addAll( reports.values() );
+                    Collections.sort( dataList, new ResolvingComparator( new Resolver(){
+                        public Object resolve( final Object key ) {
+                            ReportData data = (ReportData) key;
+                            return data.getTime();
+                        }
+                    }, false) );
+                    reports.values().removeAll( dataList.subList( 0, removalCount ) );
+                }
+            }
+        }
+    }
+
+    /**
+     * Report generation task.
+     */
     private final class ReportProcessingTask extends TimerTask {
         private final UUID reportId;
         private final ReportSubmission submission;

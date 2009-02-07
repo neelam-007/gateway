@@ -1205,12 +1205,16 @@
 
     <bean id="reportApiImpl" class="com.l7tech.server.cluster.ReportApiImpl">
         <constructor-arg index="0" ref="transactionManager"/>
-        <constructor-arg index="1">
+        <constructor-arg index="1" ref="rbacServices"/>
+        <constructor-arg index="2">
             <bean class="com.l7tech.server.util.ManagedTimer">
                 <constructor-arg value="Report Processor"/>
             </bean>
         </constructor-arg>
         <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+    <bean id="managedReportApiImpl" class="com.l7tech.server.cluster.ReportApiImpl$ManagedReportApiImpl">
+        <constructor-arg ref="reportApiImpl"/>
     </bean>
 
     <bean id="migrationApiImpl" class="com.l7tech.server.migration.MigrationApiImpl">
