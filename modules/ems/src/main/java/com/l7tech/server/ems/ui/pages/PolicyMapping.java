@@ -36,7 +36,7 @@ import java.io.Serializable;
 /**
  *
  */
-@NavigationPage(page="PolicyMapping",pageIndex=300,section="ManagePolicies",pageUrl="PolicyMapping.html")
+@NavigationPage(page="PolicyMapping",pageIndex=300,section="ManagePolicies",pageUrl="PolicyHistory.html")
 public class PolicyMapping extends EsmStandardWebPage {
     private static final Logger logger = Logger.getLogger(PolicyMapping.class.getName());
 
