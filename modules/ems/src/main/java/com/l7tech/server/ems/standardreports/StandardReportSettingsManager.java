@@ -3,7 +3,9 @@ package com.l7tech.server.ems.standardreports;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.identity.User;
+
+import java.util.Collection;
 
 /**
  * The manager managing standard report settings.
@@ -16,9 +18,31 @@ import com.l7tech.objectmodel.DeleteException;
 public interface StandardReportSettingsManager extends EntityManager<StandardReportSettings, EntityHeader> {
 
     /**
-     * Deletes the settings of a standard report.
+     * Find report settings for the given user.
      *
-     * @param oid: the OID of the standard report settings.
+     * @param user The user whose settings are to be found
+     * @return The settings
+     * @throws FindException If an error occurs
      */
-    void delete(String oid) throws DeleteException, FindException;
+    Collection<StandardReportSettings> findByUser( User user ) throws FindException;
+
+    /**
+     * Find report by oid only if the user matches.
+     *
+     * @param user The user for the settings
+     * @param oid The identifier for the settings
+     * @return The setting or null if not found or user does not match
+     * @throws FindException If an error occurs
+     */
+    StandardReportSettings findByPrimaryKeyForUser( User user, long oid ) throws FindException;
+
+    /**
+     * Find report by name and user.
+     *
+     * @param user The user for the settings
+     * @param name The name for the settings
+     * @return The setting or null if not found or user does not match
+     * @throws FindException If an error occurs
+     */
+    StandardReportSettings findByNameAndUser( User user, String name ) throws FindException;
 }

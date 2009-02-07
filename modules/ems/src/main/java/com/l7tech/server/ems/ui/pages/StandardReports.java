@@ -11,6 +11,8 @@ import com.l7tech.server.ems.standardreports.*;
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResolvingComparator;
+import com.l7tech.util.Resolver;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.DuplicateObjectException;
@@ -35,6 +37,7 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.Serializable;
 
 /**
  *
@@ -142,13 +145,14 @@ public class StandardReports extends EsmStandardWebPage {
 
         final HiddenField deleteSettingsDialogInputId = new HiddenField("deleteSettingsDialog_id", new Model(""));
         Form deleteSettingsForm = new JsonDataResponseForm("deleteSettingsForm", new AttemptedDeleteAll( EntityType.ESM_STANDARD_REPORT )){
+            @SuppressWarnings({"ThrowableInstanceNeverThrown"})
             @Override
             protected Object getJsonResponseData() {
                 String deletedSettingsOid = (String)deleteSettingsDialogInputId.getConvertedInput();
                 try {
                     logger.fine("Deleting standard report settings (OID = "+ deletedSettingsOid + ").");
 
-                    standardReportSettingsManager.delete(deletedSettingsOid);
+                    standardReportSettingsManager.delete(Long.parseLong(deletedSettingsOid));
                     return null;    // No response object expected if successful.
                 } catch (Exception e) {
                     String errmsg = "Cannot delete the standard report settings (OID = '" + deletedSettingsOid + "').";
@@ -166,8 +170,8 @@ public class StandardReports extends EsmStandardWebPage {
 
         add( new JsonInteraction("jsonMappings", "jsonMappingUrl", new MappingDataProvider()) );
         add( new JsonPostInteraction("postReportParameters", "generateReportUrl", new ReportParametersDataProvider()) );
-        add( new JsonPostInteraction("postReportSavingSettings", "saveSettingsUrl", new ReportSavingSettingsDataProvider()) );
-        add( new JsonPostInteraction("reconfirmPostReportSavingSettings", "saveSettingsOverwriteUrl", new ReportSavingSettingsDataProvider()) );
+        add( new JsonPostInteraction("postReportSavingSettings", "saveSettingsUrl", new ReportSavingSettingsDataProvider(false)) );
+        add( new JsonPostInteraction("reconfirmPostReportSavingSettings", "saveSettingsOverwriteUrl", new ReportSavingSettingsDataProvider(true)) );
         add( new JsonInteraction("getReportSettingsList", "getSettingsListUrl", new SettingsListDataProvider()) );
         add( new ReportSettingsJsonPostInteraction("getReportSettings", "getSettingsUrl", new ReportSettingsDataProvider()) );
 
@@ -298,19 +302,43 @@ public class StandardReports extends EsmStandardWebPage {
     }
 
     private final class ReportSavingSettingsDataProvider implements JsonDataProvider {
+        private final boolean overwrite;
         private Object returnValue;
 
-        @Override
-        public Object getData() {
-            return returnValue;
+        public ReportSavingSettingsDataProvider( boolean overwrite ) {
+            this.overwrite = overwrite;        
         }
 
         @Override
-        public void setData(Object jsonData) {
-            if (jsonData instanceof JSONException ){
+        public Object getData() {
+            Object data = returnValue;
+
+            if ( returnValue instanceof Map ) {
+                data = new JSON.Convertible() {
+                    @SuppressWarnings({"unchecked"})
+                    @Override
+                    public void toJSON(JSON.Output output) {
+                        for ( Map.Entry<String,Object> entry : ((Map<String,Object>)returnValue).entrySet() ) {
+                            output.add( entry.getKey(), entry.getValue() );
+                        }
+                    }
+
+                    @Override
+                    public void fromJSON(Map map) {
+                        throw new UnsupportedOperationException("Mapping from JSON not supported.");
+                    }
+                };
+            }
+
+            return data;
+        }
+
+        @Override
+        public void setData( final Object jsonData ) {
+            if ( jsonData instanceof JSONException ){
                 //some exception happened whilst trying to retrieve the payload from upload request
                 returnValue = jsonData;
-            } else if (jsonData instanceof String) {
+            } else if ( jsonData instanceof String ) {
                 Object jsonDataObj;
                 try {
                     jsonDataObj = JSON.parse(jsonData.toString());
@@ -328,6 +356,19 @@ public class StandardReports extends EsmStandardWebPage {
 
                 Map jsonDataMap = (Map) jsonDataObj;
                 String name = (String) jsonDataMap.get("name");
+                StandardReportSettings settings = null;
+
+                try {
+                    settings = standardReportSettingsManager.findByNameAndUser( StandardReports.this.getUser(), name );
+                } catch ( FindException fe ) {
+                    returnValue = new JSONException(new Exception("Problem saving report settings: " + fe.getMessage(), fe.getCause()));
+                    return;
+                }
+
+                if ( settings != null && !overwrite ) {
+                    returnValue = Collections.singletonMap("reconfirm", true);
+                    return;
+                }
 
                 Map<String, Object> settingsProps = new HashMap<String, Object>();
                 settingsProps.put(JSONConstants.REPORT_TYPE, jsonDataMap.get(JSONConstants.REPORT_TYPE));
@@ -341,7 +382,12 @@ public class StandardReports extends EsmStandardWebPage {
                 settingsProps.put(JSONConstants.REPORT_NAME, jsonDataMap.get(JSONConstants.REPORT_NAME));
 
                 try {
-                    standardReportSettingsManager.save(new StandardReportSettings(name, settingsProps));
+                    if ( settings == null ) {
+                        standardReportSettingsManager.save( new StandardReportSettings(name, StandardReports.this.getUser(), settingsProps) );
+                    } else {
+                        settings.setProperties( settingsProps );
+                        standardReportSettingsManager.update( settings );
+                    }
 
                     // null for success
                     returnValue = null;
@@ -349,17 +395,7 @@ public class StandardReports extends EsmStandardWebPage {
                     logger.log(Level.FINER, "Problem saving report settings: " + e.getMessage(), e.getCause());
 
                     if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
-                        returnValue = new JSON.Convertible() {
-                            @Override
-                            public void toJSON(JSON.Output output) {
-                                output.add("reconfirm", true);
-                            }
-
-                            @Override
-                            public void fromJSON(Map map) {
-                                throw new UnsupportedOperationException("Mapping from JSON not supported.");
-                            }
-                        };
+                        returnValue = Collections.singletonMap("reconfirm", true);
                     } else {
                         returnValue = new JSONException(new Exception("Problem saving report settings: " + e.getMessage(), e.getCause()));
                     }
@@ -371,17 +407,25 @@ public class StandardReports extends EsmStandardWebPage {
     }
 
     private final class SettingsListDataProvider implements JsonDataProvider {
+        @SuppressWarnings({"unchecked"})
         @Override
         public Object getData() {
-            final List<Object> settingsList = new ArrayList<Object>();
+            final List<StandardReportSettings> settingsList = new ArrayList<StandardReportSettings>();
             try {
-                for (StandardReportSettings settings: standardReportSettingsManager.findAll()) {
+                for (StandardReportSettings settings: standardReportSettingsManager.findByUser( StandardReports.this.getUser() )) {
                     settingsList.add(settings);
                 }
             } catch (FindException e) {
                 logger.warning("Cannot find standard reports settings.");
                 return new JSONException(e);
             }
+            Collections.sort( settingsList, new ResolvingComparator( new Resolver(){
+                @Override
+                public Object resolve( Object key ) {
+                    StandardReportSettings standardReportSettings = (StandardReportSettings) key;
+                    return standardReportSettings.getName().toLowerCase();
+                }
+            }, false ));
             return settingsList;
         }
 
@@ -407,12 +451,16 @@ public class StandardReports extends EsmStandardWebPage {
             } else if (jsonData instanceof String) {
                 String oid = (String) jsonData;
                 try {
-                    StandardReportSettings reportSettings = standardReportSettingsManager.findByPrimaryKey(Integer.parseInt(oid));
-                    Map<String, Object> settingsPropsMap = reportSettings.obtainSettingsProps();
-                    updateReportSettings(settingsPropsMap);
+                    StandardReportSettings reportSettings = standardReportSettingsManager.findByPrimaryKeyForUser( StandardReports.this.getUser(), Integer.parseInt(oid));
+                    if ( reportSettings == null ) {
+                        returnValue = new JSONException(new NumberFormatException("The OID ('" + oid + "') is not a valid settings.."));
+                    } else {
+                        Map<String, Object> settingsPropsMap = new HashMap<String,Object>(reportSettings.getProperties());
+                        updateReportSettings(settingsPropsMap);
 
-                    // null for success
-                    returnValue = settingsPropsMap;
+                        // null for success
+                        returnValue = settingsPropsMap;
+                    }
                 } catch (NumberFormatException e) {
                     String errmsg = "The OID ('" + oid + "') is not an integer.";
                     logger.warning(errmsg);
@@ -436,7 +484,7 @@ public class StandardReports extends EsmStandardWebPage {
         }
     }
 
-    private static final class MappingKey implements JSON.Convertible {
+    private static final class MappingKey implements JSON.Convertible, Serializable {
         private final String id;
         private final String[] standard;
         private final String[] custom;
@@ -478,15 +526,19 @@ public class StandardReports extends EsmStandardWebPage {
      *
      * @param settingsPropsMap: the map of the settings properties.
      */
+    @SuppressWarnings({"unchecked"})
     private void updateReportSettings(Map<String, Object> settingsPropsMap) {
         List<String> warnings = new ArrayList<String>();
         MessageFormat warningMsgFormat = new MessageFormat(WARNING_LOADING_SETTINGS);
 
         // Step 1: update and validate "entities"
-        List<Object> entitiesPropsMapList = new ArrayList<Object>(Arrays.asList((Object[])settingsPropsMap.get(JSONConstants.REPORT_ENTITIES)));
         List<String> removedGuidsForEntities = new ArrayList<String>();
-        for (Iterator<Object> itr = entitiesPropsMapList.iterator(); itr.hasNext(); ) {
-            Map entityPropsMap = (Map) itr.next();
+        List<Map<String,Object>> entitiesPropsMapList = new ArrayList<Map<String,Object>>();
+        for ( Object item : (Object[])settingsPropsMap.get(JSONConstants.REPORT_ENTITIES) ) {
+            entitiesPropsMapList.add( (Map<String,Object>) item );    
+        }
+        for ( Iterator<Map<String,Object>> entityPropsMapIter = entitiesPropsMapList.iterator(); entityPropsMapIter.hasNext(); ) {
+            Map<String,Object> entityPropsMap = entityPropsMapIter.next();
             String clusterGuid = (String) entityPropsMap.get(JSONConstants.ReportEntities.CLUSTER_ID);
             try {
                 SsgCluster ssgCluster = ssgClusterManager.findByGuid(clusterGuid);
@@ -501,9 +553,10 @@ public class StandardReports extends EsmStandardWebPage {
                     removedGuidsForEntities.add(clusterGuid);
                     warnings.add(warningMsgFormat.format(new Object[]{"Entities", clusterGuid}));
                 }
-                itr.remove();
+                entityPropsMapIter.remove();
             }
         }
+
         // Update the "entities" property
         settingsPropsMap.put(JSONConstants.REPORT_ENTITIES, entitiesPropsMapList.toArray());
 

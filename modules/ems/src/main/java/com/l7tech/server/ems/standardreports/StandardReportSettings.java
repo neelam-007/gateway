@@ -6,11 +6,13 @@ import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.server.ems.enterprise.JSONConstants;
+import com.l7tech.identity.User;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Collections;
 import java.io.ByteArrayInputStream;
 
 import org.mortbay.util.ajax.JSON;
@@ -27,21 +29,71 @@ import org.mortbay.util.ajax.JSON;
 @Table(name="standard_report_settings")
 public class StandardReportSettings extends NamedEntityImp implements JSON.Convertible {
 
-    private Map<String, Object> settingsProps = new HashMap<String, Object>();
-    private String settingsPropsXml;
+    //- PUBLIC
 
     @Deprecated // For serialization and persistence only
     public StandardReportSettings() {}
 
-    public StandardReportSettings(String name, Map settingsProps) {
-        _name = name;
+    public StandardReportSettings( final String name,
+                                   final User user,
+                                   final Map<String,Object> settingsProps ) {
+        this._name = name;
+        this.userId = user.getId();
+        this.provider = user.getProviderId();
         this.settingsProps = settingsProps;
+    }
+
+    @Column(name="provider", nullable=false)
+    public long getProvider() {
+        return provider;
+    }
+
+    public void setProvider( final long providerId ) {
+        this.provider = providerId;
+    }
+
+    @Column(name="user_id", nullable=false, length=255)
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId( final String userId ) {
+        this.userId = userId;
+    }
+
+    public Object getProperty( final String name ) {
+        return settingsProps.get(name);
+    }
+
+    public void setProperty( final String name, final Object value ) {
+        settingsProps.put(name, value);
+        settingsPropsXml = null;
+    }
+
+    /**
+     * Get a read only copy of the properties for this settings.
+     *
+     * @return The settings property map.
+     */
+    @Transient
+    public Map<String,Object> getProperties() {
+        return Collections.unmodifiableMap(settingsProps);
+    }
+
+    /**
+     *
+     */
+    public void setProperties( final Map<String,Object> properties ) {
+        settingsProps.clear();
+        settingsProps.putAll( properties );
+        settingsPropsXml = null;
     }
 
     /**
      * for serialization by axis and hibernate only.
      * to get the properties, call getProperty
      */
+    @Deprecated
     @Column(name="settings_properties", length=Integer.MAX_VALUE)
     @Lob
     public String getSerializedSettingsProps() throws java.io.IOException {
@@ -70,22 +122,12 @@ public class StandardReportSettings extends NamedEntityImp implements JSON.Conve
         return settingsPropsXml;
     }
 
-    /*For JAXB processing. Needed a way to get this identity provider to recreate it's internal
-    * settingsPropsXml after setting a property after it has been unmarshalled*/
-    public void recreateSerializedSettingsProps() throws java.io.IOException{
-        settingsPropsXml = null;
-        this.getSerializedSettingsProps();
-    }
-
-    public Map<String, Object> obtainSettingsProps() {
-        return settingsProps;
-    }
-
     /**
      * for serialization by axis and hibernate only.
      * to set the properties, call setProperty
      */
-    public void setSerializedSettingsProps(String serializedProps) {
+    @Deprecated
+    public void setSerializedSettingsProps( final String serializedProps ) {
         settingsPropsXml = serializedProps;
         if (serializedProps == null || serializedProps.length() < 2) {
             settingsProps.clear();
@@ -95,23 +137,22 @@ public class StandardReportSettings extends NamedEntityImp implements JSON.Conve
             //noinspection unchecked
             settingsProps = (Map<String, Object>) decoder.readObject();
         }
-    }
+    }    
 
-    public Object getSettingProperty(String name) {
-        return settingsProps.get(name);
-    }
-
-    protected void setSettingProperty(String name, Object value) {
-        settingsProps.put(name, value);
-        settingsPropsXml = null;
-    }
-
-    public void toJSON(JSON.Output output) {
+    public void toJSON( final JSON.Output output ) {
         output.add(JSONConstants.ID, getId());
         output.add(JSONConstants.NAME, getName());
     }
 
-    public void fromJSON(Map map) {
+    public void fromJSON( final Map map ) {
         throw new UnsupportedOperationException("Mapping from JSON not supported.");
     }
+
+    //- PRIVATE
+
+    private long provider;
+    private String userId;
+    private Map<String, Object> settingsProps = new HashMap<String, Object>();
+    private String settingsPropsXml;
+    
 }
