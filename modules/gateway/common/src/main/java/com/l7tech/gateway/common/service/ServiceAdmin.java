@@ -79,11 +79,8 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
      * unique object ID that already exists, this will replace the objects current configuration with the new configuration.
      * Otherwise, a new object will be created.
      * <p/>
-     * The policy XML in the policy property will be made the active version of the policy.
-     * <p/>
-     * This method will always activate the newly-saved policy XML immediately.
-     * If this is undesirable, see {@link com.l7tech.gateway.common.admin.PolicyAdmin#savePolicy(com.l7tech.policy.Policy , boolean)}
-     * for a way to save policy XML without immediately activating it.
+     * Unless this is a new service being saved for the first time, the policy XML in the
+     * service being saved will be ignored, and will not be updated.
      *
      * @param service the published service to create or update.  Must not be null.
      * @return the unique object ID that was updated or created.
@@ -101,7 +98,8 @@ public interface ServiceAdmin extends ServiceAdminPublic, AsyncAdminMethods, Ali
      * unique object ID that already exists, this will replace the objects current configuration with the new configuration.
      * Otherwise, a new object will be created.
      * <p/>
-     * The policy XML in the policy property of the PublishedService will be made the active version of the policy.
+     * Unless this is a new service being saved for the first time, the policy XML in the 
+     * service being saved will be ignored, and will not be updated.
      *
      * @param service the published service to create or update.  Must not be null.
      * @param serviceDocuments the serviceDocuments to save. Null means no documents.

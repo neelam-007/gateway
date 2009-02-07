@@ -248,6 +248,15 @@ public class PolicyRevisionsDialog extends JDialog {
             return;
         PolicyVersion version = info.right;
 
+        if (version.isActive() && areUnsavedChangesToThisPolicy(version.getPolicyOid())) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "<html>This policy is currently open for editing and has unsaved changes.<p>&nbsp;<p>Please save or discard edits before editing the active version's comment.",
+                    "Active Version Comment",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         String comment = version.getName();
         if (comment == null) comment = "";
         comment = JOptionPane.showInputDialog(
@@ -360,6 +369,11 @@ public class PolicyRevisionsDialog extends JDialog {
         } catch (FindException e) {
             showErrorMessage("Unable to Load Revisions", "There was an error while loading policy revisions.\n\nError message: " + ExceptionUtils.getMessage(e), e);
         }
+    }
+
+    private static boolean areUnsavedChangesToThisPolicy(long policyOid) {
+        PolicyEditorPanel pep = TopComponents.getInstance().getPolicyEditorPanel();
+        return pep != null && policyOid == pep.getPolicyOid() && pep.isUnsavedChanges();
     }
 
     private void showErrorMessage(String title, String msg, Throwable e) {

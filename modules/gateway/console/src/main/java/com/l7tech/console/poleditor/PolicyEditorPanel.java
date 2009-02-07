@@ -203,6 +203,15 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return output;
     }
 
+    /**
+     * Check if this policy editor panel has unsaved changes.
+     *
+     * @return true iff. there are unsaved changes in this panel.
+     */
+    public boolean isUnsavedChanges() {
+        return policyEditorToolbar.buttonSaveOnly.isEnabled();
+    }
+
     protected PublishedService getPublishedService() {
         PublishedService service = null;
         EntityWithPolicyNode pn = subject.getPolicyNode();
@@ -214,6 +223,40 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
         }
         return service;
+    }
+
+    /**
+     * Check if this policy editor panel is editing a published service policy or a non-published service policy.
+     *
+     * @return true if this panel currently has a PublishedService node's policy open for editing.
+     *         false if the policy being edited does not belong to a PublishedService (is an includable policy, say)
+     */
+    public boolean isEditingPublishedService() {
+        return getPublishedService() != null;
+    }
+
+    /**
+     * Get the OID of the PublishedService whose policy is open for editing, if this panel is editing the
+     * policy of a PublishedService.
+     *
+     * @return the OID of the PublishedService whose policy is open for editing, or null if it's not a PublishedService policy.
+     */
+    public Long getPublishedServiceOid() {
+        final PublishedService ps = getPublishedService();
+        return ps == null ? null : ps.getOid();
+    }
+
+    /**
+     * Get the OID of the Policy that is open for editing in this editor panel.
+     *
+     * @return the policy OID.  Never null.
+     */
+    public long getPolicyOid() {
+        try {
+            return getPolicyNode().getPolicy().getOid();
+        } catch (FindException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -1145,7 +1188,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public void componentWillRemove(ContainerEvent e)
       throws ContainerVetoException {
         if (e.getChild() == this) {
-            if (policyEditorToolbar.buttonSaveOnly.isEnabled()) {
+            if (isUnsavedChanges()) {
                 if (!TopComponents.getInstance().isConnectionLost()) {
                     int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
                       "<html><center><b>Do you want to save changes to service policy " +

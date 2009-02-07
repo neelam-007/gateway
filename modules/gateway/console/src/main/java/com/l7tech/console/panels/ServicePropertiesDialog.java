@@ -5,24 +5,24 @@ import com.japisoft.xmlpad.UIAccessibility;
 import com.japisoft.xmlpad.XMLContainer;
 import com.japisoft.xmlpad.action.ActionModel;
 import com.japisoft.xmlpad.editor.XMLEditor;
+import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.console.action.Actions;
+import com.l7tech.console.action.CreateServiceWsdlAction;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.WsdlComposer;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.util.Functions;
 import com.l7tech.wsdl.Wsdl;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.http.HttpMethod;
-import com.l7tech.console.util.WsdlComposer;
-import com.l7tech.console.action.Actions;
-import com.l7tech.console.action.CreateServiceWsdlAction;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceDocument;
-import com.l7tech.gateway.common.service.ServiceAdmin;
-import com.l7tech.objectmodel.DuplicateObjectException;
-
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
@@ -34,10 +34,10 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * SSM Dialog for editing properties of a PublishedService object.
@@ -80,13 +80,21 @@ public class ServicePropertiesDialog extends JDialog {
     private JCheckBox laxResolutionCheckbox;
     private JTextField oidField;
     private JCheckBox enableWSSSecurityProcessingCheckBox;
+    private JLabel readOnlyWarningLabel;
     private String ssgURL;
     private final boolean canUpdate;
 
     public ServicePropertiesDialog(Frame owner, PublishedService svc, boolean hasUpdatePermission) {
         super(owner, true);
         subject = svc;
-        this.canUpdate = hasUpdatePermission;
+
+        if (areUnsavedChangesToThisPolicy(svc)) {
+            readOnlyWarningLabel.setText("Service has unsaved policy changes");
+            this.canUpdate = false;
+        } else {
+            this.canUpdate = hasUpdatePermission;
+        }
+
         initialize();
         DialogDisplayer.suppressSheetDisplay(this); // incompatible with xmlpad
     }
@@ -295,6 +303,11 @@ public class ServicePropertiesDialog extends JDialog {
         //apply permissions last
         applyPermissions();
 
+    }
+
+    private static boolean areUnsavedChangesToThisPolicy(PublishedService subject) {
+        PolicyEditorPanel pep = TopComponents.getInstance().getPolicyEditorPanel();
+        return pep != null && pep.isEditingPublishedService() && subject.getOid() == pep.getPublishedServiceOid() && pep.isUnsavedChanges();
     }
 
     /**

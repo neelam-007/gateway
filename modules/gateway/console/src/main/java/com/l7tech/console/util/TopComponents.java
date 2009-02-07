@@ -265,6 +265,26 @@ public class TopComponents {
     }
 
     /**
+     * Check if there is currently a policy open for editing.
+     *
+     * @return true if the workspace is displaying a policy editor panel.
+     *         false if it is displaying something else (ie, the home page, or a blank pane)
+     */
+    public boolean isPolicyOpenForEditing() {
+        return getPolicyEditorPanel() != null;
+    }
+
+    /**
+     * Get the currently-open PolicyEditorPanel, if a policy is open for editing.
+     *
+     * @return the currently-open PolicyEditorPanel, if the workspace is displaying one; otherwise null.
+     */
+    public PolicyEditorPanel getPolicyEditorPanel() {
+        JComponent comp = getCurrentWorkspace().getComponent();
+        return comp instanceof PolicyEditorPanel ? (PolicyEditorPanel)comp : null;
+    }
+
+    /**
      * @return  the ApplicationContext for which the current MainWindow was created.
      */
     public ApplicationContext getApplicationContext() {

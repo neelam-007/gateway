@@ -1,24 +1,17 @@
 package com.l7tech.server.service;
 
 import com.l7tech.common.io.ByteLimitInputStream;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.service.*;
-import com.l7tech.gateway.common.audit.SystemMessages;
-import static com.l7tech.objectmodel.EntityType.SERVICE;
 import com.l7tech.objectmodel.*;
-import com.l7tech.policy.AssertionLicense;
-import com.l7tech.policy.PolicyValidator;
-import com.l7tech.policy.PolicyValidatorResult;
+import static com.l7tech.objectmodel.EntityType.SERVICE;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.PolicyReference;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.policy.Policy;
-import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.AdminInfo;
@@ -29,12 +22,12 @@ import com.l7tech.server.sla.CounterIDManager;
 import com.l7tech.server.uddi.RegistryPublicationManager;
 import com.l7tech.server.uddi.UDDITemplateManager;
 import com.l7tech.uddi.UDDIRegistryInfo;
-import com.l7tech.uddi.WsdlInfo;
 import com.l7tech.uddi.UddiAgent;
 import com.l7tech.uddi.UddiAgentException;
+import com.l7tech.uddi.WsdlInfo;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
-
+import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
@@ -42,13 +35,6 @@ import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.HttpVersion;
-import org.apache.commons.httpclient.HttpState;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.ConnectTimeoutException;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
@@ -333,15 +319,21 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
 
         long oid;
         try {
-            if (service.getOid() > 0) {
+            if (!isDefaultOid(service)) {
                 // UPDATING EXISTING SERVICE
                 oid = service.getOid();
                 logger.fine("Updating PublishedService: " + oid);
-                serviceManager.update(service);
+
                 if (policy != null) {
-                    PolicyVersion ver = policyVersionManager.checkpointPolicy(policy, true, false);
-                    auditor.logAndAudit(SystemMessages.POLICY_VERSION_ACTIVATION, Long.toString(ver.getOrdinal()), Long.toString(policy.getOid()));
+                    // Saving an existing published service must never change its policy xml (or folder) as a side-effect. (Bug #6405)
+                    PublishedService previous = serviceManager.findByPrimaryKey(service.getOid());
+                    if (previous != null) {
+                        service.setFolder(previous.getFolder());
+                        service.setPolicy(previous.getPolicy());
+                    }
                 }
+
+                serviceManager.update(service);
             } else {
                 // SAVING NEW SERVICE
                 logger.fine("Saving new PublishedService");

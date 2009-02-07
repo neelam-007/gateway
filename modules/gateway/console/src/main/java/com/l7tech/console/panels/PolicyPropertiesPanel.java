@@ -3,25 +3,26 @@
  */
 package com.l7tech.console.panels;
 
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceTemplate;
+import com.l7tech.gui.util.DocumentSizeFilter;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.gui.widgets.ValidatedPanel;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gui.util.DocumentSizeFilter;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
-import java.awt.event.ItemListener;
 import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.*;
 import java.util.List;
-
-import org.apache.commons.lang.StringUtils;
 
 /**
  * @author alex
@@ -36,6 +37,7 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
     private JComboBox tagCombo;
     private JLabel typeLabel;
     private JLabel tagLabel;
+    private JLabel unsavedWarningLabel;
     // TODO include a policy panel
 
     private final Policy policy;
@@ -56,8 +58,21 @@ public class PolicyPropertiesPanel extends ValidatedPanel {
     public PolicyPropertiesPanel(Policy policy, boolean canUpdate) {
         super("policy");
         this.policy = policy;
-        this.canUpdate = canUpdate;
+
+        if (areUnsavedChangesToThisPolicy(policy)) {
+            this.canUpdate = false;
+            unsavedWarningLabel.setText(resources.getString("unsaved.warning"));
+        } else {
+            unsavedWarningLabel.setVisible(false);
+            this.canUpdate = canUpdate;
+        }
+
         init();
+    }
+
+    private static boolean areUnsavedChangesToThisPolicy(Policy policy) {
+        PolicyEditorPanel pep = TopComponents.getInstance().getPolicyEditorPanel();
+        return pep != null && policy.getOid() == pep.getPolicyOid() && pep.isUnsavedChanges();
     }
 
     protected Object getModel() {
