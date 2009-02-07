@@ -84,7 +84,7 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
             //determine that the drop location is a folder node base.
             //NOTE: RootNode is also an instance of FolderNodeBase
             TreePath path = dropZone.getPath();
-            return path.getLastPathComponent() instanceof FolderNodeBase;
+            return path != null && path.getLastPathComponent() instanceof FolderNodeBase;
         } else {
             return false;
         }
