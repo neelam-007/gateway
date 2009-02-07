@@ -1,25 +1,21 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.server.ems.ui.NavigationPage;
-import com.l7tech.server.ems.ui.EsmSecurityManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.ems.enterprise.*;
+import com.l7tech.server.ems.gateway.GatewayContext;
+import com.l7tech.server.ems.gateway.GatewayContextFactory;
+import com.l7tech.server.ems.gateway.GatewayRegistrationEvent;
+import com.l7tech.server.ems.gateway.GatewayTrustTokenFactory;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.standardreports.StandardReportManager;
-import com.l7tech.server.ems.gateway.GatewayTrustTokenFactory;
-import com.l7tech.server.ems.gateway.GatewayContextFactory;
-import com.l7tech.server.ems.gateway.GatewayContext;
-import com.l7tech.server.ems.gateway.GatewayRegistrationEvent;
-import com.l7tech.server.ems.enterprise.*;
+import com.l7tech.server.ems.ui.EsmSecurityManager;
+import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
-import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
-import com.l7tech.gateway.common.security.rbac.AttemptedCreate;
-import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
-import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.form.RequiredTextField;
@@ -29,13 +25,9 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.mortbay.util.ajax.JSON;
 import org.springframework.context.ApplicationEventPublisher;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeSet;
-import java.util.Collections;
-import java.util.logging.Logger;
+import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -213,6 +205,26 @@ public class Configure extends EsmStandardWebPage {
         editFolderForm.add(editFolderDialogInputId);
         editFolderForm.add(editFolderInputName);
 
+        final HiddenField moveFolderDialogEntityId = new HiddenField("moveFolderDialog_entityId", new Model(""));
+        final HiddenField moveFolderDialogDestFolderId = new HiddenField("moveFolderDialog_destFolderId", new Model(""));
+        final Form moveFolderForm = new JsonDataResponseForm("moveFolderForm", new AttemptedUpdateAny(EntityType.ESM_ENTERPRISE_FOLDER)){
+            @Override
+            protected Object getJsonResponseData() {
+                String entityId = (String)moveFolderDialogEntityId.getConvertedInput();
+                String destFolderId = (String)moveFolderDialogDestFolderId.getConvertedInput();
+                try {
+                    logger.fine("Moving folder (GUID = "+ entityId + ") into folder with GUID = " + destFolderId + ".");
+                    enterpriseFolderManager.moveByGuid(entityId, destFolderId);
+                    return null;    // No response object expected if successful.
+                } catch (Exception e) {
+                    logger.warning(e.toString());
+                    return new JSONException(e);
+                }
+            }
+        };
+        moveFolderForm.add(moveFolderDialogEntityId);
+        moveFolderForm.add(moveFolderDialogDestFolderId);
+
         final HiddenField deleteFolderDialogInputId = new HiddenField("deleteFolderDialog_id", new Model(""));
         Form deleteFolderForm = new JsonDataResponseForm("deleteFolderForm", new AttemptedDeleteAll( EntityType.ESM_ENTERPRISE_FOLDER )){
             @Override
@@ -315,6 +327,26 @@ public class Configure extends EsmStandardWebPage {
         editSSGClusterForm.add(editSSGClusterInputName);
         editSSGClusterForm.add(editSSGClusterInputSslHostname);
         editSSGClusterForm.add(editSSGClusterInputAdminPort);
+
+        final HiddenField moveSSGClusterDialogEntityId = new HiddenField("moveSSGClusterDialog_entityId", new Model(""));
+        final HiddenField moveSSGClusterDialogDestFolderId = new HiddenField("moveSSGClusterDialog_destFolderId", new Model(""));
+        final Form moveSSGClusterForm = new JsonDataResponseForm("moveSSGClusterForm", new AttemptedUpdateAny(EntityType.ESM_ENTERPRISE_FOLDER)){
+            @Override
+            protected Object getJsonResponseData() {
+                String entityId = (String)moveSSGClusterDialogEntityId.getConvertedInput();
+                String destSSGClusterId = (String)moveSSGClusterDialogDestFolderId.getConvertedInput();
+                try {
+                    logger.fine("Moving SSG Cluster (GUID = "+ entityId + ") into folder with GUID = " + destSSGClusterId + ".");
+                    ssgClusterManager.moveByGuid(entityId, destSSGClusterId);
+                    return null;    // No response object expected if successful.
+                } catch (Exception e) {
+                    logger.warning(e.toString());
+                    return new JSONException(e);
+                }
+            }
+        };
+        moveSSGClusterForm.add(moveSSGClusterDialogEntityId);
+        moveSSGClusterForm.add(moveSSGClusterDialogDestFolderId);
 
         final HiddenField deleteSSGClusterDialogInputId = new HiddenField("deleteSSGClusterDialog_id", new Model(""));
         Form deleteSSGClusterForm = new JsonDataResponseForm("deleteSSGClusterForm", new AttemptedDeleteAll( EntityType.ESM_SSG_CLUSTER )){
@@ -460,9 +492,11 @@ public class Configure extends EsmStandardWebPage {
 
         add(addFolderForm);
         add(editFolderForm);
+        add(moveFolderForm);
         add(deleteFolderForm);
         add(addSSGClusterForm);
         add(editSSGClusterForm);
+        add(moveSSGClusterForm);
         add(deleteSSGClusterForm);
         add(reconfirmSSGClusterDeletionForm);
         add(getGatewayTrustServletInputsForm);

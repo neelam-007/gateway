@@ -34,14 +34,30 @@ public interface EnterpriseFolderManager extends EntityManager<EnterpriseFolder,
     EnterpriseFolder create(String name, String parentFolderGuid) throws FindException, InvalidNameException, SaveException;
 
     /**
-     * Rename the name of the folder with the guid.
-     * @param name: the new name of the folder
-     * @param guid: the guid of the folder
+     * Rename a folder with the given GUID.
+     *
+     * @param name      the new name
+     * @param guid      GUID of the folder
      * @throws FindException if failed to determine if a folder with <code>parentFolderGuid</code> exists
      * @throws InvalidNameException if <code>name</code> does not conform to name rules
      * @throws SaveException if the new folder cannot be persisted
      */
     void renameByGuid(String name, String guid) throws FindException, UpdateException;
+
+    /**
+     * Moves a folder into a different parent folder.
+     * No action or exception if no change in parent folder.
+     *
+     * @param guid              GUID of the folder to move
+     * @param newParentGuid     GUID of the destination parent folder
+     * @throws FindException if no folder with the given GUIDs
+     * @throws UpdateException if the folder to move is the root folder,
+     *                         or attempt to move into itself,
+     *                         or attempt to move into a descendent folder,
+     *                         or name collision in the destination folder,
+     *                         or database error
+     */
+    void moveByGuid(String guid, String newParentGuid) throws FindException, UpdateException;
 
     /**
      * Deletes a folder with the given guid without Cascade Deletion.  If the folder has descendents, then the folder

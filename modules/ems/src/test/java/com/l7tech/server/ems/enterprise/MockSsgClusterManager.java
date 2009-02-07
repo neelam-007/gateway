@@ -30,6 +30,10 @@ public class MockSsgClusterManager extends EntityManagerStub<SsgCluster, EntityH
     }
 
     @Override
+    public void moveByGuid(String guid, String newParentGuid) throws FindException, UpdateException {
+    }
+
+    @Override
     public void deleteByGuid(String guid) throws FindException, DeleteException {
     }
 

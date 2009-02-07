@@ -10,8 +10,8 @@ import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -85,6 +85,48 @@ public class EnterpriseFolderManagerImpl extends HibernateEntityManager<Enterpri
         final EnterpriseFolder folder = findByGuid(guid);
         verifyLegalFolderName(name);
         folder.setName(name);
+        super.update(folder);
+    }
+
+    @Override
+    public void moveByGuid(String guid, String newParentGuid) throws FindException, UpdateException {
+        final EnterpriseFolder folder = findByGuid(guid);
+        if (folder == null) {
+            throw new FindException("The folder to move does not exists. (GUID = " + guid + ")");
+        }
+
+        if (folder.isRoot()) {
+            throw new UpdateException("Cannot move root folder.");
+        }
+
+        if (guid.equals(newParentGuid)) {
+            throw new UpdateException("Cannot move folder \"" + folder.getName() + "\" to inside itself.");
+        }
+
+        if (folder.getParentFolder().getGuid().equals(newParentGuid)) {
+            logger.info("Attempt to move folder \"" + folder.getName() + "\" to same parent folder, i.e., no-op.");
+            return;
+        }
+
+        final EnterpriseFolder newParent = findByGuid(newParentGuid);
+        if (newParent == null) {
+            throw new FindException("Destination folder does not exists. (GUID = " + newParentGuid + ")");
+        }
+
+        for (EnterpriseFolder p = newParent.getParentFolder(); p != null; p = p.getParentFolder()) {
+            if (p.getGuid().equals(guid)) {
+                throw new UpdateException("Cannot move folder \"" + folder.getName() + "\" into its own descendent folder \"" + newParent.getName() + "\".");
+            }
+        }
+
+        final List<EnterpriseFolder> newSiblings = findChildFolders(newParent);
+        for (EnterpriseFolder sibling : newSiblings) {
+            if (sibling.getName().equals(folder.getName())) {
+                throw new UpdateException("A folder with the name \"" + sibling.getName() + "\" already exists in the destination folder \"" + newParent.getName() + "\".");
+            }
+        }
+
+        folder.setParentFolder(newParent);
         super.update(folder);
     }
 

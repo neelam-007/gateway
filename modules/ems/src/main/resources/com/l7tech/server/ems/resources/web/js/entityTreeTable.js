@@ -831,6 +831,15 @@ if (!l7.EntityTreeTable) {
             // --------------------------------------------------------------------------------
 
             /**
+             * Returns the TBODY element.
+             * @public
+             * @return {HTMLTableSectionElement} the TBODY element
+             */
+            this.getTBody = function() {
+                return this._tbody;
+            }
+
+            /**
              * Returns the configuration object literal passed into the constructor.
              * @public
              * @return {object} the configuration object literal
@@ -910,11 +919,35 @@ if (!l7.EntityTreeTable) {
 
             /**
              * @public
-             * @param {object} entity
-             * @return {object} the parent entity object literal
+             * @param {object} entity   an entity object literal
+             * @return {object} the parent entity object literal; null if no parent
              */
             this.getParentEntity = function(entity) {
                 return l7.Util.findFirstArrayElementByProperty(this._entities, 'id', entity.parentId);
+            }
+
+            /**
+             * @public
+             * @param {object} entity   an entity object literal
+             * @return {array} array of child entities; may be empty but never null
+             */
+            this.getChildEntities = function(entity) {
+                return entity._children;
+            }
+
+            /**
+             * @public
+             * @param {object} x    an entity object literal
+             * @param {object} y    an entity object literal
+             * @return {boolean} true if x is a descendent of y
+             */
+            this.isDescendent = function(x, y) {
+                for (var entity = this.getParentEntity(x); entity != null; entity = this.getParentEntity(entity)) {
+                    if (entity.id == y.id) {
+                        return true;
+                    }
+                }
+                return false;
             }
 
             /**

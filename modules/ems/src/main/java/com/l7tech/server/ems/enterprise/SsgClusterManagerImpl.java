@@ -1,13 +1,13 @@
 package com.l7tech.server.ems.enterprise;
 
+import static com.l7tech.gateway.common.security.rbac.OperationType.READ;
+import com.l7tech.gateway.common.security.rbac.RbacAdmin;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.*;
+import static com.l7tech.objectmodel.EntityType.ESM_SSG_CLUSTER;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.gateway.common.security.rbac.RbacAdmin;
-import com.l7tech.gateway.common.security.rbac.Role;
-import static com.l7tech.objectmodel.EntityType.*;
-import static com.l7tech.gateway.common.security.rbac.OperationType.*;
 import com.l7tech.util.TextUtils;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -15,15 +15,15 @@ import org.hibernate.Session;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.SQLException;
-import java.util.*;
-import java.util.regex.Pattern;
-import java.util.logging.Logger;
-import java.text.MessageFormat;
 import java.net.InetAddress;
+import java.sql.SQLException;
+import java.text.MessageFormat;
+import java.util.*;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Entity manager for {@link SsgCluster}.
@@ -119,6 +119,34 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
         if (updated) {
             update(cluster);
         }
+    }
+
+    @Override
+    public void moveByGuid(String guid, String newParentGuid) throws FindException, UpdateException {
+        final SsgCluster cluster = findByGuid(guid);
+        if (cluster == null) {
+            throw new FindException("The SSG Cluster to move does not exists. (GUID = " + guid + ")");
+        }
+
+        if (cluster.getParentFolder().getGuid().equals(newParentGuid)) {
+            logger.info("Attempt to move SSG Cluster \"" + cluster.getName() + "\" to same parent folder, i.e., no-op.");
+            return;
+        }
+
+        final EnterpriseFolder newParent = enterpriseFolderManager.findByGuid(newParentGuid);
+        if (newParent == null) {
+            throw new FindException("Destination folder does not exists. (GUID = " + newParentGuid + ")");
+        }
+
+        final List<SsgCluster> newSiblings = findChildSsgClusters(newParent);
+        for (SsgCluster sibling : newSiblings) {
+            if (sibling.getName().equals(cluster.getName())) {
+                throw new UpdateException("An SSG Cluster with the name \"" + sibling.getName() + "\" already exists in the destination folder \"" + newParent.getName() + "\".");
+            }
+        }
+
+        cluster.setParentFolder(newParent);
+        super.update(cluster);
     }
 
     @Override

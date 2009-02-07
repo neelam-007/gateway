@@ -23,6 +23,16 @@
         <script type="text/javascript" src="/yui/json/json-min.js"></script>
         <script type="text/javascript" src="/yui/logger/logger-min.js"></script>
 
+        <style type="text/css">
+            .moveDialog_entityTreePanel {
+                border: 1px solid #000000;
+                height: 300px;
+                margin-bottom: 2px;
+                margin-top: 10px;
+                overflow: auto;
+                width: 400px;
+            }
+        </style>
         <script type="text/javascript" src="/js/entityTreeTable.js"></script>
         <script type="text/javascript">
             // TODO generate these variables dynamically on the server according to user's langauge preference
@@ -78,10 +88,10 @@
                 SESSION_TIMEOUT : 'Your session has timed out.',
                 CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server.',
                 CANNOT_DOWNLOAD_ENTITY_DATA : 'Unable to retrieve array of enterprise entities from the server.',
-                CANNOT_PARSE_ENTITY_DATA : 'Unable to parse array of enterprise entities downloaded from the server.',
+                CANNOT_PARSE_ENTITY_DATA : 'Unable to parse array of enterprise entities retrieved from the server.',
                 ENTITY_DATA_ERROR : 'Data error.',
                 CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Unable to retrieve data for establishing trust by SSG Cluster from the server.',
-                CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT : 'Unable to retrieve data for mapping access account from server.',
+                CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT : 'Unable to retrieve data for mapping access account from the server.',
                 INVALID_NAME_LENGTH : 'must be 1 to 128 characters',
                 INVALID_NAME_SLASH : 'slash "/" not allowed',
                 INVALID_NAME_LEADING_SPACES : 'leading spaces not allowed',
@@ -94,6 +104,11 @@
                 CANNOT_DELETE_FOLDER : 'Unable to delete folder.',
                 CANNOT_ADD_SSG_CLUSTER : 'Unable to add SSG Cluster.',
                 CANNOT_EDIT_SSG_CLUSTER : 'Unable to edit SSG Cluster.',
+                WARN_MOVE_NAME_COLLISION : 'A {0} of the same name already exists in the selected folder.',
+                WARN_MOVE_NO_CHANGE : 'Same as current parent folder.',
+                WARN_MOVE_FOLDER_INTO_SELF : 'Cannot move a folder to inside itself.',
+                WARN_MOVE_FOLDER_INTO_DESCENDENT : 'Cannot move a folder into its own descendent folder.',
+                CANNOT_MOVE: 'Unable to move {0} &ldquo;{1}&rdquo;.',
                 CANNOT_DELETE_SSG_CLUSTER : 'Unable to delete SSG Cluster.',
                 CANNOT_START_SSG_NODE : 'Unable to start SSG Node.',
                 CANNOT_STOP_SSG_NODE : 'Unable to stop SSG Node.'
@@ -105,11 +120,13 @@
              * @type l7.EntityTreeTable
              */
             var entityTreeTable;
+            var moveFolderDialog_entityTreeTable;
+            var moveSSGClusterDialog_entityTreeTable;
 
             var addFolderButton;
             var addSSGClusterButton;
             var editButton;
-            //var moveButton;
+            var moveButton;
             var deleteButton;
             var startButton;
             var stopButton;
@@ -126,22 +143,36 @@
 
             var addFolderDialog;
             var editFolderDialog;
+            var moveFolderDialog;
             var deleteFolderDialog;
             var addSSGClusterDialog;
             var editSSGClusterDialog;
+            var moveSSGClusterDialog;
             var deleteSSGClusterDialog;
             var reconfirmSSGClusterDeletionDialog;
             var ssgClusterTrustDialog;
             var mapAccessAccountDialog;
             var changeAccessAccountDialog;
 
-            function showHideLogReader() {
-                var debugLogReader = document.getElementById('debugLogReader');
-                if (debugLogReader.style.display == '') {
-                    debugLogReader.style.display = 'none';
-                } else {
-                    debugLogReader.style.display = '';
+            /**
+             * @param {string} type     an l7.Constants.ENTITY_TYPE enum value
+             * @return {string} localized string
+             */
+            function getEntityTypeLocalizedStrings(type) {
+                if (type == l7.Constants.ENTITY_TYPE.ENTERPRISE_FOLDER) {
+                    return entityTreeTableLocalizedStrings.ENTERPRISE_FOLDER;
+                } else if (type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
+                    return entityTreeTableLocalizedStrings.SSG_CLUSTER;
+                } else if (type == l7.Constants.ENTITY_TYPE.SSG_NODE) {
+                    return entityTreeTableLocalizedStrings.SSG_NODE;
+                } else if (type == l7.Constants.ENTITY_TYPE.SERVICE_FOLDER) {
+                    return entityTreeTableLocalizedStrings.SERVICE_FOLDER;
+                } else if (type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE) {
+                    return entityTreeTableLocalizedStrings.PUBLISHED_SERVICE;
+                } else if (type == l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT) {
+                    return entityTreeTableLocalizedStrings.POLICY_FRAGMENT;
                 }
+                return null;
             }
 
             /**
@@ -193,7 +224,7 @@
                 addFolderButton.set('disabled', !enabled);
                 addSSGClusterButton.set('disabled', !enabled);
                 editButton.set('disabled', !enabled);
-                //moveButton.set('disabled', !enabled);
+                moveButton.set('disabled', !enabled);
                 deleteButton.set('disabled', !enabled);
                 startButton.set('disabled', !enabled);
                 stopButton.set('disabled', !enabled);
@@ -204,7 +235,7 @@
                 enableToolbarButtons(false);
                 addFolderButton.set('disabled', !isPermitted(entity, 'addFolder'));
                 editButton.set('disabled', !isPermitted(entity, 'edit'));
-                //moveButton.set('disabled', !isPermitted(entity, 'move'));
+                moveButton.set('disabled', !isPermitted(entity, 'move'));
                 deleteButton.set('disabled', !isPermitted(entity, 'delete'));
                 addSSGClusterButton.set('disabled', !isPermitted(entity, 'addSSGCluster'));
                 startButton.set('disabled', !isPermitted(entity, 'start'));
@@ -343,10 +374,86 @@
                 }
             }
 
+            function onClickMoveFolder(event) {
+                var entity = entityTreeTable.getHighlightedEntity();
+                document.getElementById('moveFolderDialog_entityId').value = entity.id;
+                document.getElementById('moveFolderDialog_entityName').innerHTML = l7.Util.escapeHtmlText(entity.name);
+                moveFolderDialog_entityTreeTable.clear();
+
+                var xhr = l7.Connection.syncRequest('GET', jsonUrl, null, true);
+                if (xhr.status == 200) {
+                    var result = l7.Connection.parseJsonResponse(xhr,
+                                                                 true,
+                                                                 localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA,
+                                                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                                 localizedStrings.SESSION_TIMEOUT,
+                                                                 localizedStrings.ERROR,
+                                                                 localizedStrings.OK);
+                    if (result.success) {
+                        var entities = result.json;
+
+                        // When moving an enterprise folder, displays only enterprise folders.
+                        for (var i = entities.length - 1; i >= 0; --i) {
+                            if (entities[i].type != l7.Constants.ENTITY_TYPE.ENTERPRISE_FOLDER) {
+                                entities.splice(i, 1);
+                            }
+                        }
+
+                        moveFolderDialog_entityTreeTable.load(entities);
+                        validateMoveFolderDialog();
+                        moveFolderDialog.center();
+                        moveFolderDialog.show();
+                    }
+                } else {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + '<br/><br/>' + xhr.status + ' ' + xhr.statusText, localizedStrings.OK);
+                }
+            }
+
+            function onClickMoveSSGCluster(event) {
+                var entity = entityTreeTable.getHighlightedEntity();
+                document.getElementById('moveSSGClusterDialog_entityId').value = entity.id;
+                document.getElementById('moveSSGClusterDialog_entityName').innerHTML = l7.Util.escapeHtmlText(entity.name);
+                moveSSGClusterDialog_entityTreeTable.clear();
+
+                var xhr = l7.Connection.syncRequest('GET', jsonUrl, null, true);
+                if (xhr.status == 200) {
+                    var result = l7.Connection.parseJsonResponse(xhr,
+                                                                 true,
+                                                                 localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA,
+                                                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                                 localizedStrings.SESSION_TIMEOUT,
+                                                                 localizedStrings.ERROR,
+                                                                 localizedStrings.OK);
+                    if (result.success) {
+                        var entities = result.json;
+
+                        // When moving an SSG Cluster, displays only enterprise folders and SSG Clusters.
+                        for (var i = entities.length - 1; i >= 0; --i) {
+                            if (entities[i].type != l7.Constants.ENTITY_TYPE.ENTERPRISE_FOLDER &&
+                                entities[i].type != l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
+                                entities.splice(i, 1);
+                            }
+                        }
+
+                        moveSSGClusterDialog_entityTreeTable.load(entities);
+                        validateMoveSSGClusterDialog();
+                        moveSSGClusterDialog.center();
+                        moveSSGClusterDialog.show();
+                    }
+                } else {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + '<br/><br/>' + xhr.status + ' ' + xhr.statusText, localizedStrings.OK);
+                }
+            }
+
             function onClickMove(event) {
                 var entity = entityTreeTable.getHighlightedEntity();
-                // TODO
-alert('Not implemented yet!\n\nonClickMove\nentity.name = ' + entity.name);
+                if (entity.type == l7.Constants.ENTITY_TYPE.ENTERPRISE_FOLDER) {
+                    onClickMoveFolder(event);
+                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
+                    onClickMoveSSGCluster(event);
+                } else {
+                    YAHOO.log('No move handler for entity type: ' + entity.type, 'error', 'Configure.html');
+                }
             }
 
             function onClickDeleteFolder(event) {
@@ -514,6 +621,44 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                 }
             }
 
+            function validateMoveFolderDialog() {
+                var valid = true;
+                var warning = document.getElementById('moveFolderDialog_warning');
+                warning.innerHTML = '<img src="../images/warning.png"/> ';
+                warning.style.visibility = 'hidden';
+
+                var destFolder = moveFolderDialog_entityTreeTable.getHighlightedEntity();
+                if (destFolder == null) {
+                    valid = false;
+                } else {
+                    var entity = entityTreeTable.getHighlightedEntity();    // The folder to move.
+                    if (entity.parentId == destFolder.id) {
+                        warning.innerHTML += l7.Util.escapeHtmlText(localizedStrings.WARN_MOVE_NO_CHANGE);
+                        warning.style.visibility = 'visible';
+                        valid = false;
+                    } else if (entity.id == destFolder.id) {
+                        warning.innerHTML += l7.Util.escapeHtmlText(localizedStrings.WARN_MOVE_FOLDER_INTO_SELF);
+                        warning.style.visibility = 'visible';
+                        valid = false;
+                    } else if (entityTreeTable.isDescendent(destFolder, entity)) {
+                        warning.innerHTML += l7.Util.escapeHtmlText(localizedStrings.WARN_MOVE_FOLDER_INTO_DESCENDENT);
+                        warning.style.visibility = 'visible';
+                        valid = false;
+                    } else {
+                        var destFolderChildren = moveFolderDialog_entityTreeTable.getChildEntities(destFolder);
+                        var siblings = l7.Util.findArrayElementsByProperty(destFolderChildren, 'type', entity.type);
+                        if (l7.Util.findArrayElementsByProperty(siblings, 'name', entity.name).length != 0) {
+                            warning.innerHTML += l7.Util.escapeHtmlText(l7.Util.formatMessage(localizedStrings.WARN_MOVE_NAME_COLLISION, getEntityTypeLocalizedStrings(entity.type)));
+                            warning.style.visibility = 'visible';
+                            valid = false;
+                        }
+                    }
+                }
+
+                var okButton = moveFolderDialog.getButtons()[0];
+                okButton.set('disabled', !valid);
+            }
+
             function validateAddSSGClusterDialog() {
                 var nameTextBox = document.getElementById('addSSGClusterDialog_name');
                 var name = nameTextBox.value;
@@ -580,6 +725,36 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                 } else {
                     okButton.set('disabled', true);
                 }
+            }
+
+            function validateMoveSSGClusterDialog() {
+                var valid = true;
+                var warning = document.getElementById('moveSSGClusterDialog_warning');
+                warning.innerHTML = '<img src="../images/warning.png"/> ';
+                warning.style.visibility = 'hidden';
+
+                var destFolder = moveSSGClusterDialog_entityTreeTable.getHighlightedEntity();
+                if (destFolder == null) {
+                    valid = false;
+                } else {
+                    var entity = entityTreeTable.getHighlightedEntity();
+                    if (entity.parentId == destFolder.id) {
+                        warning.innerHTML += l7.Util.escapeHtmlText(localizedStrings.WARN_MOVE_NO_CHANGE);
+                        warning.style.visibility = 'visible';
+                        valid = false;
+                    } else {
+                        var destFolderChildren = moveSSGClusterDialog_entityTreeTable.getChildEntities(destFolder);
+                        var siblings = l7.Util.findArrayElementsByProperty(destFolderChildren, 'type', entity.type);
+                        if (l7.Util.findArrayElementsByProperty(siblings, 'name', entity.name).length != 0) {
+                            warning.innerHTML += l7.Util.escapeHtmlText(l7.Util.formatMessage(localizedStrings.WARN_MOVE_NAME_COLLISION, getEntityTypeLocalizedStrings(entity.type)));
+                            warning.style.visibility = 'visible';
+                            valid = false;
+                        }
+                    }
+                }
+
+                var okButton = moveSSGClusterDialog.getButtons()[0];
+                okButton.set('disabled', !valid);
             }
 
             function initAddFolderDialog() {
@@ -661,11 +836,65 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                                                                  localizedStrings.OK);
                     if (result.success) {
                         // No response JSON object expected.
-                        loadEntityTreeTable();  // Reloads to show new folder name.
+                        loadEntityTreeTable();  // Reloads to show change.
                     }
                 }
                 editFolderDialog.callback.failure = function(o) {
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_EDIT_FOLDER + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
+                }
+            }
+
+            function initMoveFolderDialog() {
+                var tbody = document.getElementById('moveFolderDialog_entityTreeTableBody');
+                var config = {
+                    localizedStrings      : entityTreeTableLocalizedStrings,
+                    columns               : [ l7.EntityTreeTable.COLUMN.NAME ],
+                    highlightableEntities : [ l7.Constants.ENTITY_TYPE.ENTERPRISE_FOLDER ],
+                    onEntityHighlighted   : validateMoveFolderDialog
+                };
+                moveFolderDialog_entityTreeTable = new l7.EntityTreeTable(tbody, [], '../images', config);
+
+                moveFolderDialog = new YAHOO.widget.Dialog('moveFolderDialog', {
+                    buttons     : [
+                        {
+                            text      : localizedStrings.OK,
+                            handler   : function() {
+                                document.getElementById('moveFolderDialog_destFolderId').value = moveFolderDialog_entityTreeTable.getHighlightedEntity().id;
+                                this.submit();
+                            },
+                            isDefault : true
+                        },
+                        {
+                            text      : localizedStrings.CANCEL,
+                            handler   : function() {
+                                this.hide();
+                                document.getElementById('moveFolderDialog_warning').style.visibility = 'hidden'; // Workaround for bug in YUI?
+                            }
+                        }
+                    ],
+                    close       : true,
+                    draggable   : true,
+                    icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                    modal       : true,
+                    postmethod  : 'async',
+                    visible     : false
+                });
+                moveFolderDialog.render();
+                moveFolderDialog.callback.success = function(o) {
+                    var result = l7.Connection.parseJsonResponse(o,
+                                                                 true,
+                                                                 l7.Util.formatMessage(localizedStrings.CANNOT_MOVE, getEntityTypeLocalizedStrings(moveFolderDialog_entityTreeTable.getHighlightedEntity().type), moveFolderDialog_entityTreeTable.getHighlightedEntity().name),
+                                                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                                 localizedStrings.SESSION_TIMEOUT,
+                                                                 localizedStrings.ERROR,
+                                                                 localizedStrings.OK);
+                    if (result.success) {
+                        // No response JSON object expected if successfully moved.
+                        loadEntityTreeTable();  // Reloads to show change.
+                    }
+                }
+                moveFolderDialog.callback.failure = function(o) {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, l7.Util.formatMessage(localizedStrings.CANNOT_MOVE, getEntityTypeLocalizedStrings(moveFolderDialog_entityTreeTable.getHighlightedEntity().type), moveFolderDialog_entityTreeTable.getHighlightedEntity().name) + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -803,6 +1032,60 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                 }
                 editSSGClusterDialog.callback.failure = function(o) {
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_EDIT_SSG_CLUSTER + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
+                }
+            }
+
+            function initMoveSSGClusterDialog() {
+                var tbody = document.getElementById('moveSSGClusterDialog_entityTreeTableBody');
+                var config = {
+                    localizedStrings      : entityTreeTableLocalizedStrings,
+                    columns               : [ l7.EntityTreeTable.COLUMN.NAME ],
+                    highlightableEntities : [ l7.Constants.ENTITY_TYPE.ENTERPRISE_FOLDER ],
+                    onEntityHighlighted   : validateMoveSSGClusterDialog
+                };
+                moveSSGClusterDialog_entityTreeTable = new l7.EntityTreeTable(tbody, [], '../images', config);
+
+                moveSSGClusterDialog = new YAHOO.widget.Dialog('moveSSGClusterDialog', {
+                    buttons     : [
+                        {
+                            text      : localizedStrings.OK,
+                            handler   : function() {
+                                document.getElementById('moveSSGClusterDialog_destFolderId').value = moveSSGClusterDialog_entityTreeTable.getHighlightedEntity().id;
+                                this.submit();
+                            },
+                            isDefault : true
+                        },
+                        {
+                            text      : localizedStrings.CANCEL,
+                            handler   : function() {
+                                this.hide();
+                                document.getElementById('moveSSGClusterDialog_warning').style.visibility = 'hidden'; // Workaround for bug in YUI?
+                            }
+                        }
+                    ],
+                    close       : true,
+                    draggable   : true,
+                    icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                    modal       : true,
+                    postmethod  : 'async',
+                    visible     : false
+                });
+                moveSSGClusterDialog.render();
+                moveSSGClusterDialog.callback.success = function(o) {
+                    var result = l7.Connection.parseJsonResponse(o,
+                                                                 true,
+                                                                 l7.Util.formatMessage(localizedStrings.CANNOT_MOVE, getEntityTypeLocalizedStrings(moveSSGClusterDialog_entityTreeTable.getHighlightedEntity().type), moveSSGClusterDialog_entityTreeTable.getHighlightedEntity().name),
+                                                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                                 localizedStrings.SESSION_TIMEOUT,
+                                                                 localizedStrings.ERROR,
+                                                                 localizedStrings.OK);
+                    if (result.success) {
+                        // No response JSON object expected if successfully moved.
+                        loadEntityTreeTable();  // Reloads to show change.
+                    }
+                }
+                moveSSGClusterDialog.callback.failure = function(o) {
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, l7.Util.formatMessage(localizedStrings.CANNOT_MOVE, getEntityTypeLocalizedStrings(moveSSGClusterDialog_entityTreeTable.getHighlightedEntity().type), moveSSGClusterDialog_entityTreeTable.getHighlightedEntity().name) + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -1113,9 +1396,11 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
             function initDialogs() {
                 initAddFolderDialog();
                 initEditFolderDialog();
+                initMoveFolderDialog();
                 initDeleteFolderDialog();
                 initAddSSGClusterDialog();
                 initEditSSGClusterDialog();
+                initMoveSSGClusterDialog();
                 initDeleteSSGClusterDialog();
                 initReconfirmSSGClusterDeletionDialog();
                 initSSGClusterTrustDialog();
@@ -1136,10 +1421,10 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     label   : '<img src="../images/rename.png" alt="" />&nbsp;' + localizedStrings.EDIT,
                     onclick : {fn : onClickEdit}
                 });
-                /*moveButton = new YAHOO.widget.Button('moveButton', {
+                moveButton = new YAHOO.widget.Button('moveButton', {
                     label   : '<img src="../images/move.png" alt="" />&nbsp;' + localizedStrings.MOVE,
                     onclick : {fn : onClickMove}
-                });*/
+                });
                 deleteButton = new YAHOO.widget.Button('deleteButton', {
                     label   : '<img src="../images/delete.png" alt="" />&nbsp;' + localizedStrings.DELETE,
                     onclick : {fn : onClickDelete}
@@ -1177,7 +1462,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
 
                 if (isPermitted(entity, 'addFolder')) this.addItem(addFolderMenuItem);
                 if (isPermitted(entity, 'edit')) this.addItem(editMenuItem);
-// TODO         if (isPermitted(entity, 'move')) this.addItem(moveMenuItem);
+                if (isPermitted(entity, 'move')) this.addItem(moveMenuItem);
                 if (isPermitted(entity, 'delete')) this.addItem(deleteMenuItem);
                 if (isPermitted(entity, 'addSSGCluster')) this.addItem(addSSGClusterMenuItem);
                 if (isPermitted(entity, 'start')) this.addItem(startMenuItem);
@@ -1363,7 +1648,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                                 <button id="addFolderButton" type="submit" name="addFolderButton" value="addFolder"></button>
                                 <button id="addSSGClusterButton" type="submit" name="addSSGClusterButton" value="addSSGCluster"></button>
                                 <button id="editButton" type="submit" name="editButton" value="edit"></button>
-                                <!--<button id="moveButton" type="submit" name="moveButton" value="move"></button>-->
+                                <button id="moveButton" type="submit" name="moveButton" value="move"></button>
                                 <button id="deleteButton" type="submit" name="deleteButton" value="delete"></button>
                                 <button id="startButton" type="submit" name="startButton" value="start"></button>
                                 <button id="stopButton" type="submit" name="stopButton" value="stop"></button>
@@ -1418,6 +1703,24 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     <td><input type="text" id="editFolderDialog_name" wicket:id="editFolderDialog_name" name="name" size="40" maxlength="128" onkeyup="validateEditFolderDialog();" /> <span id="editFolderDialog_name_hint" class="red"></span></td>
                 </tr>
             </table>
+        </form>
+    </div>
+</div>
+
+<div id="moveFolderDialog">
+    <div class="hd">Move Folder</div>
+    <div class="bd">
+        <form name="moveFolderForm" wicket:id="moveFolderForm" method="POST">
+            <input id="moveFolderDialog_entityId" wicket:id="moveFolderDialog_entityId" type="hidden" name="entityId"/>
+            <input id="moveFolderDialog_destFolderId" wicket:id="moveFolderDialog_destFolderId" type="hidden" name="destFolderId"/>
+            Select the destination folder for &ldquo;<span id="moveFolderDialog_entityName"></span>&rdquo;:
+            <div class="moveDialog_entityTreePanel">
+                <table class="dataTable" width="100%">
+                    <tbody id="moveFolderDialog_entityTreeTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <span id="moveFolderDialog_warning"></span>
         </form>
     </div>
 </div>
@@ -1527,6 +1830,24 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                     <td><input type="text" id="editSSGClusterDialog_adminPort" wicket:id="editSSGClusterDialog_adminPort" name="port" size="10" onkeyup="validateEditSSGClusterDialog();" /> <span id="editSSGClusterDialog_port_hint" class="red"></span></td>
                 </tr>
             </table>
+        </form>
+    </div>
+</div>
+
+<div id="moveSSGClusterDialog">
+    <div class="hd">Move SSG Cluster</div>
+    <div class="bd">
+        <form name="moveSSGClusterForm" wicket:id="moveSSGClusterForm" method="POST">
+            <input id="moveSSGClusterDialog_entityId" wicket:id="moveSSGClusterDialog_entityId" type="hidden" name="entityId"/>
+            <input id="moveSSGClusterDialog_destFolderId" wicket:id="moveSSGClusterDialog_destFolderId" type="hidden" name="destFolderId"/>
+            Select the destination folder for &ldquo;<span id="moveSSGClusterDialog_entityName"></span>&rdquo;:
+            <div class="moveDialog_entityTreePanel">
+                <table class="dataTable" width="100%">
+                    <tbody id="moveSSGClusterDialog_entityTreeTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <span id="moveSSGClusterDialog_warning"></span>
         </form>
     </div>
 </div>

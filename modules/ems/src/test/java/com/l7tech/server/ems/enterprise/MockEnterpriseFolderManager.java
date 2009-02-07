@@ -1,11 +1,6 @@
 package com.l7tech.server.ems.enterprise;
 
-import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityManagerStub;
 
 import java.util.List;
@@ -26,6 +21,10 @@ public class MockEnterpriseFolderManager extends EntityManagerStub<EnterpriseFol
 
     @Override
     public void renameByGuid(String name, String guid) throws FindException, UpdateException {
+    }
+
+    @Override
+    public void moveByGuid(String guid, String newParentGuid) throws FindException, UpdateException {
     }
 
     @Override
