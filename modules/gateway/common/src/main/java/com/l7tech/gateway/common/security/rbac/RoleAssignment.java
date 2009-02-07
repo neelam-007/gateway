@@ -14,6 +14,8 @@ import javax.persistence.UniqueConstraint;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * Statically assigns a {@link Role} to a {@link User}.
  * @author alex
@@ -21,6 +23,7 @@ import javax.persistence.ManyToOne;
  * EntityType is enforced in constructor but for hibernate initial implementation the value is stored as a string
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="rbac_assignment",
        uniqueConstraints=@UniqueConstraint(columnNames={"provider_oid", "role_oid", "identity_id", "entity_type"})
 )

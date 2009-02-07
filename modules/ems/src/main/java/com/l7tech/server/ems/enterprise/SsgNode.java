@@ -2,6 +2,7 @@ package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import org.mortbay.util.ajax.JSON;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import java.net.InetAddress;
@@ -15,6 +16,7 @@ import java.util.Map;
  * @Date: Nov 14, 2008
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="ssg_node")
 public class SsgNode extends NamedEntityImp implements JSON.Convertible, Comparable {
     public static final int MAX_NAME_LENGTH = 128;

@@ -8,6 +8,7 @@ import com.l7tech.util.ExceptionUtils;
 import org.hibernate.annotations.CollectionOfElements;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -24,6 +25,7 @@ import java.util.regex.Pattern;
  * Describes a port on which the Gateway will listen for incoming requests.
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="connector")
 @XmlRootElement
 public class SsgConnector extends NamedEntityImp implements PortOwner {

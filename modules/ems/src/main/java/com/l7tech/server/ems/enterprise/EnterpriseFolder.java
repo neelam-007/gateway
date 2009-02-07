@@ -2,6 +2,7 @@ package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import org.mortbay.util.ajax.JSON;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import java.util.Map;
@@ -17,6 +18,7 @@ import java.util.UUID;
  * @author rmak
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="enterprise_folder")
 public class EnterpriseFolder extends NamedEntityImp implements JSON.Convertible {
 

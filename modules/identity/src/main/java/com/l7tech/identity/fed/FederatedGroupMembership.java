@@ -14,10 +14,13 @@ import javax.persistence.Id;
 import javax.persistence.IdClass;
 import java.io.Serializable;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * 
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="fed_user_group")
 @IdClass(FederatedGroupMembership.FederatedGroupMembershipPK.class)
 public class FederatedGroupMembership extends GroupMembership {

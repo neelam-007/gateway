@@ -10,10 +10,13 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * A certificate for a user in an SSG Identity Provider; not necessarily a certificate issued by the SSG's CA.
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="client_cert")
 @AttributeOverride(name="certBase64",column=@Column(name="cert"))
 public class CertEntryRow extends X509Entity {

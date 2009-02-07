@@ -14,6 +14,8 @@ import javax.persistence.Table;
 import javax.persistence.Column;
 import javax.persistence.Lob;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * A row in the communityschema table. These xml schemas are meant to define additional
  * elements that are potentially common to more than one services such as envelope schemas
@@ -22,6 +24,7 @@ import javax.persistence.Lob;
  * @author flascelles@layer7-tech.com
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="community_schemas")
 @XmlRootElement
 public class SchemaEntry extends NamedEntityImp {

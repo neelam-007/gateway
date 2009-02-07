@@ -12,10 +12,13 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * Describes the configuration of a logging sink.
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="sink_config")
 @AttributeOverride(name="name", column=@Column(name="name", nullable=false, length=32))
 public class SinkConfiguration extends NamedEntityImp {

@@ -18,12 +18,15 @@ import javax.persistence.Column;
 import javax.persistence.Transient;
 import javax.persistence.Lob;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * A Policy for Certificate Revocation Checking.
  *
  * @author Steve Jones
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="revocation_check_policy")
 public class RevocationCheckPolicy extends NamedEntityImp implements Cloneable {
 

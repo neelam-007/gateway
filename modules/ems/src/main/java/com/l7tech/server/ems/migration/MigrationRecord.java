@@ -6,6 +6,8 @@ import com.l7tech.identity.User;
 
 import javax.persistence.*;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * This entity class stores the information of a migration such as name, id, time created,
  * source cluster, and destination cluster.
@@ -15,6 +17,7 @@ import javax.persistence.*;
  * @Date: Nov 19, 2008
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="migration")
 public class MigrationRecord extends NamedEntityImp {
 

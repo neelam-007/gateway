@@ -14,6 +14,7 @@ import javax.persistence.Column;
 import javax.persistence.Lob;
 
 import org.mortbay.util.ajax.JSON;
+import org.hibernate.annotations.Proxy;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import java.io.ByteArrayInputStream;
  */
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @Table(name="system_monitoring_notification_rule")
 public class SystemMonitoringNotificationRule extends NamedEntityImp implements JSON.Convertible {
 

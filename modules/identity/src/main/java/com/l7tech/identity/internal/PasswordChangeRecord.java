@@ -5,6 +5,8 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.*;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * A bean that holds a particular password that was changed at a particular time.
  *
@@ -13,6 +15,7 @@ import javax.persistence.*;
  */
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @Table(name="password_history")
 public class PasswordChangeRecord extends PersistentEntityImp {
 

@@ -13,6 +13,8 @@ import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * Matches an {@link com.l7tech.objectmodel.Entity} if a specified {@link #attribute} of that entity matches a
  * predetermined value.
@@ -21,6 +23,7 @@ import java.util.logging.Logger;
  * or {@link CharSequence}.
  */
 @javax.persistence.Entity
+@Proxy(lazy=false)
 @Table(name="rbac_predicate_attribute")
 public class AttributePredicate extends ScopePredicate implements ScopeEvaluator {
     private static final Logger logger = Logger.getLogger(AttributePredicate.class.getName());

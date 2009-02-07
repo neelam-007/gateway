@@ -14,6 +14,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.HashSet;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * A row in the cluster_properties table. On the server-side, this is managed through
  * the ClusterPropertyManager, and on the client side, through the ClusterStatusAdmin interface.
@@ -22,6 +24,7 @@ import java.util.HashSet;
  */
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @Table(name="cluster_properties")
 @AttributeOverride(name="name", column=@Column(name="propKey", nullable=false, unique=true))
 public class ClusterProperty extends NamedEntityImp {

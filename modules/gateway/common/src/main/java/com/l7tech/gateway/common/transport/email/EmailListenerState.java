@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.PersistentEntity;
 import javax.persistence.*;
 
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Proxy;
 
 import java.io.Serializable;
 
@@ -13,6 +14,7 @@ import java.io.Serializable;
  * The state bean of the email listener.
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="email_listener_state")
 public class EmailListenerState implements PersistentEntity, Serializable {
     private Long Id;

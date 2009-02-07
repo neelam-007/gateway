@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.io.ByteArrayInputStream;
 
 import org.mortbay.util.ajax.JSON;
+import org.hibernate.annotations.Proxy;
 
 /**
  * Entity encapsulating all settings of a standard report
@@ -26,6 +27,7 @@ import org.mortbay.util.ajax.JSON;
  */
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @Table(name="standard_report_settings")
 public class StandardReportSettings extends NamedEntityImp implements JSON.Convertible {
 

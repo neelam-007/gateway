@@ -11,11 +11,14 @@ import javax.persistence.Table;
 import javax.persistence.Column;
 import javax.persistence.Transient;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * Matches any {@link com.l7tech.objectmodel.Entity} that is of the expected type and whose
  * {@link com.l7tech.objectmodel.Entity#getId()} matches {@link #targetEntityId}.
  */
 @javax.persistence.Entity
+@Proxy(lazy=false)
 @Table(name="rbac_predicate_oid")
 public class ObjectIdentityPredicate extends ScopePredicate implements ScopeEvaluator {
     private String targetEntityId;

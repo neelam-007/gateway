@@ -20,11 +20,13 @@ import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Proxy;
 
 /**
  * 
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="report")
 public class StandardReport extends NamedEntityImp {
 

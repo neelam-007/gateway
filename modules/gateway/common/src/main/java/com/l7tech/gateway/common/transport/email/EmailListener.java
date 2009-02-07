@@ -6,6 +6,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.*;
 
 import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.Proxy;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -18,6 +19,7 @@ import java.io.ByteArrayOutputStream;
  */
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @Table(name="email_listener")
 public class EmailListener extends NamedEntityImp {
     private static final Logger logger = Logger.getLogger(EmailListener.class.getName());

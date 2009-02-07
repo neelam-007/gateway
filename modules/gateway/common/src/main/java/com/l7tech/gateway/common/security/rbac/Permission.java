@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -22,6 +23,7 @@ import java.util.Set;
  * instances are routinely added to {@link java.util.Set}s.
  */
 @javax.persistence.Entity
+@Proxy(lazy=false)
 @Table(name="rbac_permission")
 public class Permission extends PersistentEntityImp implements Cloneable {
     private Role role;

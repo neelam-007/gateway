@@ -13,11 +13,14 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.Column;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * @author alex
  */
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @Table(name="fed_user")
 public class FederatedUser extends PersistentUser {
     public FederatedUser() {

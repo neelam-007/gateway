@@ -9,6 +9,8 @@ import javax.persistence.Table;
 import javax.persistence.Column;
 import javax.persistence.Version;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * A subscription
  * <p/>
@@ -19,6 +21,7 @@ import javax.persistence.Version;
  * Date: Nov 5, 2007<br/>
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="wsdm_subscription")
 public class Subscription extends PersistentEntityImp {
     //public static final String POLICY_TAG_ESM_NOTIFICATION = "esm-notification";

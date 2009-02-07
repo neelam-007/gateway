@@ -7,6 +7,7 @@
 package com.l7tech.server.sla;
 
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -22,6 +23,7 @@ import java.io.Serializable;
  * @author flascelles@layer7-tech.com
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="counters")
 public class CounterIDRecord implements Serializable {
     public static final String UNIDENTIFIED_USER = "*";

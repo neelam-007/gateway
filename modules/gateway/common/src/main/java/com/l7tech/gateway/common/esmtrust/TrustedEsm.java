@@ -5,10 +5,13 @@ import com.l7tech.security.cert.TrustedCert;
 
 import javax.persistence.*;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * Represents an Enterprise Manager Server instance that is trusted to manage this Gateway cluster.
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="trusted_esm")
 public class TrustedEsm extends NamedEntityImp {
     private TrustedCert trustedCert;

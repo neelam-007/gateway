@@ -9,6 +9,8 @@ import javax.persistence.Table;
 import javax.persistence.Id;
 import java.io.Serializable;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * Bean representation of a row in the cluster_info table.
  *
@@ -23,6 +25,7 @@ import java.io.Serializable;
  *
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="cluster_info")
 public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NamedEntity, Serializable {
 

@@ -1,5 +1,7 @@
 package com.l7tech.server.security.sharedkey;
 
+import org.hibernate.annotations.Proxy;
+
 import javax.persistence.Table;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -16,6 +18,7 @@ import java.io.Serializable;
  * Date: May 18, 2007<br/>
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="shared_keys")
 public class SharedKeyRecord implements Serializable {
     private String encodingID;

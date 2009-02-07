@@ -22,6 +22,8 @@ import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * Configuration of an Identity Provider object.
  *
@@ -36,6 +38,7 @@ import java.util.Map;
  */
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @Table(name="identity_provider")
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(

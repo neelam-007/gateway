@@ -7,10 +7,13 @@ import javax.persistence.Table;
 import javax.persistence.Column;
 import javax.persistence.UniqueConstraint;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  *  Represents a single property name/value pair for a user.
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="user_property",
        uniqueConstraints=@UniqueConstraint(columnNames={"provider", "user_id", "propkey"}))
 public class UserProperty extends PersistentEntityImp {

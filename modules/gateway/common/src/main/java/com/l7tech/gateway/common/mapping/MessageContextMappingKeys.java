@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * Key information for a message context mapping.
  * 
@@ -21,6 +23,7 @@ import java.util.logging.Logger;
  * @Date: Aug 12, 2008
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="message_context_mapping_keys")
 public class MessageContextMappingKeys extends PersistentEntityImp {
     private static final Logger logger = Logger.getLogger(MessageContextMappingKeys.class.getName());

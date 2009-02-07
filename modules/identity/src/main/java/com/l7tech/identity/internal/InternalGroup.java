@@ -7,8 +7,11 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
+import org.hibernate.annotations.Proxy;
+
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @Table(name="internal_group")
 public class InternalGroup extends PersistentGroup {
     public InternalGroup() {

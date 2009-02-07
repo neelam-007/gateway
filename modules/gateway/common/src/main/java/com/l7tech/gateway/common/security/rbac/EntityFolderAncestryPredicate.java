@@ -7,7 +7,10 @@ import javax.persistence.Column;
 import javax.persistence.Enumerated;
 import javax.persistence.EnumType;
 
+import org.hibernate.annotations.Proxy;
+
 @javax.persistence.Entity
+@Proxy(lazy=false)
 @Table(name="rbac_predicate_entityfolder")
 public class EntityFolderAncestryPredicate extends ScopePredicate {
     private String entityId;

@@ -12,6 +12,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import java.util.List;
 
 import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.Proxy;
 
 /**
  * User from the internal identity provider.
@@ -27,6 +28,7 @@ import org.hibernate.annotations.Cascade;
  */
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @Table(name="internal_user")
 public class InternalUser extends PersistentUser {
     private long expiration = -1;

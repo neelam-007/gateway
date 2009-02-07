@@ -19,6 +19,8 @@ import javax.persistence.Column;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * A "physical" federated group.
  *
@@ -31,6 +33,7 @@ import javax.persistence.InheritanceType;
  */
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @Table(name="fed_group")
 @Inheritance(strategy=InheritanceType.TABLE_PER_CLASS)
 public class FederatedGroup extends PersistentGroup {

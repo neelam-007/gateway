@@ -18,6 +18,7 @@ import java.util.*;
  * @author rmak
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="ssg_cluster")
 public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
 

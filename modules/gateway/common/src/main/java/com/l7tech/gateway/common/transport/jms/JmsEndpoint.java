@@ -18,6 +18,8 @@ import javax.persistence.EnumType;
 import java.io.Serializable;
 import java.net.PasswordAuthentication;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * A reference to a preconfigured JMS Destination (i.e. a Queue or Topic).
  *
@@ -25,6 +27,7 @@ import java.net.PasswordAuthentication;
   */
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @Table(name="jms_endpoint")
 public class JmsEndpoint extends NamedEntityImp implements Serializable, Comparable {
     public static final int DEFAULT_MAX_CONCURRENT_REQUESTS = 1;

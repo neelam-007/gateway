@@ -12,6 +12,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * General LDAP connector config.
  *
@@ -26,6 +28,7 @@ import java.util.Iterator;
  */
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @DiscriminatorValue("2")
 public class LdapIdentityProviderConfig extends IdentityProviderConfig implements Serializable {
     public LdapIdentityProviderConfig(IdentityProviderConfig toto) {

@@ -17,6 +17,7 @@ import com.l7tech.util.TextUtils;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import java.util.HashSet;
@@ -34,6 +35,7 @@ import java.util.regex.Matcher;
  * </ul>
  */
 @javax.persistence.Entity
+@Proxy(lazy=false)
 @Table(name="rbac_role")
 public class Role extends NamedEntityImp implements Comparable<Role> {
     public static enum Tag { ADMIN }

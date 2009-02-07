@@ -17,12 +17,15 @@ import javax.persistence.Transient;
 import java.util.HashMap;
 import java.util.Set;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * @author alex
  * @version $Revision$
  */
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @DiscriminatorValue("3")
 public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
     public FederatedIdentityProviderConfig() {

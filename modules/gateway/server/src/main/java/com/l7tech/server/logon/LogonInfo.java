@@ -5,6 +5,8 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.*;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * The logon information object stores information about the user that has attempted to log into the system.
  * Such information are the number of failed attempts and the last login attempt was made.  The purpose of this is
@@ -14,6 +16,7 @@ import javax.persistence.*;
  * Date: Jun 24, 2008
  */
 @XmlRootElement
+@Proxy(lazy=false)
 @Entity
 @Table(name="logon_info")
 public class LogonInfo extends PersistentEntityImp {

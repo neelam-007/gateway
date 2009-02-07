@@ -17,6 +17,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Transient;
 
 import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Proxy;
 
 /**
  * A row in a user-group intersect table.
@@ -29,6 +30,7 @@ import org.hibernate.annotations.GenericGenerator;
  * @author alex
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="internal_user_group")
 public class InternalGroupMembership extends GroupMembership {
 

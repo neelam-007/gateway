@@ -18,6 +18,8 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * A reference to a preconfigured connection to a JMS provider.
  *
@@ -25,6 +27,7 @@ import java.util.logging.Logger;
  */
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @Table(name="jms_connection")
 public class JmsConnection extends NamedEntityImp implements Serializable {
     private static final Logger logger = Logger.getLogger(JmsConnection.class.getName());

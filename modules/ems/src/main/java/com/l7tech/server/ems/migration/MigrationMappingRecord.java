@@ -14,11 +14,13 @@ import javax.persistence.AttributeOverride;
 
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.Proxy;
 
 /**
  * 
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="migration_mapping")
 public class MigrationMappingRecord extends PersistentEntityImp {
 

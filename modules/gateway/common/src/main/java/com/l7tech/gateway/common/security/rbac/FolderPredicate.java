@@ -13,12 +13,15 @@ import javax.persistence.Table;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * Matches entities in a {@link #folder}, and optionally those in {@link #transitive child folders}.
  *
  * @author alex 
  */
 @javax.persistence.Entity
+@Proxy(lazy=false)
 @Table(name="rbac_predicate_folder")
 public class FolderPredicate extends ScopePredicate implements ScopeEvaluator {
     private static final Logger logger = Logger.getLogger(FolderPredicate.class.getName());

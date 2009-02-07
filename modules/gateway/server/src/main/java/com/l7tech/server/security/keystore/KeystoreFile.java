@@ -18,6 +18,8 @@ import java.beans.XMLEncoder;
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * Represents raw keystore data stored in a row of the "keystore" table.
  * <p/>
@@ -28,6 +30,7 @@ import java.io.UnsupportedEncodingException;
  * {@link com.l7tech.server.security.keystore.sca.ScaSsgKeyStore}.
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="keystore_file")
 public class KeystoreFile extends NamedEntityImp {
     private static final long serialVersionUID = 7293792837442132345L;

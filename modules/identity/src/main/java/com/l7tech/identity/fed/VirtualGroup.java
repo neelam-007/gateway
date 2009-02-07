@@ -15,6 +15,8 @@ import javax.persistence.AttributeOverride;
 import javax.persistence.Transient;
 import javax.persistence.Lob;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * A "virtual" federated group.
  *
@@ -28,6 +30,7 @@ import javax.persistence.Lob;
 
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @Table(name="fed_group_virtual")
 public class VirtualGroup extends FederatedGroup {
     public VirtualGroup() {

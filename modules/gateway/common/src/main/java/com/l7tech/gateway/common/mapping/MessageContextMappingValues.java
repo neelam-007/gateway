@@ -5,6 +5,8 @@ import com.l7tech.util.HexUtils;
 
 import javax.persistence.*;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * Value information for a message context mapping.
  *
@@ -13,6 +15,7 @@ import javax.persistence.*;
  * @Date: Aug 12, 2008
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="message_context_mapping_values")
 public class MessageContextMappingValues extends PersistentEntityImp {
     private static final int MAX_VALUE_LENGTH = 255;

@@ -19,6 +19,8 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.Set;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * An certificate that is trusted by the SSG for a variety of purposes.
  *
@@ -30,6 +32,7 @@ import java.util.Set;
 
 @XmlRootElement
 @Entity
+@Proxy(lazy=false)
 @Table(name="trusted_cert")
 public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
     public void copyFrom(TrustedCert cert) {

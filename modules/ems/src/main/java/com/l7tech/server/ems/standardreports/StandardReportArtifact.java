@@ -12,10 +12,13 @@ import javax.persistence.Basic;
 import javax.persistence.FetchType;
 import java.util.Arrays;
 
+import org.hibernate.annotations.Proxy;
+
 /**
  * 
  */
 @Entity
+@Proxy(lazy=false)
 @Table(name="report_artifact")
 public class StandardReportArtifact extends PersistentEntityImp {
 
