@@ -880,7 +880,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                                 ExternalEntityHeader source = item.getSourceHeader();
                                 ExternalEntityHeader target = item.getTargetHeader();
 
-                                if ( source != null && target != null && item.getOperation() == MigratedItem.ImportOperation.CREATE) {
+                                if ( source != null && target != null && item.getOperation() != MigratedItem.ImportOperation.IGNORE) {
                                     migrationMappingRecordManager.persistMapping( sourceCluster.getGuid(), source, targetCluster.getGuid(), target, true );
                                 }
                             }
@@ -982,14 +982,14 @@ public class PolicyMigration extends EsmStandardWebPage {
         MigrationMetadata metadata = export.getMetadata();
 
         // overview
-        builder.append( "Migration Options\n" );
+        builder.append( "Migration Options:\n" );
         builder.append( "Imported to folder: " );
         builder.append( targetFolderPath );
         builder.append( "\n" );
         builder.append( "Services enabled on import: " );
         builder.append( enabled );
         builder.append( "\n" );
-        builder.append( "Existing dependencies replaced: " );
+        builder.append( "Existing dependencies overwritten: " );
         builder.append( overwrite );
         builder.append( "\n" );
         builder.append( "Services migrated: " );
@@ -1000,13 +1000,19 @@ public class PolicyMigration extends EsmStandardWebPage {
         builder.append( "\n\n" );
 
         // entity details
-        builder.append( "Migrated Data\n" );
+        builder.append( "\nMigrated Data:\n" );
+        boolean willOverwriteAnything = false;
+        MigratedItem.ImportOperation operation;
         if ( migratedItems != null ) {
             for ( MigratedItem item : migratedItems ) {
-                if (item.getOperation() == MigratedItem.ImportOperation.IGNORE) continue;
+                operation = item.getOperation();
+                if (operation == MigratedItem.ImportOperation.IGNORE) continue;
+                if (operation == MigratedItem.ImportOperation.OVERWRITE)
+                    willOverwriteAnything = true;
                 ExternalEntityHeader ih = dryRun ? item.getSourceHeader() : item.getTargetHeader();
                 builder.append(ih.getType().getName()).append(", ").append(ih.getName())
-                    .append("(#").append(ih.getExternalId()).append("): ").append(item.getOperation()).append(dryRun ? "\n" : "D\n");
+                    .append("(#").append(ih.getExternalId()).append("): ")
+                    .append(dryRun ? item.getOperation() : item.getOperation().pastParticiple()).append("\n");
             }
         } else {
             builder.append("None.\n");
@@ -1035,9 +1041,12 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
         String mappingText = mappingBuilder.toString();
         if ( !mappingText.isEmpty() ) {
-            builder.append( "Mappings\n" );
+            builder.append( "\nMappings:\n" );
             builder.append( mappingText );
         }
+
+        if (willOverwriteAnything && dryRun)
+            builder.append("\nWARNING: Some enties on the target cluster may contain changes that will be overwritten!\n");
 
         return builder.toString();
     }

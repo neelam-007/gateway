@@ -13,8 +13,21 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class MigratedItem {
     private ExternalEntityHeader sourceHeader;
     private ExternalEntityHeader targetHeader;
-    public static enum ImportOperation { CREATE, UPDATE, IGNORE }
     private ImportOperation operation;
+
+    public static enum ImportOperation {
+        IGNORE,
+        CREATE,
+        UPDATE,
+        OVERWRITE {
+            public String pastParticiple() {
+                return "OVERWRITTEN";
+            }};
+
+        public String pastParticiple() {
+            return toString() + "D";
+        }
+    }
 
     public MigratedItem() {}
 

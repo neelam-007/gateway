@@ -69,8 +69,7 @@ public class ExternalEntityHeader extends EntityHeader {
     }
 
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (externalId != null ? externalId.hashCode() : 0);
+        int result = (externalId != null ? externalId.hashCode() : 0);
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + (version != null ? version.hashCode() : 0);
         return result;

@@ -70,13 +70,13 @@ public class MigrationManagerImpl implements MigrationManager {
                     loadEntity(header);
                     result.add(header);
                 } catch (MigrationApi.MigrationException e) {
-                    // entity not found, header won't be returned
+                    logger.log(Level.FINE, "Not validating header: entity not found: {0}", header);
                 }
             }
         }
         return result;
     }
-
+    
     @Override
     public MigrationMetadata findDependencies(Collection<ExternalEntityHeader> headers ) throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Finding dependencies for headers: {0}", headers);
@@ -159,7 +159,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
         Collection<String> errors = processFolders(bundle, targetFolder, flattenFolders);
 
-        Map<ExternalEntityHeader,Entity> entitiesFromTarget = loadMappedEntities(metadata);
+        Map<ExternalEntityHeader,Entity> entitiesFromTarget = loadEntitiesFromTarget(metadata);
 
         errors.addAll(validateBundle(bundle, entitiesFromTarget));
 
@@ -179,14 +179,25 @@ public class MigrationManagerImpl implements MigrationManager {
         return result.values();
     }
 
-    private Map<ExternalEntityHeader,Entity> loadMappedEntities(MigrationMetadata metadata) throws MigrationApi.MigrationException {
+    private Map<ExternalEntityHeader,Entity> loadEntitiesFromTarget(MigrationMetadata metadata) throws MigrationApi.MigrationException {
         Map<ExternalEntityHeader,Entity> entitiesFromTarget = new HashMap<ExternalEntityHeader, Entity>();
 
+        Entity ent;
         for(ExternalEntityHeader header : metadata.getMappedHeaders()) {
-            entitiesFromTarget.put(header, loadEntity(header));
+            ent = loadEntity(header);
+            entitiesFromTarget.put(EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(ent)), ent);
         }
         for(ExternalEntityHeader header : metadata.getCopiedHeaders()) {
-            entitiesFromTarget.put(header, loadEntity(header));
+            ent = loadEntity(header);
+            entitiesFromTarget.put(EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(ent)), ent);
+        }
+        for(ExternalEntityHeader header : metadata.getHeaders()) {
+            try {
+                ent = loadEntity(header);
+                entitiesFromTarget.put(EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(ent)), ent);
+            } catch (MigrationApi.MigrationException e) {
+                // do nothing
+            }
         }
 
         return entitiesFromTarget;
@@ -206,11 +217,27 @@ public class MigrationManagerImpl implements MigrationManager {
         }
 
         // determine the upload operation
-        MigratedItem.ImportOperation op = metadata.wasCopied(header) ?
-            overwriteExisting ? UPDATE : IGNORE :
-            metadata.isMapped(header) ? IGNORE : CREATE;
-
+        MigratedItem.ImportOperation op;
         ExternalEntityHeader targetHeader;
+        if (metadata.isMapped(header)) {
+            op = IGNORE;
+            targetHeader = metadata.getCopiedOrMapped(header);
+        } else if (overwriteExisting && metadata.wasCopied(header)) {
+            if (entitiesFromTarget.containsKey(metadata.getCopied(header))) {
+                op = UPDATE;
+                targetHeader = metadata.getCopied(header);
+            } else {
+                op = OVERWRITE;
+                targetHeader = EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(loadEntity(metadata.getCopied(header))));
+            }
+        } else if (overwriteExisting && entitiesFromTarget.containsKey(header)) {
+            op = OVERWRITE;
+            targetHeader = header;
+        } else {
+            op = CREATE;
+            targetHeader = header;
+        }
+
         Entity entity;
 
         if (op != IGNORE) {
@@ -223,54 +250,27 @@ public class MigrationManagerImpl implements MigrationManager {
         // do upload
         switch (op) {
             case IGNORE:
-                targetHeader = metadata.getCopiedOrMapped(header);
                 entity = entitiesFromTarget.get(targetHeader);
-                if (entity == null)
-                    throw new MigrationApi.MigrationException("Entity not found on the target cluster for header: " + header);
+                break;
+
+            case OVERWRITE:
+                entity = updateEntity(header, targetHeader, bundle, entitiesFromTarget, dryRun);
                 break;
 
             case UPDATE:
-                targetHeader = metadata.getCopiedOrMapped(header);
-                entity = bundle.getExportedEntity(header);
-                if (entity == null)
-                    throw new MigrationApi.MigrationException("Entity not found in the bundle for header: " + header);
-                if (header instanceof ValueReferenceEntityHeader)
-                    break;
-                Entity onTarget = entitiesFromTarget.get(metadata.getCopied(header));
-                if (entity instanceof PersistentEntity && onTarget instanceof PersistentEntity) {
-                    ((PersistentEntity) entity).setOid(((PersistentEntity)onTarget).getOid());
-                    ((PersistentEntity) entity).setVersion(((PersistentEntity)onTarget).getVersion());
-                }
-                if (entity instanceof PublishedService && onTarget instanceof PublishedService) {
-                    ((PublishedService)entity).getPolicy().setOid(((PublishedService)onTarget).getPolicy().getOid());
-                    ((PublishedService)entity).getPolicy().setVersion(((PublishedService)onTarget).getPolicy().getVersion());
-                }
-                checkServiceResolution(header, entity, bundle);
-                if (!dryRun)
-                    entityCrud.update(entity);
+                entity = updateEntity(header, targetHeader, bundle, entitiesFromTarget, dryRun);
                 break;
 
             case CREATE:
-                targetHeader = header;
-                entity = bundle.getExportedEntity(header);
-                if (entity == null)
-                    throw new MigrationApi.MigrationException("Entity not found in the bundle for header: " + header);
-                if (header instanceof ValueReferenceEntityHeader)
-                    break;
-                if (!enableServices && entity instanceof PublishedService)
-                    ((PublishedService) entity).setDisabled(true);
-                checkServiceResolution(header, entity, bundle);
-                // todo: warn early (at dry-run) about entity identity conflicts
-                if (!dryRun) {
-                    Long oid = (Long) entityCrud.save(entity);
-                    if (entity instanceof PersistentEntity)
-                        ((PersistentEntity) entity).setOid(oid);
-                }
+                entity = createEntity(header, bundle, enableServices, dryRun);
                 break;
 
             default:
                 throw new IllegalStateException("Import operation not known: " + op);
         }
+
+        if (entity == null)
+            throw new MigrationApi.MigrationException("Entity not found on the target cluster for header: " + header);
 
         if (! (header instanceof ValueReferenceEntityHeader) )
             result.put(header, new MigratedItem(header, EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(entity)), op));
@@ -292,9 +292,63 @@ public class MigrationManagerImpl implements MigrationManager {
         }
     }
 
+    private Entity updateEntity(ExternalEntityHeader header, ExternalEntityHeader targetHeader, MigrationBundle bundle, Map<ExternalEntityHeader, Entity> entitiesFromTarget, boolean dryRun) throws MigrationApi.MigrationException, UpdateException {
+        Entity entity;
+        entity = bundle.getExportedEntity(header);
+
+        if (entity == null)
+            throw new MigrationApi.MigrationException("Entity not found in the bundle for header: " + header);
+
+        if (header instanceof ValueReferenceEntityHeader)
+            return entity;
+
+        Entity onTarget = entitiesFromTarget.get(targetHeader);
+        if (entity instanceof PersistentEntity && onTarget instanceof PersistentEntity) {
+            ((PersistentEntity) entity).setOid(((PersistentEntity)onTarget).getOid());
+            ((PersistentEntity) entity).setVersion(((PersistentEntity)onTarget).getVersion());
+        }
+        if (entity instanceof PublishedService && onTarget instanceof PublishedService) {
+            ((PublishedService)entity).getPolicy().setOid(((PublishedService)onTarget).getPolicy().getOid());
+            ((PublishedService)entity).getPolicy().setVersion(((PublishedService)onTarget).getPolicy().getVersion());
+        }
+
+        checkServiceResolution(header, entity, bundle);
+
+        if (!dryRun) {
+            entityCrud.update(entity);
+            // todo: need more reliable method of retrieving the new version;
+            // loadEntity() returns null until the whole import (transactional) completes, version is not always incremented (e.g. if the new entity is not different) 
+            if (entity instanceof PersistentEntity && onTarget instanceof PersistentEntity)
+                ((PersistentEntity) entity).setVersion(((PersistentEntity) onTarget).getVersion() + (entity.equals(onTarget) ? 0 : 1) );
+        }
+
+        return entity;
+    }
+
+    private Entity createEntity(ExternalEntityHeader header, MigrationBundle bundle, boolean enableServices, boolean dryRun) throws MigrationApi.MigrationException, SaveException {
+        Entity entity;
+        entity = bundle.getExportedEntity(header);
+        if (entity == null)
+            throw new MigrationApi.MigrationException("Entity not found in the bundle for header: " + header);
+        if (header instanceof ValueReferenceEntityHeader)
+            return entity;
+        if (!enableServices && entity instanceof PublishedService)
+            ((PublishedService) entity).setDisabled(true);
+        checkServiceResolution(header, entity, bundle);
+        if (!dryRun) {
+            Long oid = (Long) entityCrud.save(entity);
+            if (entity instanceof PersistentEntity) {
+                ((PersistentEntity) entity).setOid(oid);
+                ((PersistentEntity) entity).setVersion(((PersistentEntity) entity).getVersion()+1);
+            }
+        }
+        return entity;
+    }
+
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
     private Collection<String> processFolders(MigrationBundle bundle, ExternalEntityHeader targetFolder, boolean flatten) throws MigrationApi.MigrationException {
         Collection<String> errors = new HashSet<String>();
+        ExternalEntityHeader resolvedTarget = resolveHeader(targetFolder);
         MigrationMetadata metadata = bundle.getMetadata();
         if (flatten) {
             // replace all folder dependencies with the (unique) targetFolder
@@ -302,19 +356,19 @@ public class MigrationManagerImpl implements MigrationManager {
             for (MigrationDependency dep : metadata.getDependencies()) {
                 if (dep.getDependency().getType() == EntityType.FOLDER) {
                     headersToRemove.add(dep.getDependency());
-                    metadata.addMappingOrCopy(dep.getDependant(), targetFolder, false);
+                    metadata.addMappingOrCopy(dep.getDependant(), resolvedTarget, false);
                 }
             }
             for (ExternalEntityHeader header : headersToRemove) {
                 metadata.removeHeader(header);
             }
-            metadata.addHeader(targetFolder);
+            metadata.addHeader(resolvedTarget);
         } else {
             // map root folder to target folder
             if (!metadata.hasHeader(getRootFolderHeader())) {
                 logger.log(Level.INFO, "Root folder not found in the bundle, not processing folders.");
             } else {
-                metadata.addMappingOrCopy(getRootFolderHeader(), targetFolder, false);
+                metadata.addMappingOrCopy(getRootFolderHeader(), resolvedTarget, false);
             }
         }
         return errors;
@@ -387,7 +441,7 @@ public class MigrationManagerImpl implements MigrationManager {
             } catch (DuplicateObjectException e) {
                 errors.add("Service resolution error: " + ExceptionUtils.getMessage(e));
             } catch (ServiceResolutionException e) {
-                errors.add("Error getting service resolution parametes: " + ExceptionUtils.getMessage(e));
+                errors.add("Error getting service resolution parameters: " + ExceptionUtils.getMessage(e));
             }
         }
         return errors;
