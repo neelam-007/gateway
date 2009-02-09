@@ -6,40 +6,42 @@ package com.l7tech.server.audit;
 
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.AuditRecord;
-import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.audit.AuditRecordHeader;
+import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.util.JaasUtils;
-import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.admin.AuditViewGatewayAuditsData;
-import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.security.rbac.SecurityFilter;
+import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.OpaqueId;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.util.TimeUnit;
-import com.l7tech.identity.User;
+import org.apache.commons.collections.map.LRUMap;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.BlockingQueue;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.BeansException;
-import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.apache.commons.collections.map.LRUMap;
 
 /**
  * Implementation of AuditAdmin in SSG.
@@ -175,7 +177,24 @@ public class AuditAdminImpl implements AuditAdmin, InitializingBean, Application
         if (prop == null || ! ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION.equals(prop.getName()))
             throw new UpdateException("Invalid cluster property provided for FTP archiver configuration: " + prop);
 
-        clusterPropertyManager.update(prop);
+        // bug #6574 - error calling update() for the first time to set the cluster property
+        //             for ftp archiver -- Call save to create the first time
+        ClusterProperty cp;
+        try {
+            cp = clusterPropertyManager.findByUniqueName(ServerConfig.PARAM_AUDIT_ARCHIVER_FTP_DESTINATION);
+        } catch (FindException fe) {
+            cp = null;
+        }
+
+        if (cp != null)
+            clusterPropertyManager.update(prop);
+        else {
+            try {
+                clusterPropertyManager.save(prop);
+            } catch (SaveException se) {
+                clusterPropertyManager.update(prop);
+            }
+        }
     }
 
     public void afterPropertiesSet() throws Exception {

@@ -297,9 +297,10 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 }
             }
 
+            // backwards compatibility - changed to only validate the version id on properties that already exist in the db
             try {
                 ET original = findByPrimaryKey(entity.getOid());                
-                if (original == null || original.getVersion() != entity.getVersion()) {
+                if (original != null && original.getVersion() != entity.getVersion()) {
                     throw new StaleUpdateException("Entity " + entity.getOid() + ": version mismatch");
                 }
             } catch (FindException fe) {
