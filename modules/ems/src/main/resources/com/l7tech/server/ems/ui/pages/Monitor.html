@@ -836,7 +836,9 @@
                     notifDlg_eMail_hostTextBox.value = params.host;
                     notifDlg_eMail_portTextBox.value = params.port;
                     notifDlg_eMail_requiresAuthenticationCheckBox.checked = params.requiresAuthentication;
-                    notifDlg_eMail_userNameTextBox.value = params.userName;
+                    if (notifDlg_eMail_requiresAuthenticationCheckBox.checked) {
+                        notifDlg_eMail_userNameTextBox.value = params.userName;
+                    }
                     notifDlg_eMail_passwordChoiceConfig.style.display = '';
                     notifDlg_eMail_useOldPasswordRadioButton.checked = true;
                     notifDlg_eMail_toTextBox.value = params.to;
