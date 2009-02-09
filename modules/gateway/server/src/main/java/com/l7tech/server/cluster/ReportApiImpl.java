@@ -281,7 +281,7 @@ public class ReportApiImpl extends HibernateDaoSupport implements ReportApi {
         try {
             if ( !rbacServices.isPermittedForAnyEntityOfType(user, OperationType.READ, EntityType.SERVICE) ||
                  !rbacServices.isPermittedForAnyEntityOfType(user, OperationType.READ, EntityType.METRICS_BIN) ||
-                 !rbacServices.isPermittedForAnyEntityOfType(user, OperationType.READ, EntityType.SERVICE) ) {
+                 !rbacServices.isPermittedForAnyEntityOfType(user, OperationType.READ, EntityType.USER) ) {
                 throw new ReportException( "Permission denied." );
             }
         } catch (FindException fe) {
