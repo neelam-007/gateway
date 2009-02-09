@@ -117,14 +117,6 @@ public class GatewayFeatureSets {
             "Everything that used to be enabled by the catchall Feature.ADMIN",
             misc(SERVICE_ADMIN, "All admin APIs, over all admin API transports", null),
             misc(SERVICE_REMOTE_MANAGEMENT, "Gateway Remote Management", null));
-        
-        GatewayFeatureSet adminAndEms =
-        fsr("set:adminAndEms", "All admin APIs, over all admin API transports",
-            "Everything that used to be enabled by the catchall Feature.ADMIN",
-            misc(SERVICE_ADMIN, "All admin APIs, over all admin API transports", null),
-            misc(SERVICE_REMOTE_MANAGEMENT, "Gateway Remote Management", null),
-            misc(SERVICE_EMS, "Ability to be managed remotely by an Enterprise Manager Server",
-                "Includes the ability to view and modify Trusted EMS registrations and EMS user mappings, both in the SSM and using the bootstrap web page."));
 
         GatewayFeatureSet branching =
         fsr("set:policy:branching", "Support for branching policies",
@@ -226,6 +218,13 @@ public class GatewayFeatureSets {
         //  but which on their own may still be useless or of little value as a product.)
         // Naming convention:  set:CamelCaseCategory:LevelName
         //
+
+        GatewayFeatureSet adminAndEms =
+        fsr("set:adminAndEms", "All admin APIs, including enterprise management.",
+            "Everything that used to be enabled by the catchall Feature.ADMIN plus enterprise management",
+            admin,
+            misc(SERVICE_EMS, "Ability to be managed remotely by an Enterprise Manager Server",
+                "Includes the ability to view and modify Trusted EMS registrations and EMS user mappings, both in the SSM and using the bootstrap web page."));
 
         GatewayFeatureSet uiAccel =
         fsr("set:UI:Accel", "SecureSpan Accelerator UI features",
