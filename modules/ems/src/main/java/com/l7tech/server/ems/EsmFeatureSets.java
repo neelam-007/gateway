@@ -53,7 +53,7 @@ public class EsmFeatureSets {
         // Naming convention:   set:Profile:ProfileName
         //
         PROFILE_ALL =
-        fsp("set:Profile:Manager", "Enterprise Service Manager",
+        fsp("set:Profile:EnterpriseServiceManager", "Enterprise Service Manager",
             "All features enabled.",
             fs(admin),
             feat(FEATURE_BACKUPRESTORE, "Gateway Backup and Restore."),

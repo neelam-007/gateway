@@ -223,8 +223,7 @@ public class GatewayFeatureSets {
         fsr("set:adminAndEms", "All admin APIs, including enterprise management.",
             "Everything that used to be enabled by the catchall Feature.ADMIN plus enterprise management",
             admin,
-            misc(SERVICE_EMS, "Ability to be managed remotely by an Enterprise Manager Server",
-                "Includes the ability to view and modify Trusted EMS registrations and EMS user mappings, both in the SSM and using the bootstrap web page."));
+            ems);
 
         GatewayFeatureSet uiAccel =
         fsr("set:UI:Accel", "SecureSpan Accelerator UI features",
