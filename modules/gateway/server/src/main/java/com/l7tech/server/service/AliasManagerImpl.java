@@ -122,4 +122,15 @@ public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends Persiste
         if ( entity == null ) throw new UpdateException("Alias is required but missing.");
         setParentFolderForEntity( entity.getOid(), folder );
     }
+
+    @Override
+    public AT findByHeader(EntityHeader header) throws FindException {
+        if (header instanceof OrganizationHeader) {
+            return findByPrimaryKey(((OrganizationHeader)header).getAliasOid());
+        } else if (header.getType().name().endsWith("_ALIAS")) {
+            return super.findByHeader(header);
+        } else {
+            throw new IllegalArgumentException("Unsupported header type: " + header);
+        }
+    }
 }

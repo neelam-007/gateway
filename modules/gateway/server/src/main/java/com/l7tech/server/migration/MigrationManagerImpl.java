@@ -377,7 +377,8 @@ public class MigrationManagerImpl implements MigrationManager {
     private ExternalEntityHeader getRootFolderHeader() throws MigrationApi.MigrationException {
         if (rootFolderHeader == null) {
             try {
-                rootFolderHeader = EntityHeaderUtils.toExternal(entityCrud.findHeader(EntityType.FOLDER, ROOT_FOLDER_OID));
+                rootFolderHeader = EntityHeaderUtils.toExternal(
+                    EntityHeaderUtils.fromEntity(entityCrud.find(EntityTypeRegistry.getEntityClass(EntityType.FOLDER), ROOT_FOLDER_OID)) );
             } catch (FindException e) {
                 throw new MigrationApi.MigrationException("Error getting root folder header.", e);
             }
@@ -495,6 +496,11 @@ public class MigrationManagerImpl implements MigrationManager {
         }
     }
 
+    /**
+     * "Resolves" an external entity header:
+     * - special-case processing for certain types
+     * - if the entity can be loaded, the header is reconstructed from the entity, filling in all the fields (e.g. name, version)
+     */
     private ExternalEntityHeader resolveHeader(final ExternalEntityHeader header) throws MigrationApi.MigrationException {
         if (header instanceof ValueReferenceEntityHeader)
             return header;

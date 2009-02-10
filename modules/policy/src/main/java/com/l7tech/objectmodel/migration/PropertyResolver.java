@@ -14,8 +14,10 @@ public interface PropertyResolver {
     public static enum Type {
         DEFAULT,
         SERVICE,
+        SERVICE_ALIAS,
         SERVICE_DOCUMENT,
         POLICY,
+        POLICY_ALIAS,
         ASSERTION,
         ID_PROVIDER_CONFIG,
         USERGROUP,

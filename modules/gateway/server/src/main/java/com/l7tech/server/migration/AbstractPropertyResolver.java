@@ -29,4 +29,14 @@ public abstract class AbstractPropertyResolver implements PropertyResolver {
 
         return resolver;
     }
+
+    protected Object getPropertyValue(Object object, Method property) throws PropertyResolverException {
+        final Object propertyValue;
+        try {
+            propertyValue = property.invoke(object);
+        } catch (Exception e) {
+            throw new PropertyResolverException("Error getting property value for entity: " + object, e);
+        }
+        return propertyValue;
+    }
 }

@@ -37,12 +37,7 @@ public class DefaultEntityPropertyResolver extends AbstractPropertyResolver {
         final MigrationMappingType type = MigrationUtils.getMappingType(property);
         final boolean exported = MigrationUtils.isExported(property);
 
-        final Object propertyValue;
-        try {
-            propertyValue = property.invoke(entity);
-        } catch (Exception e) {
-            throw new PropertyResolverException("Error getting property value for entity: " + entity, e);
-        }
+        final Object propertyValue = getPropertyValue(entity, property);
 
         Map<ExternalEntityHeader, Set<MigrationDependency>> result = new HashMap<ExternalEntityHeader, Set<MigrationDependency>>();
 

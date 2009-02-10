@@ -43,15 +43,16 @@ public abstract class AbstractOidPropertyResolver extends AbstractPropertyResolv
 
         final Long oid;
         try {
-            oid = (Long) property.invoke(entity);
-        } catch (Exception e) {
+            oid = (Long) getPropertyValue(entity, property);
+        } catch (RuntimeException e) {
             throw new PropertyResolverException("Error getting property value for entity: " + entity, e);
         }
 
         Map<ExternalEntityHeader,Set<MigrationDependency>> result = new HashMap<ExternalEntityHeader, Set<MigrationDependency>>();
         try {
-            ExternalEntityHeader idpHeader = EntityHeaderUtils.toExternal(entityFinder.findHeader(targetType, oid));
-            result.put(idpHeader, Collections.singleton(new MigrationDependency(source, idpHeader, propertyName, type, exported)));
+            ExternalEntityHeader externalHeader = EntityHeaderUtils.toExternal(
+                EntityHeaderUtils.fromEntity(entityFinder.find(EntityTypeRegistry.getEntityClass(targetType), oid)) );
+            result.put(externalHeader, Collections.singleton(new MigrationDependency(source, externalHeader, propertyName, type, exported)));
         } catch (FindException e) {
             logger.log(Level.FINE, "No entity found for type: {0} oid: {1}.", new Object[]{targetType, oid});
         }

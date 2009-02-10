@@ -106,6 +106,11 @@ public final class EntityHeaderUtils {
     public static ExternalEntityHeader toExternal(final EntityHeader header) {
         if (header instanceof ExternalEntityHeader) {
             return (ExternalEntityHeader) header;
+        } else if (header instanceof OrganizationHeader && ((OrganizationHeader)header).isAlias()) {
+            OrganizationHeader oh = ((OrganizationHeader)header);
+            return new ExternalEntityHeader(oh.getAliasOid().toString(), // use the alias OID as the external ID
+                EntityType.valueOf(header.getType().name() + "_ALIAS"),
+                oh.getStrId(), oh.getName() + " Alias", oh.getDescription(), oh.getVersion());
         } else if (header instanceof PolicyHeader) {
             return new ExternalEntityHeader(((PolicyHeader)header).getGuid(), header);
         } else if (header instanceof IdentityHeader) {

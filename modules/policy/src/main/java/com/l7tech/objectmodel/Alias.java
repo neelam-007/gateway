@@ -3,8 +3,9 @@ package com.l7tech.objectmodel;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
+
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * Alias was created as a means of referring to any class which can be aliases generically.
@@ -12,8 +13,9 @@ import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
  * @param <ET> the type of entity that this is an alias to
  * @author darmstrong
  */
+@XmlRootElement
 public abstract class Alias<ET extends PersistentEntity> extends PersistentEntityImp implements EntityAlias {
-    private long entityOid;
+    protected long entityOid;
     private Folder folder;
 
     @Deprecated // For Serialization and persistence only
@@ -24,10 +26,11 @@ public abstract class Alias<ET extends PersistentEntity> extends PersistentEntit
         this.folder = folder;
     }
 
-    /** The OID of the entity to which this alias refers. */
-    public long getEntityOid() {
-        return entityOid;
-    }
+    /**
+     * The OID of the entity to which this alias refers.
+     * Needs to be overridden with the proper Migration annotation.
+     */
+    public abstract long getEntityOid();
 
     @Deprecated
     protected void setEntityOid(long entityOid) {

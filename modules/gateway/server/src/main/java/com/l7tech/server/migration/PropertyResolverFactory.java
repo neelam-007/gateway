@@ -34,8 +34,12 @@ public class PropertyResolverFactory {
         registry.put(PropertyResolver.Type.SERVICE, new AbstractOidPropertyResolver(this, entityFinder) {
             public EntityType getTargetType() { return EntityType.SERVICE; }
         });
-        registry.put(PropertyResolver.Type.POLICY, new PolicyPropertyResolver(this));
-        registry.put(PropertyResolver.Type.ASSERTION, new AssertionPropertyResolver(this));
+        registry.put(PropertyResolver.Type.SERVICE_ALIAS, new AbstractOidPropertyResolver(this, entityFinder) {
+            public EntityType getTargetType() { return EntityType.SERVICE; }
+        });        registry.put(PropertyResolver.Type.POLICY, new PolicyPropertyResolver(this));
+        registry.put(PropertyResolver.Type.POLICY_ALIAS, new AbstractOidPropertyResolver(this, entityFinder) {
+            public EntityType getTargetType() { return EntityType.POLICY; }
+        });        registry.put(PropertyResolver.Type.ASSERTION, new AssertionPropertyResolver(this));
         registry.put(PropertyResolver.Type.ID_PROVIDER_CONFIG, new AbstractOidPropertyResolver(this, entityFinder) {
             public EntityType getTargetType() { return EntityType.ID_PROVIDER_CONFIG; }
         });
