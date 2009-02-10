@@ -79,31 +79,29 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
         Map<String, Object> initialSetupSettingsMap = new HashMap<String, Object>();
 
         try {
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_SSGAUDITSIZE,     Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_SSGAUDITSIZE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_SSGLOGSIZE,       Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_SSGLOGSIZE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DISKUSAGE,        Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_DISKUSAGE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_CPUTEMPERATURE,   Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_CPUTEMPERATURE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_CPUUSAGE,         Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_CPUUSAGE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_SWAPUSAGE,        Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_SWAPUSAGE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_AUDITSIZE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_AUDITSIZE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_LOGSIZE,          Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_LOGSIZE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DISKUSAGE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_DISKUSAGE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_CPUTEMPERATURE,   Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_CPUTEMPERATURE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_CPUUSAGE,         Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_CPUUSAGE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_SWAPUSAGE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_SWAPUSAGE)));
 
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_SSGAUDITSIZE,    Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_SSGAUDITSIZE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS, Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_OPERATINGSTATUS)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_SSGLOGSIZE,      Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_SSGLOGSIZE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_DISKUSAGE,       Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_DISKUSAGE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_RAIDSTATUS,      Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_RAIDSTATUS)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_CPUTEMPERATURE,  Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_CPUTEMPERATURE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_CPUUSAGE,        Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_CPUUSAGE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_SWAPUSAGE,       Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_SWAPUSAGE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_NTPSTATUS,       Integer.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_NTPSTATUS)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_AUDITSIZE,       Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_AUDITSIZE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_OPERATINGSTATUS)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_LOGSIZE,         Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_LOGSIZE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_DISKUSAGE,       Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_DISKUSAGE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_RAIDSTATUS,      Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_RAIDSTATUS)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_CPUTEMPERATURE,  Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_CPUTEMPERATURE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_CPUUSAGE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_CPUUSAGE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_SWAPUSAGE,       Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_SWAPUSAGE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_NTPSTATUS,       Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_NTPSTATUS)));
 
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_DISABLEALLNOTIFICATIONS,  Boolean.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_DISABLEALLNOTIFICATIONS)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_AUDITUPONALERTSTATE,      Boolean.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_AUDITUPONALERTSTATE)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_AUDITUPONNORMALSTATE,     Boolean.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_AUDITUPONNORMALSTATE)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_AUDITUPONNOTIFICATION,    Boolean.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_AUDITUPONNOTIFICATION)));
         } catch (NumberFormatException e) {
-            String errmsg = "Invalid system monitoring setup settings in the ESM config properties file.";
-            logger.warning(errmsg);
-            throw new InvalidMonitoringSetupSettingException(errmsg);
+            throw new InvalidMonitoringSetupSettingException("Invalid system monitoring setup settings in the ESM config properties file.", e);
         }
 
         return initialSetupSettingsMap;

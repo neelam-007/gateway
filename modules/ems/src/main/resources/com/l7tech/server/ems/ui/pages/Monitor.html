@@ -694,12 +694,19 @@
             var settings = {};
             settings.entity = {};
             settings.entity.id = monDlg_entityId.value;
+            if (monDlg_entityTypeLabel.innerHTML == entityTreeTableLocalizedStrings.SSG_CLUSTER) {
+                settings.entity.type = l7.Constants.ENTITY_TYPE.SSG_CLUSTER;
+            } else if (monDlg_entityTypeLabel.innerHTML == entityTreeTableLocalizedStrings.SSG_NODE) {
+                settings.entity.type = l7.Constants.ENTITY_TYPE.SSG_NODE;
+            }
             settings.propertyType = monDlg_propertyType.value;
             settings.monitoringEnabled = monDlg_enabledCheckBox.checked;
             if (settings.monitoringEnabled) {
                 settings.triggerEnabled = monDlg_triggerEnabledCheckBox.checked;
                 if (settings.triggerEnabled) {
-                    settings.triggerValue = parseFloat(monDlg_triggerValueTextBoxes[settings.propertyType].value);
+                    if (monDlg_triggerValueTextBoxes[settings.propertyType] != null) {
+                        settings.triggerValue = parseFloat(monDlg_triggerValueTextBoxes[settings.propertyType].value);
+                    }
                     settings.notificationEnabled = monDlg_notificationEnabledCheckBox.checked;
                 }
             }
@@ -713,10 +720,9 @@
             }
 
             var postData = YAHOO.lang.JSON.stringify(settings);
-            // TODO Set saveMonitoringPropertySettingsUrl using Wicket.
             YAHOO.util.Connect.setDefaultPostHeader(false);
             YAHOO.util.Connect.initHeader('Content-Type', 'application/json; charset=utf-8');
-            YAHOO.util.Connect.asyncRequest('POST', saveMonitoringPropertySettingsUrl, callback, postData);
+            YAHOO.util.Connect.asyncRequest('POST', saveEntityMonitoringPropertySetupSettingsUrl, callback, postData);
             YAHOO.util.Connect.setDefaultPostHeader(true);  // Revert to default for next caller.
         }
 
@@ -912,8 +918,7 @@
             var postData = 'entityType=' + encodeURIComponent(entity.type)
                          + '&entityId=' + encodeURIComponent(entity.id)
                          + '&propertyType=' + encodeURIComponent(propertyType);
-            // TODO Set getMonitoringPropertySettingsUrl using Wicket.
-            var xhr = l7.Connection.syncRequest('POST', getMonitoringPropertySettingsUrl, postData, false);
+            var xhr = l7.Connection.syncRequest('POST', getEntityMonitoringPropertySetupSettingsUrl, postData, false);
             if (xhr.status == 200) {
                 var result = l7.Connection.parseJsonResponse(xhr,
                                                              true,
@@ -994,8 +999,7 @@
 
         function refreshMonitoringProperties() {
             var nextRefreshInterval = DEFAULT_MONITORING_PROPERTIES_REFRESH_INTERVAL;
-            // TODO Set refreshMonitoringPropertiesUrl using Wicket.
-            var xhr = l7.Connection.syncRequest('GET', refreshMonitoringPropertiesUrl, null, false);
+            var xhr = l7.Connection.syncRequest('GET', getEntitiesMonitoringPropertiesUrl, null, false);
             var result = l7.Connection.parseJsonResponse(xhr, false);
             if (result.success) {
                 if (result.json.entities) {
@@ -1104,8 +1108,7 @@
                     l7.Dialog.showErrorDialog(localizedStrings.ERROR, localizedStrings.CANNOT_DOWNLOAD_ENTITY_DATA + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             };
-            var getEntityTreeUrl = 'dataSource/monitor.json';
-            YAHOO.util.Connect.asyncRequest('GET', getEntityTreeUrl, callback, null);
+            YAHOO.util.Connect.asyncRequest('GET', getEntitiesUrl, callback, null);
         }
 
         function initNotificationRulesDataTable() {
@@ -2046,6 +2049,10 @@
                 <div wicket:id="saveSystemMonitoringSetupSettings"/>
                 <div wicket:id="getSystemMonitoringNotificationRules"/>
                 <div wicket:id="saveSystemMonitoringNotificationRule"/>
+                <div wicket:id="getEntities"/>
+                <div wicket:id="getEntitiesMonitoringProperties"/>
+                <div wicket:id="getEntityMonitoringPropertySetupSettings"/>
+                <div wicket:id="saveEntityMonitoringPropertySetupSettings"/>
 
                 </wicket:extend>
 

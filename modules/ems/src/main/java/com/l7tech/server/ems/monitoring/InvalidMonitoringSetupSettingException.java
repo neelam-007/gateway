@@ -12,4 +12,8 @@ public class InvalidMonitoringSetupSettingException extends Exception {
     public InvalidMonitoringSetupSettingException(String message) {
         super(message);
     }
+
+    public InvalidMonitoringSetupSettingException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

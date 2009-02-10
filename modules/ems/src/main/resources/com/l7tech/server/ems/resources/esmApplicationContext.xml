@@ -98,6 +98,8 @@
 
                 <!-- Remote System Monitoring -->
                 <value>com.l7tech.server.ems.monitoring.SystemMonitoringNotificationRule</value>
+                <value>com.l7tech.server.ems.monitoring.EntityMonitoringPropertySetup</value>
+                <value>com.l7tech.server.ems.monitoring.SsgClusterNotificationSetup</value>
 
                 <!-- General -->
                 <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
@@ -474,6 +476,10 @@
     <!-- Migration Manager -->
     <bean id="migrationRecordManager" class="com.l7tech.server.ems.migration.MigrationRecordManagerImpl" parent="hibernateBean"/>
 
+    <bean id="migrationMappingManager" class="com.l7tech.server.ems.migration.MigrationMappingRecordManagerImpl" parent="hibernateBean">
+        <constructor-arg index="0" ref="ssgClusterManager"/>
+    </bean>
+
     <!-- Standard Report Settings Manager -->
     <bean id="standardReportSettingsManager" class="com.l7tech.server.ems.standardreports.StandardReportSettingsManagerImpl" parent="hibernateBean"/>
 
@@ -485,9 +491,9 @@
 
     <bean id="systemMonitoringNotificationRulesManager" class="com.l7tech.server.ems.monitoring.SystemMonitoringNotificationRulesManagerImpl" parent="hibernateBean"/>
 
-    <bean id="migrationMappingManager" class="com.l7tech.server.ems.migration.MigrationMappingRecordManagerImpl" parent="hibernateBean">
-        <constructor-arg index="0" ref="ssgClusterManager"/>
-    </bean>
+    <bean id="entityMonitoringPropertySetupManager" class="com.l7tech.server.ems.monitoring.EntityMonitoringPropertySetupManagerImpl" parent="hibernateBean"/>
+
+    <bean id="ssgClusterNotificationSetupManager" class="com.l7tech.server.ems.monitoring.SsgClusterNotificationSetupManagerImpl" parent="hibernateBean"/>
 
     <!-- keystore root cert and ssl config  -->
     <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl">

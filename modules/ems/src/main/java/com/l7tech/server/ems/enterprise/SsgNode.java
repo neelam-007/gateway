@@ -7,6 +7,8 @@ import org.hibernate.annotations.Proxy;
 import javax.persistence.*;
 import java.net.InetAddress;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Entity class for SSG Node
@@ -156,5 +158,19 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
             "SSG Node Name : " + getName() + "\n" +
             "Self Host Name: " + obtainHostName() + "\n" +
             "IP Address    : " + getIpAddress();
+    }
+
+    /**
+     * Get names of all ancestors.
+     * @return a string list.
+     */
+    public List<String> ancestors() {
+        List<String> list = new ArrayList<String>();
+        if (ssgCluster != null) {
+            list.addAll(ssgCluster.ancestors());
+            list.add(ssgCluster.getName());
+        }
+
+        return list;
     }
 }

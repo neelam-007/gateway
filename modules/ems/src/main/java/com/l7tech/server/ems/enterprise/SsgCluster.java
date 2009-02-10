@@ -210,6 +210,22 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         return _name;
     }
 
+    /**
+     * Get names of all ancestors.
+     * @return a string list.
+     */
+    public List<String> ancestors() {
+        List<String> list = new ArrayList<String>();
+
+        EnterpriseFolder parent = parentFolder;
+        while (parent != null) {
+            list.add(0, parent.getName());
+            parent = parent.getParentFolder();
+        }
+
+        return list;
+    }
+
     // Implements JSON.Convertible
     @Override
     public void toJSON(JSON.Output output) {

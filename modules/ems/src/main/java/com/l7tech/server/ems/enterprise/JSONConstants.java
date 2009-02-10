@@ -165,6 +165,8 @@ public final class JSONConstants {
     public static final String TYPE       = "type";
     public static final String NAME       = "name";
     public static final String READONLY   = "readOnly";
+    public static final String ANCESTORS  = "ancestors";
+    public static final String ENTITY     = "entity";
 
     // Additional properties for SSG Cluster entities.
     public static final String CLUSTER_NAME      = "clusterName";
@@ -192,10 +194,25 @@ public final class JSONConstants {
     // Properties within a monitored property current value.
     public static final String MONITORED = "monitored";
     public static final String VALUE     = "value";
+    public static final String UNIT      = "unit";
     public static final String ALERT     = "alert";
 
     // Additional properties for SSG Cluster, SSG Node, published service and policy fragment entities.
     public static final String VERSION = "version";
+
+    /**
+     * Enum of Entity Prop Setup.
+     */
+    public static final class ENTITY_PROPS_SETUP {
+        public static final String ENTITY               = "entity";
+        public static final String PROP_TYPE            = "propertyType";
+        public static final String MONITORING_ENABLED   = "monitoringEnabled";
+        public static final String TRIGGER_ENABLED      = "triggerEnabled";
+        public static final String TRIGGER_VALUE        = "triggerValue";
+        public static final String UNIT                 = "unit";
+        public static final String NOTIFICATION_ENABLED = "notificationEnabled";
+        public static final String NOTIFICATION_RULES   = "notificationRules";
+    }
 
     /**
      * Enum of standard report types.
