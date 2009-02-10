@@ -325,7 +325,7 @@ public class UserRoles extends EsmStandardWebPage {
 
         String panelId = "panel." + (usersAssigned? "" : "un") + "assignedUsers";
         return new YuiDataTable(panelId, columns, "login", true, newArrayList(new UserDataProvider("login", true, usersAssigned).iterator(0,1000)), hidden,
-            "login", false, new Button[]{button}) {
+            false, "login", false, new Button[]{button}) {
             @Override
             @SuppressWarnings({"UnusedDeclaration"})
             protected void onSelect(AjaxRequestTarget ajaxRequestTarget, String value) {

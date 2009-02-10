@@ -24,6 +24,7 @@ import org.apache.wicket.model.AbstractReadOnlyModel;
 import com.l7tech.server.ems.standardreports.StandardReportManager;
 import com.l7tech.server.ems.standardreports.StandardReport;
 import com.l7tech.server.ems.ui.EsmSecurityManager;
+import com.l7tech.server.ems.util.TypedPropertyColumn;
 import com.l7tech.identity.User;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
@@ -39,6 +40,7 @@ import java.util.Iterator;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,16 +69,6 @@ public class StandardReportsManagementPanel extends Panel {
         final Form pageForm = new Form("form");
         add ( pageForm );
 
-        final Button viewButton = new YuiAjaxButton("viewReportButton") {
-            @Override
-            protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                String reportIdentifier = (String)form.get("reportId").getModel().getObject();
-                if ( reportIdentifier != null && reportIdentifier.length() > 0 ) {
-                    ajaxRequestTarget.appendJavascript("window.open('/reports/" + reportIdentifier + "/', '_blank');");
-                }
-            }
-        };
-
         final Button downloadButton = new YuiAjaxButton("downloadReportButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
@@ -84,7 +76,11 @@ public class StandardReportsManagementPanel extends Panel {
                 String reportFormat = (String)form.get("reportFormat").getModel().getObject();
                 if ( reportIdentifier != null && reportIdentifier.length() > 0 ) {
                     ValueMap vm = new ValueMap();
-                    vm.add("reportId", reportIdentifier);
+                    if ( reportIdentifier.indexOf(',') > 0 ) {
+                        vm.add("reportIds", reportIdentifier);
+                    } else {
+                        vm.add("reportId", reportIdentifier);
+                    }
                     vm.add("type", reportFormat==null || !reportFormat.equals("HTML") ? "application/pdf" : "application/zip");
                     vm.add("disposition", "attachment");
                     ResourceReference resourceReference = new ResourceReference("reportResource");
@@ -96,29 +92,36 @@ public class StandardReportsManagementPanel extends Panel {
         Button deleteButton = new YuiAjaxButton("deleteReportButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                String reportIdentifier = (String)form.get("reportId").getModel().getObject();
-                if ( reportIdentifier != null && reportIdentifier.length() > 0 ) {
+                String reportIdentifierStr = (String)form.get("reportId").getModel().getObject();
+                if ( reportIdentifierStr != null && reportIdentifierStr.length() > 0 ) {
                     try {
-                        final StandardReport report = reportManager.findByPrimaryKey( Long.parseLong(reportIdentifier) );
-                        if ( report != null ) {
-
+                        final String[] reportIdentifiers = reportIdentifierStr.split(",");
+                        final Collection<StandardReport> reports = new ArrayList<StandardReport>();
+                        for ( String reportIdentifier : reportIdentifiers )   {
+                            reports.add( reportManager.findByPrimaryKey( Long.parseLong(reportIdentifier) ) );
+                        }
+                        if ( !reports.isEmpty() ) {
                             // Pop up a warning dialog to let the user confirm the report deletion.
-                            String warningText = "Really delete report \"" + report.getName() + "\"?";
+                            String warningText = reports.size() == 1 ?
+                                    "Really delete report \"" + reports.iterator().next().getName() + "\"?" :
+                                    "Really delete " + reports.size() + " reports?";
                             Label label = new Label(YuiDialog.getContentId(), warningText);
                             label.setEscapeModelStrings(false);
                             YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Confirm Generated Report Deletion", YuiDialog.Style.OK_CANCEL, label, new YuiDialog.OkCancelCallback() {
                                 @Override
                                 public void onAction( final YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
                                     if ( button == YuiDialog.Button.OK ) {
-                                        if ( securityManager.hasPermission( new AttemptedDeleteSpecific(EntityType.ESM_STANDARD_REPORT, report) ) ) {
-                                            try {
-                                                reportManager.delete( report );
-                                                target.addComponent( tableContainer );
-                                            } catch (DeleteException e) {
-                                                logger.log( Level.WARNING, "Error deleting report.", e );
+                                        for ( StandardReport report : reports ) {
+                                            if ( securityManager.hasPermission( new AttemptedDeleteSpecific(EntityType.ESM_STANDARD_REPORT, report) ) ) {
+                                                try {
+                                                    reportManager.delete( report );
+                                                    target.addComponent( tableContainer );
+                                                } catch (DeleteException e) {
+                                                    logger.log( Level.WARNING, "Error deleting report.", e );
+                                                }
+                                            } else {
+                                                logger.log( Level.WARNING, "Report deletion not permitted." );
                                             }
-                                        } else {
-                                            logger.log( Level.WARNING, "Report deletion not permitted." );
                                         }
                                     }
                                     dynamicDialogHolder.replace(new EmptyPanel("dynamic.holder.content"));
@@ -129,12 +132,12 @@ public class StandardReportsManagementPanel extends Panel {
                             dynamicDialogHolder.replace(dialog);
                             ajaxRequestTarget.addComponent(dynamicDialogHolder);
                         } else {
-                            logger.log( Level.FINE, "Report deletion request ignored for unknown report '"+reportIdentifier+"'." );
+                            logger.log( Level.FINE, "Report deletion request ignored for unknown reports '"+reportIdentifierStr+"'." );
                         }
                     } catch ( FindException e ) {
                         logger.log( Level.WARNING, "Error deleting report.", e );
                     } catch ( NumberFormatException nfe ) {
-                        logger.log( Level.INFO, "Report deletion request ignored for unknown report '"+reportIdentifier+"'." );
+                        logger.log( Level.INFO, "Report deletion request ignored for invalid report(s) '"+reportIdentifierStr+"'." );
                     }
                 }
             }
@@ -143,11 +146,9 @@ public class StandardReportsManagementPanel extends Panel {
         HiddenField hidden = new HiddenField("reportId", new Model(""));
 
 
-        viewButton.setEnabled(false);
         downloadButton.setEnabled(false);
 
         pageForm.add( new DropDownChoice( "reportFormat", new Model("PDF"), Arrays.asList("HTML", "PDF") ) );
-        pageForm.add( viewButton.setOutputMarkupId(true) );
         pageForm.add( downloadButton.setOutputMarkupId(true) );
         pageForm.add( deleteButton );
         pageForm.add( hidden.setOutputMarkupId(true) );
@@ -156,31 +157,32 @@ public class StandardReportsManagementPanel extends Panel {
         columns.add(new PropertyColumn(new Model("id"), "id"));
         columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.name", this, null), "name", "name"));
         columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.date", this, null), "statusTime", "statusTime"));
-        columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.clusterName", this, null), "clusterName", "clusterName"));
-        columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.status", this, null), "status", "status"));
-        columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.statusMessage", this, null), "statusMessage", "statusMessage"));
+        columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.clusterName", this, null), "clusterName"));
+        columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.status", this, null), "status"));
+        columns.add(new PropertyColumn(new StringResourceModel("reporttable.column.statusMessage", this, null), "statusMessage"));
+        columns.add(new TypedPropertyColumn(new StringResourceModel("reporttable.column.htmlReport", this, null), "viewLinkHtml", String.class, false));
 
-        YuiDataTable table = new YuiDataTable("reportTable", columns, "statusTime", false,  new ReportDataProvider("statusTime", false), hidden, "id", true, new Button[]{ deleteButton, viewButton, downloadButton }){
+        YuiDataTable table = new YuiDataTable("reportTable", columns, "statusTime", false,  new ReportDataProvider("statusTime", false), hidden, true, "id", true, new Button[]{ deleteButton, downloadButton }){
             @Override
             @SuppressWarnings({"UnusedDeclaration"})
-            protected void onSelect(final AjaxRequestTarget ajaxRequestTarget, final String value) {
+            protected void onSelect(final AjaxRequestTarget ajaxRequestTarget, final Collection<String> values) {
                 boolean enable = false;
-                try {
-                    StandardReport report = reportManager.findByPrimaryKey( Long.parseLong(value) );
-                    if ( "COMPLETED".equals(report.getStatus()) ) {
-                        enable = true;
+                for ( String value : values ) {
+                    try {
+                        StandardReport report = reportManager.findByPrimaryKey( Long.parseLong(value) );
+                        if ( "COMPLETED".equals(report.getStatus()) ) {
+                            enable = true;
+                        }
+                    } catch (FindException e) {
+                        // disable buttons
+                    } catch (NumberFormatException e) {
+                        // disable buttons
                     }
-                } catch (FindException e) {
-                    // disable buttons
-                } catch (NumberFormatException e) {
-                    // disable buttons
                 }
 
-                viewButton.setEnabled(enable);
                 downloadButton.setEnabled(enable);
 
                 ajaxRequestTarget.addComponent(downloadButton);
-                ajaxRequestTarget.addComponent(viewButton);
             }
         };
         tableContainer.add( table );
@@ -264,6 +266,16 @@ public class StandardReportsManagementPanel extends Panel {
 
        public String getStatusMessage() {
            return statusMessage;
+       }
+
+       public String getViewLinkHtml() {
+           String linkHtml = "";
+
+           if ( "COMPLETED".equals(status) ) {
+                linkHtml =  "<a href=\"/reports/" + id + "/\" target=\"_blank\">View</a>";
+           }
+
+           return linkHtml;
        }
     }
 

@@ -10,15 +10,22 @@ import org.apache.wicket.util.time.Time;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.Date;
+import java.util.Collection;
+import java.util.ArrayList;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import java.text.SimpleDateFormat;
 
 import com.l7tech.server.ems.ui.SecureResource;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -108,6 +115,64 @@ public class ReportResource extends SecureResource {
                     }
                 }
             }
+        } else if ( parameters.containsKey("reportIds") &&
+                    parameters.containsKey("type") ) {
+            String ids = parameters.getString("reportIds");
+            String type = parameters.getString("type");
+
+            StandardReportManager manager = getStandardReportManager();
+            if ( manager != null ) {
+                final Collection<StandardReportArtifact> artifacts = new ArrayList<StandardReportArtifact>();
+                try {
+                    for ( String id : ids.split(",", 50) ) {
+                        if( hasPermission( new AttemptedReadSpecific(EntityType.ESM_STANDARD_REPORT, id) ) || isOwner(id) ) {
+                            final StandardReport report = manager.findByPrimaryKey( Long.parseLong( id ) );
+                            if ( report != null ) {
+                                for ( StandardReportArtifact artifact : report.getArtifacts() ) {
+                                    if ( artifact.getContentType().equals(type) ) {
+                                        artifacts.add( artifact );
+                                        break;
+                                    }
+                                }
+                            } else {
+                                logger.warning("Report id not found when accessing report resource '"+id+"'.");
+                            }
+                        }
+                    }
+                } catch ( NumberFormatException nfe ) {
+                    logger.warning("Invalid report id when accessing report resources '"+ids+"'.");
+                } catch (FindException e) {
+                    logger.log( Level.WARNING, "Error finding report.", e );
+                }
+
+                try {
+                    final ByteArrayInputStream in = new ByteArrayInputStream( zip( artifacts ) );
+                    resource = new AbstractResourceStream(){
+                        @Override
+                        public String getContentType() {
+                            return "application/zip";
+                        }
+
+                        @Override
+                        public InputStream getInputStream() throws ResourceStreamNotFoundException {
+                            return in;
+                        }
+
+                        @Override
+                        public void close() throws IOException {
+                            ResourceUtils.closeQuietly( in );
+                        }
+
+                        @Override
+                        public Time lastModifiedTime() {
+                            return Time.milliseconds( System.currentTimeMillis() );
+                        }
+                    };
+                } catch ( IOException ioe ) {
+                    logger.log( Level.WARNING, "Error when building report ZIP for download.", ioe );
+                    resource = new StringResourceStream( "" );
+                }
+            }
         }
 
         if ( resource == null ){
@@ -163,6 +228,10 @@ public class ReportResource extends SecureResource {
                 }
             }
 
+        } else if ( parameters.containsKey("reportIds") ) {
+            // request for multiple zip'd reports use current date for unique file name
+            SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd HHmmss");
+            name = "reports_" + format.format( new Date() ) + ".zip";            
         }
 
         return name;
@@ -206,5 +275,46 @@ public class ReportResource extends SecureResource {
         }
 
         return owner;
+    }
+
+    /**
+     * Build zip file containing the given artifacts, for HTML reports combine the existing zip files.
+     */
+    private byte[] zip( final Collection<StandardReportArtifact> artifacts ) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream( 100000 );
+        ZipOutputStream zipOut = new ZipOutputStream( out );
+
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd HHmmss");
+        for ( StandardReportArtifact resourceArtifact : artifacts ) {
+            String reportName = format.format( new Date(resourceArtifact.getReport().getStatusTime()) ) + "_" +
+                                processFilename( resourceArtifact.getReport().getName() != null ?
+                                                 resourceArtifact.getReport().getName() :
+                                                 resourceArtifact.getReport().getId() );             
+
+            if ( "application/zip".equals( resourceArtifact.getContentType() ) ) {
+                // copy all elements into sub folder
+                ZipInputStream zipIn = null;
+                try {
+                    zipIn = new ZipInputStream( new ByteArrayInputStream(resourceArtifact.getReportData()) );
+                    ZipEntry entry;
+                    while( (entry = zipIn.getNextEntry()) != null) {
+                        zipOut.putNextEntry( new ZipEntry( reportName + "/" + entry.getName() ) );
+                        IOUtils.copyStream( zipIn, zipOut );
+                        zipOut.closeEntry();
+                    }
+                } finally {
+                    ResourceUtils.closeQuietly( zipIn );
+                }
+            } else {
+                // add to zip directly
+                zipOut.putNextEntry( new ZipEntry( reportName + ".pdf" ) );
+                zipOut.write( resourceArtifact.getReportData() );
+                zipOut.closeEntry();
+            }
+        }
+
+        zipOut.close();
+
+        return out.toByteArray();
     }
 }

@@ -520,7 +520,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             new PropertyColumn(new Model("Dest. Name"), "destName", "destName")
         );
 
-        final YuiDataTable ydt = new YuiDataTable( "dependenciesTable", dependencyColumns, "name", true, items, null, "uid", true, null ){
+        final YuiDataTable ydt = new YuiDataTable( "dependenciesTable", dependencyColumns, "name", true, items, null, false, "uid", true, null ){
             @Override
             @SuppressWarnings({"UnusedDeclaration"})
             protected void onSelect( final AjaxRequestTarget ajaxRequestTarget, final String value ) {

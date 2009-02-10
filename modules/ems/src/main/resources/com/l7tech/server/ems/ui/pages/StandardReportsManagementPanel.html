@@ -12,15 +12,16 @@
 
             <form wicket:id="form">
                 <div class="panelToolbar">
-                    Output Format:
+                    <input name="reportId" type="hidden" value="" wicket:id="reportId"/>
+
+                    <button wicket:id="downloadReportButton" title="Download Report">Download</button>
+                    <span style="font-weight: bold;">Format:</span>                    
                     <select wicket:id="reportFormat">
                         <option>HTML</option>
                         <option selected="selected">PDF</option>
                     </select>
-                    <button wicket:id="viewReportButton" title="View Report">View</button>
-                    <button wicket:id="downloadReportButton" title="Download Report">Download</button>
+                    <span style="margin-left: 0.5em; margin-right: 0.5em;">|</span>
                     <button wicket:id="deleteReportButton" title="Delete Report">Delete</button>
-                    <input name="reportId" type="hidden" value="" wicket:id="reportId"/>
                 </div>
             </form>
 

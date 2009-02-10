@@ -15,10 +15,11 @@
  * @param sortDir initial sort direction 'yui-dt-asc' or 'yui-dt-desc'
  * @param selectionControlIds DOM ids for components to be enabled on selection
  * @param selectionId DOM id of form field to set value of on selection
+ * @param multiSelect True to allow multiple selection with per-row checkboxes
  * @param selectionCallback function to call on selection (passing identifier)
  * @param idProperty the property name to set on selection
  */
-function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, tableData, sortBy, sortDir, selectionControlIds, selectionId, selectionCallback, idProperty  ) {
+function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, tableData, sortBy, sortDir, selectionControlIds, selectionId, multiSelect, selectionCallback, idProperty  ) {
     var myPaginator,  // to hold the Paginator instance
         myDataSource, // to hold the DataSource instance
         myDataTable;  // to hold the DataTable instance
@@ -123,6 +124,73 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, ta
         return function(){ return func(a, arguments[0], arguments[1], arguments[2]); };
     }
 
+    var updateControlStates = function( enable ) {
+        if ( selectionControlIds ) {
+            var controlIndex;
+            for ( controlIndex in selectionControlIds ) {
+                var controlId = selectionControlIds[controlIndex];
+                var yuiButton = YAHOO.widget.Button.getButton( controlId );
+                if ( yuiButton ) {
+                    yuiButton.set('disabled', !enable);
+                } else {
+                    var control = document.getElementById( controlId );
+                    if ( control ) {
+                        control.disabled = !enable;
+                    }
+                }
+            }
+        }
+    }
+
+    var dataCallback = null;
+    var multiSelectUpdate = null;
+    if ( multiSelect && ( selectionControlIds || selectionCallback ) ) {
+        // Add column metadata for multi select checkboxes
+        var multiCol = new Object();
+        multiCol.key = "checkbox";
+        multiCol.label = '<input type="checkbox" onclick="document.getElementById(\''+tableId+'\').updateItemSelections(this.checked);"/>';
+        tableColumns = new Array(multiCol).concat(tableColumns);
+
+        multiSelectUpdate = function() {
+            var selectedItemIds = new Array();
+            var ids = document.getElementById( tableId ).currentPageIdentifiers;
+            for ( var item in ids ) {
+                var itemCheckbox = document.getElementById( tableId+'-'+ids[item] );
+                if ( itemCheckbox && itemCheckbox.checked ) {
+                    selectedItemIds = selectedItemIds.concat( new Array(ids[item]) );
+                }
+            }
+
+            var selectionControl = document.getElementById( selectionId );
+            if ( selectionControl ) {
+                selectionControl.value = selectedItemIds.join();
+            }
+
+            updateControlStates( selectedItemIds.length > 0 );
+
+            if( selectionCallback ) {
+                selectionCallback( selectedItemIds.join() );
+            }
+        };
+
+        // Add callback to populate checkbox data
+        // doBeforeCallback Object doBeforeCallback ( oRequest , oFullResponse , oParsedResponse , oCallback )
+        dataCallback = function( oRequest , oFullResponse , oParsedResponse , oCallback ){
+            var currentPageIdentifiers = new Array();
+
+            for ( var item in oParsedResponse.results ) {
+                var itemId = oParsedResponse.results[item][idProperty];
+                currentPageIdentifiers = currentPageIdentifiers.concat( new Array(itemId) );
+                oParsedResponse.results[item].checkbox = '<input id="'+tableId+'-'+itemId+'" type="checkbox" onclick="document.getElementById(\''+tableId+'\').updateItemSelection(\''+itemId+'\', this.checked);"/>';
+            }
+
+            document.getElementById( tableId ).currentPageIdentifiers = currentPageIdentifiers;
+            multiSelectUpdate();
+
+            return oParsedResponse;
+        };
+    }
+
     if ( tableData ) {
         for ( var field in tableColumns ) {
             if ( tableColumns[field].formatter == 'emstdate' ) {
@@ -146,6 +214,7 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, ta
         myDataSource.responseSchema = {
             fields: dataFields
         };
+        if ( dataCallback ) myDataSource.doBeforeCallback = dataCallback;
 
         myDataTable = new YAHOO.widget.DataTable(
             tableId,             // The dom element to contain the DataTable
@@ -167,6 +236,7 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, ta
                 sortDir: "dir"
             }
         };
+        if ( dataCallback ) myDataSource.doBeforeCallback = dataCallback;
 
         // Create the DataTable configuration and Paginator
         myPaginator = new YAHOO.widget.Paginator({
@@ -211,28 +281,14 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, ta
         // Subscribes to events for row selection.
         myDataTable.subscribe("rowMouseoverEvent", myDataTable.onEventHighlightRow);
         myDataTable.subscribe("rowMouseoutEvent", myDataTable.onEventUnhighlightRow);
-        myDataTable.subscribe("rowClickEvent", myDataTable.onEventSelectRow);
+        if ( !multiSelect ) myDataTable.subscribe("rowClickEvent", myDataTable.onEventSelectRow);
 
         // Subscribes to row select changes for enabling/disabling toolbar buttons.
         var enableOrDisableControls = function (event, target) {
             var selectedRows = myDataTable.getSelectedRows();
             var hasSelectedRows = selectedRows && (selectedRows.length != 0);
 
-            if ( selectionControlIds ) {
-                var controlIndex;
-                for ( controlIndex in selectionControlIds ) {
-                    var controlId = selectionControlIds[controlIndex];
-                    var yuiButton = YAHOO.widget.Button.getButton( controlId );
-                    if ( yuiButton ) {
-                        yuiButton.set('disabled', !hasSelectedRows);
-                    } else {
-                        var control = document.getElementById( controlId );
-                        if ( control ) {
-                            control.disabled = !hasSelectedRows;
-                        }
-                    }
-                }
-            }
+            updateControlStates( hasSelectedRows );
 
             var selectedValue = "";
             if ( hasSelectedRows ) {
@@ -248,9 +304,26 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, ta
                 selectionCallback( selectedValue );
             }
         }
-        
-        myDataTable.subscribe("rowSelectEvent", enableOrDisableControls);
-        myDataTable.subscribe("rowUnSelectEvent", enableOrDisableControls);
+
+        if ( !multiSelect ) {
+            myDataTable.subscribe("rowSelectEvent", enableOrDisableControls);
+            myDataTable.subscribe("rowUnSelectEvent", enableOrDisableControls);
+        } else {
+            document.getElementById( tableId ).updateItemSelection = function( identifier, selected ) {
+                multiSelectUpdate();
+            }
+
+            document.getElementById( tableId ).updateItemSelections = function( selected ) {
+                var ids = document.getElementById( tableId ).currentPageIdentifiers;
+                for ( var item in ids ) {
+                    var itemCheckbox = document.getElementById( tableId+'-'+ids[item] );
+                    if ( itemCheckbox ) {
+                        itemCheckbox.checked = selected;                        
+                    }
+                }
+                multiSelectUpdate();
+            }
+        }
 
         enableOrDisableControls();
     }

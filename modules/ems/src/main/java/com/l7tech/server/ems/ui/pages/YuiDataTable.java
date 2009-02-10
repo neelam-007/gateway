@@ -3,7 +3,6 @@ package com.l7tech.server.ems.ui.pages;
 import org.apache.wicket.IRequestTarget;
 import org.apache.wicket.Page;
 import org.apache.wicket.RequestCycle;
-import org.apache.wicket.ResourceReference;
 import org.apache.wicket.Component;
 import org.apache.wicket.util.string.Strings;
 import org.apache.wicket.util.convert.IConverter;
@@ -39,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Arrays;
 import java.util.logging.Level;
 
 import com.l7tech.util.ResolvingComparator;
@@ -72,7 +72,7 @@ public class YuiDataTable extends Panel {
                          final String sortProperty,
                          final boolean sortAscending,
                          final ISortableDataProvider sortableDataProvider ) {
-        this( id, columns, sortProperty, sortAscending, sortableDataProvider, true, null, null, false, null );
+        this( id, columns, sortProperty, sortAscending, sortableDataProvider, true, null, false, null, false, null );
     }
 
     /**
@@ -98,7 +98,35 @@ public class YuiDataTable extends Panel {
                          final boolean hideIdColumn,
                          final Button[] selectionSensitiveComponents ) {
         this( id, columns, sortProperty, sortAscending, sortableDataProvider,
-              true, selectionComponent, idProperty, hideIdColumn, selectionSensitiveComponents );
+              true, selectionComponent, false, idProperty, hideIdColumn, selectionSensitiveComponents );
+    }
+
+    /**
+     * Create a YUI DataTable component with server side sort/page.
+     *
+     * @param id The component identifier
+     * @param columns The table column definitions
+     * @param sortProperty The property to sort by
+     * @param sortAscending True to sort in ascending order
+     * @param sortableDataProvider The data provider for the table data
+     * @param selectionComponent The component to hold row selection values
+     * @param multiSelect True to permit multiselect
+     * @param idProperty The property to use as the selection id
+     * @param hideIdColumn True if the id column should be hidden
+     * @param selectionSensitiveComponents Buttons that are sensitive to row selection
+     */
+    public YuiDataTable( final String id,
+                         final List<PropertyColumn> columns,
+                         final String sortProperty,
+                         final boolean sortAscending,
+                         final ISortableDataProvider sortableDataProvider,
+                         final HiddenField selectionComponent,
+                         final boolean multiSelect,
+                         final String idProperty,
+                         final boolean hideIdColumn,
+                         final Button[] selectionSensitiveComponents ) {
+        this( id, columns, sortProperty, sortAscending, sortableDataProvider,
+              true, selectionComponent, multiSelect, idProperty, hideIdColumn, selectionSensitiveComponents );
     }
 
     /**
@@ -115,7 +143,7 @@ public class YuiDataTable extends Panel {
                          final String sortProperty,
                          final boolean sortAscending,
                          final Collection<?> data ) {
-        this( id, columns, sortProperty, sortAscending, asSortableDataProvider(data, sortProperty, sortAscending), false, null, null, false, null );
+        this( id, columns, sortProperty, sortAscending, asSortableDataProvider(data, sortProperty, sortAscending), false, null, false, null, false, null );
     }
 
     /**
@@ -127,6 +155,7 @@ public class YuiDataTable extends Panel {
      * @param sortAscending True to sort in ascending order
      * @param data The table data
      * @param selectionComponent The component to hold row selection values
+     * @param multiSelect True to allow multiple selection with checkboxes
      * @param idProperty The property to use as the selection id
      * @param hideIdColumn True if the id column should be hidden
      * @param selectionSensitiveComponents Buttons that are sensitive to row selection
@@ -137,11 +166,12 @@ public class YuiDataTable extends Panel {
                          final boolean sortAscending,
                          final Collection<?> data,
                          final HiddenField selectionComponent,
+                         final boolean multiSelect,
                          final String idProperty,
                          final boolean hideIdColumn,
                          final Button[] selectionSensitiveComponents ) {
         this( id, columns, sortProperty, sortAscending, asSortableDataProvider(data, sortProperty, sortAscending),
-              false, selectionComponent, idProperty, hideIdColumn, selectionSensitiveComponents );
+              false, selectionComponent, multiSelect, idProperty, hideIdColumn, selectionSensitiveComponents );
     }
 
     /**
@@ -173,6 +203,7 @@ public class YuiDataTable extends Panel {
                           final ISortableDataProvider sortableDataProvider,
                           final boolean isServerSortAndPage,
                           final HiddenField selectionComponent,
+                          final boolean multiSelect,
                           final String idProperty,
                           final boolean hideIdColumn,
                           final Button[] selectionSensitiveComponents ) {
@@ -286,6 +317,8 @@ public class YuiDataTable extends Panel {
                 scriptBuilder.append( ", '" );
                 scriptBuilder.append( selectionId );
                 scriptBuilder.append( "', " );
+                scriptBuilder.append( multiSelect );
+                scriptBuilder.append( ", " );
                 scriptBuilder.append( "dataTableSelectionCallback" ).append( tableId );
                 scriptBuilder.append( ", '" );
                 scriptBuilder.append( idProperty );
@@ -314,7 +347,11 @@ public class YuiDataTable extends Panel {
                                 AjaxRequestTarget target = app.newAjaxRequestTarget(getComponent().getPage());
                                 RequestCycle.get().setRequestTarget(target);
                                 String id = requestCycle.getRequest().getParameter("id");
-                                onSelect( target, unescapeIdentitifer(id) );
+                                if ( multiSelect ) {
+                                    onSelect( target, Arrays.asList( unescapeIdentitifer(id).split(",") ) );                                    
+                                } else {
+                                    onSelect( target, Collections.singletonList(unescapeIdentitifer(id)) );
+                                }
                             } else {
 
                                 int startIndex = Integer.parseInt(requestCycle.getRequest().getParameter("startIndex"));
@@ -378,10 +415,23 @@ public class YuiDataTable extends Panel {
     /**
      * Override to perform an action on selection.
      *
+     * <p>If using multiple selections this may be called multiple times.</p>
+     *
      * @param value The selected value
      */
     @SuppressWarnings({"UnusedDeclaration"})
     protected void onSelect( final AjaxRequestTarget ajaxRequestTarget, final String value ) {        
+    }
+
+    /**
+     * Override to perform an action on selection.
+     *
+     * @param values The selected value
+     */
+    protected void onSelect( final AjaxRequestTarget ajaxRequestTarget, final Collection<String> values ) {
+        for ( String value : values ) {
+            onSelect( ajaxRequestTarget, value );                
+        }
     }
 
     //- PRIVATE
