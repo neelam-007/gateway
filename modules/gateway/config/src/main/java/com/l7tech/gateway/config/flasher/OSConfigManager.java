@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -23,10 +24,10 @@ import java.util.logging.Logger;
  */
 class OSConfigManager {
     private static final Logger logger = Logger.getLogger(OSConfigManager.class.getName());
-    private static final String SETTINGS_PATH = "./cfg/backup_manifest";
-    private static final String SYSTMP_PATH = "../backup/configfiles";
-    private static final String SUBDIR = File.separator + "os";
-    private final String tmpDirPath;
+    private static final String SETTINGS_PATH = "cfg/backup_manifest";
+    private static final String SYSTMP_PATH = "configfiles";
+    private static final String SUBDIR = "os";
+    private final File tmpDirPath;
     private File flasherHome;
 
     /**
@@ -67,9 +68,9 @@ class OSConfigManager {
                 while((tmp = grandmasterreader.readLine()) != null) {
                     if (!tmp.startsWith("#")) {
                         File osconfigfile = new File(tmp);
-                        if (osconfigfile.isFile()) {
-                            logger.info("saving " + osconfigfile.getPath());
-                            File target = new File(tmpDirPath + SUBDIR + File.separator + osconfigfile.getPath());
+                        if ( osconfigfile.isFile() ) {
+                            logger.info("Saving " + osconfigfile.getPath());
+                            File target = new File(new File(tmpDirPath, SUBDIR), osconfigfile.getPath());
                             FileUtils.ensurePath(target.getParentFile());
                             FileUtils.copyFile(osconfigfile, target);
                         } else {
@@ -87,11 +88,12 @@ class OSConfigManager {
 
     private void doLoadToRealTarget() throws IOException {
         logger.info("Listing files that potentially need restore");
-        ArrayList<String> listofosfiles = listDir(SYSTMP_PATH);
+        String path = new File(SYSTMP_PATH).getAbsolutePath();
+        List<String> listofosfiles = listDir(path);
         if (listofosfiles != null) for (String osfiletorestore : listofosfiles) {
             String realtarget;
-            if (osfiletorestore.startsWith(SYSTMP_PATH)) {
-                realtarget = osfiletorestore.substring(SYSTMP_PATH.length());
+            if ( osfiletorestore.startsWith(path) ) {
+                realtarget = osfiletorestore.substring(path.length());
             } else {
                 // if this happens, it's a bug
                 throw new RuntimeException("unexpected path for " + osfiletorestore);
@@ -117,8 +119,8 @@ class OSConfigManager {
     }
 
     private void doLoadToTmpTarget() throws IOException {
-        final String osfilesroot = tmpDirPath + SUBDIR;
-        ArrayList<String> listofosfiles = listDir(osfilesroot);
+        final String osfilesroot = new File(tmpDirPath, SUBDIR).getAbsolutePath();
+        List<String> listofosfiles = listDir(osfilesroot);
         boolean systemfileoverwritten = false;
         for (String osfiletorestore : listofosfiles) {
             String tmptarget;
@@ -145,20 +147,21 @@ class OSConfigManager {
         }
     }
 
-    private ArrayList<String> listDir(String path) {
-        File dir = new File (path);
-        if (dir.exists() && dir.isDirectory()) {
-            ArrayList<String> output = new ArrayList<String>();
-            String[] children = dir.list();
-            for (String child : children) {
-                File childfile = new File(path + File.separator + child);
-                if (childfile.isDirectory()) {
-                    ArrayList<String> subdirlist = listDir(path + File.separator + child);
-                    if (subdirlist != null) {
-                        output.addAll(subdirlist);
+    private List<String> listDir( final String path ) {
+        final File dir = new File(path);
+        if ( dir.exists() && dir.isDirectory() ) {
+            List<String> output = new ArrayList<String>();
+            File[] children = dir.listFiles();
+            if ( children != null ) {
+                for ( File childfile : children ) {
+                    if ( childfile.isDirectory() ) {
+                        List<String> subdirlist = listDir( childfile.getAbsolutePath() );
+                        if ( subdirlist != null ) {
+                            output.addAll( subdirlist );
+                        }
+                    } else {
+                        output.add(  childfile.getAbsolutePath() );
                     }
-                } else {
-                    output.add(path + File.separator + child);
                 }
             }
             return output;
@@ -166,6 +169,6 @@ class OSConfigManager {
     }
 
     private OSConfigManager(String path) {
-        tmpDirPath = path;
+        tmpDirPath = new File(path);
     }
 }

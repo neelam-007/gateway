@@ -4,6 +4,9 @@ import com.l7tech.util.BuildInfo;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.DefaultMasterPasswordFinder;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.gateway.config.manager.ClusterPassphraseManager;
 import com.l7tech.server.management.config.node.DatabaseConfig;
@@ -21,6 +24,7 @@ import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 
 /**
  * The utility that imports an SSG image
@@ -72,7 +76,7 @@ class Importer {
     private boolean newDatabaseCreated = false;
 
     // do the import
-    public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
+    public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, FlashUtilityLauncher.FatalException, IOException {
         String inputpathval = FlashUtilityLauncher.getAbsolutePath(arguments.get(IMAGE_PATH.name));
         if (inputpathval == null) {
             logger.info("Error, no image provided for import");
@@ -187,12 +191,15 @@ class Importer {
             }
 
             if (!configOnly) {
-                if (dbHost.equalsIgnoreCase(InetAddress.getLocalHost().getCanonicalHostName()) ||
-                        dbHost.equals(InetAddress.getLocalHost().getHostAddress())) {
+                NetworkInterface networkInterface = NetworkInterface.getByInetAddress( InetAddress.getByName(dbHost) );
+                if ( networkInterface != null ) {
                     // The database server is on local machine. So use "localhost" instead of
                     // FQDN in case user (such as "root") access is restricted to localhost.
-                    logger.fine("Recognizing \"" + dbHost + "\" as \"localhost\".");
+                    logger.fine("Recognizing \"" + dbHost + "\" as \"localhost\" for network interface \""+ networkInterface.getDisplayName() +"\".");
                     dbHost = "localhost";
+                } else if ( SyspropUtil.getBoolean("com.l7tech.config.backup.localDbOnly", true) ) {
+                    // We will not modifiy a non-local database
+                    throw new FlashUtilityLauncher.FatalException( "Database host \""+dbHost+"\" is a remote database. Database restore requires a local database." );
                 }
 
                 //boolean newDatabaseCreated = false;
@@ -225,7 +232,7 @@ class Importer {
                     logger.info("The database already exists on this system");
                     System.out.println("Existing target database detected");
                 } else {
-                    logger.info("database need to be created");
+                    logger.info("Database need to be created");
                     System.out.print("The target database does not exist. Creating it now ...");
                     DBActions dba = new DBActions();
                     DatabaseConfig config = new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, databaseUser, databasePass);
@@ -233,7 +240,7 @@ class Importer {
                     config.setDatabaseAdminPassword(rootDBPasswd);
                     DBActions.DBActionsResult res = dba.createDb(config, null, "../etc/sql/ssg.sql", false);
                     if (res.getStatus() != DBActions.StatusType.SUCCESS) {
-                        throw new IOException("cannot create database " + res.getErrorMessage());
+                        throw new IOException("Cannot create database " + res.getErrorMessage());
                     }
                     newDatabaseCreated = true;
                     System.out.println(" DONE");
@@ -245,7 +252,7 @@ class Importer {
                         String connectedNode = checkSSGConnectedToDatabase();
                         if (StringUtils.isNotEmpty(connectedNode)) {
                             logger.info("cannot import on this database because it is being used by a SSG");
-                            throw new IOException("A SecureSpan Gateway is currently running " +
+                            throw new FlashUtilityLauncher.FatalException("A SecureSpan Gateway is currently running " +
                                     "and connected to the database. Please shutdown " + connectedNode);
                         }
                     } catch (SQLException e) {
@@ -266,7 +273,7 @@ class Importer {
                         try {
                             mapping = MappingUtil.loadMapping(mappingPath);
                         } catch (SAXException e) {
-                            throw new IOException("Problem loading " + MAPPING_PATH.name + ". Invalid Format. " + e.getMessage());
+                            throw new FlashUtilityLauncher.FatalException("Problem loading " + MAPPING_PATH.name + ". Invalid Format. " + e.getMessage());
                         }
                         System.out.println(". DONE");
                     } else {
@@ -280,7 +287,7 @@ class Importer {
                     try {
                         saveExistingLicense();
                     } catch (SQLException e) {
-                        throw new IOException("cannot save existing license from database " + e.getMessage());
+                        throw new FlashUtilityLauncher.FatalException("Error saving existing license from database " + e.getMessage());
                     }
                 } else {
                     logger.info("not trying to save license because new database");
@@ -291,7 +298,7 @@ class Importer {
                 try {
                     loadDumpFromExplodedImage();
                 } catch (SQLException e) {
-                    throw new IOException(e);
+                    throw new IOException("Error loading database.", e);
                 }
 
                 // apply mapping if applicable
@@ -302,7 +309,7 @@ class Importer {
                         MappingUtil.applyMappingChangesToDB(config, mapping);
                     } catch (SQLException e) {
                         logger.log(Level.WARNING, "error mapping target", e);
-                        throw new IOException("error mapping staging values " + e.getMessage());
+                        throw new FlashUtilityLauncher.FatalException("error mapping staging values " + e.getMessage());
                     }
                 }
 
@@ -326,10 +333,10 @@ class Importer {
                 throw new IOException("Cannot update settings in \"" + nodePropsFile.getAbsolutePath() + "\".", e);
             }
             if (arguments.get(OS_OVERWRITE.name) != null) {
-                if (new File("/opt/SecureSpan/Appliance").exists()) {
-                    if (new File(tempDirectory + "os").exists()) {
+                if ( new File("/opt/SecureSpan/Appliance").isDirectory() ) {
+                    if ( new File(new File(tempDirectory),  "os").exists() ) {
                         // overwrite os level system files
-                        OSConfigManager.restoreOSConfigFilesToTmpTarget(tempDirectory);
+                        OSConfigManager.restoreOSConfigFilesToTmpTarget( tempDirectory );
                     } else {
                         logger.info("No OS files are available in the image.  This option will be ignored.");
                     }
@@ -434,7 +441,7 @@ class Importer {
         System.out.println(". DONE");
     }
 
-    private void loadDumpFromExplodedImage() throws IOException, SQLException, FlashUtilityLauncher.InvalidArgumentException {
+    private void loadDumpFromExplodedImage() throws IOException, SQLException, FlashUtilityLauncher.InvalidArgumentException, FlashUtilityLauncher.FatalException {
         // create temporary database copy to test the import
         System.out.print("Creating copy of target database for testing import ..");
         String testdbname = "TstDB_" + System.currentTimeMillis();
@@ -461,11 +468,11 @@ class Importer {
                 if (!newDatabaseCreated) {
                     ClusterPassphraseManager cpm = new ClusterPassphraseManager(targetConfig);
                     if (cpm.getDecryptedSharedKey(suppliedClusterPassphrase) == null) {
-                        throw new FlashUtilityLauncher.InvalidArgumentException("Incorrect cluster passphrase.");
+                        throw new FlashUtilityLauncher.FatalException("Incorrect cluster passphrase.");
                     }
                 }
             } finally {
-                c.close();
+                ResourceUtils.closeQuietly( c );
             }
         } finally {
             // delete the temporary database
@@ -477,10 +484,10 @@ class Importer {
                     stmt.executeUpdate("drop database " + testdbname + ";");
                     System.out.println(" DONE");
                 } finally {
-                    stmt.close();
+                    ResourceUtils.closeQuietly( stmt );
                 }
             } finally {
-                c.close();
+                ResourceUtils.closeQuietly( c );
             }
         }
 
@@ -490,7 +497,7 @@ class Importer {
         try {
             doLoadDump(c, msg);
         } finally {
-            c.close();
+            ResourceUtils.closeQuietly( c );
         }
     }
 
@@ -598,37 +605,35 @@ class Importer {
         return null;
     }
 
-    public void unzipToDir(String filename, String destinationpath) throws IOException {
-        byte[] buf = new byte[1024];
-        ZipInputStream zipinputstream;
-        ZipEntry zipentry;
-        zipinputstream = new ZipInputStream(new FileInputStream(filename));
-        zipentry = zipinputstream.getNextEntry();
-        while (zipentry != null) {
-            // for each entry to be extracted
-            String entryName = zipentry.getName();
-            if (zipentry.isDirectory()) {
-                (new File(destinationpath + File.separator + entryName)).mkdir();
-            } else {
-                System.out.println("\t- " + entryName);
-                FileOutputStream fileoutputstream;
-                File newFile = new File(entryName);
-                String directory = newFile.getParent();
-                if (directory == null) {
-                    if (newFile.isDirectory()) break;
+    public void unzipToDir( final String filename, final String destinationpath ) throws IOException {
+        ZipInputStream zipinputstream = null;
+        try {
+            zipinputstream = new ZipInputStream( new FileInputStream(filename) );
+            ZipEntry zipentry = zipinputstream.getNextEntry();
+            while ( zipentry != null ) {
+                // for each entry to be extracted
+                String entryName = zipentry.getName();
+                final File outputFile = new File(destinationpath + File.separator + entryName);
+
+                if ( zipentry.isDirectory() ) {
+                    outputFile.mkdirs();
+                } else {
+                    System.out.println("\t- " + entryName);
+                    FileUtils.ensurePath( outputFile.getParentFile() );
+                    FileOutputStream fileoutputstream = null;
+                    try {
+                        fileoutputstream = new FileOutputStream( outputFile );
+                        IOUtils.copyStream( zipinputstream, fileoutputstream );
+                    } finally {
+                        ResourceUtils.closeQuietly( fileoutputstream );
+                    }
+                    zipinputstream.closeEntry();
                 }
-                FileUtils.ensurePath((new File(destinationpath + File.separator + entryName)).getParentFile());
-                fileoutputstream = new FileOutputStream(destinationpath + File.separator + entryName);
-                int n;
-                while ((n = zipinputstream.read(buf, 0, 1024)) > -1) {
-                    fileoutputstream.write(buf, 0, n);
-                }
-                fileoutputstream.close();
-                zipinputstream.closeEntry();
+                zipentry = zipinputstream.getNextEntry();
             }
-            zipentry = zipinputstream.getNextEntry();
+        } finally {
+            ResourceUtils.closeQuietly( zipinputstream );
         }
-        zipinputstream.close();
     }
 
 }

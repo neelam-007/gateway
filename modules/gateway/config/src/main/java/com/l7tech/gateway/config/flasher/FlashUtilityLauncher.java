@@ -63,10 +63,17 @@ public class FlashUtilityLauncher {
             System.out.println(e.getMessage());
             logger.log(Level.INFO, "User error. Bad arguments.", e);
             printusage();
+            System.exit(1);
         } catch (IOException e) {
             System.out.println("Error, consult log file.");
             logger.log(Level.WARNING, "Could not perform operation", e);
             System.out.println(e.getMessage());
+            System.exit(1);
+        } catch (FatalException e) {
+            String message = "Import failed due to '" + e.getMessage() + "'.";
+            System.out.println(message);
+            logger.log(Level.WARNING, message);
+            System.exit(1);
         }
     }
 
@@ -155,6 +162,10 @@ public class FlashUtilityLauncher {
 
     public static class InvalidArgumentException extends Exception {
         public InvalidArgumentException(String reason) {super(reason);}
+    }
+
+    public static class FatalException extends Exception {
+        public FatalException(String reason) {super(reason);}
     }
 
     public static boolean isOptionPath(String optionname) throws InvalidArgumentException {
