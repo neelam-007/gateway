@@ -1007,6 +1007,8 @@ INSERT INTO rbac_permission VALUES (-253,0,-250,'CREATE',NULL,'ID_PROVIDER_CONFI
 INSERT INTO rbac_predicate VALUES (-254,0,-253);
 INSERT INTO rbac_predicate_attribute VALUES (-254,'typeVal','3');
 INSERT INTO rbac_permission VALUES (-255,0,-250,'READ',NULL,'TRUSTED_CERT');
+INSERT INTO rbac_permission VALUES (-256,0,-250,'READ',NULL,'SSG_KEYSTORE');
+INSERT INTO rbac_permission VALUES (-257,0,-250,'READ',NULL,'SSG_KEY_ENTRY');
 
 INSERT INTO rbac_role VALUES (-300,0,'Search Users and Groups', null,null,null, 'Users assigned to the {0} role have permission to search and view users and groups in all identity providers.');
 INSERT INTO rbac_permission VALUES (-301,0,-300,'READ',NULL,'USER');

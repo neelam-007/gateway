@@ -302,6 +302,12 @@ INSERT INTO rbac_permission VALUES (-660,1,-650,'READ',NULL,'SSG_KEYSTORE');
 INSERT INTO rbac_permission VALUES (-661,1,-650,'READ',NULL,'SSG_KEY_ENTRY');
 
 --
+-- Add new RBAC permissions for Publish External Identity Providers
+--
+INSERT INTO rbac_permission VALUES (-256,0,-250,'READ',NULL,'SSG_KEYSTORE');
+INSERT INTO rbac_permission VALUES (-257,0,-250,'READ',NULL,'SSG_KEY_ENTRY');
+
+--
 -- Create tables for RBAC folder predicates
 --
 CREATE TABLE rbac_predicate_folder (

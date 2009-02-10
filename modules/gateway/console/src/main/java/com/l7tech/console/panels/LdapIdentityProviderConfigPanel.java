@@ -307,6 +307,61 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         return adminEnabledCheckbox;
     }
 
+    private JCheckBox getClientAuthenticationCheckbox() {
+        if (clientAuthenticationCheckbox != null) return clientAuthenticationCheckbox;
+
+        clientAuthenticationCheckbox = new JCheckBox(resources.getString("useClientAuthenticationCheckbox.text"));
+        clientAuthenticationCheckbox.setToolTipText(resources.getString("useClientAuthenticationCheckbox.tooltip"));
+
+        clientAuthenticationCheckbox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                keyStoreLabel.setEnabled(getClientAuthenticationCheckbox().isSelected());
+                getPrivateKeysComboBox().setEnabled(getClientAuthenticationCheckbox().isSelected());
+            }
+        });
+
+        keyStoreLabel.setEnabled(clientAuthenticationCheckbox.isSelected());
+        getPrivateKeysComboBox().setEnabled(clientAuthenticationCheckbox.isSelected());
+
+        return clientAuthenticationCheckbox;
+    }
+
+    private JPanel getKeystorePanel() {
+        if (keyStorePanel != null) return keyStorePanel;
+
+        keyStorePanel = new JPanel(new GridBagLayout());
+        getPrivateKeysComboBox().selectDefaultSsl();
+
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = 1;
+        constraints.weightx = 0.0;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(0,0,0,0);
+        keyStorePanel.add(keyStoreLabel, constraints);
+
+        constraints = new GridBagConstraints();
+        constraints.gridx = 2;
+        constraints.gridy = 1;
+        constraints.weightx = 0.0;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.LAST_LINE_END;
+        constraints.insets = new Insets(0,0,0,0);
+        keyStorePanel.add(privateKeyComboBox, constraints);
+
+        return keyStorePanel;
+    }
+
+    private PrivateKeysComboBox getPrivateKeysComboBox() {
+        if (privateKeyComboBox != null) return privateKeyComboBox;
+
+        privateKeyComboBox = new PrivateKeysComboBox(false);
+        return privateKeyComboBox;
+    }
+
     private JCheckBox getUserCertsEnabledCheckbox() {
         if (userCertsEnabled == null) {
             userCertsEnabled = new JCheckBox("Enable user certificates in this LDAP");
@@ -448,6 +503,27 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.anchor = GridBagConstraints.SOUTHWEST;
         constraints.insets = new Insets(0, 7, 0, 0);
         configPanel.add(getAddEditRemoveButtons(), constraints);
+
+        //client authentication checkbox
+        constraints = new GridBagConstraints();
+        constraints.gridx = 2;
+        constraints.gridy = rowIndex++;
+        constraints.weightx = 0.0;
+        constraints.gridwidth = 2;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(TOP_SPACING, 7, 0, 0);
+        configPanel.add(getClientAuthenticationCheckbox(), constraints);
+
+        constraints = new GridBagConstraints();
+        constraints.gridx = 2;
+        constraints.gridy = rowIndex++;
+        constraints.weightx = 0.0;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(0, 25, 0, 0);
+        configPanel.add(getKeystorePanel(), constraints);
 
         // search base label
         JLabel ldapSearchBaseLabel = new JLabel();
@@ -697,6 +773,20 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                     getLdapSearchBaseTextField().setText(iProviderConfig.getSearchBase());
                     getAdminEnabledCheckbox().setSelected(iProviderConfig.isAdminEnabled());
                     getUserCertsEnabledCheckbox().setSelected(iProviderConfig.isUserCertsEnabled());
+                    getClientAuthenticationCheckbox().setSelected(iProviderConfig.isClientAuthEnabled());                    
+                    if (getClientAuthenticationCheckbox().isSelected()) {
+                        getPrivateKeysComboBox().select(iProviderConfig.getKeystoreId(), iProviderConfig.getKeystoreAlias());
+                        if (getPrivateKeysComboBox().getSelectedItem() == null) {
+                            //the selected key doesnt exists
+                            JOptionPane.showMessageDialog(this, 
+                                    "Keystore alias not found, will use default SSL key.",
+                                    "Keystore alias not found",
+                                    JOptionPane.WARNING_MESSAGE);
+                            getPrivateKeysComboBox().selectDefaultSsl();
+                        }
+                    }
+                    keyStoreLabel.setEnabled(getClientAuthenticationCheckbox().isSelected());
+                    getPrivateKeysComboBox().setEnabled(getClientAuthenticationCheckbox().isSelected());
 
                     // populate host list based on what is in the iProviderConfig
                     ((DefaultComboBoxModel)getLdapHostList().getModel()).removeAllElements();
@@ -761,6 +851,11 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 ((LdapIdentityProviderConfig) settings).setBindPasswd(String.valueOf(getLdapBindPasswordField().getPassword()));
                 ((LdapIdentityProviderConfig) settings).setAdminEnabled(getAdminEnabledCheckbox().isSelected());
                 ((LdapIdentityProviderConfig) settings).setUserCertsEnabled(getUserCertsEnabledCheckbox().isSelected());
+                ((LdapIdentityProviderConfig) settings).setClientAuthEnabled(getClientAuthenticationCheckbox().isSelected());
+                if (getClientAuthenticationCheckbox().isSelected()) {
+                    ((LdapIdentityProviderConfig) settings).setKeystoreId(getPrivateKeysComboBox().getSelectedKeystoreId());
+                    ((LdapIdentityProviderConfig) settings).setKeystoreAlias(getPrivateKeysComboBox().getSelectedKeyAlias());
+                }
             }
         }
     }
@@ -845,4 +940,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private JButton downbutton;
     private JCheckBox adminEnabledCheckbox;
     private JCheckBox userCertsEnabled;
+    private JCheckBox clientAuthenticationCheckbox;
+    private JPanel keyStorePanel;
+    private JLabel keyStoreLabel = new JLabel("Keystore: ");
+    private PrivateKeysComboBox privateKeyComboBox;
 }

@@ -260,6 +260,46 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     }
 
     /**
+     * @return  TRUE if using client authentication or if no client auth was found (backward compatiblity) otherwise FALSE.
+     */
+    @Transient
+    public boolean isClientAuthEnabled() {
+        Boolean b = (Boolean) getProperty(CLIENT_AUTH_ENABLED);
+        if (b == null) return true; //backward compatible to use client auth because before enhancement it will always use client auth
+        return b != null && b;
+    }
+
+    public void setClientAuthEnabled(boolean clientAuthEnabled) {
+        setProperty(CLIENT_AUTH_ENABLED, clientAuthEnabled);
+    }
+
+    /**
+     * @return  Keystore Id used for client auth or -1 (backward compatibility).
+     */
+    @Transient
+    public Long getKeystoreId() {
+        Long keystoreId = (Long) getProperty(KEYSTORE_ID);
+        if (keystoreId == null) return -1L; //backward compatible to use default key
+        return keystoreId;
+    }
+
+    public void setKeystoreId(long keystoreId) {
+        setProperty(KEYSTORE_ID, keystoreId);
+    }
+
+    /**
+     * @return  Keystore alias used for client auth or NULL (backward compatibility).
+     */
+    @Transient
+    public String getKeystoreAlias() {
+        return (String) getProperty(KEYSTORE_ALIAS);
+    }
+
+    public void setKeystoreAlias(String keyAlias) {
+        setProperty(KEYSTORE_ALIAS, keyAlias);
+    }
+
+    /**
      * set by the template manager. dont override this value.
      */
     @Transient
@@ -283,4 +323,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     private static final String BIND_DN = "ldapBindDN";
     private static final String BIND_PASS = "ldapBindPass";
     private static final String BASE_TEMPLATE = "originalTemplateName";
+    private static final String CLIENT_AUTH_ENABLED = "clientAuth";
+    private static final String KEYSTORE_ID = "keystoreId";
+    private static final String KEYSTORE_ALIAS = "keystoreAlias";
 }

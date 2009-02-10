@@ -6,6 +6,8 @@
 package com.l7tech.server.upgrade;
 
 import static com.l7tech.objectmodel.EntityType.FOLDER;
+import static com.l7tech.objectmodel.EntityType.SSG_KEY_ENTRY;
+import static com.l7tech.objectmodel.EntityType.SSG_KEYSTORE;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.OperationType;
@@ -18,6 +20,8 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.folder.FolderManager;
+import com.l7tech.server.identity.IdProvConfManagerServer;
+import com.l7tech.identity.IdentityProviderConfig;
 import org.springframework.context.ApplicationContext;
 
 import java.util.Collection;
@@ -50,6 +54,8 @@ public class Upgrade465To50UpdateRoles implements UpgradeTask {
 
         FolderManager folderManager = (FolderManager)getBean("folderManager",FolderManager.class);
         RoleManager roleManager = (RoleManager)getBean("roleManager",RoleManager.class);
+        IdProvConfManagerServer identityManager =
+                (IdProvConfManagerServer) getBean("identityProviderConfigManager", IdProvConfManagerServer.class);
 
         try {
             addRolesForFolders(folderManager, roleManager);
@@ -66,6 +72,33 @@ public class Upgrade465To50UpdateRoles implements UpgradeTask {
             throw new NonfatalUpgradeException(e); // rollback, but continue boot, and try again another day
         }
 
+        try {
+            upgradeManageIdentityProviderRoles(roleManager, identityManager);
+        } catch (FindException fe) {
+            throw new NonfatalUpgradeException(fe); // rollback, but continue boot, and try again another day
+        } catch (UpdateException se) {
+            throw new NonfatalUpgradeException(se); // rollback, but continue boot, and try again another day
+        }
+
+    }
+
+    /**
+     * Upgrades all 'Manage X Identity Provider' roles to have permission access to all key stores.
+     * @param roleManager
+     */
+    private void upgradeManageIdentityProviderRoles(final RoleManager roleManager, final IdProvConfManagerServer identityManager)
+            throws FindException, UpdateException {
+        //find all identity provider
+        Collection<IdentityProviderConfig> providers = identityManager.findAll();
+        for (IdentityProviderConfig provider : providers) {
+            //find all roles that have entity_type = ID_PROVIDER_CONFIG
+            Collection<Role> roles = roleManager.findEntitySpecificRoles(EntityType.ID_PROVIDER_CONFIG, provider.getOid());
+            for (Role role : roles) {
+                role.addEntityPermission(OperationType.READ, SSG_KEY_ENTRY, null);
+                role.addEntityPermission(OperationType.READ, SSG_KEYSTORE, null);
+                roleManager.update(role);
+            }
+        }
     }
 
     private void addRolesForFolders( final FolderManager folderManager, final RoleManager roleManager )

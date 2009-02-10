@@ -161,6 +161,11 @@ public class IdProvConfManagerServer
         newRole.addAttributePermission(OperationType.READ, GROUP, "providerId", config.getId());
         newRole.addAttributePermission(OperationType.UPDATE, GROUP, "providerId", config.getId());
         newRole.addAttributePermission(OperationType.DELETE, GROUP, "providerId", config.getId());
+
+        // permission to all keystore
+        newRole.addEntityPermission(OperationType.READ, SSG_KEY_ENTRY, null);
+        newRole.addEntityPermission(OperationType.READ, SSG_KEYSTORE, null);
+
         newRole.setEntityType(ID_PROVIDER_CONFIG);
         newRole.setEntityOid(config.getOid());
         newRole.setDescription("Users assigned to the {0} role have the ability to read, update and delete the {1} provider, and create, search, update and delete its users and groups.");
