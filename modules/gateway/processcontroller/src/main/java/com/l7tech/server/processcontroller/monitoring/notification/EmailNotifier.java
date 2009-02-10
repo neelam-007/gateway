@@ -6,6 +6,7 @@ package com.l7tech.server.processcontroller.monitoring.notification;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.server.management.config.monitoring.AuthInfo;
 import com.l7tech.server.management.config.monitoring.EmailNotificationRule;
 import com.l7tech.server.management.config.monitoring.Trigger;
@@ -181,13 +182,13 @@ class EmailNotifier extends Notifier<EmailNotificationRule> {
     }
 
     @Override
-    public void doNotification(Long timestamp, Object value, Trigger trigger) throws IOException {
+    public NotificationAttempt.StatusType doNotification(Long timestamp, Object value, Trigger trigger) throws IOException {
         try {
             final Session session = getSession();
             final String body = ExpandVariables.process(rule.getText(), getMonitoringVariables(trigger), auditor);
 
             sendMessage( session, body );
-
+            return NotificationAttempt.StatusType.SENT;
         } catch (AuthenticationFailedException e) {
             throw new IOException(e);
         } catch (MessagingException e) {

@@ -1,32 +1,27 @@
+/*
+ * Copyright (C) 2009 Layer 7 Technologies Inc.
+ */
 package com.l7tech.server.ems.monitoring;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.HexUtils;
 import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ems.enterprise.JSONConstants;
-
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Column;
-import javax.persistence.Lob;
-
-import org.mortbay.util.ajax.JSON;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.ResourceUtils;
 import org.hibernate.annotations.Proxy;
+import org.mortbay.util.ajax.JSON;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.UUID;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Lob;
+import javax.persistence.Table;
+import javax.xml.bind.annotation.XmlRootElement;
 import java.io.ByteArrayInputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
-/**
- * @Copyright: Layer 7 Tech. Inc.
- * @Author: ghuang
- * @Date: Jan 28, 2009
- * @since Enterprise Manager 1.0
- */
 @XmlRootElement
 @Entity
 @Proxy(lazy=false)

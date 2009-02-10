@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2008 Layer 7 Technologies Inc.
+ * Copyright (C) 2008-2009 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.processcontroller;
 
@@ -7,6 +7,7 @@ import com.l7tech.server.management.NodeStateType;
 import static com.l7tech.server.management.NodeStateType.*;
 import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.api.node.NodeApi;
+import com.l7tech.server.management.api.monitoring.NodeStatus;
 import com.l7tech.server.management.config.Feature;
 import com.l7tech.server.management.config.HasCommandLineArguments;
 import com.l7tech.server.management.config.host.HostConfig;
@@ -95,37 +96,13 @@ public class ProcessController {
     /**
      * @return a Pair containing the node's state, and the time at which the state was last observed. Never null.
      */
-    public synchronized NodeStateSample getNodeState(String nodeName) {
+    public synchronized NodeStatus getNodeStatus(String nodeName) {
         final NodeState state = nodeStates.get(nodeName);
         if (state != null) 
-            return new NodeStateSample(state.type, new Date(state.startTime), new Date(state.sinceWhen));
+            return new NodeStatus(state.type, new Date(state.startTime), new Date(state.sinceWhen));
 
         final Date now = new Date();
-        return new NodeStateSample(NodeStateType.UNKNOWN, now, now);
-    }
-
-    public static class NodeStateSample {
-        private final NodeStateType type;
-        private final Date startTime;
-        private final Date lastObservedTime;
-
-        private NodeStateSample(NodeStateType type, Date startTime, Date lastObservedTime) {
-            this.type = type;
-            this.startTime = startTime;
-            this.lastObservedTime = lastObservedTime;
-        }
-
-        public NodeStateType getType() {
-            return type;
-        }
-
-        public Date getStartTime() {
-            return startTime;
-        }
-
-        public Date getLastObservedTime() {
-            return lastObservedTime;
-        }
+        return new NodeStatus(NodeStateType.UNKNOWN, now, now);
     }
 
     /**

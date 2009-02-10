@@ -3,14 +3,15 @@
  */
 package com.l7tech.server.processcontroller.monitoring.notification;
 
+import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.server.management.config.monitoring.NotificationRule;
-import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.server.management.config.monitoring.PropertyTrigger;
+import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.util.Closeable;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 public abstract class Notifier<RT extends NotificationRule> implements Closeable {
     protected final RT rule;
@@ -27,10 +28,19 @@ public abstract class Notifier<RT extends NotificationRule> implements Closeable
      * @param trigger the trigger that fired
      * @throws IOException if the notification could be done
      */
-    public abstract void doNotification(Long timestamp, Object value, Trigger trigger) throws IOException;
+    public abstract NotificationAttempt.StatusType doNotification(Long timestamp, Object value, Trigger trigger) throws IOException;
 
     @Override
     public void close() { }
+
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            super.finalize();
+        } finally {
+            close();
+        }
+    }
 
     /**
      * Return a new HashMap populated with interpolatable variables describing the specified Trigger.

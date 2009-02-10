@@ -6,11 +6,14 @@ package com.l7tech.server.processcontroller.monitoring;
 import com.l7tech.server.management.api.monitoring.MonitorableProperty;
 import com.l7tech.server.processcontroller.monitoring.sampling.PropertySampler;
 import com.l7tech.server.processcontroller.monitoring.sampling.PropertySamplingException;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Runtime state for a MonitorableProperty.
@@ -18,6 +21,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * @param <V> the type of the sampled property values
  */
 public class PropertyState<V extends Serializable & Comparable> extends MonitorState<MonitorableProperty> {
+    private static final Logger logger = Logger.getLogger(PropertyState.class.getName());
+
     private final NavigableMap<Long, Pair<V, PropertySamplingException>> lastSamples;
     private final TimerTask task;
     private final long samplingInterval;
@@ -39,8 +44,11 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
             public void run() {
                 final long now = System.currentTimeMillis();
                 try {
-                    addSample(sampler.sample(), now);
+                    final V value = sampler.sample();
+                    logger.fine("Got property value: " + value); 
+                    addSample(value, now);
                 } catch (PropertySamplingException e) {
+                    logger.log(Level.WARNING, "Couldn't get property value: " + ExceptionUtils.getMessage(e), e);
                     addFailure(e, now);
                 }
             }

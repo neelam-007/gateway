@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
+import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * A configuration for a type of notification that can be sent by the monitoring system.
@@ -17,7 +18,10 @@ import javax.persistence.ManyToOne;
 @Entity
 public abstract class NotificationRule extends NamedEntityImp {
     protected MonitoringConfiguration monitoringConfiguration;
-    private final Type type;
+    private Type type;
+
+    @Deprecated
+    protected NotificationRule() { }
 
     protected NotificationRule(MonitoringConfiguration configuration, Type type) {
         this.monitoringConfiguration = configuration;
@@ -28,12 +32,13 @@ public abstract class NotificationRule extends NamedEntityImp {
         this.type = type;
     }
 
+    @XmlTransient
     @ManyToOne(cascade=CascadeType.ALL)
-    public MonitoringConfiguration getMonitoringScheme() {
+    public MonitoringConfiguration getMonitoringConfiguration() {
         return monitoringConfiguration;
     }
 
-    public void setMonitoringScheme(MonitoringConfiguration monitoringConfiguration) {
+    public void setMonitoringConfiguration(MonitoringConfiguration monitoringConfiguration) {
         this.monitoringConfiguration = monitoringConfiguration;
     }
 

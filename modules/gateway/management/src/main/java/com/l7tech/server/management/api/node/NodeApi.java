@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2008 Layer 7 Technologies Inc.
+ * Copyright (C) 2008-2009 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.management.api.node;
 
@@ -76,7 +76,7 @@ public interface NodeApi {
      * @throws FindException if the property cannot be retrieved for some reason
      */
     @WebResult(name="propertyValue")
-    Object getProperty(@WebParam(name="propertyId")String propertyId) throws UnsupportedPropertyException, FindException;
+    String getProperty(@WebParam(name="propertyId")String propertyId) throws UnsupportedPropertyException, FindException;
 
     public class UnsupportedEventException extends Exception {
         private final String eventId;

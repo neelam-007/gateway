@@ -11,6 +11,7 @@ import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.management.config.monitoring.AuthInfo;
 import com.l7tech.server.management.config.monitoring.HttpNotificationRule;
 import com.l7tech.server.management.config.monitoring.Trigger;
+import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
@@ -50,7 +51,7 @@ class HttpNotifier extends Notifier<HttpNotificationRule> {
         }
     }
 
-    public void doNotification(Long timestamp, Object value, Trigger trigger) throws IOException {
+    public NotificationAttempt.StatusType doNotification(Long timestamp, Object value, Trigger trigger) throws IOException {
         String bodyText = ExpandVariables.process(rule.getRequestBody(), getMonitoringVariables(trigger), auditor);
 
         GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(rule.getUrl()));
@@ -72,7 +73,8 @@ class HttpNotifier extends Notifier<HttpNotificationRule> {
             resp = req.getResponse();
             if (resp.getStatus() != HttpConstants.STATUS_OK)
                 throw new IOException("HTTP server responded with status " + resp.getStatus());
-
+            
+            return NotificationAttempt.StatusType.ACKNOWLEDGED;
         } finally {
             ResourceUtils.closeQuietly(req);
             ResourceUtils.closeQuietly(resp);

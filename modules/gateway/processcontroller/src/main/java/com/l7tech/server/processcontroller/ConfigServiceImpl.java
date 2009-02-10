@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2008 Layer 7 Technologies Inc.
+ * Copyright (C) 2008-2009 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.processcontroller;
 
@@ -9,15 +9,13 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.management.config.host.HostConfig;
 import com.l7tech.server.management.config.host.IpAddressConfig;
 import com.l7tech.server.management.config.host.PCHostConfig;
+import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.PCNodeConfig;
-import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
-import com.l7tech.util.DefaultMasterPasswordFinder;
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.OSDetector;
-import com.l7tech.util.Pair;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.server.processcontroller.monitoring.MonitoringKernel;
+import com.l7tech.util.*;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -55,6 +53,12 @@ public class ConfigServiceImpl implements ConfigService {
     private final File configDirectory;
     private final File javaBinary;
     private final Map<String, NodeInfo> nodeInfos;
+
+    private volatile boolean responsibleForClusterMonitoring;
+    private volatile MonitoringConfiguration currentMonitoringConfiguration;
+
+    @Resource
+    private MonitoringKernel monitoringKernel;
 
     public ConfigServiceImpl() throws IOException, GeneralSecurityException {
         // TODO maybe just pass the host.properties path instead, and put the nodeBaseDirectory in there
@@ -132,6 +136,17 @@ public class ConfigServiceImpl implements ConfigService {
 
         this.nodeInfos = new ConcurrentHashMap<String, NodeInfo>(infos);
         this.host = hostConfig;
+
+        Pair<MonitoringConfiguration, Boolean> config = loadMonitoringConfigFromFile();
+        if (config != null) {
+            currentMonitoringConfiguration = config.left;
+            responsibleForClusterMonitoring = config.right;
+            monitoringKernel.setConfiguration(currentMonitoringConfiguration, responsibleForClusterMonitoring);
+        }
+    }
+
+    private Pair<MonitoringConfiguration, Boolean> loadMonitoringConfigFromFile() {
+        return null; // TODO
     }
 
     static File getHomeDirectory() {
@@ -400,5 +415,14 @@ public class ConfigServiceImpl implements ConfigService {
     @Override
     public boolean isResponsibleForClusterMonitoring() {
         return false;
+    }
+
+    @Override
+    public void pushMonitoringConfiguration(MonitoringConfiguration config, boolean responsibleForClusterMonitoring) {
+        this.responsibleForClusterMonitoring = responsibleForClusterMonitoring;
+        this.currentMonitoringConfiguration = config;
+
+        monitoringKernel.setConfiguration(config, responsibleForClusterMonitoring);
+        // TODO write it to a file
     }
 }

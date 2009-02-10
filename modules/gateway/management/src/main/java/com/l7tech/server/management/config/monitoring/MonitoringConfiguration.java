@@ -7,6 +7,10 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
+import javax.xml.bind.annotation.XmlAnyElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlSeeAlso;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,11 +23,15 @@ import java.util.Set;
  * @author alex
  */
 @Entity
+@XmlRootElement
+@XmlSeeAlso({PropertyTrigger.class, EventTrigger.class, NotificationRule.class})
 public final class MonitoringConfiguration extends NamedEntityImp {
     private Set<Trigger> triggers = new HashSet<Trigger>();
     private Set<NotificationRule> notificationRules = new HashSet<NotificationRule>();
 
     @OneToMany(mappedBy="monitoringConfiguration")
+    @XmlElementWrapper(name="triggers")
+    @XmlAnyElement(lax=true)
     public Set<Trigger> getTriggers() {
         return triggers;
     }

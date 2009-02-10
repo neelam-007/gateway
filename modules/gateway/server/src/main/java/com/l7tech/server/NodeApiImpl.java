@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2008 Layer 7 Technologies Inc.
+ * Copyright (C) 2008-2009 Layer 7 Technologies Inc.
  */
 package com.l7tech.server;
 
@@ -9,10 +9,10 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.boot.ShutdownWatcher;
+import com.l7tech.server.management.NodeStateType;
 import com.l7tech.server.management.api.monitoring.NodeStatus;
 import com.l7tech.server.management.api.node.EventSubscription;
 import com.l7tech.server.management.api.node.NodeApi;
-import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.transport.http.HttpTransportModule;
@@ -24,6 +24,7 @@ import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.handler.MessageContext;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -45,6 +46,7 @@ public class NodeApiImpl implements NodeApi {
     @Resource
     private ShutdownWatcher shutdowner; // Injected by Spring
 
+    @SuppressWarnings({"SpringJavaAutowiringInspection"})
     @Resource
     private WebServiceContext wscontext; // Injected by CXF to get access to request metadata (e.g. HttpServletRequest)
 
@@ -94,18 +96,7 @@ public class NodeApiImpl implements NodeApi {
     public NodeStatus getNodeStatus() {
         checkRequest();
         logger.fine("getNodeStatus");
-        return new NodeStatus();
-    }
-
-    public void pushMonitoringConfiguration(MonitoringConfiguration configuration) throws UpdateException {
-        checkRequest();
-        logger.fine("pushMonitoringConfiguration");
-    }
-
-    public MonitoringConfiguration getMonitoringScheme() throws FindException {
-        checkRequest();
-        logger.fine("getMonitoringScheme");
-        return null;
+        return new NodeStatus(NodeStateType.RUNNING, new Date(), new Date()); // TODO
     }
 
     public Set<EventSubscription> subscribeEvents(Set<String> eventIds) throws UnsupportedEventException, SaveException {
@@ -125,7 +116,7 @@ public class NodeApiImpl implements NodeApi {
         logger.fine("releaseEventSubscriptions");
     }
 
-    public Object getProperty(String propertyId) throws UnsupportedPropertyException, FindException {
+    public String getProperty(String propertyId) throws UnsupportedPropertyException, FindException {
         checkRequest();
         logger.fine("getProperty");
         return null;

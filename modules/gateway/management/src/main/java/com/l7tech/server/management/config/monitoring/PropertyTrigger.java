@@ -7,7 +7,7 @@ import com.l7tech.server.management.api.monitoring.MonitorableProperty;
 import com.l7tech.util.ComparisonOperator;
 
 import javax.persistence.Entity;
-import java.io.Serializable;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * A trigger that directs the monitoring system to periodically sample some property of the subject component, and fire
@@ -16,20 +16,23 @@ import java.io.Serializable;
  * @author alex
  */
 @Entity
-public class PropertyTrigger<T extends Serializable & Comparable> extends Trigger<MonitorableProperty> {
+@XmlRootElement(name="propertyTrigger", namespace="http://ns.l7tech.com/secureSpan/1.0/monitoring")
+public class PropertyTrigger extends Trigger<MonitorableProperty> {
     private String propertyName;
-    private long maxSamplingInterval;
+    private Long maxSamplingInterval;
     private ComparisonOperator operator;
-    private T triggerValue;
-    private Class<? extends Serializable> propertyValueClass;
+    private String triggerValue;
 
-    public PropertyTrigger(MonitorableProperty property, String componentId, ComparisonOperator operator, T triggerValue, long maxSamplingInterval) {
+    @Deprecated
+    public PropertyTrigger() {
+    }
+
+    public PropertyTrigger(MonitorableProperty property, String componentId, ComparisonOperator operator, String triggerValue, long maxSamplingInterval) {
         super(property, componentId);
         this.propertyName = property.getName();
         this.maxSamplingInterval = maxSamplingInterval;
         this.operator = operator;
         this.triggerValue = triggerValue;
-        this.propertyValueClass = triggerValue.getClass();
     }
 
     /** The name of the property that's being monitored */
@@ -42,11 +45,11 @@ public class PropertyTrigger<T extends Serializable & Comparable> extends Trigge
     }
 
     /** The interval, in milliseconds, between successive samples */
-    public long getMaxSamplingInterval() {
+    public Long getMaxSamplingInterval() {
         return maxSamplingInterval;
     }
 
-    public void setMaxSamplingInterval(long maxSamplingInterval) {
+    public void setMaxSamplingInterval(Long maxSamplingInterval) {
         this.maxSamplingInterval = maxSamplingInterval;
     }
 
@@ -60,16 +63,12 @@ public class PropertyTrigger<T extends Serializable & Comparable> extends Trigge
     }
 
     /** The value to compare the property value with to determine whether the trigger should fire */
-    public T getTriggerValue() {
+    public String getTriggerValue() {
         return triggerValue;
     }
 
-    public void setTriggerValue(T triggerValue) {
+    public void setTriggerValue(String triggerValue) {
         this.triggerValue = triggerValue;
-    }
-
-    public Class<? extends Serializable> getValueClass() {
-        return propertyValueClass;
     }
 
     /**

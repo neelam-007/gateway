@@ -20,7 +20,7 @@ public class HttpNotificationRule extends NotificationRule {
     private String contentType;
     private List<Pair<String, String>> extraHeaders = new ArrayList<Pair<String, String>>();
 
-    protected HttpNotificationRule(MonitoringConfiguration configuration) {
+    public HttpNotificationRule(MonitoringConfiguration configuration) {
         super(configuration, Type.HTTP);
     }
 

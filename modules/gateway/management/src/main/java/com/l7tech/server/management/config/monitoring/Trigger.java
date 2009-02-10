@@ -10,6 +10,7 @@ import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.xml.bind.annotation.XmlTransient;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,10 +30,14 @@ public abstract class Trigger<MT extends Monitorable> extends NamedEntityImp {
     /** The unique ID of the subject component (usually a URI or GUID) */
     private String componentId;
 
-    private final MT monitorable;
+    private MT monitorable;
 
     /** The notification rules that should be invoked when this trigger fires */
     private List<NotificationRule> notificationRules = new ArrayList<NotificationRule>();
+
+    @Deprecated
+    public Trigger() {
+    }
 
     protected Trigger(MT monitorable, String componentId) {
         this.componentId = componentId;
@@ -44,12 +49,13 @@ public abstract class Trigger<MT extends Monitorable> extends NamedEntityImp {
         return monitorable;
     }
 
+    @XmlTransient
     @ManyToOne(cascade=CascadeType.ALL)
-    public MonitoringConfiguration getMonitoringScheme() {
+    public MonitoringConfiguration getMonitoringConfig() {
         return monitoringConfiguration;
     }
 
-    public void setMonitoringScheme(MonitoringConfiguration monitoringConfiguration) {
+    public void setMonitoringConfig(MonitoringConfiguration monitoringConfiguration) {
         this.monitoringConfiguration = monitoringConfiguration;
     }
 
@@ -115,7 +121,7 @@ public abstract class Trigger<MT extends Monitorable> extends NamedEntityImp {
     public boolean isIncompatibleWith(Trigger that) {
         return that.getClass() != this.getClass() ||
                that.getOid() != this.getOid() ||
-               that.getMonitoringScheme().getOid() != this.getMonitoringScheme().getOid() ||
+               that.getMonitoringConfig().getOid() != this.getMonitoringConfig().getOid() ||
                that.getComponentType() != this.getComponentType() ||
                !that.getComponentId().equals(this.getComponentId());
     }

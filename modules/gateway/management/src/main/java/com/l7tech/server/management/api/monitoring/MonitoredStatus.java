@@ -46,10 +46,17 @@ public abstract class MonitoredStatus<MT extends Monitorable> {
         /** The monitorable is within tolerance */
         OK,
 
+        /** The monitorable has no known state yet */
+        UNKNOWN,
+
         /** The monitorable is out of the tolerance of one or more triggers, but no notification has been sent yet */
         WARNING,
 
         /** The monitorable is out of the tolerance of one or more triggers, and at least one notification has been sent. */
-        NOTIFIED
+        NOTIFIED;
+
+        public StatusType gt(StatusType that) {
+            return this.ordinal() < that.ordinal() ? this : that;
+        }
     }
 }

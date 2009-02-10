@@ -6,13 +6,19 @@ package com.l7tech.server.management.config.monitoring;
 import com.l7tech.server.management.api.monitoring.MonitorableEvent;
 
 import javax.persistence.Basic;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * An trigger that directs the monitoring system to react when the subject component fires events of a particular type.
  *  
  * @author alex
  */
+@XmlRootElement
 public class EventTrigger extends Trigger<MonitorableEvent> {
+    @Deprecated
+    public EventTrigger() {
+    }
+
     /** A string identifying the event that's being monitored.  Type and format depends on the subject component type.  Required. */
     private String eventId;
 

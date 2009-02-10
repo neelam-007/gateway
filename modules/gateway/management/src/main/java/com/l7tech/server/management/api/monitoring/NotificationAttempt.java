@@ -8,7 +8,7 @@ import com.l7tech.util.ExceptionUtils;
 /**
  * A record of an attempted notification
  */
-public abstract class NotificationAttempt {
+public class NotificationAttempt {
     private final StatusType statusType;
     private final long timestamp;
     private final String message;

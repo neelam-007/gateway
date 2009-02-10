@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2008 Layer 7 Technologies Inc.
+ * Copyright (C) 2008-2009 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.processcontroller;
 
@@ -23,7 +23,7 @@ public final class ProcessControllerDaemon {
     private volatile boolean shutdown = false;
     static final int SHUTDOWN_POLL_INTERVAL = 5000;
     private ProcessController processController;
-    private static final String[] DAEMON_CONTEXTS = new String[] {
+    public static final String[] DAEMON_CONTEXTS = new String[] {
         "/com/l7tech/server/processcontroller/resources/processControllerApplicationContext.xml",
         "/com/l7tech/server/processcontroller/resources/processControllerServletContainerContext.xml",
     };

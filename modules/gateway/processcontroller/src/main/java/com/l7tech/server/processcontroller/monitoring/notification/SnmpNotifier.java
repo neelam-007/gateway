@@ -7,6 +7,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.management.config.monitoring.SnmpTrapNotificationRule;
 import com.l7tech.server.management.config.monitoring.Trigger;
+import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.UptimeMonitor;
 import com.l7tech.util.ExceptionUtils;
@@ -30,9 +31,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- *
- */
 class SnmpNotifier extends Notifier<SnmpTrapNotificationRule> {
     private static final Logger logger = Logger.getLogger(SnmpNotifier.class.getName());
 
@@ -82,7 +80,7 @@ class SnmpNotifier extends Notifier<SnmpTrapNotificationRule> {
         auditor = new LogOnlyAuditor(logger);
     }
 
-    public void doNotification(Long timestamp, Object value, Trigger trigger) throws IOException {
+    public NotificationAttempt.StatusType doNotification(Long timestamp, Object value, Trigger trigger) throws IOException {
         PDU pdu = new PDU();
         pdu.setType(PDU.TRAP);
         UptimeMetrics um = UptimeMonitor.getLastUptime();
@@ -116,6 +114,7 @@ class SnmpNotifier extends Notifier<SnmpTrapNotificationRule> {
                                               SecurityLevel.NOAUTH_NOPRIV,
                                               pdu,
                                               false);
+        return NotificationAttempt.StatusType.SENT;
     }
 
     @Override

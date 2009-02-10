@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2008-2009 Layer 7 Technologies Inc.
+ */
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
@@ -8,6 +11,7 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.management.NodeStateType;
 import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.api.node.NodeManagementApi;
+import com.l7tech.server.management.api.monitoring.NodeStatus;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
@@ -146,8 +150,8 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         final List<NodeHeader> nodes = new ArrayList<NodeHeader>();
         for (NodeConfig config : configService.getHost().getNodes().values()) {
             final PCNodeConfig pcNodeConfig = (PCNodeConfig)config;
-            final ProcessController.NodeStateSample state = processController.getNodeState(pcNodeConfig.getName());
-            nodes.add(new NodeHeader(pcNodeConfig.getId(), pcNodeConfig.getName(), pcNodeConfig.getSoftwareVersion(), pcNodeConfig.isEnabled(), state.getType(), state.getStartTime(), state.getLastObservedTime()));
+            final NodeStatus status = processController.getNodeStatus(pcNodeConfig.getName());
+            nodes.add(new NodeHeader(pcNodeConfig.getId(), pcNodeConfig.getName(), pcNodeConfig.getSoftwareVersion(), pcNodeConfig.isEnabled(), status.getType(), status.getStartTime(), status.getLastObservedTime()));
         }
         return nodes;
     }
@@ -211,7 +215,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         }
 
         // apply state change if required
-        NodeStateType currentState = processController.getNodeState(nodeName).getType();
+        NodeStateType currentState = processController.getNodeStatus(nodeName).getType();
         if ( node.isEnabled() && NodeStateType.RUNNING != currentState ) {
             try {
                 processController.startNode( currentNodeConfig, false );
@@ -252,7 +256,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     @Override
     public NodeStateType startNode(String nodeName) throws FindException, StartupException {
         checkRequest();
-        NodeStateType tempState = processController.getNodeState(nodeName).getType();
+        NodeStateType tempState = processController.getNodeStatus(nodeName).getType();
         if (tempState == null) tempState = NodeStateType.UNKNOWN;
         switch(tempState) {
             case RUNNING:

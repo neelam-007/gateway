@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2008 Layer 7 Technologies Inc.
+ * Copyright (C) 2008-2009 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.processcontroller;
 
@@ -69,4 +69,11 @@ public interface ConfigService {
      * @return true if this PC node is responsible for monitoring cluster-wide properties; false if not.
      */
     boolean isResponsibleForClusterMonitoring();
+
+    /**
+     * Accept a new MonitoringConfiguration and notify the monitoring system about it
+     * @param config the new configuration
+     * @param responsibleForClusterMonitoring <code>true</code> if this node is responsible for monitoring cluster-wide properties
+     */
+    void pushMonitoringConfiguration(MonitoringConfiguration config, boolean responsibleForClusterMonitoring);
 }

@@ -111,7 +111,7 @@ public final class Functions {
      * @param transformation a transformation to apply to each input item to produce the corresponding output item
      * @return a collection of output items
      */
-    public static <I,O> List<O> map(Collection<I> in, Unary<O,I> transformation) {
+    public static <I,O> List<O> map(Iterable<I> in, Unary<O,I> transformation) {
         List<O> ret = new ArrayList<O>();
         for (I i : in)
             ret.add(transformation.call(i));
@@ -141,12 +141,24 @@ public final class Functions {
      * @param predicate the predicate to match
      * @return the first matching object, or null if no match was found
      */
-    public static <I> I grepFirst(Collection<I> in, Unary<Boolean, I> predicate) {
+    public static <I> I grepFirst(Iterable<I> in, Unary<Boolean, I> predicate) {
         for (I i : in) {
             if (predicate.call(i))
                 return i;
         }
         return null;
+    }
+
+    /**
+     * Returns <code>true</code> if any element matches the predicate, <code>false</code> otherwise.
+     *  
+     * @param in the iterable to search
+     * @param predicate the predicate to evaluate
+     * @param <I> the type of element in the iterable
+     * @return <code>true</code> if any element matches the predicate, <code>false</code> otherwise.
+     */
+    public static <I> boolean exists(Iterable<I> in, Unary<Boolean, I> predicate) {
+        return grepFirst(in, predicate) != null;
     }
 
     /**

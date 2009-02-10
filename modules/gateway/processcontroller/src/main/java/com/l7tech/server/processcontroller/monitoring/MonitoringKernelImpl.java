@@ -4,11 +4,10 @@
 package com.l7tech.server.processcontroller.monitoring;
 
 import com.l7tech.objectmodel.EntityUtil;
-import com.l7tech.server.management.api.monitoring.Monitorable;
-import com.l7tech.server.management.api.monitoring.MonitorableEvent;
-import com.l7tech.server.management.api.monitoring.MonitorableProperty;
+import com.l7tech.server.management.api.monitoring.*;
 import com.l7tech.server.management.config.monitoring.*;
 import com.l7tech.server.processcontroller.ConfigService;
+import com.l7tech.server.processcontroller.monitoring.notification.Notifier;
 import com.l7tech.server.processcontroller.monitoring.notification.NotifierFactory;
 import com.l7tech.server.processcontroller.monitoring.sampling.PropertySampler;
 import com.l7tech.server.processcontroller.monitoring.sampling.PropertySamplerFactory;
@@ -16,32 +15,41 @@ import com.l7tech.util.ComparisonOperator;
 import com.l7tech.util.Pair;
 import com.l7tech.util.Sets;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class MonitoringKernelImpl implements MonitoringKernel {
     private static final Logger logger = Logger.getLogger(MonitoringKernelImpl.class.getName());
 
+    public static final int MIN_SAMPLING_INTERVAL = 1000;
+
     private final Timer samplerTimer = new Timer("Monitoring System / Property Sampler", true);
     private final Timer triggerCheckTimer = new Timer("Monitoring System / Trigger Condition Checker", true);
     private final TimerTask triggerCheckTask = new TriggerCheckTask();
+    private final Thread notificationThread = new Thread(new NotificationRunner());
+    // TODO configurable or heuristic sizes?
+    private final ExecutorService notifierThreadPool = new ThreadPoolExecutor(2, 10, 10, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(100));
 
     private volatile Map<MonitorableProperty, PropertyState<?>> currentPropertyStates;
     private volatile Map<MonitorableEvent, EventState> currentEventStates;
     private volatile Map<Long, TriggerState> currentTriggerStates = null;
+    private volatile Map<Long, NotificationState> currentNotificationStates = null;
 
     private volatile MonitoringConfiguration currentConfig = null;
 
-    private final BlockingQueue<NotifiableCondition<?>> notificationQueue = new LinkedBlockingQueue<NotifiableCondition<?>>(500); // TODO configurable or heuristic size?
+    // TODO configurable or heuristic size?
+    private final BlockingQueue<NotifiableCondition<?>> notificationQueue = new LinkedBlockingQueue<NotifiableCondition<?>>(500);
 
     private static class TriggerState {
         private final Trigger trigger;
+        private volatile boolean outOfTolerance;
 
         public TriggerState(Trigger trigger) {
             this.trigger = trigger;
@@ -57,10 +65,19 @@ public class MonitoringKernelImpl implements MonitoringKernel {
     @Resource
     private ConfigService configService;
 
-    void checkConfig() {
-        MonitoringConfiguration newConfiguration = configService.getCurrentMonitoringConfiguration();
+    @PostConstruct
+    public void start() {
+        triggerCheckTimer.scheduleAtFixedRate(triggerCheckTask, 16000, 120000); // TODO use a shorter interval when not debugging
+        notificationThread.start();
+    }
+
+    @PreDestroy
+    public void close() {
+        triggerCheckTask.cancel();
+    }
+
+    public void setConfiguration(MonitoringConfiguration newConfiguration, boolean doClusterMonitoring) {
         final MonitoringConfiguration oldConfiguration;
-        final MonitoringConfiguration currentConfig = this.currentConfig;
 
         // TODO simplfy
         if (newConfiguration != null) {
@@ -92,14 +109,12 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         }
 
         final Map<Long, Trigger> newTriggers = EntityUtil.buildEntityMap(newConfiguration.getTriggers());
-        final Map<Long, NotificationRule> newNotificationRules = EntityUtil.buildEntityMap(newConfiguration.getNotificationRules());
         if (oldConfiguration == null) {
             logger.info("Accepted initial configuration");
         } else {
             logger.info("Monitoring Configuration has been updated");
         }
 
-        final Map<Long, TriggerState> oldTstate = currentTriggerStates;
         final Map<Long, TriggerState> buildingTstates = new HashMap<Long, TriggerState>();
 
         // Check for properties that are starting to be monitored or are no longer being monitored
@@ -113,16 +128,24 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
         final Set<MonitorableEvent> liveEvents = new HashSet<MonitorableEvent>();
         final Set<MonitorableProperty> liveProperties = new HashSet<MonitorableProperty>();
+
         // Initialize/update states for created/updated properties
         for (Map.Entry<Long, Trigger> entry : newTriggers.entrySet()) {
             final Long triggerOid = entry.getKey();
-            final Trigger trigger = entry.getValue();
+            final Trigger<?> trigger = entry.getValue();
             buildingTstates.put(triggerOid, new TriggerState(trigger)); // TODO inherit anything from predecessor version?
+
             if (trigger instanceof PropertyTrigger) {
                 PropertyTrigger pt = (PropertyTrigger) trigger;
                 MonitorableProperty mp = (MonitorableProperty) pt.getMonitorable();
                 liveProperties.add(mp);
                 PropertyState<?> ps = buildingPstates.get(mp);
+                Long interval = pt.getMaxSamplingInterval();
+                if (interval == null || interval < 0) {
+                    interval = 5000L;
+                } else if (interval < MIN_SAMPLING_INTERVAL) {
+                    interval = (long) MIN_SAMPLING_INTERVAL;
+                }
                 if (ps == null) {
                     logger.info("Starting to monitor property " + mp + " on " + pt.getComponentId());
                     final PropertySampler<Serializable> sampler;
@@ -133,12 +156,12 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                         continue;
                     }
                     //noinspection unchecked
-                    ps = new PropertyState(mp, pt.getComponentId(), Collections.singleton(triggerOid), pt.getMaxSamplingInterval(), sampler);
+                    ps = new PropertyState(mp, pt.getComponentId(), Collections.singleton(triggerOid), interval, sampler);
                 } else {
                     // TODO check for compatibility!
                     // TODO don't bother making a new state if the trigger is unchanged
                     //noinspection unchecked
-                    ps = new PropertyState(ps, Sets.union(ps.triggerOids, triggerOid), pt.getMaxSamplingInterval());
+                    ps = new PropertyState(ps, Sets.union(ps.triggerOids, triggerOid), interval);
                 }
                 buildingPstates.put(mp, ps);
             } else if (trigger instanceof EventTrigger) {
@@ -158,9 +181,10 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         }
 
         // Forget about the monitorables that are no longer in the config
-        cancelDeadProperties(buildingPstates, liveProperties, "properties");
-//        cancelDeadProperties(buildingEstates, liveEvents, "events");
+        cancelDeadMonitors(buildingPstates, liveProperties, "properties");
+        cancelDeadMonitors(buildingEstates, liveEvents, "events");
 
+        // Remove dead ones from current state
         buildingPstates.keySet().retainAll(liveProperties);
         buildingEstates.keySet().retainAll(liveEvents);
 
@@ -170,8 +194,6 @@ public class MonitoringKernelImpl implements MonitoringKernel {
             state.schedule(samplerTimer);
         }
 
-        // TODO do we need to do anything to kick off the event samplers?
-
         kickTheSampler();
 
         // TODO apply created NotificationRules
@@ -179,9 +201,74 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         // TODO apply deleted NotificationRules
 
         kickTheNotifier(); // if any notifications have changed
+
+        this.currentConfig = newConfiguration;
     }
 
-    private <MT extends Monitorable, ST extends MonitorState> void cancelDeadProperties(Map<MT, ST> states, Set<MT> liveOnes, String what) {
+    private static class TransientStatus {
+        private final Set<Long> badTriggerOids = new HashSet<Long>();
+        private MonitoredStatus.StatusType status = MonitoredStatus.StatusType.OK;
+        private Serializable value;
+        private Long timestamp;
+    }
+
+    @Override
+    public List<MonitoredPropertyStatus> getCurrentPropertyStatuses(long configurationOid) {
+        final Map<MonitorableProperty, TransientStatus> stati = new HashMap<MonitorableProperty, TransientStatus>();
+
+        final Map<MonitorableProperty, PropertyState<?>> pstates = currentPropertyStates;
+        final Map<Long, TriggerState> tstates = currentTriggerStates;
+        final Map<Long, NotificationState> nstates = currentNotificationStates;
+
+        for (Map.Entry<MonitorableProperty, PropertyState<?>> entry : pstates.entrySet()) {
+            final MonitorableProperty prop = entry.getKey();
+            final PropertyState<?> pstate = entry.getValue();
+            final Set<Long> toids = pstate.getTriggerOids();
+            for (Long toid : toids) {
+                final TriggerState tstate = tstates.get(toid);
+                if (tstate == null) continue;
+                final Trigger<?> trig = tstate.trigger;
+                if (!(trig instanceof PropertyTrigger)) continue;
+
+                final PropertyTrigger ptrig = (PropertyTrigger) trig;
+                if (ptrig.getMonitoringConfig().getOid() != configurationOid) continue;
+
+                TransientStatus transientStatus = stati.get(prop);
+                if (transientStatus == null) {
+                    transientStatus = new TransientStatus();
+                    stati.put(prop, transientStatus);
+                }
+
+                if (tstate.outOfTolerance) {
+                    transientStatus.badTriggerOids.add(toid);
+                    transientStatus.status = MonitoredStatus.StatusType.WARNING;
+                }
+
+                final Pair<Long, ? extends Serializable> lastSample = pstate.getLastSample();
+                transientStatus.timestamp = transientStatus.timestamp == 0 ? lastSample.left : Math.min(lastSample.left, transientStatus.timestamp);
+                transientStatus.value = lastSample.right;
+
+                for (NotificationRule rule : ptrig.getNotificationRules()) {
+                    if (rule.getMonitoringConfiguration().getOid() != configurationOid) continue;
+                    NotificationState nstate = nstates.get(rule.getOid());
+                    if (nstate.isNotified()) {
+                        transientStatus.status = MonitoredStatus.StatusType.NOTIFIED;
+                    }
+                }
+            }
+        }
+
+        final List<MonitoredPropertyStatus> result = new ArrayList<MonitoredPropertyStatus>();
+        for (Map.Entry<MonitorableProperty, TransientStatus> entry : stati.entrySet()) {
+            final MonitorableProperty prop = entry.getKey();
+            final TransientStatus transientStatus = entry.getValue();
+            result.add(new MonitoredPropertyStatus(prop, transientStatus.timestamp, transientStatus.status, transientStatus.badTriggerOids, transientStatus.value));
+        }
+
+        return result;
+    }
+
+    private <MT extends Monitorable, ST extends MonitorState> void cancelDeadMonitors(Map<MT, ST> states, Set<MT> liveOnes, String what) {
         Set<MT> deletes = new HashSet<MT>();
         for (Map.Entry<MT,ST> entry : states.entrySet()) {
             MT mp = entry.getKey();
@@ -237,7 +324,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 final Long oid = entry.getKey();
                 final TriggerState tstate = entry.getValue();
                 if (tstate.trigger instanceof PropertyTrigger) {
-                    final PropertyTrigger<?> ptrigger = (PropertyTrigger) tstate.trigger;
+                    final PropertyTrigger ptrigger = (PropertyTrigger) tstate.trigger;
                     final MonitorableProperty property = ptrigger.getMonitorable();
 
                     final PropertyState<?> mstate = pstates.get(property);
@@ -251,13 +338,16 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     final Comparable what = sample.right;
                     final long sampleAge = now - when;
                     if (sampleAge > (2 * mstate.getSamplingInterval())) {
+                        // TODO parameterize max sample age, and/or figure out how/whether to handle failures specially?
                         logger.log(Level.WARNING, "Last sample for " + property + " more than " + sampleAge + "ms old");
                     }
 
+                    // Compare the sampled value
                     final ComparisonOperator op = ptrigger.getOperator();
                     final Comparable rvalue = ptrigger.getTriggerValue();
                     if (op.compare(what, rvalue, false)) {
-                        logger.log(Level.INFO, property + " is out of tolerance");
+                        logger.log(Level.INFO, property + " is out of tolerance"); // TODO maybe log the value and test expression here too
+                        tstate.outOfTolerance = true;
                         PropertyCondition cond = conditions.get(property);
                         if (cond == null) {
                             conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), when, Collections.singleton(oid), rvalue));
@@ -265,11 +355,83 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                             // Merge the previous condition with this one
                             conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), cond.getTimestamp(), Sets.union(cond.getTriggerOids(), oid), cond.getValue()));
                         }
+                    } else {
+                        tstate.outOfTolerance = false;
                     }
                 }
             }
 
             notificationQueue.addAll(conditions.values());
+        }
+    }
+
+
+    private class NotificationRunner implements Runnable {
+        @Override
+        public void run() {
+            while(true) {
+                final Map<Long, TriggerState> tstates = currentTriggerStates;
+                final Map<Long, NotificationState> nstates = currentNotificationStates;
+                try {
+                    final NotifiableCondition<?> got = notificationQueue.poll(500, TimeUnit.MILLISECONDS); // TODO timeout configurable?
+                    if (got == null) continue;
+
+                    final Set<Long> triggerOids = got.getTriggerOids();
+                    if (triggerOids == null || triggerOids.isEmpty()) {
+                        logger.warning("Got a condition with no trigger OIDs");
+                        continue;
+                    }
+
+                    for (Long triggerOid : triggerOids) {
+                        final TriggerState tstate = tstates.get(triggerOid);
+                        if (tstate == null) {
+                            logger.log(Level.FINE, "Trigger #{0} has been deleted; skipping", triggerOid);
+                            continue;
+                        }
+
+                        final Trigger<?> trigger = tstate.trigger;
+
+                        final List<NotificationRule> rules = trigger.getNotificationRules();
+                        for (NotificationRule rule : rules) {
+                            final Long notificationOid = rule.getOid();
+                            NotificationState nstate = nstates.get(notificationOid);
+                            if (nstate == null) {
+                                nstate = new NotificationState(trigger, rule, 1, TimeUnit.MINUTES);
+                                nstates.put(notificationOid, nstate);
+                            } else {
+                                nstate.condition(got.getTimestamp());
+                            }
+
+                            if (!nstate.isOKToFire()) {
+                                logger.fine("Suppressing repeated notification"); // TODO log more details
+                                continue;
+                            }
+
+                            final Notifier notifier = notifierFactory.getNotifier(rule);
+                            if (got instanceof PropertyCondition) {
+                                final PropertyCondition pc = (PropertyCondition) got;
+                                final NotificationState nstate1 = nstate;
+                                notifierThreadPool.submit(new Runnable() {
+                                    public void run() {
+                                        try {
+                                            final NotificationAttempt.StatusType status = notifier.doNotification(got.getTimestamp(), pc.getValue(), trigger);
+                                            nstate1.notified(new NotificationAttempt(status, null, System.currentTimeMillis()));
+                                        } catch (Exception e) {
+                                            logger.log(Level.WARNING, "Couldn't notify", e);
+                                            nstate1.failed(new NotificationAttempt(e, System.currentTimeMillis()));
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    logger.info("Interrupted waiting for notification queue");
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+
+            }
         }
     }
 }

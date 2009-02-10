@@ -1,10 +1,11 @@
 /**
- * Copyright (C) 2008 Layer 7 Technologies Inc.
+ * Copyright (C) 2008-2009 Layer 7 Technologies Inc.
  */
 package com.l7tech.server.management.api.monitoring;
 
 import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 
+import javax.jws.WebService;
 import java.io.IOException;
 import java.util.List;
 
@@ -13,6 +14,7 @@ import java.util.List;
  *
  * @author alex
  */
+@WebService
 public interface MonitoringApi {
     /**
      * Gets the status of the named Node; never null.

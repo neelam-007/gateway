@@ -3,10 +3,13 @@
  */
 package com.l7tech.server.processcontroller.monitoring.notification;
 
+import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.server.management.config.monitoring.EmailNotificationRule;
 import com.l7tech.server.management.config.monitoring.HttpNotificationRule;
 import com.l7tech.server.management.config.monitoring.NotificationRule;
 import com.l7tech.server.management.config.monitoring.SnmpTrapNotificationRule;
+import com.whirlycott.cache.Cache;
+import com.whirlycott.cache.policy.LRUMaintenancePolicy;
 
 import java.lang.reflect.Constructor;
 import java.util.Collections;
@@ -20,12 +23,21 @@ public final class NotifierFactory {
         put(HttpNotificationRule.class, HttpNotifier.class);
     }});
 
-    public Notifier makeNotifier(NotificationRule rule) {
+    private final Cache notifierCache = WhirlycacheFactory.createCache("notifierCache", 500, 9931, new LRUMaintenancePolicy());
+
+    public <RT extends NotificationRule> Notifier<RT> getNotifier(RT rule) {
+        @SuppressWarnings({"unchecked"})
+        Notifier<RT> notifier = (Notifier<RT>) notifierCache.retrieve(rule);
+        if (notifier != null) return notifier;
+
         final Class<? extends Notifier> notifierClass = registry.get(rule.getClass());
         if (notifierClass == null) throw new IllegalArgumentException("Unsupported notification rule type: " + rule.getClass().getSimpleName());
         try {
             Constructor<? extends Notifier> ctor = notifierClass.getConstructor(Notifier.class);
-            return ctor.newInstance(rule);
+            //noinspection unchecked
+            notifier = ctor.newInstance(rule);
+            notifierCache.store(rule, notifier);
+            return notifier;
         } catch (Exception e) {
             throw new IllegalArgumentException("Couldn't make Notifier", e);
         }

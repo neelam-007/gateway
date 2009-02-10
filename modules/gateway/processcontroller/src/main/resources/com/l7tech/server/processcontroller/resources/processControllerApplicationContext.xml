@@ -11,9 +11,7 @@
 
     <bean id="configService" class="com.l7tech.server.processcontroller.ConfigServiceImpl"/>
 
-<!--
     <bean id="monitoringKernel" class="com.l7tech.server.processcontroller.monitoring.MonitoringKernelImpl"/>
     <bean id="propertySamplerFactory" class="com.l7tech.server.processcontroller.monitoring.sampling.PropertySamplerFactory"/>
     <bean id="notifierFactory" class="com.l7tech.server.processcontroller.monitoring.notification.NotifierFactory"/>
--->
 </beans>

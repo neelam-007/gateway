@@ -17,8 +17,12 @@
 
     <bean id="processControllerApiImpl" class="com.l7tech.server.processcontroller.ProcessControllerApiImpl"/>
 
+    <bean id="monitoringApiImpl" class="com.l7tech.server.processcontroller.MonitoringApiImpl"/>
+
     <jaxws:endpoint id="nodeManagementApiEndpoint" implementor="#nodeManagementApiImpl" address="/nodeManagementApi"/>
 
     <jaxws:endpoint id="processControllerApiEndpoint" implementor="#processControllerApiImpl" address="/processControllerApi"/>
+
+    <jaxws:endpoint id="monitoringApiEndpoint" implementor="#monitoringApiImpl" address="/monitoringApi"/>
 
 </beans>

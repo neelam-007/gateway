@@ -225,7 +225,10 @@ public class NodeConfigurationManager {
         Collection<Pair<NodeConfig, File>> nodeConfigs = new ArrayList<Pair<NodeConfig, File>>();
 
         File nodeBaseDirectory = nodesDir;
-        for ( String nodeConfigName : nodeBaseDirectory.list() ) {
+        String[] nodeNames = nodeBaseDirectory.list();
+        if (nodeNames == null) return Collections.emptyList();
+        
+        for ( String nodeConfigName : nodeNames) {
             try {
                 final File nodePropsFile = new File(getConfigurationDirectory(nodeConfigName), NODE_PROPS_FILE);
                 nodeConfigs.add(new Pair<NodeConfig, File>(loadNodeConfig( nodeConfigName, nodePropsFile, false), nodePropsFile));

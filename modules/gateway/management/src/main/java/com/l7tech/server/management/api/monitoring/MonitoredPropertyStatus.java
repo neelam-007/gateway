@@ -9,10 +9,10 @@ import java.util.Set;
 /**
  * The status of a particular property at some moment in time
  */
-public abstract class MonitoredPropertyStatus extends MonitoredStatus<MonitorableProperty> {
+public class MonitoredPropertyStatus extends MonitoredStatus<MonitorableProperty> {
     private final Serializable value;
 
-    public MonitoredPropertyStatus(StatusType status, long timestamp, MonitorableProperty property, Set<Long> triggerOids, Serializable value) {
+    public MonitoredPropertyStatus(MonitorableProperty property, long timestamp, StatusType status, Set<Long> triggerOids, Serializable value) {
         super(timestamp, triggerOids, status, property);
         this.value = value;
     }
