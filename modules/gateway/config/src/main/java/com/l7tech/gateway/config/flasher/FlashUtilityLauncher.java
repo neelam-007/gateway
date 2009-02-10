@@ -1,5 +1,7 @@
 package com.l7tech.gateway.config.flasher;
 
+import com.l7tech.util.SyspropUtil;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -114,7 +116,7 @@ public class FlashUtilityLauncher {
 
     private static void initializeLogging() {
         final LogManager logManager = LogManager.getLogManager();
-        final File file = new File(LOGCONFIG_NAME);
+        final File file = new File(SyspropUtil.getString("java.util.logging.config.file", LOGCONFIG_NAME));
         if (file.exists()) {
             InputStream in = null;
             try {

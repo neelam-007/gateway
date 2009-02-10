@@ -2031,6 +2031,7 @@
             <fileset dir="${src.root}/etc">
                 <include name="ssgbackup.sh"/>
                 <include name="ssgrestore.sh"/>
+                <include name="backupgatewaylogging.properties"/>
                 <include name="backuputilitylogging.properties"/>
             </fileset>
         </copy>

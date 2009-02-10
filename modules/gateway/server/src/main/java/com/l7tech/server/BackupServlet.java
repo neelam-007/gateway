@@ -6,6 +6,7 @@ package com.l7tech.server;
 import com.l7tech.common.http.*;
 import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.ProcUtils;
+import com.l7tech.common.io.ProcResult;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
@@ -229,10 +230,11 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             throws IOException {
         File tmpFile  = File.createTempFile("backup", ".tmp");
         final String ssgHome = System.getProperty("com.l7tech.server.home");
-        final File flasherHome = new File(ssgHome, "../../config/migration");
+        final File flasherHome = new File(ssgHome, "../../config/backup");
 
         try {
-            ProcUtils.exec(flasherHome, new File(flasherHome, "ssgmigration.sh"), new String[] { "export", "-image", tmpFile.getCanonicalPath() }, null, false);
+            ProcResult result = ProcUtils.exec(flasherHome, new File(flasherHome, "ssgbackup.sh"), new String[] { "-image", tmpFile.getCanonicalPath() }, null, false);
+            logger.log( Level.INFO, "Backup completed with output: \n{0}", new String( result.getOutput()) );
         } catch (IOException e) {
             logAndAudit(getOriginalClientAddr(request), user, "Backup failed", ServiceMessages.BACKUP_CANT_CREATE_IMAGE, e, nodeName);
             respondError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Backup failed");
@@ -261,7 +263,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             }
 
             final String saveAsFilename = nodeName + ".zip";
-            response.setContentType("text/html");
+            response.setContentType("application/zip");
             response.setContentLength((int)size);
             response.setHeader("Content-Disposition", "attachment; filename=\"" + saveAsFilename + "\"; size=" + size);
             response.setHeader("Accept-Ranges", "none");

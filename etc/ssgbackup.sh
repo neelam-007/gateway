@@ -26,9 +26,22 @@ cd ${BACKUP_HOME}
 # This must be run as layer7
 if [ $UID -eq 0 ]; then
     # invoke flasher as layer7
-    su layer7 -c "${SSG_JAVA_HOME}/bin/java -Xmx256m -Dcom.l7tech.server.home=${SSG_HOME} -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} -jar ${BACKUP_HOME}/SSGBackupUtility.jar export $*"
+    su layer7 -c "${SSG_JAVA_HOME}/bin/java -Xmx256m \
+        -Dcom.l7tech.server.home=${SSG_HOME} \
+        -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} \
+        -jar ${BACKUP_HOME}/SSGBackupUtility.jar export $*"
 elif [ "$USER" == "layer7" ]; then
-    ${SSG_JAVA_HOME}/bin/java -Xmx256m -Dcom.l7tech.server.home=${SSG_HOME} -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} -jar ${BACKUP_HOME}/SSGBackupUtility.jar export $*
+    ${SSG_JAVA_HOME}/bin/java -Xmx256m \
+        -Dcom.l7tech.server.home=${SSG_HOME} \
+        -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} \
+        -jar ${BACKUP_HOME}/SSGBackupUtility.jar export $*
+elif [ "$USER" == "gateway" ]; then
+    ${SSG_JAVA_HOME}/bin/java -Xmx256m \
+        -Dcom.l7tech.server.home=${SSG_HOME} \
+        -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} \
+        -Djava.util.logging.config.file=backupgatewaylogging.properties \
+        -jar ${BACKUP_HOME}/SSGBackupUtility.jar export $*
 else
     echo "Must be layer7 to invoke ssgbackup.sh"
+    exit 1
 fi
