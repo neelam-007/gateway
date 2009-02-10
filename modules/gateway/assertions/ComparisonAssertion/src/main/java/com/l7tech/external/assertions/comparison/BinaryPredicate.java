@@ -56,7 +56,7 @@ public class BinaryPredicate extends Predicate {
     public String toString() {
         ResourceBundle res = ComparisonAssertion.resources;
         String rv = rightValue;
-        final String prefix = "binaryPredicate." + operator.getShortName().toLowerCase();
+        final String prefix = "binaryPredicate." + operator.name().toLowerCase();
         final String negKey = prefix + ".negatedDesc";
         final String nonNegKey = prefix + ".nonNegatedDesc";
         // Use the override construction if present

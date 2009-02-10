@@ -175,7 +175,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
         });
 
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
-            new WspEnumTypeMapping(ComparisonOperator.class, "operator"),
+            new Java5EnumTypeMapping(ComparisonOperator.class, "operator"),
             new ArrayTypeMapping(new Predicate[0], "predicates"),
             new AbstractClassTypeMapping(Predicate.class, "predicate"),
             new BeanTypeMapping(BinaryPredicate.class, "binary"),

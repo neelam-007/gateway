@@ -16,7 +16,6 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ComparisonOperator;
 import com.l7tech.util.Functions;
 import static org.junit.Assert.assertEquals;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -41,13 +40,12 @@ public class ServerComparisonAssertionTest {
         assertEquals(AssertionStatus.NONE, stat);
     }
 
-    @Ignore("This test is not finished")
     @Test
     public void testString() throws Exception {
         AssertionRegistry.installEnhancedMetadataDefaults();
         ComparisonAssertion comp = make();
-        Functions.Unary<String, Assertion> funky = (Functions.Unary<String, Assertion>) comp.meta().get(AssertionMetadata.POLICY_NODE_NAME);
-        System.out.println(funky.call(comp));
+        Functions.Unary<String, Assertion> funky = (Functions.Unary<String, Assertion>) comp.meta().get(AssertionMetadata.POLICY_NODE_NAME_FACTORY);
+        assertEquals("policy node name", funky.call(comp), "Proceed if ${asdf} is an Integer, is equal to 12345, contains 234 (case sensitive), has at least 1 value and has exactly 5 characters");
     }
 
     private ComparisonAssertion make() {
@@ -56,7 +54,7 @@ public class ServerComparisonAssertionTest {
         comp.setPredicates(
             new DataTypePredicate(DataType.INTEGER),
             new BinaryPredicate(ComparisonOperator.EQ, "12345", false, false),
-//            new BinaryPredicate(ComparisonOperator.CONTAINS, "234", true, false),
+            new BinaryPredicate(ComparisonOperator.CONTAINS, "234", true, false),
             new CardinalityPredicate(1, -1, false),
             new StringLengthPredicate(5, 5, false)
         );

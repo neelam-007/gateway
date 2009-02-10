@@ -5,84 +5,29 @@
 
 package com.l7tech.util;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
+import javax.xml.bind.annotation.XmlEnum;
 
 /**
  * Class that represents a strategy for unary or binary comparisons.
  */
-public class ComparisonOperator implements Serializable {
-    private static int n = 0;
-    public static final ComparisonOperator LT = new ComparisonOperator(n++, "LT", "less than", false, -1, -1);
-    public static final ComparisonOperator LE = new ComparisonOperator(n++, "LE", "less than or equal to", false, -1, 0);
-    public static final ComparisonOperator EQ = new EqualsOperator(n++, "EQ", "equal to");
-    public static final ComparisonOperator GT = new ComparisonOperator(n++, "GT", "greater than", false, 1, 1);
-    public static final ComparisonOperator GE = new ComparisonOperator(n++, "GE", "greater than or equal to", false, 1, 0);
-    public static final ComparisonOperator EMPTY = new EmptyOperator(n++, "EMPTY", "empty");
-    public static final ComparisonOperator CONTAINS = new ContainsOperator(n++, "CONTAINS", "contain");
-    public static final ComparisonOperator NE = new NotEqualsOperator(n++, "NE", "not equal to");
+@XmlEnum(String.class)
+public enum ComparisonOperator {
+    LT("less than", -1, -1),
+    LE("less than or equal to", -1, 0),
+    EQ("equal to", new EqualsStrategy()),
+    GT("greater than", 1, 1),
+    GE("greater than or equal to", 1, 0),
+    EMPTY("empty", new EmptyStrategy()),
+    CONTAINS("contain", new ContainsStrategy()),
+    NE("not equal to", new NotEqualsStrategy());
 
-    private static ComparisonOperator[] VALUES = { LT, LE, EQ, GT, GE, EMPTY, CONTAINS }; // NE not included
-    private static final Map byShortName = new HashMap();
-
-    static {
-        for (int i = 0; i < VALUES.length; i++) {
-            ComparisonOperator operator = VALUES[i];
-            byShortName.put(operator.getShortName(), operator);
-        }
-    }
-
-    private ComparisonOperator(int num, String shortName, String name, boolean unary, int compareVal1, int compareVal2) {
-        this.num = num;
-        this.shortName = shortName;
+    private ComparisonOperator(String name, ComparisonStrategy strategy) {
         this.name = name;
-        this.unary = unary;
-        this.compareVal1 = compareVal1;
-        this.compareVal2 = compareVal2;
+        this.strategy = strategy;
     }
 
-    public ComparisonOperator(int num, String shortName, String name, boolean unary) {
-        this.num = num;
-        this.shortName = shortName;
-        this.name = name;
-        this.unary = unary;
-        this.compareVal1 = Integer.MAX_VALUE;
-        this.compareVal2 = Integer.MAX_VALUE;
-    }
-
-    public static ComparisonOperator[] getValues() {
-        ComparisonOperator[] clone = new ComparisonOperator[VALUES.length];
-        System.arraycopy(VALUES, 0, clone, 0, VALUES.length);
-        return clone;
-    }
-
-    public static ComparisonOperator getByShortName(String shortName) {
-        return (ComparisonOperator)byShortName.get(shortName);
-    }
-
-    // This method is invoked reflectively by WspEnumTypeMapping
-    public static EnumTranslator getEnumTranslator() {
-        return new EnumTranslator() {
-            public String objectToString(Object target) {
-                ComparisonOperator op = (ComparisonOperator)target;
-                return op.getShortName();
-            }
-
-            public Object stringToObject(String value) throws IllegalArgumentException {
-                ComparisonOperator op = ComparisonOperator.getByShortName(value);
-                if (op == null) throw new IllegalArgumentException("Unknown Operator short name: '" + value + "'");
-                return op;
-            }
-        };
-    }
-
-    public int getNum() {
-        return num;
-    }
-
-    public String getName() {
-        return name;
+    private ComparisonOperator(String name, int compareVal1, int compareVal2) {
+        this(name, new DefaultComparisonStrategy(compareVal1, compareVal2));
     }
 
     public String toString() {
@@ -90,55 +35,24 @@ public class ComparisonOperator implements Serializable {
     }
 
     public boolean isUnary() {
-        return unary;
+        return strategy.isUnary();
     }
 
-    public int getCompareVal1() {
-        return compareVal1;
+    public String getName() {
+        return name;
     }
 
-    public int getCompareVal2() {
-        return compareVal2;
-    }
-
-    protected Object readResolve() {
-        return VALUES[num];
-    }
-
-    public String getShortName() {
-        return shortName;
-    }
-
-    /**
-     * Default comparison strategy: compare two Comparables using this operator.
-     *
-     * @param left   the left side of the comparison.  MUST NOT be null.
-     * @param right  the right side of the comparison.  MAY be null.
-     * @param ignoreCase  Ignored by operators other than CONTAINS and EQ.
-     *                    If true, either side that is a String will be forced to lowercase before comparing
-     */
-    public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
-        if (left == null) throw new NullPointerException();
-        if (right == null) return false;
-        boolean match;
-        int comp = left.compareTo(right);
-        if (comp > 0) comp = 1;
-        if (comp < 0) comp = -1;
-        match = comp == getCompareVal1() || comp == getCompareVal2();
-        return match;
-    }
-
-    private final int num;
-    private final String shortName;
     private final String name;
-    private final boolean unary;
-    private final int compareVal1;
-    private final int compareVal2;
+    private final ComparisonStrategy strategy;
+
+    public <T extends Comparable> boolean compare(T left, T right, boolean ignoreCase) {
+        return strategy.compare(left, right, ignoreCase);
+    }
 
     /** Compares two Comparables for equality. */
-    private static class EqualsOperator extends ComparisonOperator {
-        public EqualsOperator(int num, String shortName, String name) {
-            super(num, shortName, name, false, 0, 0);
+    private static class EqualsStrategy extends DefaultComparisonStrategy {
+        private EqualsStrategy() {
+            super(0, 0);
         }
 
         public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
@@ -154,23 +68,20 @@ public class ComparisonOperator implements Serializable {
             }
             return super.compare(left, right, ignoreCase);
         }
+
     }
 
     /** Negated EQ. */
-    private static class NotEqualsOperator extends EqualsOperator {
-        public NotEqualsOperator(int num, String shortName, String name) {
-            super(num, shortName, name);
-        }
-
+    private static class NotEqualsStrategy extends EqualsStrategy {
         public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
             return !super.compare(left, right, ignoreCase);
         }
     }
 
     /** Unary operator that returns true if Comparable is null or its toString() returns empty string. */
-    private static class EmptyOperator extends ComparisonOperator {
-        public EmptyOperator(int num, String shortName, String name) {
-            super(num, shortName, name, true);
+    private static class EmptyStrategy extends ComparisonStrategy {
+        protected EmptyStrategy() {
+            super(true);
         }
 
         public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
@@ -179,9 +90,9 @@ public class ComparisonOperator implements Serializable {
     }
 
     /** Binary operator that returns true if right String is contained within left String. */
-    private static class ContainsOperator extends ComparisonOperator {
-        public ContainsOperator(int num, String shortName, String name) {
-            super(num, shortName, name, false);
+    private static class ContainsStrategy extends ComparisonStrategy {
+        protected ContainsStrategy() {
+            super(false);
         }
 
         public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
@@ -193,6 +104,44 @@ public class ComparisonOperator implements Serializable {
                 s2 = s2.toLowerCase();
             }
             return s1.contains(s2);
+        }
+    }
+
+    private static abstract class ComparisonStrategy {
+        private final boolean unary;
+
+        protected ComparisonStrategy(boolean unary) {
+            this.unary = unary;
+        }
+
+        public abstract boolean compare(Comparable left, Comparable right, boolean ignoreCase);
+        public boolean isUnary() { return unary; }
+    }
+
+    /**
+     * Default comparison strategy: compare two Comparables using this operator.
+     *
+     */
+    private static class DefaultComparisonStrategy extends ComparisonStrategy {
+        private final int compareVal1;
+        private final int compareVal2;
+
+        private DefaultComparisonStrategy(int compareVal1, int compareVal2) {
+            super(false);
+            this.compareVal1 = compareVal1;
+            this.compareVal2 = compareVal2;
+        }
+
+        public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
+            if (left == null) throw new NullPointerException();
+            if (right == null) return false;
+            boolean match;
+            @SuppressWarnings({"unchecked"})
+            int comp = left.compareTo(right);
+            if (comp > 0) comp = 1;
+            if (comp < 0) comp = -1;
+            match = comp == compareVal1 || comp == compareVal2;
+            return match;
         }
     }
 }

@@ -63,7 +63,7 @@ public class BinaryPredicatePanel extends PredicatePanel<BinaryPredicate> {
     }
 
     protected void initComponents() {
-        operatorCombo.setModel(new DefaultComboBoxModel(ComparisonOperator.getValues()));
+        operatorCombo.setModel(new DefaultComboBoxModel(ComparisonOperator.values()));
         operatorCombo.setSelectedItem(ComparisonOperator.EQ);
         operatorCombo.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
