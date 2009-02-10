@@ -2,15 +2,15 @@
 <project name="ReportApp" default="javac" basedir=".">
     <description>Run ReportApp</description>
 
-	<property name="class.name" value="com.l7tech.standardreports.ReportApp" />
-    <property name="test_data_class.name" value="com.l7tech.standardreports.CreateTestData" />
-    <property name="demo_class.name" value="com.l7tech.standardreports.demo.RunJetty" />
-    <property name="reporting.classes.dir" value="../../../../../../../../modules/gateway/reporting/build/classes" />
-    <property name="ems.classes.dir" value="../../../../../../../../modules/ems/build/classes" />
-    <property name="lib" value="../../../../../../../../lib" />
-    <property name="ems.dependency.dir" value="../../../../../../../../modules/ems/build/dependency" />
-
-    <property name="jasper.jrxml_files" value="../../../../../../../../modules/gateway/reporting/src/main/java/com/l7tech/gateway/standardreports" />
+	<property name="class.name" value="com.l7tech.skunkworks.standardreports.ReportApp" />
+    <property name="test_data_class.name" value="com.l7tech.skunkworks.standardreports.CreateTestData" />
+    <property name="demo_class.name" value="com.l7tech.skunkworks.standardreports.demo.RunJetty" />
+    <property name="reporting.classes.dir" value="../../../../../../../../../modules/gateway/reporting/build/classes" />
+    <property name="ems.classes.dir"       value="../../../../../../../../../modules/ems/build/classes" />
+    <property name="lib"                   value="../../../../../../../../../lib" />
+    <property name="ems.dependency.dir"    value="../../../../../../../../../modules/ems/build/dependency" />
+    <property name="jasper.jrxml_files"    value="../../../../../../../../../modules/gateway/reporting/src/main/java/com/l7tech/gateway/standardreports" />
+    <property name="property.files.dest"        value="../../../../../resources/com/l7tech/skunkworks/standardreports/test" />
     <!--<property name="canned_usage.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Canned_Usage_Report.jrxml" />-->
     <!--<property name="canned_usage_interval_master.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Usage_IntervalMasterReport.jrxml" />-->
     <!--<property name="canned_usage_interval_subreport_1.jrxml_file" value="../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/standardreports/test/Usage_SubIntervalMasterReport.jrxml" />-->
@@ -30,21 +30,21 @@
     </path>
 
     <path id="classpath">
-        <pathelement location="." />
         <!-- Don't want the ems jar as may compile the ems classes during development-->
         <pathelement location="${ems.classes.dir}" />
-        <pathelement location="${reporting.classes.dir}" />
         <fileset dir="${ems.dependency.dir}">
             <include name="**/*.jar"/>
             <exclude name="layer7-gateway-reporting-5.0-dev-b2.jar"/>
         </fileset>
         <file file="${lib}/repository/junit/junit-4.4.jar"/>
+        <pathelement location="." />
+
     </path>
 
     <target name="javac" description="Compiles the java source files of the test application.">
 
         <javac srcdir="./" destdir="./" debug="true" optimize="false" deprecation="false">
-			<classpath refid="classpath"/>
+            <classpath refid="classpath"/>
 		</javac>
 	</target>
 
@@ -70,7 +70,8 @@
 	</target>
 
 	<target name="run" description="Runs the report as configured in report.properties and displays the results.">
-        <copy file="../../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Styles.jrtx" todir="."/>
+        <copy file="../../../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Styles.jrtx" todir="."/>
+        <copy file="../../../../../../../../gateway/reporting/build/classes/StyleGenerator.jasper" todir="."/>
         <java classname="${class.name}" fork="true">
 			<arg value="run"/>
 			<classpath refid="classpath"/>
@@ -79,6 +80,8 @@
 
     <target name="test_data" description="Creates test data for the supplied services for the maximum default retention
     period for hourly and daily metric bins">
+        <copy file="${property.files.dest}/testdata.properties" todir="./com/l7tech/skunkworks/standardreports/test" />
+        
         <java classname="${test_data_class.name}" fork="true">
             <classpath refid="classpath"/>
         </java>
@@ -111,8 +114,5 @@
 		<antcall target="clean" />
 		<antcall target="javac" />
 		<antcall target="compile" />
-		<antcall target="fill" />
-		<antcall target="pdf" />
-		<antcall target="html" />
 	</target>
 </project>

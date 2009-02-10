@@ -386,7 +386,7 @@ public class CreateTestData {
      */
     public static void main(String [] args) throws Exception{
         System.out.println("Starting");
-        InputStream inputStream = CreateTestData.class.getResourceAsStream("testdata.properties");
+        InputStream inputStream = CreateTestData.class.getResourceAsStream("/com/l7tech/skunkworks/standardreports/test/testdata.properties");
         Properties prop = new Properties();
         prop.load(inputStream);
 

@@ -87,7 +87,7 @@ public class ReportApp
     private static final String SERVICE_ID_TO_OPERATIONS_MAP = "SERVICE_ID_TO_OPERATIONS_MAP";
 
     private static final String SKUNKWORK_RELATIVE_PATH = "reportOutput";
-    private static final String REPORTING_RELATIVE_PATH = "../../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports";
+    private static final String REPORTING_RELATIVE_PATH = "../../../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports";
     private static final String SERVICE_ID_TO_NAME_MAP = "SERVICE_ID_TO_NAME_MAP";
 
     private static final String SPECIFIC_TIME_ZONE = "SPECIFIC_TIME_ZONE";

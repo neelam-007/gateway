@@ -37,7 +37,7 @@ public class CheckTestData{
     @Before
     public void setUp() throws Exception {
         prop = new Properties();
-        InputStream is = new FileInputStream(new File("testdata.properties"));
+        InputStream is = CheckTestData.class.getResourceAsStream("testdata.properties");
         prop.load(is);
         conn = ReportApp.getConnection(prop);
         stmt = conn.createStatement();
