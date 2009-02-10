@@ -23,7 +23,9 @@ if [ ! -z "${SSGNODE}" ] ; then
             export SSG_JAVA_HOME
         fi
 
-        NODE_OPTS=""
+        if [ -z "${NODE_OPTS}" ] ; then
+            NODE_OPTS=""
+        fi
         if [ ! -z "${NODE_JAVA_HEAP}" ] || [ ! -z "${NODE_JAVA_OPTS}" ] ; then
             if [ ! -z "${NODE_JAVA_HEAP}" ] ; then
                 NODE_OPTS="-Xmx${NODE_JAVA_HEAP}m"
