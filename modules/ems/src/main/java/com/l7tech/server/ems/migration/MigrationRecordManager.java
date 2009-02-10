@@ -17,7 +17,7 @@ import java.util.Date;
 public interface MigrationRecordManager extends EntityManager<MigrationRecord, EntityHeader> {
 
     enum SortProperty {
-        NAME("name"), TIME("timeCreated"), FROM("sourceCluster"), TO("destinationCluster");
+        NAME("name"), TIME("timeCreated");
         private final String name;
         SortProperty( String name ) {
             this.name = name;

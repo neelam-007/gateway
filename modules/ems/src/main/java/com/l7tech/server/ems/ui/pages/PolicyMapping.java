@@ -230,10 +230,10 @@ public class PolicyMapping extends EsmStandardWebPage {
     private Panel buildMigrationTablePanel( final HiddenField hidden, final Button[] selectionComponents ) {
         List<PropertyColumn> columns = new ArrayList<PropertyColumn>();
         columns.add(new PropertyColumn(new Model("id"), "id"));
-        columns.add(new PropertyColumn(new StringResourceModel("migration.column.name", this, null), "NAME", "name"));
-        columns.add(new PropertyColumn(new StringResourceModel("migration.column.time", this, null), "TIME", "timeCreated"));
-        columns.add(new PropertyColumn(new StringResourceModel("migration.column.from", this, null), "FROM", "sourceCluster"));
-        columns.add(new PropertyColumn(new StringResourceModel("migration.column.to", this, null), "TO", "targetCluster"));
+        columns.add(new PropertyColumn(new StringResourceModel("migration.column.name", this, null), MigrationRecordManager.SortProperty.NAME.toString(), "name"));
+        columns.add(new PropertyColumn(new StringResourceModel("migration.column.time", this, null), MigrationRecordManager.SortProperty.TIME.toString(), "timeCreated"));
+        columns.add(new PropertyColumn(new StringResourceModel("migration.column.from", this, null), "sourceCluster"));
+        columns.add(new PropertyColumn(new StringResourceModel("migration.column.to", this, null), "targetCluster"));
 
         Date start = startOfDay((Date)dateStartModel.getObject());
         Date end = new Date(startOfDay((Date)dateEndModel.getObject()).getTime() + TimeUnit.DAYS.toMillis(1));
@@ -364,7 +364,7 @@ public class PolicyMapping extends EsmStandardWebPage {
                     }
                 });
             } catch (FindException fe) {
-                logger.warning("Error finding policy migration records");
+                logger.log( Level.WARNING, "Error finding policy migration records", fe);
                 return Collections.emptyList().iterator();
             }
         }
