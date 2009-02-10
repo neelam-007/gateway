@@ -2,10 +2,14 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
+import java.io.IOException;
+import java.security.KeyStoreException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -78,9 +82,16 @@ public class PrivateKeysComboBox extends JComboBox {
                 }
             }
             setModel(new DefaultComboBoxModel(items.toArray()));
-        } catch (Exception e) {
-            _logger.log(Level.WARNING, "Problem when listing keys in keystores.", e);
+        } catch (FindException fe) {
+            _logger.log(Level.WARNING, "Problem when listing keys in keystores.", fe);
+        } catch (KeyStoreException kse) {
+            _logger.log(Level.WARNING, "Problem when listing keys in keystores.", kse);
+        } catch (CertificateException ce) {
+            _logger.log(Level.WARNING, "Problem when listing keys in keystores.", ce);
+        } catch (IOException ioe) {
+            _logger.log(Level.WARNING, "Problem when listing keys in keystores.", ioe);
         }
+        // bug #6596 - catch individual checked exception rather than Exception base class
     }
 
     /**
