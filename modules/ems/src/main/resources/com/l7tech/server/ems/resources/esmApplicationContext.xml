@@ -312,7 +312,7 @@
         <property name="clusterPropertyListener" ref="serverConfig"/>
     </bean>
 
-    <bean id="licenseManager" class="com.l7tech.server.GatewayLicenseManager">
+    <bean id="licenseManager" class="com.l7tech.server.ems.EsmLicenseManager">
         <constructor-arg ref="clusterPropertyManager"/>
     </bean>
 
