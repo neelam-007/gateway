@@ -1,9 +1,11 @@
 package com.l7tech.server.ems.enterprise;
 
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.gateway.GatewayRegistrationEvent;
+import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.user.UserPropertyManager;
+import org.springframework.context.ApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -12,9 +14,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.springframework.context.ApplicationContext;
-import org.springframework.web.context.support.WebApplicationContextUtils;
 
 /**
  * TODO [steve] Add a "nonce" value using EM user login, sessionid and cluster guid
@@ -38,7 +37,10 @@ public class MappingFilter implements Filter {
         final HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
 
         boolean handled = false;
-        if ( "/Configure.html".equals(httpServletRequest.getRequestURI()) &&
+        final String requestURI = httpServletRequest.getRequestURI();
+        if ( ("/Configure.html".equals(requestURI) ||
+              "/StandardReports.html".equals(requestURI) ||
+              "/PolicyMigration.html".equals(requestURI)) &&
              httpServletRequest.getMethod().equalsIgnoreCase("get") ) {
             String username = httpServletRequest.getParameter("username");
             String clusterGuid = httpServletRequest.getParameter("clusterguid");

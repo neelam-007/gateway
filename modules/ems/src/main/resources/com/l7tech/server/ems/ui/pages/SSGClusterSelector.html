@@ -77,10 +77,22 @@
 
         /**
          * Callback function upon highlighting an SSG Cluster.
-         * @type function(entity)
+         * @type function(previous, entity, callbackId)
          */
         var entityHighlightedCallback;
 
+        /**
+         * Callback function upon clicking trust dialog button.
+         * @type function(event, entity, callbackId)
+         */
+        var onClickTrustDialogButtonCallback;
+
+        /**
+         * Callback function upon clicking access dialog button.
+         * @type function(event, entity, callbackId)
+         */
+
+        var onClickAccessDialogButtonCallback;
         /**
          * Parent window should call this if it wants a callback identifier.
          * @param {string} id   an identifier to include when callback to parent's showSSGClusterContent function.
@@ -89,6 +101,10 @@
             callbackId = id;
         }
 
+        /**
+         * Parent window should call this to provide the handler for entity highlighted event.
+         * @param {function} fn
+         */
         function setEntityHighlightedCallback(fn) {
             entityHighlightedCallback = fn;
         }
@@ -100,6 +116,22 @@
          */
         function onEntityHighlighted(previous, entity) {
             entityHighlightedCallback(previous, entity, callbackId);
+        }
+
+        function setOnClickTrustDialogButtonCallback(fn) {
+            onClickTrustDialogButtonCallback = fn;
+        }
+
+        function onClickTrustDialogButton(event, entity) {
+            onClickTrustDialogButtonCallback(event, entity, callbackId);
+        }
+
+        function setOnClickAccessDialogButtonCallback(fn) {
+            onClickAccessDialogButtonCallback = fn;
+        }
+
+        function onClickAccessDialogButton(event, entity) {
+            onClickAccessDialogButtonCallback(event, entity, callbackId);
         }
 
         /**
@@ -154,9 +186,8 @@
                     l7.Constants.ENTITY_TYPE.SSG_CLUSTER
                 ],
                 onEntityHighlighted : onEntityHighlighted,
-                onClickAccessDialogButton : function(event, entity) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, 'This feature is not available in this version.', localizedStrings.OK);
-                }
+                onClickTrustDialogButton : onClickTrustDialogButton,
+                onClickAccessDialogButton : onClickAccessDialogButton
             };
             entityTreeTable = new l7.EntityTreeTable(entityTreeTableBody, [], '../images', config);
 

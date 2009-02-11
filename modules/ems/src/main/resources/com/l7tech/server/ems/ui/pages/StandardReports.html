@@ -48,7 +48,7 @@
             REMOVE : 'Remove',
             LOADING_SAVED_SETTINGS : "Loading settings &ldquo;{0}&rdquo;...",
             SETTINGS_SAVED_TITLE : "Settings Saved",
-            SETTINGS_SAVED : "Settings saved successfully.",
+            SETTINGS_SAVED : "Settings is saved successfully.",
             OK : 'OK',
             CANCEL : 'Cancel',
             YES : 'Yes',
@@ -57,12 +57,14 @@
             ERROR : 'Error',
             SESSION_TIMEOUT : 'Your session has timed out.',
             CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server.',
+            CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Unable to retrieve data for establishing trust by SSG Cluster from the server.',
+            CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT : 'Unable to retrieve data for mapping access account from the server.',
             CANNOT_SAVE_SETTINGS : 'Unable to save settings.',
             CANNOT_DELETE_SETTINGS : 'Unable to delete settings &ldquo;{0}&rdquo;.',
             CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST : 'Unable to retrieve list of saved settings from the server.',
             CANNOT_DOWNLOAD_SAVED_SETTINGS : 'Unable to retrieve saved settings &ldquo;{0}&rdquo; from the server.',
             DOWNLOAD_SAVED_SETTINGS_WARNING : 'Saved settings has been loaded but with problem:',
-            CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST : 'Unable to retrieve list of message context keys for the selected SSG Clusers from the server.',
+            CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST : 'Unable to retrieve list of message context keys for the selected SSG Clusters from the server.',
             SSG_CLUSTER_NOT_APPLICABLE : 'None of the selected entities belong to this SSG Cluster. Please delete or reselect.',
             TOO_MANY_UNIQUE_MESSAGE_CONTEXT_KEYS : 'Cannot use more than 5 unique message context keys per SSG cluster',
             INVALID_GROUPINGS_REMOVED : 'Some groupings in this settings have been removed because they no longer applies.',
@@ -78,24 +80,12 @@
         }
     </script>
     <script type="text/javascript">
-        var ReportType = {
-            PERFORMANCE : 'performance',
-            USAGE       : 'usage'
-        };
-
-        var TimePeriodType = {
-            RELATIVE : 'relative',
-            ABSOLUTE : 'absolute'
-        };
-
         var loadSettingsButton;
         var saveSettingsButton;
         var deleteSettingsButton;
         var addEntityButton;
         var addGroupingButton;
         var generateButton;
-        var downloadOutputButton;
-        var deleteOutputButton;
 
         var relativeTimePeriodRadioButton;
         var absoluteTimePeriodRadioButton;
@@ -134,6 +124,9 @@
         var saveSettingsDialog;
         var saveSettingsOverwriteDialog;
         var deleteSettingsDialog;
+        var ssgClusterTrustDialog;
+        var mapAccessAccountDialog;
+        var changeAccessAccountDialog;
 
         /**
          * Array of SSG Cluster IDs that have entities selected.
@@ -307,7 +300,7 @@
 
             valid = valid && validateGroupingMessageContextKey();
 
-            if (reportTypeDropDown.value == ReportType.USAGE && trs.length == 0) {
+            if (reportTypeDropDown.value == l7.Constants.REPORT_TYPE.USAGE && trs.length == 0) {
                 groupingHint.style.display = '';
                 valid = false;
             } else {
@@ -500,7 +493,7 @@
         }
 
         /**
-         * @param {string} type     a ReportType value
+         * @param {string} type     a l7.Constants.REPORT_TYPE value
          */
         function setReportType(type) {
             l7.Widget.selectDropDownByValue(reportTypeDropDown, type);
@@ -640,14 +633,14 @@
         }
 
         /**
-         * @return {string} a TimePeriodType value
+         * @return {string} a l7.Constants.REPORT_TIME_PERIOD_TYPE value
          */
         function getTimePeriodType() {
             var result;
             if (relativeTimePeriodRadioButton.checked) {
-                result = TimePeriodType.RELATIVE;
+                result = l7.Constants.REPORT_TIME_PERIOD_TYPE.RELATIVE;
             } else if (absoluteTimePeriodRadioButton.checked) {
-                result = TimePeriodType.ABSOLUTE;
+                result = l7.Constants.REPORT_TIME_PERIOD_TYPE.ABSOLUTE;
             }
             return result;
         }
@@ -655,26 +648,26 @@
         /**
          * Sets the time period selection.
          * @param {string} timeZone         a java.util.TimeZone long name time zone ID
-         * @param {string} type             a TimePeriodType value
-         * @param {string} relativeValue    applies if type == TimePeriodType.RELATIVE
-         * @param {string} relativeUnit     applies if type == TimePeriodType.RELATIVE
-         * @param {string} absoluteFrom     applies if type == TimePeriodType.ABSOLUTE
-         * @param {string} absoluteTo       applies if type == TimePeriodType.ABSOLUTE
+         * @param {string} type             a l7.Constants.REPORT_TIME_PERIOD_TYPE value
+         * @param {string} relativeValue    applies if type == l7.Constants.REPORT_TIME_PERIOD_TYPE.RELATIVE
+         * @param {string} relativeUnit     applies if type == l7.Constants.REPORT_TIME_PERIOD_TYPE.RELATIVE
+         * @param {string} absoluteFrom     applies if type == l7.Constants.REPORT_TIME_PERIOD_TYPE.ABSOLUTE
+         * @param {string} absoluteTo       applies if type == l7.Constants.REPORT_TIME_PERIOD_TYPE.ABSOLUTE
          */
         function setTimePeriod(timeZone, type, relativeValue, relativeUnit, absoluteFrom, absoluteTo) {
-            if (type == TimePeriodType.RELATIVE) {
+            if (type == l7.Constants.REPORT_TIME_PERIOD_TYPE.RELATIVE) {
                 relativeTimePeriodRadioButton.checked = true;
                 wicketAjaxGet(loadTimePeriodSettingsUrl +
-                              '&type=' + TimePeriodType.RELATIVE +
+                              '&type=' + l7.Constants.REPORT_TIME_PERIOD_TYPE.RELATIVE +
                               '&timeZone=' + escape(timeZone), function() {}, function() {});
                 relativeTimePeriodTextBox.value = relativeValue;
                 l7.Widget.selectDropDownByValue(relativeTimePeriodUnitDropDown, relativeUnit);
-            } else if (type == TimePeriodType.ABSOLUTE) {
+            } else if (type == l7.Constants.REPORT_TIME_PERIOD_TYPE.ABSOLUTE) {
                 absoluteTimePeriodRadioButton.checked = true;
                 var from = deserializeDateTime(absoluteFrom);
                 var to = deserializeDateTime(absoluteTo);
                 wicketAjaxGet(loadTimePeriodSettingsUrl +
-                              '&type=' + TimePeriodType.ABSOLUTE +
+                              '&type=' + l7.Constants.REPORT_TIME_PERIOD_TYPE.ABSOLUTE +
                               '&timeZone=' + escape(timeZone) +
                               '&absoluteFrom=' + escape(from.toString()) +
                               '&absoluteTo=' + escape(to.toString()), function() {}, function() {});
@@ -841,10 +834,10 @@
             settings.timePeriod = {};
             settings.timePeriod.timeZone = document.getElementById('timePeriodTimeZoneDropDown').value;
             settings.timePeriod.type = getTimePeriodType();
-            if (settings.timePeriod.type == TimePeriodType.RELATIVE) {
+            if (settings.timePeriod.type == l7.Constants.REPORT_TIME_PERIOD_TYPE.RELATIVE) {
                 settings.timePeriod.numberOfTimeUnits = relativeTimePeriodTextBox.value;
                 settings.timePeriod.unitOfTime = relativeTimePeriodUnitDropDown.value;
-            } else if (settings.timePeriod.type == TimePeriodType.ABSOLUTE) {
+            } else if (settings.timePeriod.type == l7.Constants.REPORT_TIME_PERIOD_TYPE.ABSOLUTE) {
                 var fromDate = new Date();
                 fromDate.setTime(Date.parse(absoluteTimePeriodFromDate));
                 var fromHour = absoluteTimePeriodFromHourDropDown.value;
@@ -943,10 +936,133 @@
          * Callback function upon an SSG Cluster highlighted.
          * @param {object} previous     the previously highlighted SSG Cluster entity object literal; null if none
          * @param {object} ssgCluster   the newly highlighted SSG Cluster entity object literal
-         * @param {string} callbackId
+         * @param {string} callbackId   not used
          */
         function onHighlightSsgCluster(previous, ssgCluster, callbackId) {
             refreshSsgClusterContentSelector();
+        }
+
+        /**
+         * @param {string} id           SSG Cluster ID
+         * @param {string} name         SSG Cluster name
+         * @param {string} hostName     SSG Cluster SSL host name
+         * @param {string} port         SSG Cluster administrative port number
+         */
+        function launchSSGClusterTrustDialog(id, name, hostName, port) {
+            var callback = {
+                success : function(o) {
+                    var result = l7.Connection.parseJsonResponse(o,
+                                                                 true,
+                                                                 localizedStrings.CANNOT_GET_DATA_TO_ESTABLISH_TRUST,
+                                                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                                 localizedStrings.SESSION_TIMEOUT,
+                                                                 localizedStrings.ERROR,
+                                                                 localizedStrings.OK);
+                    if (result.success) {
+                        // The response JSON object is expected to have this property:
+                        // token {string} - an opague token for use as input to the gateway trust servlet
+                        var baseURL = document.URL;
+                        var queryPos = baseURL.indexOf('?');
+                        if (queryPos > -1) {
+                            baseURL = baseURL.substr(0, queryPos);  // Strips off query part.
+                        }
+                        document.getElementById('ssgClusterTrustForm_returnurl').value = baseURL + '?clusterguid=' + o.argument.id;
+                        document.getElementById('ssgClusterTrustForm_esmToken').value = result.json.token;
+                        document.getElementById('ssgClusterTrustForm').action = 'https://' + o.argument.hostName + ':' + o.argument.port + '/ssg/esmtrust?esmtrust=1';
+                        document.getElementById('ssgClusterTrustDialog_name').innerHTML = o.argument.name;
+                        ssgClusterTrustDialog.center();
+                        ssgClusterTrustDialog.show();
+                    }
+                },
+                failure : function(o) {
+                    l7.Dialog.showErrorDialog(
+                            localizedStrings.ERROR,
+                            localizedStrings.CANNOT_GET_DATA_TO_ESTABLISH_TRUST + '<br/><br/>' + o.status + ' ' + o.statusText,
+                            localizedStrings.OK);
+                },
+                argument : {
+                    id       : id,
+                    name     : name,
+                    hostName : hostName,
+                    port     : port
+                }
+            };
+            var url = document.forms['getGatewayTrustServletInputsForm'].action;
+            YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
+        }
+
+        /**
+         * @param {object} entity   the SSG Cluster entity object literal
+         */
+        function launchMapAccessAccountDialog(entity) {
+            var callback = {
+                success : function(o) {
+                    var result = l7.Connection.parseJsonResponse(o,
+                                                                 true,
+                                                                 localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT,
+                                                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                                 localizedStrings.SESSION_TIMEOUT,
+                                                                 localizedStrings.ERROR,
+                                                                 localizedStrings.OK);
+                    if (result.success) {
+                        // The response JSON object is expected to have this property:
+                        // token {string} - an opague token for use as input to the gateway trust servlet
+                        var entity = o.argument;
+                        document.getElementById('mapAccessAccountForm_esmToken').value = result.json.token;
+                        document.getElementById('mapAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
+                        document.getElementById('mapAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/esmtrust';
+                        document.getElementById('mapAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
+                        mapAccessAccountDialog.center();
+                        mapAccessAccountDialog.show();
+                    }
+                },
+                failure : function(o) {
+                    l7.Dialog.showErrorDialog(
+                            localizedStrings.ERROR,
+                            localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT + '<br/><br/>' + o.status + ' ' + o.statusText,
+                            localizedStrings.OK);
+                },
+                argument : entity
+            };
+            var url = document.forms['getGatewayTrustServletInputsForm'].action;
+            YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
+        }
+
+        /**
+         * @param {object} entity   the SSG Cluster entity object literal
+         */
+        function launchChangeAccessAccountDialog(entity) {
+            var callback = {
+                success : function(o) {
+                    var result = l7.Connection.parseJsonResponse(o,
+                                                                 true,
+                                                                 localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT,
+                                                                 localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
+                                                                 localizedStrings.SESSION_TIMEOUT,
+                                                                 localizedStrings.ERROR,
+                                                                 localizedStrings.OK);
+                    if (result.success) {
+                        // The response JSON object is expected to have this property:
+                        // token {string} - an opague token for use as input to the gateway trust servlet
+                        var entity = o.argument;
+                        document.getElementById('changeAccessAccountForm_esmToken').value = result.json.token;
+                        document.getElementById('changeAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
+                        document.getElementById('changeAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/esmtrust';
+                        document.getElementById('changeAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
+                        changeAccessAccountDialog.center();
+                        changeAccessAccountDialog.show();
+                    }
+                },
+                failure : function(o) {
+                    l7.Dialog.showErrorDialog(
+                            localizedStrings.ERROR,
+                            localizedStrings.CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT + '<br/><br/>' + o.status + ' ' + o.statusText,
+                            localizedStrings.OK);
+                },
+                argument : entity
+            };
+            var url = document.forms['getGatewayTrustServletInputsForm'].action;
+            YAHOO.util.Connect.asyncRequest('GET', url, callback, null);
         }
 
         /**
@@ -1069,10 +1185,6 @@
             }
         }
 
-        function loadOutputTableBody() {
-            // TODO
-        }
-
         /**
          * Note: This uses an asynchronous call.
          */
@@ -1099,7 +1211,7 @@
                             bodyHtml += '<ul style="margin-left: 1.5em; margin-top: 1em;">'
                             for (var i = 0; i < settings.warningItems.length; ++i) {
                                 var warningItem = settings.warningItems[i];
-                                bodyHtml += '<li style="display: list-item;">' + l7.Util.escapeAsText(warningItem) + '</li>';
+                                bodyHtml += '<li style="display: list-item;">' + l7.Util.escapeHtmlText(warningItem) + '</li>';
                             }
                             bodyHtml += '</ul>';
                             bodyHtml += '</div>';
@@ -1288,15 +1400,37 @@
             YAHOO.util.Connect.setDefaultPostHeader(true);
         }
 
-        function onClickDownloadOutput() {
-            // TODO
-            l7.Dialog.showErrorDialog(null, 'Not Implemented yet!', null);
+        /**
+         * Callback function upon clicking a trust dialog button in the SSG Cluster selector.
+         * @param {MouseEvent} event    the click event
+         * @param {object} entity       object literal of the SSG cluster clicked on
+         * @param {string} callbackId   not used
+         */
+        function onClickTrustDialogButton(event, entity, callbackId) {
+            if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
+                launchSSGClusterTrustDialog(entity.id, entity.name, entity.sslHostName, entity.adminPort);
+            } else {
+                YAHOO.log('No trust action for entity type: ' + entity.type, 'error', 'StandardReport.html');
+            }
         }
 
-        function onClickDeleteOutput() {
-            // TODO
-            l7.Dialog.showErrorDialog(null, 'Not Implemented yet!', null);
-        }
+        /**
+         * Callback function upon clicking an access dialog button in the SSG Cluster selector.
+         * @param {MouseEvent} event    the click event
+         * @param {object} entity       object literal of the SSG cluster clicked on
+         * @param {string} callbackId   not used
+         */
+        function onClickAccessDialogButton(event, entity, callbackId) {
+            if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
+                if (entity.accessStatus) {
+                    launchChangeAccessAccountDialog(entity);
+                } else {
+                    launchMapAccessAccountDialog(entity);
+                }
+            } else {
+                YAHOO.log('No trust action for entity type: ' + entity.type, 'error', 'Configure.html');
+            }
+        };
 
         /**
          * Verifies if all inputs in the save settings dialog are valid.
@@ -1380,14 +1514,6 @@
             });
             generateButton = new YAHOO.widget.Button('generateButton', {
                 onclick : {fn : onClickGenerate},
-                type : 'push'
-            });
-            downloadOutputButton = new YAHOO.widget.Button('downloadOutputButton', {
-                onclick : {fn : onClickDownloadOutput},
-                type : 'push'
-            });
-            deleteOutputButton = new YAHOO.widget.Button('deleteOutputButton', {
-                onclick : {fn : onClickDeleteOutput},
                 type : 'push'
             });
         }
@@ -1497,14 +1623,100 @@
             }
         }
 
+        function initSSGClusterTrustDialog() {
+            ssgClusterTrustDialog = new YAHOO.widget.Dialog('ssgClusterTrustDialog', {
+                buttons     : [
+                    {
+                        text      : localizedStrings.OK,
+                        handler   : function() {
+                            this.submit();
+                        },
+                        isDefault : true
+                    },
+                    {
+                        text      : localizedStrings.CANCEL,
+                        handler   : function() {
+                            this.hide();
+                        }
+                    }
+                ],
+                close       : true,
+                draggable   : true,
+                icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                modal       : true,
+                postmethod  : 'form',
+                visible     : false
+            });
+            ssgClusterTrustDialog.render();
+        }
+
+        function initMapAccessAccountDialog() {
+            mapAccessAccountDialog = new YAHOO.widget.Dialog('mapAccessAccountDialog', {
+                buttons     : [
+                    {
+                        text      : localizedStrings.OK,
+                        handler   : function() {
+                            this.submit();
+                        },
+                        isDefault : true
+                    },
+                    {
+                        text      : localizedStrings.CANCEL,
+                        handler   : function() {
+                            this.hide();
+                        }
+                    }
+                ],
+                close       : true,
+                draggable   : true,
+                icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                modal       : true,
+                postmethod  : 'form',
+                visible     : false
+            });
+            mapAccessAccountDialog.render();
+        }
+
+        function initChangeAccessAccountDialog() {
+            changeAccessAccountDialog = new YAHOO.widget.Dialog('changeAccessAccountDialog', {
+                buttons     : [
+                    {
+                        text      : localizedStrings.OK,
+                        handler   : function() {
+                            this.submit();
+                        },
+                        isDefault : true
+                    },
+                    {
+                        text      : localizedStrings.CANCEL,
+                        handler   : function() {
+                            this.hide();
+                        }
+                    }
+                ],
+                close       : true,
+                draggable   : true,
+                icon        : YAHOO.widget.SimpleDialog.ICON_BLOCK,
+                modal       : true,
+                postmethod  : 'form',
+                visible     : false
+            });
+            changeAccessAccountDialog.render();
+        }
+
         function initDialogs() {
             initSaveSettingsDialog();
             initSaveSettingsOverwriteDialog();
             initDeleteSettingsDialog();
+            initSSGClusterTrustDialog();
+            initMapAccessAccountDialog();
+            initChangeAccessAccountDialog();
         }
 
         function initSsgClusterSelector(iframe) {
             iframe.contentWindow.setEntityHighlightedCallback(onHighlightSsgCluster);
+            iframe.contentWindow.setOnClickTrustDialogButtonCallback(onClickTrustDialogButton);
+            iframe.contentWindow.setOnClickAccessDialogButtonCallback(onClickAccessDialogButton);
         }
 
         function initSsgClusterContentSelector(iframe) {
@@ -1652,7 +1864,9 @@
                 <span class="subtabOn">Standard Reports</span>
             </div>
             <div class="content">
+
                 <wicket:extend>
+
                 <div class="panel">
                     <div class="panelTitle tippy"><img id="newReportTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'newReportDiv')" /><span class="clickable" onclick="l7.Tippy.toggleTippy('newReportTippy', 'newReportDiv')">Generate New Report</span></div>
                     <div id="newReportDiv">
@@ -1873,30 +2087,7 @@
                 </div>
                 <script lanaguge="javascript" wicket:id="fromDateJavascript"></script>
                 <script lanaguge="javascript" wicket:id="toDateJavascript"></script>
-                <div wicket:id="generatedReports" style="min-height: 200px;">
-                <div class="panel">
-                    <div class="panelTitle tippy">
-                        <img id="generatedReportsTippy" class="tippy" src="../images/tippyExpanded.png" alt="" onclick="l7.Tippy.toggleTippy(this, 'generatedReportsDiv')" />
-                        <span class="clickable" onclick="l7.Tippy.toggleTippy('generatedReportsTippy', 'generatedReportsDiv')">Generated Reports</span>
-                        <img class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of generated reports" alt="Refresh" onclick="" />
-                    </div>
-                    <div id="generatedReportsDiv">
-                        <div class="panelToolbar">
-                            <table class="spaced"> <!-- Any other way to middle-align SELECT and BUTTON elements? -->
-                                <tr>
-                                    <td class="middle">Output Format: </td>
-                                    <td class="middle"><select><option>PDF</option></select></td>
-                                    <td class="middle"><button id="downloadOutputButton" title="Zip and download checked reports">Zip and Download</button></td>
-                                    <td class="middle"><button id="deleteOutputButton" title="Delete checked reports">Delete</button></td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="panelContent">
-                            <!-- Table of generated reports goes here. -->
-                        </div>
-                    </div>
-                </div>
-                </div>
+                <div wicket:id="generatedReports" style="min-height: 200px;"></div>
 
                 <div wicket:id="jsonMappings"/>
                 <div wicket:id="postReportParameters"/>
@@ -1942,6 +2133,59 @@
                         </form>
                     </div>
                 </div>
+
+                <div id="ssgClusterTrustDialog">
+                    <div class="hd">Establish Trust by SSG Cluster</div>
+                    <div class="bd" style="width: 40em;">
+                        <form id="ssgClusterTrustForm" method="POST">
+                            <input id="ssgClusterTrustForm_esmToken" type="hidden" name="token" />
+                            <input id="ssgClusterTrustForm_returnurl" type="hidden" name="returnurl" />
+                        </form>
+                        To establish trust of this Enterprise Service Manager by the SSG Cluster
+                        &ldquo;<span id="ssgClusterTrustDialog_name"></span>&rdquo;,
+                        you will now be redirected to the cluster server where
+                        you can authenticate using a gateway administrator account.
+                        That account will also be mapped to your Enterprise Service Manager account.
+                        When completed, you will be returned to this page.
+                    </div>
+                </div>
+
+                <div style="display: none;">
+                    <form name="getGatewayTrustServletInputsForm" wicket:id="getGatewayTrustServletInputsForm" method="POST">
+                    </form>
+                </div>
+
+                <div id="mapAccessAccountDialog">
+                    <div class="hd">Map Access Account</div>
+                    <div class="bd" style="width: 40em;">
+                        <form id="mapAccessAccountForm" method="POST">
+                            <input id="mapAccessAccountForm_esmToken" type="hidden" name="token" />
+                            <input id="mapAccessAccountForm_returnurl" type="hidden" name="returnurl" />
+                        </form>
+                        To enable access to the SSG Cluster
+                        &ldquo;<span id="mapAccessAccountDialog_ssgClusterName"></span>&rdquo;,
+                        you will now be redirected to the cluster server where
+                        you can map a gateway user account to your Enterprise Service Manager account.
+                        When completed, you will be returned to this page.
+                    </div>
+                </div>
+
+                <div id="changeAccessAccountDialog">
+                    <div class="hd">Change Access Account</div>
+                    <div class="bd" style="width: 40em;">
+                        <form id="changeAccessAccountForm" method="POST">
+                            <input id="changeAccessAccountForm_esmToken" type="hidden" name="token" />
+                            <input id="changeAccessAccountForm_returnurl" type="hidden" name="returnurl" />
+                        </form>
+                        Your Enterprise Service Manager account is currently mapped to a user account
+                        on the SSG Cluster
+                        &ldquo;<span id="changeAccessAccountDialog_ssgClusterName"></span>&rdquo;.
+                        To change that,  you will now be redirected to the cluster server where
+                        you can map a different gateway user account.
+                        When completed, you will be returned to this page.
+                    </div>
+                </div>
+
                 </wicket:extend>
 
             </div>

@@ -497,9 +497,6 @@
             function onClickTrustDialogButton(event, entity) {
                 if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
                     launchSSGClusterTrustDialog(entity.id, entity.name, entity.sslHostName, entity.adminPort);
-                } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE) {
-                    // TODO
-alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entity.id + '\nentity.type = ' + entity.type + '\nentity.name = ' + entity.name);
                 } else {
                     YAHOO.log('No trust action for entity type: ' + entity.type, 'error', 'Configure.html');
                 }
@@ -1295,7 +1292,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                                 baseURL = baseURL.substr(0, queryPos);  // Strips off query part.
                             }
                             document.getElementById('ssgClusterTrustForm_returnurl').value = baseURL + '?clusterguid=' + o.argument.id;
-                            document.getElementById('ssgClusterTrustForm_emstoken').value = result.json.token;
+                            document.getElementById('ssgClusterTrustForm_esmToken').value = result.json.token;
                             document.getElementById('ssgClusterTrustForm').action = 'https://' + o.argument.hostName + ':' + o.argument.port + '/ssg/esmtrust?esmtrust=1';
                             document.getElementById('ssgClusterTrustDialog_name').innerHTML = o.argument.name;
                             ssgClusterTrustDialog.center();
@@ -1336,7 +1333,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                             // The response JSON object is expected to have this property:
                             // token {string} - an opague token for use as input to the gateway trust servlet
                             var entity = o.argument;
-                            document.getElementById('mapAccessAccountForm_emstoken').value = result.json.token;
+                            document.getElementById('mapAccessAccountForm_esmToken').value = result.json.token;
                             document.getElementById('mapAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
                             document.getElementById('mapAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/esmtrust';
                             document.getElementById('mapAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
@@ -1373,7 +1370,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
                             // The response JSON object is expected to have this property:
                             // token {string} - an opague token for use as input to the gateway trust servlet
                             var entity = o.argument;
-                            document.getElementById('changeAccessAccountForm_emstoken').value = result.json.token;
+                            document.getElementById('changeAccessAccountForm_esmToken').value = result.json.token;
                             document.getElementById('changeAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
                             document.getElementById('changeAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/esmtrust';
                             document.getElementById('changeAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
@@ -1762,9 +1759,8 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
     <div class="hd">Establish Trust by SSG Cluster</div>
     <div class="bd" style="width: 40em;">
         <form id="ssgClusterTrustForm" method="POST">
-            <input id="ssgClusterTrustForm_emstoken" type="hidden" name="token" />
+            <input id="ssgClusterTrustForm_esmToken" type="hidden" name="token" />
             <input id="ssgClusterTrustForm_returnurl" type="hidden" name="returnurl" />
-            <input id="ssgClusterTrustForm_returntoken" type="hidden" name="returntoken" />
         </form>
         To establish trust of this Enterprise Service Manager by the SSG Cluster
         &ldquo;<span id="ssgClusterTrustDialog_name"></span>&rdquo;,
@@ -1784,7 +1780,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
     <div class="hd">Map Access Account</div>
     <div class="bd" style="width: 40em;">
         <form id="mapAccessAccountForm" method="POST">
-            <input id="mapAccessAccountForm_emstoken" type="hidden" name="token" />
+            <input id="mapAccessAccountForm_esmToken" type="hidden" name="token" />
             <input id="mapAccessAccountForm_returnurl" type="hidden" name="returnurl" />
         </form>
         To enable access to the SSG Cluster
@@ -1799,7 +1795,7 @@ alert('Not implemented yet!\n\nonClickTrustDialogButton\n\nentity.id = ' + entit
     <div class="hd">Change Access Account</div>
     <div class="bd" style="width: 40em;">
         <form id="changeAccessAccountForm" method="POST">
-            <input id="changeAccessAccountForm_emstoken" type="hidden" name="token" />
+            <input id="changeAccessAccountForm_esmToken" type="hidden" name="token" />
             <input id="changeAccessAccountForm_returnurl" type="hidden" name="returnurl" />
         </form>
         Your Enterprise Service Manager account is currently mapped to a user account

@@ -1,43 +1,39 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.server.ems.ui.NavigationPage;
-import com.l7tech.server.ems.enterprise.*;
-import com.l7tech.server.ems.gateway.GatewayContext;
-import com.l7tech.server.ems.gateway.GatewayContextFactory;
-import com.l7tech.server.ems.gateway.GatewayException;
-import com.l7tech.server.ems.gateway.GatewayNotMappedException;
-import com.l7tech.server.ems.gateway.GatewayNoTrustException;
-import com.l7tech.server.ems.standardreports.*;
-import com.l7tech.server.management.api.node.ReportApi;
-import com.l7tech.util.TimeUnit;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.ResolvingComparator;
-import com.l7tech.util.Resolver;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
+import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.ems.enterprise.*;
+import com.l7tech.server.ems.gateway.*;
+import com.l7tech.server.ems.standardreports.*;
+import com.l7tech.server.ems.ui.NavigationPage;
+import com.l7tech.server.management.api.node.ReportApi;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Resolver;
+import com.l7tech.util.ResolvingComparator;
+import com.l7tech.util.TimeUnit;
 import org.apache.wicket.RequestCycle;
-import org.apache.wicket.protocol.http.WebRequest;
-import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
+import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
+import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.DropDownChoice;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.markup.html.form.HiddenField;
-import org.apache.wicket.markup.html.IHeaderResponse;
+import org.apache.wicket.markup.html.form.IChoiceRenderer;
 import org.apache.wicket.model.Model;
+import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.mortbay.util.ajax.JSON;
 
-import java.text.SimpleDateFormat;
+import java.io.Serializable;
 import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.Serializable;
 
 /**
  *
@@ -56,6 +52,9 @@ public class StandardReports extends EsmStandardWebPage {
 
     @SpringBean
     private GatewayContextFactory gatewayContextFactory;
+
+    @SpringBean
+    private GatewayTrustTokenFactory gatewayTrustTokenFactory;
 
     @SpringBean
     private StandardReportSettingsManager standardReportSettingsManager;
@@ -163,10 +162,30 @@ public class StandardReports extends EsmStandardWebPage {
         };
         deleteSettingsForm.add(deleteSettingsDialogInputId );
 
+        final Form getGatewayTrustServletInputsForm = new JsonDataResponseForm("getGatewayTrustServletInputsForm"){
+            @Override
+            protected Object getJsonResponseData() {
+                try {
+                    logger.fine("Responding to request for trust token.");
+                    final String token = gatewayTrustTokenFactory.getTrustToken();
+                    return new JSONSupport() {
+                        @Override
+                        protected void writeJson() {
+                            add("token", token);
+                        }
+                    };
+                } catch (Exception e) {
+                    logger.warning(e.toString());
+                    return new JSONException(e);
+                }
+            }
+        };
+
         add( reportParametersForm);
         add( fromDateJavascript.setOutputMarkupId(true) );
         add( toDateJavascript.setOutputMarkupId(true) );
         add( deleteSettingsForm );
+        add( getGatewayTrustServletInputsForm );
 
         add( new JsonInteraction("jsonMappings", "jsonMappingUrl", new MappingDataProvider()) );
         add( new JsonPostInteraction("postReportParameters", "generateReportUrl", new ReportParametersDataProvider()) );

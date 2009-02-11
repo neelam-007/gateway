@@ -422,7 +422,6 @@ public class Configure extends EsmStandardWebPage {
                 }
             }
         };
-        deleteSSGClusterForm.add(deleteSSGClusterDialogInputId );
 
         final HiddenField startSsgNodeInputId = new HiddenField("startSsgNode_id", new Model(""));
         Form startSsgNodeForm = new JsonDataResponseForm("startSsgNodeForm") {

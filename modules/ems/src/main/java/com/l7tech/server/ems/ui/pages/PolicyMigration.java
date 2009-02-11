@@ -1,13 +1,15 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityHeaderSet;
+import com.l7tech.objectmodel.ExternalEntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.migration.MigrationDependency;
-import com.l7tech.server.ems.enterprise.JSONConstants;
-import com.l7tech.server.ems.enterprise.SsgCluster;
-import com.l7tech.server.ems.enterprise.SsgClusterManager;
+import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayException;
+import com.l7tech.server.ems.gateway.GatewayTrustTokenFactory;
 import com.l7tech.server.ems.migration.MigrationMappedEntity;
 import com.l7tech.server.ems.migration.MigrationMappingRecord;
 import com.l7tech.server.ems.migration.MigrationMappingRecordManager;
@@ -302,7 +304,27 @@ public class PolicyMigration extends EsmStandardWebPage {
         migrateImage.add(migrateBehaviour);
         add(migrateImage);
 
+        final Form getGatewayTrustServletInputsForm = new JsonDataResponseForm("getGatewayTrustServletInputsForm"){
+            @Override
+            protected Object getJsonResponseData() {
+                try {
+                    logger.fine("Responding to request for trust token.");
+                    final String token = gatewayTrustTokenFactory.getTrustToken();
+                    return new JSONSupport() {
+                        @Override
+                        protected void writeJson() {
+                            add("token", token);
+                        }
+                    };
+                } catch (Exception e) {
+                    logger.warning(e.toString());
+                    return new JSONException(e);
+                }
+            }
+        };
+
         add( selectionJsonForm );
+        add( getGatewayTrustServletInputsForm );
 
         dependenciesContainer.add( new Label("dependenciesTotalLabel", new PropertyModel(dependencySummaryModel, "totalDependencies")).setOutputMarkupId(true) );
         dependenciesContainer.add( new Label("dependenciesUnmappedLabel", new PropertyModel(dependencySummaryModel, "unmappedDependencies")).setOutputMarkupId(true) );
@@ -360,6 +382,9 @@ public class PolicyMigration extends EsmStandardWebPage {
 
     @SpringBean
     private GatewayContextFactory gatewayContextFactory;
+
+    @SpringBean
+    private GatewayTrustTokenFactory gatewayTrustTokenFactory;
 
     private DependencyKey lastSourceKey;
     private String lastSourceClusterId;
