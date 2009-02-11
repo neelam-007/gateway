@@ -271,6 +271,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     }
 
 
+    @Migration(mapName = NONE, mapValue = OPTIONAL, resolver = PropertyResolver.Type.VALUE_REFERENCE)
     public String[] getCustomURLs() {
         return customURLs;
     }
