@@ -243,6 +243,7 @@
         <constructor-arg index="1" ref="keystoreFileManager"/>
         <constructor-arg index="2" ref="serverConfig"/>
         <constructor-arg index="3" value=" "/>  <!-- This is for SCA, and we don't have one -->
+        <constructor-arg index="4"><null/></constructor-arg>
     </bean>
 
     <!-- server side log manager -->

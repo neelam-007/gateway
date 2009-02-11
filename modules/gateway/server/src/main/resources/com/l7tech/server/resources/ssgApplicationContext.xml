@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+S<?xml version="1.0" encoding="UTF-8"?>
 <!--
     The Application Context contains the definitions that describe the SSG server side components.
     Things such as identitiy managers, trust components, policy services token services etc. are defined
@@ -1057,7 +1057,7 @@
                 <constructor-arg value="node.cluster.pass"/>
             </bean>
         </constructor-arg>
-	<constructor-arg ref="dbPasswordEncryption"/>
+	    <constructor-arg ref="dbPasswordEncryption"/>
     </bean>
 
     <bean id="ftpServerManager" class="com.l7tech.server.transport.ftp.FtpServerManager">
