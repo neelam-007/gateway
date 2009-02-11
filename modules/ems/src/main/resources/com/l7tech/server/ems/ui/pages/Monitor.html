@@ -183,6 +183,7 @@
         var notifDlg_eMail_useOldPasswordRadioButton;
         var notifDlg_eMail_useNewPasswordRadioButton;
         var notifDlg_eMail_passwordTextBox;
+        var notifDlg_eMail_fromTextBox;
         var notifDlg_eMail_toTextBox;
         var notifDlg_eMail_ccTextBox;
         var notifDlg_eMail_bccTextBox;
@@ -447,6 +448,7 @@
                     notifDlg_eMail_useNewPasswordRadioButton.disabled = true;
                     notifDlg_eMail_passwordTextBox.disabled = true;
                 }
+                if (l7.Util.isBlankOnly(notifDlg_eMail_fromTextBox.value)) valid = false;
                 if (l7.Util.isBlankOnly(notifDlg_eMail_toTextBox.value) &&
                     l7.Util.isBlankOnly(notifDlg_eMail_ccTextBox.value) &&
                     l7.Util.isBlankOnly(notifDlg_eMail_bccTextBox.value)) {
@@ -619,6 +621,7 @@
                         settings.params.password = notifDlg_eMail_passwordTextBox.value;
                     }
                 }
+                settings.params.from = notifDlg_eMail_fromTextBox.value;
                 settings.params.to = notifDlg_eMail_toTextBox.value;
                 settings.params.cc = notifDlg_eMail_ccTextBox.value;
                 settings.params.bcc = notifDlg_eMail_bccTextBox.value;
@@ -822,6 +825,7 @@
                 // Populate some fields with default values.
                 onChangeNotifDlg_eMail_protocol();  // For side effect of populating the e-mail server default port number.
                 notifDlg_eMail_subjectTextBox.value = 'ESM monitoring notification';
+                notifDlg_eMail_toTextBox.value = 'ESM Server <esm-reply@company.com>';
                 notifDlg_eMail_bodyTextArea.value = '${monitoring.context.entityType} : ${monitoring.context.entityPathName}\n'
                                                   + 'Property : ${monitoring.context.propertyType}\n'
                                                   + 'Property State : ${monitoring.context.propertyState}\n'
@@ -847,6 +851,7 @@
                     }
                     notifDlg_eMail_passwordChoiceConfig.style.display = '';
                     notifDlg_eMail_useOldPasswordRadioButton.checked = true;
+                    notifDlg_eMail_fromTextBox.value = params.from;
                     notifDlg_eMail_toTextBox.value = params.to;
                     notifDlg_eMail_ccTextBox.value = params.cc;
                     notifDlg_eMail_bccTextBox.value = params.bcc;
@@ -1393,6 +1398,7 @@
             notifDlg_eMail_useOldPasswordRadioButton = document.getElementById('notifDlg_eMail_useOldPasswordRadioButton');
             notifDlg_eMail_useNewPasswordRadioButton = document.getElementById('notifDlg_eMail_useNewPasswordRadioButton');
             notifDlg_eMail_passwordTextBox = document.getElementById('notifDlg_eMail_passwordTextBox');
+            notifDlg_eMail_fromTextBox = document.getElementById('notifDlg_eMail_fromTextBox');
             notifDlg_eMail_toTextBox = document.getElementById('notifDlg_eMail_toTextBox');
             notifDlg_eMail_ccTextBox = document.getElementById('notifDlg_eMail_ccTextBox');
             notifDlg_eMail_bccTextBox = document.getElementById('notifDlg_eMail_bccTextBox');
@@ -1827,6 +1833,10 @@
                         </span>
                         <input id="notifDlg_eMail_passwordTextBox" type="password" size="48" maxlength="128"/>
                     </td>
+                </tr>
+                <tr>
+                    <th>From:</th>
+                    <td><input id="notifDlg_eMail_fromTextBox" type="text" maxlength="128" style="width: 98%;" onkeyup="validateNotificationRuleDialog();"/></td>
                 </tr>
                 <tr>
                     <th>To:</th>
