@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.ldapquery.server;
 
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.external.assertions.ldapquery.LDAPQueryAssertion;
 import com.l7tech.external.assertions.ldapquery.QueryAttributeMapping;
 import com.l7tech.identity.IdentityProvider;
@@ -17,6 +18,7 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import org.springframework.context.ApplicationContext;
 
 import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.SearchControls;
@@ -83,7 +85,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 try {
                     cachedvalues = createNewCacheEntry(filterExpression);
                 } catch (FindException e) {
-                    logger.log(Level.WARNING, "error reading from ldap", e);
+                    logger.log(Level.WARNING, e.getMessage(), ExceptionUtils.getDebugException(e));
                     return AssertionStatus.SERVER_ERROR;
                 }
                 cacheLock.writeLock().lock();
@@ -108,7 +110,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
             try {
                 values = createNewCacheEntry(filterExpression);
             } catch (FindException e) {
-                logger.log(Level.WARNING, "error reading from ldap", e);
+                logger.log(Level.WARNING, e.getMessage(), ExceptionUtils.getMessage(e));
                 return AssertionStatus.SERVER_ERROR;
             }
 
@@ -185,7 +187,11 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 }
                 return cachedvalues;
             } catch (Exception e) {
-                throw new FindException("Error searching for LDAP entry", e);
+                if (ExceptionUtils.causedBy(e, NamingException.class)) {
+                    throw new FindException("Error searching for LDAP entry: " + e.getMessage(), e);
+                } else {
+                    throw new FindException("Error searching for LDAP entry", e);
+                }
             } finally {
                 if (ldapcontext != null) {
                     if (answer != null) {
