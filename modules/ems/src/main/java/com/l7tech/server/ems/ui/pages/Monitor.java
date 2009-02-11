@@ -299,7 +299,7 @@ public class Monitor extends EsmStandardWebPage {
 
                         // Update the password for the E-mail notification rule.
                         if (notificationRule.getType().equals(JSONConstants.NotificationType.E_MAIL)) {
-                            boolean requiresAuth = (Boolean) params.get(JSONConstants.NotificationEmailParams.REQUIRES_AUTHENTICATION);
+                            boolean requiresAuth = (Boolean) params.get(JSONConstants.NotificationEmailParams.REQUIRES_AUTH);
                             if (requiresAuth) {
                                 String oldPassword = (String) notificationRule.getParamProp(JSONConstants.NotificationEmailParams.PASSWORD);
                                 String newPassword = (String) params.get(JSONConstants.NotificationEmailParams.PASSWORD);
