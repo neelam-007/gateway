@@ -90,9 +90,17 @@ public final class JSONConstants {
      * Enum of parameters for e-mail notification.
      */
     public static final class NotificationEmailParams {
-        public static final String REQUIRES_AUTHENTICATION = "requiresAuthentication";
-        public static final String USERNAME                = "userName";
-        public static final String PASSWORD                = "password";
+        public static final String PROTOCOL      = "protocol";
+        public static final String HOST          = "host";
+        public static final String PORT          = "port";
+        public static final String REQUIRES_AUTH = "requiresAuthentication";
+        public static final String USERNAME      ="userName";
+        public static final String PASSWORD      = "password";
+        public static final String TO            = "to";
+        public static final String CC            = "cc";
+        public static final String BCC           = "bcc";
+        public static final String SUBJECT       = "subject";
+        public static final String BODY          = "body";
     }
 
     /**
@@ -101,8 +109,43 @@ public final class JSONConstants {
      */
     public static final class NotificationEmailProtocol {
         public static final String PLAIN_SMTP         = "plainSmtp";
-        public static final String SMTP_over_SSL      = "sslSmtp";
+        public static final String SMTP_OVER_SSL      = "sslSmtp";
         public static final String SMTP_WITH_STARTTLS = "startTlsSmtp";
+    }
+
+    /**
+     * Enum of parameters for snmp-trap notification.
+     */
+    public static final class NotificationSnmpTrapParams {
+        public static final String HOST         = "host";
+        public static final String DEFAULT_PORT = "defaultPort";
+        public static final String PORT         = "port";
+        public static final String COMMUNITY    = "community";
+        public static final String TEXTDATA     = "textData";
+        public static final String OIDFUFFIX    = "oidSuffix";
+    }
+
+    /**
+     * Enum of parameters for http-request notification.
+     */
+    public static final class NotificationHttpRequestParams {
+        public static final String URL                   = "url";
+        public static final String HTTP_METHOD           = "httpMethod";
+        public static final String STANDARD_CONTENT_TYPE = "standardContentType";
+        public static final String CONTENT_TYPE          = "contentType";
+        public static final String BODAY                 = "body";
+    }
+
+    /**
+     * Enum of notification http method types.
+     */
+    public static final class NotificationHttpMethodType {
+        public static final String GET    = "GET";
+        public static final String POST   = "POST";
+        public static final String PUT    = "PUT";
+        public static final String DELETE = "DELETE";
+        public static final String HEAD   = "HEAD";
+        public static final String OTHER  = "OTHER";
     }
 
     /**

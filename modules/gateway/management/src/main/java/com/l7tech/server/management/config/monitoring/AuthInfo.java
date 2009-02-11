@@ -13,6 +13,11 @@ public class AuthInfo implements Serializable {
     private String username;
     private char[] password;
 
+    public AuthInfo(String username, char[] password) {
+        this.username = username;
+        this.password = password;
+    }
+
     public String getUsername() {
         return username;
     }

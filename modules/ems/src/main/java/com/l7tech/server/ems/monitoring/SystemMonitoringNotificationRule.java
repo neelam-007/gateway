@@ -7,10 +7,7 @@ import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ems.enterprise.JSONConstants;
-import com.l7tech.server.management.config.monitoring.HttpNotificationRule;
-import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
-import com.l7tech.server.management.config.monitoring.SnmpTrapNotificationRule;
-import com.l7tech.server.management.config.monitoring.EmailNotificationRule;
+import com.l7tech.server.management.config.monitoring.*;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
@@ -20,9 +17,7 @@ import org.mortbay.util.ajax.JSON;
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.ByteArrayInputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @XmlRootElement
 @Entity
@@ -84,12 +79,12 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
 
         HttpNotificationRule ret = new HttpNotificationRule(config);
         ret.setName(getName());
-        // TODO convert into HttpNotificationRule by copying properties
-        ret.setAuthInfo(null);
-        ret.setContentType(null);
-        ret.setMethod(HttpMethod.POST);
-        ret.setRequestBody(null);
-        ret.setUrl(null);
+        ret.setOid(getOid());
+        ret.setAuthInfo(null); // todo: where to get username and password to create authInfo?
+        ret.setContentType((String)getParamProp(JSONConstants.NotificationHttpRequestParams.CONTENT_TYPE));
+        ret.setMethod(obtainHttpMethod((String)getParamProp(JSONConstants.NotificationHttpRequestParams.HTTP_METHOD)));
+        ret.setRequestBody((String)getParamProp(JSONConstants.NotificationHttpRequestParams.BODAY));
+        ret.setUrl((String)getParamProp(JSONConstants.NotificationHttpRequestParams.URL));
         return ret;
     }
 
@@ -106,12 +101,12 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
 
         SnmpTrapNotificationRule ret = new SnmpTrapNotificationRule(config);
         ret.setName(getName());
-        // TODO convert into SnmpTrapNotificationRule by copying properties
-        ret.setCommunity(null);
-        ret.setOidSuffix(1);
-        ret.setPort(0);
-        ret.setSnmpHost(null);
-        ret.setText(null);
+        ret.setOid(getOid());
+        ret.setCommunity((String)getParamProp(JSONConstants.NotificationSnmpTrapParams.COMMUNITY));
+        ret.setOidSuffix(Integer.valueOf(getParamProp(JSONConstants.NotificationSnmpTrapParams.OIDFUFFIX).toString()));
+        ret.setPort(Integer.valueOf(getParamProp(JSONConstants.NotificationSnmpTrapParams.PORT).toString()));
+        ret.setSnmpHost((String)getParamProp(JSONConstants.NotificationSnmpTrapParams.HOST));
+        ret.setText((String)getParamProp(JSONConstants.NotificationSnmpTrapParams.TEXTDATA));
         return ret;
     }
 
@@ -128,17 +123,17 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
 
         EmailNotificationRule ret = new EmailNotificationRule(config);
         ret.setName(getName());
-        // TODO convert into a EmailNotificationRule by copying properties
-        ret.setAuthInfo(null);   getParamProp(JSONConstants.NotificationEmailParams.REQUIRES_AUTHENTICATION); // TODO ??
-        ret.setBcc(null);
-        ret.setCc(null);
-        ret.setCryptoType(null);
-        ret.setFrom(null);
-        ret.setPort(0);
-        ret.setSmtpHost(null);
-        ret.setSubject(null);
-        ret.setText(null);
-        ret.setTo(null);
+        ret.setOid(getOid());
+        ret.setAuthInfo(obtainAuthInfo());
+        ret.setBcc(toStringList((String)getParamProp(JSONConstants.NotificationEmailParams.BCC)));
+        ret.setCc(toStringList((String)getParamProp(JSONConstants.NotificationEmailParams.CC)));
+        ret.setCryptoType(obtainCryptoType((String)getParamProp(JSONConstants.NotificationEmailParams.PROTOCOL)));
+        ret.setFrom("postmaster"); // todo: get the real "from" after UI adds "From" field.
+        ret.setPort(Integer.valueOf(getParamProp(JSONConstants.NotificationEmailParams.PORT).toString()));
+        ret.setSmtpHost((String)getParamProp(JSONConstants.NotificationEmailParams.HOST));
+        ret.setSubject((String)getParamProp(JSONConstants.NotificationEmailParams.SUBJECT));
+        ret.setText((String)getParamProp(JSONConstants.NotificationEmailParams.BODY));
+        ret.setTo(toStringList((String)getParamProp(JSONConstants.NotificationEmailParams.TO)));
         return ret;
     }
 
@@ -218,5 +213,57 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
 
     public void fromJSON(Map map) {
         throw new UnsupportedOperationException("Mapping from JSON not supported.");
+    }
+
+    private AuthInfo obtainAuthInfo() {
+        AuthInfo authInfo = null;
+        boolean requireAuth = (Boolean)getParamProp(JSONConstants.NotificationEmailParams.REQUIRES_AUTH);
+        if (requireAuth) {
+            String username = (String)getParamProp(JSONConstants.NotificationEmailParams.USERNAME);
+            char[] password = ((String)getParamProp(JSONConstants.NotificationEmailParams.PASSWORD)).toCharArray();
+            authInfo = new AuthInfo(username, password);
+        }
+
+        return authInfo;
+    }
+
+    private List<String> toStringList(String str) {
+        List<String> list = new ArrayList<String>();
+        list.addAll(Arrays.asList(str.split(",")));
+        return list;
+    }
+
+    private EmailNotificationRule.CryptoType obtainCryptoType(String protocol) {
+        if (protocol == null) {
+            return null;
+        } else if (protocol.equals(JSONConstants.NotificationEmailProtocol.PLAIN_SMTP)) {
+            return EmailNotificationRule.CryptoType.PLAIN;
+        } else if (protocol.equals(JSONConstants.NotificationEmailProtocol.SMTP_OVER_SSL)) {
+            return EmailNotificationRule.CryptoType.SSL;
+        } else if (protocol.equals(JSONConstants.NotificationEmailProtocol.SMTP_WITH_STARTTLS)) {
+            return EmailNotificationRule.CryptoType.STARTTLS;
+        } else {
+            return null;
+        }
+    }
+
+    private HttpMethod obtainHttpMethod(String type) {
+        if (type == null) {
+            return HttpMethod.OTHER;
+        } else if (type.equals(JSONConstants.NotificationHttpMethodType.GET)) {
+            return HttpMethod.GET;
+        } else if (type.equals(JSONConstants.NotificationHttpMethodType.POST)) {
+            return HttpMethod.POST;
+        } else if (type.equals(JSONConstants.NotificationHttpMethodType.PUT)) {
+            return HttpMethod.PUT;
+        } else if (type.equals(JSONConstants.NotificationHttpMethodType.DELETE)) {
+            return HttpMethod.DELETE;
+        } else if (type.equals(JSONConstants.NotificationHttpMethodType.HEAD)) {
+            return HttpMethod.HEAD;
+        } else if (type.equals(JSONConstants.NotificationHttpMethodType.OTHER)) {
+            return HttpMethod.OTHER;
+        } else {
+            return HttpMethod.OTHER;
+        }
     }
 }
