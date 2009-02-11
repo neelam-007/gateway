@@ -721,6 +721,8 @@ public class Utilities {
             List<ReportApi.FilterPair> userFilterPairs = getAuthenticatedUserFilterPairs(keysToFilters);
             if(!userFilterPairs.isEmpty()){
                 addUserConstraint(userFilterPairs, sb);
+            }else{
+                addUserNotNullConstraint(sb);
             }
         }
 
@@ -802,6 +804,8 @@ public class Utilities {
             List<ReportApi.FilterPair> userFilterPairs = getAuthenticatedUserFilterPairs(keysToFilters);
             if(!userFilterPairs.isEmpty()){
                 addUserConstraint(userFilterPairs, sb);
+            }else{
+                addUserNotNullConstraint(sb);
             }
         }
 
@@ -899,6 +903,8 @@ public class Utilities {
             List<ReportApi.FilterPair> userFilterPairs = getAuthenticatedUserFilterPairs(keysToFilters);
             if(!userFilterPairs.isEmpty()){
                 addUserConstraint(userFilterPairs, sb);
+            }else{
+                addUserNotNullConstraint(sb);
             }
         }
 
@@ -1306,6 +1312,8 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
             List<ReportApi.FilterPair> userFilterPairs = getAuthenticatedUserFilterPairs(keysToFilters);
             if(!userFilterPairs.isEmpty()){
                 addUserConstraint(userFilterPairs, sb);
+            }else{
+                addUserNotNullConstraint(sb);
             }
         }
 
@@ -1946,6 +1954,16 @@ ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, 
             index++;
         }
         sb.append(") ");
+    }
+
+    /**
+     * It's possible for auth_user to have null values, when a context assertion which includes it either does not
+     * get a value or it's simply not in a context assertion. In this case we want to filter out any null values
+     * when we are interested in auth_user
+     * @param sb
+     */
+    private static void addUserNotNullConstraint(StringBuilder sb){
+        sb.append(" AND mcmv.auth_user_id IS NOT NULL ");
     }
 
     /**
