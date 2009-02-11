@@ -775,7 +775,9 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                     getUserCertsEnabledCheckbox().setSelected(iProviderConfig.isUserCertsEnabled());
                     getClientAuthenticationCheckbox().setSelected(iProviderConfig.isClientAuthEnabled());                    
                     if (getClientAuthenticationCheckbox().isSelected()) {
-                        getPrivateKeysComboBox().select(iProviderConfig.getKeystoreId(), iProviderConfig.getKeystoreAlias());
+                        if ( iProviderConfig.getKeystoreId() != null && iProviderConfig.getKeyAlias() != null ) {
+                            getPrivateKeysComboBox().select( iProviderConfig.getKeystoreId(), iProviderConfig.getKeyAlias() );
+                        }
                         if (getPrivateKeysComboBox().getSelectedItem() == null) {
                             //the selected key doesnt exists
                             JOptionPane.showMessageDialog(this, 
@@ -828,33 +830,38 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
             if (selectedType instanceof LdapIdentityProviderConfig) {
                 LdapIdentityProviderConfig ldapType = (LdapIdentityProviderConfig) selectedType;
 
+                final LdapIdentityProviderConfig ldapSettings = (LdapIdentityProviderConfig) settings;
+
                 // stores the default mappings only when the config is a new object or
                 // when the selection of the template is changed
-                if (((LdapIdentityProviderConfig) settings).getTemplateName() == null ||
-                        (((LdapIdentityProviderConfig) settings).getTemplateName() != null &&
-                        !((LdapIdentityProviderConfig) settings).getTemplateName().equals(ldapType.getTemplateName()))) {
+                if ( ldapSettings.getTemplateName() == null ||
+                        (ldapSettings.getTemplateName() != null &&
+                        !ldapSettings.getTemplateName().equals(ldapType.getTemplateName()))) {
 
-                    ((LdapIdentityProviderConfig) settings).setGroupMappings(ldapType.getGroupMappings());
-                    ((LdapIdentityProviderConfig) settings).setUserMappings(ldapType.getUserMappings());
+                    ldapSettings.setGroupMappings(ldapType.getGroupMappings());
+                    ldapSettings.setUserMappings(ldapType.getUserMappings());
                 }
 
-                ((LdapIdentityProviderConfig) settings).setTemplateName(ldapType.getTemplateName());
+                ldapSettings.setTemplateName(ldapType.getTemplateName());
                 DefaultComboBoxModel model = (DefaultComboBoxModel)getLdapHostList().getModel();
                 String[] newlist = new String[model.getSize()];
                 for (int i = 0; i < newlist.length; i++) {
                     newlist[i] = (String)model.getElementAt(i);
                 }
-                ((LdapIdentityProviderConfig) settings).setLdapUrl(newlist);
-                ((LdapIdentityProviderConfig) settings).setName(getProviderNameTextField().getText());
-                ((LdapIdentityProviderConfig) settings).setSearchBase(getLdapSearchBaseTextField().getText());
-                ((LdapIdentityProviderConfig) settings).setBindDN(getLdapBindDNTextField().getText());
-                ((LdapIdentityProviderConfig) settings).setBindPasswd(String.valueOf(getLdapBindPasswordField().getPassword()));
-                ((LdapIdentityProviderConfig) settings).setAdminEnabled(getAdminEnabledCheckbox().isSelected());
-                ((LdapIdentityProviderConfig) settings).setUserCertsEnabled(getUserCertsEnabledCheckbox().isSelected());
-                ((LdapIdentityProviderConfig) settings).setClientAuthEnabled(getClientAuthenticationCheckbox().isSelected());
-                if (getClientAuthenticationCheckbox().isSelected()) {
-                    ((LdapIdentityProviderConfig) settings).setKeystoreId(getPrivateKeysComboBox().getSelectedKeystoreId());
-                    ((LdapIdentityProviderConfig) settings).setKeystoreAlias(getPrivateKeysComboBox().getSelectedKeyAlias());
+                ldapSettings.setLdapUrl(newlist);
+                ldapSettings.setName(getProviderNameTextField().getText());
+                ldapSettings.setSearchBase(getLdapSearchBaseTextField().getText());
+                ldapSettings.setBindDN(getLdapBindDNTextField().getText());
+                ldapSettings.setBindPasswd(String.valueOf(getLdapBindPasswordField().getPassword()));
+                ldapSettings.setAdminEnabled(getAdminEnabledCheckbox().isSelected());
+                ldapSettings.setUserCertsEnabled(getUserCertsEnabledCheckbox().isSelected());
+                ldapSettings.setClientAuthEnabled(getClientAuthenticationCheckbox().isSelected());
+                if ( getClientAuthenticationCheckbox().isSelected() && !getPrivateKeysComboBox().isSelectedDefaultSsl() ) {
+                    ldapSettings.setKeystoreId(getPrivateKeysComboBox().getSelectedKeystoreId());
+                    ldapSettings.setKeyAlias(getPrivateKeysComboBox().getSelectedKeyAlias());
+                } else {
+                    ldapSettings.setKeystoreId(null);    
+                    ldapSettings.setKeyAlias(null);
                 }
             }
         }

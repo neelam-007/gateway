@@ -506,6 +506,26 @@
         </property>
     </bean>
 
+    <!-- SSL for LDAP -->
+    <bean id="ldapSocketFactoryInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.identity.ldap.LdapSslCustomizerSupport"/>
+        <property name="targetMethod" value="setTrustManager"/>
+        <property name="arguments">
+            <list>
+                <ref bean="trustManager"/>
+            </list>
+        </property>
+    </bean>
+    <bean id="ldapSocketFactoryKeyManagerInitializer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.identity.ldap.LdapSslCustomizerSupport"/>
+        <property name="targetMethod" value="setSsgKeyStoreManager"/>
+        <property name="arguments">
+            <list>
+                <ref bean="ssgKeyStoreManager"/>
+            </list>
+        </property>
+    </bean>
+
      <!-- server side HTTP routing hostname verifier -->
     <bean id="hostnameVerifier" class="com.l7tech.server.transport.http.SslClientHostnameVerifier">
         <constructor-arg ref="serverConfig"/>

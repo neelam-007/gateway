@@ -32,14 +32,17 @@ public abstract class SslClientSocketFactorySupport extends SSLSocketFactory imp
      *
      * <p>NOTE: the actual objects passed are Strings ie. "com.l7tech.server.transport.http.SslClientSocketFactory" </p>
      */
+    @Override
     public final int compare(Object o1, Object o2) {
         return o1!=null && o2!=null && o1.equals(o2) ? 0 : -1;
     }
 
+    @Override
     public final String[] getDefaultCipherSuites() {
         return getSocketFactory().getDefaultCipherSuites();
     }
 
+    @Override
     public final String[] getSupportedCipherSuites() {
         return getSocketFactory().getSupportedCipherSuites();
     }
@@ -49,37 +52,40 @@ public abstract class SslClientSocketFactorySupport extends SSLSocketFactory imp
         return getSocketFactory().createSocket();
     }
 
+    @Override
     public final Socket createSocket(Socket socket, String string, int i, boolean b) throws IOException {
         return getSocketFactory().createSocket(socket, string, i, b);
     }
 
+    @Override
     public final Socket createSocket(String string, int i) throws IOException {
         return getSocketFactory().createSocket(string, i);
     }
 
+    @Override
     public final Socket createSocket(String string, int i, InetAddress inetAddress, int i1) throws IOException {
         return getSocketFactory().createSocket(string, i, inetAddress, i1);
     }
 
+    @Override
     public final Socket createSocket(InetAddress inetAddress, int i) throws IOException {
         return getSocketFactory().createSocket(inetAddress, i);
     }
 
+    @Override
     public final Socket createSocket(InetAddress inetAddress, int i, InetAddress inetAddress1, int i1) throws IOException {
         return getSocketFactory().createSocket(inetAddress, i, inetAddress1, i1);
     }
 
-    //- PACKAGE
+    //- PROTECTED
 
-    abstract X509TrustManager getTrustManager();
+    protected abstract X509TrustManager getTrustManager();
 
-    KeyManager[] getDefaultKeyManagers() {
+    protected KeyManager[] getDefaultKeyManagers() {
         return new KeyManager[0];
     }
 
-    SslClientSocketFactorySupport() {
-        logger.info("Initializing SSL Client Socket Factory");
-
+    protected SSLContext buildSSLContext() {
         KeyManager[] keyManagers = getDefaultKeyManagers();
         if ( keyManagers == null )
             throw new IllegalStateException("KeyManagers must be set before first use");
@@ -98,8 +104,13 @@ public abstract class SslClientSocketFactorySupport extends SSLSocketFactory imp
         } catch (GeneralSecurityException e) {
             throw new RuntimeException("Couldn't initialize LDAP client SSL context", e);
         }
+        
+        return context;
+    }
 
-        this.sslContext = context;
+    protected SslClientSocketFactorySupport() {
+        logger.info("Initializing SSL Client Socket Factory");
+        this.sslContext = buildSSLContext();
     }
 
     //- PRIVATE

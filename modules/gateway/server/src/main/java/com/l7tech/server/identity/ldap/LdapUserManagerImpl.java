@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 
 import javax.naming.*;
 import javax.naming.directory.*;
@@ -116,11 +117,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
             logger.log(Level.WARNING, "LDAP error: " + ne.getMessage(), ExceptionUtils.getDebugException(ne));
             return null;
         } finally {
-            try {
-                if (context != null) context.close();
-            } catch (NamingException e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-            }
+            ResourceUtils.closeQuietly( context );
         }
     }
 
@@ -149,14 +146,14 @@ public class LdapUserManagerImpl implements LdapUserManager {
 
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            NamingEnumeration answer;
-            answer = context.search(ldapIdentityProviderConfig.getSearchBase(),
-                                    filter.toString(),
-                                    new String[]{login},
-                                    sc);
-
             String dn = null;
+
+            NamingEnumeration answer = null;
             try {
+                answer = context.search(ldapIdentityProviderConfig.getSearchBase(),
+                                        filter.toString(),
+                                        new String[]{login},
+                                        sc);
                 if (answer.hasMore()) {
                     dn = ((SearchResult)answer.next()).getNameInNamespace();
                 } else {
@@ -164,10 +161,10 @@ public class LdapUserManagerImpl implements LdapUserManager {
                     return null;
                 }
             } finally {
-                answer.close();
+                ResourceUtils.closeQuietly( answer );
             }
 
-            // close context so it can be re-used (if pooled)
+            // close context here so it can be re-used in find method (if pooled)
             context.close();
             context = null;
             
@@ -177,11 +174,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
         } catch (NamingException ne) {
             logger.log(Level.WARNING, "LDAP error: " + ne.getMessage(), ExceptionUtils.getDebugException(ne));
         } finally {
-            try {
-                if (context != null) context.close();
-            } catch (NamingException e) {
-                logger.log(Level.WARNING, "Caught NamingException while closing LDAP Context", e);
-            }
+            ResourceUtils.closeQuietly( context );
         }
         return null;
     }
@@ -289,7 +282,10 @@ public class LdapUserManagerImpl implements LdapUserManager {
         while (ldapurl != null) {
             DirContext userCtx;
             try {
-                userCtx = LdapUtils.getLdapContext(ldapurl, dn, passwd, identityProvider.getLdapConnectionTimeout(), identityProvider.getLdapReadTimeout());
+                boolean clientAuth = ldapIdentityProviderConfig.isClientAuthEnabled();
+                Long keystoreId = ldapIdentityProviderConfig.getKeystoreId();
+                String keyAlias = ldapIdentityProviderConfig.getKeyAlias();
+                userCtx = LdapUtils.getLdapContext(ldapurl, clientAuth, keystoreId, keyAlias, dn, passwd, identityProvider.getLdapConnectionTimeout(), identityProvider.getLdapReadTimeout(), false );
                 // Close the context when we're done
                 userCtx.close();
                 logger.info("User: " + dn + " authenticated successfully in provider " + ldapIdentityProviderConfig.getName());

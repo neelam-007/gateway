@@ -26,7 +26,6 @@ import com.l7tech.server.identity.ConfigurableIdentityProvider;
 import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
 import com.l7tech.server.logon.LogonService;
-import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.util.Background;
@@ -351,9 +350,9 @@ public class LdapIdentityProviderImpl
 
     private void rebuildCertIndex() {
         logger.fine("Re-creating ldap user certificate index for " + config.getName());
-        DirContext context = null;
-        NamingEnumeration answer = null;
         HashMap<Pair<String,String>, String> tmpCertIndex = new HashMap<Pair<String, String>, String>();
+
+        DirContext context = null;
         try {
             context = getBrowseContext();
             SearchControls sc = new SearchControls();
@@ -362,25 +361,30 @@ public class LdapIdentityProviderImpl
             UserMappingConfig[] mappings = config.getUserMappings();
             for (UserMappingConfig mapping : mappings) {
                 String certAttributeName = mapping.getUserCertAttrName();
-                answer = context.search(config.getSearchBase(), "(" + certAttributeName + "=*)", sc);
+                NamingEnumeration answer = null;
+                try {
+                    answer = context.search(config.getSearchBase(), "(" + certAttributeName + "=*)", sc);
 
-                while (answer.hasMore()) {
-                    SearchResult sr = (SearchResult)answer.next();
-                    Object tmp = LdapUtils.extractOneAttributeValue(sr.getAttributes(), certAttributeName);
-                    if (tmp != null) {
-                        if (tmp instanceof byte[]) {
-                            X509Certificate cert = CertUtils.decodeCert((byte[])tmp);
-                            if (cert.getSerialNumber() != null && cert.getIssuerX500Principal() != null) {
-                                BigInteger serialNumber = cert.getSerialNumber();
-                                X500Principal issuerDn = cert.getIssuerX500Principal();
+                    while (answer.hasMore()) {
+                        SearchResult sr = (SearchResult)answer.next();
+                        Object tmp = LdapUtils.extractOneAttributeValue(sr.getAttributes(), certAttributeName);
+                        if (tmp != null) {
+                            if (tmp instanceof byte[]) {
+                                X509Certificate cert = CertUtils.decodeCert((byte[])tmp);
+                                if (cert.getSerialNumber() != null && cert.getIssuerX500Principal() != null) {
+                                    BigInteger serialNumber = cert.getSerialNumber();
+                                    X500Principal issuerDn = cert.getIssuerX500Principal();
 
-                                Pair<String, String> key = makeIndexKey(issuerDn, serialNumber);
-                                String val = sr.getNameInNamespace();
-                                logger.fine("Indexing " + key + " for " + val);
-                                tmpCertIndex.put(key, val);
+                                    Pair<String, String> key = makeIndexKey(issuerDn, serialNumber);
+                                    String val = sr.getNameInNamespace();
+                                    logger.fine("Indexing " + key + " for " + val);
+                                    tmpCertIndex.put(key, val);
+                                }
                             }
                         }
                     }
+                } finally {
+                    ResourceUtils.closeQuietly( answer );                    
                 }
             }
             indexLock.writeLock().lock();
@@ -393,12 +397,7 @@ public class LdapIdentityProviderImpl
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error while recreating ldap user certificate index for LDAP Provider '" + config.getName() + "': " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         } finally {
-            if (context != null) {
-                if (answer != null) {
-                    ResourceUtils.closeQuietly(answer);
-                }
-                ResourceUtils.closeQuietly(context);
-            }
+            ResourceUtils.closeQuietly( context );
         }
     }
 
@@ -859,12 +858,8 @@ public class LdapIdentityProviderImpl
         } catch (NamingException e) {
             throw new FindException("LDAP search error with filter " + filter, e);
         } finally {
-            if (context != null) {
-                if (answer != null) {
-                    ResourceUtils.closeQuietly(answer);
-                }
-                ResourceUtils.closeQuietly(context);
-            }
+            ResourceUtils.closeQuietly( answer );
+            ResourceUtils.closeQuietly( context );
         }
         return output;
     }
@@ -978,60 +973,67 @@ public class LdapIdentityProviderImpl
 
     @Override
     public DirContext getBrowseContext() throws NamingException {
-        String ldapurl = getLastWorkingLdapUrl();
-        if (ldapurl == null) {
-            ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
-        }
-        while (ldapurl != null) {
-            UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
-            // fla note: this is weird. new BrowseContext objects are created at every operation so they
-            // should not cross threads.
-            env.put("java.naming.ldap.version", "3");
-            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-            // when getting javax.naming.CommunicationException at
-            env.put(Context.PROVIDER_URL, ldapurl);
-            env.put("com.sun.jndi.ldap.connect.pool", "true");
-            env.put("com.sun.jndi.ldap.connect.timeout", Long.toString(ldapConnectionTimeout));
-            env.put("com.sun.jndi.ldap.read.timeout", Long.toString(ldapReadTimeout));
-            env.put( Context.REFERRAL, "follow" );
-            String dn = config.getBindDN();
-            if (dn != null && dn.length() > 0) {
-                String pass = config.getBindPasswd();
-                env.put(Context.SECURITY_AUTHENTICATION, "simple");
-                env.put(Context.SECURITY_PRINCIPAL, dn);
-                env.put(Context.SECURITY_CREDENTIALS, pass);
-            }
+        final ClassLoader originalContextClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader( LdapSslCustomizerSupport.getSSLSocketFactoryClassLoader() );
 
-            try {
-                LdapURL url = new LdapURL(ldapurl);
-                if (url.useSsl()) {
-                    env.put("java.naming.ldap.factory.socket", SslClientSocketFactory.class.getName());
-                    env.put(Context.SECURITY_PROTOCOL, "ssl");
+            String ldapurl = getLastWorkingLdapUrl();
+            if (ldapurl == null) {
+                ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+            }
+            while (ldapurl != null) {
+                UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
+                // fla note: this is weird. new BrowseContext objects are created at every operation so they
+                // should not cross threads.
+                env.put("java.naming.ldap.version", "3");
+                env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+                // when getting javax.naming.CommunicationException at
+                env.put(Context.PROVIDER_URL, ldapurl);
+                env.put("com.sun.jndi.ldap.connect.pool", "true");
+                env.put("com.sun.jndi.ldap.connect.timeout", Long.toString(ldapConnectionTimeout));
+                env.put("com.sun.jndi.ldap.read.timeout", Long.toString(ldapReadTimeout));
+                env.put( Context.REFERRAL, "follow" );
+                String dn = config.getBindDN();
+                if (dn != null && dn.length() > 0) {
+                    String pass = config.getBindPasswd();
+                    env.put(Context.SECURITY_AUTHENTICATION, "simple");
+                    env.put(Context.SECURITY_PRINCIPAL, dn);
+                    env.put(Context.SECURITY_CREDENTIALS, pass);
                 }
-            } catch (NamingException e) {
-                logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
-                continue;
-            } catch (IllegalArgumentException e) {
-                logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
-                continue;
-            }
 
-            env.lock();
+                try {
+                    LdapURL url = new LdapURL(ldapurl);
+                    if (url.useSsl()) {
+                        env.put("java.naming.ldap.factory.socket", LdapSslCustomizerSupport.getSSLSocketFactoryClassname( config.isClientAuthEnabled(), config.getKeystoreId(), config.getKeyAlias() ) );
+                        env.put(Context.SECURITY_PROTOCOL, "ssl");
+                    }
+                } catch (NamingException e) {
+                    logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+                    continue;
+                } catch (IllegalArgumentException e) {
+                    logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+                    continue;
+                }
 
-            try {
-                // Create the initial directory context.
-                return new InitialDirContext(env);
-            } catch (CommunicationException e) {
-                logger.log(Level.WARNING, "Could not establish context using LDAP URL " + ldapurl + ". " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
-            } catch (RuntimeException e) {
-                logger.log(Level.WARNING, "Could not establish context using LDAP URL " + ldapurl + ". " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+                env.lock();
+
+                try {
+                    // Create the initial directory context.
+                    return new InitialDirContext(env);
+                } catch (CommunicationException e) {
+                    logger.log(Level.WARNING, "Could not establish context using LDAP URL " + ldapurl + ". " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+                } catch (RuntimeException e) {
+                    logger.log(Level.WARNING, "Could not establish context using LDAP URL " + ldapurl + ". " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+                }
             }
+            throw new CommunicationException("Could not establish context on any of the ldap urls.");
+        } finally {
+            Thread.currentThread().setContextClassLoader( originalContextClassLoader );            
         }
-        throw new CommunicationException("Could not establish context on any of the ldap urls.");
     }
 
     @Override
@@ -1063,10 +1065,13 @@ public class LdapIdentityProviderImpl
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
 
             // make sure the base DN is valid and contains at least one entry
+            NamingEnumeration entrySearchEnumeration = null;
             try {
-                context.search(config.getSearchBase(), "(objectClass=*)", sc);
+                entrySearchEnumeration = context.search(config.getSearchBase(), "(objectClass=*)", sc);
             } catch (NamingException e) {
                 throw new InvalidIdProviderCfgException("Cannot search using base: " + config.getSearchBase(), e);
+            } finally {
+                ResourceUtils.closeQuietly( entrySearchEnumeration );
             }
 
             // check user mappings. make sure they work
@@ -1106,7 +1111,7 @@ public class LdapIdentityProviderImpl
                     offensiveUserMappings.add(userType);
                     logger.log(Level.FINE, "error testing user mapping" + userType.getObjClass(), e);
                 } finally {
-                    if (answer != null) ResourceUtils.closeQuietly(answer);
+                    ResourceUtils.closeQuietly(answer);
                 }
             }
 
@@ -1135,7 +1140,7 @@ public class LdapIdentityProviderImpl
                     offensiveGroupMappings.add(groupType);
                     logger.log(Level.FINE, "error testing group mapping" + groupType.getObjClass(), e);
                 } finally {
-                    if (answer != null) ResourceUtils.closeQuietly(answer);
+                    ResourceUtils.closeQuietly(answer);
                 }
             }
 
@@ -1177,7 +1182,7 @@ public class LdapIdentityProviderImpl
             } else
                 logger.finest("this ldap config was tested successfully");
         } finally {
-            if (context != null) ResourceUtils.closeQuietly(context);
+            ResourceUtils.closeQuietly(context);
             cancelTasks(rebuildTask, cleanupTask);
         }
     }

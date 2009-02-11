@@ -4,7 +4,6 @@
 package com.l7tech.server.identity.ldap;
 
 import com.sun.jndi.ldap.LdapURL;
-import com.l7tech.server.transport.http.SslClientSocketFactory;
 import com.l7tech.server.ServerConfig;
 
 import javax.naming.directory.Attribute;
@@ -65,28 +64,83 @@ public final class LdapUtils {
         return null;
     }
 
-    public static DirContext getLdapContext(String url, String login, String pass, long connectTimeout, long readTimeout) throws NamingException {
-        LdapURL lurl = new LdapURL(url);
-        UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
-        env.put("java.naming.ldap.version", "3");
-        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, url);
-        env.put("com.sun.jndi.ldap.connect.pool", "true");
-        env.put("com.sun.jndi.ldap.connect.timeout", Long.toString(connectTimeout));
-        env.put("com.sun.jndi.ldap.read.timeout", Long.toString(readTimeout));
-        env.put( Context.REFERRAL, "follow" );
+    /**
+     * Get a DirContext created with the given parameters.
+     *
+     * <p>For LDAPS connections, the default keystore will be used for client certificate.</p>
+     *
+     * @param url The LDAP(S) url
+     * @param login The login to use (may be null)
+     * @param pass  The password to use (may be null)
+     * @param connectTimeout The TCP connection timeout
+     * @param readTimeout The TCP read timeout
+     * @return The context
+     * @throws NamingException If an error occurs
+     */
+    public static DirContext getLdapContext( final String url,
+                                             final String login,
+                                             final String pass,
+                                             final long connectTimeout,
+                                             final long readTimeout ) throws NamingException {
+        return getLdapContext(url, true, null, null, login, pass, connectTimeout, readTimeout, true);
+    }
 
-        if (lurl.useSsl()) {
-            env.put("java.naming.ldap.factory.socket", SslClientSocketFactory.class.getName());
-            env.put(Context.SECURITY_PROTOCOL, "ssl");
-        }
+    /**
+     * Get a DirContext created with the given parameters.
+     *
+     * <p>For LDAPS connections, the default keystore will be used for client certificate.</p>
+     *
+     * @param url The LDAP(S) url
+     * @param useClientAuth True to enable client authentication
+     * @param keystoreId The keystore identifier (null for default)
+     * @param keyAlias The key alias (null for default)
+     * @param login The login to use (may be null)
+     * @param pass  The password to use (may be null)
+     * @param connectTimeout The TCP connection timeout
+     * @param readTimeout The TCP read timeout
+     * @param useConnectionPooling True to use connection pool
+     * @return The context
+     * @throws NamingException If an error occurs
+     */
+    public static DirContext getLdapContext( final String url,
+                                             final boolean useClientAuth,
+                                             final Long keystoreId,
+                                             final String keyAlias,
+                                             final String login,
+                                             final String pass,
+                                             final long connectTimeout,
+                                             final long readTimeout,
+                                             final boolean useConnectionPooling ) throws NamingException {
+        final ClassLoader originalContextClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader( LdapSslCustomizerSupport.getSSLSocketFactoryClassLoader() );
 
-        if (login != null && login.length() > 0) {
-            env.put(Context.SECURITY_AUTHENTICATION, "simple");
-            env.put(Context.SECURITY_PRINCIPAL, login);
-            env.put(Context.SECURITY_CREDENTIALS, pass);
+            LdapURL lurl = new LdapURL(url);
+            UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
+            env.put("java.naming.ldap.version", "3");
+            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+            env.put(Context.PROVIDER_URL, url);
+            if ( useConnectionPooling ) {
+                env.put("com.sun.jndi.ldap.connect.pool", "true");
+            }
+            env.put("com.sun.jndi.ldap.connect.timeout", Long.toString(connectTimeout));
+            env.put("com.sun.jndi.ldap.read.timeout", Long.toString(readTimeout));
+            env.put( Context.REFERRAL, "follow" );
+
+            if (lurl.useSsl()) {
+                env.put("java.naming.ldap.factory.socket", LdapSslCustomizerSupport.getSSLSocketFactoryClassname( useClientAuth, keystoreId, keyAlias ));
+                env.put(Context.SECURITY_PROTOCOL, "ssl");
+            }
+
+            if (login != null && login.length() > 0) {
+                env.put(Context.SECURITY_AUTHENTICATION, "simple");
+                env.put(Context.SECURITY_PRINCIPAL, login);
+                env.put(Context.SECURITY_CREDENTIALS, pass);
+            }
+            env.lock();
+            return new InitialDirContext(env);
+        } finally {
+            Thread.currentThread().setContextClassLoader( originalContextClassLoader );
         }
-        env.lock();
-        return new InitialDirContext(env);
     }
 }

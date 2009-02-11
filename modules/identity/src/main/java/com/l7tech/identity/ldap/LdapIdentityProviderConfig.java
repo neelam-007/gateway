@@ -265,8 +265,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     @Transient
     public boolean isClientAuthEnabled() {
         Boolean b = (Boolean) getProperty(CLIENT_AUTH_ENABLED);
-        if (b == null) return true; //backward compatible to use client auth because before enhancement it will always use client auth
-        return b != null && b;
+        return b == null || b;
     }
 
     public void setClientAuthEnabled(boolean clientAuthEnabled) {
@@ -274,29 +273,27 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     }
 
     /**
-     * @return  Keystore Id used for client auth or -1 (backward compatibility).
+     * @return  Keystore Id used for client auth or NULL for default key.
      */
     @Transient
     public Long getKeystoreId() {
-        Long keystoreId = (Long) getProperty(KEYSTORE_ID);
-        if (keystoreId == null) return -1L; //backward compatible to use default key
-        return keystoreId;
+        return (Long) getProperty(KEYSTORE_ID);
     }
 
-    public void setKeystoreId(long keystoreId) {
+    public void setKeystoreId(Long keystoreId) {
         setProperty(KEYSTORE_ID, keystoreId);
     }
 
     /**
-     * @return  Keystore alias used for client auth or NULL (backward compatibility).
+     * @return  Key alias used for client auth or NULL for default key.
      */
     @Transient
-    public String getKeystoreAlias() {
-        return (String) getProperty(KEYSTORE_ALIAS);
+    public String getKeyAlias() {
+        return (String) getProperty(KEY_ALIAS);
     }
 
-    public void setKeystoreAlias(String keyAlias) {
-        setProperty(KEYSTORE_ALIAS, keyAlias);
+    public void setKeyAlias(String keyAlias) {
+        setProperty(KEY_ALIAS, keyAlias);
     }
 
     /**
@@ -325,5 +322,5 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     private static final String BASE_TEMPLATE = "originalTemplateName";
     private static final String CLIENT_AUTH_ENABLED = "clientAuth";
     private static final String KEYSTORE_ID = "keystoreId";
-    private static final String KEYSTORE_ALIAS = "keystoreAlias";
+    private static final String KEY_ALIAS = "keyAlias";
 }

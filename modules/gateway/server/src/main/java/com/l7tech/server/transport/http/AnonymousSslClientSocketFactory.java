@@ -24,9 +24,9 @@ public class AnonymousSslClientSocketFactory extends SslClientSocketFactorySuppo
         return SingletonHolder.defaultInstance;
     }
 
-    //- PACKAGE
+    //- PROTECTED
 
-    final X509TrustManager getTrustManager() {
+    protected final X509TrustManager getTrustManager() {
         return trustManager;
     }
 

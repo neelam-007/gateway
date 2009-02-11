@@ -7,6 +7,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509TrustManager;
 import java.util.logging.Logger;
+import java.util.Comparator;
 
 /**
  * {@link SSLSocketFactory} implementation used by {@link com.l7tech.server.identity.ldap.LdapIdentityProvider}s and
@@ -14,7 +15,7 @@ import java.util.logging.Logger;
  * {@link SSLSocketFactory#getDefault} mechanism and our non-singleton {@link SslClientTrustManager}.
  * @author alex
  */
-public final class SslClientSocketFactory extends SslClientSocketFactorySupport {
+public final class SslClientSocketFactory extends SslClientSocketFactorySupport implements Comparator {
 
     //- PUBLIC
 

@@ -96,9 +96,14 @@ public class EntityHeader extends EntityHeaderRef {
                ", type = " + type.toString();
     }
 
+    /**
+     * Get an end-user visisble string representation of this header.
+     *
+     * @return A user friendly identifier for this header.
+     */
     @Override
     public String toString() {
-        return name + " : " + type + " : " + version;
+        return name;
     }
 
     @Override

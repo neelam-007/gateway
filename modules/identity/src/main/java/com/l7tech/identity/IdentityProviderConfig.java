@@ -89,7 +89,11 @@ public class IdentityProviderConfig extends NamedEntityImp {
     }
 
     protected void setProperty(String name, Object value) {
-        props.put(name, value);
+        if ( value == null ) {
+            props.remove( name );
+        } else {
+            props.put(name, value);
+        }
         propsXml = null;
     }
 
