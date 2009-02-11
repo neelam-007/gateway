@@ -3,6 +3,9 @@
  */
 package com.l7tech.server.management.config.monitoring;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(namespace="http://ns.l7tech.com/secureSpan/1.0/monitoring/notification")
 public class SnmpTrapNotificationRule extends NotificationRule {
     private String snmpHost;
     private int port = 162;

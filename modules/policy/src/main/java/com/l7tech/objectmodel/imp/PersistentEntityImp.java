@@ -7,6 +7,9 @@ import com.l7tech.objectmodel.PersistentEntity;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlID;
+import javax.xml.bind.annotation.XmlTransient;
 import java.io.Serializable;
 
 /**
@@ -26,7 +29,7 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
         setVersion(entity.getVersion());
     }
 
-    @Id
+    @Id @XmlTransient
     @Column(name="objectid", nullable=false, updatable=false)
     @GenericGenerator( name="generator", strategy = "hilo" )
     @GeneratedValue(strategy=GenerationType.SEQUENCE, generator = "generator")
@@ -40,8 +43,19 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
     }
 
     @Transient
+    @XmlID @XmlAttribute
     public String getId() {
         return Long.toString(_oid);
+    }
+
+    @Deprecated // only for XML, likely to throw NFE
+    public void setId(String id) {
+        if ( isLocked() ) throw new IllegalStateException("Cannot update locked entity");
+        if (id == null || id.length() == 0) {
+            setOid(DEFAULT_OID);
+        } else {
+            setOid(Long.parseLong(id));
+        }
     }
 
     public void setOid( long oid ) {
@@ -51,6 +65,7 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
     }
 
     @Transient
+    @XmlAttribute
     public int getVersion() {
         return _version;
     }

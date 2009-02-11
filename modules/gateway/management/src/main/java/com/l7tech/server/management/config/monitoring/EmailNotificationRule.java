@@ -3,14 +3,14 @@
  */
 package com.l7tech.server.management.config.monitoring;
 
-import com.l7tech.util.Pair;
-
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Configuration for an Email {@link NotificationRule}.
  */
+@XmlRootElement(namespace="http://ns.l7tech.com/secureSpan/1.0/monitoring/notification")
 public class EmailNotificationRule extends NotificationRule {
     private String smtpHost;
     private int port = 25;
@@ -20,7 +20,7 @@ public class EmailNotificationRule extends NotificationRule {
     private List<String> to = new ArrayList<String>();
     private List<String> cc = new ArrayList<String>();
     private List<String> bcc = new ArrayList<String>();
-    private List<Pair<String, String>> extraHeaders = new ArrayList<Pair<String, String>>();
+    private List<Header> headers = new ArrayList<Header>();
     private String subject;
     private String text;
 
@@ -115,15 +115,15 @@ public class EmailNotificationRule extends NotificationRule {
         this.text = text;
     }
 
-    public List<Pair<String, String>> getExtraHeaders() {
-        return extraHeaders;
+    public List<Header> getHeaders() {
+        return headers;
     }
 
     /**
      * Additional headers to include in the message
      */
-    public void setExtraHeaders(List<Pair<String, String>> extraHeaders) {
-        this.extraHeaders = extraHeaders;
+    public void setHeaders(List<Header> extraHeaders) {
+        this.headers = extraHeaders;
     }
 
     public enum CryptoType {
@@ -143,7 +143,7 @@ public class EmailNotificationRule extends NotificationRule {
         if (bcc != null ? !bcc.equals(that.bcc) : that.bcc != null) return false;
         if (cc != null ? !cc.equals(that.cc) : that.cc != null) return false;
         if (cryptoType != that.cryptoType) return false;
-        if (extraHeaders != null ? !extraHeaders.equals(that.extraHeaders) : that.extraHeaders != null) return false;
+        if (headers != null ? !headers.equals(that.headers) : that.headers != null) return false;
         if (smtpHost != null ? !smtpHost.equals(that.smtpHost) : that.smtpHost != null) return false;
         if (subject != null ? !subject.equals(that.subject) : that.subject != null) return false;
         if (text != null ? !text.equals(that.text) : that.text != null) return false;
@@ -162,7 +162,7 @@ public class EmailNotificationRule extends NotificationRule {
         result = 31 * result + (to != null ? to.hashCode() : 0);
         result = 31 * result + (cc != null ? cc.hashCode() : 0);
         result = 31 * result + (bcc != null ? bcc.hashCode() : 0);
-        result = 31 * result + (extraHeaders != null ? extraHeaders.hashCode() : 0);
+        result = 31 * result + (headers != null ? headers.hashCode() : 0);
         result = 31 * result + (subject != null ? subject.hashCode() : 0);
         result = 31 * result + (text != null ? text.hashCode() : 0);
         return result;

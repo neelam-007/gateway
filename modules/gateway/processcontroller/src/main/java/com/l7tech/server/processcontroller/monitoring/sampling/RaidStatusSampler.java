@@ -3,6 +3,8 @@
  */
 package com.l7tech.server.processcontroller.monitoring.sampling;
 
+import com.l7tech.server.management.api.monitoring.RaidStatus;
+
 import java.io.File;
 import java.util.regex.Pattern;
 

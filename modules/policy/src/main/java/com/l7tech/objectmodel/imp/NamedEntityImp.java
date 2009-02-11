@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.NamedEntity;
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.Version;
+import javax.xml.bind.annotation.XmlElement;
 
 @MappedSuperclass
 public abstract class NamedEntityImp extends PersistentEntityImp implements NamedEntity {
@@ -26,6 +27,7 @@ public abstract class NamedEntityImp extends PersistentEntityImp implements Name
     }
 
     @Column(name="name", nullable=false, length=128)
+    @XmlElement(namespace="http://ns.l7tech.com/secureSpan/1.0/core")
     public String getName() {
         return _name;
     }

@@ -7,11 +7,11 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
-import javax.xml.bind.annotation.XmlAnyElement;
+import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlSeeAlso;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -23,15 +23,15 @@ import java.util.Set;
  * @author alex
  */
 @Entity
-@XmlRootElement
-@XmlSeeAlso({PropertyTrigger.class, EventTrigger.class, NotificationRule.class})
+@XmlRootElement(namespace="http://ns.l7tech.com/secureSpan/1.0/monitoring")
+@XmlSeeAlso({PropertyTrigger.class, EventTrigger.class, EmailNotificationRule.class, SnmpTrapNotificationRule.class, HttpNotificationRule.class})
 public final class MonitoringConfiguration extends NamedEntityImp {
-    private Set<Trigger> triggers = new HashSet<Trigger>();
-    private Set<NotificationRule> notificationRules = new HashSet<NotificationRule>();
+    private Set<Trigger> triggers = new LinkedHashSet<Trigger>();
+    private Set<NotificationRule> notificationRules = new LinkedHashSet<NotificationRule>();
 
     @OneToMany(mappedBy="monitoringConfiguration")
-    @XmlElementWrapper(name="triggers")
-    @XmlAnyElement(lax=true)
+    @XmlElementWrapper(name="triggers", namespace="http://ns.l7tech.com/secureSpan/1.0/monitoring")
+    @XmlElementRef()
     public Set<Trigger> getTriggers() {
         return triggers;
     }
@@ -41,6 +41,8 @@ public final class MonitoringConfiguration extends NamedEntityImp {
     }
 
     @OneToMany(mappedBy="monitoringConfiguration")
+    @XmlElementWrapper(name="notificationRules", namespace="http://ns.l7tech.com/secureSpan/1.0/monitoring")
+    @XmlElementRef
     public Set<NotificationRule> getNotificationRules() {
         return notificationRules;
     }

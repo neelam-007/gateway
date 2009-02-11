@@ -25,6 +25,9 @@ import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Drives all the monitoring behaviour of the ProcessController.
+ */
 public class MonitoringKernelImpl implements MonitoringKernel {
     private static final Logger logger = Logger.getLogger(MonitoringKernelImpl.class.getName());
 
@@ -137,7 +140,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
             if (trigger instanceof PropertyTrigger) {
                 PropertyTrigger pt = (PropertyTrigger) trigger;
-                MonitorableProperty mp = (MonitorableProperty) pt.getMonitorable();
+                MonitorableProperty mp = pt.getMonitorable();
                 liveProperties.add(mp);
                 PropertyState<?> ps = buildingPstates.get(mp);
                 Long interval = pt.getMaxSamplingInterval();

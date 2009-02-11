@@ -55,7 +55,7 @@ public abstract class Notifier<RT extends NotificationRule> implements Closeable
 
         if (trigger instanceof PropertyTrigger) {
             PropertyTrigger ptrig = (PropertyTrigger) trigger;
-            variables.put("monitoring.context.propertyType", ptrig.getPropertyName());
+            variables.put("monitoring.context.propertyType", ptrig.getMonitorableId());
             variables.put("monitoring.context.propertyState", "alert");
             variables.put("monitoring.context.propertyValue", ""); // TODO
             variables.put("monitoring.context.propertyUnit", "");  // TODO

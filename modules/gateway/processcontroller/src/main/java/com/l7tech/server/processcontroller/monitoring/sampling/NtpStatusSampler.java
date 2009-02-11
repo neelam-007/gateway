@@ -6,6 +6,7 @@ package com.l7tech.server.processcontroller.monitoring.sampling;
 import com.l7tech.common.io.ProcResult;
 import static com.l7tech.common.io.ProcUtils.args;
 import static com.l7tech.common.io.ProcUtils.exec;
+import com.l7tech.server.management.api.monitoring.NtpStatus;
 
 import java.io.File;
 import java.io.IOException;

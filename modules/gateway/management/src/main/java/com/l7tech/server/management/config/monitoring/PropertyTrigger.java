@@ -18,30 +18,23 @@ import javax.xml.bind.annotation.XmlRootElement;
 @Entity
 @XmlRootElement(name="propertyTrigger", namespace="http://ns.l7tech.com/secureSpan/1.0/monitoring")
 public class PropertyTrigger extends Trigger<MonitorableProperty> {
-    private String propertyName;
     private Long maxSamplingInterval;
     private ComparisonOperator operator;
     private String triggerValue;
 
     @Deprecated
-    public PropertyTrigger() {
+    public PropertyTrigger() { }
+
+    @Override
+    protected MonitorableProperty buildMonitorable() {
+        return new MonitorableProperty(componentType, monitorableId, null);
     }
 
     public PropertyTrigger(MonitorableProperty property, String componentId, ComparisonOperator operator, String triggerValue, long maxSamplingInterval) {
-        super(property, componentId);
-        this.propertyName = property.getName();
+        super(property.getComponentType(), componentId, property.getName());
         this.maxSamplingInterval = maxSamplingInterval;
         this.operator = operator;
         this.triggerValue = triggerValue;
-    }
-
-    /** The name of the property that's being monitored */
-    public String getPropertyName() {
-        return propertyName;
-    }
-
-    public void setPropertyName(String propertyName) {
-        this.propertyName = propertyName;
     }
 
     /** The interval, in milliseconds, between successive samples */
@@ -69,14 +62,5 @@ public class PropertyTrigger extends Trigger<MonitorableProperty> {
 
     public void setTriggerValue(String triggerValue) {
         this.triggerValue = triggerValue;
-    }
-
-    /**
-     * {@link #propertyName} cannot be changed; other properties are OK
-     */
-    @Override
-    public boolean isIncompatibleWith(Trigger that) {
-        return super.isIncompatibleWith(that) ||
-                !this.getPropertyName().equals(((PropertyTrigger)that).getPropertyName());
     }
 }

@@ -19,8 +19,10 @@ public class EventTrigger extends Trigger<MonitorableEvent> {
     public EventTrigger() {
     }
 
-    /** A string identifying the event that's being monitored.  Type and format depends on the subject component type.  Required. */
-    private String eventId;
+    @Override
+    protected MonitorableEvent buildMonitorable() {
+        return new MonitorableEvent(componentType, monitorableId);
+    }
 
     /** The number of times the event must be seen before the trigger fires.  Required; must be at least 1. */
     private int count;
@@ -32,19 +34,9 @@ public class EventTrigger extends Trigger<MonitorableEvent> {
     private Integer period;
 
     public EventTrigger(MonitorableEvent event, String componentId, int count, Integer period) {
-        super(event, componentId);
-        this.eventId = event.getName();
+        super(event.getComponentType(), componentId, event.getName());
         this.count = count;
         this.period = period;
-    }
-
-    @Basic(optional=false)
-    public String getEventId() {
-        return eventId;
-    }
-
-    public void setEventId(String eventId) {
-        this.eventId = eventId;
     }
 
     @Basic(optional=false)
@@ -64,29 +56,23 @@ public class EventTrigger extends Trigger<MonitorableEvent> {
         this.period = period;
     }
 
-    /** {@link #count} and {@link #period} can be changed */
     @Override
-    public boolean isIncompatibleWith(Trigger that) {
-        return super.isIncompatibleWith(that) || !this.eventId.equals(((EventTrigger)that).eventId);
-    }
-
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
 
-        EventTrigger that = (EventTrigger)o;
+        EventTrigger that = (EventTrigger) o;
 
         if (count != that.count) return false;
-        if (eventId != null ? !eventId.equals(that.eventId) : that.eventId != null) return false;
         if (period != null ? !period.equals(that.period) : that.period != null) return false;
 
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (eventId != null ? eventId.hashCode() : 0);
         result = 31 * result + count;
         result = 31 * result + (period != null ? period.hashCode() : 0);
         return result;

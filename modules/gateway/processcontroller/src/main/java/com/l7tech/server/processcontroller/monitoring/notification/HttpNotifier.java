@@ -8,12 +8,12 @@ import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.server.management.config.monitoring.AuthInfo;
+import com.l7tech.server.management.config.monitoring.Header;
 import com.l7tech.server.management.config.monitoring.HttpNotificationRule;
 import com.l7tech.server.management.config.monitoring.Trigger;
-import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 
 import java.io.ByteArrayInputStream;
@@ -24,9 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-/**
- *
- */
 class HttpNotifier extends Notifier<HttpNotificationRule> {
     private static final Logger logger = Logger.getLogger(HttpNotifier.class.getName());
 
@@ -34,7 +31,7 @@ class HttpNotifier extends Notifier<HttpNotificationRule> {
     private final GenericHttpClient httpClient;
     private final HttpMethod httpMethod;
     private final ContentTypeHeader contentType;
-    private final List<Pair<String, String>> extraHeaders;
+    private final List<Header> extraHeaders;
     private final AuthInfo authInfo;
 
     protected HttpNotifier(HttpNotificationRule rule) {
@@ -42,8 +39,8 @@ class HttpNotifier extends Notifier<HttpNotificationRule> {
         httpClient = new UrlConnectionHttpClient();
         httpMethod = this.rule.getMethod();
         authInfo = this.rule.getAuthInfo();
-        final List<Pair<String, String>> heads = this.rule.getExtraHeaders();
-        extraHeaders = heads == null ? new ArrayList<Pair<String, String>>() : heads;
+        final List<Header> heads = this.rule.getHeaders();
+        extraHeaders = heads == null ? new ArrayList<Header>() : heads;
         try {
             contentType = ContentTypeHeader.parseValue(this.rule.getContentType());
         } catch (IOException e) {
@@ -56,7 +53,7 @@ class HttpNotifier extends Notifier<HttpNotificationRule> {
 
         GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(rule.getUrl()));
         params.setContentType(contentType);
-        for (Pair<String, String> header : extraHeaders)
+        for (Header header : extraHeaders)
             params.addExtraHeader(new GenericHttpHeader(header));
 
         if (authInfo != null) {
