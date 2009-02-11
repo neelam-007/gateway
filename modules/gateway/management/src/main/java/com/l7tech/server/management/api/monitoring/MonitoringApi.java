@@ -37,9 +37,8 @@ public interface MonitoringApi {
     void pushMonitoringConfiguration(MonitoringConfiguration config, boolean responsibleForClusterProperties) throws IOException;
 
     /**
-     * Gets the status of all the properties being monitored by this PC under the direction of the
-     * {@link MonitoringConfiguration} with the specified OID at the present time.
-     * @return the list of PropertyStatus objects; TODO in any useful order?
+     * Gets the status of all the properties being monitored by this PC at the present time.
+     * @return the list of MonitedPropertyStatus objects
      */
-    List<MonitoredPropertyStatus> getCurrentPropertyStatuses(long monitoringConfigurationOid);
+    List<MonitoredPropertyStatus> getCurrentPropertyStatuses();
 }

@@ -36,7 +36,7 @@ public class MonitoringApiImpl implements MonitoringApi {
     }
 
     @Override
-    public List<MonitoredPropertyStatus> getCurrentPropertyStatuses(long monitoringConfigurationOid) {
-        return monitoringKernel.getCurrentPropertyStatuses(monitoringConfigurationOid);
+    public List<MonitoredPropertyStatus> getCurrentPropertyStatuses() {
+        return monitoringKernel.getCurrentPropertyStatuses();
     }
 }

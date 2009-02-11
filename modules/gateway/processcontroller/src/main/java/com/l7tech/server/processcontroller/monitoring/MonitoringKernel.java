@@ -11,5 +11,5 @@ import java.util.List;
 public interface MonitoringKernel {
     void setConfiguration(MonitoringConfiguration config, boolean doCluster);
 
-    List<MonitoredPropertyStatus> getCurrentPropertyStatuses(long configurationOid);
+    List<MonitoredPropertyStatus> getCurrentPropertyStatuses();
 }

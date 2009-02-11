@@ -216,7 +216,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
     }
 
     @Override
-    public List<MonitoredPropertyStatus> getCurrentPropertyStatuses(long configurationOid) {
+    public List<MonitoredPropertyStatus> getCurrentPropertyStatuses() {
         final Map<MonitorableProperty, TransientStatus> stati = new HashMap<MonitorableProperty, TransientStatus>();
 
         final Map<MonitorableProperty, PropertyState<?>> pstates = currentPropertyStates;
@@ -234,8 +234,6 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 if (!(trig instanceof PropertyTrigger)) continue;
 
                 final PropertyTrigger ptrig = (PropertyTrigger) trig;
-                if (ptrig.getMonitoringConfig().getOid() != configurationOid) continue;
-
                 TransientStatus transientStatus = stati.get(prop);
                 if (transientStatus == null) {
                     transientStatus = new TransientStatus();
@@ -252,7 +250,6 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 transientStatus.value = lastSample.right;
 
                 for (NotificationRule rule : ptrig.getNotificationRules()) {
-                    if (rule.getMonitoringConfiguration().getOid() != configurationOid) continue;
                     NotificationState nstate = nstates.get(rule.getOid());
                     if (nstate.isNotified()) {
                         transientStatus.status = MonitoredStatus.StatusType.NOTIFIED;
