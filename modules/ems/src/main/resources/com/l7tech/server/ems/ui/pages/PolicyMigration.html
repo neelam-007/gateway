@@ -278,6 +278,7 @@
                 postObject.entities = getSelectedSrcItems();
                 var postData = YAHOO.lang.JSON.stringify(postObject);
                 document.getElementById('selectionJson').value = postData;
+                document.getElementById('migrateFolders').value = document.getElementById('migrateFoldersCheckBox').checked;
                 document.getElementById('enableNewServices').value = document.getElementById('enableNewServicesCheckBox').checked;
                 document.getElementById('overwriteDependencies').value = document.getElementById('overwriteDependenciesCheckBox').checked;
                 migrationAction();
@@ -572,8 +573,14 @@
                 <td class="srcDest">
                     <table width="100%">
                         <tr>
-                            <td class="nowrap">Select items to migrate:</td>
-                            <td class="right" width="100%">
+                            <td width="100%">
+                                <span class="nowrap">Select items to migrate:</span>
+                                <span class="nowrap">
+                                    <input id="migrateFoldersCheckBox" type="checkbox" />
+                                    <label for="migrateFoldersCheckBox"> migrate folders</label>
+                                </span>
+                            </td>
+                            <td class="nowrap">
                                 <img class="clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="refreshSrcSsgClusterContentSelector();"/>
                                 <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
                                      onclick="l7.Resize.changeHeight(['srcSSGClusterContentSelector', 'destSSGClusterContentSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
@@ -728,6 +735,7 @@
                 <input id="selectionJson" type="hidden" wicket:id="selectionJson"/>
                 <input id="destinationClusterId" type="hidden" wicket:id="destinationClusterId"/>
                 <input id="destinationFolderId" type="hidden" wicket:id="destinationFolderId"/>
+                <input id="migrateFolders" type="hidden" wicket:id="migrateFolders"/>
                 <input id="enableNewServices" type="hidden" wicket:id="enableNewServices"/>
                 <input id="overwriteDependencies" type="hidden" wicket:id="overwriteDependencies"/>
             </form>

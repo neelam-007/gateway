@@ -30,6 +30,7 @@ import java.util.logging.Level;
 public class MigrationMetadata {
 
     private static final Logger logger = Logger.getLogger(MigrationMetadata.class.getName());
+    private final static String ROOT_FOLDER_OID = "-5002";
 
     /**
      * Headers for all the items in the Migration Bundle.
@@ -213,5 +214,17 @@ public class MigrationMetadata {
                 result.add(dep.getDependency());
         }
         return result;
+    }
+
+    public ExternalEntityHeader getRootFolder() {
+        ExternalEntityHeader rootFolder = null;
+        for (ExternalEntityHeader header : headers) {
+            if (header.getType() == EntityType.FOLDER &&  ROOT_FOLDER_OID.equals(header.getExternalId())) {
+                if (rootFolder != null)
+                    throw new IllegalStateException("More than one root folders found in the bundle.");
+                rootFolder = header;
+            }
+        }
+        return rootFolder;
     }
 }

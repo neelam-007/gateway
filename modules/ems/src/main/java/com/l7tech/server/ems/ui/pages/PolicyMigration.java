@@ -107,11 +107,13 @@ public class PolicyMigration extends EsmStandardWebPage {
         final HiddenField hiddenSelectionForm = new HiddenField("selectionJson", new Model(""));
         final HiddenField hiddenDestClusterId = new HiddenField("destinationClusterId", new Model(""));
         final HiddenField hiddenDestFolderId = new HiddenField("destinationFolderId", new Model(""));
+        final HiddenField hiddenMigrateFolders = new HiddenField("migrateFolders", new Model(""));
         final HiddenField hiddenEnableNewServices = new HiddenField("enableNewServices", new Model(""));
         final HiddenField hiddenOverwriteDependencies = new HiddenField("overwriteDependencies", new Model(""));
         selectionJsonForm.add( hiddenSelectionForm );
         selectionJsonForm.add( hiddenDestClusterId );
         selectionJsonForm.add( hiddenDestFolderId );
+        selectionJsonForm.add( hiddenMigrateFolders );
         selectionJsonForm.add( hiddenEnableNewServices );
         selectionJsonForm.add( hiddenOverwriteDependencies );
         AjaxFormSubmitBehavior dependenciesBehaviour = new AjaxFormSubmitBehavior(selectionJsonForm, "onclick"){
@@ -197,6 +199,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                 final String value = hiddenSelectionForm.getModelObjectAsString();
                 final String targetClusterId = hiddenDestClusterId.getModelObjectAsString();
                 final String targetFolderId = hiddenDestFolderId.getModelObjectAsString();
+                final String migrateFolders = hiddenMigrateFolders.getModelObjectAsString();
                 final String enableNewServices = hiddenEnableNewServices.getModelObjectAsString();
                 final String overwriteDependencies = hiddenOverwriteDependencies.getModelObjectAsString();
                 try {
@@ -214,19 +217,20 @@ public class PolicyMigration extends EsmStandardWebPage {
                             dialogContainer.replace( dialog );
                             target.addComponent( dialogContainer );
                         } else {
+                            final boolean folders = Boolean.valueOf(migrateFolders);
                             final boolean enableServices = Boolean.valueOf(enableNewServices);
                             final boolean overwrite = Boolean.valueOf(overwriteDependencies);
 
                             // load mappings for top-level items that have been previously migrated
                             loadMappingsForMigration( mappingModel, dir.clusterId, targetClusterId, buildDependencyItems(dir) );
-                            TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model(performMigration( dir.clusterId, targetClusterId, targetFolderId, enableServices, overwrite, dir, mappingModel, true )));
+                            TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model(performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, dir, mappingModel, true )));
                             YuiDialog dialog = new YuiDialog("dialog", "Confirm Migration", YuiDialog.Style.OK_CANCEL, textPanel, new YuiDialog.OkCancelCallback(){
                                 @Override
                                 public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
                                     if ( button == YuiDialog.Button.OK ) {
                                         logger.fine("Migration confirmed.");
                                         try {
-                                            String message = performMigration( dir.clusterId, targetClusterId, targetFolderId, enableServices, overwrite, dir, mappingModel, false );
+                                            String message = performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, dir, mappingModel, false );
                                             YuiDialog resultDialog = new YuiDialog("dialog", "Migration Result", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model(message)), null, "600px");
                                             dialogContainer.replace( resultDialog );
                                         } catch ( MigrationFailedException mfe ) {
@@ -835,6 +839,7 @@ public class PolicyMigration extends EsmStandardWebPage {
     private String performMigration( final String sourceClusterId,
                                      final String targetClusterId,
                                      final String targetFolderId,
+                                     final boolean migrateFolders,
                                      final boolean enableNewServices,
                                      final boolean overwriteDependencies,
                                      final DependencyItemsRequest requestedItems,
@@ -875,7 +880,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                         }
                     }
 
-                    Collection<MigratedItem> migratedItems = targetMigrationApi.importBundle( export, targetFolderHeader, false, overwriteDependencies, enableNewServices, dryRun);
+                    Collection<MigratedItem> migratedItems = targetMigrationApi.importBundle( export, targetFolderHeader, ! migrateFolders, overwriteDependencies, enableNewServices, dryRun);
                     summary = summarize(export, migratedItems, summarize(folders, targetFolderId), enableNewServices, overwriteDependencies, dryRun);
                     if ( !dryRun ) {
                         if ( migratedItems != null ) {

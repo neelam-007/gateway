@@ -39,9 +39,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
     private EntityCrud entityCrud;
     private PropertyResolverFactory resolverFactory;
-    private final static String ROOT_FOLDER_OID = "-5002";
     private ResolutionManager resolutionManager;
-    private ExternalEntityHeader rootFolderHeader;
 
     public MigrationManagerImpl(EntityCrud entityCrud, PropertyResolverFactory resolverFactory, ResolutionManager resolutionManager) {
         this.entityCrud = entityCrud;
@@ -165,7 +163,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
         if (!errors.isEmpty())
             logger.log(Level.WARNING, "Bundle validation errors: {0}.", errors);
-            //throw new MigrationApi.MigrationException(errors);
+            // todo throw new MigrationApi.MigrationException(errors);
 
         Map<ExternalEntityHeader, MigratedItem> result = new HashMap<ExternalEntityHeader, MigratedItem>();
         for(ExternalEntityHeader header : metadata.getHeaders()) {
@@ -280,7 +278,7 @@ public class MigrationManagerImpl implements MigrationManager {
             for (MigrationDependency dep : metadata.getDependants(header)) {
                 ExternalEntityHeader dependant = dep.getDependant();
                 Entity dependantEntity = metadata.isMapped(dependant) ? entitiesFromTarget.get(metadata.getMapping(dependant)) : bundle.getExportedEntity(dependant);
-
+                if (dependantEntity == entity) continue;
                 PropertyResolver resolver = getResolver(dependantEntity, dep.getPropName());
                 if (entity == null) {
                     throw new MigrationApi.MigrationException("Cannot apply mapping, target entity not found for dependency reference: " + dep.getDependency());
@@ -352,39 +350,16 @@ public class MigrationManagerImpl implements MigrationManager {
         MigrationMetadata metadata = bundle.getMetadata();
         if (flatten) {
             // replace all folder dependencies with the (unique) targetFolder
-            Set<ExternalEntityHeader> headersToRemove = new HashSet<ExternalEntityHeader>();
             for (MigrationDependency dep : metadata.getDependencies()) {
                 if (dep.getDependency().getType() == EntityType.FOLDER) {
-                    headersToRemove.add(dep.getDependency());
-                    metadata.addMappingOrCopy(dep.getDependant(), resolvedTarget, false);
+                    metadata.addMappingOrCopy(dep.getDependency(), resolvedTarget, false);
                 }
             }
-            for (ExternalEntityHeader header : headersToRemove) {
-                metadata.removeHeader(header);
-            }
-            metadata.addHeader(resolvedTarget);
         } else {
             // map root folder to target folder
-            if (!metadata.hasHeader(getRootFolderHeader())) {
-                logger.log(Level.INFO, "Root folder not found in the bundle, not processing folders.");
-            } else {
-                metadata.addMappingOrCopy(getRootFolderHeader(), resolvedTarget, false);
-            }
+            metadata.addMappingOrCopy(metadata.getRootFolder(), resolvedTarget, false);
         }
         return errors;
-    }
-
-    private ExternalEntityHeader getRootFolderHeader() throws MigrationApi.MigrationException {
-        if (rootFolderHeader == null) {
-            try {
-                rootFolderHeader = EntityHeaderUtils.toExternal(
-                    EntityHeaderUtils.fromEntity(entityCrud.find(EntityTypeRegistry.getEntityClass(EntityType.FOLDER), ROOT_FOLDER_OID)) );
-            } catch (FindException e) {
-                throw new MigrationApi.MigrationException("Error getting root folder header.", e);
-            }
-        }
-
-        return rootFolderHeader;
     }
 
     private PropertyResolver getResolver(Entity sourceEntity, String propName) throws PropertyResolverException {
