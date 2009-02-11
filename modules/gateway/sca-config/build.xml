@@ -1,0 +1,5 @@
+<project name="layer7-gateway-sca-config" default="compile">
+    <property name="module.main" value="com.l7tech.gateway.sca.config.ScaHsmKeystoreConfigurator"/>
+    <property name="module.package.root" value="com/l7tech/gateway/sca/config/"/>
+    <import file="../../../etc/build/build-common.xml"/>
+</project>

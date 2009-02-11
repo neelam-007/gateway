@@ -5,8 +5,11 @@ trap doLogout INT
 
 SYSWIZARD="sudo -u layer7 /opt/SecureSpan/Appliance/sysconfig/systemconfig.sh"
 CONFWIZARD="sudo -u layer7 /opt/SecureSpan/Gateway/config/ssgconfig.sh"
+HSMCONFIG="sudo -u layer7 /opt/SecureSpan/Appliance/hsmconfig/scahsmconfig.sh"
 EMCONFWIZARD="sudo -u layer7 /opt/SecureSpan/EnterpriseManager/config/emconfig.sh"
 MASTERKEYMANAGE="/opt/SecureSpan/Appliance/libexec/masterkey-manage.pl"
+CHECK_USB_KEY="sudo -u layer7 ${MASTERKEYMANAGE} probe &> /dev/null"
+
 GETROOT="su -"
 MASTER_KEY_BACKUP_FILE_NAME="ssg_mkey.bak"
 
@@ -292,6 +295,131 @@ doEmsConfiguration() {
     isMenuValid="n"
 }
 
+doInitializeHsm() {
+    echo "Initializing the HSM will irreversibly delete ALL data"
+    echo "from the hardware keystore."
+    echo ""
+    echo "You may import an existing master key to this HSM or create a new one"
+    echo ""
+    echo "What would like to do?"
+    echo "1) Create a new master key"
+    echo "2) Restore an existing master key"
+    echo -n "Please make a selection: "
+    read choice
+    case $choice in
+        1)
+            clear;
+            confirmedMessage "This will initialize the HSM"
+            (${HSMCONFIG} -initializeHsm);;
+        2)
+            clear;
+            doHsmMasterKeyRestore;;
+        x|X)
+            clear;
+            echo "The HSM will not be initialized";;
+        *)
+            echo "$choice is not a valid selection";;
+    esac
+    confirmedMessage ""
+}
+
+doHsmMasterKeyRestore() {
+    confirmedMessage "This will restore the master key (and reinitialize) the HSM"
+    (${HSMCONFIG} -restoreMasterKey)
+}
+
+checkHsmStatus() {
+    (${HSMCONFIG} -checkHsmStatus)
+    STATUS_OF_HSM=$?
+}
+
+doEnableDisableHsm() {
+    checkHsmStatus
+    if [ ${STATUS_OF_HSM} -eq 0 ] ; then
+        #it's enabled
+        echo "The HSM is currently enabled"
+        confirmedMessage "This will Disable the HSM"
+        (${HSMCONFIG} -disableHsm);
+    elif [ ${STATUS_OF_HSM} -eq 1 ] ; then
+        #it's disabled
+        echo "The HSM is currently disabled"
+        confirmedMessage "This will Enable the HSM"
+        (${HSMCONFIG} -enableHsm);
+    else
+        echo "Cannot check the status of the HSM"
+    fi
+    confirmedMessage ""
+}
+
+doHsmMasterKeyBackup() {
+    confirmedMessage "This will back up the Master Key to USB flash drive"
+    echo "Checking for USB drive"
+    ${CHECK_USB_KEY};
+    if [ ${?} != 0 ] ; then
+        echo ""
+        confirmedMessage "The USB drive could not be found. Please attach the USB drive and try again."
+    else
+        echo "Found the USB drive. Continuing..."
+        echo -n "Enter the keystore password:"
+        read -s ksPassword;
+        echo ""
+        echo -n "Enter the master key backup password:"
+        read -s masterKeyBackupPassword;
+        echo ""
+        (sudo ${MASTERKEYMANAGE} backup ${ksPassword} ${MASTER_KEY_BACKUP_FILE_NAME} ${masterKeyBackupPassword});
+        if [ ${?} != 0 ] ; then
+            echo ""
+            confirmedMessage "The master key backup did not succeed. See the error message above for details."
+        else
+            echo ""
+            confirmedMessage "The master key backup was successfull."
+        fi
+    fi
+}
+
+doHsmConfiguration() {
+    isMenuValid="n"
+    while [ "$isMenuValid" != "y" ]
+    do
+        clear
+        echo "This menu allows you to configure the Hardware Security Module"
+        echo "on the SecureSpan Gateway Appliance"
+        echo ""
+        echo "What would you like to do?"
+        echo ""
+        echo " 1) Initialize the HSM"
+        echo " 2) Enable/Disable HSM"
+        echo " 3) Back up the HSM Master Key to a USB flash drive"
+        echo " X) Exit menu"
+        echo ""
+        echo -n "Please make a selection: "
+        read choice
+
+        case $choice in
+                1)
+                    clear;
+                    doInitializeHsm
+                    clear;;
+                2)
+                    clear;
+                    doEnableDisableHsm
+                    clear;;
+                3)
+                    clear;
+                    doHsmMasterKeyBackup
+                    clear;;
+                x|X)
+                    clear;
+                    isMenuValid="y";
+                    clear;;
+                *)
+                    clear;
+                    confirmedMessage "That is not a valid selection";
+                    clear;;
+        esac
+    done
+}
+
 
 checkForSca
 checkForEm
@@ -310,7 +438,7 @@ do
         echo " 4) Change the Master Passphrase"
         echo " 5) Display Remote Management configuration menu"
         if [ "${SCA_PRESENT}" == "true" ] ; then
-            echo " 6) Configure HSM"
+            echo " 6) Manage HSM"
         fi
 
         if [ "${EM_PRESENT}" == "true" ] ; then
@@ -350,28 +478,8 @@ do
                     clear;;
                 *)  if [ "$choice" == "6" ] && [ "${SCA_PRESENT}" == "true" ]; then
                         clear;
-                        echo "Checking for USB drive"
-                        (sudo ${MASTERKEYMANAGE} probe &> /dev/null);
-                        if [ ${?} != 0 ] ; then
-                            echo ""
-                            confirmedMessage "The USB drive could not be found. Please attach the USB drive and try again."
-                        else
-                            echo "Found the USB drive. Continuing..."
-                            echo -n "Enter the keystore password:"
-                            read -s ksPassword;
-			                echo ""
-                            echo -n "Enter the master key backup password:"
-                            read -s masterKeyBackupPassword;
-			                echo "" 
-                            (sudo ${MASTERKEYMANAGE} backup ${ksPassword} ${MASTER_KEY_BACKUP_FILE_NAME} ${masterKeyBackupPassword});
-                            if [ ${?} != 0 ] ; then
-                                echo ""
-                                confirmedMessage "The master key backup did not succeed. See the error message above for details."
-                            else
-                                echo ""
-                                confirmedMessage "The master key backup was successfull."
-                            fi
-                        fi
+                        doHsmConfiguration
+                        clear;
                     elif [ "$choice" == "7" ] && [ "${EM_PRESENT}" == "true" ]; then
                         clear;
                         doEmsConfiguration

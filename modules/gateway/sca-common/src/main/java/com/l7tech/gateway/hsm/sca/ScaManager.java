@@ -1,9 +1,10 @@
-package com.l7tech.server.security.keystore.sca;
+package com.l7tech.gateway.hsm.sca;
 
-import com.l7tech.util.*;
-import static com.l7tech.common.io.ProcUtils.args;
-import com.l7tech.common.io.ProcUtils;
 import com.l7tech.common.io.ProcResult;
+import com.l7tech.common.io.ProcUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.FileUtils;
+import com.l7tech.util.SudoUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,9 +18,9 @@ public class ScaManager {
     protected static final Logger logger = Logger.getLogger(ScaManager.class.getName());
 
     private static final String DEFAULT_SCAKIOD_PATH = "/opt/sun/sca6000/bin/scakiod_load";
-    private static final String DEFAULT_LOAD_KEYDATA_PATH = "/ssg/appliance/libexec/load_keydata";
-    private static final String DEFAULT_SAVE_KEYDATA_PATH = "/ssg/appliance/libexec/save_keydata";
-    private static final String DEFAULT_WIPE_KEYDATA_PATH = "/ssg/appliance/libexec/wipe_keydata";
+    private static final String DEFAULT_LOAD_KEYDATA_PATH = "/opt/SecureSpan/Appliance/libexec/load_keydata";
+    private static final String DEFAULT_SAVE_KEYDATA_PATH = "/opt/SecureSpan/Appliance/libexec/save_keydata";
+    private static final String DEFAULT_WIPE_KEYDATA_PATH = "/opt/SecureSpan/Appliance/libexec/wipe_keydata";
 
     private static final String SYSPROP_BASE = ScaManager.class.getPackage().getName() + ".";
 
@@ -58,7 +59,7 @@ public class ScaManager {
             // Work-around for SCA STALL deadlock (Bug #3802) -- wait for any pending DB changes to be
             // written out before we stop the kiod
             Thread.sleep(2000L);
-            ProcResult result = exec(null, scakiodLoad, args("stop"), null, true);
+            ProcResult result = exec(null, scakiodLoad, ProcUtils.args("stop"), null, true);
             int status = result.getExitStatus();
             switch (status) {
                 case 0:
@@ -87,7 +88,7 @@ public class ScaManager {
      */
     protected void doStartSca() throws ScaException {
         try {
-            exec(null, scakiodLoad, args("start"), null, false);
+            exec(null, scakiodLoad, ProcUtils.args("start"), null, false);
         } catch (IOException e) {
             throw new ScaException(e);
         }
@@ -103,7 +104,7 @@ public class ScaManager {
      */
     private byte[] doLoadKeydata() throws ScaException {
         try {
-            return exec(null, loadKeydata, args("reallyForSure"), null, false).getOutput();
+            return exec(null, loadKeydata, ProcUtils.args("reallyForSure"), null, false).getOutput();
         } catch (IOException e) {
             throw new ScaException(e);
         }
@@ -122,7 +123,7 @@ public class ScaManager {
     private ProcResult doSaveKeydata(byte[] data) throws ScaException {
         // TODO change so it is actually safe (writes to ".new" directory)
         try {
-            return exec(null, saveKeydata, args("reallyForSure"), data, false);
+            return exec(null, saveKeydata, ProcUtils.args("reallyForSure"), data, false);
         } catch (IOException e) {
             throw new ScaException(e);
         }
@@ -138,7 +139,7 @@ public class ScaManager {
      */
     private ProcResult doWipeKeydata() throws ScaException {
         try {
-            return exec(null, wipeKeydata, args("reallyForSure"), null, false);
+            return exec(null, wipeKeydata, ProcUtils.args("reallyForSure"), null, false);
         } catch (IOException e) {
             throw new ScaException(e);
         }
@@ -161,7 +162,7 @@ public class ScaManager {
      * @see com.l7tech.common.io.ProcUtils#exec(java.io.File, java.io.File, String[], byte[], boolean)
      */
     private ProcResult exec(File cwd, File program, String[] args, byte[] stdin, boolean allowNonzeroExit) throws IOException {
-        return ProcUtils.exec(cwd, sudo, args(program.getAbsolutePath(), args), stdin, allowNonzeroExit);
+        return ProcUtils.exec(cwd, sudo, ProcUtils.args(program.getAbsolutePath(), args), stdin, allowNonzeroExit);
     }
 
 

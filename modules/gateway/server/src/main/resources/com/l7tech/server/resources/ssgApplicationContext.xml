@@ -1057,6 +1057,7 @@
                 <constructor-arg value="node.cluster.pass"/>
             </bean>
         </constructor-arg>
+	<constructor-arg ref="dbPasswordEncryption"/>
     </bean>
 
     <bean id="ftpServerManager" class="com.l7tech.server.transport.ftp.FtpServerManager">

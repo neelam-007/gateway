@@ -1,6 +1,7 @@
 package com.l7tech.server.boot;
 
 import com.l7tech.gateway.common.Component;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.BootProcess;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
@@ -26,9 +27,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.InvalidAlgorithmParameterException;
+import java.security.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Object that represents a complete, running Gateway instance.
@@ -46,9 +47,72 @@ public class GatewayBoot {
     private ClassPathXmlApplicationContext applicationContext;
     private ShutdownWatcher shutdowner;
 
+    //code required to ensure that if the HSM is enabled, the correct security providers get set up.
+    //we'll do this here so it gets done early enough that any calls to DefaultKey.getSslInfo() result in using the HSM
+    //if it's enabled.
+    public static final String SYSPROP_ENABLE_HSM = "com.l7tech.server.sca.enable";
+
+    public static final String PKCS11_CFG_FILE = "/opt/SecureSpan/Appliance/etc/pkcs11_linux.cfg";
+
+    public static final String[] HSM_SECURITY_PROVIDERS =
+            {
+                "sun.security.pkcs11.SunPKCS11 " + PKCS11_CFG_FILE,
+                "sun.security.provider.Sun",
+                "com.sun.net.ssl.internal.ssl.Provider",
+                "com.sun.crypto.provider.SunJCE"
+            };
     static {
         JdkLogConfig.configureLogging();
+        setupSecurityProviders();
     }
+    private static void setupSecurityProviders() {
+        //setup the security providers needed by the SCA6000 HSM if it's enabled (via a system property)
+        boolean hsmEnabled = Boolean.getBoolean(SYSPROP_ENABLE_HSM);
+
+        if (hsmEnabled) {
+
+            for (Provider provider : Security.getProviders()) {
+                Security.removeProvider(provider.getName());
+            }
+
+            try {
+                prepareProviders(HSM_SECURITY_PROVIDERS);
+                System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.PKCS11_ENGINE);
+            } catch (LifecycleException e) {
+                throw new RuntimeException("Could not start the server. The HSM is enabled, but there was an error preparing the security providers. ", e);
+            }
+        }
+    }
+
+    private static void prepareProviders(String[] securityProviders) throws LifecycleException {
+        for (String providerName : securityProviders) {
+            Provider p;
+            try {
+                if (providerName.contains(" ")) {
+                    String[] splitz = providerName.split(" ");
+                    logger.info("Adding " + splitz[0]);
+                    Class providerClass = Class.forName(splitz[0]);
+                    Constructor ctor = providerClass.getConstructor(String.class);
+                    p = (Provider) ctor.newInstance(splitz[1]);
+
+                } else {
+                    p = (Provider) Class.forName(providerName).newInstance();
+                }
+                Security.addProvider(p);
+            } catch (ClassNotFoundException e) {
+                throw new LifecycleException("Error while instantiating the required security provider: " + providerName + ": " + ExceptionUtils.getMessage(e), e);
+            } catch (InvocationTargetException e) {
+                throw new LifecycleException("Error while instantiating the required security provider: " + providerName + ": " + ExceptionUtils.getMessage(e), e);
+            } catch (NoSuchMethodException e) {
+                throw new LifecycleException("Error while instantiating the required security provider: " + providerName + ": " + ExceptionUtils.getMessage(e), e);
+            } catch (IllegalAccessException e) {
+                throw new LifecycleException("Error while instantiating the required security provider: " + providerName + ": " + ExceptionUtils.getMessage(e), e);
+            } catch (InstantiationException e) {
+                throw new LifecycleException("Error while instantiating the required security provider: " + providerName + ": " + ExceptionUtils.getMessage(e), e);
+            }
+        }
+    }
+
 
     /**
      * Create a Gateway instance but do not initialize or start it.

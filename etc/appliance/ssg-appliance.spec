@@ -121,6 +121,15 @@ sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf
 %defattr(0644,layer7,layer7,0775)
 /opt/SecureSpan/Appliance/sysconfig/*.properties
 
+#SCA Config Wizard
+%defattr(0444,layer7,layer7,0775)
+%dir /opt/SecureSpan/Appliance/hsmconfig
+/opt/SecureSpan/Appliance/hsmconfig/lib
+/opt/SecureSpan/Appliance/hsmconfig/*.jar
+%attr(0755,layer7,layer7) /opt/SecureSpan/Appliance/hsmconfig/*.sh
+%defattr(0644,layer7,layer7,0775)
+/opt/SecureSpan/Appliance/hsmconfig/*.properties
+
 # SSG config user files
 %defattr(0644,ssgconfig,ssgconfig,0700)
 /home/ssgconfig
@@ -187,12 +196,14 @@ fi
 # The ssgconfig user can run system and software configuration as layer7 user
 echo "ssgconfig ALL = NOPASSWD: /sbin/reboot" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/sysconfig/systemconfig.sh" >> /etc/sudoers
+echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/hsmconfig/scahsmconfig.sh" >> /etc/sudoers
+echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/libexec/masterkey-manage.pl" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Gateway/config/ssgconfig.sh" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/EnterpriseManager/config/emconfig.sh" >> /etc/sudoers
-echo "ssgconfig ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/masterkey-manage.pl" >> /etc/sudoers
 echo "ssgconfig ALL = NOPASSWD: /sbin/chkconfig ssem on, /sbin/chkconfig ssem off" >> /etc/sudoers
 
 # The layer7 user is allowed to run the sca stuff without having to enter a password
+echo "layer7 ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/masterkey-manage.pl" >> /etc/sudoers
 echo "layer7 ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
 echo "layer7 ALL = NOPASSWD: /opt/sun/sca6000/sbin/scadiag" >> /etc/sudoers
 echo "layer7 ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
@@ -201,7 +212,7 @@ echo "layer7 ALL = (gateway) NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /e
 # The gateway user is allowed to run the sca stuff without having to enter a password
 # The gateway user is allowed to update the firewall configuration
 echo "gateway ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
-echo "gateway ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/update_firewall" >> /etc/sudoers
+echo "gateway ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
 
 if grep -q kernel.panic /etc/sysctl.conf; then
 	echo -n ""
@@ -239,6 +250,7 @@ fi
 
 # Chown any files that have been left behind by a previous installation
 [ ! -d /opt/SecureSpan/Appliance/sysconfig ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/sysconfig
+[ ! -d /opt/SecureSpan/Appliance/hsmconfig ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/hsmconfig
 [ ! -d /opt/SecureSpan/Appliance/controller/etc ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/controller/etc
 [ ! -d /opt/SecureSpan/Appliance/controller/var ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/controller/var
 

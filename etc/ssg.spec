@@ -69,7 +69,9 @@ rm -fr %{buildroot}
 /opt/SecureSpan/Gateway/config/etc
 /opt/SecureSpan/Gateway/runtime/web
 /opt/SecureSpan/Gateway/runtime/lib
-%defattr(0644,gateway,gateway,0755)
+
+#var directory needs to be writable by layer7 group as well as gateway
+%defattr(0644,gateway,layer7,0775)
 /opt/SecureSpan/Gateway/node/default/var
 
 #Configuration

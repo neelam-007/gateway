@@ -2091,7 +2091,7 @@
     <!--
       Package all configuration wizards
     -->
-    <target name="package.configwiz.all" depends="package.configwiz, package.systemconfigwiz"/>
+    <target name="package.configwiz.all" depends="package.configwiz, package.systemconfigwiz, package.scaconfig"/>
 
     <!--
       Package the main configuration wizard (JAR)
@@ -2193,6 +2193,34 @@
                 <attribute name="X-Layer7-Main-Class" value="com.l7tech.server.config.systemconfig.SysConfigWizardLauncher"/>
             </manifest>
         </jar>
+    </target>
+    
+    <!--
+      Package the SCA config tool (JAR)
+    -->
+    <target name="package.scaconfig" unless="ssg.only" depends="package.jars">
+        <mkdir dir="${build.dir}/scaconfig"/>
+        <mkdir dir="${build.dir}/scaconfig/lib"/>
+
+
+        <copy todir="${build.dir}/scaconfig/lib">
+            <fileset dir="modules/gateway/sca-config/build/dependency">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+        <copy file="modules/gateway/sca-config/build/layer7-gateway-sca-config.jar" tofile="${build.dir}/scaconfig/ConfigScaHsm.jar"/>
+
+        <copy todir="${build.dir}/scaconfig">
+            <fileset dir="${src.root}/etc/appliance/crypto">
+                <include name="scahsmconfig.sh"/>
+            </fileset>
+        </copy>
+
+        <copy todir="${build.dir}/scaconfig">
+            <fileset dir="${src.root}/etc/">
+                <include name="configlogging.properties"/>
+            </fileset>
+        </copy>
     </target>
 
     <!--
@@ -2583,6 +2611,7 @@
         <mkdir dir="${install.src.app.ssgconfig}"/>
         <mkdir dir="${install.src.app.ssgprofile}"/>
         <mkdir dir="${install.src.app.sysconfigwizard}"/>
+        <mkdir dir="${install.src.app.scaconfig}"/>
         <mkdir dir="${install.src.app.control}"/>
         <mkdir dir="${install.src.app.controlbin}"/>
         <mkdir dir="${install.src.app.controletc}"/>
@@ -2629,6 +2658,13 @@
         <!--copy the system config wizard -->
         <copy todir="${install.src.app.sysconfigwizard}">
             <fileset dir="${build.dir}/sysconfigwizard">
+                <include name="**/*"/>
+            </fileset>
+        </copy>
+
+        <!--copy the sca config tool -->
+        <copy todir="${install.src.app.scaconfig}">
+            <fileset dir="${build.dir}/scaconfig">
                 <include name="**/*"/>
             </fileset>
         </copy>

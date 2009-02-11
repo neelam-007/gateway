@@ -1,4 +1,4 @@
-package com.l7tech.server.security.keystore.sca;
+package com.l7tech.gateway.hsm.sca;
 
 /**
  * Exception thrown if an SCA configuration operation fails.

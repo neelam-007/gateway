@@ -30,7 +30,7 @@ public class Pkcs11JceProviderEngine implements JceProviderEngine {
      * </pre>
      */
     public static final String PROPERTY_CONFIG_PATH = "com.l7tech.server.pkcs11ConfigFile";
-    private static final String DEFAULT_CONFIG_PATH = "/ssg/appliance/pkcs11.cfg";
+    private static final String DEFAULT_CONFIG_PATH = "/opt/SecureSpan/Appliance/etc/pkcs11.cfg";
     private static final String CONFIG_PATH = SyspropUtil.getString(PROPERTY_CONFIG_PATH, DEFAULT_CONFIG_PATH);
     private static final Provider PROVIDER;
 

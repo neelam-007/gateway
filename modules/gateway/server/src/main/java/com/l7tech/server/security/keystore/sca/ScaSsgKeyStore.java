@@ -1,5 +1,7 @@
 package com.l7tech.server.security.keystore.sca;
 
+import com.l7tech.gateway.hsm.sca.ScaException;
+import com.l7tech.gateway.hsm.sca.ScaManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
