@@ -56,7 +56,7 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
                                    final String summary,
                                    final byte[] data ) throws SaveException {
 
-        MigrationRecord result = new MigrationRecord( name, System.currentTimeMillis(), user, source, target, summary, data );
+        MigrationRecord result = new MigrationRecord( name, System.currentTimeMillis(), user, source, target, summary, data, data==null ? 0 : data.length );
         long oid = super.save(result);
         result.setOid( oid );
         return result;

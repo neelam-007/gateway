@@ -448,6 +448,17 @@
         </property>
     </bean>
 
+    <bean id="setMigrationResourceMigrationRecordManager"
+          class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="staticMethod"
+                  value="com.l7tech.server.ems.migration.MigrationArtifactResource.setMigrationRecordManager"/>
+        <property name="arguments">
+            <list>
+                <ref local="migrationRecordManager"/>
+            </list>
+        </property>
+    </bean>
+
     <bean id="setResourceSecurityManager"
           class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="staticMethod"

@@ -28,6 +28,7 @@ public class MigrationRecord extends NamedEntityImp {
     private SsgCluster targetCluster;
     private String summary;
     private byte[] data;
+    private int dataSize;
 
     public MigrationRecord() {
     }
@@ -38,7 +39,8 @@ public class MigrationRecord extends NamedEntityImp {
                             final SsgCluster sourceCluster,
                             final SsgCluster targetCluster,
                             final String summary,
-                            final byte[] data) {
+                            final byte[] data,
+                            final int dataSize ) {
         this._name = name==null ? "" : name;
         this.timeCreated = timeCreated;
         this.provider = user.getProviderId();
@@ -47,6 +49,7 @@ public class MigrationRecord extends NamedEntityImp {
         this.targetCluster = targetCluster;
         this.summary = summary;
         this.data = data;
+        this.dataSize = dataSize;
     }
 
     @Column(name="time_created", nullable=false)
@@ -114,5 +117,14 @@ public class MigrationRecord extends NamedEntityImp {
 
     public void setData(byte[] data) {
         this.data = data;
+    }
+
+    @Column(name="data_size", nullable=false)
+    public int getDataSize() {
+        return dataSize;
+    }
+
+    public void setDataSize(int dataSize) {
+        this.dataSize = dataSize;
     }
 }

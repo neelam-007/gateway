@@ -6,6 +6,7 @@ import com.l7tech.server.ems.migration.MigrationRecord;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SizeUnit;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
@@ -27,6 +28,8 @@ import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvid
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.RequestCycle;
+import org.apache.wicket.ResourceReference;
+import org.apache.wicket.util.value.ValueMap;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -122,12 +125,10 @@ public class PolicyMapping extends EsmStandardWebPage {
         HiddenField hiddenFieldForMigration = new HiddenField("migrationId", new Model(""));
         migrationForm.add(hiddenFieldForMigration.setOutputMarkupId(true));
 
-        // Add delete action
         YuiAjaxButton deleteMigrationButton = new YuiAjaxButton("deleteMigrationButton") {
             @Override
             protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, final Form form) {
-                String warningText =
-                        "<p>Really delete migration record?</p>";
+                String warningText = "<p>Really delete migration record?</p>";
                 Label label = new Label(YuiDialog.getContentId(), warningText);
                 label.setEscapeModelStrings(false);
                 YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Confirm Migration Deletion", YuiDialog.Style.OK_CANCEL, label, new YuiDialog.OkCancelCallback() {
@@ -156,24 +157,14 @@ public class PolicyMapping extends EsmStandardWebPage {
                 ajaxRequestTarget.addComponent(dynamicDialogHolder);
             }
         };
-        migrationForm.add(deleteMigrationButton);
 
         YuiAjaxButton renameMigrationButton = new YuiAjaxButton("renameMigrationButton") {
             @Override
             protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, final Form form) {
                 final String migrationId = (String) form.get("migrationId").getModelObject();
 
-                MigrationRecord record = null;
-                try {
-                    record = migrationManager.findByPrimaryKey(Long.parseLong(migrationId));
-                } catch ( FindException fe ) {
-                    logger.log( Level.WARNING, "Error loading migration record.", fe );
-                } catch ( NumberFormatException nfe ) {
-                    logger.log( Level.FINE, "Ignoring invalid migration id '"+migrationId+"'." );    
-                }
-
+                final MigrationRecord record = findMigrationRecordById( migrationId );
                 if ( record != null ) {
-                    final MigrationRecord editRecord = record;
                     MigrationRecordEditPanel editPanel = new MigrationRecordEditPanel( YuiDialog.getContentId(), record );
                     YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Migration Properties", YuiDialog.Style.OK_CANCEL, editPanel, new YuiDialog.OkCancelCallback() {
                         @Override
@@ -182,9 +173,9 @@ public class PolicyMapping extends EsmStandardWebPage {
                                 try {
                                     logger.info("Renaming the migration (OID = " + migrationId + ")");
 
-                                    if ( editRecord.getName() == null ) editRecord.setName("");
-                                    migrationManager.update( editRecord );
-                                    selectedMigrationModel.setMigrationRecord( editRecord );                            
+                                    if ( record.getName() == null ) record.setName("");
+                                    migrationManager.update( record );
+                                    selectedMigrationModel.setMigrationRecord( record );
 
                                     target.addComponent(migrationTableContainer);
                                     target.addComponent(migrationSummaryContainer);
@@ -202,12 +193,97 @@ public class PolicyMapping extends EsmStandardWebPage {
                 }
             }
         };
+
+        YuiAjaxButton downloadArchiveButton = new YuiAjaxButton("downloadArchiveButton") {
+            @Override
+            protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, final Form form) {
+                final String migrationId = (String) form.get("migrationId").getModelObject();
+                if ( migrationId != null && migrationId.length() > 0 ) {
+                    ValueMap vm = new ValueMap();
+                    vm.add("migrationId", migrationId);
+                    vm.add("disposition", "attachment");
+                    ResourceReference resourceReference = new ResourceReference("migrationResource");
+                    ajaxRequestTarget.appendJavascript("window.location = '" + RequestCycle.get().urlFor(resourceReference, vm).toString() + "';");
+                }
+            }
+        };
+
+        YuiAjaxButton deleteArchiveButton = new YuiAjaxButton("deleteArchiveButton") {
+            @Override
+            protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, final Form form) {
+                final String migrationId = (String) form.get("migrationId").getModelObject();
+
+                final MigrationRecord record = findMigrationRecordById( migrationId );
+                if ( record != null ) {
+                    String warningText = "<p>Really delete migration archive?</p>";
+                    Label label = new Label(YuiDialog.getContentId(), warningText);
+                    label.setEscapeModelStrings(false);
+                    YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Confirm Archive Deletion", YuiDialog.Style.OK_CANCEL, label, new YuiDialog.OkCancelCallback() {
+                        @Override
+                        public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
+                            if ( button == YuiDialog.Button.OK ) {
+                                try {
+                                    logger.fine("Deleting migration archive for migration record (OID = " + migrationId + ")");
+
+                                    record.setData( null );
+                                    record.setDataSize( 0 );
+                                    migrationManager.update(record);
+                                    migrationSummaryContainer.setVisible(false);
+
+                                    target.addComponent(migrationTableContainer);
+                                    target.addComponent(migrationSummaryContainer);
+                                } catch (Exception e) {
+                                    logger.warning("Cannot delete migration archive for migration record (OID = " + migrationId + "), '"+ ExceptionUtils.getMessage(e)+"'");
+                                }
+                            }
+                            dynamicDialogHolder.replace(new EmptyPanel("dynamic.holder.content"));
+                            target.addComponent(dynamicDialogHolder);
+                        }
+                    });
+
+                    dynamicDialogHolder.replace(dialog);
+                    ajaxRequestTarget.addComponent(dynamicDialogHolder);
+                }
+            }
+        };
+
+        YuiAjaxButton uploadArchiveButton = new YuiAjaxButton("uploadArchiveButton") {
+            @Override
+            protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, final Form form) {
+                PolicyMigrationUploadPanel policyMigrationUploadPanel = new PolicyMigrationUploadPanel( YuiDialog.getContentId(), getUser() ){
+                    @Override
+                    @SuppressWarnings({"UnusedDeclaration"})
+                    protected void onSubmit(final AjaxRequestTarget target) {
+                        migrationSummaryContainer.setVisible(false);
+                        if ( target != null ) {
+                            target.addComponent(migrationTableContainer);
+                            target.addComponent(migrationSummaryContainer);
+                        }
+                    }
+                };
+                YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Upload Migration Archive", YuiDialog.Style.OK_CANCEL, policyMigrationUploadPanel, new YuiDialog.OkCancelCallback(){
+                    @Override
+                    public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button ) {
+                        //NOTE, due to YUI AJAX form submission for file upload this action is not run.
+                    }
+                } );
+                policyMigrationUploadPanel.setSuccessScript( dialog.getSuccessScript() );
+                dynamicDialogHolder.replace(dialog);
+                if ( ajaxRequestTarget != null ) {
+                    ajaxRequestTarget.addComponent(dynamicDialogHolder);
+                }
+            }
+        };
+
         migrationForm.add(hiddenFieldForMigration.setOutputMarkupId(true));
-        migrationForm.add(deleteMigrationButton);
-        migrationForm.add(renameMigrationButton);
+        migrationForm.add(deleteMigrationButton.setEnabled(false));
+        migrationForm.add(renameMigrationButton.setEnabled(false));
+        migrationForm.add(downloadArchiveButton.setEnabled(false));
+        migrationForm.add(deleteArchiveButton.setEnabled(false));
+        migrationForm.add(uploadArchiveButton);
 
         // Create a migration table
-        Panel migrationTable = buildMigrationTablePanel(hiddenFieldForMigration, new Button[]{deleteMigrationButton, renameMigrationButton});
+        Panel migrationTable = buildMigrationTablePanel(hiddenFieldForMigration, new Button[]{deleteMigrationButton, renameMigrationButton}, new Button[]{ downloadArchiveButton, deleteArchiveButton } );
 
         // Add the above two components into the migrationTableContainer
         if (migrationTableContainer == null) {
@@ -221,42 +297,77 @@ public class PolicyMapping extends EsmStandardWebPage {
     }
 
     /**
+     * Find migration record by id.
+     *
+     * @param migrationId The record to find.
+     * @return The record or null.
+     */
+    private MigrationRecord findMigrationRecordById( final String migrationId ) {
+        MigrationRecord record = null;
+
+        try {
+            record = migrationManager.findByPrimaryKey(Long.parseLong(migrationId));
+        } catch ( FindException fe ) {
+            logger.log( Level.WARNING, "Error loading migration record.", fe );
+        } catch ( NumberFormatException nfe ) {
+            logger.log( Level.FINE, "Ignoring invalid migration id '"+migrationId+"'." );
+        }
+
+        return record;
+    }
+
+    /**
      * Build a migration table based on given the start date and the end date.
      *
      * @param hidden: the hidden field to store the selected migration id.
      * @param selectionComponents: the buttons needed to be updated after the migration is selected.
      * @return a panel that contains a migration table.
      */
-    private Panel buildMigrationTablePanel( final HiddenField hidden, final Button[] selectionComponents ) {
+    private Panel buildMigrationTablePanel( final HiddenField hidden, final Button[] selectionComponents, final Button[] archiveSelectionComponents ) {
         List<PropertyColumn> columns = new ArrayList<PropertyColumn>();
         columns.add(new PropertyColumn(new Model("id"), "id"));
         columns.add(new PropertyColumn(new StringResourceModel("migration.column.name", this, null), MigrationRecordManager.SortProperty.NAME.toString(), "name"));
         columns.add(new PropertyColumn(new StringResourceModel("migration.column.time", this, null), MigrationRecordManager.SortProperty.TIME.toString(), "timeCreated"));
         columns.add(new PropertyColumn(new StringResourceModel("migration.column.from", this, null), "sourceCluster"));
         columns.add(new PropertyColumn(new StringResourceModel("migration.column.to", this, null), "targetCluster"));
+        columns.add(new PropertyColumn(new StringResourceModel("migration.column.size", this, null), "size"));
 
         Date start = startOfDay((Date)dateStartModel.getObject());
         Date end = new Date(startOfDay((Date)dateEndModel.getObject()).getTime() + TimeUnit.DAYS.toMillis(1));
 
         return new YuiDataTable("migrationTable", columns, "timeCreated", false, new MigrationDataProvider(start, end, "timeCreated", false), hidden, "id", true, selectionComponents) {
             @Override
-            protected void onSelect(AjaxRequestTarget ajaxRequestTarget, String value) {
+            protected void onSelect( final AjaxRequestTarget ajaxRequestTarget, final String value) {
+                boolean selected = false;
+                boolean archivePresent = false;
+
                 if (value != null && value.length() > 0) {
-                    boolean visible = false;
                     try {
                         MigrationRecord migration = migrationManager.findByPrimaryKey(Long.parseLong(value));
                         if ( migration != null ) {
-                            visible = true;
-                            selectedMigrationModel.setMigrationRecord( migration );                            
+                            selected = true;
+                            if ( migration.getDataSize() > 0 ) {
+                                archivePresent = true;
+                            }
+                            selectedMigrationModel.setMigrationRecord( migration );
                         }
                     } catch ( FindException fe ) {
                         logger.log( Level.WARNING, "Error finding policy migration record (OID = '" + value + "').", fe );
-                        return;
                     }
-
-                    migrationSummaryContainer.setVisible(visible);
-                    ajaxRequestTarget.addComponent(migrationSummaryContainer);
                 }
+
+                for ( Button button : selectionComponents ) {
+                    button.setEnabled( selected );
+                    ajaxRequestTarget.addComponent( button );
+                }
+
+                for ( Button button : archiveSelectionComponents ) {
+                    button.setEnabled( archivePresent );
+                    ajaxRequestTarget.addComponent( button );                    
+                }
+
+                migrationSummaryContainer.setVisible(selected);
+                ajaxRequestTarget.addComponent(migrationSummaryContainer);
             }
         };
     }
@@ -319,6 +430,10 @@ public class PolicyMapping extends EsmStandardWebPage {
 
         public String getName() {
             return migration==null ? null : migration.getName();
+        }
+
+        public String getSize() {
+            return migration==null ? null : SizeUnit.format(migration.getDataSize());
         }
 
         public String getSummary() {

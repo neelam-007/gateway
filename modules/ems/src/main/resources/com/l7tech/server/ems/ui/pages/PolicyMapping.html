@@ -145,13 +145,23 @@
                             <div wicket:id="migrationTable"/>
                             <div class="panelContent">
                                 <form wicket:id="deleteMigrationForm">
-                                    <button id="deleteMigrationButton" type="button" wicket:id="deleteMigrationButton">
-                                        <wicket:message key="button.delete"/>
-                                    </button>
+                                    <input name="migrationId" type="hidden" value="" wicket:id="migrationId"/>
                                     <button id="renameMigrationButton" type="button" wicket:id="renameMigrationButton">
                                         <wicket:message key="button.rename"/>
                                     </button>
-                                    <input name="migrationId" type="hidden" value="" wicket:id="migrationId"/>
+                                    <button id="downloadArchiveButton" type="button" wicket:id="downloadArchiveButton">
+                                        <wicket:message key="button.downloadArchive"/>
+                                    </button>
+                                    <button id="deleteArchiveButton" type="button" wicket:id="deleteArchiveButton">
+                                        <wicket:message key="button.deleteArchive"/>
+                                    </button>
+                                    <button id="deleteMigrationButton" type="button" wicket:id="deleteMigrationButton">
+                                        <wicket:message key="button.delete"/>
+                                    </button>
+                                    <span style="margin-left: 0.5em; margin-right: 0.5em; vertical-align: 50%">|</span>
+                                    <button id="uploadArchiveButton" type="button" wicket:id="uploadArchiveButton">
+                                        <wicket:message key="button.uploadArchive"/>
+                                    </button>
                                 </form>
                             </div>
                         </div>

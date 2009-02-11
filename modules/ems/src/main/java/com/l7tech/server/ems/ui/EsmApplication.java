@@ -5,6 +5,7 @@ import com.l7tech.server.ems.standardreports.ReportResource;
 import com.l7tech.server.ems.standardreports.ReportViewResource;
 import com.l7tech.server.ems.standardreports.ReportViewCodingStrategy;
 import com.l7tech.server.ems.user.UserPropertyManager;
+import com.l7tech.server.ems.migration.MigrationArtifactResource;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
@@ -141,6 +142,7 @@ public class EsmApplication extends WebApplication {
         getSharedResources().add("logResource", new LogResource());
         getSharedResources().add("reportResource", new ReportResource());
         getSharedResources().add("reportViewResource", new ReportViewResource());        
+        getSharedResources().add("migrationResource", new MigrationArtifactResource());
         mount( new ReportViewCodingStrategy("reports") );
 
         IMarkupSettings markupSettings = getMarkupSettings();
