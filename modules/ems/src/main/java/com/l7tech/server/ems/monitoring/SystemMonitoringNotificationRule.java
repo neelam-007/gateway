@@ -3,18 +3,24 @@
  */
 package com.l7tech.server.ems.monitoring;
 
-import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ems.enterprise.JSONConstants;
-import com.l7tech.server.management.config.monitoring.*;
+import com.l7tech.server.management.config.monitoring.AuthInfo;
+import com.l7tech.server.management.config.monitoring.EmailNotificationRule;
+import com.l7tech.server.management.config.monitoring.HttpNotificationRule;
+import com.l7tech.server.management.config.monitoring.SnmpTrapNotificationRule;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
 import org.hibernate.annotations.Proxy;
 import org.mortbay.util.ajax.JSON;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Lob;
+import javax.persistence.Table;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.ByteArrayInputStream;
 import java.util.*;
@@ -69,15 +75,14 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
     /**
      * Obtain a view of this rule as an HttpNotificationRule, if applicable.
      *
-     * @param config the MonitoringConfiguration to use when creating the rule.
      * @return an appropriately-configured HttpNotificationRule instance, or null if this
-     *         rule does not represent an HTTP request notification. 
+     *         rule does not represent an HTTP request notification.
      */
-    public HttpNotificationRule asHttpNotificationRule(MonitoringConfiguration config) {
+    public HttpNotificationRule asHttpNotificationRule() {
         if (!(JSONConstants.NotificationType.HTTP_REQUEST.equals(getType())))
             return null;
 
-        HttpNotificationRule ret = new HttpNotificationRule(config);
+        HttpNotificationRule ret = new HttpNotificationRule();
         ret.setName(getName());
         ret.setOid(getOid());
         ret.setAuthInfo(null); // todo: where to get username and password to create authInfo?
@@ -91,15 +96,14 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
     /**
      * Obtain a view of this rule as an SnmpTrapNotificationRule, if applicable.
      *
-     * @param config the MonitoringConfiguration to use when creating the rule.
      * @return an appropriately-configured SnmpTrapNotificationRule instance, or null if this
      *         rule does not represent an SNMP trap notification.
      */
-    public SnmpTrapNotificationRule asSnmpTrapNotificationRule(MonitoringConfiguration config) {
+    public SnmpTrapNotificationRule asSnmpTrapNotificationRule() {
         if (!(JSONConstants.NotificationType.SNMP_TRAP.equals(getType())))
             return null;
 
-        SnmpTrapNotificationRule ret = new SnmpTrapNotificationRule(config);
+        SnmpTrapNotificationRule ret = new SnmpTrapNotificationRule();
         ret.setName(getName());
         ret.setOid(getOid());
         ret.setCommunity((String)getParamProp(JSONConstants.NotificationSnmpTrapParams.COMMUNITY));
@@ -113,15 +117,14 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
     /**
      * Obtain a view of this rule as an EmailNotificationRule, if applicable.
      *
-     * @param config the MonitoringConfiguration to use when creating the rule.
      * @return an appropriately-configured EmailNotificationRule instance, or null if this
      *         rule does not represent an email notification.
      */
-    public EmailNotificationRule asEmailNotificationRule(MonitoringConfiguration config) {
+    public EmailNotificationRule asEmailNotificationRule() {
         if (!(JSONConstants.NotificationType.E_MAIL.equals(getType())))
             return null;
 
-        EmailNotificationRule ret = new EmailNotificationRule(config);
+        EmailNotificationRule ret = new EmailNotificationRule();
         ret.setName(getName());
         ret.setOid(getOid());
         ret.setAuthInfo(obtainAuthInfo());

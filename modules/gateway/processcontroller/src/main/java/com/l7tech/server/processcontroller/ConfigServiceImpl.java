@@ -15,7 +15,9 @@ import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.server.processcontroller.monitoring.MonitoringKernel;
 import com.l7tech.util.*;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import javax.xml.bind.JAXB;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -51,6 +53,7 @@ public class ConfigServiceImpl implements ConfigService {
     private final int sslPort;
     private final String sslIPAddress;
     private final File configDirectory;
+    private final File varDirectory; // TODO do we want to notice if the directory gets created during runtime?
     private final File javaBinary;
     private final Map<String, NodeInfo> nodeInfos;
 
@@ -59,6 +62,7 @@ public class ConfigServiceImpl implements ConfigService {
 
     @Resource
     private MonitoringKernel monitoringKernel;
+    private final File monitoringConfigFile;
 
     public ConfigServiceImpl() throws IOException, GeneralSecurityException {
         // TODO maybe just pass the host.properties path instead, and put the nodeBaseDirectory in there
@@ -75,6 +79,13 @@ public class ConfigServiceImpl implements ConfigService {
         if (!configDirectory.exists() || !configDirectory.isDirectory())
             throw new IllegalStateException("Configuration directory " + configDirectory.getAbsolutePath() + " does not exist");
         this.configDirectory = configDirectory;
+
+        File varDirectory = new File(processControllerHomeDirectory, SLASH + "var");
+        if (!varDirectory.exists() || !varDirectory.isDirectory())
+            logger.log(Level.WARNING, varDirectory.getAbsolutePath() + " does not exist; monitoring configurations will not be saved");
+        this.varDirectory = varDirectory;
+        this.monitoringConfigFile = varDirectory == null ? null : new File(this.varDirectory, "currentMonitoringConfig.xml");
+
         this.masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(configDirectory, "omp.dat") ) );
 
         final File hostPropsFile = new File(getProcessControllerHomeDirectory(), "etc" + SLASH + "host.properties");
@@ -136,17 +147,33 @@ public class ConfigServiceImpl implements ConfigService {
 
         this.nodeInfos = new ConcurrentHashMap<String, NodeInfo>(infos);
         this.host = hostConfig;
+    }
 
-        Pair<MonitoringConfiguration, Boolean> config = loadMonitoringConfigFromFile();
+    @PostConstruct
+    void start() {
+        final Pair<MonitoringConfiguration, Boolean> config = loadMonitoringConfigFromFile();
         if (config != null) {
             currentMonitoringConfiguration = config.left;
             responsibleForClusterMonitoring = config.right;
             monitoringKernel.setConfiguration(currentMonitoringConfiguration, responsibleForClusterMonitoring);
         }
+
     }
 
     private Pair<MonitoringConfiguration, Boolean> loadMonitoringConfigFromFile() {
-        return null; // TODO
+        if (monitoringConfigFile == null) return null;
+        if (!monitoringConfigFile.exists()) {
+            logger.info("No monitoring configuration found in " + monitoringConfigFile);
+            return null;
+        }
+        MonitoringConfiguration config = null;
+        try {
+            config = JAXB.unmarshal(monitoringConfigFile, MonitoringConfiguration.class);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to read monitoring configuration", e);
+            return null;
+        }
+        return new Pair<MonitoringConfiguration, Boolean>(config, true);
     }
 
     static File getHomeDirectory() {
@@ -423,6 +450,13 @@ public class ConfigServiceImpl implements ConfigService {
         this.currentMonitoringConfiguration = config;
 
         monitoringKernel.setConfiguration(config, responsibleForClusterMonitoring);
-        // TODO write it to a file
+
+        if (monitoringConfigFile == null) return;
+        
+        try {
+            JAXB.marshal(config, monitoringConfigFile);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Couldn't save current monitoring configuration; it will need to be reconfigured on startup", e);
+        }
     }
 }

@@ -186,11 +186,11 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
         for (SystemMonitoringNotificationRule rule : systemNotificationRules) {
             final String ruleType = rule.getType();
             if (JSONConstants.NotificationType.E_MAIL.equals(ruleType)) {
-                rules.add(rule.asEmailNotificationRule(config));
+                rules.add(rule.asEmailNotificationRule());
             } else if (JSONConstants.NotificationType.SNMP_TRAP.equals(ruleType)) {
-                rules.add(rule.asSnmpTrapNotificationRule(config));
+                rules.add(rule.asSnmpTrapNotificationRule());
             } else if (JSONConstants.NotificationType.HTTP_REQUEST.equals(ruleType)) {
-                rules.add(rule.asHttpNotificationRule(config));
+                rules.add(rule.asHttpNotificationRule());
             } else {
                 logger.log(Level.WARNING, "Ignoring configured notification rule of unrecognized type: " + ruleType);
             }

@@ -21,11 +21,7 @@ public class HttpNotificationRule extends NotificationRule {
     private String contentType;
     private List<Header> headers = new ArrayList<Header>();
 
-    public HttpNotificationRule(MonitoringConfiguration configuration) {
-        super(configuration, Type.HTTP);
-    }
-
-    protected HttpNotificationRule() {
+    public HttpNotificationRule() {
         super(Type.HTTP);
     }
 

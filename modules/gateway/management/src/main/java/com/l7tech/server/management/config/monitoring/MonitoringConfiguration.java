@@ -6,7 +6,6 @@ package com.l7tech.server.management.config.monitoring;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import javax.persistence.Entity;
-import javax.persistence.OneToMany;
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -29,7 +28,6 @@ public final class MonitoringConfiguration extends NamedEntityImp {
     private Set<Trigger> triggers = new LinkedHashSet<Trigger>();
     private Set<NotificationRule> notificationRules = new LinkedHashSet<NotificationRule>();
 
-    @OneToMany(mappedBy="monitoringConfiguration")
     @XmlElementWrapper(name="triggers", namespace="http://ns.l7tech.com/secureSpan/1.0/monitoring")
     @XmlElementRef()
     public Set<Trigger> getTriggers() {
@@ -40,7 +38,6 @@ public final class MonitoringConfiguration extends NamedEntityImp {
         this.triggers = triggers;
     }
 
-    @OneToMany(mappedBy="monitoringConfiguration")
     @XmlElementWrapper(name="notificationRules", namespace="http://ns.l7tech.com/secureSpan/1.0/monitoring")
     @XmlElementRef
     public Set<NotificationRule> getNotificationRules() {

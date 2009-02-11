@@ -9,7 +9,6 @@ import com.l7tech.server.management.api.monitoring.Monitorable;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
 import javax.xml.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,9 +22,6 @@ import java.util.List;
 @XmlRootElement
 @XmlSeeAlso({PropertyTrigger.class, EventTrigger.class})
 public abstract class Trigger<MT extends Monitorable> extends NamedEntityImp {
-    /** The parent monitoring scheme that owns this trigger */
-    private MonitoringConfiguration monitoringConfiguration;
-
     /** The type of the subject component */
     protected ComponentType componentType;
 
@@ -58,16 +54,6 @@ public abstract class Trigger<MT extends Monitorable> extends NamedEntityImp {
     }
 
     protected abstract MT buildMonitorable();
-
-    @XmlTransient
-    @ManyToOne(cascade=CascadeType.ALL)
-    public MonitoringConfiguration getMonitoringConfig() {
-        return monitoringConfiguration;
-    }
-
-    public void setMonitoringConfig(MonitoringConfiguration monitoringConfiguration) {
-        this.monitoringConfiguration = monitoringConfiguration;
-    }
 
     public ComponentType getComponentType() {
         return componentType;
@@ -113,7 +99,6 @@ public abstract class Trigger<MT extends Monitorable> extends NamedEntityImp {
      * <ul>
      * <li>the class or {@link #_oid OID} </li>
      * <li>the {@link #monitorableId}</li>
-     * <li>the parent {@link #monitoringConfiguration monitoring configuration}</li>
      * <li>the {@link #componentType type} or {@link #componentId ID} of the subject component</li>
      * </ul>
      *
@@ -124,7 +109,6 @@ public abstract class Trigger<MT extends Monitorable> extends NamedEntityImp {
     public boolean isIncompatibleWith(Trigger that) {
         return that.getClass() != this.getClass() ||
                that.getOid() != this.getOid() ||
-               that.getMonitoringConfig().getOid() != this.getMonitoringConfig().getOid() ||
                that.getComponentType() != this.getComponentType() ||
                !that.getComponentId().equals(this.getComponentId()) ||
                !that.getMonitorableId().equals(this.getMonitorableId());

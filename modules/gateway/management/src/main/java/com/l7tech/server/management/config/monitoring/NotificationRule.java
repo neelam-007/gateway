@@ -5,10 +5,7 @@ package com.l7tech.server.management.config.monitoring;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * A configuration for a type of notification that can be sent by the monitoring system.
@@ -17,29 +14,13 @@ import javax.xml.bind.annotation.XmlTransient;
  */
 @Entity
 public abstract class NotificationRule extends NamedEntityImp {
-    protected MonitoringConfiguration monitoringConfiguration;
     private Type type;
 
     @Deprecated
     protected NotificationRule() { }
 
-    protected NotificationRule(MonitoringConfiguration configuration, Type type) {
-        this.monitoringConfiguration = configuration;
-        this.type = type;
-    }
-
     protected NotificationRule(Type type) {
         this.type = type;
-    }
-
-    @XmlTransient
-    @ManyToOne(cascade=CascadeType.ALL)
-    public MonitoringConfiguration getMonitoringConfiguration() {
-        return monitoringConfiguration;
-    }
-
-    public void setMonitoringConfiguration(MonitoringConfiguration monitoringConfiguration) {
-        this.monitoringConfiguration = monitoringConfiguration;
     }
 
     public Type getType() {
@@ -47,9 +28,8 @@ public abstract class NotificationRule extends NamedEntityImp {
     }
 
     public boolean isIncompatibleWith(NotificationRule that) {
-        return !this.monitoringConfiguration.equals(that.monitoringConfiguration) ||
-                this.type != that.type || 
-                this._oid != that._oid;
+        return this.type != that.type ||
+               this._oid != that._oid;
     }
 
     public enum Type {

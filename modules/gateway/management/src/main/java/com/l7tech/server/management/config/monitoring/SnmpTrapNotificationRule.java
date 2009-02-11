@@ -13,11 +13,7 @@ public class SnmpTrapNotificationRule extends NotificationRule {
     private String text;
     private int oidSuffix;
 
-    public SnmpTrapNotificationRule(MonitoringConfiguration configuration) {
-        super(configuration, Type.SNMP);
-    }
-
-    protected SnmpTrapNotificationRule() {
+    public SnmpTrapNotificationRule() {
         super(Type.SNMP);
     }
 

@@ -24,11 +24,7 @@ public class EmailNotificationRule extends NotificationRule {
     private String subject;
     private String text;
 
-    public EmailNotificationRule(MonitoringConfiguration configuration) {
-        super(configuration, Type.EMAIL);
-    }
-
-    protected EmailNotificationRule() {
+    public EmailNotificationRule() {
         super(Type.EMAIL);
     }
 

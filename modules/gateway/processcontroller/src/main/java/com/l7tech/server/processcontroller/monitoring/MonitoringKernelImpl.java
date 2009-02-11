@@ -70,7 +70,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
     @PostConstruct
     public void start() {
-        triggerCheckTimer.scheduleAtFixedRate(triggerCheckTask, 16000, 120000); // TODO use a shorter interval when not debugging
+        triggerCheckTimer.scheduleAtFixedRate(triggerCheckTask, 5000, 997); // TODO configurable or heuristic scheduling? 
         notificationThread.start();
     }
 
@@ -127,7 +127,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
         final Map<MonitorableEvent, EventState> buildingEstates = new HashMap<MonitorableEvent, EventState>();
         final Map<MonitorableEvent, EventState> priorEstates = currentEventStates;
-        if (priorPstates != null) buildingEstates.putAll(priorEstates);
+        if (priorEstates != null) buildingEstates.putAll(priorEstates);
 
         final Set<MonitorableEvent> liveEvents = new HashSet<MonitorableEvent>();
         final Set<MonitorableProperty> liveProperties = new HashSet<MonitorableProperty>();
@@ -334,6 +334,8 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     }
 
                     final Pair<Long, ? extends Comparable> sample = mstate.getLastSample();
+                    if (sample == null) continue;
+                    
                     final Long when = sample.left;
                     final Comparable what = sample.right;
                     final long sampleAge = now - when;

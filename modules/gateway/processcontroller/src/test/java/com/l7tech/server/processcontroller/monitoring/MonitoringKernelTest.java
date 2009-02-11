@@ -103,21 +103,21 @@ public class MonitoringKernelTest {
         mc.setName("My config");
         mc.setOid(1234);
 
-        final HttpNotificationRule rulez = new HttpNotificationRule(mc);
+        final HttpNotificationRule rulez = new HttpNotificationRule();
         rulez.setName("bring me a bucket");
         rulez.setUrl("http://localhost/");
         rulez.setMethod(HttpMethod.GET);
         rulez.setOid(342345);
         mc.getNotificationRules().add(rulez);
 
-        final EmailNotificationRule rulez2 = new EmailNotificationRule(mc);
+        final EmailNotificationRule rulez2 = new EmailNotificationRule();
         rulez2.setName("spammity spam");
         rulez2.setFrom("root@localhost");
         rulez2.setSubject("Uh-oh");
         rulez2.setOid(43243);
         mc.getNotificationRules().add(rulez2);
 
-        final SnmpTrapNotificationRule rulez3 = new SnmpTrapNotificationRule(mc);
+        final SnmpTrapNotificationRule rulez3 = new SnmpTrapNotificationRule();
         rulez3.setName("ITS A TRAP");
         rulez3.setCommunity("public");
         rulez3.setOidSuffix(1234);
