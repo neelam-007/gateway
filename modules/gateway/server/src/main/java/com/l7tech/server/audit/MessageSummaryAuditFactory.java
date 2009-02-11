@@ -20,6 +20,7 @@ import com.l7tech.util.IOUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.mapping.MessageContextMappingManager;
 import com.l7tech.server.ServerConfig;
@@ -28,6 +29,8 @@ import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.objectmodel.FindException;
 
 import javax.wsdl.Operation;
 import java.io.UnsupportedEncodingException;
@@ -56,6 +59,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
 
     private MessageContextMappingManager messageContextMappingManager;
     private boolean addMappingsIntoAudit;
+    private IdentityProviderFactory identityProviderFactory;
 
     public MessageSummaryAuditFactory(String nodeId) {
         if (nodeId == null) {
@@ -197,6 +201,10 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
         this.messageContextMappingManager = messageContextMappingManager;
     }
 
+    public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
+        this.identityProviderFactory = identityProviderFactory;
+    }
+
     public void propertyChange(PropertyChangeEvent event) {
         if (ServerConfig.PARAM_ADD_MAPPINGS_INTO_AUDIT.equals(event.getPropertyName())) {
             if (Boolean.valueOf((String)event.getNewValue())) {
@@ -223,8 +231,9 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
             for ( MessageContextMapping mapping : mappings ) {
                 if ( mapping.getMappingType() == MessageContextMapping.MappingType.AUTH_USER ) {
                     if (user != null) {
+                        valuesEntity.setAuthUserId(describe(user.getProviderId(), user.getId()));
+                        valuesEntity.setAuthUserUniqueId(user.getId());
                         valuesEntity.setAuthUserProviderId( user.getProviderId() );
-                        valuesEntity.setAuthUserId( user.getId() );
                     }
                 } else {
                     keysEntity.setTypeAndKey(index, mapping.getMappingType(), mapping.getKey());
@@ -313,4 +322,26 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
         }
         return operationName;
     }
+
+    private String describe( final Long providerOid, final String userId ) {
+         String description;
+
+         try {
+             IdentityProvider provider = identityProviderFactory.getProvider( providerOid );
+             User user = provider.getUserManager().findByPrimaryKey( userId );
+             description = getUserDesription(user) + " [" + provider.getConfig().getName() + "]";
+         } catch ( FindException fe ) {
+             description = userId + " [#" + providerOid + "]";
+         }
+
+         return description;
+     }
+
+     private String getUserDesription( final User user ) {
+         String userName = user.getLogin();
+         if (userName == null || "".equals(userName)) userName = user.getName();
+         if (userName == null || "".equals(userName)) userName = user.getId();
+         return userName;
+     }
+     
 }

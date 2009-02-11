@@ -708,6 +708,7 @@
     <bean id="messageSummaryAuditFactory" class="com.l7tech.server.audit.MessageSummaryAuditFactory">
         <constructor-arg ref="clusterNodeId"/>
         <property name="messageContextMappingManager" ref="messageContextMappingManager"/>
+        <property name="identityProviderFactory" ref="identityProviderFactory" />
     </bean>
 
     <!-- keystore root cert and ssl config  -->
@@ -913,7 +914,7 @@
     </bean>
 
     <!-- Dependency ensures system.properties file is processed first -->
-    <bean id="serviceMetricsManager"
+   <bean id="serviceMetricsManager"
           class="com.l7tech.server.service.ServiceMetricsManagerImpl"
           depends-on="ssgBoot"
           parent="hibernateBean">
@@ -923,6 +924,7 @@
         <property name="serviceManager" ref ="serviceManager"/>
         <property name="roleManager" ref="roleManager"/>
         <property name="messageContextMappingManager" ref="messageContextMappingManager"/>
+        <property name="identityProviderFactory" ref="identityProviderFactory" />
     </bean>
 
     <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker" depends-on="ssgBoot">
@@ -1195,7 +1197,6 @@
     <bean id="messageContextMappingManager" class="com.l7tech.server.mapping.MessageContextMappingManagerImpl">
         <constructor-arg ref="messageContextMappingKeyManager"/>
         <constructor-arg ref="messageContextMappingValueManager"/>
-        <constructor-arg ref="identityProviderFactory"/>
     </bean>
 
     <bean id="trustedEsmManager" class="com.l7tech.server.TrustedEsmManagerImpl" parent="hibernateBean">

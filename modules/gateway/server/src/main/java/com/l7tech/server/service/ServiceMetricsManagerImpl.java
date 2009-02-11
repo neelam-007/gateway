@@ -4,9 +4,11 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.mapping.MessageContextMappingManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -97,6 +99,10 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
 
     public void setMessageContextMappingManager(MessageContextMappingManager messageContextMappingManager) {
         this.messageContextMappingManager = messageContextMappingManager;
+    }
+
+    public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
+        this.identityProviderFactory = identityProviderFactory;
     }
 
     public void destroy() throws Exception {
@@ -564,6 +570,8 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
     private MessageContextMappingManager messageContextMappingManager;
 
     private AtomicBoolean _addMappingsIntoServiceMetrics = new AtomicBoolean(false);
+
+    private IdentityProviderFactory identityProviderFactory;
 
     /** Turns on service metrics collection. */
     private void enable() {
@@ -1227,8 +1235,9 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
             for ( MessageContextMapping mapping : key.getMappings() ) {
                 if ( mapping.getMappingType() == MessageContextMapping.MappingType.AUTH_USER ) {
                     if (key != null) {
+                        valuesEntity.setAuthUserId(describe(key.getUserProviderId(), key.getUserId()));
+                        valuesEntity.setAuthUserUniqueId(key.getUserId());
                         valuesEntity.setAuthUserProviderId( key.getUserProviderId() );
-                        valuesEntity.setAuthUserId( key.getUserId() );
                     }
                 } else {
                     keysEntity.setTypeAndKey(index, mapping.getMappingType(), mapping.getKey());
@@ -1248,5 +1257,28 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
             return null;
         }
     }
+
+    private String describe( final Long providerOid, final String userId ) {
+        String description;
+
+        try {
+            IdentityProvider provider = identityProviderFactory.getProvider( providerOid );
+            User user = provider.getUserManager().findByPrimaryKey( userId );
+            description = getUserDesription(user) + " [" + provider.getConfig().getName() + "]";
+        } catch ( FindException fe ) {
+            description = userId + " [#" + providerOid + "]";
+        }
+
+        return description;
+    }
+
+    private String getUserDesription( final User user ) {
+        String userName = user.getLogin();
+        if (userName == null || "".equals(userName)) userName = user.getName();
+        if (userName == null || "".equals(userName)) userName = user.getId();
+        return userName;
+    }
+
+    
 
 }

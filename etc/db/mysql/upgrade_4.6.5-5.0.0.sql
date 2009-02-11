@@ -80,7 +80,7 @@ CREATE TABLE message_context_mapping_values (
   mapping_keys_oid bigint(20) NOT NULL,
   auth_user_provider_id bigint(20),
   auth_user_id varchar(255),
-  auth_user_description varchar(255),
+  auth_user_unique_id varchar(255),
   service_operation varchar(255),
   mapping1_value varchar(255),
   mapping2_value varchar(255),

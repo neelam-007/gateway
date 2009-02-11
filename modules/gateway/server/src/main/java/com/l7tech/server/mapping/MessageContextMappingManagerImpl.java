@@ -19,11 +19,9 @@ public class MessageContextMappingManagerImpl implements MessageContextMappingMa
     //- PUBLIC
 
     public  MessageContextMappingManagerImpl( final MessageContextMappingKeyManager mappingKeyManager,
-                                              final MessageContextMappingValueManager mappingValueManager,
-                                              final IdentityProviderFactory identityProviderFactory ) {
+                                              final MessageContextMappingValueManager mappingValueManager) {
         this.mappingKeyManager = mappingKeyManager;
         this.mappingValueManager = mappingValueManager;
-        this.identityProviderFactory = identityProviderFactory;
     }
 
     public MessageContextMappingKeys getMessageContextMappingKeys( final long oid ) throws FindException {
@@ -48,11 +46,6 @@ public class MessageContextMappingManagerImpl implements MessageContextMappingMa
         MessageContextMappingValues anEntity = mappingValueManager.getMessageContextMappingValues(mappingValuesEntity);
         if (anEntity == null) {
             mappingValuesEntity.setCreateTime(System.currentTimeMillis());
-            if ( mappingValuesEntity.getAuthUserId() != null &&
-                 mappingValuesEntity.getAuthUserProviderId() != null &&
-                 mappingValuesEntity.getAuthUserDescription() == null ) {
-                mappingValuesEntity.setAuthUserDescription( describe( mappingValuesEntity.getAuthUserProviderId(), mappingValuesEntity.getAuthUserId() ) );
-            }
             return mappingValueManager.save(mappingValuesEntity);
         } else {
             return anEntity.getOid();
@@ -63,26 +56,5 @@ public class MessageContextMappingManagerImpl implements MessageContextMappingMa
 
     private final MessageContextMappingKeyManager mappingKeyManager;
     private final MessageContextMappingValueManager mappingValueManager;
-    private final IdentityProviderFactory identityProviderFactory;
-
-    private String describe( final Long providerOid, final String userId ) {
-        String description;
-
-        try {
-            IdentityProvider provider = identityProviderFactory.getProvider( providerOid );
-            User user = provider.getUserManager().findByPrimaryKey( userId );
-            description = getUserDesription(user) + " [" + provider.getConfig().getName() + "]";
-        } catch ( FindException fe ) {
-            description = userId + " [#" + providerOid + "]";
-        }
-
-        return description;
-    }
-
-    private String getUserDesription( final User user ) {
-        String userName = user.getLogin();
-        if (userName == null || "".equals(userName)) userName = user.getName();
-        if (userName == null || "".equals(userName)) userName = user.getId();
-        return userName;
-    }
+    
 }

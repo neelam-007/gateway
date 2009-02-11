@@ -27,7 +27,7 @@ public class MessageContextMappingValues extends PersistentEntityImp {
     // special case mappings
     private Long authUserProviderId;
     private String authUserId;
-    private String authUserDescription; // this is not part of the identity
+    private String authUserUniqueId; // this is not part of the identity
     private String serviceOperation;
 
     // general purpose mappings
@@ -84,13 +84,13 @@ public class MessageContextMappingValues extends PersistentEntityImp {
         this.authUserId = authUserId;
     }
 
-    @Column(name="auth_user_description", length=255)
-    public String getAuthUserDescription() {
-        return authUserDescription;
+    @Column(name="auth_user_unique_id", length=255)
+    public String getAuthUserUniqueId() {
+        return authUserUniqueId;
     }
 
-    public void setAuthUserDescription(String authUserDescription) {
-        this.authUserDescription = authUserDescription;
+    public void setAuthUserUniqueId(String authUserUniqueId) {
+        this.authUserUniqueId = authUserUniqueId;
     }
 
     @Column(name="service_operation", length=255)
