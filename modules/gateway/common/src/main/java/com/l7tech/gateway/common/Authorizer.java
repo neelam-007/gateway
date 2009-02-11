@@ -71,8 +71,8 @@ public abstract class Authorizer {
                 if (perm.getScope() == null || perm.getScope().size() == 0) return true;
 
                 AttemptedEntityOperation attemptedEntityOperation = (AttemptedEntityOperation) attempted;
-                if (attemptedEntityOperation.getEntity() != null && attemptedEntityOperation.getEntity().getId() != null) {
-                    if ( perm.getScope().size() == 1) {
+                if ( attemptedEntityOperation.getEntity() != null ) {
+                    if ( perm.getScope().size() == 1 ) {
                         ScopePredicate pred = perm.getScope().iterator().next();
                         if ( pred instanceof ScopeEvaluator ) {
                             try {
