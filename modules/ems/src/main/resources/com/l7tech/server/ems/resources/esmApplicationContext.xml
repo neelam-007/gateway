@@ -553,4 +553,10 @@
 
     <bean id="eventPublisher" class="com.l7tech.server.ems.util.ApplicationEventPublisherImpl"/>
 
+    <bean id="monitoringConfigurationSynchronizer" class="com.l7tech.server.ems.monitoring.MonitoringConfigurationSynchronizer">
+        <constructor-arg index="0" ref="ssgClusterManager"/>
+        <constructor-arg index="1" ref="gatewayContextFactory"/>
+        <constructor-arg index="2" ref="ssgClusterNotificationSetupManager"/>
+        <constructor-arg index="3" ref="entityMonitoringPropertySetupManager"/>
+    </bean>
 </beans>

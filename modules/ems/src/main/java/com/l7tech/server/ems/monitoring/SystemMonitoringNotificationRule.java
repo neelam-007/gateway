@@ -4,18 +4,20 @@
 package com.l7tech.server.ems.monitoring;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ems.enterprise.JSONConstants;
+import com.l7tech.server.management.config.monitoring.HttpNotificationRule;
+import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
+import com.l7tech.server.management.config.monitoring.SnmpTrapNotificationRule;
+import com.l7tech.server.management.config.monitoring.EmailNotificationRule;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
 import org.hibernate.annotations.Proxy;
 import org.mortbay.util.ajax.JSON;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Lob;
-import javax.persistence.Table;
+import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
@@ -67,6 +69,77 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    /**
+     * Obtain a view of this rule as an HttpNotificationRule, if applicable.
+     *
+     * @param config the MonitoringConfiguration to use when creating the rule.
+     * @return an appropriately-configured HttpNotificationRule instance, or null if this
+     *         rule does not represent an HTTP request notification. 
+     */
+    public HttpNotificationRule asHttpNotificationRule(MonitoringConfiguration config) {
+        if (!(JSONConstants.NotificationType.HTTP_REQUEST.equals(getType())))
+            return null;
+
+        HttpNotificationRule ret = new HttpNotificationRule(config);
+        ret.setName(getName());
+        // TODO convert into HttpNotificationRule by copying properties
+        ret.setAuthInfo(null);
+        ret.setContentType(null);
+        ret.setMethod(HttpMethod.POST);
+        ret.setRequestBody(null);
+        ret.setUrl(null);
+        return ret;
+    }
+
+    /**
+     * Obtain a view of this rule as an SnmpTrapNotificationRule, if applicable.
+     *
+     * @param config the MonitoringConfiguration to use when creating the rule.
+     * @return an appropriately-configured SnmpTrapNotificationRule instance, or null if this
+     *         rule does not represent an SNMP trap notification.
+     */
+    public SnmpTrapNotificationRule asSnmpTrapNotificationRule(MonitoringConfiguration config) {
+        if (!(JSONConstants.NotificationType.SNMP_TRAP.equals(getType())))
+            return null;
+
+        SnmpTrapNotificationRule ret = new SnmpTrapNotificationRule(config);
+        ret.setName(getName());
+        // TODO convert into SnmpTrapNotificationRule by copying properties
+        ret.setCommunity(null);
+        ret.setOidSuffix(1);
+        ret.setPort(0);
+        ret.setSnmpHost(null);
+        ret.setText(null);
+        return ret;
+    }
+
+    /**
+     * Obtain a view of this rule as an EmailNotificationRule, if applicable.
+     *
+     * @param config the MonitoringConfiguration to use when creating the rule.
+     * @return an appropriately-configured EmailNotificationRule instance, or null if this
+     *         rule does not represent an email notification.
+     */
+    public EmailNotificationRule asEmailNotificationRule(MonitoringConfiguration config) {
+        if (!(JSONConstants.NotificationType.E_MAIL.equals(getType())))
+            return null;
+
+        EmailNotificationRule ret = new EmailNotificationRule(config);
+        ret.setName(getName());
+        // TODO convert into a EmailNotificationRule by copying properties
+        ret.setAuthInfo(null);   getParamProp(JSONConstants.NotificationEmailParams.REQUIRES_AUTHENTICATION); // TODO ??
+        ret.setBcc(null);
+        ret.setCc(null);
+        ret.setCryptoType(null);
+        ret.setFrom(null);
+        ret.setPort(0);
+        ret.setSmtpHost(null);
+        ret.setSubject(null);
+        ret.setText(null);
+        ret.setTo(null);
+        return ret;
     }
 
     /**

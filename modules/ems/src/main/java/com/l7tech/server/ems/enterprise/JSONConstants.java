@@ -80,7 +80,7 @@ public final class JSONConstants {
      * Enum of notifiation types.
      * Defined as l7.Constants.NOTIFICATION_TYPE in l7.js.
      */
-    public static final class NotifiationType {
+    public static final class NotificationType {
         public static final String E_MAIL       = "eMail";
         public static final String SNMP_TRAP    = "snmpTrap";
         public static final String HTTP_REQUEST = "httpRequest";
@@ -89,7 +89,7 @@ public final class JSONConstants {
     /**
      * Enum of parameters for e-mail notification.
      */
-    public static final class NotifiationEMailParams {
+    public static final class NotificationEmailParams {
         public static final String REQUIRES_AUTHENTICATION = "requiresAuthentication";
         public static final String USERNAME                = "userName";
         public static final String PASSWORD                = "password";
@@ -99,7 +99,7 @@ public final class JSONConstants {
      * Enum of protocol types for e-mail notification.
      * Defined as l7.Constants.NOTIFICATION_EMAIL_PROTOCOL in l7.js.
      */
-    public static final class NotifiationEMailProtocol {
+    public static final class NotificationEmailProtocol {
         public static final String PLAIN_SMTP         = "plainSmtp";
         public static final String SMTP_over_SSL      = "sslSmtp";
         public static final String SMTP_WITH_STARTTLS = "startTlsSmtp";

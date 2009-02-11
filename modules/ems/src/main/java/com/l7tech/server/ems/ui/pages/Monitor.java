@@ -213,8 +213,8 @@ public class Monitor extends EsmStandardWebPage {
 
                 // Remove password for those E-mail notification rules.
                 for (SystemMonitoringNotificationRule rule: notificationRules) {
-                    if (rule.getType().equals(JSONConstants.NotifiationType.E_MAIL)) {
-                        rule.obtainParamsProps().remove(JSONConstants.NotifiationEMailParams.PASSWORD);
+                    if (rule.getType().equals(JSONConstants.NotificationType.E_MAIL)) {
+                        rule.obtainParamsProps().remove(JSONConstants.NotificationEmailParams.PASSWORD);
                     }
                 }
 
@@ -298,17 +298,17 @@ public class Monitor extends EsmStandardWebPage {
                         SystemMonitoringNotificationRule notificationRule = systemMonitoringNotificationRulesManager.findByGuid(guid);
 
                         // Update the password for the E-mail notification rule.
-                        if (notificationRule.getType().equals(JSONConstants.NotifiationType.E_MAIL)) {
-                            boolean requiresAuth = (Boolean) params.get(JSONConstants.NotifiationEMailParams.REQUIRES_AUTHENTICATION);
+                        if (notificationRule.getType().equals(JSONConstants.NotificationType.E_MAIL)) {
+                            boolean requiresAuth = (Boolean) params.get(JSONConstants.NotificationEmailParams.REQUIRES_AUTHENTICATION);
                             if (requiresAuth) {
-                                String oldPassword = (String) notificationRule.getParamProp(JSONConstants.NotifiationEMailParams.PASSWORD);
-                                String newPassword = (String) params.get(JSONConstants.NotifiationEMailParams.PASSWORD);
+                                String oldPassword = (String) notificationRule.getParamProp(JSONConstants.NotificationEmailParams.PASSWORD);
+                                String newPassword = (String) params.get(JSONConstants.NotificationEmailParams.PASSWORD);
                                 if (newPassword == null) {
-                                    params.put(JSONConstants.NotifiationEMailParams.PASSWORD, oldPassword);
+                                    params.put(JSONConstants.NotificationEmailParams.PASSWORD, oldPassword);
                                 }
                             } else {
-                                params.remove(JSONConstants.NotifiationEMailParams.USERNAME);
-                                params.remove(JSONConstants.NotifiationEMailParams.PASSWORD);
+                                params.remove(JSONConstants.NotificationEmailParams.USERNAME);
+                                params.remove(JSONConstants.NotificationEmailParams.PASSWORD);
                             }
                         }
 

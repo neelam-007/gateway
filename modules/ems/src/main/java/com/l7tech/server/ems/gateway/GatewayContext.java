@@ -2,6 +2,7 @@ package com.l7tech.server.ems.gateway;
 
 
 import com.l7tech.server.DefaultKey;
+import com.l7tech.server.management.api.monitoring.MonitoringApi;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.management.api.node.MigrationApi;
 import com.l7tech.server.management.api.node.NodeManagementApi;
@@ -22,8 +23,8 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.net.ConnectException;
 import java.net.NoRouteToHostException;
-import java.net.UnknownHostException;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
@@ -43,34 +44,48 @@ public class GatewayContext {
      * Create a GatewayContext that uses the given host/port for services.
      *
      * @param host The gateway host
-     * @param port The gateway port
+     * @param gatewayPort The gateway port
      * @param esmId The ID for the EM
      * @param userId The ID for the EM user (null for none)
      */
-    public GatewayContext( final DefaultKey defaultKey, final String host, final int port, final String esmId, final String userId ) {
+    public GatewayContext( final DefaultKey defaultKey, final String host, final int gatewayPort, final String esmId, final String userId ) {
         if ( host == null ) throw new IllegalArgumentException("host is required");
         if ( esmId == null ) throw new IllegalArgumentException("esmId is required");
         this.cookie = buildCookie( esmId, userId );
-        this.api = initApi( GatewayApi.class, defaultKey, MessageFormat.format(GATEWAY_URL, host, Integer.toString(port)));
-        this.reportApi = initApi( ReportApi.class, defaultKey, MessageFormat.format(REPORT_URL, host, Integer.toString(port)));
-        this.managementApi = initApi( NodeManagementApi.class, defaultKey, MessageFormat.format(CONTROLLER_URL, host, "8765")); //TODO this should be passed in
-        this.migrationApi = initApi(MigrationApi.class, defaultKey, MessageFormat.format(MIGRATION_URL, host, Integer.toString(port)));
+        this.defaultKey = defaultKey;
+        this.host = host;
+        this.gatewayPort = gatewayPort;
+        this.processControllerPort = 8765; // TODO pass in the processControllerPort instead of hardcoding it
     }
 
-    public GatewayApi getApi() {
+    public synchronized GatewayApi getApi() {
+        if (api == null)
+            api = initApi( GatewayApi.class, defaultKey, MessageFormat.format(GATEWAY_URL, host, Integer.toString(gatewayPort)));
         return api;
     }
 
-    public ReportApi getReportApi() {
+    public synchronized ReportApi getReportApi() {
+        if (reportApi == null)
+            reportApi = initApi( ReportApi.class, defaultKey, MessageFormat.format(REPORT_URL, host, Integer.toString(gatewayPort)));
         return reportApi;
     }
 
-    public NodeManagementApi getManagementApi() {
+    public synchronized NodeManagementApi getManagementApi() {
+        if (managementApi == null)
+            managementApi = initApi( NodeManagementApi.class, defaultKey, MessageFormat.format(CONTROLLER_URL, host, Integer.toString(processControllerPort)));
         return managementApi;
     }
 
-    public MigrationApi getMigrationApi() {
+    public synchronized MigrationApi getMigrationApi() {
+        if (migrationApi == null)
+            migrationApi = initApi(MigrationApi.class, defaultKey, MessageFormat.format(MIGRATION_URL, host, Integer.toString(gatewayPort)));
         return migrationApi;
+    }
+
+    public synchronized MonitoringApi getMonitoringApi() {
+        if (monitoringApi == null)
+            monitoringApi = initApi(MonitoringApi.class, defaultKey, MessageFormat.format(MONITORING_URL, host, Integer.toString(processControllerPort)));
+        return monitoringApi;
     }
 
     public static boolean isNetworkException( final Exception exception ) {
@@ -101,17 +116,25 @@ public class GatewayContext {
     private static final String PROP_GATEWAY_URL = "com.l7tech.esm.gatewayUrl";
     private static final String PROP_REPORT_URL = "com.l7tech.esm.reportUrl";
     private static final String PROP_CONTROLLER_URL = "com.l7tech.esm.controllerUrl";
+    private static final String PROP_MONITORING_URL = "com.l7tech.esm.monitoringUrl";
     private static final String PROP_MIGRATION_URL = "com.l7tech.esm.migrationUrl";
     private static final String GATEWAY_URL = SyspropUtil.getString(PROP_GATEWAY_URL, "https://{0}:{1}/ssg/services/gatewayApi");
     private static final String REPORT_URL = SyspropUtil.getString(PROP_REPORT_URL, "https://{0}:{1}/ssg/services/reportApi");
     private static final String CONTROLLER_URL = SyspropUtil.getString(PROP_CONTROLLER_URL, "https://{0}:{1}/services/nodeManagementApi");
+    private static final String MONITORING_URL = SyspropUtil.getString(PROP_MONITORING_URL, "https://{0}:{1}/services/monitoringApi");
     private static final String MIGRATION_URL = SyspropUtil.getString(PROP_MIGRATION_URL, "https://{0}:{1}/ssg/services/migrationApi");
 
     private final String cookie;
-    private final GatewayApi api;
-    private final ReportApi reportApi;
-    private final NodeManagementApi managementApi;
-    private final MigrationApi migrationApi;
+    private final DefaultKey defaultKey;
+    private final String host;
+    private final int gatewayPort;
+    private final int processControllerPort;
+
+    private GatewayApi api;
+    private ReportApi reportApi;
+    private NodeManagementApi managementApi;
+    private MigrationApi migrationApi;
+    private MonitoringApi monitoringApi;
 
     private String buildCookie( final String esmId, final String userId ) {
         String cookie =  "EM-UUID=" + esmId;

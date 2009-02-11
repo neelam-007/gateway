@@ -28,7 +28,7 @@ public class Esm {
      */
     public void start() throws Exception {
         if (appContext.get() != null)
-            throw new IllegalStateException("EMS already started");
+            throw new IllegalStateException("ESM already started");
         AbstractApplicationContext newAppContext = new ClassPathXmlApplicationContext(new String[] {
                 "com/l7tech/server/ems/resources/esmApplicationContext.xml",
         });

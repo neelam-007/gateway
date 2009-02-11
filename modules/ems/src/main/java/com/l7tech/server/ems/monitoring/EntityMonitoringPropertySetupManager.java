@@ -6,6 +6,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 
+import java.util.List;
+
 /**
  * @Copyright: Layer 7 Tech. Inc.
  * @Author: ghuang
@@ -14,6 +16,14 @@ import com.l7tech.objectmodel.FindException;
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public interface EntityMonitoringPropertySetupManager extends EntityManager<EntityMonitoringPropertySetup, EntityHeader> {
+    /**
+     * Find all property setups for the given entity (Cluster or Node) guid.
+     * @param entityGuid: the GUID of an entity such as SSG Cluster or SSG Node.
+     * @return an EntityMonitoringPropertySetup object.
+     * @throws FindException if there is a data access error.
+     */
+    public List<EntityMonitoringPropertySetup> findByEntityGuid(final String entityGuid) throws FindException;
+
     /**
      * Find the property setup by the given entity guid and property type.
      * @param entityGuid: the GUID of an entity such as SSG Cluster or SSG Node.
