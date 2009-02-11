@@ -91,6 +91,7 @@ public abstract class Syntax {
                 throw new IllegalStateException("Expecting 1 matching group, received: "+count);
             }
             String var = matcher.group(1);
+            if (var != null) var = var.trim();
             vars.add(Syntax.parse(var, DEFAULT_MV_DELIMITER).remainingName);
         }
         return (String[]) vars.toArray(new String[0]);

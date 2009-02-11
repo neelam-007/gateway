@@ -134,14 +134,14 @@ public final class ExpandVariables {
 
         Object got = vars.get(matchingName);
 
-        if (!matchingName.toLowerCase().equals(syntax.remainingName.toLowerCase())) {
+        if (!matchingName.toLowerCase().equals(syntax.remainingName.toLowerCase().trim())) {
             // Get name suffix, it will be used to select a sub-value from the found object
-            assert(syntax.remainingName.toLowerCase().startsWith(matchingName.toLowerCase()));
-            assert(syntax.remainingName.substring(matchingName.length(), matchingName.length()+1).equals("."));
+            assert(syntax.remainingName.toLowerCase().trim().startsWith(matchingName.toLowerCase()));
+            assert(syntax.remainingName.trim().substring(matchingName.length(), matchingName.length()+1).equals("."));
 
             Selector selector = (Selector) selectorMap.get(got.getClass());
             if (selector != null) {
-                String remainder = syntax.remainingName.substring(matchingName.length()+1);
+                String remainder = syntax.remainingName.trim().substring(matchingName.length()+1);
                 if (remainder.length() > 0) {
                     Object newval = selector.select(got, remainder, audit, strict);
                     if (newval == null) {
