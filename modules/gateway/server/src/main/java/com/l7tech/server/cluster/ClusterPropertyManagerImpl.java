@@ -15,6 +15,8 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.hibernate.Criteria;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -129,6 +131,20 @@ public class ClusterPropertyManagerImpl
             String msg = "error retrieving property";
             logger.log(Level.WARNING, msg, e);
             throw new FindException(msg, e);
+        }
+    }
+
+    @Override
+    public ClusterProperty findByHeader(EntityHeader header) throws FindException {
+        if ( EntityType.CLUSTER_PROPERTY != header.getType() ) {
+            throw new IllegalArgumentException("Invalid header type: " + header);
+        }
+
+        try {
+            return super.findByPrimaryKey(EntityTypeRegistry.getEntityClass(EntityType.CLUSTER_PROPERTY), Long.parseLong(header.getStrId()));
+        } catch (NumberFormatException e) {
+            // fallback to name lookup
+            return super.findByUniqueName(header.getName());
         }
     }
 

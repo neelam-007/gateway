@@ -3,6 +3,9 @@ package com.l7tech.policy.assertion;
 import java.util.StringTokenizer;
 
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 /**
  * Assertion that verifies that remote ip address of requestor is within valid range.
@@ -137,6 +140,7 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
     private final static int MIN_IP_VALUE = 0;
     private final static int MAX_IP_VALUE = 255;
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         if (ipSourceContextVariable == null || ipSourceContextVariable.length() < 1) {
             return new String[0];

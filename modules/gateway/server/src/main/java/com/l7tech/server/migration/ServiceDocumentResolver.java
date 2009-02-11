@@ -32,8 +32,8 @@ public class ServiceDocumentResolver extends AbstractPropertyResolver {
 
         final Long serviceOid;
         try {
-            serviceOid = Long.parseLong((String) property.invoke(entity));
-        } catch (Exception e) {
+            serviceOid = Long.parseLong((String) getPropertyValue(entity, property));
+        } catch (RuntimeException e) {
             throw new PropertyResolverException("Error getting property value for entity: " + entity, e);
         }
 

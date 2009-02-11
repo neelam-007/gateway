@@ -10,6 +10,9 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_EXTERNAL_NAME;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.validator.AssertionValidator;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +26,7 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
     private static final String QOSMW	= "http://metadata.dod.mil/mdr/ns/netops/esm/qosmw";
 
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return new String[0]; //Syntax.getReferencedNames(...);
     }

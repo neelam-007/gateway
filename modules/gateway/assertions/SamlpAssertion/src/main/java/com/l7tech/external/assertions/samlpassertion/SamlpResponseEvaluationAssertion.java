@@ -14,6 +14,9 @@ import com.l7tech.policy.wsp.BeanTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.util.Functions;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,6 +97,7 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
     }
 
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         Set<String> varNames = new HashSet<String>();
         collectVars(varNames, audienceRestriction);

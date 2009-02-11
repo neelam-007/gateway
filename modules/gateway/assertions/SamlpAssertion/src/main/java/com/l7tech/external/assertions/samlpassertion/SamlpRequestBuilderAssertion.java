@@ -15,6 +15,9 @@ import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.util.Functions;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 import java.util.*;
 
@@ -187,6 +190,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         this.decorationTypes = decorationTypes;
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         Set<String> varNames = new HashSet<String>();
         collectVars(varNames, nameIdentifierFormat);

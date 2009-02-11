@@ -8,6 +8,9 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.ArrayTypeMapping;
 import com.l7tech.util.Functions;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 import java.io.Serializable;
 import java.util.*;
@@ -101,6 +104,7 @@ public class LDAPQueryAssertion extends Assertion implements UsesVariables, Sets
         this.ldapProviderOid = ldapProviderOid;
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         // parse out of searchFilter
         return Syntax.getReferencedNames(searchFilter);

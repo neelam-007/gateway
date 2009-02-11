@@ -7,6 +7,9 @@ import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -29,6 +32,7 @@ public class RateLimitAssertion extends Assertion implements UsesVariables {
     private int maxConcurrency = 0;
     private boolean hardLimit = false;
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return Syntax.getReferencedNames(getCounterName());
     }

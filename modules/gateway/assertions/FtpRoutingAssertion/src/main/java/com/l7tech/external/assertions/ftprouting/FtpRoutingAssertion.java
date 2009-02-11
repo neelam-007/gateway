@@ -17,6 +17,9 @@ import com.l7tech.policy.wsp.WspEnumTypeMapping;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
 import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
 import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -240,6 +243,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
         return meta;
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         Set<String> vars = new HashSet<String>();
         vars.addAll(Arrays.asList(Syntax.getReferencedNames(getFileNamePattern())));

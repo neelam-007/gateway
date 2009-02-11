@@ -23,6 +23,7 @@ public class IdentityAttributesAssertion extends Assertion implements UsesVariab
 
     public static final String DEFAULT_VAR_PREFIX = "authenticatedUser";
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return new String[0];
     }

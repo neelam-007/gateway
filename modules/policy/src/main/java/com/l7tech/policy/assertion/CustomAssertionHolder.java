@@ -11,6 +11,9 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.common.io.ClassLoaderObjectInputStream;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -94,6 +97,7 @@ public class CustomAssertionHolder extends Assertion implements UsesVariables, S
     private Category category;
     private String descriptionText;
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         if (customAssertion == null || !(customAssertion instanceof UsesVariables) ) {
             return new String[0];

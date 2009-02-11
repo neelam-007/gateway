@@ -32,11 +32,7 @@ public class ValueReferencePropertyResolver extends AbstractPropertyResolver {
         final MigrationMappingType type = MigrationUtils.getMappingType(property);
         final boolean exported = MigrationUtils.isExported(property);
 
-        try {
-            property.invoke(entity);
-        } catch (Exception e) {
-            throw new PropertyResolverException("Error getting property value for entity: " + entity, e);
-        }
+        getPropertyValue(entity, property);
 
         return new HashMap<ExternalEntityHeader, Set<MigrationDependency>>() {{
             ValueReferenceEntityHeader dependencyHeader = new ValueReferenceEntityHeader(EntityHeaderUtils.toExternal(source), propertyName);
@@ -57,7 +53,7 @@ public class ValueReferencePropertyResolver extends AbstractPropertyResolver {
         try {
             // get the actual value
             Method getter = MigrationUtils.getterForPropertyName(target, targetPropName);
-            Object value = getter.invoke(target);
+            Object value = getPropertyValue(target, getter);
 
             // apply dependency value
             if (value != null) {

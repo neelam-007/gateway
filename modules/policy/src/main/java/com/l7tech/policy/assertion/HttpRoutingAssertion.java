@@ -330,6 +330,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.setCustomURLs(source.getCustomURLs());
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         StringBuffer tmp = new StringBuffer();
         if (!StringUtils.isEmpty(login)) tmp.append(login);

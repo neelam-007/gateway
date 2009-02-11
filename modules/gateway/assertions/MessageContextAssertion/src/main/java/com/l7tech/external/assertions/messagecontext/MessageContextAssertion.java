@@ -17,6 +17,9 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -46,6 +49,7 @@ public class MessageContextAssertion extends Assertion implements UsesVariables 
         this.mappings = mappings;
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         if (mappings.length == 0) return new String[0];
         List<String> variableList = new ArrayList<String>();

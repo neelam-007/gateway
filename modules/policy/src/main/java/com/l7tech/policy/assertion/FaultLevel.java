@@ -1,6 +1,9 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 /**
  * This assertions allows the overriding of the PolicyEnforcementContext's SoapFaultLevel
@@ -28,6 +31,7 @@ public class FaultLevel extends Assertion implements UsesVariables {
         this.data = levelInfo;
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return data.getVariablesUsed();
     }

@@ -12,6 +12,9 @@ import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 /**
  * An assertion that enforce the number of requests that can be made to a particular resource per time unit.
@@ -188,6 +191,7 @@ public class ThroughputQuota extends Assertion implements UsesVariables, SetsVar
         this.counterStrategy = counterStrategy;
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         if (counterName == null) return new String[0];
         return Syntax.getReferencedNames(counterName);

@@ -22,7 +22,8 @@ public interface PropertyResolver {
         ID_PROVIDER_CONFIG,
         USERGROUP,
         VALUE_REFERENCE,
-        SSGKEY
+        SSGKEY,
+        SERVER_VARIABLE
     }
 
     /**

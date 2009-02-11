@@ -3,6 +3,10 @@
  */
 package com.l7tech.policy.assertion;
 
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+
 /** @author alex */
 public abstract class MessageTargetableAssertion extends Assertion implements MessageTargetable, UsesVariables {
     protected TargetMessageType target = TargetMessageType.REQUEST;
@@ -38,6 +42,7 @@ public abstract class MessageTargetableAssertion extends Assertion implements Me
         }
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         if (otherTargetMessageVariable != null) return new String[] { otherTargetMessageVariable };
         return new String[0];

@@ -9,6 +9,9 @@ package com.l7tech.policy.assertion;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.annotation.ProcessesResponse;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 /**
  * Data for an assertion that verifies whether a response matches a specified
@@ -67,6 +70,7 @@ public class ResponseXpathAssertion extends SimpleXpathAssertion implements Uses
         xmlMsgSrc = src;
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return xmlMsgSrc == null ? new String[0] : new String[]{xmlMsgSrc};
     }

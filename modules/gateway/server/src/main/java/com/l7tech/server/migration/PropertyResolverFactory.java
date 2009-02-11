@@ -46,6 +46,7 @@ public class PropertyResolverFactory {
         registry.put(PropertyResolver.Type.USERGROUP, new UserGroupResolver(this));
         registry.put(PropertyResolver.Type.VALUE_REFERENCE, new ValueReferencePropertyResolver(this));
         registry.put(PropertyResolver.Type.SSGKEY, new SsgKeyResolver(this, keyManager));
+        registry.put(PropertyResolver.Type.SERVER_VARIABLE, new ServerVariablePropertyResolver(this));
     }
 
     /**

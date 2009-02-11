@@ -10,6 +10,9 @@ import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.*;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -35,6 +38,7 @@ public class ComparisonAssertion extends Assertion implements UsesVariables {
      * {@link BinaryPredicate#getRightValue()} values of our {@link #predicates}. (Only {@link BinaryPredicate} supports the
      * use of variables on the right-hand side of the equation)
      */
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         StringBuilder sb = new StringBuilder(leftValue == null ? "" : leftValue);
         for (Predicate predicate : predicates) {

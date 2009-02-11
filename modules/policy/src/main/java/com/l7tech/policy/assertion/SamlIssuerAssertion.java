@@ -19,6 +19,9 @@ import com.l7tech.policy.wsp.Java5EnumSetTypeMapping;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 import java.util.*;
 
@@ -146,6 +149,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
         this.decorationTypes = decorationTypes;
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         Set<String> varNames = new HashSet<String>();
         collectVars(varNames, nameIdentifierFormat);

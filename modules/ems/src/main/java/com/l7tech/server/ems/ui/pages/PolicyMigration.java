@@ -473,6 +473,9 @@ public class PolicyMigration extends EsmStandardWebPage {
             case SSG_KEY_ENTRY:
                 type = "private key";
                 break;
+            case CLUSTER_PROPERTY:
+                type = "cluster property";
+                break;
             default:
                 type = entityType.toString();
                 break;

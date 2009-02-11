@@ -2,6 +2,9 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.util.HexUtils;
 import com.l7tech.policy.variable.*;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 /**
  * Assertion to set a context variable, either built-in or user-defined.
@@ -119,6 +122,7 @@ public class SetVariableAssertion extends Assertion implements SetsVariables, Us
         return new VariableMetadata[] { getMetadata() };
     }
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         if (_base64Expression == null) return new String[0];
         return Syntax.getReferencedNames(expression());

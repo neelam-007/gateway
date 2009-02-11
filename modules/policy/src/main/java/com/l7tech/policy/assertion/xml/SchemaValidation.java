@@ -13,6 +13,9 @@ import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,6 +74,7 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
     private boolean applyToArguments;
     private AssertionResourceInfo resourceInfo = new StaticResourceInfo();
 
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         List<String> vars = new ArrayList<String>();
         vars.addAll(Arrays.asList(super.getVariablesUsed()));
