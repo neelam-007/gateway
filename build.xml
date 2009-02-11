@@ -274,6 +274,7 @@
 
         <!-- Defaults for development SSG deployments -->
         <property name="deploy.dir" value="${build.dir}"/>
+        <property name="deploy.pc.dir" value="${build.dir}/sspc"/>
         <property name="deploy.cluster.password" value="${deploy.keys.password}"/>
         <property name="deploy.db.username" value="gateway"/>
         <property name="deploy.db.password" value="7layer"/>
@@ -1372,6 +1373,34 @@
         </copy>
         <copy file="${build.dir}/Gateway.jar" todir="${deploy.dir}/" preservelastmodified="true"/>
         <echo level="info">Finished copying gateway files</echo>
+    </target>
+
+
+    <!--
+      Deploy Process Controller for development
+    -->
+    <target name="deploycontroller-init" depends="init">
+        <echo level="info">Creating Process Controller deployment directories</echo>
+        <mkdir dir="${deploy.pc.dir}/etc/conf"/>
+        <copy file="etc/omp.dat" todir="${deploy.pc.dir}/etc/conf"/>
+    </target>
+    <target name="deploycontroller-config-check" depends="deploycontroller-init">
+        <condition property="deploycontroller.config.isrequired">
+            <not>
+                <available file="${deploy.pc.dir}/etc/conf/host.properties"/>
+            </not>
+        </condition>
+    </target>
+    <target name="deploycontroller-config" if="deploycontroller.config.isrequired" depends="deploycontroller-config-check">
+        <ivy:cachepath organisation="com.l7tech" module="layer7-gateway-processcontroller" inline="true" conf="default" pathid="sspc.path"/>
+        <java classname="com.l7tech.server.processcontroller.BootstrapConfig" fork="true">
+            <classpath>
+                <path refid="sspc.path"/>
+            </classpath>
+            <sysproperty key="com.l7tech.server.processcontroller.homeDirectory" value="${deploy.pc.dir}"/>
+        </java>
+    </target>
+    <target name="deploycontroller" description="Deploy a development Process Controller" depends="deploycontroller-init,deploycontroller-config">
     </target>
 
     <target name="pack.manager" depends="pack.manager.compress"/>
