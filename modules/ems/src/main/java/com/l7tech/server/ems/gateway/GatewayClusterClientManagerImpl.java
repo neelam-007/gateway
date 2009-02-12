@@ -46,6 +46,7 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
     @Override
     public GatewayClusterClient getGatewayClusterClient( final String clusterId, final User user) throws GatewayException {
         Callable<SsgCluster> clusterFinder = new Callable<SsgCluster>() {
+            @Override
             public SsgCluster call() throws FindException {
                 return ssgClusterManager.findByGuid(clusterId);
             }
@@ -56,11 +57,12 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
     @Override
     public GatewayClusterClient getGatewayClusterClient(final SsgCluster cluster, final User user) throws GatewayException {
         Callable<SsgCluster> clusterFinder = new Callable<SsgCluster>() {
+            @Override
             public SsgCluster call() {
                 return cluster;
             }
         };
-        return getGatewayClusterClient(cluster.getId(), clusterFinder, user);
+        return getGatewayClusterClient(cluster.getGuid(), clusterFinder, user);
     }
 
     private SsgCluster findCluster(String clusterId, Callable<SsgCluster> cluster) throws GatewayException {

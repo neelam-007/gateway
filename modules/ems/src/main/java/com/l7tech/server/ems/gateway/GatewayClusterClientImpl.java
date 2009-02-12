@@ -158,16 +158,20 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
         //noinspection unchecked
         return (IT) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[] { interfaceClass }, new InvocationHandler() {
             public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
-                return callWithFailover(new GatewayContextUser<Object>() {
-                    public Object callUsingContext(GatewayContext context) throws SOAPFaultException, InvocationTargetException {
-                        IT delegate = apiFinder.call(context);
-                        try {
-                            return method.invoke(delegate, args);
-                        } catch (IllegalAccessException e) {
-                            throw new RuntimeException(e);
+                try {
+                    return callWithFailover(new GatewayContextUser<Object>() {
+                        public Object callUsingContext(GatewayContext context) throws SOAPFaultException, InvocationTargetException {
+                            IT delegate = apiFinder.call(context);
+                            try {
+                                return method.invoke(delegate, args);
+                            } catch (IllegalAccessException e) {
+                                throw new RuntimeException(e);
+                            }
                         }
-                    }
-                });
+                    });
+                } catch ( InvocationTargetException ite ) {
+                    throw ite.getTargetException();                
+                }
             }
         });
     }
