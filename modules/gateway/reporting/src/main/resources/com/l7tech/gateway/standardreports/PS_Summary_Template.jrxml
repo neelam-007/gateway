@@ -348,7 +348,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
 					<chart evaluationTime="Group" evaluationGroup="CONSTANT_CHART"  hyperlinkTarget="Self"  customizerClass="com.l7tech.gateway.standardreports.PerformanceSummaryChartCustomizer"  renderType="image" >
 					<reportElement
 						x="0"
-						y="5"
+						y="0"
 						width="820"
 						height="130"
 						key="element-1"/>
