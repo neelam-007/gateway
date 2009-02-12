@@ -32,7 +32,6 @@ import java.util.logging.Logger;
 /** @author alex */
 public class TrustInterviewer {
     private static final Logger logger = Logger.getLogger(TrustInterviewer.class.getName());
-    private static final String PCHOME = SyspropUtil.getString("com.l7tech.server.controller.home", "/opt/SecureSpan/Appliance/controller");
 
     // TODO find some place to put these where we can share them with ConfigService
     static String HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_FILE = "host.controller.remoteNodeManagement.truststore.file";
@@ -45,16 +44,18 @@ public class TrustInterviewer {
     private static final String DEFAULT_REMOTE_MANAGEMENT_TRUSTSTORE_FILENAME = "remoteNodeManagementTruststore.jks";
     public static void main(String[] args) {
         JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
-        final File pcHomeDir = new File(PCHOME);
-        final File etcDirectory = new File(pcHomeDir, "etc");
-        final File etcConfDirectory = new File(etcDirectory, "conf");
-
-        final File hostPropsFile = new File(etcDirectory, "host.properties");
-
-        doTrustInterview( hostPropsFile, new File(etcConfDirectory, "omp.dat"), etcDirectory );
+        new TrustInterviewer().run();
     }
 
-    static void doTrustInterview( final File hostPropsFile, final File masterPasswordFile, final File etcDirectory ) {
+    void run() {
+        final File pcHomeDir = new File(SyspropUtil.getString("com.l7tech.server.controller.home", "/opt/SecureSpan/Appliance/controller"));
+        final File etcDirectory = new File(pcHomeDir, "etc");
+        final File etcConfDirectory = new File(etcDirectory, "conf");
+        final File hostPropsFile = new File(etcDirectory, "host.properties");
+        doTrustInterview( hostPropsFile, new File(etcConfDirectory, "omp.dat"), etcDirectory ) ;
+    }
+
+    void doTrustInterview( final File hostPropsFile, final File masterPasswordFile, final File etcDirectory ) {
         try {
 
             final Properties hostProps;
@@ -116,7 +117,7 @@ public class TrustInterviewer {
             ResourceBundle bundle = ResourceBundle.getBundle("com/l7tech/gateway/config/client/beans/trust/TrustInterviewerMessages");
             List<ConfigurationBean> outBeans;
             try {
-                outBeans = new ConfigInterviewer(bundle, inBeans.toArray(new ConfigurationBean[inBeans.size()])).doInterview();
+                outBeans = doInterview(inBeans, bundle);
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Error during configuration", e);
                 throw new ExitErrorException(1, "Error during configuration");
@@ -250,6 +251,10 @@ public class TrustInterviewer {
             System.out.println( eee.getMessage() );
             System.exit( eee.getExitCode() );
         }
+    }
+
+    List<ConfigurationBean> doInterview(List<ConfigurationBean> inBeans, ResourceBundle bundle) throws IOException {
+        return new ConfigInterviewer(bundle, inBeans.toArray(new ConfigurationBean[inBeans.size()])).doInterview();
     }
 
     private static Properties readHostProperties(File hostPropsFile) throws ConfigurationException {

@@ -14,6 +14,6 @@ public class RemoteManagementTest {
         File tempDir = new File( System.getProperty("java.io.tmpdir") );
         File hostFile = File.createTempFile( "host.properties", null, tempDir );
 
-        TrustInterviewer.doTrustInterview( hostFile, new File("etc/omp.dat"), tempDir );
+        new TrustInterviewer().doTrustInterview( hostFile, new File("etc/omp.dat"), tempDir );
     }
 }
