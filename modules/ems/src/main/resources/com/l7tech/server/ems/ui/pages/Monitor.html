@@ -1004,7 +1004,7 @@
 
         function refreshMonitoringProperties() {
             var nextRefreshInterval = DEFAULT_MONITORING_PROPERTIES_REFRESH_INTERVAL;
-            var xhr = l7.Connection.syncRequest('GET', getEntitiesMonitoringPropertiesUrl, null, false);
+            var xhr = l7.Connection.syncRequest('GET', getCurrentEntitiesPropertyValuesUrl, null, false);
             var result = l7.Connection.parseJsonResponse(xhr, false);
             if (result.success) {
                 if (result.json.entities) {
@@ -2060,7 +2060,7 @@
                 <div wicket:id="getSystemMonitoringNotificationRules"/>
                 <div wicket:id="saveSystemMonitoringNotificationRule"/>
                 <div wicket:id="getEntities"/>
-                <div wicket:id="getEntitiesMonitoringProperties"/>
+                <div wicket:id="getCurrentEntitiesPropertyValues"/>
                 <div wicket:id="getEntityMonitoringPropertySetupSettings"/>
                 <div wicket:id="saveEntityMonitoringPropertySetupSettings"/>
 

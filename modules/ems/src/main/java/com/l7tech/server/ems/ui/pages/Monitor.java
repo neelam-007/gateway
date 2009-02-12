@@ -108,7 +108,7 @@ public class Monitor extends EsmStandardWebPage {
         add(new JsonInteraction("getEntities", "getEntitiesUrl", new GettingEntitiesDataProvider()));
 
         // Wicket component for getting the monitoring properties of all entities
-        add(new JsonInteraction("getEntitiesMonitoringProperties", "getEntitiesMonitoringPropertiesUrl", new GettingEntitiesMonitoringPropertiesDataProvider()));
+        add(new JsonInteraction("getCurrentEntitiesPropertyValues", "getCurrentEntitiesPropertyValuesUrl", new GettingCurrentEntitiesPropertyValuesDataProvider()));
 
         // Wicket component for getting entity monitoring property setup settings
         add(new JsonInteraction("getEntityMonitoringPropertySetupSettings", "getEntityMonitoringPropertySetupSettingsUrl", new GettingEntityMonitoringPropertySetupSettingsDataProvider()));
@@ -411,7 +411,7 @@ public class Monitor extends EsmStandardWebPage {
     /**
      * Data provider for getting entities monitoring properties.
      */
-    private final class GettingEntitiesMonitoringPropertiesDataProvider implements JsonDataProvider {
+    private final class GettingCurrentEntitiesPropertyValuesDataProvider implements JsonDataProvider {
 
         @Override
         public Object getData() {
@@ -426,6 +426,7 @@ public class Monitor extends EsmStandardWebPage {
                     entitiesList = getDemoPropertyValuesData();
                 } else {
                     // Real data
+                    // Use MonitoringService to call MonitoringApi to get current property statuses
                     for (SsgCluster ssgCluster: ssgClusterManager.findAll()) {
                         // First get the current values for each SSG node.
                         for (SsgNode ssgNode: ssgCluster.getNodes()) {
