@@ -112,14 +112,16 @@ class EmailNotifier extends Notifier<EmailNotificationRule> {
         String protoVal = cryptoType == EmailNotificationRule.CryptoType.SSL ? "smtps" : "smtp";
 
         Map<String,String> props = new HashMap<String,String>();
-        props.put("mail.from", rule.getFrom());
+        String from = rule.getFrom();
+        props.put("mail.from", from == null ? "Layer 7 SecureSpan Process Controller <l7pc@NOMAILBOX>" : from);
 
         // Transport config
         props.put("mail.transport.protocol", protoVal);
         props.put("mail." + protoVal + ".sendpartial", "true");
         props.put("mail." + protoVal + ".connectiontimeout", Long.toString(connectTimeout));
         props.put("mail." + protoVal + ".timeout", Long.toString(readTimeout));
-        props.put("mail." + protoVal + ".host", rule.getSmtpHost());
+        String smtpHost = rule.getSmtpHost();
+        props.put("mail." + protoVal + ".host", smtpHost == null ? "127.0.0.1" : smtpHost);
         props.put("mail." + protoVal + ".port", Integer.toString(rule.getPort()));
         props.put("mail." + protoVal + ".fallback", "false");
 
