@@ -168,17 +168,16 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
 		<variableExpression><![CDATA[$F{ROUTING_FAILURES}]]></variableExpression>
 	</variable>
 	<variable name="FRTM_MIN" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Lowest">
-		<variableExpression><![CDATA[($F{FRTM} == null || $F{FRTM}.equals(new Integer(0)) )? new Integer(Integer.MAX_VALUE)
-: $F{FRTM}]]></variableExpression>
+		<variableExpression><![CDATA[($F{FRTM} == null)? new Integer(Integer.MAX_VALUE): $F{FRTM}]]></variableExpression>
 	</variable>
 	<variable name="FRTMX_MAX" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Highest">
-		<variableExpression><![CDATA[($F{FRTMX} == null || $F{FRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
+		<variableExpression><![CDATA[($F{FRTMX} == null)? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
 	</variable>
 	<variable name="BRTM_MIN" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Lowest">
-		<variableExpression><![CDATA[($F{BRTM} == null || $F{BRTM}.equals(new Integer(0)))? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
+		<variableExpression><![CDATA[($F{BRTM} == null)? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
 	</variable>
 	<variable name="BRTMX_MAX" class="java.lang.Integer" resetType="Group" resetGroup="MAPPINGS" calculation="Highest">
-		<variableExpression><![CDATA[($F{BRTMX} == null || $F{BRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
+		<variableExpression><![CDATA[($F{BRTMX} == null)? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
 	</variable>
 	<variable name="AP_AVG" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS" calculation="Average">
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
@@ -211,17 +210,16 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
 		<variableExpression><![CDATA[$F{ROUTING_FAILURES}]]></variableExpression>
 	</variable>
 	<variable name="FRTM_SERVICE_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Lowest">
-		<variableExpression><![CDATA[($F{FRTM} == null || $F{FRTM}.equals(new Integer(0)) )? new Integer(Integer.MAX_VALUE)
-: $F{FRTM}]]></variableExpression>
+		<variableExpression><![CDATA[($F{FRTM} == null)? new Integer(Integer.MAX_VALUE): $F{FRTM}]]></variableExpression>
 	</variable>
 	<variable name="FRTMX_SERVICE_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Highest">
-		<variableExpression><![CDATA[($F{FRTMX} == null || $F{FRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
+		<variableExpression><![CDATA[($F{FRTMX} == null)? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
 	</variable>
 	<variable name="BRTM_SERVICE_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Lowest">
-		<variableExpression><![CDATA[($F{BRTM} == null || $F{BRTM}.equals(new Integer(0)))? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
+		<variableExpression><![CDATA[($F{BRTM} == null)? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
 	</variable>
 	<variable name="BRTMX_SERVICE_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Highest">
-		<variableExpression><![CDATA[($F{BRTMX} == null || $F{BRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
+		<variableExpression><![CDATA[($F{BRTMX} == null)? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
 	</variable>
 	<variable name="AP_SERVICE_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_ID_GROUP" calculation="Average">
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
@@ -251,17 +249,16 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
 		<variableExpression><![CDATA[$F{ROUTING_FAILURES}]]></variableExpression>
 	</variable>
 	<variable name="FRTM_REPORT_MIN" class="java.lang.Integer" resetType="Report" calculation="Lowest">
-		<variableExpression><![CDATA[($F{FRTM} == null || $F{FRTM}.equals(new Integer(0)) )? new Integer(Integer.MAX_VALUE)
-: $F{FRTM}]]></variableExpression>
+		<variableExpression><![CDATA[($F{FRTM} == null)? new Integer(Integer.MAX_VALUE): $F{FRTM}]]></variableExpression>
 	</variable>
 	<variable name="FRTMX_REPORT_MAX" class="java.lang.Integer" resetType="Report" calculation="Highest">
-		<variableExpression><![CDATA[($F{FRTMX} == null || $F{FRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
+		<variableExpression><![CDATA[($F{FRTMX} == null)? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
 	</variable>
 	<variable name="BRTM_REPORT_MIN" class="java.lang.Integer" resetType="Report" calculation="Lowest">
-		<variableExpression><![CDATA[($F{BRTM} == null || $F{BRTM}.equals(new Integer(0)))? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
+		<variableExpression><![CDATA[($F{BRTM} == null)? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
 	</variable>
 	<variable name="BRTMX_REPORT_MAX" class="java.lang.Integer" resetType="Report" calculation="Highest">
-		<variableExpression><![CDATA[($F{BRTMX} == null || $F{BRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
+		<variableExpression><![CDATA[($F{BRTMX} == null)? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
 	</variable>
 	<variable name="AP_REPORT_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
@@ -291,17 +288,16 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
 		<variableExpression><![CDATA[$F{ROUTING_FAILURES}]]></variableExpression>
 	</variable>
 	<variable name="FRTM_OPERATION_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Lowest">
-		<variableExpression><![CDATA[($F{FRTM} == null || $F{FRTM}.equals(new Integer(0)) )? new Integer(Integer.MAX_VALUE)
-: $F{FRTM}]]></variableExpression>
+		<variableExpression><![CDATA[($F{FRTM} == null)? new Integer(Integer.MAX_VALUE): $F{FRTM}]]></variableExpression>
 	</variable>
 	<variable name="FRTMX_OPERATION_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Highest">
-		<variableExpression><![CDATA[($F{FRTMX} == null || $F{FRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
+		<variableExpression><![CDATA[($F{FRTMX} == null)? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
 	</variable>
 	<variable name="BRTM_OPERATION_MIN" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Lowest">
-		<variableExpression><![CDATA[($F{BRTM} == null || $F{BRTM}.equals(new Integer(0)))? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
+		<variableExpression><![CDATA[($F{BRTM} == null)? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
 	</variable>
 	<variable name="BRTMX_OPERATION_MAX" class="java.lang.Integer" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Highest">
-		<variableExpression><![CDATA[($F{BRTMX} == null || $F{BRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
+		<variableExpression><![CDATA[($F{BRTMX} == null)? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
 	</variable>
 	<variable name="AP_OPERATION_AVG" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Average">
 		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
@@ -495,8 +491,7 @@ $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())?
 (Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{AUTHENTICATED_USER}, $P{KEYS_TO_LIST_FILTER_PAIRS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}})):"1"
-]]></categoryExpression>
+$F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{THROUGHPUT_SUM}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
@@ -506,8 +501,7 @@ $F{MAPPING_VALUE_5}})):"1"
 							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())?
 (Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{AUTHENTICATED_USER}, $P{KEYS_TO_LIST_FILTER_PAIRS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}})):"1"
-]]></categoryExpression>
+$F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{POLICY_VIOLATIONS_SUM}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
@@ -517,8 +511,7 @@ $F{MAPPING_VALUE_5}})):"1"
 							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())?
 (Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{AUTHENTICATED_USER}, $P{KEYS_TO_LIST_FILTER_PAIRS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}})):"1"
-]]></categoryExpression>
+$F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{ROUTING_FAILURES_SUM}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>

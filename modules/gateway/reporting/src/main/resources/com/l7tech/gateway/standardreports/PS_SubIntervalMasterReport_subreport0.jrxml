@@ -116,19 +116,19 @@ $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
 	</variable>
 	<variable name="FRTM_MIN" class="java.lang.Integer" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[($F{FRTM} == null || $F{FRTM}.equals(new Integer(0)) )? new Integer(Integer.MAX_VALUE): $F{FRTM}]]></variableExpression>
+		<variableExpression><![CDATA[($F{FRTM} == null)? new Integer(Integer.MAX_VALUE): $F{FRTM}]]></variableExpression>
 		<initialValueExpression><![CDATA[new Integer(Integer.MAX_VALUE)]]></initialValueExpression>
 	</variable>
 	<variable name="FRTMX_MAX" class="java.lang.Integer" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[($F{FRTMX} == null || $F{FRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
+		<variableExpression><![CDATA[($F{FRTMX} == null)? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
 		<initialValueExpression><![CDATA[new Integer(Integer.MIN_VALUE)]]></initialValueExpression>
 	</variable>
 	<variable name="BRTM_MIN" class="java.lang.Integer" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[($F{BRTM} == null || $F{BRTM}.equals(new Integer(0)))? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
+		<variableExpression><![CDATA[($F{BRTM} == null)? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
 		<initialValueExpression><![CDATA[new Integer(Integer.MAX_VALUE)]]></initialValueExpression>
 	</variable>
 	<variable name="BRTMX_MAX" class="java.lang.Integer" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[($F{BRTMX} == null || $F{BRTMX}.equals(new Integer(0)))? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
+		<variableExpression><![CDATA[($F{BRTMX} == null)? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
 		<initialValueExpression><![CDATA[new Integer(Integer.MIN_VALUE)]]></initialValueExpression>
 	</variable>
 	<variable name="AP_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
