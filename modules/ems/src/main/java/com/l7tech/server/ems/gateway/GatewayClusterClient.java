@@ -3,6 +3,8 @@ package com.l7tech.server.ems.gateway;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.management.api.node.GatewayApi;
+import com.l7tech.server.management.api.node.MigrationApi;
+import com.l7tech.server.management.api.node.ReportApi;
 
 import java.util.Collection;
 
@@ -53,4 +55,27 @@ public interface GatewayClusterClient {
      * @throws GatewayException if the Gateway cluster cannot be accessed.
      */
     Collection<GatewayApi.GatewayInfo> getGatewayInfo() throws GatewayException;
+
+    /**
+     * Get access to an uncached GatewayApi for this cluster, but still with failover.
+     * <p/>
+     * Most users should avoid this and use one of the caching wrapper methods instead.
+     *
+     * @return a proxy object for the GatewayApi that offers failover but not caching.  Never null.
+     */
+    GatewayApi getUncachedGatewayApi();
+
+    /**
+     * Get access to an uncached ReportApi for this cluster, but still with failover.
+     *
+     * @return a proxy object for the ReportApi that offers failover but not caching.  Never null.
+     */
+    ReportApi getUncachedReportApi();
+
+    /**
+     * Get the uncached migration API for this cluster, but still with failover.
+     *
+     * @return a proxy object for the MigrationApi that offers failover but not caching.  Never null.
+     */
+    MigrationApi getUncachedMigrationApi();
 }

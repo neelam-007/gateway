@@ -7,10 +7,7 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ems.enterprise.JSONConstants;
-import com.l7tech.server.management.config.monitoring.AuthInfo;
-import com.l7tech.server.management.config.monitoring.EmailNotificationRule;
-import com.l7tech.server.management.config.monitoring.HttpNotificationRule;
-import com.l7tech.server.management.config.monitoring.SnmpTrapNotificationRule;
+import com.l7tech.server.management.config.monitoring.*;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;
@@ -73,15 +70,23 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
     }
 
     /**
-     * Obtain a view of this rule as an HttpNotificationRule, if applicable.
+     * Obtain a view of this rule as a NotificationRule.
      *
-     * @return an appropriately-configured HttpNotificationRule instance, or null if this
-     *         rule does not represent an HTTP request notification.
+     * @return a new EmailNotificationRule, SnmpTrapNotificationRule, or or HttpNotificationRule instance.  Never null.
+     * @throws IllegalStateException if this rule's notification type is not EMAIL, SNMP, or HTTP.
      */
-    public HttpNotificationRule asHttpNotificationRule() {
-        if (!(JSONConstants.NotificationType.HTTP_REQUEST.equals(getType())))
-            return null;
+    public NotificationRule asNotificationRule() {
+        final String type = getType();
+        if (JSONConstants.NotificationType.HTTP_REQUEST.equals(type))
+            return asHttpNotificationRule();
+        if (JSONConstants.NotificationType.SNMP_TRAP.equals(getType()))
+            return asSnmpTrapNotificationRule();
+        if (JSONConstants.NotificationType.E_MAIL.equals(getType()))
+            return asEmailNotificationRule();
+        throw new IllegalStateException("Unknown notification type: " + getType());
+    }
 
+    private HttpNotificationRule asHttpNotificationRule() {
         HttpNotificationRule ret = new HttpNotificationRule();
         ret.setName(getName());
         ret.setOid(getOid());
@@ -93,16 +98,7 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
         return ret;
     }
 
-    /**
-     * Obtain a view of this rule as an SnmpTrapNotificationRule, if applicable.
-     *
-     * @return an appropriately-configured SnmpTrapNotificationRule instance, or null if this
-     *         rule does not represent an SNMP trap notification.
-     */
-    public SnmpTrapNotificationRule asSnmpTrapNotificationRule() {
-        if (!(JSONConstants.NotificationType.SNMP_TRAP.equals(getType())))
-            return null;
-
+    private SnmpTrapNotificationRule asSnmpTrapNotificationRule() {
         SnmpTrapNotificationRule ret = new SnmpTrapNotificationRule();
         ret.setName(getName());
         ret.setOid(getOid());
@@ -114,16 +110,7 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
         return ret;
     }
 
-    /**
-     * Obtain a view of this rule as an EmailNotificationRule, if applicable.
-     *
-     * @return an appropriately-configured EmailNotificationRule instance, or null if this
-     *         rule does not represent an email notification.
-     */
-    public EmailNotificationRule asEmailNotificationRule() {
-        if (!(JSONConstants.NotificationType.E_MAIL.equals(getType())))
-            return null;
-
+    private EmailNotificationRule asEmailNotificationRule() {
         EmailNotificationRule ret = new EmailNotificationRule();
         ret.setName(getName());
         ret.setOid(getOid());

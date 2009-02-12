@@ -1,9 +1,16 @@
 package com.l7tech.server.ems.gateway;
 
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgNode;
 import com.l7tech.server.management.api.node.GatewayApi;
+import com.l7tech.server.management.api.node.MigrationApi;
+import com.l7tech.server.management.migration.bundle.MigratedItem;
+import com.l7tech.server.management.migration.bundle.MigrationBundle;
+import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.test.BugNumber;
 import static org.junit.Assert.*;
 import org.junit.*;
@@ -67,6 +74,34 @@ public class GatewayClusterClientTest {
                     }
                 };
             }
+
+            public MigrationApi getMigrationApi() {
+                return new MigrationApi() {
+                    public Collection<ExternalEntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException {
+                        return Arrays.asList(new ExternalEntityHeader("myexternalid", new EntityHeader()));
+                    }
+
+                    public Collection<ExternalEntityHeader> checkHeaders(Collection<ExternalEntityHeader> headers) {
+                        return null;
+                    }
+
+                    public MigrationMetadata findDependencies(Collection<ExternalEntityHeader> headers) throws MigrationException {
+                        return null;
+                    }
+
+                    public MigrationBundle exportBundle(Collection<ExternalEntityHeader> headers) throws MigrationException {
+                        return null;
+                    }
+
+                    public Collection<MappingCandidate> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, String filter) throws MigrationException {
+                        return null;
+                    }
+
+                    public Collection<MigratedItem> importBundle(MigrationBundle bundle, ExternalEntityHeader targetFolder, boolean flattenFolders, boolean overwriteExisting, boolean enableServices, boolean dryRun) throws MigrationException {
+                        return null;
+                    }
+                };
+            }
         };
     }
 
@@ -124,14 +159,22 @@ public class GatewayClusterClientTest {
         assertTrue("cluster matches", fooCluster == cc.getCluster());
         assertTrue("results filtered", cc.getEntityInfo(Arrays.asList(EntityType.AUDIT_ADMIN)).isEmpty());
 
+        GatewayApi uncachedApi = cc.getUncachedGatewayApi();
+
         final GatewayApi.EntityInfo firstInfo = cc.getEntityInfo(Arrays.asList(EntityType.FOLDER)).iterator().next();
         assertTrue("folder returned", blahfolder == firstInfo);
+
+        final GatewayApi.EntityInfo firstInfoUc = uncachedApi.getEntityInfo(Arrays.asList(EntityType.FOLDER)).iterator().next();
+        assertTrue("folder returned", blahfolder == firstInfoUc);
 
         // Change gacking data on gateway
         entityInfoToReturn = foofolderInfo;
 
         final GatewayApi.EntityInfo firstInfo2 = cc.getEntityInfo(Arrays.asList(EntityType.FOLDER)).iterator().next();
         assertTrue("folder returned from cache, ingoring backing change", blahfolder == firstInfo2);
+
+        final GatewayApi.EntityInfo firstInfoUc2 = uncachedApi.getEntityInfo(Arrays.asList(EntityType.FOLDER)).iterator().next();
+        assertTrue("folder returned bypassing cache, seeing the backing change", foofolder == firstInfoUc2);
 
         cc.clearCachedData();
 
@@ -166,6 +209,14 @@ public class GatewayClusterClientTest {
         assertTrue(clust == clusterInfoToReturn);
 
         assertEquals("Failover to third node", 2, failoverAttemptsDetected);
+    }
+    
+    @Test
+    public void testMigration() throws Exception {
+        GatewayClusterClientImpl cc = new GatewayClusterClientImpl(fooCluster, nodeContexts);
+
+        Collection<ExternalEntityHeader> got = cc.getUncachedMigrationApi().listEntities(null);
+        assertEquals(got.iterator().next().getExternalId(), "myexternalid");
     }
 
     @Test

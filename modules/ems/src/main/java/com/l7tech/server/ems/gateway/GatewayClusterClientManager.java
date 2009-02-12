@@ -1,6 +1,7 @@
 package com.l7tech.server.ems.gateway;
 
 import com.l7tech.identity.User;
+import com.l7tech.server.ems.enterprise.SsgCluster;
 
 /**
  * Interface to a bean that keeps track of {@link GatewayClusterClient} instances, creating, caching, and
@@ -22,4 +23,17 @@ public interface GatewayClusterClientManager {
      * @throws GatewayException if a GatewayClsuterClient cannot be created.
      */
     GatewayClusterClient getGatewayClusterClient(String clusterId, User user) throws GatewayException;
+
+    /**
+     * Get a GatewayClusterClient implementation that will provide access to API services managing
+     * the specified Gateway cluster, accessed claiming the access rights of the specified ESM user ID.
+     *
+     * @param cluster  the cluster to access.  Required.
+     * @param user   the user on whose behalf the cluster API calls are to be made, or null it
+     *               the request is being issued by the ESM itself and not on
+     *               behalf of some ESM user
+     * @return a GatewayClusterClient instance.  Never null.
+     * @throws GatewayException if a GatewayClsuterClient cannot be created.
+     */
+    GatewayClusterClient getGatewayClusterClient(SsgCluster cluster, User user) throws GatewayException;
 }

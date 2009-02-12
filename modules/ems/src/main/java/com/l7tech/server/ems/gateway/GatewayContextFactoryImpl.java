@@ -1,10 +1,11 @@
 package com.l7tech.server.ems.gateway;
 
-import com.l7tech.server.DefaultKey;
-import com.l7tech.server.ems.user.UserPropertyManager;
-import com.l7tech.util.Config;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.server.ems.user.UserPropertyManager;
+import com.l7tech.server.ems.enterprise.SsgNode;
+import com.l7tech.util.Config;
 
 import java.util.Map;
 
@@ -24,13 +25,13 @@ public class GatewayContextFactoryImpl implements GatewayContextFactory {
     }
 
     @Override
-    public GatewayContext getGatewayContext( final User user, final String host, final int port ) throws GatewayException {
-        return getGatewayContext( user, null, host, port );
+    public GatewayContext createGatewayContext( final User user, final String clusterId, final String clusterSslHostname, final int gatewayPort ) throws GatewayException {
+        return new GatewayContext( defaultKey, clusterSslHostname, gatewayPort, config.getProperty("em.server.id", ""), user==null ? null : getUserUuid(user, clusterId) );
     }
 
     @Override
-    public GatewayContext getGatewayContext( final User user, final String clusterId, final String host, final int port ) throws GatewayException {
-        return new GatewayContext( defaultKey, host, port, config.getProperty("em.server.id", ""), user==null ? null : getUserUuid(user, clusterId) );
+    public ProcessControllerContext createProcessControllerContext(SsgNode node) throws GatewayException {
+        return new ProcessControllerContext( defaultKey, node.getIpAddress(), node.getProcessControllerPort(), config.getProperty("em.server.id", ""));
     }
 
     //- PRIVATE

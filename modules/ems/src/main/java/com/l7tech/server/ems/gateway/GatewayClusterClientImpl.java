@@ -6,6 +6,8 @@ import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.management.api.node.GatewayApi;
+import com.l7tech.server.management.api.node.MigrationApi;
+import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
@@ -14,6 +16,10 @@ import com.l7tech.util.SyspropUtil;
 import javax.xml.ws.ProtocolException;
 import javax.xml.ws.soap.SOAPFaultException;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.*;
 
 /**
@@ -69,10 +75,14 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
     public Collection<GatewayApi.EntityInfo> getEntityInfo(final Collection<EntityType> entityTypes) throws GatewayException {
         if (entityTypes == null) throw new NullPointerException();
 
-        Collection<GatewayApi.EntityInfo> allInfos = cacheGet(entityInfos, new GatewayContextUser<Collection<GatewayApi.EntityInfo>>() {
+        Collection<GatewayApi.EntityInfo> allInfos = cacheGetWithRethrow(entityInfos, new GatewayContextUser<Collection<GatewayApi.EntityInfo>>() {
             @Override
-            public Collection<GatewayApi.EntityInfo> callUsingContext(GatewayContext context) throws GatewayApi.GatewayException {
-                return context.getApi().getEntityInfo(null);
+            public Collection<GatewayApi.EntityInfo> callUsingContext(GatewayContext context) throws InvocationTargetException {
+                try {
+                    return context.getApi().getEntityInfo(null);
+                } catch (GatewayApi.GatewayException e) {
+                    throw new InvocationTargetException(e);
+                }
             }
         });
 
@@ -91,9 +101,9 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
 
     @Override
     public GatewayApi.ClusterInfo getClusterInfo() throws GatewayException {
-        return cacheGet(clusterInfo, new GatewayContextUser<GatewayApi.ClusterInfo>() {
+        return cacheGetWithRethrow(clusterInfo, new GatewayContextUser<GatewayApi.ClusterInfo>() {
             @Override
-            public GatewayApi.ClusterInfo callUsingContext(GatewayContext context) throws GatewayApi.GatewayException, SOAPFaultException {
+            public GatewayApi.ClusterInfo callUsingContext(GatewayContext context) throws SOAPFaultException {
                 return context.getApi().getClusterInfo();
             }
         });
@@ -101,15 +111,68 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
 
     @Override
     public Collection<GatewayApi.GatewayInfo> getGatewayInfo() throws GatewayException {
-        return cacheGet(gatewayInfo, new GatewayContextUser<Collection<GatewayApi.GatewayInfo>>() {
+        return cacheGetWithRethrow(gatewayInfo, new GatewayContextUser<Collection<GatewayApi.GatewayInfo>>() {
             @Override
-            public Collection<GatewayApi.GatewayInfo> callUsingContext(GatewayContext context) throws GatewayApi.GatewayException, SOAPFaultException {
+            public Collection<GatewayApi.GatewayInfo> callUsingContext(GatewayContext context) throws SOAPFaultException {
                 return context.getApi().getGatewayInfo();
             }
         });
     }
 
-    /** Encapsulates a method of GatewayApi, and some arguments to pass it, that should be called with failover. */
+    @Override
+    public GatewayApi getUncachedGatewayApi() {
+        return addFailover(GatewayApi.class, new Functions.Unary<GatewayApi, GatewayContext>() {
+            public GatewayApi call(GatewayContext context) {
+                return context.getApi();
+            }
+        });
+    }
+
+    @Override
+    public ReportApi getUncachedReportApi() {
+        return addFailover(ReportApi.class, new Functions.Unary<ReportApi, GatewayContext>() {
+            public ReportApi call(GatewayContext context) {
+                return context.getReportApi();
+            }
+        });
+    }
+
+    @Override
+    public MigrationApi getUncachedMigrationApi() {
+        return addFailover(MigrationApi.class, new Functions.Unary<MigrationApi, GatewayContext>() {
+            public MigrationApi call(GatewayContext context) {
+                return context.getMigrationApi();
+            }
+        });
+    }
+
+    /**
+     * Add transparent failover to the specified API from GatewayContext.
+     *
+     * @param interfaceClass the API class to wrap.  Required.
+     * @param apiFinder a generator that will select the correct API given a GatewayContext.  Required.
+     * @return a proxy for the API that will use the configured failover strategy to select a different cluster
+     *         node to talk to if the one it is talking to goes down.
+     */
+    private <IT> IT addFailover(Class<IT> interfaceClass, final Functions.Unary<IT, GatewayContext> apiFinder) {
+        //noinspection unchecked
+        return (IT) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[] { interfaceClass }, new InvocationHandler() {
+            public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
+                return callWithFailover(new GatewayContextUser<Object>() {
+                    public Object callUsingContext(GatewayContext context) throws SOAPFaultException, InvocationTargetException {
+                        IT delegate = apiFinder.call(context);
+                        try {
+                            return method.invoke(delegate, args);
+                        } catch (IllegalAccessException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    /** Encapsulates a method of an API provided by GatewayContext, and some arguments to pass the method, that should be called with failover. */
     public interface GatewayContextUser<R> {
         /**
          * Do something with the specified GatewayContext that either produces a result of type R, or fails
@@ -119,10 +182,10 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
          *
          * @param context a GatewayContext representing a particular remote call target.  Required.
          * @return the result of doing something with context.  May be null.
-         * @throws GatewayApi.GatewayException if a GatewayApi method fails with this exception
          * @throws SOAPFaultException if there is a problem at the SOAP layer.
+         * @throws java.lang.reflect.InvocationTargetException if the API method throws a checked exception
          */
-        R callUsingContext(GatewayContext context) throws GatewayApi.GatewayException, SOAPFaultException;
+        R callUsingContext(GatewayContext context) throws SOAPFaultException, InvocationTargetException;
     }
 
     /**
@@ -139,8 +202,9 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
      * @throws GatewayException if any invocation failed with an exception other than a network related exception;
      *                          if numAttempts invocation attempts failed with a network related exception; or,
      *                          if the failover strategy signalled to give up by returning null from {@link FailoverStrategy#selectService()}.
+     * @throws java.lang.reflect.InvocationTargetException if the API method throws a checked exception
      */
-    public static <R> R callWithFailover(FailoverStrategy<GatewayContext> failover, int numAttempts, GatewayContextUser<R> contextUser) throws GatewayException {
+    public static <R> R callWithFailover(FailoverStrategy<GatewayContext> failover, int numAttempts, GatewayContextUser<R> contextUser) throws GatewayException, InvocationTargetException {
         ProtocolException lastNetworkException = null;
 
         for (int i = 0; i < numAttempts; ++i) {
@@ -154,8 +218,6 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
                 R result = contextUser.callUsingContext(context);
                 success = true;
                 return result;
-            } catch (GatewayApi.GatewayException e) {
-                throw new GatewayException(e);
             } catch (ProtocolException sfe) {
                 if (GatewayContext.isNetworkException(sfe)) {
                     lastNetworkException = sfe;
@@ -173,6 +235,28 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
         throw new GatewayNetworkException("Unable to find any working cluster node to talk to: " + ExceptionUtils.getMessage(lastNetworkException), lastNetworkException);
     }
 
+    private <R> R callWithFailover(GatewayContextUser<R> contextUser) throws Throwable {
+        return callWithFailover(failover, numContexts, contextUser);
+    }
+
+
+    /**
+     * Use the cached data, if we have some and it isn't stale, or else use callWithFailover to obtain it; and
+     * rethrow any checked exception thrown by the API method inside a GatewayException.
+     *
+     * @param cached    a cache that may hold some data of type R.  Required (although the cache may be empty).
+     * @param contextUser  remote call for refilling cache.  See {@link #callWithFailover} for more information.
+     * @return cached data, or the result of invoking {@link #callWithFailover}.  May be null if the contextUser can return null.
+     * @throws GatewayException @see #callWithFailover
+     */
+    private <R> R cacheGetWithRethrow(Cached<R> cached, GatewayContextUser<R> contextUser) throws GatewayException {
+        try {
+            return cacheGet(cached, contextUser);
+        } catch (InvocationTargetException e) {
+            throw new GatewayException(e.getTargetException());
+        }
+    }
+
     /**
      * Use the cached data, if we have some and it isn't stale, or else use callWithFailover to obtain it.
      *
@@ -180,8 +264,9 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
      * @param contextUser  remote call for refilling cache.  See {@link #callWithFailover} for more information.
      * @return cached data, or the result of invoking {@link #callWithFailover}.  May be null if the contextUser can return null.
      * @throws GatewayException @see #callWithFailover
+     * @throws java.lang.reflect.InvocationTargetException if the API method throws a checked exception
      */
-    private <R> R cacheGet(Cached<R> cached, GatewayContextUser<R> contextUser) throws GatewayException {
+    private <R> R cacheGet(Cached<R> cached, GatewayContextUser<R> contextUser) throws GatewayException, InvocationTargetException {
         if (cached == null)
             throw new NullPointerException();
 

@@ -228,7 +228,7 @@ public class StandardReports extends EsmStandardWebPage {
                     try {
                         SsgCluster cluster = ssgClusterManager.findByGuid( clusterGuid );
                         if ( cluster != null ) {
-                            GatewayContext context = gatewayContextFactory.getGatewayContext( getUser(), cluster.getGuid(), cluster.getSslHostName(), cluster.getAdminPort() );
+                            GatewayContext context = gatewayContextFactory.createGatewayContext( getUser(), cluster.getGuid(), cluster.getSslHostName(), cluster.getAdminPort() );
                             ReportApi reportApi = context.getReportApi();
                             Collection<ReportApi.GroupingKey> keys = reportApi.getGroupingKeys();
                             if ( keys != null ) {

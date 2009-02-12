@@ -169,6 +169,8 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_JMS_LISTENER_THREAD_LIMIT = "jmsListenerThreadLimit";
 
     public static final String PARAM_PROCESS_CONTROLLER_PRESENT = "processControllerPresent";
+    public static final String PARAM_PROCESS_CONTROLLER_PORT = "processControllerPort";
+    public static final String PARAM_PROCESS_CONTROLLER_EXTERNAL_PORT = "processControllerExternalPort";
 
     public static final String PARAM_ADD_MAPPINGS_INTO_AUDIT = "customerMapping.addToGatewayAuditEvents";
     public static final String PARAM_ADD_MAPPINGS_INTO_SERVICE_METRICS = "customerMapping.addToServiceMetrics";

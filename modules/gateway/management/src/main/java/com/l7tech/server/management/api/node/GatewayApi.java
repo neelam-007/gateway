@@ -233,6 +233,8 @@ public interface GatewayApi {
         private String softwareVersion;
         private String ipAddress;
         private long statusTimestamp;
+        private int gatewayPort;
+        private int processControllerPort;
 
         @XmlAttribute(name="id")
         public String getId() {
@@ -279,6 +281,24 @@ public interface GatewayApi {
             this.statusTimestamp = statusTimestamp;
         }
 
+        @XmlAttribute(name="gatewayPort")
+        public int getGatewayPort() {
+            return gatewayPort;
+        }
+
+        public void setGatewayPort(int gatewayPort) {
+            this.gatewayPort = gatewayPort;
+        }
+
+        @XmlAttribute(name="processControllerPort")
+        public int getProcessControllerPort() {
+            return processControllerPort;
+        }
+
+        public void setProcessControllerPort(int processControllerPort) {
+            this.processControllerPort = processControllerPort;
+        }
+
         @Override
         @SuppressWarnings({"RedundantIfStatement"})
         public boolean equals(Object o) {
@@ -287,6 +307,8 @@ public interface GatewayApi {
 
             GatewayInfo that = (GatewayInfo) o;
 
+            if (gatewayPort != that.gatewayPort) return false;
+            if (processControllerPort != that.processControllerPort) return false;
             if (id != null ? !id.equals(that.id) : that.id != null) return false;
             if (ipAddress != null ? !ipAddress.equals(that.ipAddress) : that.ipAddress != null) return false;
             if (name != null ? !name.equals(that.name) : that.name != null) return false;
@@ -303,6 +325,8 @@ public interface GatewayApi {
             result = 31 * result + (name != null ? name.hashCode() : 0);
             result = 31 * result + (softwareVersion != null ? softwareVersion.hashCode() : 0);
             result = 31 * result + (ipAddress != null ? ipAddress.hashCode() : 0);
+            result = 31 * result + gatewayPort;
+            result = 31 * result + processControllerPort;
             return result;
         }
     }

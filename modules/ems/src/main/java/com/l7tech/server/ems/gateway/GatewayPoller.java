@@ -119,7 +119,7 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                                 try {
                                     String host = cluster.getSslHostName();
                                     int port = cluster.getAdminPort();
-                                    GatewayContext context = gatewayContextFactory.getGatewayContext( user, cluster.getGuid(), host, port );
+                                    GatewayContext context = gatewayContextFactory.createGatewayContext( user, cluster.getGuid(), host, port );
                                     context.getApi().getEntityInfo( Collections.singleton(EntityType.FOLDER) );
                                 } catch ( GatewayException ge ) {
                                     // ok, can't update status
@@ -172,7 +172,7 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
 
                         if ( host != null && host.length() > 0 && port > 0 ) {
                             try {
-                                GatewayContext context = gatewayContextFactory.getGatewayContext( null, host, port );
+                                GatewayContext context = gatewayContextFactory.createGatewayContext( null, null, host, port );
                                 Set<GatewayApi.GatewayInfo> newInfoSet = null;
                                 try {
                                     GatewayApi api = context.getApi();
@@ -218,6 +218,8 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                                         node.setName(newInfo.getName());
                                         node.setSoftwareVersion(newInfo.getSoftwareVersion());
                                         node.setIpAddress(newInfo.getIpAddress());
+                                        node.setGatewayPort(newInfo.getGatewayPort());
+                                        node.setProcessControllerPort(newInfo.getProcessControllerPort());
                                         refreshNodeStatus(node, port);
                                         node.setSsgCluster(cluster);
                                         nodes.add(node);
@@ -308,7 +310,7 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
         Boolean trusted = null;
         String status = JSONConstants.SsgNodeOnlineState.OFFLINE;
         try {
-            NodeManagementApi nodeApi = gatewayContextFactory.getGatewayContext( null, host, 0 ).getManagementApi();
+            NodeManagementApi nodeApi = gatewayContextFactory.createProcessControllerContext( node ).getManagementApi();
             Collection<NodeManagementApi.NodeHeader> nodeHeaders = nodeApi.listNodes();
             trusted = true;
             if ( nodeHeaders != null ) {
@@ -338,7 +340,7 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
 
                 // perhaps we don't have a process controller that works, let's check the node directly
                 try {
-                    GatewayContext context = gatewayContextFactory.getGatewayContext( null, host, port );
+                    GatewayContext context = gatewayContextFactory.createGatewayContext( null, null, host, port );
                     GatewayApi api = context.getApi();
                     if ( api.getClusterInfo() != null ) {
                         status = JSONConstants.SsgNodeOnlineState.ON;

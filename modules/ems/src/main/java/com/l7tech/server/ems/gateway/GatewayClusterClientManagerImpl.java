@@ -9,12 +9,13 @@ import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgNode;
 import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.Updated;
-import com.l7tech.util.Functions;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -44,15 +45,44 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
 
     @Override
     public GatewayClusterClient getGatewayClusterClient( final String clusterId, final User user) throws GatewayException {
+        Callable<SsgCluster> clusterFinder = new Callable<SsgCluster>() {
+            public SsgCluster call() throws FindException {
+                return ssgClusterManager.findByGuid(clusterId);
+            }
+        };
+        return getGatewayClusterClient(clusterId, clusterFinder, user);
+    }
+
+    @Override
+    public GatewayClusterClient getGatewayClusterClient(final SsgCluster cluster, final User user) throws GatewayException {
+        Callable<SsgCluster> clusterFinder = new Callable<SsgCluster>() {
+            public SsgCluster call() {
+                return cluster;
+            }
+        };
+        return getGatewayClusterClient(cluster.getId(), clusterFinder, user);
+    }
+
+    private SsgCluster findCluster(String clusterId, Callable<SsgCluster> cluster) throws GatewayException {
+        SsgCluster ssgCluster;
+        try {
+            ssgCluster = cluster.call();
+            if (ssgCluster == null)
+                throw new GatewayException("No cluster found with ID " + clusterId);
+        } catch (Exception e) {
+            throw new GatewayException(e);
+        }
+        return ssgCluster;
+    }
+
+    private GatewayClusterClient getGatewayClusterClient(final String clusterId, final Callable<SsgCluster> cluster, final User user) throws GatewayException {
         ClientKey key = new ClientKey(clusterId, user);
         try {
             GatewayClusterClientImpl client = clients.get(key);
             if (client != null)
                 return client;
 
-            final SsgCluster ssgCluster = ssgClusterManager.findByGuid(clusterId);
-            if (ssgCluster == null)
-                throw new GatewayException("No cluster found with ID " + clusterId);
+            final SsgCluster ssgCluster = findCluster(clusterId, cluster);
 
             if ( !ssgCluster.getTrustStatus() )
                 throw new GatewayNoTrustException("Bad trust status for cluster with ID " + clusterId);
@@ -63,7 +93,7 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
                 public GatewayContext call(SsgNode ssgNode) {
                     try {
                         final String nodeAdminAddress = ssgNode.getIpAddress();
-                        return gatewayContextFactory.getGatewayContext(user, clusterId, nodeAdminAddress, adminPort);
+                        return gatewayContextFactory.createGatewayContext(user, clusterId, nodeAdminAddress, adminPort);
                     } catch (GatewayException e) {
                         throw new GatewayContextCreationException(e);
                     }
@@ -72,7 +102,7 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
 
             // Add the public hostname of the entire cluster as a least-preference option, just in case
             // none of the individual node IPs are reachable from the ESM.
-            GatewayContext publicContext = gatewayContextFactory.getGatewayContext(user, ssgCluster.getSslHostName(), adminPort);
+            GatewayContext publicContext = gatewayContextFactory.createGatewayContext(user, clusterId, ssgCluster.getSslHostName(), adminPort);
             nodeContexts.add(publicContext);
 
             client = new GatewayClusterClientImpl(ssgCluster, nodeContexts);
@@ -82,8 +112,6 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
             GatewayException ge = ExceptionUtils.getCauseIfCausedBy( e, GatewayException.class );
             if ( ge != null ) throw ge;
             else throw new GatewayException(e);
-        } catch (FindException e) {
-            throw new GatewayException(e);
         }
     }
 

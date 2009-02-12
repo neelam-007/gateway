@@ -6,11 +6,13 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ExternalEntityHeader;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.policy.PolicyManager;
@@ -18,7 +20,6 @@ import com.l7tech.server.security.rbac.SecurityFilter;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.JaasUtils;
-import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
@@ -94,6 +95,8 @@ public class GatewayApiImpl implements GatewayApi {
                         gatewayInfo.setIpAddress( info.getAddress() );
                         gatewayInfo.setSoftwareVersion( BuildInfo.getProductVersion() );
                         gatewayInfo.setStatusTimestamp( info.getLastUpdateTimeStamp() );
+                        gatewayInfo.setGatewayPort( config.getIntProperty("clusterhttpsport", 8443) );
+                        gatewayInfo.setProcessControllerPort( config.getIntProperty(ServerConfig.PARAM_PROCESS_CONTROLLER_EXTERNAL_PORT, 8765) );
                         gateways.add(gatewayInfo);
                     }
                 }

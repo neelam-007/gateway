@@ -6,10 +6,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.migration.MigrationDependency;
 import com.l7tech.server.ems.enterprise.*;
-import com.l7tech.server.ems.gateway.GatewayContext;
-import com.l7tech.server.ems.gateway.GatewayContextFactory;
-import com.l7tech.server.ems.gateway.GatewayException;
-import com.l7tech.server.ems.gateway.GatewayTrustTokenFactory;
+import com.l7tech.server.ems.gateway.*;
 import com.l7tech.server.ems.migration.MigrationMappedEntity;
 import com.l7tech.server.ems.migration.MigrationMappingRecord;
 import com.l7tech.server.ems.migration.MigrationMappingRecordManager;
@@ -381,7 +378,7 @@ public class PolicyMigration extends EsmStandardWebPage {
     private MigrationMappingRecordManager migrationMappingRecordManager;
 
     @SpringBean
-    private GatewayContextFactory gatewayContextFactory;
+    private GatewayClusterClientManager gatewayClusterClientManager;
 
     @SpringBean
     private GatewayTrustTokenFactory gatewayTrustTokenFactory;
@@ -676,8 +673,8 @@ public class PolicyMigration extends EsmStandardWebPage {
         SsgCluster cluster = ssgClusterManager.findByGuid(request.clusterId);
         if ( cluster != null ) {
             if ( cluster.getTrustStatus() ) {
-                GatewayContext context = gatewayContextFactory.getGatewayContext( getUser(), cluster.getSslHostName(), cluster.getAdminPort() );
-                MigrationApi api = context.getMigrationApi();
+                GatewayClusterClient context = gatewayClusterClientManager.getGatewayClusterClient(cluster, getUser());
+                MigrationApi api = context.getUncachedMigrationApi();
                 MigrationMetadata metadata = api.findDependencies( request.asEntityHeaders() );
                 for (ExternalEntityHeader header : metadata.getMappableDependencies()) {
                     deps.add( new DependencyItem( header, !metadata.isMappingRequired(header) ) );
@@ -709,8 +706,8 @@ public class PolicyMigration extends EsmStandardWebPage {
             SsgCluster cluster = ssgClusterManager.findByGuid(targetClusterId);
             if ( cluster != null ) {
                 if ( cluster.getTrustStatus() ) {
-                    GatewayContext context = gatewayContextFactory.getGatewayContext( getUser(), cluster.getSslHostName(), cluster.getAdminPort() );
-                    MigrationApi api = context.getMigrationApi();
+                    GatewayClusterClient context = gatewayClusterClientManager.getGatewayClusterClient(cluster, getUser());
+                    MigrationApi api = context.getUncachedMigrationApi();
                     ExternalEntityHeader entityHeader = sourceKey.asEntityHeader();
                     Map candidates = MigrationApi.MappingCandidate.fromCandidates(api.retrieveMappingCandidates( Collections.singletonList( entityHeader ), filter ));
                     if ( candidates != null && candidates.containsKey(entityHeader) ) {
@@ -787,8 +784,8 @@ public class PolicyMigration extends EsmStandardWebPage {
 
             // discard the dependencies that no longer exist on the target cluster
             SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterId);
-            GatewayContext targetContext = gatewayContextFactory.getGatewayContext(getUser(), targetCluster.getSslHostName(), targetCluster.getAdminPort());
-            MigrationApi targetMigrationApi = targetContext.getMigrationApi();
+            GatewayClusterClient targetContext = gatewayClusterClientManager.getGatewayClusterClient(targetCluster, getUser());
+            MigrationApi targetMigrationApi = targetContext.getUncachedMigrationApi();
 
             Collection<ExternalEntityHeader> headersToCheck = new HashSet<ExternalEntityHeader>();
             for (Map.Entry<Pair<DependencyKey,String>,Pair<DependencyItem,Boolean>> entry : mappingModel.dependencyMap.entrySet()) {
@@ -876,12 +873,12 @@ public class PolicyMigration extends EsmStandardWebPage {
             SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterId);
             if ( sourceCluster != null && targetCluster != null) {
                 if ( sourceCluster.getTrustStatus() && targetCluster.getTrustStatus() ) {
-                    GatewayContext sourceContext = gatewayContextFactory.getGatewayContext( getUser(), sourceCluster.getSslHostName(), sourceCluster.getAdminPort() );
-                    MigrationApi sourceMigrationApi = sourceContext.getMigrationApi();
+                    GatewayClusterClient sourceContext = gatewayClusterClientManager.getGatewayClusterClient(sourceCluster, getUser());
+                    MigrationApi sourceMigrationApi = sourceContext.getUncachedMigrationApi();
 
-                    GatewayContext targetContext = gatewayContextFactory.getGatewayContext( getUser(), targetCluster.getSslHostName(), targetCluster.getAdminPort() );
-                    MigrationApi targetMigrationApi = targetContext.getMigrationApi();
-                    GatewayApi targetGatewayApi = targetContext.getApi();
+                    GatewayClusterClient targetContext = gatewayClusterClientManager.getGatewayClusterClient(targetCluster, getUser());
+                    MigrationApi targetMigrationApi = targetContext.getUncachedMigrationApi();
+                    GatewayApi targetGatewayApi = targetContext.getUncachedGatewayApi();
 
                     MigrationBundle export = sourceMigrationApi.exportBundle( requestedItems.asEntityHeaders() );
                     MigrationMetadata metadata = export.getMetadata();

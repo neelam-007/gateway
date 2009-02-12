@@ -1,191 +1,60 @@
 package com.l7tech.server.ems.gateway;
 
-
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.management.api.monitoring.MonitoringApi;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.management.api.node.MigrationApi;
-import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.management.api.node.ReportApi;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
-import org.apache.cxf.configuration.jsse.TLSClientParameters;
-import org.apache.cxf.endpoint.Client;
-import org.apache.cxf.interceptor.LoggingInInterceptor;
-import org.apache.cxf.interceptor.LoggingOutInterceptor;
-import org.apache.cxf.jaxws.JaxWsClientFactoryBean;
-import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
-import org.apache.cxf.transport.http.HTTPConduit;
-import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import java.net.ConnectException;
-import java.net.NoRouteToHostException;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * GatewayContext provides access to a Gateway from the ESM.
- *
- * @author steve
+ * GatewayContext provides access from the ESM to APIs offered by a Gateway cluster (represented by either a
+ * single Gateway node or a front-end load balancer URL).
+ * <p/>
+ * For access to Process Controller APIs, see {@link ProcessControllerContext}.
  */
-public class GatewayContext {
+public class GatewayContext extends ApiContext {
+    private static final String PROP_GATEWAY_URL = "com.l7tech.esm.gatewayUrl";
+    private static final String PROP_REPORT_URL = "com.l7tech.esm.reportUrl";
+    private static final String PROP_MIGRATION_URL = "com.l7tech.esm.migrationUrl";
+    private static final String REPORT_URL = SyspropUtil.getString(PROP_REPORT_URL, "https://{0}:{1}/ssg/services/reportApi");
+    private static final String MIGRATION_URL = SyspropUtil.getString(PROP_MIGRATION_URL, "https://{0}:{1}/ssg/services/migrationApi");
+    private static final String GATEWAY_URL = SyspropUtil.getString(PROP_GATEWAY_URL, "https://{0}:{1}/ssg/services/gatewayApi");
 
-    //- PUBLIC
+    private final AtomicReference<GatewayApi> api = new AtomicReference<GatewayApi>();
+    private final AtomicReference<ReportApi> reportApi = new AtomicReference<ReportApi>();
+    private final AtomicReference<MigrationApi> migrationApi = new AtomicReference<MigrationApi>();
+    private String gatewayUrl;
+    private String reportUrl;
+    private String migrationUrl;
 
     /**
      * Create a GatewayContext that uses the given host/port for services.
      *
-     * @param host The gateway host
-     * @param gatewayPort The gateway port
+     * @param defaultKey the ESM's SSL private key.  Required so the ESM can authenticate to the API servers.
+     * @param host The gateway SSL hostname, or the node IP address.  Required.
+     * @param gatewayPort The gateway port.  Required.
      * @param esmId The ID for the EM
      * @param userId The ID for the EM user (null for none)
      */
-    public GatewayContext( final DefaultKey defaultKey, final String host, final int gatewayPort, final String esmId, final String userId ) {
-        if ( host == null ) throw new IllegalArgumentException("host is required");
-        if ( esmId == null ) throw new IllegalArgumentException("esmId is required");
-        this.cookie = buildCookie( esmId, userId );
-        this.defaultKey = defaultKey;
-        this.host = host;
-        this.gatewayPort = gatewayPort;
-        this.processControllerPort = 8765; // TODO pass in the processControllerPort instead of hardcoding it
+    public GatewayContext(final DefaultKey defaultKey, final String host, final int gatewayPort, final String esmId, final String userId) {
+        super(defaultKey, host, esmId, userId);
+        gatewayUrl = MessageFormat.format(GATEWAY_URL, host, Integer.toString(gatewayPort));
+        reportUrl = MessageFormat.format(REPORT_URL, host, Integer.toString(gatewayPort));
+        migrationUrl = MessageFormat.format(MIGRATION_URL, host, Integer.toString(gatewayPort));
     }
 
-    public synchronized GatewayApi getApi() {
-        if (api == null)
-            api = initApi( GatewayApi.class, defaultKey, MessageFormat.format(GATEWAY_URL, host, Integer.toString(gatewayPort)));
-        return api;
+    public GatewayApi getApi() {
+        return getApi(api, GatewayApi.class, gatewayUrl);
     }
 
-    public synchronized ReportApi getReportApi() {
-        if (reportApi == null)
-            reportApi = initApi( ReportApi.class, defaultKey, MessageFormat.format(REPORT_URL, host, Integer.toString(gatewayPort)));
-        return reportApi;
+    public ReportApi getReportApi() {
+        return getApi(reportApi, ReportApi.class, reportUrl);
     }
 
-    public synchronized NodeManagementApi getManagementApi() {
-        if (managementApi == null)
-            managementApi = initApi( NodeManagementApi.class, defaultKey, MessageFormat.format(CONTROLLER_URL, host, Integer.toString(processControllerPort)));
-        return managementApi;
-    }
-
-    public synchronized MigrationApi getMigrationApi() {
-        if (migrationApi == null)
-            migrationApi = initApi(MigrationApi.class, defaultKey, MessageFormat.format(MIGRATION_URL, host, Integer.toString(gatewayPort)));
-        return migrationApi;
-    }
-
-    public synchronized MonitoringApi getMonitoringApi() {
-        if (monitoringApi == null)
-            monitoringApi = initApi(MonitoringApi.class, defaultKey, MessageFormat.format(MONITORING_URL, host, Integer.toString(processControllerPort)));
-        return monitoringApi;
-    }
-
-    public static boolean isNetworkException( final Exception exception ) {
-        return ExceptionUtils.causedBy( exception, ConnectException.class ) ||
-               ExceptionUtils.causedBy( exception, NoRouteToHostException.class ) ||
-               ExceptionUtils.causedBy( exception, UnknownHostException.class ) ||
-               ExceptionUtils.causedBy( exception, SocketTimeoutException.class );
-    }
-
-    public static boolean isConfigurationException( final Exception exception ) {
-        boolean isConfigurationException = false;
-
-        if ( "Access Denied".equals(exception.getMessage()) ) {
-            isConfigurationException = true;
-        } else if ( "Authentication Required".equals(exception.getMessage()) ){
-            isConfigurationException = true;
-        } else if ( "Not Licensed".equals(exception.getMessage()) ) {
-            isConfigurationException = true;
-        }
-
-        return isConfigurationException;
-    }
-
-    //- PRIVATE
-
-    private static final Logger logger = Logger.getLogger(GatewayContext.class.getName());
-
-    private static final String PROP_GATEWAY_URL = "com.l7tech.esm.gatewayUrl";
-    private static final String PROP_REPORT_URL = "com.l7tech.esm.reportUrl";
-    private static final String PROP_CONTROLLER_URL = "com.l7tech.esm.controllerUrl";
-    private static final String PROP_MONITORING_URL = "com.l7tech.esm.monitoringUrl";
-    private static final String PROP_MIGRATION_URL = "com.l7tech.esm.migrationUrl";
-    private static final String GATEWAY_URL = SyspropUtil.getString(PROP_GATEWAY_URL, "https://{0}:{1}/ssg/services/gatewayApi");
-    private static final String REPORT_URL = SyspropUtil.getString(PROP_REPORT_URL, "https://{0}:{1}/ssg/services/reportApi");
-    private static final String CONTROLLER_URL = SyspropUtil.getString(PROP_CONTROLLER_URL, "https://{0}:{1}/services/nodeManagementApi");
-    private static final String MONITORING_URL = SyspropUtil.getString(PROP_MONITORING_URL, "https://{0}:{1}/services/monitoringApi");
-    private static final String MIGRATION_URL = SyspropUtil.getString(PROP_MIGRATION_URL, "https://{0}:{1}/ssg/services/migrationApi");
-
-    private final String cookie;
-    private final DefaultKey defaultKey;
-    private final String host;
-    private final int gatewayPort;
-    private final int processControllerPort;
-
-    private GatewayApi api;
-    private ReportApi reportApi;
-    private NodeManagementApi managementApi;
-    private MigrationApi migrationApi;
-    private MonitoringApi monitoringApi;
-
-    private String buildCookie( final String esmId, final String userId ) {
-        String cookie =  "EM-UUID=" + esmId;
-        if ( userId != null ) {
-            cookie += "; EM-USER-UUID=" + userId;
-        }
-        return cookie;
-    }
-
-    @SuppressWarnings({"unchecked"})
-    protected <T> T initApi( final Class<T> apiClass, final DefaultKey defaultKey, final String url ) {
-        JaxWsClientFactoryBean cfb = new JaxWsClientFactoryBean();
-        cfb.setServiceClass( apiClass );
-        cfb.setAddress( url );
-
-        Client c = cfb.create();
-        if ( logger.isLoggable( Level.FINEST ) ) {
-            c.getInInterceptors().add( new LoggingInInterceptor() );
-            c.getOutInterceptors().add( new LoggingOutInterceptor() );
-            c.getInFaultInterceptors().add( new LoggingInInterceptor() );
-            c.getOutFaultInterceptors().add( new LoggingOutInterceptor() );
-        }
-
-        HTTPConduit hc = (HTTPConduit) c.getConduit();
-        HTTPClientPolicy policy = hc.getClient();
-        policy.setCookie( cookie );
-        hc.setTlsClientParameters(new TLSClientParameters() {
-            @Override
-            public TrustManager[] getTrustManagers() {
-                return new TrustManager[] { new X509TrustManager() {
-                    @Override
-                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
-                    @Override
-                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
-                    @Override
-                    public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
-                }};
-            }
-
-            @Override
-            public KeyManager[] getKeyManagers() {
-                return defaultKey==null ? new KeyManager[0] : defaultKey.getSslKeyManagers();
-            }
-
-            @Override
-            public boolean isDisableCNCheck() {
-                return true;
-            }
-        });
-
-        JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean(cfb);
-        return (T) factory.create();
+    public MigrationApi getMigrationApi() {
+        return getApi(migrationApi, MigrationApi.class, migrationUrl);
     }
 }

@@ -26,6 +26,8 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
 
     private String guid;
     private String ipAddress;
+    private int gatewayPort;
+    private int processControllerPort;
     private SsgCluster ssgCluster;
     private String onlineStatus;
     private boolean trustStatus;
@@ -86,6 +88,24 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
         this.trustStatus = trustStatus;
     }
 
+    @Column(name="gateway_port")
+    public int getGatewayPort() {
+        return gatewayPort;
+    }
+
+    public void setGatewayPort(int gatewayPort) {
+        this.gatewayPort = gatewayPort;
+    }
+
+    @Column(name="process_controller_port")
+    public int getProcessControllerPort() {
+        return processControllerPort;
+    }
+
+    public void setProcessControllerPort(int processControllerPort) {
+        this.processControllerPort = processControllerPort;
+    }
+
     @Override
     public void toJSON(JSON.Output output) {
         output.add(JSONConstants.ID, guid);
@@ -98,6 +118,8 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
         output.add(JSONConstants.TRUST_STATUS, isTrustStatus());
         output.add(JSONConstants.SELF_HOST_NAME, obtainHostName());
         output.add(JSONConstants.IP_ADDRESS, getIpAddress());
+        output.add(JSONConstants.GATEWAY_PORT, Integer.toString(getGatewayPort()));
+        output.add(JSONConstants.PROCESS_CONTROLLER_PORT, Integer.toString(getProcessControllerPort()));
     }
 
     @Override
@@ -123,11 +145,13 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof SsgNode)) return false;
         if (!super.equals(o)) return false;
 
         SsgNode ssgNode = (SsgNode) o;
 
+        if (gatewayPort != ssgNode.gatewayPort) return false;
+        if (processControllerPort != ssgNode.processControllerPort) return false;
         if (trustStatus != ssgNode.trustStatus) return false;
         if (guid != null ? !guid.equals(ssgNode.guid) : ssgNode.guid != null) return false;
         if (ipAddress != null ? !ipAddress.equals(ssgNode.ipAddress) : ssgNode.ipAddress != null) return false;
@@ -145,6 +169,8 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
         int result = super.hashCode();
         result = 31 * result + (guid != null ? guid.hashCode() : 0);
         result = 31 * result + (ipAddress != null ? ipAddress.hashCode() : 0);
+        result = 31 * result + gatewayPort;
+        result = 31 * result + processControllerPort;
         result = 31 * result + (ssgCluster != null ? ssgCluster.hashCode() : 0);
         result = 31 * result + (onlineStatus != null ? onlineStatus.hashCode() : 0);
         result = 31 * result + (trustStatus ? 1 : 0);

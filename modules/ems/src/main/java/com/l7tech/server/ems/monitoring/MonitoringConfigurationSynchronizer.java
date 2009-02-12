@@ -10,20 +10,20 @@ import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgNode;
-import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayException;
+import com.l7tech.server.ems.gateway.ProcessControllerContext;
 import com.l7tech.server.event.admin.PersistenceEvent;
 import com.l7tech.server.event.system.Started;
-import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
-import com.l7tech.server.management.config.monitoring.NotificationRule;
-import com.l7tech.server.management.config.monitoring.PropertyTrigger;
-import com.l7tech.server.management.config.monitoring.Trigger;
+import com.l7tech.server.management.api.monitoring.MonitorableProperty;
+import com.l7tech.server.management.config.monitoring.*;
+import com.l7tech.util.ComparisonOperator;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -36,36 +36,39 @@ import java.util.logging.Logger;
 public class MonitoringConfigurationSynchronizer extends TimerTask implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(MonitoringConfigurationSynchronizer.class.getName());
 
+    /** We should mark all monitoring configurations as dirty any time one of these entities changes. */
+    private static final Set<Class<? extends Entity>> MONITORING_ENTITIES = Collections.unmodifiableSet(new HashSet<Class<? extends Entity>>() {{
+        add(SystemMonitoringNotificationRule.class);
+        add(SsgClusterNotificationSetup.class);
+        add(EntityMonitoringPropertySetup.class);
+    }});
+
+    /** We should mark all monitoring configurations as dirty any time one of these cluster properties changes. */
+    // TODO It may turn out that the PCs don't care about these settings after all
+    private static final Set<String> MONITORING_CLUSTER_PROPS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+            ServerConfig.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS
+    )));
+
     private final SsgClusterManager ssgClusterManager;
     private final GatewayContextFactory gatewayContextFactory;
     private final SsgClusterNotificationSetupManager ssgClusterNotificationSetupManager;
     private final EntityMonitoringPropertySetupManager entityMonitoringPropertySetupManager;
+    private final SystemMonitoringSetupSettingsManager systemMonitoringSetupSettingsManager;
     private final Timer timer = new Timer();
     private final AtomicBoolean dirty = new AtomicBoolean(true);
 
     public MonitoringConfigurationSynchronizer(SsgClusterManager ssgClusterManager,
                                                GatewayContextFactory gatewayContextFactory,
                                                SsgClusterNotificationSetupManager ssgClusterNotificationSetupManager,
-                                               EntityMonitoringPropertySetupManager entityMonitoringPropertySetupManager)
+                                               EntityMonitoringPropertySetupManager entityMonitoringPropertySetupManager,
+                                               SystemMonitoringSetupSettingsManager systemMonitoringSetupSettingsManager)
     {
         this.ssgClusterManager = ssgClusterManager;
         this.gatewayContextFactory = gatewayContextFactory;
         this.ssgClusterNotificationSetupManager = ssgClusterNotificationSetupManager;
         this.entityMonitoringPropertySetupManager = entityMonitoringPropertySetupManager;
+        this.systemMonitoringSetupSettingsManager = systemMonitoringSetupSettingsManager;
     }
-
-    /** We should mark all monitoring configurations as dirty any time one of these entities changes. */
-    private final Set<Class<? extends Entity>> MONITORING_ENTITIES = new HashSet<Class<? extends Entity>>() {{
-        add(SystemMonitoringNotificationRule.class);
-        add(SsgClusterNotificationSetup.class);
-        add(EntityMonitoringPropertySetup.class);
-    }};
-
-    /** We should mark all monitoring configurations as dirty any time one of these cluster properties changes. */
-    // TODO It may turn out that the PCs don't care about these settings after all
-    private final Set<String> MONITORING_CLUSTER_PROPS = new HashSet<String>(Arrays.asList(
-            ServerConfig.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS
-    ));
 
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof PersistenceEvent) {
@@ -118,13 +121,15 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
     private boolean pushAllConfig() throws FindException {
         logger.info("Pushing down monitoring configurations to all known process controllers");
 
+        boolean notificationsDisabled = areNotificationsGloballyDisabled();
+
         boolean sawFailure = false;
         Collection<SsgCluster> clusters = ssgClusterManager.findAll();
         for (SsgCluster cluster : clusters) {
             boolean needClusterMaster = true;
             Set<SsgNode> nodes = cluster.getNodes();
             for (SsgNode node : nodes) {
-                if (configureNode(cluster, node, needClusterMaster))
+                if (configureNode(cluster, node, notificationsDisabled, needClusterMaster))
                     needClusterMaster = false;
                 else
                     sawFailure = true;
@@ -133,9 +138,9 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
         return !sawFailure;
     }
 
-    private boolean configureNode(SsgCluster cluster, SsgNode node, boolean needClusterMaster) {
+    private boolean configureNode(SsgCluster cluster, SsgNode node, boolean notificationsDisabled, boolean needClusterMaster) {
         try {
-            doConfigureNode(cluster, node, needClusterMaster);
+            doConfigureNode(cluster, node, notificationsDisabled, needClusterMaster);
             return true;
         } catch (IOException e) {
             logger.log(Level.INFO, "Unable to push down monitoring configuration to node " + node.getIpAddress() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -149,53 +154,115 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
         return false;
     }
 
-    private void doConfigureNode(SsgCluster cluster, SsgNode node, boolean needClusterMaster) throws GatewayException, IOException, FindException {
-        GatewayContext ctx = gatewayContextFactory.getGatewayContext(null, node.getIpAddress(), 0);
-        MonitoringConfiguration config = makeMonitoringConfiguration(cluster, node);
+    private void doConfigureNode(SsgCluster cluster, SsgNode node, boolean notificationsDisabled, boolean needClusterMaster) throws GatewayException, IOException, FindException {
+        ProcessControllerContext ctx = gatewayContextFactory.createProcessControllerContext(node);
+        MonitoringConfiguration config = makeMonitoringConfiguration(cluster, node, notificationsDisabled);
         ctx.getMonitoringApi().pushMonitoringConfiguration(config, needClusterMaster);
     }
 
-    private MonitoringConfiguration makeMonitoringConfiguration(SsgCluster cluster, SsgNode node) throws FindException {
+    private MonitoringConfiguration makeMonitoringConfiguration(SsgCluster cluster, SsgNode node, boolean notificationsDisabled) throws FindException {
         MonitoringConfiguration config = new MonitoringConfiguration();
         config.setName(node.getName());
 
         SsgClusterNotificationSetup clusterSetup = ssgClusterNotificationSetupManager.findByEntityGuid(cluster.getGuid());
-        config.setNotificationRules(convertNotificationRules(config, clusterSetup.getSystemNotificationRules()));
+        Map<Long, NotificationRule> notRules = convertNotificationRules(notificationsDisabled, clusterSetup.getSystemNotificationRules());
+        config.setNotificationRules(new HashSet<NotificationRule>(notRules.values()));
+
+        Collection<Trigger> clusterTriggers =
+                convertTriggers(notificationsDisabled,
+                        cluster.getSslHostName(),
+                        ComponentType.CLUSTER,
+                        notRules,
+                        entityMonitoringPropertySetupManager.findByEntityGuid(cluster.getGuid())
+                );
+
+        Collection<Trigger> nodeTriggers =
+                convertTriggers(notificationsDisabled,
+                        node.getIpAddress(),
+                        ComponentType.NODE,
+                        notRules,
+                        entityMonitoringPropertySetupManager.findByEntityGuid(node.getGuid())
+                );
 
         Set<Trigger> triggers = new HashSet<Trigger>();
-        triggers.addAll(convertTriggers(entityMonitoringPropertySetupManager.findByEntityGuid(cluster.getGuid())));
-        triggers.addAll(convertTriggers(entityMonitoringPropertySetupManager.findByEntityGuid(node.getGuid())));
+        triggers.addAll(clusterTriggers);
+        triggers.addAll(nodeTriggers);
         config.setTriggers(triggers);
 
         return config;
     }
 
-    private Collection<? extends Trigger> convertTriggers(List<EntityMonitoringPropertySetup> clusterSetups) {
-        Collection<? extends Trigger> ret = new ArrayList<Trigger>();
+    // notificationRules is map of SystemMonitoringNotificationRule OID => NotificationRule instance
+    private Collection<Trigger> convertTriggers(boolean notificationsDisabled,
+                                                String componentId,
+                                                ComponentType componentType,
+                                                Map<Long, NotificationRule> notificationRules, List<EntityMonitoringPropertySetup> setups
+    )
+    {
+        Collection<Trigger> ret = new ArrayList<Trigger>();
 
-        for (EntityMonitoringPropertySetup setup : clusterSetups) {
-            PropertyTrigger trigger = new PropertyTrigger(); // TODO ???
-            // TODO build a PropertyTrigger somehow 
+        for (EntityMonitoringPropertySetup setup : setups) {
+            if (!setup.isMonitoringEnabled())
+                continue;
+
+            String propertyName = setup.getPropertyType();
+            MonitorableProperty property = new MonitorableProperty(componentType, propertyName, String.class);
+            ComparisonOperator operator = ComparisonOperator.GE;
+            String triggerValue = Long.toString(setup.getTriggerValue());
+            long maxSamplingInterval = 5000L; // TODO is this the same value from monitoring.samplingInterval.lowerLimit in emconfig.properties that default to 2 sec?
+            PropertyTrigger trigger = new PropertyTrigger(property, componentId, operator, triggerValue, maxSamplingInterval);
+            trigger.setNotificationRules(lookupNotificationRules(notificationsDisabled, setup, componentId, notificationRules, propertyName));
+
+            ret.add(trigger);
         }
 
         return ret;
     }
 
-    private Set<NotificationRule> convertNotificationRules(MonitoringConfiguration config, Set<SystemMonitoringNotificationRule> systemNotificationRules) {
-        Set<NotificationRule> rules = new HashSet<NotificationRule>();
-        for (SystemMonitoringNotificationRule rule : systemNotificationRules) {
-            final String ruleType = rule.getType();
-            if (JSONConstants.NotificationType.E_MAIL.equals(ruleType)) {
-                rules.add(rule.asEmailNotificationRule());
-            } else if (JSONConstants.NotificationType.SNMP_TRAP.equals(ruleType)) {
-                rules.add(rule.asSnmpTrapNotificationRule());
-            } else if (JSONConstants.NotificationType.HTTP_REQUEST.equals(ruleType)) {
-                rules.add(rule.asHttpNotificationRule());
+    // notificationRules is map of SystemMonitoringNotificationRule OID => NotificationRule instance
+    private static List<NotificationRule> lookupNotificationRules(boolean notificationsDisabled,
+                                                                  EntityMonitoringPropertySetup entityMonitoringPropertySetup,
+                                                                  String componentId,
+                                                                  Map<Long, NotificationRule> notificationRules,
+                                                                  String propertyName)
+    {
+        if (notificationsDisabled || !entityMonitoringPropertySetup.isNotificationEnabled())
+            return Collections.emptyList();
+
+        Set<SystemMonitoringNotificationRule> rules = entityMonitoringPropertySetup.getSsgClusterNotificationSetup().getSystemNotificationRules();
+        List<NotificationRule> notRules = new ArrayList<NotificationRule>();
+        for (SystemMonitoringNotificationRule rule : rules) {
+            NotificationRule notRule = notificationRules.get(rule.getOid());
+            if (notRule != null) {
+                notRules.add(notRule);
             } else {
-                logger.log(Level.WARNING, "Ignoring configured notification rule of unrecognized type: " + ruleType);
+                if (logger.isLoggable(Level.WARNING))
+                    logger.log(Level.WARNING, MessageFormat.format("Trigger on monitorable property {0} on {1} refers to unavailable notification rule with OID {2}", propertyName, componentId, rule.getOid()));
             }
+
         }
+        return notRules;
+    }
+
+    // returns map of SystemMonitoringNotificationRule OID => NotificationRule instance
+    private Map<Long, NotificationRule> convertNotificationRules(boolean notificationsDisabled, Set<SystemMonitoringNotificationRule> systemNotificationRules) {
+        Map<Long, NotificationRule> rules = new HashMap<Long, NotificationRule>();
+        if (!notificationsDisabled)
+            for (SystemMonitoringNotificationRule rule : systemNotificationRules)
+                rules.put(rule.getOid(), rule.asNotificationRule());
         return rules;
+    }
+
+    private boolean areNotificationsGloballyDisabled() {
+        try {
+            Map<String, Object> globalSettings = systemMonitoringSetupSettingsManager.findSetupSettings();
+            return Boolean.valueOf(String.valueOf(globalSettings.get(JSONConstants.SystemMonitoringSetup.DISABLE_ALL_NOTIFICATIONS)));
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Unable to get monitoring settings: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        } catch (InvalidMonitoringSetupSettingException e) {
+            logger.log(Level.WARNING, "Unable to get monitoring settings: " + ExceptionUtils.getMessage(e), e);
+        }
+        return false;
     }
 
     /**

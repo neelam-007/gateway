@@ -5,10 +5,7 @@ import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ems.enterprise.*;
-import com.l7tech.server.ems.gateway.GatewayContext;
-import com.l7tech.server.ems.gateway.GatewayContextFactory;
-import com.l7tech.server.ems.gateway.GatewayRegistrationEvent;
-import com.l7tech.server.ems.gateway.GatewayTrustTokenFactory;
+import com.l7tech.server.ems.gateway.*;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.standardreports.StandardReportManager;
 import com.l7tech.server.ems.ui.EsmSecurityManager;
@@ -434,8 +431,8 @@ public class Configure extends EsmStandardWebPage {
                     SsgNode node = ssgNodeManager.findByGuid(ssgNodeGuid);
                     SsgCluster cluster = node.getSsgCluster();
                     if ( securityManager.hasPermission( new AttemptedReadSpecific( EntityType.ESM_SSG_CLUSTER, cluster.getId() ) ) ) {
-                        GatewayContext gatewayContext = gatewayContextFactory.getGatewayContext(null, node.getIpAddress(), cluster.getAdminPort());
-                        NodeManagementApi nodeManagementApi = gatewayContext.getManagementApi();
+                        ProcessControllerContext pc = gatewayContextFactory.createProcessControllerContext(node);
+                        NodeManagementApi nodeManagementApi = pc.getManagementApi();
 
                         // Start the node
                         nodeManagementApi.startNode("default");
@@ -467,8 +464,8 @@ public class Configure extends EsmStandardWebPage {
                     SsgNode node = ssgNodeManager.findByGuid(ssgNodeGuid);
                     SsgCluster cluster = node.getSsgCluster();
                     if ( securityManager.hasPermission( new AttemptedReadSpecific( EntityType.ESM_SSG_CLUSTER, cluster.getId() ) ) ) {
-                        GatewayContext gatewayContext = gatewayContextFactory.getGatewayContext(null, node.getIpAddress(), cluster.getAdminPort());
-                        NodeManagementApi nodeManagementApi = gatewayContext.getManagementApi();
+                        ProcessControllerContext pc = gatewayContextFactory.createProcessControllerContext(node);
+                        NodeManagementApi nodeManagementApi = pc.getManagementApi();
 
                         // Stop the node
                         nodeManagementApi.stopNode("default", 20000);

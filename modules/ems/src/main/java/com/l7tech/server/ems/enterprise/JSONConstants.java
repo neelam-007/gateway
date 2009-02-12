@@ -221,6 +221,8 @@ public final class JSONConstants {
 
     // Additional properties for SSG Node entities.
     public static final String SELF_HOST_NAME = "selfHostName";
+    public static final String GATEWAY_PORT = "gatewayPort";
+    public static final String PROCESS_CONTROLLER_PORT = "processControllerPort";
 
     // Additional properties for enterprise folder and SSG Cluster entities.
     public static final String ACCESS_STATUS = "accessStatus";

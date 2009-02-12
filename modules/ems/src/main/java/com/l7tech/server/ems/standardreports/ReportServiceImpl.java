@@ -1,33 +1,31 @@
 package com.l7tech.server.ems.standardreports;
 
-import com.l7tech.server.management.api.node.ReportApi;
-import com.l7tech.server.ems.enterprise.SsgClusterManager;
-import com.l7tech.server.ems.enterprise.SsgCluster;
-import com.l7tech.server.ems.gateway.GatewayContextFactory;
-import com.l7tech.server.ems.gateway.GatewayException;
-import com.l7tech.server.ems.gateway.GatewayContext;
-import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.identity.User;
-
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.Collection;
-import java.util.Arrays;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
+import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.server.ems.enterprise.SsgCluster;
+import com.l7tech.server.ems.enterprise.SsgClusterManager;
+import com.l7tech.server.ems.gateway.GatewayContext;
+import com.l7tech.server.ems.gateway.GatewayContextFactory;
+import com.l7tech.server.ems.gateway.GatewayException;
+import com.l7tech.server.management.api.node.ReportApi;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.xml.ws.soap.SOAPFaultException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * ReportService handles report submissions and artifact retrieval. 
@@ -84,7 +82,7 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
         final int port = cluster.getAdminPort();
         final String submissionId;
         try {
-            GatewayContext context = contextFactory.getGatewayContext( user, cluster.getGuid(), host, port );
+            GatewayContext context = contextFactory.createGatewayContext( user, cluster.getGuid(), host, port );
             ReportApi reportApi = context.getReportApi();
             submissionId = reportApi.submitReport( reportSubmission, Arrays.asList( ReportApi.ReportOutputType.PDF, ReportApi.ReportOutputType.HTML ) );
         } catch ( GatewayException ge ) {
@@ -164,7 +162,7 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
                     final String host = report.getSubmissionHost();
                     final int port = cluster.getAdminPort();
                     try {
-                        GatewayContext context = contextFactory.getGatewayContext( null, host, port );
+                        GatewayContext context = contextFactory.createGatewayContext( null, null, host, port );
                         ReportApi reportApi = context.getReportApi();
                         Collection<ReportApi.ReportStatus> statusCollection =
                                 reportApi.getReportStatus( Arrays.asList( report.getSubmissionId() ) );
