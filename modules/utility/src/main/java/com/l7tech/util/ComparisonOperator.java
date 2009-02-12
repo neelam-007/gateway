@@ -12,13 +12,28 @@ import javax.xml.bind.annotation.XmlEnum;
  */
 @XmlEnum(String.class)
 public enum ComparisonOperator {
+    /** Less than. */
     LT("less than", -1, -1),
+
+    /** Less than or equal to. */
     LE("less than or equal to", -1, 0),
+
+    /** Equal to. */
     EQ("equal to", new EqualsStrategy()),
+
+    /** Greater than. */
     GT("greater than", 1, 1),
+
+    /** Greater than or equal to. */
     GE("greater than or equal to", 1, 0),
+
+    /** Is empty. */
     EMPTY("empty", new EmptyStrategy()),
+
+    /** Contains. */
     CONTAINS("contain", new ContainsStrategy()),
+
+    /** Not equal to. */
     NE("not equal to", new NotEqualsStrategy());
 
     private ComparisonOperator(String name, ComparisonStrategy strategy) {
