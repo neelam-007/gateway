@@ -101,7 +101,7 @@ class EmailNotifier extends Notifier<EmailNotificationRule> {
         for (String addr : addresses) {
             ret.addAll(Arrays.asList(InternetAddress.parse(addr)));
         }
-        return (InternetAddress[]) ret.toArray();
+        return ret.toArray(new InternetAddress[ret.size()]);
     }
 
     private static Map<String,String> buildProperties(final EmailNotificationRule rule,
