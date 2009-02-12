@@ -49,6 +49,13 @@ class IntegrityMapping extends AssertionMapping {
         TypedReference xpathTr = new TypedReference(XpathExpression.class, ass.getXpathExpression());
         xpathMapper.freeze(wspWriter, xpathTr, integrity);
         WspUtil.setWspUsageRequired(integrity, "wsp", SoapConstants.WSP_NAMESPACE);
+
+        boolean enabled = ass.isEnabled();
+        if (!enabled) {
+            TypeMapping booleanTm = new BasicTypeMapping(boolean.class, "booleanValue");
+            booleanTm.freeze(wspWriter, new TypedReference(boolean.class, enabled, "Enabled"), integrity);
+        }
+
         return integrity;
     }
 
@@ -75,6 +82,14 @@ class IntegrityMapping extends AssertionMapping {
         if (xpathRef == null || !(xpathRef.target instanceof XpathExpression))
             throw new InvalidPolicyStreamException("Could not recover xpath expression from Integrity/MessageParts");
         ass.setXpathExpression((XpathExpression)xpathRef.target);
+
+        Element enabledElem = DomUtils.findFirstChildElementByName(source, (String) null, "Enabled");
+        if (enabledElem != null) {
+            String boolValue = enabledElem.getAttribute("booleanValue");
+            if (boolValue != null) {
+                ass.setEnabled(Boolean.parseBoolean(boolValue));
+            }
+        }
 
         return tr;
     }
