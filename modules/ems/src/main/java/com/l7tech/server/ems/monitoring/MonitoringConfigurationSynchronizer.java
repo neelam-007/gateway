@@ -208,7 +208,8 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
             String propertyName = setup.getPropertyType();
             MonitorableProperty property = new MonitorableProperty(componentType, propertyName, String.class);
             ComparisonOperator operator = ComparisonOperator.GE;
-            String triggerValue = Long.toString(setup.getTriggerValue());
+            final Long value = setup.getTriggerValue();
+            String triggerValue = value == null ? "" : Long.toString(value);
             long maxSamplingInterval = 5000L; // TODO is this the same value from monitoring.samplingInterval.lowerLimit in emconfig.properties that default to 2 sec?
             PropertyTrigger trigger = new PropertyTrigger(property, componentId, operator, triggerValue, maxSamplingInterval);
             trigger.setNotificationRules(lookupNotificationRules(notificationsDisabled, setup, componentId, notificationRules, propertyName));
