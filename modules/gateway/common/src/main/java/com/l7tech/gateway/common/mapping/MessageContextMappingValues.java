@@ -26,8 +26,8 @@ public class MessageContextMappingValues extends PersistentEntityImp {
 
     // special case mappings
     private Long authUserProviderId;
-    private String authUserId;
-    private String authUserUniqueId; // this is not part of the identity
+    private String authUserId; // this is not part of the identity
+    private String authUserUniqueId;
     private String serviceOperation;
 
     // general purpose mappings
@@ -202,7 +202,7 @@ public class MessageContextMappingValues extends PersistentEntityImp {
         if (mappingKeysOid != values.mappingKeysOid) return false;
         if (serviceOperation != null ? !serviceOperation.equals(values.serviceOperation) : values.serviceOperation != null)
             return false;
-        if (authUserId != null ? !authUserId.equals(values.authUserId) : values.authUserId != null) return false;
+        if (authUserUniqueId != null ? !authUserUniqueId.equals(values.authUserUniqueId) : values.authUserUniqueId != null) return false;
         if (authUserProviderId != null ? !authUserProviderId.equals(values.authUserProviderId) : values.authUserProviderId != null)
             return false;
         if (mapping1_value != null ? !mapping1_value.equals(values.mapping1_value) : values.mapping1_value != null)
@@ -228,7 +228,7 @@ public class MessageContextMappingValues extends PersistentEntityImp {
         StringBuilder sb = new StringBuilder();
         sb.append(mappingKeysOid);
         sb.append(serviceOperation);
-        sb.append(authUserId);
+        sb.append(authUserUniqueId);
         sb.append(authUserProviderId);
         sb.append(mapping1_value);
         sb.append(mapping2_value);
