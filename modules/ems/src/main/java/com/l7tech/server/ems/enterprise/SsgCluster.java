@@ -165,6 +165,8 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
             info.setIpAddress(node.getIpAddress());
             info.setName(node.getName());
             info.setSoftwareVersion(node.getSoftwareVersion());
+            info.setProcessControllerPort(node.getProcessControllerPort());
+            info.setGatewayPort(node.getGatewayPort());
 
             infoSet.add(info);
         }
