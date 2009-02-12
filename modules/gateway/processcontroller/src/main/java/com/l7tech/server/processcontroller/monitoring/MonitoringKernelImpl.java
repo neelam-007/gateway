@@ -43,19 +43,54 @@ public class MonitoringKernelImpl implements MonitoringKernel {
     private volatile Map<MonitorableProperty, PropertyState<?>> currentPropertyStates;
     private volatile Map<MonitorableEvent, EventState> currentEventStates;
     private volatile Map<Long, TriggerState> currentTriggerStates = null;
-    private volatile Map<Long, NotificationState> currentNotificationStates = null;
+    private volatile Map<Long, NotificationState> currentNotificationStates = new ConcurrentHashMap<Long, NotificationState>();
 
     private volatile MonitoringConfiguration currentConfig = null;
 
     // TODO configurable or heuristic size?
     private final BlockingQueue<NotifiableCondition<?>> notificationQueue = new LinkedBlockingQueue<NotifiableCondition<?>>(500);
 
-    private static class TriggerState {
-        private final Trigger trigger;
+    private static abstract class TriggerState<T extends Trigger> {
+        private final T trigger;
         private volatile boolean outOfTolerance;
 
-        public TriggerState(Trigger trigger) {
+        private TriggerState(T trigger) {
             this.trigger = trigger;
+        }
+    }
+
+    private static class EventTriggerState extends TriggerState<EventTrigger> {
+        private EventTriggerState(EventTrigger trigger) {
+            super(trigger);
+        }
+    }
+
+    private static class PropertyTriggerState<T extends Serializable & Comparable> extends TriggerState<PropertyTrigger> {
+        private final Comparable comparisonValue;
+
+        private PropertyTriggerState(PropertyTrigger trigger) {
+            super(trigger);
+            final MonitorableProperty prop = BuiltinMonitorables.getBuiltinProperty(trigger.getComponentType(), trigger.getMonitorableId());
+            final String tval = trigger.getTriggerValue();
+            if (prop == null) {
+                comparisonValue = tval;
+            } else {
+                Class<T> clazz = (Class<T>)prop.getValueClass();
+                if (Integer.class.isAssignableFrom(clazz)) {
+                    comparisonValue = Integer.valueOf(tval);
+                } else if (Long.class.isAssignableFrom(clazz)) {
+                    comparisonValue = Long.valueOf(tval);
+                } else if (String.class.isAssignableFrom(clazz)) {
+                    comparisonValue = tval;
+                } else if (Enum.class.isAssignableFrom(clazz)) {
+                    Class<? extends Enum> eclass = (Class<? extends Enum>) clazz;
+                    comparisonValue = Enum.valueOf(eclass, tval);
+                } else {
+                    logger.log(Level.WARNING, "Can't convert " + prop + " value " + tval + "; using String comparison");
+                    comparisonValue = tval;
+                }
+            }
+
         }
     }
 
@@ -136,10 +171,10 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         for (Map.Entry<Long, Trigger> entry : newTriggers.entrySet()) {
             final Long triggerOid = entry.getKey();
             final Trigger<?> trigger = entry.getValue();
-            buildingTstates.put(triggerOid, new TriggerState(trigger)); // TODO inherit anything from predecessor version?
 
             if (trigger instanceof PropertyTrigger) {
                 PropertyTrigger pt = (PropertyTrigger) trigger;
+                buildingTstates.put(triggerOid, new PropertyTriggerState(pt)); // TODO inherit anything from predecessor version?
                 MonitorableProperty mp = pt.getMonitorable();
                 liveProperties.add(mp);
                 PropertyState<?> ps = buildingPstates.get(mp);
@@ -169,6 +204,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 buildingPstates.put(mp, ps);
             } else if (trigger instanceof EventTrigger) {
                 EventTrigger et = (EventTrigger) trigger;
+                buildingTstates.put(triggerOid, new EventTriggerState(et)); // TODO inherit anything from predecessor version?
                 MonitorableEvent me = et.getMonitorable();
                 liveEvents.add(me);
                 EventState es = buildingEstates.get(me);
@@ -324,6 +360,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 final Long oid = entry.getKey();
                 final TriggerState tstate = entry.getValue();
                 if (tstate.trigger instanceof PropertyTrigger) {
+                    final PropertyTriggerState ptstate = (PropertyTriggerState) tstate;
                     final PropertyTrigger ptrigger = (PropertyTrigger) tstate.trigger;
                     final MonitorableProperty property = ptrigger.getMonitorable();
 
@@ -346,7 +383,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
                     // Compare the sampled value
                     final ComparisonOperator op = ptrigger.getOperator();
-                    final Comparable rvalue = ptrigger.getTriggerValue();
+                    final Comparable rvalue = ptstate.comparisonValue;
                     if (op.compare(what, rvalue, false)) {
                         logger.log(Level.INFO, property + " is out of tolerance"); // TODO maybe log the value and test expression here too
                         tstate.outOfTolerance = true;

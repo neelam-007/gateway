@@ -33,7 +33,7 @@ public final class NotifierFactory {
         final Class<? extends Notifier> notifierClass = registry.get(rule.getClass());
         if (notifierClass == null) throw new IllegalArgumentException("Unsupported notification rule type: " + rule.getClass().getSimpleName());
         try {
-            Constructor<? extends Notifier> ctor = notifierClass.getConstructor(Notifier.class);
+            Constructor<? extends Notifier> ctor = notifierClass.getConstructor(rule.getClass());
             //noinspection unchecked
             notifier = ctor.newInstance(rule);
             notifierCache.store(rule, notifier);

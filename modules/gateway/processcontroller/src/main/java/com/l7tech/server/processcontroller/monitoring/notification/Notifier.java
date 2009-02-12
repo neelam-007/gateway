@@ -13,6 +13,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Note that implementations must have a public, one-argument constructor that takes an {@link #<RT>}.
+ * @param <RT> the type of NotificationRule that this Notifier is configured with 
+ */
 public abstract class Notifier<RT extends NotificationRule> implements Closeable {
     protected final RT rule;
 

@@ -34,17 +34,22 @@ class HttpNotifier extends Notifier<HttpNotificationRule> {
     private final List<Header> extraHeaders;
     private final AuthInfo authInfo;
 
-    protected HttpNotifier(HttpNotificationRule rule) {
+    public HttpNotifier(HttpNotificationRule rule) {
         super(rule);
         httpClient = new UrlConnectionHttpClient();
         httpMethod = this.rule.getMethod();
         authInfo = this.rule.getAuthInfo();
         final List<Header> heads = this.rule.getHeaders();
         extraHeaders = heads == null ? new ArrayList<Header>() : heads;
-        try {
-            contentType = ContentTypeHeader.parseValue(this.rule.getContentType());
-        } catch (IOException e) {
-            throw new IllegalArgumentException("HTTP notifier: Bad content type: " + e);
+        if (httpMethod.needsRequestBody()) {
+            try {
+                final String ctval = this.rule.getContentType();
+                contentType = ctval == null ? ContentTypeHeader.XML_DEFAULT : ContentTypeHeader.parseValue(ctval);
+            } catch (IOException e) {
+                throw new IllegalArgumentException("HTTP notifier: Bad content type: " + e);
+            }
+        } else {
+            contentType = null;
         }
     }
 

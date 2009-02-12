@@ -46,7 +46,7 @@ class EmailNotifier extends Notifier<EmailNotificationRule> {
 
     private static final String SOCKET_FACTORY_CLASSNAME = SslClientSocketFactory.class.getName();
 
-    protected EmailNotifier(EmailNotificationRule rule) {
+    public EmailNotifier(EmailNotificationRule rule) {
         super(rule);
         auditor = new LogOnlyAuditor(logger);
 

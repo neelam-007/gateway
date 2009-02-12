@@ -46,7 +46,7 @@ class SnmpNotifier extends Notifier<SnmpTrapNotificationRule> {
     private final int snmpPort;
     private final String text;
 
-    protected SnmpNotifier(SnmpTrapNotificationRule rule) {
+    public SnmpNotifier(SnmpTrapNotificationRule rule) {
         super(rule);
         dispatcher = new MessageDispatcherImpl();
         dispatcher.addMessageProcessingModel(new MPv2c());
