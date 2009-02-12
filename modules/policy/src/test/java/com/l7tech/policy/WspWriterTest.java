@@ -30,13 +30,9 @@ import javax.xml.XMLConstants;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
-import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -49,6 +45,8 @@ public class WspWriterTest extends TestCase {
     public static final String SIMPLE_POLICY = RESOURCE_PATH + "/simple_policy.xml";
     public static final String SCHEMA_PATH = RESOURCE_PATH + "/ws_policy_2002.xsd";
     public static final String UTILITY_SCHEMA = RESOURCE_PATH + "/ws_utility_2002.xsd";
+    public static final String ALL_ENABLED_ASSERTIONS_POLICY = RESOURCE_PATH + "/all_enabled_assertions_policy.xml";
+    public static final String ALL_DISABLED_ASSERTIONS_POLICY = RESOURCE_PATH + "/all_disabled_assertions_policy.xml";
     
     static {
         System.setProperty("com.l7tech.policy.wsp.checkAccessors", "true");
@@ -71,6 +69,76 @@ public class WspWriterTest extends TestCase {
         Assertion policy = null;
         String xml = WspWriter.getPolicyXml(policy);
         log.info("Null policy serialized to this XML:\n---<snip>---\n" + xml + "---<snip>---\n");
+    }
+
+    /**
+     * @return  An one or more assertion that contains all assertions (all are enabled)
+     */
+    private Assertion makeAllEnabledAssertions() {
+        return new OneOrMoreAssertion(Arrays.asList(AllAssertions.SERIALIZABLE_EVERYTHING));
+    }
+
+    /**
+     * @return  An one or more assertion that contains all assertsion (all disabled)
+     */
+    private Assertion makeAllDisabledAssertions() {
+        List<Assertion> allAssertions = new ArrayList<Assertion>();
+        for (Assertion assertion : AllAssertions.SERIALIZABLE_EVERYTHING) {
+            final Assertion copy = (Assertion) assertion.clone();
+            copy.setEnabled(false);
+            allAssertions.add(copy);
+        }
+
+        return new OneOrMoreAssertion(allAssertions);
+    }
+
+    /**
+     * Helper method to write the policy based on the assertion
+     */
+    private String writePolicy(Assertion assertion) throws IOException {
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        WspWriter.writePolicy(assertion, outStream);
+        return fixLines(outStream.toString());
+    }
+
+    /**
+     * Helper method to read the XML file and output as a string
+     */
+    private String readPolicyFile(String file) throws IOException {
+        InputStream inStream = cl.getResourceAsStream(file);
+        byte[] bytes = new byte[65536];
+        int len = inStream.read(bytes);
+        return fixLines(new String(bytes, 0, len));
+    }
+
+    /**
+     * Tests that all disabled assertions are written to XML correctly.
+     *
+     * @throws Exception
+     */
+    public void testWritePolicyForAllDisabledAssertions() throws Exception {
+        Assertion policy = makeAllDisabledAssertions();
+        log.fine("The created policy with all disabled assertions:\n" + policy);
+
+        String policyXml = writePolicy(policy);
+        log.fine("Policy XML output:\n" + policyXml);
+
+        assertEquals(policyXml, readPolicyFile(ALL_DISABLED_ASSERTIONS_POLICY));
+    }
+
+    /**
+     * Tests that all enabled assertions are written to XML correctly.
+     *
+     * @throws Exception
+     */
+    public void testWritePolicyForAllEnabledAssertions() throws Exception {
+        Assertion policy = makeAllEnabledAssertions();
+        log.fine("The created policy with all enabled assertions:\n" + policy);
+
+        String policyXml = writePolicy(policy);
+        log.fine("Policy XML output:\n" + policyXml);
+        
+        assertEquals(policyXml, readPolicyFile(ALL_ENABLED_ASSERTIONS_POLICY));
     }
 
     public void testWritePolicy() throws Exception {

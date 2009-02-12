@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:OneOrMore wsp:Usage="Required">
+        <L7p:HttpBasic/>
+        <L7p:HttpDigest/>
+        <L7p:HttpNegotiate/>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd#UsernameToken</wsse:TokenType>
+            <L7p:Properties/>
+        </wsse:SecurityToken>
+        <L7p:WssDigest/>
+        <wsp:All wsp:Usage="Required">
+            <L7p:FalseAssertion/>
+        </wsp:All>
+        <wsp:ExactlyOne wsp:Usage="Required">
+            <L7p:FalseAssertion/>
+        </wsp:ExactlyOne>
+        <wsp:OneOrMore wsp:Usage="Required">
+            <L7p:FalseAssertion/>
+        </wsp:OneOrMore>
+        <L7p:FalseAssertion/>
+        <L7p:SslAssertion/>
+        <L7p:HttpRoutingAssertion>
+            <L7p:RequestHeaderRules httpPassthroughRuleSet="included">
+                <L7p:Rules httpPassthroughRules="included">
+                    <L7p:item httpPassthroughRule="included">
+                        <L7p:Name stringValue="Cookie"/>
+                    </L7p:item>
+                    <L7p:item httpPassthroughRule="included">
+                        <L7p:Name stringValue="SOAPAction"/>
+                    </L7p:item>
+                </L7p:Rules>
+            </L7p:RequestHeaderRules>
+            <L7p:RequestParamRules httpPassthroughRuleSet="included">
+                <L7p:ForwardAll booleanValue="true"/>
+                <L7p:Rules httpPassthroughRules="included"/>
+            </L7p:RequestParamRules>
+            <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                <L7p:Rules httpPassthroughRules="included">
+                    <L7p:item httpPassthroughRule="included">
+                        <L7p:Name stringValue="Set-Cookie"/>
+                    </L7p:item>
+                </L7p:Rules>
+            </L7p:ResponseHeaderRules>
+        </L7p:HttpRoutingAssertion>
+        <L7p:BridgeRoutingAssertion>
+            <L7p:RequestHeaderRules httpPassthroughRuleSet="included">
+                <L7p:Rules httpPassthroughRules="included">
+                    <L7p:item httpPassthroughRule="included">
+                        <L7p:Name stringValue="Cookie"/>
+                    </L7p:item>
+                    <L7p:item httpPassthroughRule="included">
+                        <L7p:Name stringValue="SOAPAction"/>
+                    </L7p:item>
+                </L7p:Rules>
+            </L7p:RequestHeaderRules>
+            <L7p:RequestParamRules httpPassthroughRuleSet="included">
+                <L7p:ForwardAll booleanValue="true"/>
+                <L7p:Rules httpPassthroughRules="included"/>
+            </L7p:RequestParamRules>
+            <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                <L7p:Rules httpPassthroughRules="included">
+                    <L7p:item httpPassthroughRule="included">
+                        <L7p:Name stringValue="Set-Cookie"/>
+                    </L7p:item>
+                </L7p:Rules>
+            </L7p:ResponseHeaderRules>
+        </L7p:BridgeRoutingAssertion>
+        <L7p:JmsRoutingAssertion/>
+        <L7p:TrueAssertion/>
+        <L7p:MemberOfGroup/>
+        <L7p:SpecificUser/>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wsse:TokenType>
+            <L7p:Properties/>
+        </wsse:SecurityToken>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct</wsse:TokenType>
+            <L7p:Properties/>
+        </wsse:SecurityToken>
+        <wsse:Integrity wsp:Usage="wsp:Required" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:MessageParts
+                Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">/soapenv:Envelope/soapenv:Body</wsse:MessageParts>
+        </wsse:Integrity>
+        <L7p:RequestWssConfidentiality/>
+        <L7p:ResponseWssIntegrity/>
+        <L7p:ResponseWssConfidentiality/>
+        <wsp:MessagePredicate
+            Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
+            wsp:Usage="wsp:Required" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">/soapenv:Envelope</wsp:MessagePredicate>
+        <L7p:ResponseXpathAssertion/>
+        <L7p:RequestWssReplayProtection/>
+        <L7p:RequestSwAAssertion/>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>urn:oasis:names:tc:SAML:1.0:assertion#Assertion</wsse:TokenType>
+            <L7p:SamlParams>
+                <L7p:NameFormats stringArrayValue="included"/>
+                <L7p:SubjectConfirmations stringArrayValue="included"/>
+            </L7p:SamlParams>
+        </wsse:SecurityToken>
+        <L7p:RequestWssTimestamp/>
+        <L7p:ResponseWssTimestamp/>
+        <L7p:AuditAssertion/>
+        <L7p:CustomAssertion>
+            <L7p:base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAANMAAhjYXRlZ29yeXQAKkxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0NhdGVnb3J5O0wAD2N1c3RvbUFzc2VydGlvbnQAMUxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0N1c3RvbUFzc2VydGlvbjtMAA9kZXNjcmlwdGlvblRleHR0ABJMamF2YS9sYW5nL1N0cmluZzt4cgAlY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLkFzc2VydGlvbttfY5k8vaKxAgABWgAHZW5hYmxlZHhwAXBwcA==</L7p:base64SerializedValue>
+        </L7p:CustomAssertion>
+        <L7p:WsTrustCredentialExchange/>
+        <L7p:WsFederationPassiveTokenExchange/>
+        <L7p:WsFederationPassiveTokenRequest/>
+        <L7p:Regex/>
+        <L7p:UnknownAssertion/>
+        <L7p:ThroughputQuota/>
+        <L7p:EmailAlert/>
+        <L7p:CommentAssertion/>
+        <L7p:SqlAttackProtection/>
+        <L7p:OversizedText/>
+        <L7p:RequestSizeLimit/>
+        <L7p:Kerberos/>
+        <L7p:EncryptedUsernameToken/>
+        <L7p:WsiBspAssertion/>
+        <L7p:WsspAssertion/>
+        <L7p:FaultLevel>
+            <L7p:LevelInfo soapFaultLevel="included"/>
+        </L7p:FaultLevel>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>urn:oasis:names:tc:SAML:2.0:assertion#Assertion</wsse:TokenType>
+            <L7p:SamlParams>
+                <L7p:NameFormats stringArrayValue="included"/>
+                <L7p:SubjectConfirmations stringArrayValue="included"/>
+            </L7p:SamlParams>
+        </wsse:SecurityToken>
+        <L7p:SchemaValidation/>
+        <L7p:XslTransformation/>
+        <L7p:TimeRange/>
+        <L7p:RemoteIpAddressRange/>
+        <L7p:AuditDetailAssertion/>
+        <L7p:XpathCredentialSource/>
+        <L7p:SamlBrowserArtifact>
+            <L7p:AuthenticationProperties authenticationInfo="included"/>
+        </L7p:SamlBrowserArtifact>
+        <L7p:HttpFormPost>
+            <L7p:FieldInfos fieldInfoArray="included"/>
+        </L7p:HttpFormPost>
+        <L7p:InverseHttpFormPost>
+            <L7p:FieldNames stringArrayValue="included"/>
+        </L7p:InverseHttpFormPost>
+        <L7p:WSDLOperation/>
+        <L7p:HardcodedResponse/>
+        <L7p:ResponseWssSecurityToken/>
+        <L7p:SetVariable/>
+        <L7p:CookieCredentialSource/>
+        <L7p:HtmlFormDataAssertion>
+            <L7p:FieldSpecs htmlFormFieldSpecArray="included"/>
+        </L7p:HtmlFormDataAssertion>
+        <L7p:CodeInjectionProtectionAssertion>
+            <L7p:Protections codeInjectionProtectionTypeArray="included"/>
+        </L7p:CodeInjectionProtectionAssertion>
+        <L7p:Authentication/>
+        <L7p:WsiSamlAssertion/>
+        <L7p:SamlIssuer/>
+        <L7p:Include/>
+        <L7p:WssVersion/>
+        <L7p:PreemptiveCompression/>
+        <L7p:RemoteDomainIdentityInjection/>
+    </wsp:OneOrMore>
+</wsp:Policy>

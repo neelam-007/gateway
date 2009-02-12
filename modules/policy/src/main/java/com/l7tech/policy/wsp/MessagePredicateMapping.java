@@ -42,6 +42,11 @@ class MessagePredicateMapping extends AssertionMapping {
         }
 
         WspUtil.setWspUsageRequired(messagePredicate, "wsp", WspConstants.WSP_POLICY_NS);
+
+        boolean enabled = xba.isEnabled();
+        if (!enabled)
+            messagePredicate.setAttributeNS(WspConstants.WSP_POLICY_NS, WspConstants.WSP_ATTRIBUTE_ENABLED, "" + enabled);
+
         return messagePredicate;
     }
 
@@ -62,6 +67,11 @@ class MessagePredicateMapping extends AssertionMapping {
             if (prefix != null && prefix.length() > 0 && ass instanceof SimpleXpathAssertion) {
                 SimpleXpathAssertion simpleXpathAssertion = (SimpleXpathAssertion)ass;
                 simpleXpathAssertion.setVariablePrefix(prefix);
+            }
+
+            String boolValue = source.getAttribute(WspConstants.WSP_ATTRIBUTE_ENABLED);
+            if (boolValue != null) {
+                ass.setEnabled(Boolean.parseBoolean(boolValue));
             }
             return new TypedReference(this.getMappedClass(), ass);
         } catch (Exception e) {
