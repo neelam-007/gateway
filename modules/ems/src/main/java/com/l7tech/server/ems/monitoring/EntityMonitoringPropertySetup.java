@@ -1,18 +1,16 @@
 package com.l7tech.server.ems.monitoring;
 
-import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgNode;
+import org.hibernate.annotations.Proxy;
+import org.mortbay.util.ajax.JSON;
 
 import javax.persistence.*;
-
-import org.mortbay.util.ajax.JSON;
-import org.hibernate.annotations.Proxy;
-
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The class stores the property setup settings of an entity such as SSG Cluster or SSG Node.
@@ -130,21 +128,7 @@ public class EntityMonitoringPropertySetup extends PersistentEntityImp implement
 
     @Override
     public void toJSON(JSON.Output output) {
-        Map<String, Object> entityProps = new HashMap<String, Object>();
-        if (entity instanceof SsgCluster) {
-            SsgCluster ssgCluster = (SsgCluster) entity;
-            entityProps.put(JSONConstants.ID, ssgCluster.getGuid());
-            entityProps.put(JSONConstants.TYPE, JSONConstants.EntityType.SSG_CLUSTER);
-            entityProps.put(JSONConstants.NAME, ssgCluster.getName());
-            entityProps.put(JSONConstants.ANCESTORS, ssgCluster.ancestors());
-        } else if (entity instanceof SsgNode) {
-            SsgNode ssgNode = (SsgNode) entity;
-            entityProps.put(JSONConstants.ID, ssgNode.getGuid());
-            entityProps.put(JSONConstants.TYPE, JSONConstants.EntityType.SSG_NODE);
-            entityProps.put(JSONConstants.NAME, ssgNode.getName());
-            entityProps.put(JSONConstants.ANCESTORS, ssgNode.ancestors());
-        }
-        output.add(JSONConstants.ENTITY_PROPS_SETUP.ENTITY, entityProps);
+        output.add(JSONConstants.ENTITY_PROPS_SETUP.ENTITY, getEntityProps());
         output.add(JSONConstants.ENTITY_PROPS_SETUP.PROP_TYPE, propertyType);
         output.add(JSONConstants.ENTITY_PROPS_SETUP.MONITORING_ENABLED, monitoringEnabled);
         output.add(JSONConstants.ENTITY_PROPS_SETUP.TRIGGER_ENABLED, triggerEnabled);
@@ -152,6 +136,35 @@ public class EntityMonitoringPropertySetup extends PersistentEntityImp implement
         output.add(JSONConstants.ENTITY_PROPS_SETUP.UNIT, unit);
         output.add(JSONConstants.ENTITY_PROPS_SETUP.NOTIFICATION_ENABLED, notificationEnabled);
         output.add(JSONConstants.ENTITY_PROPS_SETUP.NOTIFICATION_RULES, ssgClusterNotificationSetup.getSystemNotificationRules());
+    }
+
+    @Transient
+    public boolean isSsgNode() {
+        return entity instanceof SsgNode;
+    }
+
+    @Transient
+    public boolean isSsgCluster() {
+        return entity instanceof SsgCluster;
+    }
+
+    @Transient
+    private HashMap<String, Object> getEntityProps() {
+        HashMap<String, Object> entityProps = new HashMap<String, Object>();
+        if (isSsgCluster()) {
+            SsgCluster ssgCluster = (SsgCluster) entity;
+            entityProps.put(JSONConstants.ID, ssgCluster.getGuid());
+            entityProps.put(JSONConstants.TYPE, JSONConstants.EntityType.SSG_CLUSTER);
+            entityProps.put(JSONConstants.NAME, ssgCluster.getName());
+            entityProps.put(JSONConstants.ANCESTORS, ssgCluster.ancestors());
+        } else if (isSsgNode()) {
+            SsgNode ssgNode = (SsgNode) entity;
+            entityProps.put(JSONConstants.ID, ssgNode.getGuid());
+            entityProps.put(JSONConstants.TYPE, JSONConstants.EntityType.SSG_NODE);
+            entityProps.put(JSONConstants.NAME, ssgNode.getName());
+            entityProps.put(JSONConstants.ANCESTORS, ssgNode.ancestors());
+        }
+        return entityProps;
     }
 
     @Override
