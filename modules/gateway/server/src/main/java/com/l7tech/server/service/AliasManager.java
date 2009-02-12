@@ -20,7 +20,7 @@ import java.util.Collection;
  * @author darmstrong
  */
 public interface AliasManager<AT extends Alias<ET>, ET extends PersistentEntity, HT extends OrganizationHeader>
-        extends FolderedEntityManager<AT, HT>
+        extends FolderedEntityManager<AT, AliasHeader<ET>>
 {
 
     /**

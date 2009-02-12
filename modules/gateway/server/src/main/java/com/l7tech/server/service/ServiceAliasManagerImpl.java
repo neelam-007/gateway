@@ -3,6 +3,7 @@ package com.l7tech.server.service;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.objectmodel.AliasHeader;
 
 /**
  * @author darmstrong
@@ -11,19 +12,32 @@ public class ServiceAliasManagerImpl
     extends AliasManagerImpl<PublishedServiceAlias, PublishedService, ServiceHeader>
     implements ServiceAliasManager
 {
-    public Class getImpClass() {
+    //- PUBLIC
+
+    @Override
+    public Class<PublishedServiceAlias> getImpClass() {
         return PublishedServiceAlias.class;
     }
 
-    public Class getInterfaceClass() {
+    @Override
+    public Class<PublishedServiceAlias> getInterfaceClass() {
         return PublishedServiceAlias.class;
     }
 
+    @Override
     public String getTableName() {
         return "published_service_alias";
     }
 
-    public ServiceHeader getNewEntityHeader(ServiceHeader sh) {
+    @Override
+    public ServiceHeader getNewEntityHeader( final ServiceHeader sh ) {
         return new ServiceHeader(sh);
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected AliasHeader<PublishedService> newHeader( final PublishedServiceAlias entity ) {
+        return new AliasHeader<PublishedService>(entity);
     }
 }

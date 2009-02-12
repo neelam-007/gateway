@@ -1,12 +1,14 @@
 package com.l7tech.gateway.common.service;
 
 import com.l7tech.objectmodel.Alias;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 import com.l7tech.objectmodel.folder.Folder;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * @author darmstrong
@@ -20,6 +22,12 @@ public class PublishedServiceAlias extends Alias<PublishedService> {
         super(pService, folder);
     }
 
+    @XmlTransient
+    @Override
+    public EntityType getEntityType() {
+        return EntityType.SERVICE;
+    }
+
     @Override
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.SERVICE_ALIAS)
     public long getEntityOid() {
@@ -28,6 +36,7 @@ public class PublishedServiceAlias extends Alias<PublishedService> {
 
     // needed here for JAXB serialization
     @Override
+    @Deprecated
     public void setEntityOid(long entityOid) {
         super.setEntityOid(entityOid);
     }

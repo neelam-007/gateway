@@ -1,12 +1,14 @@
 package com.l7tech.policy;
 
 import com.l7tech.objectmodel.Alias;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 import com.l7tech.objectmodel.folder.Folder;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 
 /**
  * @author darmstrong
@@ -20,6 +22,12 @@ public class PolicyAlias extends Alias<Policy> {
         super(policy, folder);
     }
 
+    @XmlTransient
+    @Override
+    public EntityType getEntityType() {
+        return EntityType.POLICY;
+    }
+
     @Override
     @Migration(mapName = NONE, mapValue = NONE, resolver = PropertyResolver.Type.POLICY_ALIAS)
     public long getEntityOid() {
@@ -28,6 +36,7 @@ public class PolicyAlias extends Alias<Policy> {
 
     // needed here for JAXB serialization
     @Override
+    @Deprecated
     public void setEntityOid(long entityOid) {
         super.setEntityOid(entityOid);
     }

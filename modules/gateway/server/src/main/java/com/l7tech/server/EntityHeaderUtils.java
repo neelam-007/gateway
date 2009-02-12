@@ -56,6 +56,7 @@ public final class EntityHeaderUtils {
     /**
      * Creates an EntityHeader from the provided Entity.  
      */
+    @SuppressWarnings({"unchecked"})
     public static EntityHeader fromEntity(Entity e) {
         if (e instanceof Policy) {
             return new PolicyHeader((Policy)e);
@@ -80,7 +81,9 @@ public final class EntityHeaderUtils {
         } else if (e instanceof Group) {
             Group group = (Group)e;
             return new IdentityHeader(group.getProviderId(), group.getId(), GROUP, group.getName(), null, group.getName(), null);
-        }  else if (e instanceof PersistentEntity) {
+        } else if (e instanceof Alias) {
+            return new AliasHeader( (Alias) e );
+        } else if (e instanceof PersistentEntity) {
             PersistentEntity entity = (PersistentEntity) e;
             return new EntityHeader(entity.getOid(),
                                     EntityTypeRegistry.getEntityType(entity.getClass()),
@@ -104,22 +107,44 @@ public final class EntityHeaderUtils {
     }
 
     public static ExternalEntityHeader toExternal(final EntityHeader header) {
+        ExternalEntityHeader externalEntityHeader;
+
         if (header instanceof ExternalEntityHeader) {
-            return (ExternalEntityHeader) header;
+            externalEntityHeader = (ExternalEntityHeader) header;
         } else if (header instanceof OrganizationHeader && ((OrganizationHeader)header).isAlias()) {
             OrganizationHeader oh = ((OrganizationHeader)header);
-            return new ExternalEntityHeader(oh.getAliasOid().toString(), // use the alias OID as the external ID
+            externalEntityHeader = new ExternalEntityHeader(oh.getAliasOid().toString(), // use the alias OID as the external ID
                 EntityType.valueOf(header.getType().name() + "_ALIAS"),
                 oh.getStrId(), oh.getName() + " Alias", oh.getDescription(), oh.getVersion());
         } else if (header instanceof PolicyHeader) {
-            return new ExternalEntityHeader(((PolicyHeader)header).getGuid(), header);
+            PolicyHeader policyHeader = (PolicyHeader) header;
+            externalEntityHeader = new ExternalEntityHeader(policyHeader.getGuid(), header);
+            externalEntityHeader.addProperty("SOAP", Boolean.toString(policyHeader.isSoap()));
+        } else if (header instanceof ServiceHeader) {
+            ServiceHeader serviceHeader = (ServiceHeader) header;
+            externalEntityHeader = new ExternalEntityHeader(serviceHeader.getStrId(), header);
+            externalEntityHeader.addProperty("Policy Version", Integer.toString(serviceHeader.getVersion()));
+            externalEntityHeader.addProperty("Display Name", serviceHeader.getDisplayName());
+            externalEntityHeader.addProperty("SOAP", Boolean.toString(serviceHeader.isSoap()));
+            externalEntityHeader.addProperty("Enabled", Boolean.toString(!serviceHeader.isDisabled()));
         } else if (header instanceof IdentityHeader) {
-            return new ExternalEntityHeader(((IdentityHeader)header).getProviderOid() + ":" + header.getStrId(), header);
+            externalEntityHeader = new ExternalEntityHeader(((IdentityHeader)header).getProviderOid() + ":" + header.getStrId(), header);
         } else if (header instanceof SsgKeyHeader) {
-            return new ExternalEntityHeader(((SsgKeyHeader)header).getKeystoreId() + ":" + ((SsgKeyHeader)header).getAlias(), header);
+            externalEntityHeader = new ExternalEntityHeader(((SsgKeyHeader)header).getKeystoreId() + ":" + ((SsgKeyHeader)header).getAlias(), header);
+        } else if (header instanceof AliasHeader) {
+            AliasHeader aliasHeader = (AliasHeader) header;
+            externalEntityHeader = new ExternalEntityHeader( aliasHeader.getStrId(), aliasHeader );
+            if ( aliasHeader.getAliasedEntityType() == EntityType.POLICY ) {
+                externalEntityHeader.addProperty("Alias Of Internal", Long.toString(aliasHeader.getAliasedEntityId()));
+            } else {
+                externalEntityHeader.addProperty("Alias Of", Long.toString(aliasHeader.getAliasedEntityId()));
+            }
+            externalEntityHeader.addProperty("Alias Type", aliasHeader.getAliasedEntityType().toString());
         } else {
-            return new ExternalEntityHeader(header.getStrId(), header);
+            externalEntityHeader = new ExternalEntityHeader(header.getStrId(), header);
         }
+
+        return externalEntityHeader;
     }
 
     public static EntityHeader fromExternal(ExternalEntityHeader eh) {

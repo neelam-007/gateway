@@ -21,7 +21,7 @@ import java.util.*;
  * @author darmstrong
  */
 public abstract class AliasManagerImpl<AT extends Alias<ET>, ET extends PersistentEntity, HT extends OrganizationHeader>
-    extends FolderSupportHibernateEntityManager<AT, HT>
+    extends FolderSupportHibernateEntityManager<AT, AliasHeader<ET>>
     implements AliasManager<AT, ET, HT>
 {
 

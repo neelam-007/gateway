@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.Alias;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.OrganizationHeader;
 import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.AliasHeader;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.EntityManagerStub;
 
@@ -14,7 +15,7 @@ import java.util.*;
 
 /** @author alex */
 public abstract class AliasManagerStub<AT extends Alias<ET>, ET extends PersistentEntity, HT extends OrganizationHeader>
-    extends EntityManagerStub<AT, HT>
+    extends EntityManagerStub<AT, AliasHeader<ET>>
     implements AliasManager<AT, ET, HT>
 {
     protected AliasManagerStub(AT... entitiesIn) {

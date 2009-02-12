@@ -225,7 +225,12 @@
 
             function onItemHighlighted(ssgCluster, previous, entity, callbackId) {
                 if (callbackId == 'srcSSGClusterContentSelector') {
-                    wicketAjaxGet(srcItemSelectionCallbackUrl + '&clusterId=' + escape(srcSSGClusterContentSelectorWindow.getSsgCluster().id) + '&type=' + escape(entity.type) + '&id=' + escape(entity.id) , function() { }, function() { });
+                    var targetParam = "";
+                    var targetCluster = destSSGClusterContentSelectorWindow.getSsgCluster();
+                    if ( targetCluster ) {
+                        targetParam = '&targetClusterId=' + escape(targetCluster.id);
+                    }
+                    wicketAjaxGet(srcItemSelectionCallbackUrl + '&clusterId=' + escape(srcSSGClusterContentSelectorWindow.getSsgCluster().id) + targetParam + '&type=' + escape(entity.type) + '&id=' + escape(entity.id) , function() { }, function() { });
                 } else if (callbackId == 'destSSGClusterContentSelector') {
                     wicketAjaxGet(destItemSelectionCallbackUrl + '&clusterId=' + escape(destSSGClusterContentSelectorWindow.getSsgCluster().id) + '&type=' + escape(entity.type) + '&id=' + escape(entity.id) , function() { }, function() { });
                 }
@@ -921,7 +926,18 @@
                 <td class="srcDestBottom" style="padding-top: 0;">
                     <div id="srcItemDiv" style="border: 1px solid #606060; overflow: scroll; height: 150px" class="dataIFrame">
                         <div id="srcItemDetailsDiv">
-                            <h4>This feature is not available in this version.</h4>
+                            <table class="dataTable" wicket:id="srcItemDetails" width="100%">
+                                <thead>
+                                    <tr>
+                                        <th width="15%">Property</th>
+                                        <th width="85%">Value</th>
+                                    </tr>
+                                </thead>
+                                <tr wicket:id="itemDetailsRepeater">
+                                    <th><div style="text-align: left;" wicket:id="name"/></th>
+                                    <td><div wicket:id="value"/></td>
+                                </tr>
+                            </table>
                         </div>
                         <div id="srcItemDependenciesDiv">
                             <table class="dataTable" wicket:id="srcItemDependencies" width="100%">
@@ -949,7 +965,18 @@
                 <td class="srcDestBottom" style="padding-top: 0;">
                     <div id="destItemDiv" style="border: 1px solid #606060; overflow: scroll; height: 150px" class="dataIFrame">
                         <div id="destItemDetailsDiv">
-                            <h4>This feature is not available in this version.</h4>
+                            <table class="dataTable" wicket:id="destItemDetails" width="100%">
+                                <thead>
+                                    <tr>
+                                        <th width="15%">Property</th>
+                                        <th width="85%">Value</th>
+                                    </tr>
+                                </thead>
+                                <tr wicket:id="itemDetailsRepeater">
+                                    <th><div style="text-align: left;" wicket:id="name"/></th>
+                                    <td><div wicket:id="value"/></td>
+                                </tr>
+                            </table>
                         </div>
                         <div id="destItemDependenciesDiv">
                             <table class="dataTable" wicket:id="destItemDependencies" width="100%">
@@ -1044,6 +1071,11 @@
                         <tr>
                             <td valign="top">
                                <div wicket:id="dependenciesTable"/>
+
+                                <form wicket:id="dependencyControlsForm">
+                                    <button type="submit" wicket:id="dependencyLoadButton">Load Previous Mappings</button>
+                                    <button type="submit" wicket:id="dependencyClearButton">Remove Mapping</button>
+                                </form>
                             </td>
                             <td></td>
                             <td valign="top">
@@ -1061,7 +1093,7 @@
 
                                         <br/>
 
-                                        <div style="border: 1px solid black; height: 165px; width: 400px; overflow: scroll">
+                                        <div style="border: 1px solid black; height: 200px; width: 400px; overflow: scroll">
                                             <table class="dataTable" wicket:id="dependencyOptions" width="100%">
                                                 <thead>
                                                     <tr>
@@ -1079,9 +1111,6 @@
                                                 </tbody>
                                             </table>
                                         </div>
-
-                                        <br/>
-                                        <button type="submit" wicket:id="dependencyClearButton">Clear Selection</button>
                                     </div>
                                 </form>
                             </td>

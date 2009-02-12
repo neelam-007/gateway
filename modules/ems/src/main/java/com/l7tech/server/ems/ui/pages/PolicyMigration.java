@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.MigrationDependency;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.*;
@@ -77,23 +78,80 @@ public class PolicyMigration extends EsmStandardWebPage {
 
         final WebMarkupContainer srcItemDependencies = new WebMarkupContainer("srcItemDependencies");
         add( srcItemDependencies.setOutputMarkupId(true) );
-        showDependencies( srcItemDependencies, Collections.<DependencyItem>emptyList() );
-        srcItemDependencies.add( buildDependencyDisplayBehaviour(srcItemDependencies, "srcItemSelectionCallbackUrl" ) );
+        final WebMarkupContainer srcItemDetails = new WebMarkupContainer("srcItemDetails");
+        add( srcItemDetails.setOutputMarkupId(true) );
+
+        showDependencies( srcItemDependencies, Collections.<DependencyItem>emptyList(), srcItemDetails, null );
+        srcItemDependencies.add( buildDependencyDisplayBehaviour(srcItemDependencies, srcItemDetails, "srcItemSelectionCallbackUrl", mappingModel) );
 
         final WebMarkupContainer destItemDependencies = new WebMarkupContainer("destItemDependencies");
         add( destItemDependencies.setOutputMarkupId(true) );
-        showDependencies( destItemDependencies, Collections.<DependencyItem>emptyList() );
-        destItemDependencies.add( buildDependencyDisplayBehaviour(destItemDependencies, "destItemSelectionCallbackUrl" ) );
+        final WebMarkupContainer destItemDetails = new WebMarkupContainer("destItemDetails");
+        add( destItemDetails.setOutputMarkupId(true) );
+        showDependencies( destItemDependencies, Collections.<DependencyItem>emptyList(), destItemDetails, null );
+        destItemDependencies.add( buildDependencyDisplayBehaviour(destItemDependencies, destItemDetails, "destItemSelectionCallbackUrl", null ) );
 
         final DepenencySummaryModel dependencySummaryModel = new DepenencySummaryModel();
         final CandidateModel candidateModel = new CandidateModel();
         final SearchModel searchModel = new SearchModel();
 
+        final YuiAjaxButton dependencyLoadButton = new YuiAjaxButton("dependencyLoadButton") {
+            @Override
+            protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
+                final String sourceClusterId = lastSourceClusterId;
+                final String targetClusterId = lastTargetClusterId;
+                final Collection<DependencyItem> items =  lastDependencyItems;
+
+                try {
+                    final int before = countUnMappedDependencies( mappingModel, sourceClusterId, targetClusterId, items  );
+                    loadMappings( mappingModel, sourceClusterId, targetClusterId, items );
+                    final int after = countUnMappedDependencies( mappingModel, sourceClusterId, targetClusterId, items  );
+                    if ( before != after ) {
+                        updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
+                        addDependencyOptions( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel, true );
+
+                        YuiDialog resultDialog = new YuiDialog("dialog", "Loaded Previous Mappings", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), "Loaded " +(before-after)+ " previous mappings."), null);
+                        dialogContainer.replace( resultDialog );
+                        ajaxRequestTarget.addComponent( dialogContainer );
+                        ajaxRequestTarget.addComponent( dependenciesContainer );
+                    } else {
+                        YuiDialog resultDialog = new YuiDialog("dialog", "Previous Mappings Not Loaded", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), "No previous mappings were found."), null);
+                        dialogContainer.replace( resultDialog );
+                        ajaxRequestTarget.addComponent( dialogContainer );
+                    }
+                } catch ( FindException fe ) {
+                    logger.log( Level.WARNING, "Unexpected error when loading previous mappings.", fe );
+                    String failureMessage = ExceptionUtils.getMessage(fe);
+                    YuiDialog resultDialog = new YuiDialog("dialog", "Error Loading Previous Mappings", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                    dialogContainer.replace( resultDialog );
+                    ajaxRequestTarget.addComponent( dialogContainer );
+                } catch ( GatewayException ge ) {
+                    String failureMessage = ExceptionUtils.getMessage(ge);
+                    YuiDialog resultDialog = new YuiDialog("dialog", "Error Loading Previous Mappings", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                    dialogContainer.replace( resultDialog );
+                    ajaxRequestTarget.addComponent( dialogContainer );
+                } catch ( SOAPFaultException e ) {
+                    String failureMessage;
+                    if ( GatewayContext.isNetworkException( e ) ) {
+                        failureMessage = "Could not connect to cluster.";
+                    } else if ( GatewayContext.isConfigurationException( e ) ) {
+                        failureMessage = "Could not connect to cluster.";
+                    } else {
+                        failureMessage = "Unexpected error from cluster.";
+                        logger.log( Level.WARNING, "Error processing selection.", e);
+                    }
+                    YuiDialog resultDialog = new YuiDialog("dialog", "Error Loading Previous Mappings", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                    dialogContainer.replace( resultDialog );
+                    ajaxRequestTarget.addComponent( dialogContainer );
+                }
+            }
+        };
+
         final YuiAjaxButton clearDependencyButton = new YuiAjaxButton("dependencyClearButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
                 final Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(lastSourceKey, lastTargetClusterId);
-                mappingModel.dependencyMap.put( mappingKey, null ); // put null so we don't reload the mapping from history
+                mappingModel.dependencyMap.remove( mappingKey ); 
                 updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
                 setEnabled(false);
                 for ( String id : DEPENDENCY_REFRESH_COMPONENTS ) ajaxRequestTarget.addComponent( dependenciesContainer.get(id) );
@@ -101,6 +159,10 @@ public class PolicyMigration extends EsmStandardWebPage {
                 ajaxRequestTarget.addComponent( dependenciesOptionsContainer );
             }
         };
+
+        Form dependencyControlsForm = new Form("dependencyControlsForm");
+        dependencyControlsForm.add( dependencyLoadButton.setOutputMarkupId(true).setEnabled(false) );
+        dependencyControlsForm.add( clearDependencyButton.setOutputMarkupId(true).setEnabled(false) );
 
         Form selectionJsonForm = new Form("selectionForm");
         final HiddenField hiddenSelectionForm = new HiddenField("selectionJson", new Model(""));
@@ -128,15 +190,14 @@ public class PolicyMigration extends EsmStandardWebPage {
                     dir.fromJSON(jsonMap);
                     lastSourceClusterId = dir.clusterId;
 
-                    final String sourceClusterId = dir.clusterId;
                     final String targetClusterId = lastTargetClusterId;
-                    final Collection<DependencyItem> deps = retrieveDependencies(dir);
+                    final Collection<DependencyItem> deps = retrieveDependencies(dir, null, null);
 
                     lastDependencyItems = deps;
                     lastSourceKey = null;
                     candidateModel.reset();                    
+                    dependencyLoadButton.setEnabled(true);
 
-                    loadMappings( mappingModel, sourceClusterId, targetClusterId, deps );
                     updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
                     addDependencyOptions( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel, true );
                     target.addComponent( dependenciesContainer );
@@ -221,7 +282,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                             final boolean overwrite = Boolean.valueOf(overwriteDependencies);
 
                             // load mappings for top-level items that have been previously migrated
-                            loadMappingsForMigration( mappingModel, dir.clusterId, targetClusterId, buildDependencyItems(dir) );
+                            loadMappingHistory( mappingModel, dir.clusterId, targetClusterId, buildDependencyItems(dir) );
                             TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model(performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, dir, mappingModel, true )));
                             YuiDialog dialog = new YuiDialog("dialog", "Confirm Migration", YuiDialog.Style.OK_CANCEL, textPanel, new YuiDialog.OkCancelCallback(){
                                 @Override
@@ -326,6 +387,8 @@ public class PolicyMigration extends EsmStandardWebPage {
         dependenciesContainer.add( new Label("dependenciesTotalLabel", new PropertyModel(dependencySummaryModel, "totalDependencies")).setOutputMarkupId(true) );
         dependenciesContainer.add( new Label("dependenciesUnmappedLabel", new PropertyModel(dependencySummaryModel, "unmappedDependencies")).setOutputMarkupId(true) );
         dependenciesContainer.add( new Label("dependenciesRequiredUnmappedLabel", new PropertyModel(dependencySummaryModel, "requiredUnmappedDependencies")).setOutputMarkupId(true) );
+        dependenciesContainer.add( dependencyControlsForm.setOutputMarkupId(true) );
+
         updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
 
         dependenciesContainer.add( dependencyCandidateContainer.setOutputMarkupId(true) );
@@ -351,7 +414,6 @@ public class PolicyMigration extends EsmStandardWebPage {
                 ajaxRequestTarget.addComponent( dependenciesOptionsContainer );
             }
         });
-        dependenciesOptionsContainer.add( clearDependencyButton.setOutputMarkupId(true) );
         dependencyCandidateContainer.add( new Label("dependencyCandidateName", new PropertyModel(candidateModel, "name")) );
         dependencyCandidateContainer.add( new Label("dependencyCandidateType", new PropertyModel(candidateModel, "type")) );
 
@@ -364,9 +426,9 @@ public class PolicyMigration extends EsmStandardWebPage {
 
     private static final Logger logger = Logger.getLogger( PolicyMigration.class.getName() );
 
-    private static final String[] DEPENDENCY_REFRESH_COMPONENTS = { "dependenciesTable", "dependenciesTotalLabel", "dependenciesUnmappedLabel", "dependenciesRequiredUnmappedLabel" };
+    private static final String[] EXTRA_PROPERTIES = new String[]{ "Policy Version", "SOAP", "Enabled" };
+    private static final String[] DEPENDENCY_REFRESH_COMPONENTS = { "dependenciesTable", "dependenciesTotalLabel", "dependenciesUnmappedLabel", "dependenciesRequiredUnmappedLabel", "dependencyControlsForm" };
     private static final String[] SEARCH_REFRESH_COMPONENTS = { "dependencySearchManner", "dependencySearchText", "dependencySearchButton" };
-    private static final String[] SELECTION_REFRESH_COMPONENTS = { "dependencyClearButton" };
 
     @SpringBean
     private SsgClusterManager ssgClusterManager;
@@ -389,7 +451,9 @@ public class PolicyMigration extends EsmStandardWebPage {
     private Collection<DependencyItem> lastDependencyItems = Collections.emptyList();
 
     private AbstractDefaultAjaxBehavior buildDependencyDisplayBehaviour( final WebMarkupContainer itemDependenciesContainer,
-                                                                         final String jsVar ) {
+                                                                         final WebMarkupContainer itemDetailsContainer,
+                                                                         final String jsVar,
+                                                                         final EntityMappingModel mappingModel ) {
         return new AbstractDefaultAjaxBehavior(){
             @Override
             public void renderHead( final IHeaderResponse iHeaderResponse ) {
@@ -399,25 +463,51 @@ public class PolicyMigration extends EsmStandardWebPage {
 
             @Override
             protected void respond( final AjaxRequestTarget ajaxRequestTarget ) {
-                WebRequest request = (WebRequest) RequestCycle.get().getRequest();
-                String clusterId = request.getParameter("clusterId");
-                String type = request.getParameter("type");
-                String id = request.getParameter("id");
+                final WebRequest request = (WebRequest) RequestCycle.get().getRequest();
+                final String clusterId = request.getParameter("clusterId");
+                final String targetClusterId = request.getParameter("targetClusterId");
+                final String type = request.getParameter("type");
+                final String id = request.getParameter("id");
+
                 logger.fine( "Processing request for cluster " + clusterId + " type " + type + " id " + id );
                 DependencyItemsRequest dir = new DependencyItemsRequest();
                 dir.clusterId = clusterId;
                 dir.entities = new DependencyItem[]{ new DependencyItem() };
                 dir.entities[0].type = type;
                 dir.entities[0].id = id;
+                DependencyItem detailItem = null;
                 List<DependencyItem> options = Collections.emptyList();
                 try {
-                    options = new ArrayList<DependencyItem>(retrieveDependencies( dir ));
+                    options = new ArrayList<DependencyItem>(retrieveDependencies( dir, mappingModel, targetClusterId ));
                     for ( Iterator<DependencyItem> itemIter = options.iterator(); itemIter.hasNext();  ) {
                         DependencyItem item = itemIter.next();
                         if ( item.hidden || com.l7tech.objectmodel.EntityType.FOLDER.toString().equals(item.type) ) {
                             itemIter.remove();
                         }
                     }
+
+                    // discard the dependencies that no longer exist on the target cluster
+                    SsgCluster cluster = ssgClusterManager.findByGuid( dir.clusterId );
+                    GatewayClusterClient targetContext = gatewayClusterClientManager.getGatewayClusterClient(cluster, getUser());
+                    MigrationApi targetMigrationApi = targetContext.getUncachedMigrationApi();
+                    Collection<ExternalEntityHeader> headers = targetMigrationApi.checkHeaders( Collections.singleton( dir.entities[0].asEntityHeader() ) );
+                    if ( headers != null && !headers.isEmpty() ) {
+                        ExternalEntityHeader header = headers.iterator().next();
+                        if ( header.getProperty("Alias Of") != null || header.getProperty("Alias Of Internal") != null ) {
+                            // resolve alias
+                            ExternalEntityHeader aliasTargetHeader =
+                                    new ExternalEntityHeader( header.getProperty("Alias Of"),
+                                                              EntityType.valueOf(header.getProperty("Alias Type")),  
+                                                              header.getProperty("Alias Of Internal"), null, null, -1 );
+                            headers = targetMigrationApi.checkHeaders( Collections.singleton( aliasTargetHeader ) );
+                            if ( headers != null && !headers.isEmpty() ) {
+                                detailItem = new DependencyItem( headers.iterator().next(), false );
+                            }
+                        } else {
+                            detailItem = new DependencyItem( header, false );
+                        }
+                    }
+
                 } catch ( MigrationApi.MigrationException me ) {
                     logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(me)+"'." );
                 } catch ( SOAPFaultException sfe ) {
@@ -429,9 +519,11 @@ public class PolicyMigration extends EsmStandardWebPage {
                 } catch ( FindException fe ) {
                     logger.log( Level.WARNING, "Error processing selection.", fe );
                 }
-                
-                showDependencies( itemDependenciesContainer, options );
+
+                Collections.sort(options);
+                showDependencies( itemDependenciesContainer, options, itemDetailsContainer, detailItem );
                 ajaxRequestTarget.addComponent( itemDependenciesContainer );
+                ajaxRequestTarget.addComponent( itemDetailsContainer );
             }
         };
     }
@@ -446,7 +538,39 @@ public class PolicyMigration extends EsmStandardWebPage {
         return visibleDeps;
     }
 
-    private void showDependencies( final WebMarkupContainer container, final List<DependencyItem> options ) {
+    private List<Pair<String,String>> nvp( final DependencyItem item ) {
+        List<Pair<String,String>> properties = new ArrayList<Pair<String,String>>();
+
+        if ( item != null ) {
+            Map<String,String> extraProps = Collections.emptyMap(); 
+            if ( item.entityHeader != null && item.entityHeader.getExtraProperties() != null ) {
+                extraProps = item.entityHeader.getExtraProperties();
+            }
+
+            if ( extraProps.containsKey("Display Name") ) {
+                properties.add( new Pair<String,String>( "Name", extraProps.get("Display Name") ) );
+            } else {
+                properties.add( new Pair<String,String>( "Name", item.name == null ? "" : item.name ) );
+            }
+            properties.add( new Pair<String,String>( "Type", item.getType() ) );
+            properties.add( new Pair<String,String>( "Version", item.getVersionAsString() ) );
+
+
+            for ( String extraProperty : EXTRA_PROPERTIES ) {
+                if ( extraProps.containsKey(extraProperty) ) {
+                    properties.add( new Pair<String,String>( extraProperty, extraProps.get(extraProperty) ) );
+                }
+            }
+        }
+
+        return properties;
+    }
+
+    private void showDependencies( final WebMarkupContainer container,
+                                   final List<DependencyItem> options,
+                                   final WebMarkupContainer detailsContainer,
+                                   final DependencyItem detailsItem ) {
+        // dependencies
         ListView listView = new ListView("optionRepeater", visible(options)) {
             @Override
             protected void populateItem( final ListItem item ) {
@@ -463,6 +587,24 @@ public class PolicyMigration extends EsmStandardWebPage {
         } else {
             container.replace( listView.setOutputMarkupId(true) );
         }
+
+        // details
+        ListView detailsListView = new ListView("itemDetailsRepeater", nvp(detailsItem)) {
+            @SuppressWarnings({"unchecked"})
+            @Override
+            protected void populateItem( final ListItem item ) {
+                final Pair<String,String> nvp = (Pair<String,String>)item.getModelObject();
+                item.add(new Label("name", nvp.left));
+                item.add(new Label("value", nvp.right));
+            }
+        };
+
+        if ( detailsContainer.get( "itemDetailsRepeater" ) == null ) {
+            detailsContainer.add( detailsListView.setOutputMarkupId(true) );
+        } else {
+            detailsContainer.replace( detailsListView.setOutputMarkupId(true) );
+        }
+
     }
 
     private static String fromEntityType( final com.l7tech.objectmodel.EntityType entityType ) {
@@ -528,10 +670,16 @@ public class PolicyMigration extends EsmStandardWebPage {
             Pair<DependencyItem, Boolean> mappedItem = mappingModel.dependencyMap.get( mappingKey );
             if ( mappedItem != null && mappedItem.left != null) {
                 item.destName = mappedItem.left.name;
+                if ( !item.isOptional() ) {
+                    item.resolved = true;
+                }
                 dependencySummaryModel.incrementTotalDependencies();
             } else {
                 item.destName = "-";
-                if ( item.optional ) {
+                if ( !item.isOptional() ) {
+                    item.resolved = false;
+                }
+                if ( item.isOptional() ) {
                     dependencySummaryModel.incrementUnmappedDependencies();
                 } else {
                     dependencySummaryModel.incrementRequiredUnmappedDependencies();
@@ -544,7 +692,6 @@ public class PolicyMigration extends EsmStandardWebPage {
             new PropertyColumn(new Model(""), "uid"),
             new TypedPropertyColumn(new Model(""), "optional", "optional", String.class, false),
             new PropertyColumn(new Model("Name"), "name", "name"),
-            new TypedPropertyColumn(new Model("Ver."), "version", "version", Integer.class, true),
             new PropertyColumn(new Model("Type"), "type", "type"),
             new PropertyColumn(new Model("Dest. Name"), "destName", "destName")
         );
@@ -565,16 +712,20 @@ public class PolicyMigration extends EsmStandardWebPage {
                         }
                     }
 
+                    Component selectionComponent = ((Form)dependenciesContainer.get("dependencyControlsForm")).get("dependencyClearButton");
                     if ( selectedItem != null ) {
                         lastSourceKey = new DependencyKey( sourceClusterId, selectedItem.asEntityHeader() );
                         candidateModel.setName( selectedItem.name );
                         candidateModel.setType( selectedItem.getType() );                        
+                        selectionComponent.setEnabled( mappingModel.dependencyMap.containsKey(new Pair<DependencyKey,String>(lastSourceKey,lastTargetClusterId)) );
                     } else {
                         lastSourceKey = null;
                         candidateModel.reset();
+                        selectionComponent.setEnabled(false);
                     }
 
                     addDependencyOptions( dependenciesContainer, optionRefreshComponents, candidateModel, searchModel, mappingModel, dependencySummaryModel, true );
+                    ajaxRequestTarget.addComponent( selectionComponent );
                     for ( Component component : optionRefreshComponents ) ajaxRequestTarget.addComponent( component );
                 }
             }
@@ -627,12 +778,6 @@ public class PolicyMigration extends EsmStandardWebPage {
             }
         }
 
-        boolean selectedItem = mappingModel.dependencyMap.get( mappingKey ) != null;
-        for ( String id : SELECTION_REFRESH_COMPONENTS ) {
-            Component component = optionRefreshComponents[1].get(id);
-            component.setEnabled( selectedItem );
-        }
-
         markupContainer.add(new ListView("optionRepeater", options) {
             @Override
             protected void populateItem( final ListItem item ) {
@@ -645,11 +790,6 @@ public class PolicyMigration extends EsmStandardWebPage {
                         mappingModel.dependencyMap.put( mappingKey, new Pair<DependencyItem, Boolean>(dependencyItem,false) );
                         updateDependencies( dependenciesContainer, optionRefreshComponents, candidateModel, searchModel, mappingModel, dependencySummaryModel );
 
-                        for ( String id : SELECTION_REFRESH_COMPONENTS ) {
-                            Component component = optionRefreshComponents[1].get(id);
-                            component.setEnabled( true );
-                        }
-                        
                         for ( String id : DEPENDENCY_REFRESH_COMPONENTS ) ajaxRequestTarget.addComponent( dependenciesContainer.get(id) );
                         for ( Component component : optionRefreshComponents ) ajaxRequestTarget.addComponent( component );
                     }
@@ -667,7 +807,9 @@ public class PolicyMigration extends EsmStandardWebPage {
         });
     }
 
-    private Collection<DependencyItem> retrieveDependencies( final DependencyItemsRequest request ) throws FindException, GatewayException, MigrationApi.MigrationException {
+    private Collection<DependencyItem> retrieveDependencies( final DependencyItemsRequest request,
+                                                             final EntityMappingModel mappingModel,
+                                                             final String targetClusterId ) throws FindException, GatewayException, MigrationApi.MigrationException {
         Collection<DependencyItem> deps = new LinkedHashSet<DependencyItem>();
 
         SsgCluster cluster = ssgClusterManager.findByGuid(request.clusterId);
@@ -677,7 +819,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                 MigrationApi api = context.getUncachedMigrationApi();
                 MigrationMetadata metadata = api.findDependencies( request.asEntityHeaders() );
                 for (ExternalEntityHeader header : metadata.getMappableDependencies()) {
-                    deps.add( new DependencyItem( header, !metadata.isMappingRequired(header) ) );
+                    deps.add( new DependencyItem( header, metadata.isMappingRequired(header) ? isResolved( mappingModel, header, request.clusterId, targetClusterId ) : null ) );
                 }
 
                 for (ExternalEntityHeader header : metadata.getHeaders() ) {
@@ -690,7 +832,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                         }
                     }
 
-                    if ( !alreadyPresent ) deps.add( new DependencyItem( header, true, true ) );
+                    if ( !alreadyPresent ) deps.add( new DependencyItem( header, null, true ) );
                 }
             }
         }
@@ -714,7 +856,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                         EntityHeaderSet<ExternalEntityHeader> entitySet = (EntityHeaderSet<ExternalEntityHeader>) candidates.get(entityHeader);
                         if ( entitySet != null ) {
                             for ( ExternalEntityHeader header : entitySet ) {
-                                deps.add( new DependencyItem( header, true) );
+                                deps.add( new DependencyItem( header, null) );
                             }
                         } else {
                             logger.fine("No entities found when searching for candidates of ID '"+sourceKey.id+"', type '"+sourceKey.type+"'.");
@@ -743,24 +885,41 @@ public class PolicyMigration extends EsmStandardWebPage {
         Collection<DependencyItem> items = new ArrayList<DependencyItem>();
 
         for ( ExternalEntityHeader entityHeader : dependencyItemsRequest.asEntityHeaders() ) {
-            items.add( new DependencyItem( entityHeader, true ) );
+            items.add( new DependencyItem( entityHeader, null ) );
         }
 
         return items;
     }
 
-    private void loadMappingsForMigration( final EntityMappingModel mappingModel,
+    /**
+     * Load any history for the current mappings.
+     *
+     * <p>This will populate any available metadata, such as whether the mapping is for the "same" entity
+     * on the source and destination (i.e. it is a copy) and what the expected version number is on the
+     * destination cluster.</p>
+     */
+    private void loadMappingHistory( final EntityMappingModel mappingModel,
                                            final String sourceClusterId,
                                            final String targetClusterId,
                                            final Collection<DependencyItem> dependencyItems ) throws MigrationFailedException {
         try {
-            loadMappings( mappingModel, sourceClusterId, targetClusterId, dependencyItems );
+            // load mappings saved in EM db
+            for ( DependencyItem item : dependencyItems ) {
+                DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
+                Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
+
+                Pair<DependencyItem,Boolean> mapValue = mappingModel.dependencyMap.get(mapKey);
+                if ( mapValue != null ) {
+                    MigrationMappingRecord mapping = migrationMappingRecordManager.findByMapping( sourceClusterId, item.asEntityHeader(), targetClusterId );
+                    if ( mapping != null && mapping.getTarget() != null && mapping.getTarget().getEntityId().equals(mapValue.left.id) ) {
+                        mappingModel.dependencyMap.put( mapKey, new Pair<DependencyItem, Boolean>(
+                            new DependencyItem(MigrationMappedEntity.asEntityHeader(mapping.getTarget()), null), mapping.isSameEntity() ));
+                    }
+                }
+            }
         } catch ( FindException fe ) {
             logger.log( Level.WARNING, "Error while loading mappings for migration.", fe );
             throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(fe)+"'.");
-        } catch ( GatewayException e ) {
-            logger.log( Level.INFO, "Error while loading mappings for migration '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
-            throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(e)+"'.");
         } 
     }
 
@@ -777,7 +936,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     MigrationMappingRecord mapping = migrationMappingRecordManager.findByMapping( sourceClusterId, item.asEntityHeader(), targetClusterId );
                     if ( mapping != null && mapping.getTarget() != null ) {
                         mappingModel.dependencyMap.put( mapKey, new Pair<DependencyItem, Boolean>(
-                            new DependencyItem(MigrationMappedEntity.asEntityHeader(mapping.getTarget()), true), mapping.isSameEntity() ));
+                            new DependencyItem(MigrationMappedEntity.asEntityHeader(mapping.getTarget()), null), mapping.isSameEntity() ));
                     }
                 }
             }
@@ -807,6 +966,30 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
     }
 
+    /**
+     * Count the number of unmapped dependencies in the mapping model for the given source/target cluster 
+     */
+    private int countUnMappedDependencies( final EntityMappingModel mappingModel,
+                                           final String sourceClusterId,
+                                           final String targetClusterId,
+                                           final Collection<DependencyItem> items ) {
+        int count = 0;
+
+        if ( sourceClusterId != null && targetClusterId != null ) {
+            for ( DependencyItem item : items ) {
+                if ( item.hidden ) continue;
+
+                DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
+                Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
+                if ( !mappingModel.dependencyMap.containsKey(mapKey) ) {
+                    count++;
+                }
+            }
+        }
+
+        return count;
+    }
+
     private String validateDependencies( final String sourceClusterId,
                                          final String targetClusterId,
                                          final DependencyItemsRequest requestedItems,
@@ -817,13 +1000,12 @@ public class PolicyMigration extends EsmStandardWebPage {
             SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterId);
             if ( sourceCluster != null && targetCluster != null) {
                 if ( sourceCluster.getTrustStatus() && targetCluster.getTrustStatus() ) {
-                    Collection<DependencyItem> items = retrieveDependencies( requestedItems );
-                    loadMappings( mappingModel, requestedItems.clusterId, targetClusterId, items );
+                    Collection<DependencyItem> items = retrieveDependencies( requestedItems, null, null );
                     StringBuilder builder = new StringBuilder();
                     for ( DependencyItem item : items ) {
                         DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
                         Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
-                        if ( !item.optional && mappingModel.dependencyMap.get(mapKey) == null ) {
+                        if ( !item.isOptional() && mappingModel.dependencyMap.get(mapKey) == null ) {
                             ExternalEntityHeader ih = item.asEntityHeader();
                             builder.append(ih.getType().getName()).append(", ").append(ih.getName())
                                 .append("(#").append(ih.getExternalId()).append(")\n");
@@ -958,7 +1140,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         for ( DependencyItem item : dependencies ) {
             DependencyKey sourceKey = new DependencyKey( request.clusterId, item.asEntityHeader() );
             Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
-            if ( !item.optional && mappings.dependencyMap.get(mapKey)==null ) {
+            if ( !item.isOptional() && !mappings.dependencyMap.containsKey(mapKey) ) {
                 count++;
             }
         }
@@ -1093,11 +1275,16 @@ public class PolicyMigration extends EsmStandardWebPage {
         return count;
     }
 
-    private static String toImgIcon( final boolean optional ) {
+    private static String toImgIcon( final Boolean resolved ) {
         String icon = "";
 
-        if ( !optional ) {
-            icon = "<img src=/images/unresolved.png />"; //TODO JSON quote escaping
+        if ( resolved != null ) {
+            if ( resolved ) {
+                icon = "<img src=/images/resolved.png />"; //TODO JSON quote escaping
+            } else {
+                icon = "<img src=/images/unresolved.png />"; //TODO JSON quote escaping
+            }
+
         }
 
         return icon;
@@ -1107,6 +1294,24 @@ public class PolicyMigration extends EsmStandardWebPage {
         return  type == com.l7tech.objectmodel.EntityType.POLICY ||
                 type == com.l7tech.objectmodel.EntityType.USER ||
                 type == com.l7tech.objectmodel.EntityType.GROUP;
+    }
+
+    public Boolean isResolved( final EntityMappingModel mappingModel,
+                               final ExternalEntityHeader externalEntityHeader,
+                               final String sourceClusterId,
+                               final String targetClusterId ) {
+        boolean resolved = false;
+
+        if ( mappingModel != null && targetClusterId != null && sourceClusterId != null) {
+            DependencyKey sourceKey = new DependencyKey( sourceClusterId, externalEntityHeader );
+            Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
+            Pair<DependencyItem,Boolean> mappingValue = mappingModel.dependencyMap.get( mappingKey );
+            if ( mappingValue != null && mappingValue.left != null ) {
+                resolved = true;
+            }
+        }
+
+        return resolved;
     }
 
     private static class DependencyItemsRequest implements JSON.Convertible, Serializable {
@@ -1145,7 +1350,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             for ( DependencyItem entity : entities ) {
                 com.l7tech.objectmodel.EntityType type = JSONConstants.EntityType.ENTITY_TYPE_MAP.get( entity.type );
                 if ( type != null ) {
-                    headers.add( new ExternalEntityHeader( entity.id, type, null, entity.name, null, entity.getVersion()) );
+                    headers.add( entity.asEntityHeader() );
                 } else {
                     logger.warning("Entity with unknown type '"+entity.type+"' requested.");
                 }
@@ -1203,13 +1408,13 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
     }
 
-    private static final class DependencyItem implements JSON.Convertible, Serializable {
+    private static final class DependencyItem implements Comparable, JSON.Convertible, Serializable {
         private ExternalEntityHeader entityHeader;
         private String uid; // id and type
         private String id;
         private String type;
         private String name;
-        private boolean optional;
+        private Boolean resolved;
         private boolean hidden;
         private Integer version;
         @SuppressWarnings({"UnusedDeclaration"})
@@ -1219,21 +1424,29 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
 
         public DependencyItem( final ExternalEntityHeader entityHeader,
-                               final boolean optional ) {
-            this( entityHeader, optional, false );
+                               final Boolean resolved ) {
+            this( entityHeader, resolved, false );
         }
 
         public DependencyItem( final ExternalEntityHeader entityHeader,
-                               final boolean optional,
+                               final Boolean resolved,
                                final boolean hidden ) {
             this.entityHeader = entityHeader;
             this.uid = entityHeader.getType().toString() +":" + entityHeader.getExternalId();
             this.id = entityHeader.getExternalId();
             this.type = entityHeader.getType().toString();
             this.name = entityHeader.getName();
-            this.optional = optional;
+            this.resolved = resolved;
             this.hidden = hidden;
             this.version = entityHeader.getVersion();
+        }
+
+        public boolean isOptional() {
+            return resolved == null;
+        }
+
+        public boolean isResolved() {
+            return resolved == null || resolved;
         }
 
         public String getType() {
@@ -1241,7 +1454,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
 
         public String getOptional() {
-            return toImgIcon(optional);
+            return toImgIcon(resolved);
         }
 
         @Override
@@ -1260,6 +1473,17 @@ public class PolicyMigration extends EsmStandardWebPage {
             type = (String)data.get("type");
             name = (String)data.get("name");
             version = Integer.parseInt((String)data.get("version"));
+        }
+
+        @Override
+        public int compareTo(Object o) {
+            DependencyItem otherItem = (DependencyItem) o;
+            int compared = name.toLowerCase().compareTo( otherItem.name.toLowerCase() );
+            if ( compared == 0 ) {
+                compared = getType().compareTo( otherItem.getType() );
+            }
+
+            return compared;
         }
 
         @SuppressWarnings({"RedundantIfStatement"})
@@ -1295,7 +1519,12 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
 
         public ExternalEntityHeader asEntityHeader() {
-            return entityHeader;
+            if ( entityHeader != null ) {
+                return entityHeader;
+            } else {
+                EntityType entityType = JSONConstants.EntityType.ENTITY_TYPE_MAP.get( type );
+                return new ExternalEntityHeader( id, entityType, null, name, null, getVersion() );
+            }
         }
 
         public Integer getVersion() {

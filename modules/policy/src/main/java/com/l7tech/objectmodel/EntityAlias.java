@@ -12,9 +12,17 @@ import com.l7tech.objectmodel.folder.HasFolder;
  * @author darmstrong
  */
 public interface EntityAlias extends HasFolder {
+
+    /**
+     * Get the type for the entity that is the target of the alias.
+     *
+     * @return The entity type.
+     */
+    EntityType getEntityType();
+
     /*
     * entityOid is the entity oid of the real entity an instance of this interface
     * is aliasing
     * */
-    public long getEntityOid();
+    long getEntityOid();
 }

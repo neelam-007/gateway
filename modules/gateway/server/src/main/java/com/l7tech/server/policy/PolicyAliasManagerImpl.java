@@ -4,6 +4,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyAlias;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.server.service.AliasManagerImpl;
+import com.l7tech.objectmodel.AliasHeader;
 
 /**
  * @author darmstrong
@@ -11,20 +12,34 @@ import com.l7tech.server.service.AliasManagerImpl;
 public class PolicyAliasManagerImpl extends AliasManagerImpl<PolicyAlias, Policy, PolicyHeader>
         implements PolicyAliasManager
 {
-    public Class getImpClass() {
+    //- PUBLIC
+
+    @Override
+    public Class<PolicyAlias> getImpClass() {
         return PolicyAlias.class;
     }
 
-    public Class getInterfaceClass() {
+    @Override
+    public Class<PolicyAlias> getInterfaceClass() {
         return PolicyAlias.class;
     }
 
+    @Override
     public String getTableName() {
         return "policy_alias";
     }
 
+    @Override
     public PolicyHeader getNewEntityHeader(PolicyHeader ph) {
         return new PolicyHeader(ph);
     }
+
+    //- PROTECTED
+
+    @Override
+    protected AliasHeader<Policy> newHeader( final PolicyAlias entity ) {
+        return new AliasHeader<Policy>(entity);
+    }
+
 }
 

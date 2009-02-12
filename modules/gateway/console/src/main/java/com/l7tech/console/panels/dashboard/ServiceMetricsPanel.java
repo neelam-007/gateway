@@ -161,7 +161,7 @@ public class ServiceMetricsPanel extends JPanel {
 
     /** Combobox item to represent all published services selected. */
     private static final ServiceHeader ALL_SERVICES = new ServiceHeader(false, false,
-            _resources.getString("publishedServiceCombo.allValue"), null, null, null, -1L, null, -1);
+            _resources.getString("publishedServiceCombo.allValue"), null, null, null, -1L, null, -1, -1);
 
     private final DefaultComboBoxModel _publishedServicesComboModel =
             new DefaultComboBoxModel() {
