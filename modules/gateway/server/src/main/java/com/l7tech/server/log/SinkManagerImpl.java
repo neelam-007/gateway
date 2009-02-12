@@ -10,6 +10,7 @@ import com.l7tech.server.event.system.SyslogEvent;
 import com.l7tech.server.log.syslog.SyslogConnectionListener;
 import com.l7tech.server.log.syslog.SyslogManager;
 import com.l7tech.server.log.syslog.SyslogProtocol;
+import com.l7tech.server.log.syslog.TestingSyslogManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
@@ -120,7 +121,10 @@ public class SinkManagerImpl
     }
 
     /**
-     * Test the given sinkConfiguration (useful for syslog)
+     * Test the given sinkConfiguration (useful for syslog).
+     *
+     * 5.0 introduced the abililty to configure multiple failover hosts for syslog.  The test functionality has been
+     * updated to send a test message to each syslog server in the SinkConfiguration.
      *
      * @param sinkConfiguration The configuration to test.
      * @param testMessage The message to send.
@@ -128,32 +132,49 @@ public class SinkManagerImpl
      */
     @Override
     public boolean test(final SinkConfiguration sinkConfiguration, final String testMessage) {
-        boolean success = false;
+        boolean success = true;
 
+        // what about testing file logging
         if ( sinkConfiguration != null ) {
-            MessageSinkSupport sink = buildSinkForConfiguration( sinkConfiguration );
-            if ( sink != null ) {
-                try {
-                    for ( MessageCategory category : MessageCategory.values() ) {
-                        if ( sink.isCategoryEnabled(category) ) {
-                            LogRecord testRecord = new LogRecord( Level.INFO,
-                                    testMessage==null ? "Test message." : testMessage );
 
-                            // up level if required for message to be sent
-                            Level testLevel = Level.parse(sinkConfiguration.getSeverity().toString());
-                            if ( testLevel.intValue() > Level.INFO.intValue() ) {
-                                testRecord.setLevel(testLevel);
-                            }
+            List<Closeable> resources = new ArrayList<Closeable>(10);
+            TestingSyslogManager testManager = new TestingSyslogManager();
+            resources.add(testManager);
 
-                            sink.message(category, testRecord);
+            try {
+                MessageSinkSupport sink = new SyslogMessageSink( serverConfig, sinkConfiguration, testManager, true );
 
-                            break;
+                for ( MessageCategory category : MessageCategory.values() ) {
+                    if ( sink.isCategoryEnabled(category) ) {
+                        LogRecord testRecord = new LogRecord( Level.INFO, testMessage==null ? "Test message." : testMessage );
+
+                        // up level if required for message to be sent
+                        Level testLevel = Level.parse(sinkConfiguration.getSeverity().toString());
+                        if ( testLevel.intValue() > Level.INFO.intValue() ) {
+                            testRecord.setLevel(testLevel);
                         }
+
+                        sink.message(category, testRecord);
+                        resources.add(sink);
+
+                        // test each host in the list
+                        for (int i=1; i<sinkConfiguration.syslogHostList().size(); i++) {
+                            testManager.setTestingHost(i);
+                            sink = new SyslogMessageSink( serverConfig, sinkConfiguration, testManager, true );
+                            sink.message(category, testRecord);
+                            resources.add(sink);
+                        }
+
+                        break;
                     }
-                } finally {
-                    // we don't know how long it will take to send a message so leave open for 60 secs
-                    delayedClose(sink, 60000);
                 }
+            } catch (MessageSinkSupport.ConfigurationException cex) {
+                // should send feedback to UI
+                success = false;
+
+            } finally {
+                // we don't know how long it will take to send a message so leave open for 60 secs
+                delayedClose(resources.toArray(new Closeable[resources.size()]), 60000L);
             }
         }
 
@@ -395,7 +416,7 @@ public class SinkManagerImpl
                     if ( logger.isLoggable(Level.CONFIG) )
                         logger.log(Level.CONFIG, "Ignoring invalid log sink configuration ''{0}''.", sinkConfiguration.getName());
                 } else {
-                    MessageSinkSupport sink = buildSinkForConfiguration( sinkConfiguration );
+                    MessageSinkSupport sink = buildSinkForConfiguration( sinkConfiguration, false );
 
                     if ( sink != null ) {
                         if ( logger.isLoggable(Level.CONFIG) )
@@ -633,7 +654,7 @@ public class SinkManagerImpl
     /**
      * Build a MessageSink for the given configuration
      */
-    private MessageSinkSupport buildSinkForConfiguration( final SinkConfiguration configuration ) {
+    private MessageSinkSupport buildSinkForConfiguration( final SinkConfiguration configuration, boolean isTest ) {
         MessageSinkSupport sink = null;
         SinkConfiguration.SinkType type = configuration.getType();
 
@@ -711,17 +732,22 @@ public class SinkManagerImpl
     }
 
     /**
-     * Close the given sink after a timeout.
+     * Close the list of resources after a given timeout period.
      *
      * This method should not be used often.
+     *
+     * @param closeList list of Closeable resources
+     * @param time the amount of time (millis) to wait before closing the resources
      */
-    private void delayedClose( final MessageSink sink, final long time ) {
+    private void delayedClose( final Closeable[] closeList, final long time ) {
         Thread cleanup = new Thread( new Runnable(){
             @Override
             public void run() {
                 try {
                     Thread.sleep(time);
-                    ResourceUtils.closeQuietly( sink );
+                    for (Closeable tobeClosed : closeList)
+                        ResourceUtils.closeQuietly( tobeClosed );
+
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 }

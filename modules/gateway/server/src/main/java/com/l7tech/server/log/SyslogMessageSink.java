@@ -44,9 +44,17 @@ class SyslogMessageSink extends MessageSinkSupport {
     SyslogMessageSink( final ServerConfig serverConfig,
                        final SinkConfiguration configuration,
                        final SyslogManager manager) throws ConfigurationException {
+        this( serverConfig, configuration, manager, false );
+    }
+
+    SyslogMessageSink( final ServerConfig serverConfig,
+                       final SinkConfiguration configuration,
+                       final SyslogManager manager,
+                       final boolean isTest) throws ConfigurationException {
         super( configuration );
         this.syslog = buildSyslog( configuration, manager, serverConfig.getHostname() );
         this.process = "SSG";
+        this.isTest = isTest;
     }
 
     @Override
@@ -64,7 +72,7 @@ class SyslogMessageSink extends MessageSinkSupport {
 
     private final Syslog syslog;
     private final String process;
-    private Integer currentSyslogIndex;
+    private final boolean isTest;
 
     /**
      * Map the log record level to a Syslog severity.
@@ -113,14 +121,6 @@ class SyslogMessageSink extends MessageSinkSupport {
         return format;
     }
 
-    private int getCurrentSyslogIndex() {
-
-        if (this.currentSyslogIndex == null)
-            currentSyslogIndex = 0;
-
-        return currentSyslogIndex;
-    }
-
     /**
      * Construct the primary syslog for this message sink.
      */
@@ -129,7 +129,7 @@ class SyslogMessageSink extends MessageSinkSupport {
                                 final String host) throws ConfigurationException
     {
         // the syslog hostlist must be > 0
-        return buildSelectedSyslog(configuration, manager, host, getCurrentSyslogIndex());
+        return buildSelectedSyslog(configuration, manager, host);
     }
 
     /**
@@ -138,8 +138,7 @@ class SyslogMessageSink extends MessageSinkSupport {
      */
     private Syslog buildSelectedSyslog( final SinkConfiguration configuration,
                                 final SyslogManager manager,
-                                final String host,
-                                final int hostIndex) throws ConfigurationException
+                                final String host) throws ConfigurationException
     {
         SyslogProtocol protocol;
         String configProtocol = configuration.getProperty(SinkConfiguration.PROP_SYSLOG_PROTOCOL);
