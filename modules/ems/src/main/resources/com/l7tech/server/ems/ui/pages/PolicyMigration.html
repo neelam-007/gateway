@@ -135,7 +135,7 @@
              */
             function validateIdentifyDependenciesInputs() {
                 return srcSSGClusterContentSelectorWindow.getSsgCluster() != null &&
-                       srcSSGClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxSelected().length > 0 &&
+                       srcSSGClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxChecked().length > 0 &&
                        destSSGClusterContentSelectorWindow.getSsgCluster() != null &&
                        srcSSGClusterContentSelectorWindow.getSsgCluster().id != destSSGClusterContentSelectorWindow.getSsgCluster().id;
             }
@@ -281,7 +281,7 @@
              */
             function getSelectedSrcItems() {
                 var result = [];
-                var entities = srcSSGClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxSelected(
+                var entities = srcSSGClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxChecked(
                     [
                         l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE,
                         l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS,

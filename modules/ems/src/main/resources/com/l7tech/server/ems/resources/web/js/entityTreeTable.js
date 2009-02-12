@@ -1063,9 +1063,9 @@ if (!l7.EntityTreeTable) {
             /**
              * @public
              * @param {array} types     array of entity types (l7.Constants.ENTITY_TYPE values) to filter; null for no filter
-             * @return {array} array of entity object literals whose checkbox is selected; may be empty but never null
+             * @return {array} array of entity object literals whose checkbox is checked; may be empty but never null
              */
-            this.getEntitiesWithTristateCheckboxSelected = function(types) {
+            this.getEntitiesWithTristateCheckboxChecked = function(types) {
                 var result = [];
                 for (var i in this._entities) {
                     var entity = this._entities[i];
@@ -1083,11 +1083,28 @@ if (!l7.EntityTreeTable) {
             /**
              * @public
              * @param {string} entityId     entity ID
-             * @return {boolean} true if selected
+             * @return {boolean} true if checked
              */
-            this.isEntityCheckboxSelected = function(entityId) {
+            this.isEntityTristateCheckboxChecked = function(entityId) {
                 var entity = this._entitiesById[entityId];
                 return entity && entity._tristateCheckbox && entity._tristateCheckbox.checked;
+            }
+
+            /**
+             * This is an no-op if the check box is already in the specified state.
+             * This will trigger any onclick handlers.
+             * @public
+             * @param {string} entityId     entity ID
+             * @param {boolean} checked     true for checked state; false for unchecked state
+             * @return {boolean} false if no entity with that ID
+             */
+            this.setEntityTristateCheckboxState = function(entityId, checked) {
+                var entity = this._entitiesById[entityId];
+                if (!entity) return false;
+                if (entity._tristateCheckbox && entity._tristateCheckbox.checked != checked) {
+                    entity._tristateCheckbox.click();
+                }
+                return true;
             }
 
             /**
@@ -1112,6 +1129,23 @@ if (!l7.EntityTreeTable) {
             this.isEntityRadioButtonSelected = function(entityId) {
                 var entity = this._entitiesById[entityId];
                 return entity && entity._radioButton && entity._radioButton.checked;
+            }
+
+            /**
+             * This is an no-op if the radio button is already in the specified state.
+             * This will trigger any onclick handlers.
+             * @public
+             * @param {string} entityId     entity ID
+             * @param {boolean} selected    true for selected state; false for unselected state
+             * @return {boolean} false if no entity with that ID
+             */
+            this.setEntityRadioButtonState = function(entityId, selected) {
+                var entity = this._entitiesById[entityId];
+                if (!entity) return false;
+                if (entity._radioButton && entity._radioButton.checked != checked) {
+                    entity._radioButton.click();
+                }
+                return true;
             }
 
             /**

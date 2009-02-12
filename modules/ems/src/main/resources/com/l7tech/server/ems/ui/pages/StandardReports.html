@@ -1250,7 +1250,7 @@
 
         function onClickAddEntity() {
             var ssgCluster = ssgClusterContentSelectorWindow.getSsgCluster();
-            var entities = ssgClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxSelected();
+            var entities = ssgClusterContentSelectorWindow.getEntityTreeTable().getEntitiesWithTristateCheckboxChecked();
             var entitySelectionType = getEntitySelectionType();
 
             for (var i = 0; i < entities.length; ++i) {
