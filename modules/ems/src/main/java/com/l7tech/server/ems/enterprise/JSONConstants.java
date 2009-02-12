@@ -96,6 +96,7 @@ public final class JSONConstants {
         public static final String REQUIRES_AUTH = "requiresAuthentication";
         public static final String USERNAME      ="userName";
         public static final String PASSWORD      = "password";
+        public static final String FROM          = "from";
         public static final String TO            = "to";
         public static final String CC            = "cc";
         public static final String BCC           = "bcc";

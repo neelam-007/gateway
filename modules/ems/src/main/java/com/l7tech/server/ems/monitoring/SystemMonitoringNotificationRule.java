@@ -118,7 +118,7 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
         ret.setBcc(toStringList((String)getParamProp(JSONConstants.NotificationEmailParams.BCC)));
         ret.setCc(toStringList((String)getParamProp(JSONConstants.NotificationEmailParams.CC)));
         ret.setCryptoType(obtainCryptoType((String)getParamProp(JSONConstants.NotificationEmailParams.PROTOCOL)));
-        ret.setFrom("postmaster"); // todo: get the real "from" after UI adds "From" field.
+        ret.setFrom((String)getParamProp(JSONConstants.NotificationEmailParams.FROM));
         ret.setPort(Integer.valueOf(getParamProp(JSONConstants.NotificationEmailParams.PORT).toString()));
         ret.setSmtpHost((String)getParamProp(JSONConstants.NotificationEmailParams.HOST));
         ret.setSubject((String)getParamProp(JSONConstants.NotificationEmailParams.SUBJECT));
