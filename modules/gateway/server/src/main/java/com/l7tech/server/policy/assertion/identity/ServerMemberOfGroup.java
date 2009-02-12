@@ -105,11 +105,11 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> 
             }
             auditor.logAndAudit(AssertionMessages.MEMBEROFGROUP_USING_CACHED_FAIL);
             return AssertionStatus.UNAUTHORIZED;
-        } catch (FindException fe) {
-            auditor.logAndAudit(AssertionMessages.MEMBEROFGROUP_GROUP_NOT_EXIST);
-            return AssertionStatus.UNAUTHORIZED;
         } catch (ObjectNotFoundException e) {
             auditor.logAndAudit(AssertionMessages.IDENTITY_PROVIDER_NOT_EXIST);
+            return AssertionStatus.UNAUTHORIZED;
+        } catch (FindException fe) {
+            auditor.logAndAudit(AssertionMessages.MEMBEROFGROUP_GROUP_NOT_EXIST);
             return AssertionStatus.UNAUTHORIZED;
         }
     }

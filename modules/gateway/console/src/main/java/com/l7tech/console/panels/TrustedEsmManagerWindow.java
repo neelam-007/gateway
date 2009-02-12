@@ -13,6 +13,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import static com.l7tech.util.Functions.propertyTransform;
@@ -127,11 +128,19 @@ public class TrustedEsmManagerWindow extends JDialog {
                     public void reportResult(int option) {
                         if (option != JOptionPane.OK_OPTION)
                             return;
+
+                        boolean reloadUserMappingDisplay = false;
                         try {
                             Registry.getDefault().getClusterStatusAdmin().deleteTrustedEsmUserMapping(user.getTrustedEsmUser().getOid());
-                            loadUsersTable(esm.getOid());
+                            reloadUserMappingDisplay = true;
+                        } catch (ObjectNotFoundException e) {
+                            reloadUserMappingDisplay = true;
                         } catch (ObjectModelException e) {
                             showError("Unable to delete ESM user mapping", e);
+                        }
+
+                        if ( reloadUserMappingDisplay ) {
+                            loadUsersTable(esm.getOid());
                         }
                     }
                 });

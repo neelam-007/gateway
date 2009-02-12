@@ -251,9 +251,7 @@ public class JmsPropertyMapper {
                 throw new KeyStoreException("Error creating keystore", e);
             } catch (UnrecoverableKeyException e) {
                 throw new KeyStoreException("Error creating keystore", e);
-            } catch (ObjectNotFoundException e) {
-                throw new KeyStoreException("Error creating keystore", e);
-            }
+            } 
 
             keyStoreInfos.put(whichKey, keyStoreInfo);
         }

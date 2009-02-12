@@ -54,12 +54,12 @@ public class ServerAssertionUtils {
             return ku.getSslInfo();
         } catch (IOException e) {
             throw new KeyStoreException("Can't read the keystore for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
+        } catch (ObjectNotFoundException e) {
+            throw new KeyStoreException("Can't find private key for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
         } catch (FindException e) {
             throw new KeyStoreException("Can't read the keystore for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
         } catch (UnrecoverableKeyException e) {
             throw new KeyStoreException("Can't read the keystore for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
-        } catch (ObjectNotFoundException e) {
-            throw new KeyStoreException("Can't find private key for outbound message decoration: " + ExceptionUtils.getMessage(e), e);
         }
     }
 }

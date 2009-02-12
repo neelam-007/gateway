@@ -162,10 +162,10 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             GroupManager groupManager = retrieveGroupManager(ipoid);
             if (groupManager == null) throw new DeleteException("Cannot retrieve the GroupManager");
             groupManager.deleteAll(ipoid);
-        } catch (FindException e) {
-            throw new DeleteException(e.getMessage(), e);
         } catch (ObjectNotFoundException e) {
             throw new DeleteException("This object cannot be found (it no longer exist?).", e);
+        } catch (FindException e) {
+            throw new DeleteException(e.getMessage(), e);
         }
     }
 
@@ -182,10 +182,10 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             GroupManager groupManager = retrieveGroupManager(ipoid);
             if (groupManager == null) throw new DeleteException("Cannot retrieve the GroupManager");
             groupManager.deleteAllVirtual(ipoid);
-        } catch (FindException e) {
-            throw new DeleteException(e.getMessage(), e);
         } catch (ObjectNotFoundException e) {
             throw new DeleteException("This object cannot be found (it no longer exist?).", e);
+        } catch (FindException e) {
+            throw new DeleteException(e.getMessage(), e);
         }
     }
 
@@ -482,8 +482,6 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             // internal users should have their password "revoked" along with their cert
         } catch (FindException e) {
             throw new UpdateException("Error revoking certificates", e);
-        } catch (ObjectNotFoundException onfe) {
-            throw new UpdateException("Error revoking certificates", onfe);
         }
 
         return revocationCount;

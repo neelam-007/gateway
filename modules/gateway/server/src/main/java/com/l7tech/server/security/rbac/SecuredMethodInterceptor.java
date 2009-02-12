@@ -391,10 +391,8 @@ public class SecuredMethodInterceptor implements MethodInterceptor {
         if(check.entity == null){
             if(findException != null){
                 throw findException;
-            } else if (operation != OperationType.DELETE ) {
-                throw new FindException("Entity not found for any declared type");
-            } else {
-                check.setBefore(CheckBefore.NONE);
+            }else{
+                throw new ObjectNotFoundException("Entity not found for any declared type");
             }
         }
         check.setAfter(CheckAfter.NONE);

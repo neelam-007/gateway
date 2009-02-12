@@ -83,13 +83,13 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
         final IdentityProvider provider;
         try {
             provider = getIdentityProvider();
+        } catch (ObjectNotFoundException e) {
+            auditor.logAndAudit(AssertionMessages.IDENTITY_PROVIDER_NOT_EXIST, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
+            return AssertionStatus.AUTH_FAILED;
         } catch (FindException e) {
             auditor.logAndAudit(AssertionMessages.IDENTITY_PROVIDER_NOT_FOUND, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             // fla fix, allow the policy to continue in case the credentials be valid for
             // another id assertion down the road (fix for bug 374)
-            return AssertionStatus.AUTH_FAILED;
-        } catch (ObjectNotFoundException e) {
-            auditor.logAndAudit(AssertionMessages.IDENTITY_PROVIDER_NOT_EXIST, new String[]{ExceptionUtils.getMessage(e)}, ExceptionUtils.getDebugException(e));
             return AssertionStatus.AUTH_FAILED;
         }
 

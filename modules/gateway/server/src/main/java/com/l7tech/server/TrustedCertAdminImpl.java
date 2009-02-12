@@ -251,9 +251,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
         } catch (InterruptedException e) {
             throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
-        } catch (ObjectNotFoundException e) {
-            throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
-        }
+        } 
     }
 
     public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays, boolean makeCaCert) throws FindException, GeneralSecurityException {
@@ -373,9 +371,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             throw new UpdateException("error getting keystore", e);
         } catch (FindException e) {
             throw new UpdateException("error getting keystore", e);
-        } catch (ObjectNotFoundException e) {
-            throw new UpdateException("error getting keystore", e);
-        }
+        } 
 
         SsgKeyStore keystore = keyFinder.getKeyStore();
         if (keystore == null)
@@ -403,9 +399,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             throw new SaveException("error getting keystore: " + ExceptionUtils.getMessage(e), e);
         } catch (FindException e) {
             throw new SaveException("error getting keystore: " + ExceptionUtils.getMessage(e), e);
-        } catch (ObjectNotFoundException e) {
-            throw new SaveException("error getting keystore: " + ExceptionUtils.getMessage(e), e);
-        }
+        } 
 
         SsgKeyStore keystore = keyFinder.getKeyStore();
         if (keystore == null)

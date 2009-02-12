@@ -11,7 +11,7 @@ package com.l7tech.objectmodel;
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class ObjectNotFoundException extends ObjectModelException {
+public class ObjectNotFoundException extends FindException {
     public ObjectNotFoundException() {
         super();
     }
