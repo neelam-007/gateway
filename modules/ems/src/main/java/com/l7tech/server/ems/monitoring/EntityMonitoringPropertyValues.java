@@ -114,7 +114,7 @@ public class EntityMonitoringPropertyValues implements JSON.Convertible {
         public void toJSON(JSON.Output output) {
             output.add(JSONConstants.MONITORED, monitored);
 
-            if (monitored) {
+            if (monitored && value != null) {
                 output.add(JSONConstants.VALUE, value);
                 if (unit != null) {
                     output.add(JSONConstants.UNIT, unit);

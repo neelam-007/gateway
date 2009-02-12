@@ -57,6 +57,9 @@ public class Monitor extends EsmStandardWebPage {
     @SpringBean(name="ssgNodeManager")
     private SsgNodeManager ssgNodeManager;
 
+    @SpringBean(name="monitoringService")
+    private MonitoringService monitoringService;
+
     private boolean isReadOnly;
     private Map<String, String> userProperties = Collections.emptyMap();
 
@@ -413,8 +416,25 @@ public class Monitor extends EsmStandardWebPage {
         @Override
         public Object getData() {
             try {
-                // Note: the entities list is temporarily got from the demo data.  Use the real data from PC after integration later on.
-                List<EntityMonitoringPropertyValues> entitiesList = getDemoPropertyValuesData();
+                // Note: currently we still use demo data.  After the functionality of MonitoringApi is completely done in Process Controller, we will use the real data.
+                boolean useDemoData = true;
+
+                List<EntityMonitoringPropertyValues> entitiesList = new ArrayList<EntityMonitoringPropertyValues>();
+
+                if (useDemoData) {
+                    // Demo data
+                    entitiesList = getDemoPropertyValuesData();
+                } else {
+                    // Real data
+                    for (SsgCluster ssgCluster: ssgClusterManager.findAll()) {
+                        // First get the current values for each SSG node.
+                        for (SsgNode ssgNode: ssgCluster.getNodes()) {
+                            entitiesList.add(monitoringService.getCurrentSsgNodePropertiesStatus(ssgNode));
+                        }
+                        // Then, get the current value (audit size) for the SSG cluster.
+                        entitiesList.add(monitoringService.getCurrentSsgClusterPropertyStatus(ssgCluster.getGuid()));
+                    }
+                }
 
                 Map<String, Object> jsonDataMap = new HashMap<String, Object>();
                 jsonDataMap.put("nextRefreshInterval", Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_NEXTREFRESH_INTERVAL)));

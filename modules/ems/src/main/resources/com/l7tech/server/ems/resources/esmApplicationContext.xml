@@ -507,6 +507,11 @@
 
     <bean id="ssgClusterNotificationSetupManager" class="com.l7tech.server.ems.monitoring.SsgClusterNotificationSetupManagerImpl" parent="hibernateBean"/>
 
+    <bean id="monitoringService" class="com.l7tech.server.ems.monitoring.MonitoringServiceImpl">
+        <constructor-arg index="0" ref="gatewayContextFactory"/>
+        <constructor-arg index="1" ref="entityMonitoringPropertySetupManager"/>
+    </bean>
+
     <!-- keystore root cert and ssl config  -->
     <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl">
         <constructor-arg index="0" ref="serverConfig"/>
