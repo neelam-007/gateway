@@ -204,7 +204,7 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
         Collection<Trigger> ret = new ArrayList<Trigger>();
 
         for (EntityMonitoringPropertySetup setup : setups) {
-            if (!setup.isMonitoringEnabled())
+            if (!setup.isNotificationEnabled())
                 continue;
 
             String propertyName = setup.getPropertyType();
@@ -213,9 +213,16 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
                 logger.warning("Ignoring PC trigger for unrecognized property name: " + propertyName);
                 continue;
             }
-            ComparisonOperator operator = ComparisonOperator.GE;
             final Long value = setup.getTriggerValue();
-            String triggerValue = value == null ? "" : Long.toString(value);
+            final ComparisonOperator operator;
+            final String triggerValue;
+            if (value == null) {
+                operator = ComparisonOperator.NE;
+                triggerValue = "OK";
+            } else {
+                operator = ComparisonOperator.GE;
+                triggerValue = Long.toString(value);
+            }
             long maxSamplingInterval = 5000L; // TODO is this the same value from monitoring.samplingInterval.lowerLimit in emconfig.properties that default to 2 sec?
             PropertyTrigger trigger = new PropertyTrigger(property, componentId, operator, triggerValue, maxSamplingInterval);
             trigger.setOid(setup.getOid());
