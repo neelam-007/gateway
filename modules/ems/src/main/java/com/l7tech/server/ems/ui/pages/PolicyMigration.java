@@ -159,9 +159,8 @@ public class PolicyMigration extends EsmStandardWebPage {
         final YuiAjaxButton editDependencyButton = new YuiAjaxButton("dependencyEditButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                Panel mapping = new EmptyPanel(YuiDialog.getContentId()); // TODO panel
-
-                YuiDialog resultDialog = new YuiDialog("dialog", "Edit Mapping Value", YuiDialog.Style.YES_NO_CANCEL, mapping, null);
+                Panel mapping = new PolicyMigrationMappingValueEditPanel(YuiDialog.getContentId(), "HTTP(s) URL value.", "http://example.com/source", null, "^(?:[a-zA-Z0-9$\\-_\\.+!\\*'\\(\\),:/\\\\]{1,4096})$");
+                YuiDialog resultDialog = new YuiDialog("dialog", "Edit Mapping Value", YuiDialog.Style.OK_CANCEL, mapping, null);
                 dialogContainer.replace( resultDialog );
                 ajaxRequestTarget.addComponent( dialogContainer );
             }
@@ -170,7 +169,8 @@ public class PolicyMigration extends EsmStandardWebPage {
         Form dependencyControlsForm = new Form("dependencyControlsForm");
         dependencyControlsForm.add( dependencyLoadButton.setOutputMarkupId(true).setEnabled(false) );
         dependencyControlsForm.add( clearDependencyButton.setOutputMarkupId(true).setEnabled(false) );
-        dependencyControlsForm.add( editDependencyButton.setOutputMarkupId(true).setEnabled(false) );
+        //TODO uncomment dependency edit when implemented
+        // dependencyControlsForm.add( editDependencyButton.setOutputMarkupId(true).setEnabled(false) );
 
         Form selectionJsonForm = new Form("selectionForm");
         final HiddenField hiddenSelectionForm = new HiddenField("selectionJson", new Model(""));
@@ -582,7 +582,6 @@ public class PolicyMigration extends EsmStandardWebPage {
                 item.add(new Label("optional", dependencyItem.getOptional()).setEscapeModelStrings(false));
                 item.add(new Label("name", dependencyItem.getDisplayName()));
                 item.add(new Label("type", com.l7tech.objectmodel.EntityType.valueOf(dependencyItem.type).getName().toLowerCase()));
-                item.add(new Label("version", dependencyItem.getVersionAsString()));
             }
         };
 
@@ -671,24 +670,25 @@ public class PolicyMigration extends EsmStandardWebPage {
                         }
                     }
 
+                    //TODO uncomment dependency edit when implemented
                     Component selectionComponent = ((Form)dependenciesContainer.get("dependencyControlsForm")).get("dependencyClearButton");
-                    Component selectionComponent2 = ((Form)dependenciesContainer.get("dependencyControlsForm")).get("dependencyEditButton");
+                    //Component selectionComponent2 = ((Form)dependenciesContainer.get("dependencyControlsForm")).get("dependencyEditButton");
                     if ( selectedItem != null ) {
                         lastSourceKey = new DependencyKey( sourceClusterId, selectedItem.asEntityHeader() );
                         candidateModel.setName( selectedItem.getDisplayName() );
                         candidateModel.setType( selectedItem.getType() );                        
                         selectionComponent.setEnabled( mappingModel.dependencyMap.containsKey(new Pair<DependencyKey,String>(lastSourceKey,lastTargetClusterId)) );
-                        selectionComponent2.setEnabled( com.l7tech.objectmodel.EntityType.valueOf(selectedItem.type) == EntityType.VALUE_REFERENCE );
+                        //selectionComponent2.setEnabled( com.l7tech.objectmodel.EntityType.valueOf(selectedItem.type) == EntityType.VALUE_REFERENCE );
                     } else {
                         lastSourceKey = null;
                         candidateModel.reset();
                         selectionComponent.setEnabled(false);
-                        selectionComponent2.setEnabled(false);
+                        //selectionComponent2.setEnabled(false);
                     }
 
                     addDependencyOptions( dependenciesContainer, optionRefreshComponents, candidateModel, searchModel, mappingModel, dependencySummaryModel, true );
                     ajaxRequestTarget.addComponent( selectionComponent );
-                    ajaxRequestTarget.addComponent( selectionComponent2 );
+                    //ajaxRequestTarget.addComponent( selectionComponent2 );
                     for ( Component component : optionRefreshComponents ) ajaxRequestTarget.addComponent( component );
                 }
             }
@@ -804,7 +804,12 @@ public class PolicyMigration extends EsmStandardWebPage {
                 MigrationApi api = context.getUncachedMigrationApi();
                 MigrationMetadata metadata = api.findDependencies( request.asEntityHeaders() );
                 for (ExternalEntityHeader header : metadata.getMappableDependencies()) {
-                    deps.add( new DependencyItem( header, metadata.isMappingRequired(header) ? isResolved( mappingModel, header, request.clusterId, targetClusterId ) : null ) );
+                    // TODO remove this !isSearchable( header.getType() ) check when mapping values are editable
+                    if ( !isSearchable( header.getType() ) ) {
+                        deps.add( new DependencyItem( header, metadata.isMappingRequired(header) ? isResolved( mappingModel, header, request.clusterId, targetClusterId ) : null, true ) );                        
+                    } else {
+                        deps.add( new DependencyItem( header, metadata.isMappingRequired(header) ? isResolved( mappingModel, header, request.clusterId, targetClusterId ) : null ) );
+                    }
                 }
 
                 for (ExternalEntityHeader header : metadata.getHeaders() ) {
