@@ -6,7 +6,7 @@ import org.junit.Test;
 /**
  *
  */
-public class CpuIdleSamplerTest {
+public class CpuUsageSamplerTest {
     @Test
     public void testParseVmstat() throws Exception {
         int got = CpuUsageSampler.parseVmstatOutput(
@@ -15,6 +15,6 @@ public class CpuIdleSamplerTest {
                 " 1  0   6592  18536  36088 839708    0    0     8    80    1    1  1  1 97  1  0\n" +
                 " 1  0   6592  18536  36088 839708    0    0     8    80    1    1 15  8 76  1  0\n");
 
-        assertEquals(76, got);
+        assertEquals(24, got);
     }
 }
