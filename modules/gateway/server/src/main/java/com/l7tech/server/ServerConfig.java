@@ -220,6 +220,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_MONITORING_TRIGGER_AUDITSIZE = "trigger.auditSize";
     public static final String PARAM_MONITORING_TRIGGER_LOGSIZE = "trigger.logSize";
     public static final String PARAM_MONITORING_TRIGGER_DISKUSAGE = "trigger.diskUsage";
+    public static final String PARAM_MONITORING_TRIGGER_DISKFREE = "trigger.diskFree";
     public static final String PARAM_MONITORING_TRIGGER_CPUTEMPERATURE = "trigger.cpuTemp";
     public static final String PARAM_MONITORING_TRIGGER_CPUUSAGE = "trigger.cpuUsage";
     public static final String PARAM_MONITORING_TRIGGER_SWAPUSAGE = "trigger.swapUsage";
@@ -228,6 +229,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_MONITORING_INTERVAL_OPERATINGSTATUS = "interval.operatingStatus";
     public static final String PARAM_MONITORING_INTERVAL_LOGSIZE = "interval.logSize";
     public static final String PARAM_MONITORING_INTERVAL_DISKUSAGE = "interval.diskUsage";
+    public static final String PARAM_MONITORING_INTERVAL_DISKFREE = "interval.diskFree";
     public static final String PARAM_MONITORING_INTERVAL_RAIDSTATUS = "interval.raidStatus";
     public static final String PARAM_MONITORING_INTERVAL_CPUTEMPERATURE = "interval.cpuTemp";
     public static final String PARAM_MONITORING_INTERVAL_CPUUSAGE = "interval.cpuUsage";
@@ -242,6 +244,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_MONITORING_INIT_TRIGGER_AUDITSIZE = "monitoring.ssgCluster.initAlertTrigger.auditSize";
     public static final String PARAM_MONITORING_INIT_TRIGGER_LOGSIZE = "monitoring.ssgNode.initAlertTrigger.logSize";
     public static final String PARAM_MONITORING_INIT_TRIGGER_DISKUSAGE = "monitoring.ssgNode.initAlertTrigger.diskUsage";
+    public static final String PARAM_MONITORING_INIT_TRIGGER_DISKFREE = "monitoring.ssgNode.initAlertTrigger.diskFree";
     public static final String PARAM_MONITORING_INIT_TRIGGER_CPUTEMPERATURE = "monitoring.ssgNode.initAlertTrigger.cpuTemperature";
     public static final String PARAM_MONITORING_INIT_TRIGGER_CPUUSAGE = "monitoring.ssgNode.initAlertTrigger.cpuUsage";
     public static final String PARAM_MONITORING_INIT_TRIGGER_SWAPUSAGE = "monitoring.ssgNode.initAlertTrigger.swapUsage";
@@ -250,6 +253,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_MONITORING_INIT_INTERVAL_OPERATINGSTATUS = "monitoring.ssgNode.initSamplingInterval.operatingStatus";
     public static final String PARAM_MONITORING_INIT_INTERVAL_LOGSIZE = "monitoring.ssgNode.initSamplingInterval.logSize";
     public static final String PARAM_MONITORING_INIT_INTERVAL_DISKUSAGE = "monitoring.ssgNode.initSamplingInterval.diskUsage";
+    public static final String PARAM_MONITORING_INIT_INTERVAL_DISKFREE = "monitoring.ssgNode.initSamplingInterval.diskFree";
     public static final String PARAM_MONITORING_INIT_INTERVAL_RAIDSTATUS = "monitoring.ssgNode.initSamplingInterval.raidStatus";
     public static final String PARAM_MONITORING_INIT_INTERVAL_CPUTEMPERATURE = "monitoring.ssgNode.initSamplingInterval.cpuTemperature";
     public static final String PARAM_MONITORING_INIT_INTERVAL_CPUUSAGE = "monitoring.ssgNode.initSamplingInterval.cpuUsage";
@@ -266,6 +270,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_MONITORING_SSGNODE_LOGSIZE_LOWERLIMIT = "monitoring.ssgNode.logSize.lowerLimit";
     public static final String PARAM_MONITORING_SSGNODE_DISKUSAGE_LOWERLIMIT = "monitoring.ssgNode.diskUsage.lowerLimit";
     public static final String PARAM_MONITORING_SSGNODE_DISKUSAGE_UPPERLIMIT = "monitoring.ssgNode.diskUsage.upperLimit";
+    public static final String PARAM_MONITORING_SSGNODE_DISKFREE_LOWERLIMIT = "monitoring.ssgNode.diskFree.lowerLimit";
     public static final String PARAM_MONITORING_SSGNODE_CPUTEMPERATURE_LOWERLIMIT = "monitoring.ssgNode.cpuTemperature.lowerLimit";
     public static final String PARAM_MONITORING_SSGNODE_CPUUSAGE_LOWERLIMIT = "monitoring.ssgNode.cpuUsage.lowerLimit";
     public static final String PARAM_MONITORING_SSGNODE_CPUUSAGE_UPPERLIMIT = "monitoring.ssgNode.cpuUsage.upperLimit";
@@ -276,6 +281,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_MONITORING_SSGCLUSTER_AUDITSIZE_UNIT = "monitoring.ssgCluster.auditSize.unit";
     public static final String PARAM_MONITORING_SSGNODE_LOGSIZE_UNIT = "monitoring.ssgNode.logSize.unit";
     public static final String PARAM_MONITORING_SSGNODE_DISKUSAGE_UNIT = "monitoring.ssgNode.diskUsage.unit";
+    public static final String PARAM_MONITORING_SSGNODE_DISKFREE_UNIT = "monitoring.ssgNode.diskFree.unit";
     public static final String PARAM_MONITORING_SSGNODE_CPUTEMPERATURE_UNIT = "monitoring.ssgNode.cpuTemp.unit";
     public static final String PARAM_MONITORING_SSGNODE_CPUUSAGE_UNIT = "monitoring.ssgNode.cpuUsage.unit";
     public static final String PARAM_MONITORING_SSGNODE_SWAPUSAGE_UNIT = "monitoring.ssgNode.swapUsage.unit";

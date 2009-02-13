@@ -82,14 +82,16 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_AUDITSIZE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_AUDITSIZE)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_LOGSIZE,          Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_LOGSIZE)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DISKUSAGE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_DISKUSAGE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DISKFREE,         Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_DISKFREE)) * KB_GB_CONVERTOR);
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_CPUTEMPERATURE,   Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_CPUTEMPERATURE)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_CPUUSAGE,         Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_CPUUSAGE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_SWAPUSAGE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_SWAPUSAGE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_SWAPUSAGE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_SWAPUSAGE)) * KB_MB_CONVERTOR);
 
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_AUDITSIZE,       Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_AUDITSIZE)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_OPERATINGSTATUS)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_LOGSIZE,         Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_LOGSIZE)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_DISKUSAGE,       Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_DISKUSAGE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_DISKFREE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_DISKFREE)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_RAIDSTATUS,      Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_RAIDSTATUS)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_CPUTEMPERATURE,  Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_CPUTEMPERATURE)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_CPUUSAGE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_INTERVAL_CPUUSAGE)));

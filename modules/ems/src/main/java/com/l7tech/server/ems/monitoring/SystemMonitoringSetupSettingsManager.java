@@ -23,6 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Transactional
 public interface SystemMonitoringSetupSettingsManager {
+    // This constant used when converting the value of swap usage in KB(MB) to MB(KB),
+    public final static long KB_MB_CONVERTOR = 1024;
+
+    // This constant used when converting the value of disk free in KB(GB) to GB(KB),
+    public final static long KB_GB_CONVERTOR = KB_MB_CONVERTOR * 1024;
+
     /**
      * Save or update system monitoring setup settings as a cluster property into the DB table cluster_properties.
      *

@@ -92,37 +92,22 @@ public class MonitoringServiceImpl implements MonitoringService {
 
             // Case 2: SSG node property status
             String propertyName = propertyStatus.getMonitorableId();
-            String jsonPropertyType;
-            if (propertyName.equals(BuiltinMonitorables.CPU_USAGE.getName())) {
-                jsonPropertyType = JSONConstants.SsgNodeMonitoringProperty.CPU_USAGE;
-            } else if (propertyName.equals(BuiltinMonitorables.CPU_TEMPERATURE.getName())) {
-                jsonPropertyType = JSONConstants.SsgNodeMonitoringProperty.CPU_USAGE;
+            if (propertyName.equals(BuiltinMonitorables.DISK_FREE_KIB.getName())) {
+                // Convert KB to GB, since the UI displays the disk free in GB.
+                value = Long.valueOf(value.toString()) / SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR;
             } else if (propertyName.equals(BuiltinMonitorables.SWAP_SPACE.getName())) {
-                jsonPropertyType = JSONConstants.SsgNodeMonitoringProperty.SWAP_USAGE;
-            } else if (propertyName.equals(BuiltinMonitorables.LOG_SIZE.getName())) {
-                jsonPropertyType = JSONConstants.SsgNodeMonitoringProperty.LOG_SIZE;
-            } else if (propertyName.equals(BuiltinMonitorables.NODE_STATE.getName())) {
-                jsonPropertyType = JSONConstants.SsgNodeMonitoringProperty.OPERATING_STATUS;
-            } else if (propertyName.equals(BuiltinMonitorables.NTP_STATUS.getName())) {
-                jsonPropertyType = JSONConstants.SsgNodeMonitoringProperty.NTP_STATUS;
-            } else if (propertyName.equals(BuiltinMonitorables.RAID_STATUS.getName())) {
-                jsonPropertyType = JSONConstants.SsgNodeMonitoringProperty.RAID_STATUS;
-            } else if (propertyName.equals(BuiltinMonitorables.DISK_FREE_KIB.getName())) {
-                // TODO: to get DISK_USAGE, we need DISK_SIZE, then DISK_USAGE = DISK_FREE_KIB / DISK_SIZE.
-                jsonPropertyType = JSONConstants.SsgNodeMonitoringProperty.DISK_USAGE;
-                // TODO: value = ... / ...
-            } else {
-                throw new IllegalArgumentException("Invalid property type, '" + propertyName + "'.");
+                // Convert KB to MB, since the UI displays the swap usage in MB.
+                value = Long.valueOf(value.toString()) / SystemMonitoringSetupSettingsManager.KB_MB_CONVERTOR;
             }
 
             EntityMonitoringPropertyValues.PropertyValues propertyValues =
-                (EntityMonitoringPropertyValues.PropertyValues) ssgNodePropertyValuesMap.get(jsonPropertyType);
+                (EntityMonitoringPropertyValues.PropertyValues) ssgNodePropertyValuesMap.get(propertyName);
             propertyValues.setValue(value.toString());
             propertyValues.setAlert(alert);
         }
 
         // After ssgNodePropertyValuesMap has been updated by using current property statuses, create an
-        // EntityMonitoringPropertyValues object for the SSG node and return the object to Monitor. 
+        // EntityMonitoringPropertyValues object for the SSG node and return the object to Monitor.
         return new EntityMonitoringPropertyValues(ssgNodeGuid, ssgNodePropertyValuesMap);
     }
 
@@ -137,6 +122,7 @@ public class MonitoringServiceImpl implements MonitoringService {
         valuesMap.put(JSONConstants.SsgNodeMonitoringProperty.OPERATING_STATUS, new EntityMonitoringPropertyValues.PropertyValues());
         valuesMap.put(JSONConstants.SsgNodeMonitoringProperty.LOG_SIZE,         new EntityMonitoringPropertyValues.PropertyValues());
         valuesMap.put(JSONConstants.SsgNodeMonitoringProperty.DISK_USAGE,       new EntityMonitoringPropertyValues.PropertyValues());
+        valuesMap.put(JSONConstants.SsgNodeMonitoringProperty.DISK_FREE,        new EntityMonitoringPropertyValues.PropertyValues());
         valuesMap.put(JSONConstants.SsgNodeMonitoringProperty.RAID_STATUS,      new EntityMonitoringPropertyValues.PropertyValues());
         valuesMap.put(JSONConstants.SsgNodeMonitoringProperty.CPU_TEMP,         new EntityMonitoringPropertyValues.PropertyValues());
         valuesMap.put(JSONConstants.SsgNodeMonitoringProperty.CPU_USAGE,        new EntityMonitoringPropertyValues.PropertyValues());

@@ -50,6 +50,7 @@ public final class JSONConstants {
         public static final String OPERATING_STATUS = "operatingStatus";
         public static final String LOG_SIZE         = "logSize";
         public static final String DISK_USAGE       = "diskUsage";
+        public static final String DISK_FREE        = "diskFree";
         public static final String RAID_STATUS      = "raidStatus";
         public static final String CPU_TEMP         = "cpuTemp";
         public static final String CPU_USAGE        = "cpuUsage";
