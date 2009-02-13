@@ -15,10 +15,12 @@ import com.l7tech.server.ems.gateway.GatewayException;
 import com.l7tech.server.ems.gateway.ProcessControllerContext;
 import com.l7tech.server.event.admin.PersistenceEvent;
 import com.l7tech.server.event.system.Started;
+import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 import com.l7tech.server.management.api.monitoring.MonitorableProperty;
 import com.l7tech.server.management.config.monitoring.*;
 import com.l7tech.util.ComparisonOperator;
 import com.l7tech.util.ExceptionUtils;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -33,7 +35,7 @@ import java.util.logging.Logger;
  * Sends the monitoring configuration to all known process controllers on ESM startup and whenever
  * the configuration changes.
  */
-public class MonitoringConfigurationSynchronizer extends TimerTask implements ApplicationListener {
+public class MonitoringConfigurationSynchronizer extends TimerTask implements ApplicationListener, DisposableBean {
     private static final Logger logger = Logger.getLogger(MonitoringConfigurationSynchronizer.class.getName());
 
     /** We should mark all monitoring configurations as dirty any time one of these entities changes. */
@@ -140,6 +142,7 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
 
     private boolean configureNode(SsgCluster cluster, SsgNode node, boolean notificationsDisabled, boolean needClusterMaster) {
         try {
+            logger.log(Level.INFO, "Pushing down monitoring configuration to " + node.getIpAddress());
             doConfigureNode(cluster, node, notificationsDisabled, needClusterMaster);
             return true;
         } catch (IOException e) {
@@ -163,6 +166,7 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
     private MonitoringConfiguration makeMonitoringConfiguration(SsgCluster cluster, SsgNode node, boolean notificationsDisabled) throws FindException {
         MonitoringConfiguration config = new MonitoringConfiguration();
         config.setName(node.getName());
+        config.setOid(node.getOid());
 
         SsgClusterNotificationSetup clusterSetup = ssgClusterNotificationSetupManager.findByEntityGuid(cluster.getGuid());
         Map<Long, NotificationRule> notRules = convertNotificationRules(notificationsDisabled, clusterSetup.getSystemNotificationRules());
@@ -171,22 +175,20 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
         Collection<Trigger> clusterTriggers =
                 convertTriggers(notificationsDisabled,
                         cluster.getSslHostName(),
-                        ComponentType.CLUSTER,
                         notRules,
                         entityMonitoringPropertySetupManager.findByEntityGuid(cluster.getGuid())
                 );
 
-        Collection<Trigger> nodeTriggers =
+        Collection<Trigger> hostTrigger =
                 convertTriggers(notificationsDisabled,
                         node.getIpAddress(),
-                        ComponentType.NODE,
                         notRules,
                         entityMonitoringPropertySetupManager.findByEntityGuid(node.getGuid())
                 );
 
         Set<Trigger> triggers = new HashSet<Trigger>();
         triggers.addAll(clusterTriggers);
-        triggers.addAll(nodeTriggers);
+        triggers.addAll(hostTrigger);
         config.setTriggers(triggers);
 
         return config;
@@ -195,7 +197,6 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
     // notificationRules is map of SystemMonitoringNotificationRule OID => NotificationRule instance
     private Collection<Trigger> convertTriggers(boolean notificationsDisabled,
                                                 String componentId,
-                                                ComponentType componentType,
                                                 Map<Long, NotificationRule> notificationRules, List<EntityMonitoringPropertySetup> setups
     )
     {
@@ -206,12 +207,17 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
                 continue;
 
             String propertyName = setup.getPropertyType();
-            MonitorableProperty property = new MonitorableProperty(componentType, propertyName, String.class);
+            MonitorableProperty property = BuiltinMonitorables.getAtMostOneBuiltinPropertyByName(propertyName);
+            if (property == null) {
+                logger.warning("Ignoring PC trigger for unrecognized property name: " + propertyName);
+                continue;
+            }
             ComparisonOperator operator = ComparisonOperator.GE;
             final Long value = setup.getTriggerValue();
             String triggerValue = value == null ? "" : Long.toString(value);
             long maxSamplingInterval = 5000L; // TODO is this the same value from monitoring.samplingInterval.lowerLimit in emconfig.properties that default to 2 sec?
             PropertyTrigger trigger = new PropertyTrigger(property, componentId, operator, triggerValue, maxSamplingInterval);
+            trigger.setOid(setup.getOid());
             trigger.setNotificationRules(lookupNotificationRules(notificationsDisabled, setup, componentId, notificationRules, propertyName));
 
             ret.add(trigger);
@@ -285,6 +291,11 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
      */
     void setAllDirty() {
         // TODO keep track of dirtiness per PC GUID
-        dirty.set(false);
+        dirty.set(true);
+    }
+
+    public void destroy() throws Exception {
+        cancel();
+        timer.cancel();
     }
 }
