@@ -5,7 +5,10 @@ import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ems.enterprise.*;
-import com.l7tech.server.ems.gateway.*;
+import com.l7tech.server.ems.gateway.GatewayContextFactory;
+import com.l7tech.server.ems.gateway.GatewayRegistrationEvent;
+import com.l7tech.server.ems.gateway.GatewayTrustTokenFactory;
+import com.l7tech.server.ems.gateway.ProcessControllerContext;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.standardreports.StandardReportManager;
 import com.l7tech.server.ems.ui.EsmSecurityManager;
@@ -155,7 +158,7 @@ public class Configure extends EsmStandardWebPage {
                         try {
                             EnterpriseFolder parentFolder = enterpriseFolderManager.findByGuid(parentFolderGuid);
                             String errorMsg = "A folder with the name '" + newFolderName + "' already exists in the folder '"
-                                + parentFolder.getName() + "'.<br/>Please specify a different name.";
+                                + parentFolder.getName() + "'. Please specify a different name.";
                             return new JSONException(new DuplicateObjectException(errorMsg, e));
                         } catch (FindException e1) {
                             return new JSONException(e1);
@@ -188,7 +191,7 @@ public class Configure extends EsmStandardWebPage {
                             EnterpriseFolder editedFolder = enterpriseFolderManager.findByGuid(editedFolderGuid);
                             EnterpriseFolder parentFolder = editedFolder.getParentFolder();
                             String errorMsg = "A folder with the name '" + newFolderName + "' already exists in the folder '"
-                                + parentFolder.getName() + "'.<br/>Please specify a different name.";
+                                + parentFolder.getName() + "'. Please specify a different name.";
                             return new JSONException(new DuplicateObjectException(errorMsg, e));
                         } catch (FindException e1) {
                             return new JSONException(e1);
@@ -261,14 +264,14 @@ public class Configure extends EsmStandardWebPage {
                         try {
                             EnterpriseFolder parentFolder = enterpriseFolderManager.findByGuid(parentFolderGuid);
                             String errorMsg = "A cluster with the name '" + newClusterName + "' already exists in the folder '"
-                                + parentFolder.getName() + "'.<br/>Please specify a different name.";
+                                + parentFolder.getName() + "'. Please specify a different name.";
                             return new JSONException(new DuplicateObjectException(errorMsg, e));
                         } catch (FindException e1) {
                             return new JSONException(e1);
                         }
                     } else if (ExceptionUtils.causedBy(e, DuplicateHostnameException.class)) {
-                        String errorMsg = "A cluster with the hostname (" + hostname + ") already exists in the enterprise tree." +
-                            "<br/>Please specify a different hostname.";
+                        String errorMsg = "A cluster with the hostname '" + hostname
+                                + "' already exists in the enterprise tree. Please specify a different hostname.";
                         return new JSONException(new DuplicateObjectException(errorMsg, e));
                     } else {
                         return new JSONException(e);
@@ -305,14 +308,14 @@ public class Configure extends EsmStandardWebPage {
                             SsgCluster editedCluster = ssgClusterManager.findByGuid(editedSSGClusterGuid);
                             EnterpriseFolder parentFolder = editedCluster.getParentFolder();
                             String errorMsg = "A cluster with the name '" + newClusterName + "' already exists in the folder '"
-                                + parentFolder.getName() + "'.<br/>Please specify a different name.";
+                                + parentFolder.getName() + "'. Please specify a different name.";
                             return new JSONException(new DuplicateObjectException(errorMsg, e));
                         } catch (FindException e1) {
                             return new JSONException(e1);
                         }
                     } else if (ExceptionUtils.causedBy(e, DuplicateHostnameException.class)) {
-                        String errorMsg = "A cluster with the hostname (" + newSslHostname + ") already exists in the enterprise tree." +
-                            "<br/>Please specify a different hostname.";
+                        String errorMsg = "A cluster with the hostname (" + newSslHostname
+                                + ") already exists in the enterprise tree. Please specify a different hostname.";
                         return new JSONException(new DuplicateObjectException(errorMsg, e));
                     } else {
                         return new JSONException(e);
