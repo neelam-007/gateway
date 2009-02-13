@@ -261,6 +261,8 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         final Map<Long, TriggerState> tstates = currentTriggerStates;
         final Map<Long, NotificationState> nstates = currentNotificationStates;
 
+        final long now = System.currentTimeMillis();
+
         for (Map.Entry<MonitorableProperty, PropertyState<?>> entry : pstates.entrySet()) {
             final MonitorableProperty prop = entry.getKey();
             final PropertyState<?> pstate = entry.getValue();
@@ -285,7 +287,11 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 }
 
                 final Pair<Long, ? extends Serializable> lastSample = pstate.getLastSample();
-                if (lastSample == null) continue;
+                if (lastSample == null) {
+                    logger.info("No sample values available for " + prop);
+                    transientStatus.timestamp = now;
+                    continue;
+                }
                 transientStatus.timestamp = transientStatus.timestamp == null || transientStatus.timestamp == 0 ? lastSample.left : Math.min(lastSample.left, transientStatus.timestamp);
                 transientStatus.value = lastSample.right;
 
@@ -304,7 +310,8 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         for (Map.Entry<MonitorableProperty, TransientStatus> entry : stati.entrySet()) {
             final MonitorableProperty prop = entry.getKey();
             final TransientStatus transientStatus = entry.getValue();
-            result.add(new MonitoredPropertyStatus(prop, transientStatus.componentId, transientStatus.timestamp, transientStatus.status, transientStatus.badTriggerOids, transientStatus.value.toString()));
+            final Serializable value = transientStatus.value;
+            result.add(new MonitoredPropertyStatus(prop, transientStatus.componentId, transientStatus.timestamp, transientStatus.status, transientStatus.badTriggerOids, value == null ? null : value.toString()));
         }
 
         return result;

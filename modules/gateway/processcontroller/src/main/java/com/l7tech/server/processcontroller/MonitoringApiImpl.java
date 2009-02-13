@@ -13,9 +13,14 @@ import javax.annotation.Resource;
 import javax.jws.WebService;
 import java.io.IOException;
 import java.util.List;
+import java.util.Collections;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 @WebService(endpointInterface="com.l7tech.server.management.api.monitoring.MonitoringApi")
 public class MonitoringApiImpl implements MonitoringApi {
+    private static final Logger logger = Logger.getLogger(MonitoringApiImpl.class.getName());
+
     @Resource
     private ConfigService configService;
 
@@ -37,6 +42,11 @@ public class MonitoringApiImpl implements MonitoringApi {
 
     @Override
     public List<MonitoredPropertyStatus> getCurrentPropertyStatuses() {
-        return monitoringKernel.getCurrentPropertyStatuses();
+        try {
+            return monitoringKernel.getCurrentPropertyStatuses();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Couldn't get properties", e);
+            return Collections.emptyList();
+        }
     }
 }
