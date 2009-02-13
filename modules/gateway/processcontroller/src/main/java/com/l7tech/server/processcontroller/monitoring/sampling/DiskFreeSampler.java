@@ -6,6 +6,7 @@ package com.l7tech.server.processcontroller.monitoring.sampling;
 import com.l7tech.common.io.ProcResult;
 import com.l7tech.common.io.ProcUtils;
 import static com.l7tech.common.io.ProcUtils.args;
+import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,7 +20,7 @@ class DiskFreeSampler extends HostPropertySampler<Long> {
     static final String DF_PATH = "/bin/df";
 
     public DiskFreeSampler(String componentId) {
-        super(componentId, "diskFree");
+        super(componentId, BuiltinMonitorables.DISK_FREE_KIB.getName());
     }
 
     public Long sample() throws PropertySamplingException {

@@ -3,9 +3,9 @@
  */
 package com.l7tech.server.processcontroller.monitoring.sampling;
 
-import com.l7tech.util.IOUtils;
 import com.l7tech.server.management.config.monitoring.ComponentType;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,19 +64,40 @@ abstract class HostPropertySampler<V extends Serializable> extends PropertySampl
      *            the regex contains no capture groups, or the captured match value can't be converted to a long.
      */
     protected long matchNumber(String contentToMatch, String location, Pattern regex) throws PropertySamplingException {
+        return matchNumbers(contentToMatch, location, regex, 1)[0];
+    }
+
+    /**
+     * Examines the specified file contents or program output, applys the specified regex (which is expected
+     * to contain a single capture group), and returns the captured value converted to a long.
+     *
+     * @param contentToMatch content of file or program output to match.  Required.
+     * @param location  the location from whence came the content, for constructing error messages;
+     *                      ie "/proc/stat" or "/usr/bin/vmstat".  Required.
+     * @param regex  regex to match, ie Pattern.compile("^btime\\s+(\\d+)$").  Required.
+     * @return the matched value as a long.  Never null.
+     * @throws PropertySamplingException if the file can't be opened or read, the regex can't be matched,
+     *            the regex contains no capture groups, or the captured match value can't be converted to a long.
+     */
+    protected long[] matchNumbers(String contentToMatch, String location, Pattern regex, int numGroups) throws PropertySamplingException {
         try {
             Matcher matcher = regex.matcher(contentToMatch);
             if (!matcher.find())
                 throw new PropertySamplingException("Unable to find " + propertyName + " in " + location);
-            if (matcher.groupCount() < 1)
-                throw new PropertySamplingException("Unable to find " + propertyName + " in " + location + ": regex contains no capture groups");
-            String freeStr = matcher.group(1);
-            return Long.parseLong(freeStr);
+            if (matcher.groupCount() < numGroups)
+                throw new PropertySamplingException("Unable to find " + propertyName + " in " + location + ": regex contains insufficient capture groups");
+            long[] result = new long[numGroups];
+            for (int i = 0; i < numGroups; i++) {
+                String what = matcher.group(i+1);
+                result[i] = Long.parseLong(what);
+            }
+            return result;
         } catch (NumberFormatException e) {
             // Regex only passes digits, so this can only happen if free swap exceeps 2^64
             throw new PropertySamplingException(e);
         }
     }
+
 
     public void close() throws IOException {
     }

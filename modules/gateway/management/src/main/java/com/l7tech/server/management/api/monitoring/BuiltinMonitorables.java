@@ -20,7 +20,9 @@ public final class BuiltinMonitorables {
     /** Free Swap space, in KiB */
     public static final MonitorableProperty SWAP_SPACE = new MonitorableProperty(ComponentType.HOST, "swapUsage", Long.class);
     /** Free disk space, in KiB */
-    public static final MonitorableProperty DISK_FREE = new MonitorableProperty(ComponentType.HOST, "diskUsage", Long.class);
+    public static final MonitorableProperty DISK_FREE_KIB = new MonitorableProperty(ComponentType.HOST, "diskFree", Long.class);
+    /** Percent free space */
+    public static final MonitorableProperty DISK_USAGE_PERCENT = new MonitorableProperty(ComponentType.HOST, "diskUsage", Double.class);
     /** Current time, in milliseconds GMT since Unix epoch */
     public static final MonitorableProperty TIME = new MonitorableProperty(ComponentType.HOST, "time", Long.class);
     /** Size of log files, in KiB */
@@ -35,7 +37,7 @@ public final class BuiltinMonitorables {
     public static final MonitorableProperty AUDIT_SIZE = new MonitorableProperty(ComponentType.CLUSTER, "auditSize", Long.class);
 
     private static final Monitorable[] VALUES = new Monitorable[] {
-        CPU_IDLE, CPU_TEMPERATURE, SWAP_SPACE, DISK_FREE, TIME, LOG_SIZE, NODE_STATE, NTP_STATUS, RAID_STATUS, AUDIT_SIZE
+        CPU_IDLE, CPU_TEMPERATURE, SWAP_SPACE, DISK_FREE_KIB, DISK_USAGE_PERCENT, TIME, LOG_SIZE, NODE_STATE, NTP_STATUS, RAID_STATUS, AUDIT_SIZE
     };
 
     private final Map<Pair<ComponentType, String>, MonitorableProperty> builtinProperties;

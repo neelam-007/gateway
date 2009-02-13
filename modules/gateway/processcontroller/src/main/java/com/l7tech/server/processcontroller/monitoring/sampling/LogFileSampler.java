@@ -5,6 +5,7 @@ package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import com.l7tech.common.io.ProcResult;
 import com.l7tech.common.io.ProcUtils;
+import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,7 +20,7 @@ class LogFileSampler extends HostPropertySampler<Long> {
     private static final Pattern NUMBER_PATTERN = Pattern.compile("^\\s*(\\d+)\\s*$");
 
     public LogFileSampler(String componentId) {
-        super(componentId, "logFileSize");
+        super(componentId, BuiltinMonitorables.LOG_SIZE.getName());
     }
 
     public Long sample() throws PropertySamplingException {

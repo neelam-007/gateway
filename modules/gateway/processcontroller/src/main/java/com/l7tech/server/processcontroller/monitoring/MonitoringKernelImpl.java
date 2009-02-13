@@ -24,7 +24,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 /**
  * Drives all the monitoring behaviour of the ProcessController.
@@ -81,6 +80,8 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     comparisonValue = Integer.valueOf(tval);
                 } else if (Long.class.isAssignableFrom(clazz)) {
                     comparisonValue = Long.valueOf(tval);
+                } else if (Double.class.isAssignableFrom(clazz)) {
+                    comparisonValue = Double.valueOf(tval);
                 } else if (String.class.isAssignableFrom(clazz)) {
                     comparisonValue = tval;
                 } else if (Enum.class.isAssignableFrom(clazz)) {
@@ -314,6 +315,18 @@ public class MonitoringKernelImpl implements MonitoringKernel {
             result.add(new MonitoredPropertyStatus(prop, transientStatus.componentId, transientStatus.timestamp, transientStatus.status, transientStatus.badTriggerOids, value == null ? null : value.toString()));
         }
 
+        return result;
+    }
+
+    @Override
+    public List<NotificationAttempt> getRecentNotificationAttempts(long sinceWhen) {
+        List<NotificationAttempt> result = new ArrayList<NotificationAttempt>();
+        Map<Long, NotificationState> nstates = currentNotificationStates;
+        for (Map.Entry<Long, NotificationState> entry : nstates.entrySet()) {
+            Long noid = entry.getKey();
+            NotificationState nstate = entry.getValue();
+            result.addAll(nstate.getNotificationAttempts(sinceWhen).values());
+        }
         return result;
     }
 

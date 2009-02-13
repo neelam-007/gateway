@@ -6,6 +6,7 @@ package com.l7tech.server.processcontroller;
 import com.l7tech.server.management.api.monitoring.MonitoredPropertyStatus;
 import com.l7tech.server.management.api.monitoring.MonitoringApi;
 import com.l7tech.server.management.api.monitoring.NodeStatus;
+import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 import com.l7tech.server.processcontroller.monitoring.MonitoringKernel;
 
@@ -48,5 +49,10 @@ public class MonitoringApiImpl implements MonitoringApi {
             logger.log(Level.WARNING, "Couldn't get properties", e);
             return Collections.emptyList();
         }
+    }
+
+    @Override
+    public List<NotificationAttempt> getRecentNotificationAttempts(long sinceWhen) {
+        return monitoringKernel.getRecentNotificationAttempts(sinceWhen);
     }
 }

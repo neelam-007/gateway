@@ -116,4 +116,16 @@ public abstract class MonitoredStatus {
             return this.ordinal() < that.ordinal() ? this : that;
         }
     }
+
+    @Override
+    public String toString() {
+        return "MonitoredStatus{" +
+                "timestamp=" + timestamp +
+                ", type=" + type +
+                ", monitorableId='" + monitorableId + '\'' +
+                ", componentId='" + componentId + '\'' +
+                ", status=" + status +
+                ", triggerOids=" + triggerOids +
+                '}';
+    }
 }

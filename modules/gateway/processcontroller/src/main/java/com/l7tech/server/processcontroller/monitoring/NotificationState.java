@@ -10,6 +10,8 @@ import com.l7tech.util.Functions;
 
 import java.util.EnumSet;
 import java.util.NavigableMap;
+import java.util.Map;
+import java.util.Collections;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.TimeUnit;
 
@@ -59,6 +61,10 @@ public class NotificationState {
         return maxNotificationRatePeriod;
     }
 
+    public Map<Long, NotificationAttempt> getNotificationAttempts(long sinceWhen) {
+        return Collections.unmodifiableMap(attempts.headMap(sinceWhen));
+    }
+
     public void condition(Long when) {
         // TODO rate-limiting
     }
@@ -68,7 +74,7 @@ public class NotificationState {
     }
 
     public void failed(NotificationAttempt notificationAttempt) {
-        // TODO
+        attempts.put(notificationAttempt.getTimestamp(), notificationAttempt);
     }
 
     public boolean isNotified() {

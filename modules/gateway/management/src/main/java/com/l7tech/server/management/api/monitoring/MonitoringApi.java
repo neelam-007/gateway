@@ -5,9 +5,8 @@ package com.l7tech.server.management.api.monitoring;
 
 import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 
-import javax.jws.WebService;
 import javax.jws.WebResult;
-import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.jws.WebService;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import java.io.IOException;
 import java.util.List;
@@ -46,4 +45,11 @@ public interface MonitoringApi {
      */
     @WebResult(name="propertyStatuses")
     List<MonitoredPropertyStatus> getCurrentPropertyStatuses();
+
+    /**
+     * Gets a record of attempted notifications since the specified time.
+     * @param sinceWhen the time after which to return notifications.
+     * @return the list of notification attempts 
+     */
+    List<NotificationAttempt> getRecentNotificationAttempts(long sinceWhen);
 }

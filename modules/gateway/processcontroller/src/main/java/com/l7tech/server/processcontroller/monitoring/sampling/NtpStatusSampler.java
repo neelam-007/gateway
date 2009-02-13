@@ -7,6 +7,7 @@ import com.l7tech.common.io.ProcResult;
 import static com.l7tech.common.io.ProcUtils.args;
 import static com.l7tech.common.io.ProcUtils.exec;
 import com.l7tech.server.management.api.monitoring.NtpStatus;
+import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,7 +16,7 @@ public class NtpStatusSampler extends HostPropertySampler<NtpStatus> {
     private static final String PATH_NTPSTAT = "/usr/bin/ntpstat";
 
     public NtpStatusSampler(String componentId) {
-        super(componentId, "ntpStatus");
+        super(componentId, BuiltinMonitorables.NTP_STATUS.getName());
     }
 
     public NtpStatus sample() throws PropertySamplingException {

@@ -6,6 +6,7 @@ package com.l7tech.server.processcontroller.monitoring.sampling;
 import com.l7tech.common.io.ProcResult;
 import static com.l7tech.common.io.ProcUtils.args;
 import static com.l7tech.common.io.ProcUtils.exec;
+import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -17,7 +18,7 @@ import java.io.StringReader;
  */
 class CpuIdleSampler extends HostPropertySampler<Integer> {
     public CpuIdleSampler(String componentId) {
-        super(componentId, "cpuIdle");
+        super(componentId, BuiltinMonitorables.CPU_IDLE.getName());
     }
 
     public Integer sample() throws PropertySamplingException {

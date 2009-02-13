@@ -3,6 +3,8 @@
  */
 package com.l7tech.server.processcontroller.monitoring.sampling;
 
+import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
+
 import java.util.regex.Pattern;
 
 /**
@@ -12,7 +14,7 @@ class SwapSpaceSampler extends HostPropertySampler<Long> {
     private static final Pattern SWAPFREE_MATCHER = Pattern.compile("(?m)^SwapFree:\\s*(\\d+)\\s*kB$", Pattern.MULTILINE);
 
     public SwapSpaceSampler(String componentId) {
-        super(componentId, "swapSpace");
+        super(componentId, BuiltinMonitorables.SWAP_SPACE.getName());
     }
 
     public Long sample() throws PropertySamplingException {

@@ -3,21 +3,18 @@
  */
 package com.l7tech.server.processcontroller.monitoring.sampling;
 
-import com.l7tech.server.management.api.monitoring.MonitorableProperty;
 import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
-
-import java.io.Serializable;
-import java.util.Map;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Arrays;
-import java.lang.reflect.Constructor;
-
+import com.l7tech.server.management.api.monitoring.MonitorableProperty;
+import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.beans.BeansException;
 
-import javax.annotation.Resource;
+import java.io.Serializable;
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class PropertySamplerFactory implements ApplicationContextAware {
     private ApplicationContext spring;
@@ -26,7 +23,8 @@ public final class PropertySamplerFactory implements ApplicationContextAware {
         put(BuiltinMonitorables.CPU_IDLE, CpuIdleSampler.class);
         put(BuiltinMonitorables.SWAP_SPACE, SwapSpaceSampler.class);
         put(BuiltinMonitorables.CPU_TEMPERATURE, CpuTemperatureSampler.class);
-        put(BuiltinMonitorables.DISK_FREE, DiskFreeSampler.class);
+        put(BuiltinMonitorables.DISK_FREE_KIB, DiskFreeSampler.class);
+        put(BuiltinMonitorables.DISK_USAGE_PERCENT, DiskUsagePercentSampler.class);
         put(BuiltinMonitorables.TIME, TimeSampler.class);
         put(BuiltinMonitorables.AUDIT_SIZE, AuditSizeSampler.class);
     }});

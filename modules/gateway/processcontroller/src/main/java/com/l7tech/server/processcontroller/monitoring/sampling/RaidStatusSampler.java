@@ -4,6 +4,7 @@
 package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import com.l7tech.server.management.api.monitoring.RaidStatus;
+import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 
 import java.io.File;
 import java.util.regex.Pattern;
@@ -21,7 +22,7 @@ class RaidStatusSampler extends HostPropertySampler<RaidStatus> {
             Pattern.compile("(?m)^\\s*\\d+ blocks[\\040-\\0176]+ \\[(?!U+\\]$)[\\040-\\0176&&[^\\]]]+\\]$(?!\\s*^[\\040-\\0176]+ recovery [\\040-\\0176]+$)");
 
     public RaidStatusSampler(String componentId) {
-        super(componentId, "raidStatus");
+        super(componentId, BuiltinMonitorables.RAID_STATUS.getName());
     }
 
     public RaidStatus sample() throws PropertySamplingException {

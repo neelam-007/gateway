@@ -108,8 +108,8 @@ public class MonitoringServiceImpl implements MonitoringService {
                 jsonPropertyType = JSONConstants.SsgNodeMonitoringProperty.NTP_STATUS;
             } else if (propertyName.equals(BuiltinMonitorables.RAID_STATUS.getName())) {
                 jsonPropertyType = JSONConstants.SsgNodeMonitoringProperty.RAID_STATUS;
-            } else if (propertyName.equals(BuiltinMonitorables.DISK_FREE.getName())) {
-                // TODO: to get DISK_USAGE, we need DISK_SIZE, then DISK_USAGE = DISK_FREE / DISK_SIZE.
+            } else if (propertyName.equals(BuiltinMonitorables.DISK_FREE_KIB.getName())) {
+                // TODO: to get DISK_USAGE, we need DISK_SIZE, then DISK_USAGE = DISK_FREE_KIB / DISK_SIZE.
                 jsonPropertyType = JSONConstants.SsgNodeMonitoringProperty.DISK_USAGE;
                 // TODO: value = ... / ...
             } else {

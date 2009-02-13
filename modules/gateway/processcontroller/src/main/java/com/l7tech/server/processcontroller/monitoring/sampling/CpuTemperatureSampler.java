@@ -3,6 +3,8 @@
  */
 package com.l7tech.server.processcontroller.monitoring.sampling;
 
+import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
+
 import java.util.regex.Pattern;
 
 /**
@@ -13,7 +15,7 @@ class CpuTemperatureSampler extends HostPropertySampler<Long> {
     private static final Pattern TEMP_MATCHER = Pattern.compile("^temperature:\\s*(\\d+)\\s*C\\s*$");
 
     public CpuTemperatureSampler(String componentId) {
-        super(componentId, "cpuTemperature");
+        super(componentId, BuiltinMonitorables.CPU_TEMPERATURE.getName());
     }
 
     public Long sample() throws PropertySamplingException {
