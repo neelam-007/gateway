@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2009 Layer 7 Technologies Inc.
+ */
 package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import org.junit.*;
@@ -13,6 +16,6 @@ public class DiskFreeSamplerTest {
                        "/dev/sda2              8064304   5224840   2429808  69% /";
 
         long matched = new DiskFreeSampler("blah").matchNumber(input, "df", DiskFreeSampler.DF_MATCHER);
-        assertEquals(matched, 69);
+        assertEquals(matched, 2429808);
     }
 }
