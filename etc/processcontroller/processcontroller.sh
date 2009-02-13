@@ -49,12 +49,26 @@ if [ ! -f "${SSPC_HOME}/etc/host.properties" ] ; then
   fi
 fi
 
+if [ -f "${SSPC_HOME}/etc/DEBUG" ] ; then
+  if [ -z "$JPDA_TRANSPORT" ]; then
+    JPDA_TRANSPORT="dt_socket"
+  fi
+  if [ -z "$JPDA_ADDRESS" ]; then
+    JPDA_ADDRESS="8001"
+  fi
+  if [ -z "$JPDA_OPTS" ]; then
+    JPDA_OPTS="-Xdebug -Xrunjdwp:transport=$JPDA_TRANSPORT,address=$JPDA_ADDRESS,server=y,suspend=n"
+  fi
+  PC_JAVAOPT="$JPDA_OPTS"
+  export PC_JAVAOPT
+fi
+
 #
 if [ -z "${PC_USER}" ] ; then
-  "${JAVA_HOME}/bin/java" -Dcom.l7tech.server.processcontroller.hostPropertiesFile="$SSPC_HOME/etc/host.properties" -jar ${PC_JAR} &>/dev/null <&- &
-else 
+  "${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -Dcom.l7tech.server.processcontroller.hostPropertiesFile="$SSPC_HOME/etc/host.properties" -jar ${PC_JAR} &>/dev/null <&- &
+else
   export JAVA_HOME SSPC_HOME PC_JAR PC_PIDTEMP
-  runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" -Dcom.l7tech.server.processcontroller.hostPropertiesFile="$SSPC_HOME/etc/host.properties" -jar ${PC_JAR} &>/dev/null <&- & echo "${!}" > "${PC_PIDTEMP}"'
+  runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -Dcom.l7tech.server.processcontroller.hostPropertiesFile="$SSPC_HOME/etc/host.properties" -jar ${PC_JAR} &>/dev/null <&- & echo "${!}" > "${PC_PIDTEMP}"'
 fi
 
 if [ ${?} -eq 0 ] ; then
