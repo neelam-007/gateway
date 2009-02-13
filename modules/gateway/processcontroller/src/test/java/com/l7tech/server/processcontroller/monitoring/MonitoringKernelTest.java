@@ -153,6 +153,7 @@ public class MonitoringKernelTest {
 
         addTrigger(mc, BuiltinMonitorables.CPU_IDLE, ComparisonOperator.GT, "10", Math.abs(random.nextLong()), rulez3);
         addTrigger(mc, BuiltinMonitorables.AUDIT_SIZE, ComparisonOperator.LT, "100000000", Math.abs(random.nextLong()), rulez3);
+        addTrigger(mc, BuiltinMonitorables.NTP_STATUS, ComparisonOperator.NE, "OK", Math.abs(random.nextLong()), rulez2, rulez3);
 
         final EventTrigger anotherTrigger = new EventTrigger(new MonitorableEvent(ComponentType.HOST, "shuttingDown"), null, 1, null);
         anotherTrigger.setOid(Math.abs(random.nextLong()));
@@ -161,7 +162,7 @@ public class MonitoringKernelTest {
     }
 
     private void addTrigger(MonitoringConfiguration mc, final MonitorableProperty prop, final ComparisonOperator op, final String val, final long oid, NotificationRule... rulez) {
-        final PropertyTrigger tempTrigger = new PropertyTrigger(prop, null, op, val, 5000);
+        final PropertyTrigger tempTrigger = new PropertyTrigger(prop, "foo.bar.example.com", op, val, 5000);
         tempTrigger.setName("idoru");
         tempTrigger.setOid(oid);
         tempTrigger.getNotificationRules().addAll(Arrays.asList(rulez));
