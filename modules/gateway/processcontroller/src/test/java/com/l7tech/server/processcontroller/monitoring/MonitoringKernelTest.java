@@ -4,9 +4,7 @@
 package com.l7tech.server.processcontroller.monitoring;
 
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.server.management.api.monitoring.MonitorableEvent;
-import com.l7tech.server.management.api.monitoring.MonitorableProperty;
-import com.l7tech.server.management.api.monitoring.MonitoringApi;
+import com.l7tech.server.management.api.monitoring.*;
 import com.l7tech.server.management.config.monitoring.*;
 import com.l7tech.util.ComparisonOperator;
 import static junit.framework.Assert.assertEquals;
@@ -15,8 +13,10 @@ import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.jaxb.JAXBDataBinding;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
-import org.junit.Ignore;
+import org.apache.cxf.interceptor.LoggingInInterceptor;
+import org.apache.cxf.interceptor.LoggingOutInterceptor;
 import org.junit.Test;
+import org.junit.Ignore;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
@@ -29,6 +29,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.Random;
+import java.util.Arrays;
 
 public class MonitoringKernelTest {
     @Test
@@ -57,18 +60,39 @@ public class MonitoringKernelTest {
     }
 
     private JAXBContext makeJaxbContext() throws JAXBException {
-        return JAXBContext.newInstance(MonitoringConfiguration.class, PropertyTrigger.class);
+        return JAXBContext.newInstance(
+                MonitoringConfiguration.class,
+                PropertyTrigger.class,
+                MonitoredPropertyStatus.class
+        );
     }
 
-    @Test @Ignore("doesn't work unless a PC is running at localhost") 
-    public void testStuff() throws Exception {
+    @Test @Ignore("doesn't work unless a PC is running at localhost")
+    public void testPushConfiguration() throws Exception {
         final MonitoringConfiguration mc = makeConfig();
 
+        MonitoringApi api = getApi();
+        api.pushMonitoringConfiguration(mc, true);
+    }
+
+    @Test @Ignore("doesn't work unless a PC is running at localhost")
+    public void testGetCurrentProperties() throws Exception {
+        MonitoringApi api = getApi();
+        List<MonitoredPropertyStatus> stats = api.getCurrentPropertyStatuses();
+        System.out.println(stats);
+    }
+
+
+    private MonitoringApi getApi() throws JAXBException {
         JaxWsProxyFactoryBean pfb = new JaxWsProxyFactoryBean();
         pfb.setDataBinding(new JAXBDataBinding(makeJaxbContext()));
         pfb.setAddress("https://localhost:8765/services/monitoringApi");
         pfb.setServiceClass(MonitoringApi.class);
         Client c = pfb.getClientFactoryBean().create();
+        c.getInInterceptors().add( new LoggingInInterceptor() );
+        c.getOutInterceptors().add( new LoggingOutInterceptor() );
+        c.getInFaultInterceptors().add( new LoggingInInterceptor() );
+        c.getOutFaultInterceptors().add( new LoggingOutInterceptor() );
         HTTPConduit hc = (HTTPConduit) c.getConduit();
         hc.setTlsClientParameters(new TLSClientParameters() {
             @Override
@@ -94,27 +118,28 @@ public class MonitoringKernelTest {
             }
         });
 
-        MonitoringApi api = (MonitoringApi) pfb.create();
-        api.pushMonitoringConfiguration(mc, true);
+        return (MonitoringApi) pfb.create();
     }
 
     private MonitoringConfiguration makeConfig() {
+        Random random = new Random();
         final MonitoringConfiguration mc = new MonitoringConfiguration();
         mc.setName("My config");
-        mc.setOid(1234);
+        mc.setOid(Math.abs(random.nextLong()));
 
         final HttpNotificationRule rulez = new HttpNotificationRule();
         rulez.setName("bring me a bucket");
         rulez.setUrl("http://localhost/");
         rulez.setMethod(HttpMethod.GET);
-        rulez.setOid(342345);
+        rulez.setOid(Math.abs(random.nextLong()));
         mc.getNotificationRules().add(rulez);
 
         final EmailNotificationRule rulez2 = new EmailNotificationRule();
         rulez2.setName("spammity spam");
         rulez2.setFrom("root@localhost");
         rulez2.setSubject("Uh-oh");
-        rulez2.setOid(43243);
+        rulez2.setSmtpHost("localhost");
+        rulez2.setOid(Math.abs(random.nextLong()));
         mc.getNotificationRules().add(rulez2);
 
         final SnmpTrapNotificationRule rulez3 = new SnmpTrapNotificationRule();
@@ -122,24 +147,24 @@ public class MonitoringKernelTest {
         rulez3.setCommunity("public");
         rulez3.setOidSuffix(1234);
         rulez3.setSnmpHost("localhost");
-        rulez3.setOid(43244);
+        rulez3.setText("yo dawg, I herd you like traps");
+        rulez3.setOid(Math.abs(random.nextLong()));
         mc.getNotificationRules().add(rulez3);
 
-        final PropertyTrigger tempTrigger = new PropertyTrigger(new MonitorableProperty(ComponentType.HOST, "cpuIdle", Integer.class), null, ComparisonOperator.GT, "10", 5000);
-        tempTrigger.setName("idoru");
-        tempTrigger.setOid(2345);
-        tempTrigger.getNotificationRules().add(rulez);
-        tempTrigger.getNotificationRules().add(rulez2);
-        tempTrigger.getNotificationRules().add(rulez3);
+        addTrigger(mc, BuiltinMonitorables.CPU_IDLE, ComparisonOperator.GT, "10", Math.abs(random.nextLong()), rulez3);
+        addTrigger(mc, BuiltinMonitorables.AUDIT_SIZE, ComparisonOperator.LT, "100000000", Math.abs(random.nextLong()), rulez3);
 
         final EventTrigger anotherTrigger = new EventTrigger(new MonitorableEvent(ComponentType.HOST, "shuttingDown"), null, 1, null);
-        anotherTrigger.setOid(2342);
-        anotherTrigger.getNotificationRules().add(rulez3);
-        anotherTrigger.getNotificationRules().add(rulez2);
+        anotherTrigger.setOid(Math.abs(random.nextLong()));
 
-        mc.getTriggers().add(tempTrigger);
-        mc.getTriggers().add(anotherTrigger);
-        
         return mc;
+    }
+
+    private void addTrigger(MonitoringConfiguration mc, final MonitorableProperty prop, final ComparisonOperator op, final String val, final long oid, NotificationRule... rulez) {
+        final PropertyTrigger tempTrigger = new PropertyTrigger(prop, null, op, val, 5000);
+        tempTrigger.setName("idoru");
+        tempTrigger.setOid(oid);
+        tempTrigger.getNotificationRules().addAll(Arrays.asList(rulez));
+        mc.getTriggers().add(tempTrigger);
     }
 }

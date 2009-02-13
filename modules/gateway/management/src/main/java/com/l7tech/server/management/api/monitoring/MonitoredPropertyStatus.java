@@ -4,23 +4,30 @@
 package com.l7tech.server.management.api.monitoring;
 
 import javax.xml.bind.annotation.XmlRootElement;
-import java.io.Serializable;
 import java.util.Set;
 
 /**
  * The status of a particular property at some moment in time
  */
 @XmlRootElement
-public class MonitoredPropertyStatus extends MonitoredStatus<MonitorableProperty> {
-    private final Serializable value;
+public class MonitoredPropertyStatus extends MonitoredStatus {
+    private String value;
 
-    public MonitoredPropertyStatus(MonitorableProperty property, long timestamp, StatusType status, Set<Long> triggerOids, Serializable value) {
-        super(timestamp, triggerOids, status, property);
+    @Deprecated // XML only
+    protected MonitoredPropertyStatus() {
+    }
+
+    public MonitoredPropertyStatus(MonitorableProperty property, final String componentId, long timestamp, StatusType status, Set<Long> triggerOids, String value) {
+        super(property.getComponentType(), property.getName(), componentId, timestamp, status, triggerOids);
         this.value = value;
     }
 
-    public Serializable getValue() {
+    public String getValue() {
         return value;
     }
 
+    @Deprecated // XML only
+    protected void setValue(String value) {
+        this.value = value;
+    }
 }

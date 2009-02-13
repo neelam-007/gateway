@@ -8,12 +8,16 @@ import java.util.Set;
 /**
  * Reports on the number of times a particular event has been observed during some time period. 
  */
-public class MonitoredEventStatus extends MonitoredStatus<MonitorableEvent> {
-    private final int count;
-    private final long period;
+public class MonitoredEventStatus extends MonitoredStatus {
+    private int count;
+    private long period;
 
-    public MonitoredEventStatus(long timestamp, Set<Long> triggerOids, StatusType status, MonitorableEvent monitorable, int count, long period) {
-        super(timestamp, triggerOids, status, monitorable);
+    @Deprecated // XML only
+    protected MonitoredEventStatus() {
+    }
+
+    public MonitoredEventStatus(MonitorableEvent monitorable, String componentId, StatusType status, long timestamp, Set<Long> triggerOids, int count, long period) {
+        super(monitorable.getComponentType(), monitorable.getName(), componentId, timestamp, status, triggerOids);
         this.count = count;
         this.period = period;
     }
@@ -26,5 +30,15 @@ public class MonitoredEventStatus extends MonitoredStatus<MonitorableEvent> {
     /** The length of time during which {@link #count} events were observed */
     public long getPeriod() {
         return period;
+    }
+
+    @Deprecated // XML only
+    protected void setCount(int count) {
+        this.count = count;
+    }
+
+    @Deprecated // XML only
+    protected void setPeriod(long period) {
+        this.period = period;
     }
 }

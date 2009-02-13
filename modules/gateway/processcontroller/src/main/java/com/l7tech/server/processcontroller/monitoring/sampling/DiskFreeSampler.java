@@ -5,6 +5,7 @@ package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import com.l7tech.common.io.ProcResult;
 import com.l7tech.common.io.ProcUtils;
+import static com.l7tech.common.io.ProcUtils.args;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +24,7 @@ class DiskFreeSampler extends HostPropertySampler<Long> {
 
     public Long sample() throws PropertySamplingException {
         try {
-            ProcResult result = ProcUtils.exec(new File(DF_PATH));
+            ProcResult result = ProcUtils.exec(new File(DF_PATH), args("/"));
             return matchNumber(new String(result.getOutput()), "output from " + DF_PATH, DF_MATCHER);
         } catch (IOException e) {
             throw new PropertySamplingException(e);

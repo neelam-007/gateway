@@ -6,6 +6,9 @@ package com.l7tech.server.management.api.monitoring;
 import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 
 import javax.jws.WebService;
+import javax.jws.WebResult;
+import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlSeeAlso;
 import java.io.IOException;
 import java.util.List;
 
@@ -15,6 +18,7 @@ import java.util.List;
  * @author alex
  */
 @WebService
+@XmlSeeAlso(MonitoredPropertyStatus.class)
 public interface MonitoringApi {
     /**
      * Gets the status of the named Node; never null.
@@ -40,5 +44,6 @@ public interface MonitoringApi {
      * Gets the status of all the properties being monitored by this PC at the present time.
      * @return the list of MonitedPropertyStatus objects
      */
+    @WebResult(name="propertyStatuses")
     List<MonitoredPropertyStatus> getCurrentPropertyStatuses();
 }

@@ -6,8 +6,8 @@ package com.l7tech.server.processcontroller;
 import com.l7tech.server.management.NodeStateType;
 import static com.l7tech.server.management.NodeStateType.*;
 import com.l7tech.server.management.SoftwareVersion;
-import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.management.api.monitoring.NodeStatus;
+import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.management.config.Feature;
 import com.l7tech.server.management.config.HasCommandLineArguments;
 import com.l7tech.server.management.config.host.HostConfig;
@@ -16,6 +16,7 @@ import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.NodeFeature;
 import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
@@ -177,6 +178,15 @@ public class ProcessController {
             }
         }
         nodeStates.remove(nodeName);
+    }
+
+    public Map<String, NodeStatus> listNodes() {
+        final Map<String, NodeStatus> result = new HashMap<String, NodeStatus>();
+        for (Map.Entry<String, NodeState> entry : nodeStates.entrySet()) {
+            final NodeState state = entry.getValue();
+            result.put(entry.getKey(), new NodeStatus(state.type, new Date(state.startTime), new Date(state.sinceWhen)));
+        }
+        return result;
     }
 
     private static abstract class NodeState {
@@ -524,6 +534,25 @@ public class ProcessController {
     private void collectArgs(List<String> cmds, Feature feature) {
         if (feature instanceof HasCommandLineArguments) {
             cmds.addAll(Arrays.asList(((HasCommandLineArguments)feature).getArguments()));
+        }
+    }
+
+    /**
+     * Invoke the node API.
+     * 
+     * @param nodeName the name of the node to invoke the API on
+     * @param callable the function to call the NodeApi with
+     * @return the API method's return value
+     * @throws IOException if the node API cannot be obtained (e.g. because the node is down)
+     */
+    public <T> T callNodeApi(String nodeName, Functions.UnaryThrows<T, NodeApi, Exception> callable) throws Exception {
+        NodeState state = nodeStates.get(nodeName);
+        if (state == null) throw new IllegalStateException("Unknown node " + nodeName);
+        if (state instanceof HasApi) {
+            NodeApi napi = ((HasApi) state).getApi();
+            return callable.call(napi);
+        } else {
+            throw new IOException(nodeName + " is currently uncommunicative (" + state.type + ")");
         }
     }
 

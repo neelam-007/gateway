@@ -13,15 +13,25 @@ import java.util.*;
  * A registry of well-known {@link Monitorable monitorables}.  Try to use these instances rather than cooking up your own. 
  */
 public final class BuiltinMonitorables {
+    /** CPU Idle percentage */
     public static final MonitorableProperty CPU_IDLE = new MonitorableProperty(ComponentType.HOST, "cpuUsage", Integer.class);
+    /** CPU Temperature, in °C */
     public static final MonitorableProperty CPU_TEMPERATURE = new MonitorableProperty(ComponentType.HOST, "cpuTemp", Integer.class);
+    /** Free Swap space, in KiB */
     public static final MonitorableProperty SWAP_SPACE = new MonitorableProperty(ComponentType.HOST, "swapUsage", Long.class);
+    /** Free disk space, in KiB */
     public static final MonitorableProperty DISK_FREE = new MonitorableProperty(ComponentType.HOST, "diskUsage", Long.class);
+    /** Current time, in milliseconds GMT since Unix epoch */
     public static final MonitorableProperty TIME = new MonitorableProperty(ComponentType.HOST, "time", Long.class);
+    /** Size of log files, in KiB */
     public static final MonitorableProperty LOG_SIZE = new MonitorableProperty(ComponentType.HOST, "logSize", Long.class);
+    /** Current state of Gateway node */
     public static final MonitorableProperty NODE_STATE = new MonitorableProperty(ComponentType.NODE, "operatingStatus", NodeStateType.class);
+    /** Current NTP synchronization status of SSG appliance */
     public static final MonitorableProperty NTP_STATUS = new MonitorableProperty(ComponentType.HOST, "ntpStatus", NtpStatus.class);
+    /** Current status of appliance's RAID array */
     public static final MonitorableProperty RAID_STATUS = new MonitorableProperty(ComponentType.HOST, "raidStatus", RaidStatus.class);
+    /** Number of records currently in the cluster's audit table */
     public static final MonitorableProperty AUDIT_SIZE = new MonitorableProperty(ComponentType.CLUSTER, "auditSize", Long.class);
 
     private static final Monitorable[] VALUES = new Monitorable[] {

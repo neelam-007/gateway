@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2009 Layer 7 Technologies Inc.
+ */
 package com.l7tech.server.ems.monitoring;
 
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
@@ -75,8 +78,7 @@ public class MonitoringServiceImpl implements MonitoringService {
 
             // Set "value" and "alert"
             // Note: "monitored" and "unit" have been set in the method initSsgNodePropertyValuesMap.
-            MonitorableProperty property = propertyStatus.getMonitorable();
-            ComponentType compTyep = property.getComponentType();
+            ComponentType compTyep = propertyStatus.getType();
 
             // Case 1: SSG cluster property status
             if (compTyep.equals(ComponentType.CLUSTER)) {
@@ -89,11 +91,11 @@ public class MonitoringServiceImpl implements MonitoringService {
             }
 
             // Case 2: SSG node property status
-            String propertyName = property.getName();
+            String propertyName = propertyStatus.getMonitorableId();
             String jsonPropertyType;
             if (propertyName.equals(BuiltinMonitorables.CPU_IDLE.getName())) {
                 jsonPropertyType = JSONConstants.SsgNodeMonitoringProperty.CPU_USAGE;
-                value = 100 - (Integer)value;
+                value = 100 - Integer.valueOf(value.toString());
             } else if (propertyName.equals(BuiltinMonitorables.CPU_TEMPERATURE.getName())) {
                 jsonPropertyType = JSONConstants.SsgNodeMonitoringProperty.CPU_USAGE;
             } else if (propertyName.equals(BuiltinMonitorables.SWAP_SPACE.getName())) {

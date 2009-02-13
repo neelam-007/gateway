@@ -4,6 +4,7 @@
 package com.l7tech.server;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.audit.AuditSearchCriteria;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -11,11 +12,13 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.boot.ShutdownWatcher;
 import com.l7tech.server.management.NodeStateType;
 import com.l7tech.server.management.api.monitoring.NodeStatus;
+import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 import com.l7tech.server.management.api.node.EventSubscription;
 import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.transport.http.HttpTransportModule;
+import com.l7tech.server.audit.AuditRecordManager;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -38,20 +41,23 @@ public class NodeApiImpl implements NodeApi {
     private static final Logger logger = Logger.getLogger(NodeApiImpl.class.getName());
 
     @Resource
-    private ServerConfig serverConfig; // Injected by Spring
+    private ServerConfig serverConfig;
 
     @Resource
-    private SsgConnectorManager ssgConnectorManager; // Injected by Spring
+    private SsgConnectorManager ssgConnectorManager;
 
     @Resource
-    private ShutdownWatcher shutdowner; // Injected by Spring
+    private ShutdownWatcher shutdowner;
+
+    @Resource
+    private AuditRecordManager auditRecordManager;
 
     @SuppressWarnings({"SpringJavaAutowiringInspection"})
     @Resource
     private WebServiceContext wscontext; // Injected by CXF to get access to request metadata (e.g. HttpServletRequest)
 
     @PostConstruct
-    private void start() {
+    public void start() {
         if (serverConfig == null || ssgConnectorManager == null || shutdowner == null) throw new NullPointerException("A required component is missing");
     }
 
@@ -90,7 +96,7 @@ public class NodeApiImpl implements NodeApi {
 
     public Set<SsgConnector> getConnectors() throws FindException {
         checkRequest();
-        return new HashSet(ssgConnectorManager.findAll());
+        return new HashSet<SsgConnector>(ssgConnectorManager.findAll());
     }
 
     public NodeStatus getNodeStatus() {
@@ -119,6 +125,10 @@ public class NodeApiImpl implements NodeApi {
     public String getProperty(String propertyId) throws UnsupportedPropertyException, FindException {
         checkRequest();
         logger.fine("getProperty");
-        return null;
+        if (propertyId.equals(BuiltinMonitorables.AUDIT_SIZE.getName())) {
+            return Long.toString(auditRecordManager.findCount(new AuditSearchCriteria.Builder().build())); // TODO
+        } else {
+            throw new UnsupportedPropertyException("propertyId");
+        }
     }
 }

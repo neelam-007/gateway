@@ -24,6 +24,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * Drives all the monitoring behaviour of the ProcessController.
@@ -105,7 +106,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
     @PostConstruct
     public void start() {
-        triggerCheckTimer.scheduleAtFixedRate(triggerCheckTask, 5000, 997); // TODO configurable or heuristic scheduling? 
+        triggerCheckTimer.scheduleAtFixedRate(triggerCheckTask, 5000, 4991); // TODO configurable or heuristic scheduling?
         notificationThread.start();
     }
 
@@ -249,6 +250,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         private MonitoredStatus.StatusType status = MonitoredStatus.StatusType.OK;
         private Serializable value;
         private Long timestamp;
+        public String componentId;
     }
 
     @Override
@@ -273,6 +275,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 TransientStatus transientStatus = stati.get(prop);
                 if (transientStatus == null) {
                     transientStatus = new TransientStatus();
+                    transientStatus.componentId = trig.getComponentId();
                     stati.put(prop, transientStatus);
                 }
 
@@ -282,13 +285,16 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 }
 
                 final Pair<Long, ? extends Serializable> lastSample = pstate.getLastSample();
-                transientStatus.timestamp = transientStatus.timestamp == 0 ? lastSample.left : Math.min(lastSample.left, transientStatus.timestamp);
+                if (lastSample == null) continue;
+                transientStatus.timestamp = transientStatus.timestamp == null || transientStatus.timestamp == 0 ? lastSample.left : Math.min(lastSample.left, transientStatus.timestamp);
                 transientStatus.value = lastSample.right;
 
-                for (NotificationRule rule : ptrig.getNotificationRules()) {
-                    NotificationState nstate = nstates.get(rule.getOid());
-                    if (nstate.isNotified()) {
-                        transientStatus.status = MonitoredStatus.StatusType.NOTIFIED;
+                if (nstates != null) {
+                    for (NotificationRule rule : ptrig.getNotificationRules()) {
+                        NotificationState nstate = nstates.get(rule.getOid());
+                        if (nstate.isNotified()) {
+                            transientStatus.status = MonitoredStatus.StatusType.NOTIFIED;
+                        }
                     }
                 }
             }
@@ -298,7 +304,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         for (Map.Entry<MonitorableProperty, TransientStatus> entry : stati.entrySet()) {
             final MonitorableProperty prop = entry.getKey();
             final TransientStatus transientStatus = entry.getValue();
-            result.add(new MonitoredPropertyStatus(prop, transientStatus.timestamp, transientStatus.status, transientStatus.badTriggerOids, transientStatus.value));
+            result.add(new MonitoredPropertyStatus(prop, transientStatus.componentId, transientStatus.timestamp, transientStatus.status, transientStatus.badTriggerOids, transientStatus.value.toString()));
         }
 
         return result;
@@ -385,7 +391,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     final ComparisonOperator op = ptrigger.getOperator();
                     final Comparable rvalue = ptstate.comparisonValue;
                     if (op.compare(what, rvalue, false)) {
-                        logger.log(Level.INFO, property + " is out of tolerance"); // TODO maybe log the value and test expression here too
+                        logger.log(Level.INFO, "{0} value {1} is out of tolerance ({2} {3} {4})", new Object[] { property, sample.right.toString(), ptrigger.getMonitorableId(), op, rvalue }); 
                         tstate.outOfTolerance = true;
                         PropertyCondition cond = conditions.get(property);
                         if (cond == null) {
@@ -409,10 +415,8 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         @Override
         public void run() {
             while(true) {
-                final Map<Long, TriggerState> tstates = currentTriggerStates;
-                final Map<Long, NotificationState> nstates = currentNotificationStates;
                 try {
-                    final NotifiableCondition<?> got = notificationQueue.poll(500, TimeUnit.MILLISECONDS); // TODO timeout configurable?
+                    final NotifiableCondition<?> got = notificationQueue.poll(10000, TimeUnit.MILLISECONDS); // TODO timeout configurable?
                     if (got == null) continue;
 
                     final Set<Long> triggerOids = got.getTriggerOids();
@@ -420,6 +424,10 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                         logger.warning("Got a condition with no trigger OIDs");
                         continue;
                     }
+
+                    final Map<Long, TriggerState> tstates = currentTriggerStates;
+                    final Map<Long, NotificationState> nstates = currentNotificationStates;
+                    if (tstates == null) continue;
 
                     for (Long triggerOid : triggerOids) {
                         final TriggerState tstate = tstates.get(triggerOid);
@@ -431,7 +439,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                         final Trigger<?> trigger = tstate.trigger;
 
                         final List<NotificationRule> rules = trigger.getNotificationRules();
-                        for (NotificationRule rule : rules) {
+                        for (final NotificationRule rule : rules) {
                             final Long notificationOid = rule.getOid();
                             NotificationState nstate = nstates.get(notificationOid);
                             if (nstate == null) {
@@ -442,11 +450,18 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                             }
 
                             if (!nstate.isOKToFire()) {
-                                logger.fine("Suppressing repeated notification"); // TODO log more details
+                                logger.fine("Suppressing repeated notification for " + rule);
                                 continue;
                             }
 
-                            final Notifier notifier = notifierFactory.getNotifier(rule);
+                            final Notifier notifier;
+                            try {
+                                notifier = notifierFactory.getNotifier(rule);
+                            } catch (Exception e) {
+                                logger.log(Level.WARNING, "Couldn't get notifier for " + rule, e);
+                                continue;
+                            }
+
                             if (got instanceof PropertyCondition) {
                                 final PropertyCondition pc = (PropertyCondition) got;
                                 final NotificationState nstate1 = nstate;
@@ -456,7 +471,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                                             final NotificationAttempt.StatusType status = notifier.doNotification(got.getTimestamp(), pc.getValue(), trigger);
                                             nstate1.notified(new NotificationAttempt(status, null, System.currentTimeMillis()));
                                         } catch (Exception e) {
-                                            logger.log(Level.WARNING, "Couldn't notify", e);
+                                            logger.log(Level.WARNING, "Couldn't notify for " + rule, e);
                                             nstate1.failed(new NotificationAttempt(e, System.currentTimeMillis()));
                                         }
                                     }
@@ -464,12 +479,12 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                             }
                         }
                     }
+                    MonitoringKernelImpl.this.currentNotificationStates = nstates;
                 } catch (InterruptedException e) {
                     logger.info("Interrupted waiting for notification queue");
                     Thread.currentThread().interrupt();
                     return;
                 }
-
             }
         }
     }
