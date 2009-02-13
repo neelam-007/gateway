@@ -982,18 +982,21 @@
             monDlg_notificationEnabledCheckBox.checked = settings.notificationEnabled;
             monDlg_notificationDisabledWarning.style.visibility = currentSetup.disableAllNotifications ? 'visible' : 'hidden';
 
+            function populateNotificationRulesSelector() {
+                for (var i = 0; i < availableNotificationRules.length; ++i) {
+                    var option = document.createElement('option');
+                    option.value = availableNotificationRules[i].id;
+                    option.innerHTML = availableNotificationRules[i].name;
+                    if (l7.Util.findArrayElementsByProperty(settings.notificationRules, 'id', option.value).length == 1) {
+                        option.selected = true;
+                    }
+                    monDlg_notificationRulesListBox.appendChild(option);
+                }
+            }
             while (monDlg_notificationRulesListBox.options.length > 0) {
                 monDlg_notificationRulesListBox.remove(0);
             }
-            for (var i = 0; i < availableNotificationRules.length; ++i) {
-                var option = document.createElement('option');
-                option.value = availableNotificationRules[i].id;
-                option.innerHTML = availableNotificationRules[i].name;
-                if (l7.Util.findArrayElementsByProperty(settings.notificationRules, 'id', option.value).length == 1) {
-                    option.selected = true;
-                }
-                monDlg_notificationRulesListBox.appendChild(option);
-            }
+            refreshNotificationRules(populateNotificationRulesSelector);
 
             validateMonitoringPropertyDialog();
             monDlg.center();
@@ -1069,14 +1072,18 @@
 
         /**
          * Downloads the list of defined notification rules, use it to populate the table and sets availableNotificationRules.
+         * @param {function} callback   (optional) no-arg callback function upon success
          */
-        function loadNotificationRules() {
+        function refreshNotificationRules(callback) {
             notificationRulesDataSource.sendRequest(getSystemMonitoringNotificationRulesUrl, {
                 success : function(sRequest , oResponse , oPayload) {
                     notificationRulesDataTable.onDataReturnInitializeTable(sRequest , oResponse , oPayload);
                     notificationRulesDataTable.sortColumn(notificationRulesDataTable.getColumn('name'), YAHOO.widget.DataTable.CLASS_ASC);
                     updateNotificationRuleButtons();
                     availableNotificationRules = oResponse.results;
+                    if (callback) {
+                        callback();
+                    }
                 },
                 failure : notificationRulesDataTable.onDataReturnInitializeTable,
                 scope   : notificationRulesDataTable
@@ -1164,7 +1171,7 @@
             notificationRulesDataTable.subscribe("rowSelectEvent", updateNotificationRuleButtons);
             notificationRulesDataTable.subscribe("rowUnSelectEvent", updateNotificationRuleButtons);
 
-            loadNotificationRules();
+            refreshNotificationRules();
         }
 
         /**
@@ -1273,7 +1280,7 @@
                             if (saveNotificationRule()) {
                                 l7.Dialog.showInfoDialog(localizedStrings.NOTIFICATION_RULE_SAVED_TITLE, localizedStrings.NOTIFICATION_RULE_SAVED, localizedStrings.OK);
                                 this.hide();
-                                loadNotificationRules();
+                                refreshNotificationRules();
                             } // else keep dialog for user to fix up
                         },
                         isDefault : true
@@ -1329,7 +1336,7 @@
                                                              localizedStrings.OK);
                 if (result.success) {
                     // No response JSON object expected.
-                    loadNotificationRules();    // Reloads to show notification rule gone.
+                    refreshNotificationRules();    // Reloads to show notification rule gone.
                 }
             }
             deleteNotificationRuleDialog.callback.failure = function(o) {
@@ -1670,7 +1677,7 @@
                                     <button id="addNotificationRuleButton">New</button>
                                     <button id="editNotificationRuleButton">Edit</button>
                                     <button id="deleteNotificationRuleButton">Delete</button>
-                                    <img class="refresh clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="loadNotificationRules();" />
+                                    <img class="refresh clickableImg" src="../images/refresh.png" title="Refresh" alt="Refresh" onclick="refreshNotificationRules();" />
                                 </div>
                                 <div id="notificationRulesResize" class="panelContent">
                                     <div id="notificationRulesDataTable"></div>

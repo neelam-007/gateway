@@ -756,7 +756,10 @@ if (!l7.Connection) {
          * @param {string} method       HTTP method; 'GET' or 'POST'
          * @param {string} uri          resource path (include any parameters if method is 'GET')
          * @param {string} postData     POST body, if method is 'POST'
-         * @param {boolean} isJSON      used for setting the content type; true for 'application/json', false for 'application/x-www-form-urlencoded'
+         * @param {boolean} isJSON      whether postData is JSON;
+         *                              used for setting the HTTP request content type;
+         *                              true will result in 'application/json';
+         *                              false will result in 'application/x-www-form-urlencoded'
          * @return {object} the XMLHttpRequest object; null if fail to instantiate XMLHttpRequest object
          */
         l7.Connection.syncRequest = function(method, uri, postData, isJSON) {
