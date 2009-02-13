@@ -3,9 +3,12 @@
  */
 package com.l7tech.server.management.api.monitoring;
 
+import javax.xml.bind.annotation.XmlEnum;
+
 /**
  * Represents a host's current NTP status.
  */
+@XmlEnum(String.class)
 public enum NtpStatus {
     /** The ntpd is running and the clock is synchronized. */
     OK,
