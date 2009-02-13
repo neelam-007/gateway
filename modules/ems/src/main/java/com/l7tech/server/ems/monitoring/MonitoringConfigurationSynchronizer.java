@@ -198,14 +198,12 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
 
         Collection<Trigger> clusterTriggers =
                 convertTriggers(notificationsDisabled,
-                        cluster.getSslHostName(),
                         notRules,
                         entityMonitoringPropertySetupManager.findByEntityGuid(cluster.getGuid())
                 );
 
         Collection<Trigger> hostTrigger =
                 convertTriggers(notificationsDisabled,
-                        node.getIpAddress(),
                         notRules,
                         entityMonitoringPropertySetupManager.findByEntityGuid(node.getGuid())
                 );
@@ -220,7 +218,6 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
 
     // notificationRules is map of SystemMonitoringNotificationRule OID => NotificationRule instance
     private Collection<Trigger> convertTriggers(boolean notificationsDisabled,
-                                                String componentId,
                                                 Map<Long, NotificationRule> notificationRules, List<EntityMonitoringPropertySetup> setups
     )
     {
@@ -247,10 +244,10 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
                 triggerValue = Long.toString(value);
             }
             long maxSamplingInterval = 5000L; // TODO is this the same value from monitoring.samplingInterval.lowerLimit in emconfig.properties that default to 2 sec?
-            PropertyTrigger trigger = new PropertyTrigger(property, componentId, operator, triggerValue, maxSamplingInterval);
+            PropertyTrigger trigger = new PropertyTrigger(property, null, operator, triggerValue, maxSamplingInterval);
             trigger.setOid(setup.getOid());
             trigger.setVersion(setup.getVersion());
-            trigger.setNotificationRules(lookupNotificationRules(notificationsDisabled, setup, componentId, notificationRules, propertyName));
+            trigger.setNotificationRules(lookupNotificationRules(notificationsDisabled, setup, notificationRules, propertyName));
 
             ret.add(trigger);
         }
@@ -261,7 +258,6 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
     // notificationRules is map of SystemMonitoringNotificationRule OID => NotificationRule instance
     private static List<NotificationRule> lookupNotificationRules(boolean notificationsDisabled,
                                                                   EntityMonitoringPropertySetup entityMonitoringPropertySetup,
-                                                                  String componentId,
                                                                   Map<Long, NotificationRule> notificationRules,
                                                                   String propertyName)
     {
@@ -276,7 +272,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
                 notRules.add(notRule);
             } else {
                 if (logger.isLoggable(Level.WARNING))
-                    logger.log(Level.WARNING, MessageFormat.format("Trigger on monitorable property {0} on {1} refers to unavailable notification rule with OID {2}", propertyName, componentId, rule.getOid()));
+                    logger.log(Level.WARNING, MessageFormat.format("Trigger on monitorable property {0} refers to unavailable notification rule with OID {2}", propertyName, rule.getOid()));
             }
 
         }
