@@ -111,6 +111,10 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
 
     private long auditNotificationAttempts(SsgNode node, AuditContext auditContext, List<NotificationAttempt> attempts) {
         long mostRecentTime = 0;
+
+        if (attempts == null || attempts.isEmpty())
+            return mostRecentTime;
+
         for (NotificationAttempt attempt : attempts) {
             long time = attempt.getTimestamp();
             if (time > mostRecentTime)
