@@ -71,9 +71,9 @@ public class MigrationApiImpl implements MigrationApi {
     }
 
     @Override
-    public Collection<MappingCandidate> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, String filter) throws MigrationException {
+    public Collection<MappingCandidate> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, String filter) throws MigrationException {
         try {
-            return MigrationApi.MappingCandidate.asCandidates(manager.retrieveMappingCandidates(mappables, filter));
+            return MigrationApi.MappingCandidate.asCandidates(manager.retrieveMappingCandidates(mappables, scope, filter));
         } catch ( RuntimeException re ) {
             logger.log( Level.WARNING, "Unexpected error in Migration API.", re );
             throw re;

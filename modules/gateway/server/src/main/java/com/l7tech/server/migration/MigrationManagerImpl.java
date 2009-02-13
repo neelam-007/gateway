@@ -117,7 +117,7 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     @Override
-    public Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, String filter) throws MigrationApi.MigrationException {
+    public Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, String filter) throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Retrieving mapping candidates for {0}.", mappables);
         Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> result = new HashMap<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>>();
 
@@ -134,7 +134,7 @@ public class MigrationManagerImpl implements MigrationManager {
                                 candidates.add(maybeCandidate);
                         }
                     } else {
-                        for (EntityHeader candidate : entityCrud.findAll(EntityHeaderUtils.getEntityClass(header), filter, 0, 50 )) {
+                        for (EntityHeader candidate : entityCrud.findAllInScope(EntityHeaderUtils.getEntityClass(header), scope, filter, 0, 50 )) {
                             candidates.add(resolveHeader(EntityHeaderUtils.toExternal(candidate)));
                         }
                     }

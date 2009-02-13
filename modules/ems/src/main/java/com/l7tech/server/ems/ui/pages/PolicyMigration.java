@@ -41,6 +41,7 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.EmptyPanel;
+import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebRequest;
@@ -160,9 +161,21 @@ public class PolicyMigration extends EsmStandardWebPage {
             }
         };
 
+        final YuiAjaxButton editDependencyButton = new YuiAjaxButton("dependencyEditButton") {
+            @Override
+            protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
+                Panel mapping = new EmptyPanel(YuiDialog.getContentId()); // TODO panel
+
+                YuiDialog resultDialog = new YuiDialog("dialog", "Edit Mapping Value", YuiDialog.Style.YES_NO_CANCEL, mapping, null);
+                dialogContainer.replace( resultDialog );
+                ajaxRequestTarget.addComponent( dialogContainer );
+            }
+        };
+
         Form dependencyControlsForm = new Form("dependencyControlsForm");
         dependencyControlsForm.add( dependencyLoadButton.setOutputMarkupId(true).setEnabled(false) );
         dependencyControlsForm.add( clearDependencyButton.setOutputMarkupId(true).setEnabled(false) );
+        dependencyControlsForm.add( editDependencyButton.setOutputMarkupId(true).setEnabled(false) );
 
         Form selectionJsonForm = new Form("selectionForm");
         final HiddenField hiddenSelectionForm = new HiddenField("selectionJson", new Model(""));
@@ -394,11 +407,11 @@ public class PolicyMigration extends EsmStandardWebPage {
         dependenciesContainer.add( dependencyCandidateContainer.setOutputMarkupId(true) );
         dependenciesContainer.add( dependenciesOptionsContainer.setOutputMarkupId(true) );
 
+        dependenciesOptionsContainer.add(new DropDownChoice("dependencySearchTarget", new PropertyModel(searchModel, "searchTarget"), Arrays.asList(new SearchTarget())));
         String[] searchManners = new String[] {
             "contains",
             "starts with"
         };
-
         dependenciesOptionsContainer.add(new DropDownChoice("dependencySearchManner", new PropertyModel(searchModel, "searchManner"), Arrays.asList(searchManners)) {
             @Override
             protected CharSequence getDefaultChoice(Object o) {
@@ -428,7 +441,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
     private static final String[] EXTRA_PROPERTIES = new String[]{ "Policy Version", "SOAP", "Enabled" };
     private static final String[] DEPENDENCY_REFRESH_COMPONENTS = { "dependenciesTable", "dependenciesTotalLabel", "dependenciesUnmappedLabel", "dependenciesRequiredUnmappedLabel", "dependencyControlsForm" };
-    private static final String[] SEARCH_REFRESH_COMPONENTS = { "dependencySearchManner", "dependencySearchText", "dependencySearchButton" };
+    private static final String[] SEARCH_REFRESH_COMPONENTS = { "dependencySearchTarget", "dependencySearchManner", "dependencySearchText", "dependencySearchButton" };
 
     @SpringBean
     private SsgClusterManager ssgClusterManager;
@@ -547,11 +560,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                 extraProps = item.entityHeader.getExtraProperties();
             }
 
-            if ( extraProps.containsKey("Display Name") ) {
-                properties.add( new Pair<String,String>( "Name", extraProps.get("Display Name") ) );
-            } else {
-                properties.add( new Pair<String,String>( "Name", item.name == null ? "" : item.name ) );
-            }
+            properties.add( new Pair<String,String>( "Name", item.getDisplayName()) );
             properties.add( new Pair<String,String>( "Type", item.getType() ) );
             properties.add( new Pair<String,String>( "Version", item.getVersionAsString() ) );
 
@@ -576,7 +585,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             protected void populateItem( final ListItem item ) {
                 final DependencyItem dependencyItem = ((DependencyItem)item.getModelObject());
                 item.add(new Label("optional", dependencyItem.getOptional()).setEscapeModelStrings(false));
-                item.add(new Label("name", dependencyItem.name));
+                item.add(new Label("name", dependencyItem.getDisplayName()));
                 item.add(new Label("type", fromEntityType(com.l7tech.objectmodel.EntityType.valueOf(dependencyItem.type))));
                 item.add(new Label("version", dependencyItem.getVersionAsString()));
             }
@@ -669,7 +678,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(sourceKey, targetClusterId);
             Pair<DependencyItem, Boolean> mappedItem = mappingModel.dependencyMap.get( mappingKey );
             if ( mappedItem != null && mappedItem.left != null) {
-                item.destName = mappedItem.left.name;
+                item.destName = mappedItem.left.getDisplayName();
                 if ( !item.isOptional() ) {
                     item.resolved = true;
                 }
@@ -713,19 +722,23 @@ public class PolicyMigration extends EsmStandardWebPage {
                     }
 
                     Component selectionComponent = ((Form)dependenciesContainer.get("dependencyControlsForm")).get("dependencyClearButton");
+                    Component selectionComponent2 = ((Form)dependenciesContainer.get("dependencyControlsForm")).get("dependencyEditButton");
                     if ( selectedItem != null ) {
                         lastSourceKey = new DependencyKey( sourceClusterId, selectedItem.asEntityHeader() );
-                        candidateModel.setName( selectedItem.name );
+                        candidateModel.setName( selectedItem.getDisplayName() );
                         candidateModel.setType( selectedItem.getType() );                        
                         selectionComponent.setEnabled( mappingModel.dependencyMap.containsKey(new Pair<DependencyKey,String>(lastSourceKey,lastTargetClusterId)) );
+                        selectionComponent2.setEnabled( com.l7tech.objectmodel.EntityType.valueOf(selectedItem.type) == EntityType.VALUE_REFERENCE );
                     } else {
                         lastSourceKey = null;
                         candidateModel.reset();
                         selectionComponent.setEnabled(false);
+                        selectionComponent2.setEnabled(false);
                     }
 
                     addDependencyOptions( dependenciesContainer, optionRefreshComponents, candidateModel, searchModel, mappingModel, dependencySummaryModel, true );
                     ajaxRequestTarget.addComponent( selectionComponent );
+                    ajaxRequestTarget.addComponent( selectionComponent2 );
                     for ( Component component : optionRefreshComponents ) ajaxRequestTarget.addComponent( component );
                 }
             }
@@ -744,7 +757,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                                        final SearchModel searchModel,
                                        final EntityMappingModel mappingModel,
                                        final DepenencySummaryModel dependencySummaryModel,
-                                       final boolean resetSearch ) {
+                                       final boolean skipSearch ) {
         String targetClusterId = lastTargetClusterId;
         DependencyKey sourceKey = lastSourceKey;
         final Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(sourceKey, targetClusterId);
@@ -756,25 +769,47 @@ public class PolicyMigration extends EsmStandardWebPage {
             optionRefreshComponents[1].replace( markupContainer.setOutputMarkupId(true) );
         }
 
-        if ( resetSearch ) {
+        List<DependencyItem> options  = Collections.emptyList();
+        DropDownChoice targetChoice = (DropDownChoice) optionRefreshComponents[1].get("dependencySearchTarget");
+        if ( skipSearch ) {
             searchModel.setSearchManner("contains");
             searchModel.setSearchValue("");
-        }
 
-        List<DependencyItem> options;
-        if ( sourceKey == null  ) {
-            options = Collections.emptyList();
+            if ( sourceKey != null && isSearchable( sourceKey.asEntityHeader().getType() ) ) {
+                for ( String id : SEARCH_REFRESH_COMPONENTS ) {
+                    Component component = optionRefreshComponents[1].get(id);
+                    component.setEnabled( true );
+                }
 
-            for ( String id : SEARCH_REFRESH_COMPONENTS ) {
-                Component component = optionRefreshComponents[1].get(id);
-                component.setEnabled( false );
+                List<DependencyItem> scopeOptions = null;
+                if ( sourceKey.asEntityHeader().getProperty("Scope Type") != null ) {
+                    ExternalEntityHeader externalEntityHeader = new ExternalEntityHeader( null, EntityType.valueOf(sourceKey.asEntityHeader().getProperty("Scope Type")), null, null, null, -1);
+                    scopeOptions = retrieveDependencyOptions( lastTargetClusterId, new DependencyKey(sourceKey.clusterId, externalEntityHeader), null, null );
+                }
+
+                if ( scopeOptions != null && !scopeOptions.isEmpty() ) {
+                    List<SearchTarget> targetChoices = new ArrayList<SearchTarget>();
+                    SearchTarget selected = null;
+                    for ( DependencyItem item : scopeOptions ) {
+                        if ( selected == null ) selected = new SearchTarget( item );
+                        targetChoices.add( new SearchTarget( item ) );
+                    }
+                    Collections.sort( targetChoices );
+                    targetChoice.setChoices( targetChoices );
+                    targetChoice.setModelObject( selected );
+                } else {
+                    targetChoice.setChoices( Arrays.asList( new SearchTarget() ) );
+                    targetChoice.setModelObject( new SearchTarget() );
+                }
+            } else {
+                for ( String id : SEARCH_REFRESH_COMPONENTS ) {
+                    Component component = optionRefreshComponents[1].get(id);
+                    component.setEnabled( false );
+                }
             }
         } else {
-            options = retrieveDependencyOptions( lastTargetClusterId, lastSourceKey, searchModel.getSearchFilter() );
-
-            for ( String id : SEARCH_REFRESH_COMPONENTS ) {
-                Component component = optionRefreshComponents[1].get(id);
-                component.setEnabled( isSearchable( sourceKey.asEntityHeader().getType() ) );
+            if ( sourceKey != null && isSearchable( sourceKey.asEntityHeader().getType() ) ) {
+                options = retrieveDependencyOptions( lastTargetClusterId, lastSourceKey, searchModel.getSearchTarget().item, searchModel.getSearchFilter() );
             }
         }
 
@@ -801,7 +836,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                 }
 
                 item.add(radioComponent);
-                item.add(new Label("name", dependencyItem.name));
+                item.add(new Label("name", dependencyItem.getDisplayName()));
                 item.add(new Label("version", dependencyItem.getVersionAsString()));
             }
         });
@@ -840,8 +875,59 @@ public class PolicyMigration extends EsmStandardWebPage {
         return deps;
     }
 
+    private static boolean matches( final String data, final String pattern ) {
+        boolean matches = true;
+
+        if(pattern!=null && pattern.trim().length()>0) {
+            if(pattern.equals("*")) {
+                matches = true;
+            }
+            else if(data==null) {
+                matches = false;
+            }
+            else {
+                String lpattern = pattern.toLowerCase();
+                String ldata = data.toLowerCase();
+
+                String[] patterns = lpattern.split("\\*");
+                boolean wildStart = lpattern.startsWith("*");
+                boolean wildEnd = lpattern.endsWith("*");
+
+                int offset = 0;
+                for (int i = 0; i < patterns.length; i++) {
+                    String pat = patterns[i];
+                    if(i==0 && !wildStart && !wildEnd && patterns.length==1 && !ldata.equals(pat)) {
+                        matches = false;
+                        break;
+                    }
+                    else if(i==0 && !wildStart && !ldata.startsWith(pat)) {
+                        matches = false;
+                        break;
+                    }
+                    else if(i==patterns.length-1 && !wildEnd && !ldata.endsWith(pat)) {
+                        matches = false;
+                        break;
+                    }
+                    else {
+                        if(pat.length()==0) continue;
+                        int patIndex = ldata.indexOf(pat, offset);
+                        if(patIndex<0) {
+                            matches = false;
+                            break;
+                        }
+                        else {
+                            offset = patIndex + pat.length();
+                        }
+                    }
+                }
+            }
+        }
+
+        return matches;
+    }
+
     @SuppressWarnings({"unchecked"})
-    private List<DependencyItem> retrieveDependencyOptions( final String targetClusterId, final DependencyKey sourceKey, final String filter ) {
+    private List<DependencyItem> retrieveDependencyOptions( final String targetClusterId, final DependencyKey sourceKey, final DependencyItem scope, final String filter ) {
         List<DependencyItem> deps = new ArrayList<DependencyItem>();
 
         try {
@@ -851,13 +937,16 @@ public class PolicyMigration extends EsmStandardWebPage {
                     GatewayClusterClient context = gatewayClusterClientManager.getGatewayClusterClient(cluster, getUser());
                     MigrationApi api = context.getUncachedMigrationApi();
                     ExternalEntityHeader entityHeader = sourceKey.asEntityHeader();
-                    Map candidates = MigrationApi.MappingCandidate.fromCandidates(api.retrieveMappingCandidates( Collections.singletonList( entityHeader ), filter ));
+                    Map candidates = MigrationApi.MappingCandidate.fromCandidates(api.retrieveMappingCandidates( Collections.singletonList( entityHeader ), scope==null?null:scope.asEntityHeader(), filter ));
                     if ( candidates != null && candidates.containsKey(entityHeader) ) {
                         EntityHeaderSet<ExternalEntityHeader> entitySet = (EntityHeaderSet<ExternalEntityHeader>) candidates.get(entityHeader);
                         if ( entitySet != null ) {
                             for ( ExternalEntityHeader header : entitySet ) {
-                                deps.add( new DependencyItem( header, null) );
+                                if ( matches( header.getName(), filter ) ) {
+                                    deps.add( new DependencyItem( header, null) );
+                                }
                             }
+                            Collections.sort( deps );
                         } else {
                             logger.fine("No entities found when searching for candidates of ID '"+sourceKey.id+"', type '"+sourceKey.type+"'.");
                         }
@@ -1291,9 +1380,7 @@ public class PolicyMigration extends EsmStandardWebPage {
     }
 
     private static boolean isSearchable( final com.l7tech.objectmodel.EntityType type ) {
-        return  type == com.l7tech.objectmodel.EntityType.POLICY ||
-                type == com.l7tech.objectmodel.EntityType.USER ||
-                type == com.l7tech.objectmodel.EntityType.GROUP;
+        return  !(type == com.l7tech.objectmodel.EntityType.VALUE_REFERENCE);
     }
 
     public Boolean isResolved( final EntityMappingModel mappingModel,
@@ -1478,7 +1565,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         @Override
         public int compareTo(Object o) {
             DependencyItem otherItem = (DependencyItem) o;
-            int compared = name.toLowerCase().compareTo( otherItem.name.toLowerCase() );
+            int compared = getDisplayName().toLowerCase().compareTo( otherItem.getDisplayName().toLowerCase() );
             if ( compared == 0 ) {
                 compared = getType().compareTo( otherItem.getType() );
             }
@@ -1530,6 +1617,17 @@ public class PolicyMigration extends EsmStandardWebPage {
         public Integer getVersion() {
             return version;
         }
+
+        public String getDisplayName() {
+            String displayName = name;
+
+            Map<String,String> extraProps = entityHeader!=null ? entityHeader.getExtraProperties() : null;
+            if ( extraProps != null && extraProps.containsKey("Display Name") ) {
+                displayName = extraProps.get("Display Name");
+            }
+
+            return displayName;
+        }
     }
 
     /**
@@ -1541,12 +1639,65 @@ public class PolicyMigration extends EsmStandardWebPage {
             new HashMap<Pair<DependencyKey, String>, Pair<DependencyItem, Boolean>>();
     }
 
+    private final static class SearchTarget implements Serializable, Comparable {
+        private final DependencyItem item;
+
+        public SearchTarget() {
+            this.item = null;
+        }
+
+        public SearchTarget( final DependencyItem item ) {
+            this.item = item;
+        }
+
+        @Override
+        public String toString() {
+            return item == null ? "-" : item.getDisplayName();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            SearchTarget that = (SearchTarget) o;
+
+            if ( that.item == null && item == null ) {
+                return true;
+            } else if ( that.item != null && this.item != null && that.item.id.equals(this.item.id) ) {
+                return true;
+            }
+
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return item == null ? 1 : item.id.hashCode();
+        }
+
+        @Override
+        public int compareTo(Object o) {
+            SearchTarget other = (SearchTarget) o;
+            return this.toString().toLowerCase().compareTo(other.toString().toLowerCase());
+        }
+    }
+
     /**
      * A model to store a search manner and a value to search.
      */
     public final static class SearchModel implements Serializable {
+        private SearchTarget searchTarget;
         private String searchManner;
         private String searchValue;
+
+        public SearchTarget getSearchTarget() {
+            return searchTarget;
+        }
+
+        public void setSearchTarget(SearchTarget searchTarget) {
+            this.searchTarget = searchTarget;
+        }
 
         public String getSearchManner() {
             return searchManner;

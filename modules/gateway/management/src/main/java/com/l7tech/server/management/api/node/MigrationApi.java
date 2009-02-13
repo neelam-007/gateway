@@ -35,6 +35,7 @@ public interface MigrationApi {
 
     @WebMethod(operationName="RetrieveMappingCandidates")
     Collection<MappingCandidate> retrieveMappingCandidates( @WebParam(name="ExternalEntityHeaders") Collection<ExternalEntityHeader> mappables,
+                                                            @WebParam(name="Scope") ExternalEntityHeader scope,
                                                             @WebParam(name="Filter") String filter ) throws MigrationException;
 
     @WebMethod(operationName="ImportBundle")

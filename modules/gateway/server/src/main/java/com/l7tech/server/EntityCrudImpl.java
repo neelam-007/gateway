@@ -67,6 +67,23 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     }
 
     @Override
+    public EntityHeaderSet<EntityHeader> findAllInScope(final Class<? extends Entity> entityClass, EntityHeader scope, final String filter, final int offset, final int max) throws FindException {
+        ReadOnlyEntityManager manager = getReadOnlyManager(entityClass);
+        if ( manager != null ){
+            Collection<EntityHeader> headers;
+            if ( scope != null && manager instanceof ScopedSearchableEntityManager ) {
+                headers = ((ScopedSearchableEntityManager)manager).findHeadersInScope( offset, max, scope, filter );
+            } else if ( manager instanceof SearchableEntityManager ) {
+                headers = ((SearchableEntityManager)manager).findHeaders( offset, max, filter );
+            } else {
+                headers = manager.findAllHeaders( offset, max );
+            }
+            return new EntityHeaderSet<EntityHeader>((EntityHeader[])headers.toArray(new EntityHeader[headers.size()]));
+        }
+        return entityFinder.findAll(entityClass);
+    }
+
+    @Override
     public Entity find(final EntityHeader header) throws FindException {
         EntityManager manager = getManager(EntityTypeRegistry.getEntityClass(header.getType()));
         Entity ent = manager != null ? manager.findByHeader(header) : entityFinder.find(header);

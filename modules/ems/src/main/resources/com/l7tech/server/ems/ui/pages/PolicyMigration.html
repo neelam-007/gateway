@@ -1053,7 +1053,7 @@
                             <td></td>
                             <td class="panelToolbar" style="padding: 4px; vertical-align: top">
                                 <div wicket:id="dependencyCandidateContainer">
-                                    <p>Showing destination mapping candidates for:</p>
+                                    <p>Find destination candidates for:</p>
 
                                     <table class="indent spaced">
                                         <tr>
@@ -1075,25 +1075,33 @@
                                 <form wicket:id="dependencyControlsForm">
                                     <button type="submit" wicket:id="dependencyLoadButton">Load Previous Mappings</button>
                                     <button type="submit" wicket:id="dependencyClearButton">Remove Mapping</button>
+                                    <button type="submit" wicket:id="dependencyEditButton">Edit Mapping Value</button>
                                 </form>
                             </td>
                             <td></td>
                             <td valign="top">
                                 <form wicket:id="dependencyOptionsContainer">
                                     <div>
-                                        <table>
+                                        <table cellspacing="2" style="margin-top: 2px">
                                             <tr>
-                                                <td class="middle">Mapping&nbsp;</td>
-                                                <td class="middle"><select wicket:id="dependencySearchManner"/>&nbsp;</td>
-                                                <td class="middle">:&nbsp;</td>
-                                                <td class="middle"><input type="text" wicket:id="dependencySearchText" value="" size="30" />&nbsp;</td>
-                                                <td class="middle"><button type="submit" wicket:id="dependencySearchButton">Search</button></td>
+                                                <td class="middle">
+                                                    Search for candidates from <select wicket:id="dependencySearchTarget" style="width: 250px;"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="middle">
+                                                    where name <select wicket:id="dependencySearchManner"/>
+                                                    <input type="text" wicket:id="dependencySearchText" value="" size="30" style="width: 235px"/>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="right"><button type="submit" wicket:id="dependencySearchButton">Search</button></td>
                                             </tr>
                                         </table>
 
                                         <br/>
 
-                                        <div style="border: 1px solid black; height: 200px; width: 400px; overflow: scroll">
+                                        <div style="border: 1px solid black; height: 185px; width: 400px; overflow: scroll">
                                             <table class="dataTable" wicket:id="dependencyOptions" width="100%">
                                                 <thead>
                                                     <tr>

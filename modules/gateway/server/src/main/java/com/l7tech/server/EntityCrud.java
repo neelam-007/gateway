@@ -38,6 +38,9 @@ public interface EntityCrud extends EntityFinder {
     @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     EntityHeaderSet<EntityHeader> findAll(Class<? extends Entity> entityClass, String filter, int offset, int max) throws FindException;
 
+    @Secured(stereotype=MethodStereotype.FIND_HEADERS)
+    EntityHeaderSet<EntityHeader> findAllInScope(Class<? extends Entity> entityClass, EntityHeader header, String filter, int offset, int max) throws FindException;
+
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
     @Override
     Entity find(EntityHeader header) throws FindException;

@@ -93,7 +93,7 @@ public class GatewayClusterClientTest {
                         return null;
                     }
 
-                    public Collection<MappingCandidate> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, String filter) throws MigrationException {
+                    public Collection<MappingCandidate> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, String filter) throws MigrationException {
                         return null;
                     }
 

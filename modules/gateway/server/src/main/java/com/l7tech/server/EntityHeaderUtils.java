@@ -129,6 +129,7 @@ public final class EntityHeaderUtils {
             externalEntityHeader.addProperty("Enabled", Boolean.toString(!serviceHeader.isDisabled()));
         } else if (header instanceof IdentityHeader) {
             externalEntityHeader = new ExternalEntityHeader(((IdentityHeader)header).getProviderOid() + ":" + header.getStrId(), header);
+            externalEntityHeader.addProperty("Scope Type", EntityType.ID_PROVIDER_CONFIG.toString());
         } else if (header instanceof SsgKeyHeader) {
             externalEntityHeader = new ExternalEntityHeader(((SsgKeyHeader)header).getKeystoreId() + ":" + ((SsgKeyHeader)header).getAlias(), header);
         } else if (header instanceof AliasHeader) {
