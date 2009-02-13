@@ -3,6 +3,7 @@ package com.l7tech.server.ems.ui.pages;
 import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.migration.MigrationRecord;
+import com.l7tech.server.ems.migration.MigrationSummary;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ExceptionUtils;
@@ -37,7 +38,7 @@ import java.util.logging.Level;
 import java.io.Serializable;
 
 /**
- *
+ * todo: rename to PolicyHistory to be consistent with the UI
  */
 @NavigationPage(page="PolicyMapping",pageIndex=300,section="ManagePolicies",pageUrl="PolicyHistory.html")
 public class PolicyMapping extends EsmStandardWebPage {
@@ -436,8 +437,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         }
 
         public String getSummary() {
-            // todo: format XML for html display
-            return migration==null ? null : migration.getSummaryXml();
+            return migration==null ? null : MigrationSummary.deserializeXml(migration.getSummaryXml()).toString();
         }
 
         public void setMigrationRecord(final MigrationRecord migration) {

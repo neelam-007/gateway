@@ -40,9 +40,9 @@ public class MigrationSummary {
                             String targetFolderPath, boolean migrateFolders, boolean overwrite, boolean enableNewServices) {
 
         this.sourceClusterGuid = sourceCluster.getGuid();
-        this.sourceClusterName = sourceCluster.getName(); // todo: name or ssl name?
+        this.sourceClusterName = sourceCluster.getName();
         this.targetClusterGuid = targetCluster.getGuid();
-        this.targetClusterName = targetCluster.getName(); // todo: name or ssl name?
+        this.targetClusterName = targetCluster.getName();
         this.migratedItems = migratedItems;
         this.dryRun = dryRun;
 

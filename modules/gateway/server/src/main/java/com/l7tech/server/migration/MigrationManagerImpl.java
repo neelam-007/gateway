@@ -458,9 +458,11 @@ public class MigrationManagerImpl implements MigrationManager {
                 for (ExternalEntityHeader depHeader : deps.keySet()) {
                     ExternalEntityHeader resolvedDepHeader = resolveHeader(depHeader);
                     for ( MigrationDependency dependency : deps.get(depHeader) ) {
-                        dependency.setDependency(resolvedDepHeader);
-                        result.addDependency(dependency);
-                        logger.log(Level.FINE, "Added dependency: " + dependency);
+                        if (dependency != null) { // only the depHeader is useful for inverse dependencies 
+                            dependency.setDependency(resolvedDepHeader);
+                            result.addDependency(dependency);
+                            logger.log(Level.FINE, "Added dependency: " + dependency);
+                        }
                         if ( !result.hasHeader( resolvedDepHeader ) ) {
                             findDependenciesRecursive( result, resolvedDepHeader );
                         }
