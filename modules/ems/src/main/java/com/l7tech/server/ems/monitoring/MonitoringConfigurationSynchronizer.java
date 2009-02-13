@@ -237,8 +237,8 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
             final ComparisonOperator operator;
             final String triggerValue;
             if (value == null) {
-                operator = ComparisonOperator.NE;
-                triggerValue = "OK";
+                operator = property.getSuggestedComparisonOperator();
+                triggerValue = property.getSuggestedComparisonValue();
             } else {
                 operator = ComparisonOperator.GE;
                 triggerValue = Long.toString(value);

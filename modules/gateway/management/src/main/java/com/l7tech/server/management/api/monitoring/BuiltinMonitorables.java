@@ -5,6 +5,7 @@ package com.l7tech.server.management.api.monitoring;
 
 import com.l7tech.server.management.NodeStateType;
 import com.l7tech.server.management.config.monitoring.ComponentType;
+import com.l7tech.util.ComparisonOperator;
 import com.l7tech.util.Pair;
 
 import java.util.*;
@@ -14,27 +15,27 @@ import java.util.*;
  */
 public final class BuiltinMonitorables {
     /** CPU usage percentage */
-    public static final MonitorableProperty CPU_USAGE = new MonitorableProperty(ComponentType.HOST, "cpuUsage", Integer.class);
+    public static final MonitorableProperty CPU_USAGE = new MonitorableProperty(ComponentType.HOST, "cpuUsage", Integer.class, 2000L, ComparisonOperator.GE, "97");
     /** CPU Temperature, in °C */
-    public static final MonitorableProperty CPU_TEMPERATURE = new MonitorableProperty(ComponentType.HOST, "cpuTemp", Integer.class);
+    public static final MonitorableProperty CPU_TEMPERATURE = new MonitorableProperty(ComponentType.HOST, "cpuTemp", Integer.class, 30000L, ComparisonOperator.GE, "50");
     /** Free Swap space, in KiB */
-    public static final MonitorableProperty SWAP_SPACE = new MonitorableProperty(ComponentType.HOST, "swapUsage", Long.class);
+    public static final MonitorableProperty SWAP_SPACE = new MonitorableProperty(ComponentType.HOST, "swapUsage", Long.class, 30000L, ComparisonOperator.LT, "100000");
     /** Free disk space, in KiB */
-    public static final MonitorableProperty DISK_FREE_KIB = new MonitorableProperty(ComponentType.HOST, "diskFree", Long.class);
+    public static final MonitorableProperty DISK_FREE_KIB = new MonitorableProperty(ComponentType.HOST, "diskFree", Long.class, 120000L, ComparisonOperator.LT, "100000");
     /** Percent free space */
-    public static final MonitorableProperty DISK_USAGE_PERCENT = new MonitorableProperty(ComponentType.HOST, "diskUsage", Integer.class);
+    public static final MonitorableProperty DISK_USAGE_PERCENT = new MonitorableProperty(ComponentType.HOST, "diskUsage", Integer.class, 120000L, ComparisonOperator.LT, "5");
     /** Current time, in milliseconds GMT since Unix epoch */
-    public static final MonitorableProperty TIME = new MonitorableProperty(ComponentType.HOST, "time", Long.class);
+    public static final MonitorableProperty TIME = new MonitorableProperty(ComponentType.HOST, "time", Long.class, 1000L, ComparisonOperator.LT, "1");
     /** Size of log files, in KiB */
-    public static final MonitorableProperty LOG_SIZE = new MonitorableProperty(ComponentType.HOST, "logSize", Long.class);
+    public static final MonitorableProperty LOG_SIZE = new MonitorableProperty(ComponentType.HOST, "logSize", Long.class, 120000L, ComparisonOperator.GT, "500000");
     /** Current state of Gateway node */
-    public static final MonitorableProperty NODE_STATE = new MonitorableProperty(ComponentType.NODE, "operatingStatus", NodeStateType.class);
+    public static final MonitorableProperty NODE_STATE = new MonitorableProperty(ComponentType.NODE, "operatingStatus", NodeStateType.class, 120000L, ComparisonOperator.NE, NodeStateType.RUNNING.name());
     /** Current NTP synchronization status of SSG appliance */
-    public static final MonitorableProperty NTP_STATUS = new MonitorableProperty(ComponentType.HOST, "ntpStatus", NtpStatus.class);
+    public static final MonitorableProperty NTP_STATUS = new MonitorableProperty(ComponentType.HOST, "ntpStatus", NtpStatus.class, 120000L, ComparisonOperator.NE, NtpStatus.OK.name());
     /** Current status of appliance's RAID array */
-    public static final MonitorableProperty RAID_STATUS = new MonitorableProperty(ComponentType.HOST, "raidStatus", RaidStatus.class);
+    public static final MonitorableProperty RAID_STATUS = new MonitorableProperty(ComponentType.HOST, "raidStatus", RaidStatus.class, 120000L, ComparisonOperator.NE, RaidStatus.OK.name());
     /** Number of records currently in the cluster's audit table */
-    public static final MonitorableProperty AUDIT_SIZE = new MonitorableProperty(ComponentType.CLUSTER, "auditSize", Long.class);
+    public static final MonitorableProperty AUDIT_SIZE = new MonitorableProperty(ComponentType.CLUSTER, "auditSize", Long.class, 600000L, ComparisonOperator.GE, "10000000");
 
     private static final Monitorable[] VALUES = new Monitorable[] {
             CPU_USAGE, CPU_TEMPERATURE, SWAP_SPACE, DISK_FREE_KIB, DISK_USAGE_PERCENT, TIME, LOG_SIZE, NODE_STATE, NTP_STATUS, RAID_STATUS, AUDIT_SIZE
