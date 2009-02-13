@@ -1,32 +1,32 @@
 package com.l7tech.server.ems.gateway;
 
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.ApplicationEvent;
-import com.l7tech.server.ems.enterprise.SsgClusterManager;
-import com.l7tech.server.ems.enterprise.SsgCluster;
-import com.l7tech.server.ems.enterprise.SsgNode;
+import com.l7tech.gateway.common.audit.LogonEvent;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.ems.enterprise.JSONConstants;
+import com.l7tech.server.ems.enterprise.SsgCluster;
+import com.l7tech.server.ems.enterprise.SsgClusterManager;
+import com.l7tech.server.ems.enterprise.SsgNode;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.management.api.node.NodeManagementApi;
-import com.l7tech.server.audit.AuditContextUtils;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.identity.User;
-import com.l7tech.gateway.common.audit.LogonEvent;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.xml.ws.soap.SOAPFaultException;
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.io.IOException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * 
@@ -48,14 +48,14 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
         this.timerTask = new TimerTask(  ) {
             @Override
             public void run() {
-                boolean isSystem = AuditContextUtils.isSystem();
                 try {
-                    AuditContextUtils.setSystem( true );
-                    pollGateways();
-                } catch ( Exception e ) {
+                    AuditContextUtils.doAsSystem(new Runnable() {
+                        public void run() {
+                            pollGateways();
+                        }
+                    });
+                } catch (Exception e) {
                     logger.log( Level.WARNING, "Error polling gateways", e );
-                } finally {
-                    AuditContextUtils.setSystem( isSystem );
                 }
             }
         };

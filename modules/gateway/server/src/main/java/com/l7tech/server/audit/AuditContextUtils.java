@@ -25,6 +25,22 @@ public class AuditContextUtils {
         systemThreadLocal.set( system );
     }
 
+    /**
+     * Execute some code with the system flag set to true, restoring the flag's previous value
+     * once execution completes.
+     *
+     * @param task a task to execute with the current audit record flagged as system generated. Required.
+     */
+    public static void doAsSystem(Runnable task) {
+        boolean isSystem = AuditContextUtils.isSystem();
+        try {
+            AuditContextUtils.setSystem( true );
+            task.run();
+        } finally {
+            AuditContextUtils.setSystem( isSystem );
+        }
+    }
+
     //- PRIVATE
 
     private static final ThreadLocal<Boolean> systemThreadLocal = new ThreadLocal<Boolean>(){

@@ -7,7 +7,7 @@ import java.util.logging.Level;
 
 /**
  * Message catalog for messages audited by policy assertions.
- * The ID range 4000-7999 inclusive is reserved for these messages.
+ * The ID range 4000-99999 inclusive is reserved for these messages.
  */
 public class AssertionMessages extends Messages {
 
@@ -619,4 +619,6 @@ public class AssertionMessages extends Messages {
     public static final M MCM_MAPPING_OVERRIDDEN = m(9002, Level.INFO, "Message context mapping overridden {0}.");
     public static final M MCM_TOO_MANY_MAPPINGS  = m(9003, Level.WARNING, "Message context mapping dropped {0}.");
     public static final M MCM_TOO_LONG_VALUE     = m(9004, Level.WARNING, "Message context mapping value truncated {0}.");
+
+    // Highest ID reserved for AssertionMessages = 99999
 }

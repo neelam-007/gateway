@@ -40,6 +40,10 @@ public class AuditDetail extends PersistentEntityImp implements Serializable, Co
         this(message, (param1 == null && param2 == null) ? null : new String[] { param1, param2 }, null);
     }
 
+    public AuditDetail(AuditDetailMessage message, String... params) {
+        this(message, params, null);
+    }
+
     public AuditDetail(AuditDetailMessage message, String[] params, Throwable e) {
         // auditOid is probably not known at this time but will be by the time it's saved
         this.time = System.currentTimeMillis();

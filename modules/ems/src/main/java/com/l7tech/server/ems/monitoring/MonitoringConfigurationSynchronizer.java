@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
@@ -17,10 +18,13 @@ import com.l7tech.server.event.admin.PersistenceEvent;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 import com.l7tech.server.management.api.monitoring.MonitorableProperty;
-import com.l7tech.server.management.config.monitoring.*;
+import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
+import com.l7tech.server.management.config.monitoring.NotificationRule;
+import com.l7tech.server.management.config.monitoring.PropertyTrigger;
+import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.util.ComparisonOperator;
 import com.l7tech.util.ExceptionUtils;
-import org.springframework.beans.factory.DisposableBean;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -35,8 +39,11 @@ import java.util.logging.Logger;
  * Sends the monitoring configuration to all known process controllers on ESM startup and whenever
  * the configuration changes.
  */
-public class MonitoringConfigurationSynchronizer extends TimerTask implements ApplicationListener, DisposableBean {
+public class MonitoringConfigurationSynchronizer implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(MonitoringConfigurationSynchronizer.class.getName());
+
+    private static final long DELAY_UNTIL_FIRST_CONFIG_PUSH = SyspropUtil.getLong("com.l7tech.server.ems.monitoring.configPush.delayUntilFirst", 1637L);
+    private static final long DELAY_BETWEEN_CONFIG_PUSHES = SyspropUtil.getLong("com.l7tech.server.ems.monitoring.configPush.delayBetween", 7457L);
 
     /** We should mark all monitoring configurations as dirty any time one of these entities changes. */
     private static final Set<Class<? extends Entity>> MONITORING_ENTITIES = Collections.unmodifiableSet(new HashSet<Class<? extends Entity>>() {{
@@ -51,20 +58,24 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
             ServerConfig.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS
     )));
 
+    private final Timer timer;
     private final SsgClusterManager ssgClusterManager;
     private final GatewayContextFactory gatewayContextFactory;
     private final SsgClusterNotificationSetupManager ssgClusterNotificationSetupManager;
     private final EntityMonitoringPropertySetupManager entityMonitoringPropertySetupManager;
     private final SystemMonitoringSetupSettingsManager systemMonitoringSetupSettingsManager;
-    private final Timer timer = new Timer();
+    private final TimerTask configPusherTask = makeConfigPusherTask();
+
     private final AtomicBoolean dirty = new AtomicBoolean(true);
 
-    public MonitoringConfigurationSynchronizer(SsgClusterManager ssgClusterManager,
+    public MonitoringConfigurationSynchronizer(Timer timer,
+                                               SsgClusterManager ssgClusterManager,
                                                GatewayContextFactory gatewayContextFactory,
                                                SsgClusterNotificationSetupManager ssgClusterNotificationSetupManager,
                                                EntityMonitoringPropertySetupManager entityMonitoringPropertySetupManager,
                                                SystemMonitoringSetupSettingsManager systemMonitoringSetupSettingsManager)
     {
+        this.timer = timer;
         this.ssgClusterManager = ssgClusterManager;
         this.gatewayContextFactory = gatewayContextFactory;
         this.ssgClusterNotificationSetupManager = ssgClusterNotificationSetupManager;
@@ -100,10 +111,22 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
     }
 
     private void start() {
-        timer.schedule(this, 1000L, 15000L);
+        timer.schedule(configPusherTask, DELAY_UNTIL_FIRST_CONFIG_PUSH, DELAY_BETWEEN_CONFIG_PUSHES);
     }
 
-    public void run() {
+    private TimerTask makeConfigPusherTask() {
+        return new TimerTask() {
+            public void run() {
+                AuditContextUtils.doAsSystem(new Runnable() {
+                    public void run() {
+                        maybePushAllConfig();
+                    }
+                });
+            }
+        };
+    }
+
+    private void maybePushAllConfig() {
         if (!dirty.get())
             return;
 
@@ -301,10 +324,5 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
     void setAllDirty() {
         // TODO keep track of dirtiness per PC GUID
         dirty.set(true);
-    }
-
-    public void destroy() throws Exception {
-        cancel();
-        timer.cancel();
     }
 }

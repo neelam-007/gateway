@@ -552,6 +552,31 @@
         <constructor-arg index="4" ref="userPropertyManager" />
     </bean>
 
+    <bean id="monitoringConfigurationSynchronizer" class="com.l7tech.server.ems.monitoring.MonitoringConfigurationSynchronizer">
+        <constructor-arg index="0">
+            <bean id="monitoringConfigurationSynchronizerTimer" class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="monitoringConfigurationSynchronizerTimer"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index="1" ref="ssgClusterManager"/>
+        <constructor-arg index="2" ref="gatewayContextFactory"/>
+        <constructor-arg index="3" ref="ssgClusterNotificationSetupManager"/>
+        <constructor-arg index="4" ref="entityMonitoringPropertySetupManager"/>
+        <constructor-arg index="5" ref="systemMonitoringSetupSettingsManager"/>
+    </bean>
+
+    <bean id="notificationAttemptAuditor" class="com.l7tech.server.ems.monitoring.NotificationAttemptAuditor">
+        <constructor-arg index="0">
+            <bean id="notificationAttemptAuditorTimer" class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="notificationAttemptAuditorTimer"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index="1" ref="transactionManager"/>
+        <constructor-arg index="2" ref="ssgClusterManager"/>
+        <constructor-arg index="3" ref="ssgNodeManager"/>
+        <constructor-arg index="4" ref="gatewayContextFactory"/>
+    </bean>
+
     <bean id="standardReportManager" class="com.l7tech.server.ems.standardreports.StandardReportManagerImpl" parent="hibernateBean">
         <constructor-arg index="0" ref="roleManager"/>
     </bean>
@@ -569,12 +594,4 @@
     </bean>
 
     <bean id="eventPublisher" class="com.l7tech.server.ems.util.ApplicationEventPublisherImpl"/>
-
-    <bean id="monitoringConfigurationSynchronizer" class="com.l7tech.server.ems.monitoring.MonitoringConfigurationSynchronizer">
-        <constructor-arg index="0" ref="ssgClusterManager"/>
-        <constructor-arg index="1" ref="gatewayContextFactory"/>
-        <constructor-arg index="2" ref="ssgClusterNotificationSetupManager"/>
-        <constructor-arg index="3" ref="entityMonitoringPropertySetupManager"/>
-        <constructor-arg index="4" ref="systemMonitoringSetupSettingsManager"/>
-    </bean>
 </beans>

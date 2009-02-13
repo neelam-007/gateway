@@ -32,6 +32,7 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
     private String onlineStatus;
     private boolean trustStatus;
     private String softwareVersion;
+    private long notificationAuditTime; // ignored by equals() and hashCode()
 
     @Column(name="guid", length=36, nullable=false)
     public String getGuid() {
@@ -106,6 +107,18 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
         this.processControllerPort = processControllerPort;
     }
 
+    /**
+     * @return Unixtime of the time we last collected and audited all notification attempts made by this node.
+     */
+    @Column(name="notification_audit_time")
+    public long getNotificationAuditTime() {
+        return notificationAuditTime;
+    }
+
+    public void setNotificationAuditTime(long notificationAuditTime) {
+        this.notificationAuditTime = notificationAuditTime;
+    }
+
     @Override
     public void toJSON(JSON.Output output) {
         output.add(JSONConstants.ID, guid);
@@ -150,9 +163,6 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
 
         SsgNode ssgNode = (SsgNode) o;
 
-        if (gatewayPort != ssgNode.gatewayPort) return false;
-        if (processControllerPort != ssgNode.processControllerPort) return false;
-        if (trustStatus != ssgNode.trustStatus) return false;
         if (guid != null ? !guid.equals(ssgNode.guid) : ssgNode.guid != null) return false;
         if (ipAddress != null ? !ipAddress.equals(ssgNode.ipAddress) : ssgNode.ipAddress != null) return false;
         if (onlineStatus != null ? !onlineStatus.equals(ssgNode.onlineStatus) : ssgNode.onlineStatus != null)

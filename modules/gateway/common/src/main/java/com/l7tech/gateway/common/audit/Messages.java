@@ -23,8 +23,8 @@ public class Messages {
      * SystemMessages:                 2000 - 2999
      * MessageProcessingMessages:      3000 - 3499
      * ServiceMessages:                3500 - 3999
-     * AssertionMessagess:             4000 - 7999
-     *
+     * AssertionMessagess:             4000 - 99999
+     * EsmMessages:                    100000 - 109999
      *
      */
 
