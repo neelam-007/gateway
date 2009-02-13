@@ -22,7 +22,7 @@ public final class BuiltinMonitorables {
     /** Free disk space, in KiB */
     public static final MonitorableProperty DISK_FREE_KIB = new MonitorableProperty(ComponentType.HOST, "diskFree", Long.class);
     /** Percent free space */
-    public static final MonitorableProperty DISK_USAGE_PERCENT = new MonitorableProperty(ComponentType.HOST, "diskUsage", Double.class);
+    public static final MonitorableProperty DISK_USAGE_PERCENT = new MonitorableProperty(ComponentType.HOST, "diskUsage", Integer.class);
     /** Current time, in milliseconds GMT since Unix epoch */
     public static final MonitorableProperty TIME = new MonitorableProperty(ComponentType.HOST, "time", Long.class);
     /** Size of log files, in KiB */
