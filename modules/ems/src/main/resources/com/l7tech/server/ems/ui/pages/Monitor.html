@@ -219,6 +219,7 @@
         var monDlg;
         var monDlg_readOnly;
         var monDlg_entityId;
+        var monDlg_entityType;
         var monDlg_propertyType;
         var monDlg_entityTypeLabel;
         var monDlg_entityPathLabel;
@@ -700,11 +701,7 @@
             var settings = {};
             settings.entity = {};
             settings.entity.id = monDlg_entityId.value;
-            if (monDlg_entityTypeLabel.innerHTML == entityTreeTableLocalizedStrings.SSG_CLUSTER) {
-                settings.entity.type = l7.Constants.ENTITY_TYPE.SSG_CLUSTER;
-            } else if (monDlg_entityTypeLabel.innerHTML == entityTreeTableLocalizedStrings.SSG_NODE) {
-                settings.entity.type = l7.Constants.ENTITY_TYPE.SSG_NODE;
-            }
+            settings.entity.type = monDlg_entityType.value;
             settings.propertyType = monDlg_propertyType.value;
             settings.monitoringEnabled = monDlg_enabledCheckBox.checked;
             if (settings.monitoringEnabled) {
@@ -948,6 +945,7 @@
 
             monDlg_readOnly = settings.readOnly;
             monDlg_entityId.value = entity.id;
+            monDlg_entityType.value = entity.type;
             monDlg_propertyType.value = propertyType;
             monDlg_entityTypeLabel.innerHTML = '';
             if (settings.entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
@@ -1444,6 +1442,7 @@
             }
 
             monDlg_entityId = document.getElementById('monDlg_entityId');
+            monDlg_entityType = document.getElementById('monDlg_entityType');
             monDlg_propertyType = document.getElementById('monDlg_propertyType');
             monDlg_entityTypeLabel = document.getElementById('monDlg_entityTypeLabel');
             monDlg_entityPathLabel = document.getElementById('monDlg_entityPathLabel');
@@ -2023,6 +2022,7 @@
     <div class="bd">
         <form>
             <input id="monDlg_entityId" type="hidden"/>
+            <input id="monDlg_entityType" type="hidden"/>
             <input id="monDlg_propertyType" type="hidden"/>
             <table class="spaced">
                 <tr>
