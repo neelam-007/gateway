@@ -167,6 +167,7 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
         MonitoringConfiguration config = new MonitoringConfiguration();
         config.setName(node.getName());
         config.setOid(node.getOid());
+        config.setVersion(node.getVersion());
 
         SsgClusterNotificationSetup clusterSetup = ssgClusterNotificationSetupManager.findByEntityGuid(cluster.getGuid());
         Map<Long, NotificationRule> notRules = convertNotificationRules(notificationsDisabled, clusterSetup.getSystemNotificationRules());
@@ -218,6 +219,7 @@ public class MonitoringConfigurationSynchronizer extends TimerTask implements Ap
             long maxSamplingInterval = 5000L; // TODO is this the same value from monitoring.samplingInterval.lowerLimit in emconfig.properties that default to 2 sec?
             PropertyTrigger trigger = new PropertyTrigger(property, componentId, operator, triggerValue, maxSamplingInterval);
             trigger.setOid(setup.getOid());
+            trigger.setVersion(setup.getVersion());
             trigger.setNotificationRules(lookupNotificationRules(notificationsDisabled, setup, componentId, notificationRules, propertyName));
 
             ret.add(trigger);

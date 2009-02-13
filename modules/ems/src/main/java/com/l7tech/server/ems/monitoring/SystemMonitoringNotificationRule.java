@@ -90,6 +90,7 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
         HttpNotificationRule ret = new HttpNotificationRule();
         ret.setName(getName());
         ret.setOid(getOid());
+        ret.setVersion(getVersion());
         ret.setAuthInfo(null); // todo: where to get username and password to create authInfo?
         ret.setContentType((String)getParamProp(JSONConstants.NotificationHttpRequestParams.CONTENT_TYPE));
         ret.setMethod(obtainHttpMethod((String)getParamProp(JSONConstants.NotificationHttpRequestParams.HTTP_METHOD)));
@@ -102,6 +103,7 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
         SnmpTrapNotificationRule ret = new SnmpTrapNotificationRule();
         ret.setName(getName());
         ret.setOid(getOid());
+        ret.setVersion(getVersion());
         ret.setCommunity((String)getParamProp(JSONConstants.NotificationSnmpTrapParams.COMMUNITY));
         ret.setOidSuffix(Integer.valueOf(getParamProp(JSONConstants.NotificationSnmpTrapParams.OIDFUFFIX).toString()));
         ret.setPort(Integer.valueOf(getParamProp(JSONConstants.NotificationSnmpTrapParams.PORT).toString()));
@@ -114,6 +116,7 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
         EmailNotificationRule ret = new EmailNotificationRule();
         ret.setName(getName());
         ret.setOid(getOid());
+        ret.setVersion(getVersion());
         ret.setAuthInfo(obtainAuthInfo());
         ret.setBcc(toStringList((String)getParamProp(JSONConstants.NotificationEmailParams.BCC)));
         ret.setCc(toStringList((String)getParamProp(JSONConstants.NotificationEmailParams.CC)));
