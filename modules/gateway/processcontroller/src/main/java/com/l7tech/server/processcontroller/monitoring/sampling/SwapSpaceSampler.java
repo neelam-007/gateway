@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
  *
  */
 class SwapSpaceSampler extends HostPropertySampler<Long> {
-    private static final Pattern SWAPFREE_MATCHER = Pattern.compile("^SwapFree:\\s*(\\d+)\\s*kB$", Pattern.MULTILINE);
+    private static final Pattern SWAPFREE_MATCHER = Pattern.compile("(?m)^SwapFree:\\s*(\\d+)\\s*kB$", Pattern.MULTILINE);
 
     public SwapSpaceSampler(String componentId) {
         super(componentId, "swapSpace");

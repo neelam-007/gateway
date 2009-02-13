@@ -66,7 +66,7 @@ abstract class HostPropertySampler<V extends Serializable> extends PropertySampl
     protected long matchNumber(String contentToMatch, String location, Pattern regex) throws PropertySamplingException {
         try {
             Matcher matcher = regex.matcher(contentToMatch);
-            if (!matcher.matches())
+            if (!matcher.find())
                 throw new PropertySamplingException("Unable to find " + propertyName + " in " + location);
             if (matcher.groupCount() < 1)
                 throw new PropertySamplingException("Unable to find " + propertyName + " in " + location + ": regex contains no capture groups");
