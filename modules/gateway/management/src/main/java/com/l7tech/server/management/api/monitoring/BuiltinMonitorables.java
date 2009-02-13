@@ -13,25 +13,41 @@ import java.util.*;
  * A registry of well-known {@link Monitorable monitorables}.  Try to use these instances rather than cooking up your own. 
  */
 public final class BuiltinMonitorables {
-    public static final MonitorableProperty CPU_IDLE = new MonitorableProperty(ComponentType.HOST, "cpuIdle", Integer.class);
-    public static final MonitorableProperty CPU_TEMPERATURE = new MonitorableProperty(ComponentType.HOST, "cpuTemperature", Integer.class);
-    public static final MonitorableProperty SWAP_SPACE = new MonitorableProperty(ComponentType.HOST, "swapSpace", Long.class);
-    public static final MonitorableProperty DISK_FREE = new MonitorableProperty(ComponentType.HOST, "diskFree", Long.class);
+    public static final MonitorableProperty CPU_IDLE = new MonitorableProperty(ComponentType.HOST, "cpuUsage", Integer.class);
+    public static final MonitorableProperty CPU_TEMPERATURE = new MonitorableProperty(ComponentType.HOST, "cpuTemp", Integer.class);
+    public static final MonitorableProperty SWAP_SPACE = new MonitorableProperty(ComponentType.HOST, "swapUsage", Long.class);
+    public static final MonitorableProperty DISK_FREE = new MonitorableProperty(ComponentType.HOST, "diskUsage", Long.class);
     public static final MonitorableProperty TIME = new MonitorableProperty(ComponentType.HOST, "time", Long.class);
-    public static final MonitorableProperty LOG_SIZE = new MonitorableProperty(ComponentType.HOST, "logFileSize", Long.class);
-    public static final MonitorableProperty NODE_STATE = new MonitorableProperty(ComponentType.NODE, "nodeState", NodeStateType.class);
+    public static final MonitorableProperty LOG_SIZE = new MonitorableProperty(ComponentType.HOST, "logSize", Long.class);
+    public static final MonitorableProperty NODE_STATE = new MonitorableProperty(ComponentType.NODE, "operatingStatus", NodeStateType.class);
     public static final MonitorableProperty NTP_STATUS = new MonitorableProperty(ComponentType.HOST, "ntpStatus", NtpStatus.class);
     public static final MonitorableProperty RAID_STATUS = new MonitorableProperty(ComponentType.HOST, "raidStatus", RaidStatus.class);
+    public static final MonitorableProperty AUDIT_SIZE = new MonitorableProperty(ComponentType.CLUSTER, "auditSize", Long.class);
 
     private static final Monitorable[] VALUES = new Monitorable[] {
-        CPU_IDLE, CPU_TEMPERATURE, SWAP_SPACE, DISK_FREE, TIME, LOG_SIZE, NODE_STATE, NTP_STATUS, RAID_STATUS
+        CPU_IDLE, CPU_TEMPERATURE, SWAP_SPACE, DISK_FREE, TIME, LOG_SIZE, NODE_STATE, NTP_STATUS, RAID_STATUS, AUDIT_SIZE
     };
 
     private final Map<Pair<ComponentType, String>, MonitorableProperty> builtinProperties;
+    private final Map<String, Set<MonitorableProperty>> builtinPropertiesByName;
     private final Map<Pair<ComponentType, String>, MonitorableEvent> builtinEvents;
 
     public static MonitorableProperty getBuiltinProperty(ComponentType type, String name) {
         return InstanceHolder.INSTANCE.builtinProperties.get(new Pair<ComponentType, String>(type, name));
+    }
+
+    public static Set<MonitorableProperty> getBuiltinPropertiesByName(String name) {
+        Set<MonitorableProperty> ret = InstanceHolder.INSTANCE.builtinPropertiesByName.get(name);
+        return ret == null ? Collections.<MonitorableProperty>emptySet() : ret;
+    }
+
+    public static MonitorableProperty getAtMostOneBuiltinPropertyByName(String name) throws IllegalArgumentException {
+        Set<MonitorableProperty> ret = getBuiltinPropertiesByName(name);
+        if (ret.isEmpty())
+            return null;
+        if (ret.size() == 1)
+            return ret.iterator().next();
+        throw new IllegalArgumentException("More than one well-known property with name " + name);
     }
 
     public static MonitorableEvent getBuiltinEvents(ComponentType type, String name) {
@@ -40,12 +56,20 @@ public final class BuiltinMonitorables {
 
     private BuiltinMonitorables() {
         final Map<Pair<ComponentType, String>, MonitorableProperty> props = new HashMap<Pair<ComponentType, String>, MonitorableProperty>();
+        final Map<String, Set<MonitorableProperty>> propsByName = new HashMap<String, Set<MonitorableProperty>>();
         final Map<Pair<ComponentType, String>, MonitorableEvent> events = new HashMap<Pair<ComponentType, String>, MonitorableEvent>();
 
         for (Monitorable value : VALUES) {
             if (value instanceof MonitorableProperty) {
                 MonitorableProperty property = (MonitorableProperty) value;
-                props.put(new Pair<ComponentType, String>(property.getComponentType(), property.getName()), property);
+                final String name = property.getName();
+                props.put(new Pair<ComponentType, String>(property.getComponentType(), name), property);
+                Set<MonitorableProperty> set = propsByName.get(name);
+                if (set == null) {
+                    set = new HashSet<MonitorableProperty>();
+                    propsByName.put(name, set);
+                }
+                set.add(property);
             } else if (value instanceof MonitorableEvent) {
                 MonitorableEvent event = (MonitorableEvent) value;
                 events.put(new Pair<ComponentType, String>(event.getComponentType(), event.getName()), event);
@@ -53,6 +77,7 @@ public final class BuiltinMonitorables {
         }
 
         this.builtinProperties = Collections.unmodifiableMap(props);
+        this.builtinPropertiesByName = Collections.unmodifiableMap(propsByName);
         this.builtinEvents = Collections.unmodifiableMap(events);
     }
 
