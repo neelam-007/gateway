@@ -4,23 +4,32 @@
 package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import com.l7tech.server.management.NodeStateType;
+import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.management.config.monitoring.ComponentType;
+import com.l7tech.util.Functions;
+import org.springframework.context.ApplicationContext;
 
-import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-/**
- *
- */
-class NodeStateSampler extends PropertySampler<NodeStateType> {
-    protected NodeStateSampler(ComponentType componentType, String componentId) {
-        super(componentType, componentId, "nodeState");
+class NodeStateSampler extends NodePropertySampler<NodeStateType> {
+    private static final Logger logger = Logger.getLogger(NodeStateSampler.class.getName());
+
+    public NodeStateSampler(ComponentType componentType, String componentId, ApplicationContext spring) {
+        super(componentType, componentId, "nodeState", spring);
     }
 
     public NodeStateType sample() throws PropertySamplingException {
-        // TODO not clear if we want a PropertySampler to deal with this
-        return NodeStateType.UNKNOWN;
-    }
-
-    public void close() throws IOException {
+        try {
+            return invokeNodeApi(new Functions.UnaryThrows<NodeStateType, NodeApi, Exception>() {
+                @Override
+                public NodeStateType call(NodeApi nodeApi) throws Exception {
+                    return nodeApi.getNodeStatus().getType();
+                }
+            });
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Couldn't get node state", e);
+            return NodeStateType.UNKNOWN;
+        }
     }
 }

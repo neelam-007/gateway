@@ -10,13 +10,13 @@ import com.l7tech.util.ComparisonOperator;
 import static junit.framework.Assert.assertEquals;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
+import org.apache.cxf.interceptor.LoggingInInterceptor;
+import org.apache.cxf.interceptor.LoggingOutInterceptor;
 import org.apache.cxf.jaxb.JAXBDataBinding;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
-import org.apache.cxf.interceptor.LoggingInInterceptor;
-import org.apache.cxf.interceptor.LoggingOutInterceptor;
-import org.junit.Test;
 import org.junit.Ignore;
+import org.junit.Test;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
@@ -29,9 +29,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.Arrays;
 
 public class MonitoringKernelTest {
     @Test
@@ -151,9 +151,11 @@ public class MonitoringKernelTest {
         rulez3.setOid(Math.abs(random.nextLong()));
         mc.getNotificationRules().add(rulez3);
 
-        addTrigger(mc, BuiltinMonitorables.CPU_IDLE, ComparisonOperator.GT, "10", Math.abs(random.nextLong()), rulez3);
-        addTrigger(mc, BuiltinMonitorables.AUDIT_SIZE, ComparisonOperator.LT, "100000000", Math.abs(random.nextLong()), rulez3);
-        addTrigger(mc, BuiltinMonitorables.NTP_STATUS, ComparisonOperator.NE, "OK", Math.abs(random.nextLong()), rulez2, rulez3);
+        addTrigger(mc, BuiltinMonitorables.CPU_IDLE, ComparisonOperator.GT, "10", Math.abs(random.nextLong()), 5000, rulez3);
+        addTrigger(mc, BuiltinMonitorables.AUDIT_SIZE, ComparisonOperator.LT, "100000000", Math.abs(random.nextLong()), 30000, rulez3);
+        addTrigger(mc, BuiltinMonitorables.DISK_FREE_KIB, ComparisonOperator.LT, "1000000000", Math.abs(random.nextLong()), 30000, rulez3);
+        addTrigger(mc, BuiltinMonitorables.DISK_USAGE_PERCENT, ComparisonOperator.GT, "50", Math.abs(random.nextLong()), 30000, rulez3);
+        addTrigger(mc, BuiltinMonitorables.NTP_STATUS, ComparisonOperator.NE, "OK", Math.abs(random.nextLong()), 60000, rulez2, rulez3);
 
         final EventTrigger anotherTrigger = new EventTrigger(new MonitorableEvent(ComponentType.HOST, "shuttingDown"), null, 1, null);
         anotherTrigger.setOid(Math.abs(random.nextLong()));
@@ -161,8 +163,8 @@ public class MonitoringKernelTest {
         return mc;
     }
 
-    private void addTrigger(MonitoringConfiguration mc, final MonitorableProperty prop, final ComparisonOperator op, final String val, final long oid, NotificationRule... rulez) {
-        final PropertyTrigger tempTrigger = new PropertyTrigger(prop, "foo.bar.example.com", op, val, 5000);
+    private void addTrigger(MonitoringConfiguration mc, final MonitorableProperty prop, final ComparisonOperator op, final String val, final long oid, final int interval, NotificationRule... rulez) {
+        final PropertyTrigger tempTrigger = new PropertyTrigger(prop, "foo.bar.example.com", op, val, interval);
         tempTrigger.setName("idoru");
         tempTrigger.setOid(oid);
         tempTrigger.getNotificationRules().addAll(Arrays.asList(rulez));

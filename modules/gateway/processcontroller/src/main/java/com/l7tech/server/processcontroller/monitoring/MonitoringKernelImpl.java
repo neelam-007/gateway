@@ -107,7 +107,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
     @PostConstruct
     public void start() {
-        triggerCheckTimer.scheduleAtFixedRate(triggerCheckTask, 5000, 4991); // TODO configurable or heuristic scheduling?
+        triggerCheckTimer.scheduleAtFixedRate(triggerCheckTask, 10000, 4991); // TODO configurable or heuristic scheduling?
         notificationThread.start();
     }
 
@@ -236,12 +236,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         }
 
         kickTheSampler();
-
-        // TODO apply created NotificationRules
-        // TODO apply updated NotificationRules
-        // TODO apply deleted NotificationRules
-
-        kickTheNotifier(); // if any notifications have changed
+        kickTheNotifier(); // TODO if any notifications have changed
 
         this.currentConfig = newConfiguration;
     }
@@ -299,6 +294,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 if (nstates != null) {
                     for (NotificationRule rule : ptrig.getNotificationRules()) {
                         NotificationState nstate = nstates.get(rule.getOid());
+                        if (nstate == null) continue;
                         if (nstate.isNotified()) {
                             transientStatus.status = MonitoredStatus.StatusType.NOTIFIED;
                         }

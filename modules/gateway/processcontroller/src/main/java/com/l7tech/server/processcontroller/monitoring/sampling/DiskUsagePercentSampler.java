@@ -5,7 +5,6 @@ package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import com.l7tech.common.io.ProcResult;
 import com.l7tech.common.io.ProcUtils;
-import static com.l7tech.common.io.ProcUtils.args;
 import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 
 import java.io.File;
@@ -27,7 +26,7 @@ class DiskUsagePercentSampler extends HostPropertySampler<Double> {
         try {
             ProcResult result = ProcUtils.exec(new File(DF_PATH));
             long[] nums = matchNumbers(new String(result.getOutput()), "output from " + DF_PATH, DF_MATCHER, 2);
-            return nums[2] / nums[1] * 100.0;
+            return nums[1] / nums[0] * 100.0;
         } catch (IOException e) {
             throw new PropertySamplingException(e);
         }

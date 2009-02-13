@@ -27,6 +27,9 @@ public final class PropertySamplerFactory implements ApplicationContextAware {
         put(BuiltinMonitorables.DISK_USAGE_PERCENT, DiskUsagePercentSampler.class);
         put(BuiltinMonitorables.TIME, TimeSampler.class);
         put(BuiltinMonitorables.AUDIT_SIZE, AuditSizeSampler.class);
+        put(BuiltinMonitorables.NTP_STATUS, NtpStatusSampler.class);
+        put(BuiltinMonitorables.LOG_SIZE, LogFileSampler.class);
+        put(BuiltinMonitorables.NODE_STATE, NodeStateSampler.class);
     }});
 
     @SuppressWarnings({"unchecked"})
