@@ -151,7 +151,7 @@ public class MonitoringKernelTest {
         rulez3.setOid(Math.abs(random.nextLong()));
         mc.getNotificationRules().add(rulez3);
 
-        addTrigger(mc, BuiltinMonitorables.CPU_IDLE, ComparisonOperator.GT, "10", Math.abs(random.nextLong()), 5000, rulez3);
+        addTrigger(mc, BuiltinMonitorables.CPU_USAGE, ComparisonOperator.GT, "90", Math.abs(random.nextLong()), 5000, rulez3);
         addTrigger(mc, BuiltinMonitorables.AUDIT_SIZE, ComparisonOperator.LT, "100000000", Math.abs(random.nextLong()), 30000, rulez3);
         addTrigger(mc, BuiltinMonitorables.DISK_FREE_KIB, ComparisonOperator.LT, "1000000000", Math.abs(random.nextLong()), 30000, rulez3);
         addTrigger(mc, BuiltinMonitorables.DISK_USAGE_PERCENT, ComparisonOperator.GT, "50", Math.abs(random.nextLong()), 30000, rulez3);

@@ -11,9 +11,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
-/**
- *
- */
 class DiskUsagePercentSampler extends HostPropertySampler<Integer> {
     private static final Pattern DF_MATCHER = Pattern.compile("(?m)^\\S+\\s+\\d+\\s+\\d+\\s+\\d+\\s+(\\d+)\\s*%\\s+/\\s*$");
     private static final String DF_PATH = "/bin/df";

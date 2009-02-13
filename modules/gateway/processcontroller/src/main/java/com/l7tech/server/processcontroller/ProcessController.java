@@ -540,13 +540,18 @@ public class ProcessController {
     /**
      * Invoke the node API.
      * 
-     * @param nodeName the name of the node to invoke the API on
+     * @param nodeName the name of the node to invoke the API on, or null to pick the first node in the system
      * @param callable the function to call the NodeApi with
      * @return the API method's return value
      * @throws IOException if the node API cannot be obtained (e.g. because the node is down)
      */
     public <T> T callNodeApi(String nodeName, Functions.UnaryThrows<T, NodeApi, Exception> callable) throws Exception {
-        NodeState state = nodeStates.get(nodeName);
+        final NodeState state;
+        if (nodeName == null) {
+            state = nodeStates.values().iterator().next();
+        } else {
+            state = nodeStates.get(nodeName);
+        }
         if (state == null) throw new IllegalStateException("Unknown node " + nodeName);
         if (state instanceof HasApi) {
             NodeApi napi = ((HasApi) state).getApi();

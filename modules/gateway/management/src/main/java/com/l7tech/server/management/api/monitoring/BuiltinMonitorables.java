@@ -13,8 +13,8 @@ import java.util.*;
  * A registry of well-known {@link Monitorable monitorables}.  Try to use these instances rather than cooking up your own. 
  */
 public final class BuiltinMonitorables {
-    /** CPU Idle percentage */
-    public static final MonitorableProperty CPU_IDLE = new MonitorableProperty(ComponentType.HOST, "cpuUsage", Integer.class);
+    /** CPU usage percentage */
+    public static final MonitorableProperty CPU_USAGE = new MonitorableProperty(ComponentType.HOST, "cpuUsage", Integer.class);
     /** CPU Temperature, in °C */
     public static final MonitorableProperty CPU_TEMPERATURE = new MonitorableProperty(ComponentType.HOST, "cpuTemp", Integer.class);
     /** Free Swap space, in KiB */
@@ -37,7 +37,7 @@ public final class BuiltinMonitorables {
     public static final MonitorableProperty AUDIT_SIZE = new MonitorableProperty(ComponentType.CLUSTER, "auditSize", Long.class);
 
     private static final Monitorable[] VALUES = new Monitorable[] {
-        CPU_IDLE, CPU_TEMPERATURE, SWAP_SPACE, DISK_FREE_KIB, DISK_USAGE_PERCENT, TIME, LOG_SIZE, NODE_STATE, NTP_STATUS, RAID_STATUS, AUDIT_SIZE
+            CPU_USAGE, CPU_TEMPERATURE, SWAP_SPACE, DISK_FREE_KIB, DISK_USAGE_PERCENT, TIME, LOG_SIZE, NODE_STATE, NTP_STATUS, RAID_STATUS, AUDIT_SIZE
     };
 
     private final Map<Pair<ComponentType, String>, MonitorableProperty> builtinProperties;

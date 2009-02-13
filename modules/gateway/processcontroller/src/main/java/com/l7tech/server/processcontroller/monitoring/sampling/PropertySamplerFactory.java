@@ -20,7 +20,7 @@ public final class PropertySamplerFactory implements ApplicationContextAware {
     private ApplicationContext spring;
 
     private static final Map<MonitorableProperty, Class<? extends PropertySampler>> hostPropertySamplers = Collections.unmodifiableMap(new HashMap<MonitorableProperty, Class<? extends PropertySampler>>() {{
-        put(BuiltinMonitorables.CPU_IDLE, CpuIdleSampler.class);
+        put(BuiltinMonitorables.CPU_USAGE, CpuUsageSampler.class);
         put(BuiltinMonitorables.SWAP_SPACE, SwapSpaceSampler.class);
         put(BuiltinMonitorables.CPU_TEMPERATURE, CpuTemperatureSampler.class);
         put(BuiltinMonitorables.DISK_FREE_KIB, DiskFreeSampler.class);

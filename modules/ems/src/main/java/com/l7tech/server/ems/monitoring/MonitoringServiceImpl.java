@@ -93,9 +93,8 @@ public class MonitoringServiceImpl implements MonitoringService {
             // Case 2: SSG node property status
             String propertyName = propertyStatus.getMonitorableId();
             String jsonPropertyType;
-            if (propertyName.equals(BuiltinMonitorables.CPU_IDLE.getName())) {
+            if (propertyName.equals(BuiltinMonitorables.CPU_USAGE.getName())) {
                 jsonPropertyType = JSONConstants.SsgNodeMonitoringProperty.CPU_USAGE;
-                value = 100 - Integer.valueOf(value.toString());
             } else if (propertyName.equals(BuiltinMonitorables.CPU_TEMPERATURE.getName())) {
                 jsonPropertyType = JSONConstants.SsgNodeMonitoringProperty.CPU_USAGE;
             } else if (propertyName.equals(BuiltinMonitorables.SWAP_SPACE.getName())) {

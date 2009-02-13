@@ -16,9 +16,9 @@ import java.io.StringReader;
 /**
  *
  */
-class CpuIdleSampler extends HostPropertySampler<Integer> {
-    public CpuIdleSampler(String componentId) {
-        super(componentId, BuiltinMonitorables.CPU_IDLE.getName());
+class CpuUsageSampler extends HostPropertySampler<Integer> {
+    public CpuUsageSampler(String componentId) {
+        super(componentId, BuiltinMonitorables.CPU_USAGE.getName());
     }
 
     public Integer sample() throws PropertySamplingException {
@@ -54,7 +54,7 @@ class CpuIdleSampler extends HostPropertySampler<Integer> {
                 String idleStr = findValueForHeader(headers, values, "id");
                 if (idleStr == null)
                     throw new IOException("Unable to parse vmstat output: couldn't find value for 'id'", null);
-                return Integer.parseInt(idleStr);
+                return 100 - Integer.parseInt(idleStr);
             }
         }
 

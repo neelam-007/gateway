@@ -26,7 +26,7 @@ public abstract class NodePropertySampler<V extends Serializable> extends Proper
     protected <T> T invokeNodeApi(Functions.UnaryThrows<T, NodeApi, Exception> callable) throws Exception {
         final Map<String,NodeStatus> nodes = processController.listNodes();
         if (nodes.isEmpty()) throw new IOException("No nodes are currently known to the Process Controller");
-        return processController.callNodeApi(componentId, callable);
+        return processController.callNodeApi(null, callable);
     }
 
     @Override
