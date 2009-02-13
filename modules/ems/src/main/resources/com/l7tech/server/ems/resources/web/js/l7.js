@@ -85,6 +85,7 @@ if (!l7.Constants) {
             OPERATING_STATUS : 'operatingStatus',
             LOG_SIZE         : 'logSize',
             DISK_USAGE       : 'diskUsage',
+            DISK_FREE        : 'diskFree',
             RAID_STATUS      : 'raidStatus',
             CPU_TEMP         : 'cpuTemp',
             CPU_USAGE        : 'cpuUsage',

@@ -98,6 +98,7 @@
             OPERATING_STATUS : 'operating status',
             LOG_SIZE : 'log file size',
             DISK_USAGE : 'disk usage',
+            DISK_FREE : 'disk free',
             RAID_STATUS : 'RAID status',
             CPU_TEMP : 'CPU temperature',
             CPU_USAGE : 'CPU usage',
@@ -274,6 +275,8 @@
                 return localizedStrings.LOG_SIZE;
             } else if (type == l7.Constants.SSG_NODE_MONITORING_PROPERTY.DISK_USAGE) {
                 return localizedStrings.DISK_USAGE;
+            } else if (type == l7.Constants.SSG_NODE_MONITORING_PROPERTY.DISK_FREE) {
+                return localizedStrings.DISK_FREE;
             } else if (type == l7.Constants.SSG_NODE_MONITORING_PROPERTY.RAID_STATUS) {
                 return localizedStrings.RAID_STATUS;
             } else if (type == l7.Constants.SSG_NODE_MONITORING_PROPERTY.CPU_TEMP) {
@@ -1179,6 +1182,7 @@
                     l7.EntityTreeTable.COLUMN.MONITORING_OPERATING_STATUS,
                     l7.EntityTreeTable.COLUMN.MONITORING_LOG_SIZE,
                     l7.EntityTreeTable.COLUMN.MONITORING_DISK_USAGE,
+                    l7.EntityTreeTable.COLUMN.MONITORING_DISK_FREE,
                     l7.EntityTreeTable.COLUMN.MONITORING_RAID_STATUS,
                     l7.EntityTreeTable.COLUMN.MONITORING_CPU_TEMP,
                     l7.EntityTreeTable.COLUMN.MONITORING_CPU_USAGE,
@@ -1609,6 +1613,11 @@
                                                     <td>&ge; <input id="diskUsageDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="4" onkeyup="validateSetup();"/> <span id="diskUsageDefaultTriggerUnitLabel"></span> <img id="diskUsageDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
                                                 </tr>
                                                 <tr>
+                                                    <td>disk free</td>
+                                                    <td class="center"><input id="diskFreeSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="diskFreeSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
+                                                    <td>&le; <input id="diskFreeDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="4" onkeyup="validateSetup();"/> <span id="diskFreeDefaultTriggerUnitLabel"></span> <img id="diskFreeDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
+                                                </tr>
+                                                <tr>
                                                     <td>RAID status</td>
                                                     <td class="center"><input id="raidStatusSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="raidStatusSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
                                                     <td>upon failure</td>
@@ -1681,13 +1690,14 @@
                                         <th class="bottom" rowspan="2">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
                                         <th class="bottom" rowspan="2"><img src="../images/status.png" title="Online Status" alt="" /></th>
                                         <th class="bottom" rowspan="2">Type</th>
-                                        <th colspan="9"><img class="tippy" src="../images/tippyCollapsed.png" title="Click to expand headers" alt="" onclick="expandSteppedHeaders();" /><span class="clickable" title="Click to expand headers" onclick="expandSteppedHeaders();">Monitored Properties</span></th>
+                                        <th colspan="10"><img class="tippy" src="../images/tippyCollapsed.png" title="Click to expand headers" alt="" onclick="expandSteppedHeaders();" /><span class="clickable" title="Click to expand headers" onclick="expandSteppedHeaders();">Monitored Properties</span></th>
                                     </tr>
                                     <tr>
                                         <th class="group0"><div class="collapsedHeader" style="display: none;">audit size (no. of audit events)</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">operating status</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">log files size</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">disk usage</div></th>
+                                        <th class="group1"><div class="collapsedHeader" style="display: none;">disk free</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">RAID status</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">CPU temperature</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">CPU usage</div></th>
@@ -1698,32 +1708,40 @@
                                 <thead id="steppedHeaders" style="display: none;">
                                     <!-- These headers are initially hidden until tippy is clicked. -->
                                     <tr>
-                                        <th class="bottom" rowspan="10">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
-                                        <th class="bottom" rowspan="10"><img src="../images/status.png" title="Online Status" alt="" /></th>
-                                        <th class="bottom" rowspan="10">Type</th>
-                                        <th colspan="9"><img class="tippy" src="../images/tippyExpanded.png" title="Click to collapse headers" alt="" onclick="collapseSteppedHeaders();" /><span class="clickable" title="Click to collapse headers" onclick="collapseSteppedHeaders();">Monitored Properties</span></th>
-                                        <th class="parentId" rowspan="10"><!-- hidden column --></th>
+                                        <th class="bottom" rowspan="11">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
+                                        <th class="bottom" rowspan="11"><img src="../images/status.png" title="Online Status" alt="" /></th>
+                                        <th class="bottom" rowspan="11">Type</th>
+                                        <th colspan="10"><img class="tippy" src="../images/tippyExpanded.png" title="Click to collapse headers" alt="" onclick="collapseSteppedHeaders();" /><span class="clickable" title="Click to collapse headers" onclick="collapseSteppedHeaders();">Monitored Properties</span></th>
+                                        <th class="parentId" rowspan="11"><!-- hidden column --></th>
                                     </tr>
                                     <tr>
-                                        <th class="topStep group0" colspan="9">audit size (no. of audit events)</th>
-                                    </tr>
-                                    <tr>
-                                        <th class="group0 middleStep group0middleStep"> </th>
-                                        <th class="group1 topStep" colspan="8">operating status</th>
+                                        <th class="topStep group0" colspan="10">audit size (no. of audit events)</th>
                                     </tr>
                                     <tr>
                                         <th class="group0 middleStep group0middleStep"> </th>
-                                        <th class="group1 middleStep group1middleStep"> </th>
-                                        <th class="group1 topStep" colspan="7">log files size</th>
+                                        <th class="group1 topStep" colspan="9">operating status</th>
                                     </tr>
                                     <tr>
                                         <th class="group0 middleStep group0middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
-                                        <th class="group1 middleStep group1middleStep"> </th>
-                                        <th class="group1 topStep" colspan="6">disk usage</th>
+                                        <th class="group1 topStep" colspan="8">log files size</th>
                                     </tr>
                                     <tr>
                                         <th class="group0 middleStep group0middleStep"> </th>
+                                        <th class="group1 middleStep group1middleStep"> </th>
+                                        <th class="group1 middleStep group1middleStep"> </th>
+                                        <th class="group1 topStep" colspan="7">disk usage</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="group0 middleStep group0middleStep"> </th>
+                                        <th class="group1 middleStep group1middleStep"> </th>
+                                        <th class="group1 middleStep group1middleStep"> </th>
+                                        <th class="group1 middleStep group1middleStep"> </th>
+                                        <th class="group1 topStep" colspan="6">disk free</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="group0 middleStep group0middleStep"> </th>
+                                        <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
@@ -1735,10 +1753,12 @@
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
+                                        <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 topStep" colspan="4">CPU temperature</th>
                                     </tr>
                                     <tr>
                                         <th class="group0 middleStep group0middleStep"> </th>
+                                        <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
@@ -1754,10 +1774,12 @@
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
+                                        <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 topStep" colspan="2">swap space usage</th>
                                     </tr>
                                     <tr>
                                         <th class="group0 bottomStep group0bottomStep"> </th>
+                                        <th class="group1 bottomStep group1bottomStep"> </th>
                                         <th class="group1 bottomStep group1bottomStep"> </th>
                                         <th class="group1 bottomStep group1bottomStep"> </th>
                                         <th class="group1 bottomStep group1bottomStep"> </th>
@@ -2024,6 +2046,7 @@
                             <div id="monDlg_operatingStatusTriggerConfig">upon failure</div>
                             <div id="monDlg_logSizeTriggerConfig">&ge; <input id="monDlg_logSizeTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_logSizeTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_diskUsageTriggerConfig">&ge; <input id="monDlg_diskUsageTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_diskUsageTriggerValueUnitLabel"></span></div>
+                            <div id="monDlg_diskFreeTriggerConfig">&le; <input id="monDlg_diskFreeTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_diskFreeTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_raidStatusTriggerConfig">upon failure</div>
                             <div id="monDlg_cpuTempTriggerConfig">&ge; <input id="monDlg_cpuTempTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_cpuTempTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_cpuUsageTriggerConfig">&ge; <input id="monDlg_cpuUsageTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_cpuUsageTriggerValueUnitLabel"></span></div>
