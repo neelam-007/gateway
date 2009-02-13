@@ -125,6 +125,7 @@ public interface GatewayApi {
         private String relatedId; // Store the OID of a real published service / policy fragment if the entity is an alias.  relatedId = null if the entity is not an alias.
         private String parentId;
         private String name;
+        private String description;
         private Integer version;
         private EntityType entityType;
         private String[] operations;
@@ -137,6 +138,7 @@ public interface GatewayApi {
                            final String id,
                            final String relatedId,
                            final String name,
+                           final String description,
                            final String parentId,
                            final Integer version ) {
             this.entityType = entityType;
@@ -144,6 +146,7 @@ public interface GatewayApi {
             this.id = id;
             this.relatedId = relatedId;
             this.name = name;
+            this.description = description;
             this.parentId = parentId;
             this.version = version;
         }
@@ -200,6 +203,15 @@ public interface GatewayApi {
 
         public void setName(String name) {
             this.name = name;
+        }
+
+        @XmlAttribute(name="description")
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
         }
 
         @XmlAttribute(name="parentId")

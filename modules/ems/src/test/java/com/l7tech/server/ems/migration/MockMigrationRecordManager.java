@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.EntityManagerStub;
+import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.identity.User;
 
@@ -17,7 +18,12 @@ import java.util.Collection;
  * @Date: Dec 10, 2008
  */
 public class MockMigrationRecordManager extends EntityManagerStub<MigrationRecord, EntityHeader> implements MigrationRecordManager {
-    public MigrationRecord create(String name, User user, SsgCluster source, SsgCluster destination, String summary, byte[] data) throws SaveException {
+
+    public MigrationRecord create(String name, User user, MigrationSummary summary, MigrationBundle bundle) throws SaveException {
+        return null;
+    }
+
+    public MigrationRecord create(String label, byte[] data, Collection<String> validClusterGuids) throws SaveException {
         return null;
     }
 

@@ -150,12 +150,11 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     @Override
-    public Collection<MigratedItem> importBundle(MigrationBundle bundle, ExternalEntityHeader targetFolder,
-                                                 boolean flattenFolders, boolean overwriteExisting, boolean enableServices, boolean dryRun) throws MigrationApi.MigrationException {
+    public Collection<MigratedItem> importBundle(MigrationBundle bundle, boolean dryRun) throws MigrationApi.MigrationException {
 
         MigrationMetadata metadata = bundle.getMetadata();
 
-        Collection<String> errors = processFolders(bundle, targetFolder, flattenFolders);
+        Collection<String> errors = processFolders(bundle, metadata.getTargetFolder(), ! metadata.isMigrateFolders());
 
         Map<ExternalEntityHeader,Entity> entitiesFromTarget = loadEntitiesFromTarget(metadata);
 
@@ -168,7 +167,7 @@ public class MigrationManagerImpl implements MigrationManager {
         Map<ExternalEntityHeader, MigratedItem> result = new HashMap<ExternalEntityHeader, MigratedItem>();
         for(ExternalEntityHeader header : metadata.getHeaders()) {
             try {
-                upload(header, bundle, entitiesFromTarget, result, overwriteExisting, enableServices, dryRun, false);
+                upload(header, bundle, entitiesFromTarget, result, metadata.isOverwrite(), metadata.isEnableNewServices(), dryRun, false);
             } catch ( ObjectModelException ome ) {
                 throw new MigrationApi.MigrationException(composeErrorMessage("Import failed when processing entity", header, ome));
             }
@@ -218,7 +217,7 @@ public class MigrationManagerImpl implements MigrationManager {
         MigratedItem.ImportOperation op;
         ExternalEntityHeader targetHeader;
         if (metadata.isMapped(header)) {
-            op = IGNORE;
+            op = MAP;
             targetHeader = metadata.getCopiedOrMapped(header);
         } else if (overwriteExisting && metadata.wasCopied(header)) {
             if (entitiesFromTarget.containsKey(metadata.getCopied(header))) {
@@ -238,7 +237,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
         Entity entity;
 
-        if (op != IGNORE) {
+        if (op != MAP) {
             // upload dependencies first
             for (MigrationDependency dep : metadata.getDependencies(header)) {
                 upload(dep.getDependency(), bundle, entitiesFromTarget, result, overwriteExisting, enableServices, dryRun, true);
@@ -247,7 +246,7 @@ public class MigrationManagerImpl implements MigrationManager {
 
         // do upload
         switch (op) {
-            case IGNORE:
+            case MAP:
                 entity = entitiesFromTarget.get(targetHeader);
                 break;
 

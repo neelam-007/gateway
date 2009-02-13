@@ -5,18 +5,13 @@ import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.migration.MigrationDependency;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.*;
-import com.l7tech.server.ems.migration.MigrationMappedEntity;
-import com.l7tech.server.ems.migration.MigrationMappingRecord;
-import com.l7tech.server.ems.migration.MigrationMappingRecordManager;
-import com.l7tech.server.ems.migration.MigrationRecordManager;
+import com.l7tech.server.ems.migration.*;
 import com.l7tech.server.ems.ui.NavigationPage;
 import com.l7tech.server.ems.util.TypedPropertyColumn;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.management.api.node.MigrationApi;
-import com.l7tech.server.management.migration.bundle.ExportedItem;
 import com.l7tech.server.management.migration.bundle.MigratedItem;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
@@ -586,7 +581,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                 final DependencyItem dependencyItem = ((DependencyItem)item.getModelObject());
                 item.add(new Label("optional", dependencyItem.getOptional()).setEscapeModelStrings(false));
                 item.add(new Label("name", dependencyItem.getDisplayName()));
-                item.add(new Label("type", fromEntityType(com.l7tech.objectmodel.EntityType.valueOf(dependencyItem.type))));
+                item.add(new Label("type", com.l7tech.objectmodel.EntityType.valueOf(dependencyItem.type).getName().toLowerCase()));
                 item.add(new Label("version", dependencyItem.getVersionAsString()));
             }
         };
@@ -614,51 +609,6 @@ public class PolicyMigration extends EsmStandardWebPage {
             detailsContainer.replace( detailsListView.setOutputMarkupId(true) );
         }
 
-    }
-
-    private static String fromEntityType( final com.l7tech.objectmodel.EntityType entityType ) {
-        String type;
-
-        switch ( entityType ) {
-            case FOLDER:
-                type = "folder";
-                break;
-            case SERVICE:
-                type = "published service";
-                break;
-            case POLICY:
-                type = "policy fragment";
-                break;
-            case ID_PROVIDER_CONFIG:
-                type = "identity provider";
-                break;
-            case USER:
-                type = "user";
-                break;
-            case GROUP:
-                type = "group";
-                break;
-            case JMS_ENDPOINT:
-                type = "jms endpoint";
-                break;
-            case TRUSTED_CERT:
-                type = "trusted certificate";
-                break;
-            case VALUE_REFERENCE:
-                type = "value reference";
-                break;
-            case SSG_KEY_ENTRY:
-                type = "private key";
-                break;
-            case CLUSTER_PROPERTY:
-                type = "cluster property";
-                break;
-            default:
-                type = entityType.toString();
-                break;
-        }
-
-        return type;
     }
 
     private void updateDependencies( final WebMarkupContainer dependenciesContainer,
@@ -1096,7 +1046,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                         Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
                         if ( !item.isOptional() && mappingModel.dependencyMap.get(mapKey) == null ) {
                             ExternalEntityHeader ih = item.asEntityHeader();
-                            builder.append(ih.getType().getName()).append(", ").append(ih.getName())
+                            builder.append(ih.getType().getName().toLowerCase()).append(", ").append(ih.getName())
                                 .append("(#").append(ih.getExternalId()).append(")\n");
                         }
                     }
@@ -1134,11 +1084,11 @@ public class PolicyMigration extends EsmStandardWebPage {
                                      final String targetFolderId,
                                      final boolean migrateFolders,
                                      final boolean enableNewServices,
-                                     final boolean overwriteDependencies,
+                                     final boolean overwriteEntities,
                                      final DependencyItemsRequest requestedItems,
                                      final EntityMappingModel mappingModel,
                                      final boolean dryRun ) throws MigrationFailedException {
-        String summary = "";
+        String summaryString = "";
         try {
             SsgCluster sourceCluster = ssgClusterManager.findByGuid(sourceClusterId);
             SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterId);
@@ -1151,8 +1101,8 @@ public class PolicyMigration extends EsmStandardWebPage {
                     MigrationApi targetMigrationApi = targetContext.getUncachedMigrationApi();
                     GatewayApi targetGatewayApi = targetContext.getUncachedGatewayApi();
 
-                    MigrationBundle export = sourceMigrationApi.exportBundle( requestedItems.asEntityHeaders() );
-                    MigrationMetadata metadata = export.getMetadata();
+                    MigrationBundle bundle = sourceMigrationApi.exportBundle( requestedItems.asEntityHeaders() );
+                    MigrationMetadata metadata = bundle.getMetadata();
                     for ( Map.Entry<Pair<DependencyKey,String>,Pair<DependencyItem,Boolean>> mapping : mappingModel.dependencyMap.entrySet() ) {
                         if ( mapping.getValue() != null && mapping.getKey().left.clusterId.equals(sourceClusterId) && mapping.getKey().right.equals(targetClusterId) ) {
                             metadata.addMappingOrCopy(mapping.getKey().left.asEntityHeader(), mapping.getValue().left.asEntityHeader(), mapping.getValue().right);
@@ -1169,25 +1119,35 @@ public class PolicyMigration extends EsmStandardWebPage {
                     ExternalEntityHeader targetFolderHeader = null;
                     for ( GatewayApi.EntityInfo info : folders ) {
                         if ( targetFolderId.equals( info.getId() ) ) {
-                            targetFolderHeader = new ExternalEntityHeader(info.getExternalId(), com.l7tech.objectmodel.EntityType.FOLDER, null, info.getName(), null, info.getVersion());
+                            targetFolderHeader = new ExternalEntityHeader(info.getExternalId(), com.l7tech.objectmodel.EntityType.FOLDER, info.getId(), info.getName(), info.getDescription(), info.getVersion());
                         }
                     }
+                    if (targetFolderHeader == null) throw new FindException("Could not find target folder.");
 
-                    Collection<MigratedItem> migratedItems = targetMigrationApi.importBundle( export, targetFolderHeader, ! migrateFolders, overwriteDependencies, enableNewServices, dryRun);
-                    summary = summarize(export, migratedItems, summarize(folders, targetFolderId), enableNewServices, overwriteDependencies, dryRun);
+                    metadata.setTargetFolder(targetFolderHeader);
+                    metadata.setMigrateFolders(migrateFolders);
+                    metadata.setOverwrite(overwriteEntities);
+                    metadata.setEnableNewServices(enableNewServices);
+
+                    Collection<MigratedItem> migratedItems = targetMigrationApi.importBundle(bundle, dryRun);
+                    MigrationSummary summary = new MigrationSummary(sourceCluster, targetCluster, migratedItems, dryRun,
+                                                            targetFolderHeader.getDescription(), migrateFolders, overwriteEntities, enableNewServices);
+
                     if ( !dryRun ) {
                         if ( migratedItems != null ) {
                             for ( MigratedItem item : migratedItems ) {
                                 ExternalEntityHeader source = item.getSourceHeader();
                                 ExternalEntityHeader target = item.getTargetHeader();
 
-                                if ( source != null && target != null && item.getOperation() != MigratedItem.ImportOperation.IGNORE) {
+                                if ( source != null && target != null && item.getOperation() != MigratedItem.ImportOperation.MAP) {
                                     migrationMappingRecordManager.persistMapping( sourceCluster.getGuid(), source, targetCluster.getGuid(), target, true );
                                 }
                             }
                         }
-                        migrationRecordManager.create( null, getUser(), sourceCluster, targetCluster, summary, new byte[]{} ); // TODO save migrated bundle
+                        migrationRecordManager.create( null, getUser(), summary, bundle );
                     }
+
+                    summaryString = summary.toString();
                 }
             }
         } catch ( GatewayException ge ) {
@@ -1207,7 +1167,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(ge)+"'.");
         }
 
-        return summary;
+        return summaryString;
     }
 
     private String summarizeMigrationException(MigrationApi.MigrationException me) {
@@ -1238,130 +1198,6 @@ public class PolicyMigration extends EsmStandardWebPage {
 
 
         return builder.toString();
-    }
-
-    private String summarize( final Collection<GatewayApi.EntityInfo> folders, final String targetFolderId ) throws FindException {
-        StringBuilder builder = new StringBuilder();
-
-        List<GatewayApi.EntityInfo> folderPath = new ArrayList<GatewayApi.EntityInfo>();
-        String targetId = targetFolderId;
-        while ( targetId != null ) {
-            GatewayApi.EntityInfo folder = null;
-            for ( GatewayApi.EntityInfo info : folders ) {
-                if ( targetId.equals( info.getId() ) ) {
-                    folder = info;
-                    break;
-                }
-            }
-
-            if ( folder == null ) {
-                throw new FindException("Could not find target folder.");
-            }
-
-            targetId = folder.getParentId();
-            if ( targetId != null || !folder.getName().equals("Root Node") ) {
-                folderPath.add(0, folder);
-            }
-        }
-
-        if ( folderPath.isEmpty() ) {
-            builder.append("/");
-        } else {
-            for ( GatewayApi.EntityInfo folder : folderPath ) {
-                builder.append( "/ " );
-                builder.append( folder.getName() );
-                builder.append( " " );
-            }
-        }
-
-        return builder.toString().trim();
-    }
-
-    private String summarize( final MigrationBundle export, final Collection<MigratedItem> migratedItems, String targetFolderPath, final boolean enabled, final boolean overwrite, boolean dryRun ) {
-        StringBuilder builder = new StringBuilder();
-
-        MigrationMetadata metadata = export.getMetadata();
-
-        // overview
-        builder.append( "Migration Options:\n" );
-        builder.append( "Imported to folder: " );
-        builder.append( targetFolderPath );
-        builder.append( "\n" );
-        builder.append( "Services enabled on import: " );
-        builder.append( enabled );
-        builder.append( "\n" );
-        builder.append( "Existing dependencies overwritten: " );
-        builder.append( overwrite );
-        builder.append( "\n" );
-        builder.append( "Services migrated: " );
-        builder.append( count(export.getExportedItems().values(), com.l7tech.objectmodel.EntityType.SERVICE) );
-        builder.append( "\n" );
-        builder.append( "Policies migrated: " );
-        builder.append( count(export.getExportedItems().values(), com.l7tech.objectmodel.EntityType.POLICY) );
-        builder.append( "\n\n" );
-
-        // entity details
-        builder.append( "\nMigrated Data:\n" );
-        boolean willOverwriteAnything = false;
-        MigratedItem.ImportOperation operation;
-        if ( migratedItems != null ) {
-            for ( MigratedItem item : migratedItems ) {
-                operation = item.getOperation();
-                if (operation == MigratedItem.ImportOperation.IGNORE) continue;
-                if (operation == MigratedItem.ImportOperation.OVERWRITE)
-                    willOverwriteAnything = true;
-                ExternalEntityHeader ih = dryRun ? item.getSourceHeader() : item.getTargetHeader();
-                builder.append(ih.getType().getName()).append(", ").append(ih.getName())
-                    .append("(#").append(ih.getExternalId()).append("): ")
-                    .append(dryRun ? item.getOperation() : item.getOperation().pastParticiple()).append("\n");
-            }
-        } else {
-            builder.append("None.\n");
-        }
-        builder.append( "\n" );
-
-        // entity mappings
-        StringBuilder mappingBuilder = new StringBuilder();
-        for ( MigrationDependency dep : metadata.getDependencies() ) {
-            if ( metadata.isMapped(dep.getDependency()) ) {
-                ExternalEntityHeader sourceHeader = dep.getDependency();
-                ExternalEntityHeader targetHeader = metadata.getMapping(dep.getDependency());
-                if (targetHeader == null) continue;
-                mappingBuilder.append( fromEntityType(sourceHeader.getType()) );
-                mappingBuilder.append( ", " );
-                mappingBuilder.append( sourceHeader.getName() );
-                mappingBuilder.append( " (#" );
-                mappingBuilder.append( sourceHeader.getExternalId() );
-                mappingBuilder.append( ") mapped to " );
-                mappingBuilder.append( targetHeader.getName() );
-                mappingBuilder.append( " (#" );
-                mappingBuilder.append( targetHeader.getExternalId() );
-                mappingBuilder.append( ")" );
-                mappingBuilder.append( "\n" );
-            }
-        }
-        String mappingText = mappingBuilder.toString();
-        if ( !mappingText.isEmpty() ) {
-            builder.append( "\nMappings:\n" );
-            builder.append( mappingText );
-        }
-
-        if (willOverwriteAnything && dryRun)
-            builder.append("\nWARNING: Some enties on the target cluster may contain changes that will be overwritten!\n");
-
-        return builder.toString();
-    }
-
-    private int count( final Collection<ExportedItem> items, final com.l7tech.objectmodel.EntityType type ) {
-        int count = 0;
-
-        for ( ExportedItem item : items ) {
-            if ( !item.isMappedValue() && item.getHeader().getType() == type ) {
-                count++;
-            }
-        }
-
-        return count;
     }
 
     private static String toImgIcon( final Boolean resolved ) {
@@ -1537,7 +1373,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
 
         public String getType() {
-            return fromEntityType(com.l7tech.objectmodel.EntityType.valueOf(type));
+            return com.l7tech.objectmodel.EntityType.valueOf(type).getName().toLowerCase();
         }
 
         public String getOptional() {

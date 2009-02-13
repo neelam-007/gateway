@@ -26,7 +26,7 @@ import java.util.logging.Level;
  * @author jbufu
  */
 @XmlRootElement
-@XmlType(propOrder={"headers", "dependencies", "mappings", "copies"})
+@XmlType(propOrder={"headers", "dependencies", "mappings", "copies", "targetFolder"})
 public class MigrationMetadata {
 
     private static final Logger logger = Logger.getLogger(MigrationMetadata.class.getName());
@@ -43,6 +43,11 @@ public class MigrationMetadata {
 
     private Map<ExternalEntityHeader, ExternalEntityHeader> mappings = new HashMap<ExternalEntityHeader, ExternalEntityHeader>();
     private Map<ExternalEntityHeader, ExternalEntityHeader> copies = new HashMap<ExternalEntityHeader, ExternalEntityHeader>();
+
+    private ExternalEntityHeader targetFolder;
+    private boolean migrateFolders = false;
+    private boolean overwrite = false;
+    private boolean enableNewServices = false;
 
     @XmlElementRef
     public Set<ExternalEntityHeader> getHeaders() {
@@ -178,6 +183,41 @@ public class MigrationMetadata {
             dependenciesByTarget.put(target, new HashSet<MigrationDependency>());
 
         return dependenciesByTarget.get(target);
+    }
+
+    public ExternalEntityHeader getTargetFolder() {
+        return targetFolder;
+    }
+
+    public void setTargetFolder(ExternalEntityHeader targetFolder) {
+        this.targetFolder = targetFolder;
+    }
+
+    @XmlAttribute
+    public boolean isMigrateFolders() {
+        return migrateFolders;
+    }
+
+    public void setMigrateFolders(boolean migrateFolders) {
+        this.migrateFolders = migrateFolders;
+    }
+
+    @XmlAttribute
+    public boolean isOverwrite() {
+        return overwrite;
+    }
+
+    public void setOverwrite(boolean overwrite) {
+        this.overwrite = overwrite;
+    }
+
+    @XmlAttribute
+    public boolean isEnableNewServices() {
+        return enableNewServices;
+    }
+
+    public void setEnableNewServices(boolean enableNewServices) {
+        this.enableNewServices = enableNewServices;
     }
 
     public boolean isMappingRequired(ExternalEntityHeader header) throws MigrationApi.MigrationException {

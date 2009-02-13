@@ -16,14 +16,16 @@ public class FolderHeader extends EntityHeader {
         this( folder.getOid(),
               folder.getName(),
               folder.getFolder() == null ? null : folder.getFolder().getOid(),
-              folder.getVersion() );
+              folder.getVersion(),
+              folder.getPath() );
     }
 
     public FolderHeader( final long objectid,
                          final String name,
                          final Long parentFolderOid,
-                         final Integer version) {
-        super(objectid, EntityType.FOLDER, name, name, version);
+                         final Integer version,
+                         final String path) {
+        super(objectid, EntityType.FOLDER, name, path, version);
         this.parentFolderOid = parentFolderOid;
     }
 

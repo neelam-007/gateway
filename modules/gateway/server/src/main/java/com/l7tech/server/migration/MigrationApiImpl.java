@@ -81,12 +81,11 @@ public class MigrationApiImpl implements MigrationApi {
     }
 
     @Override
-    public Collection<MigratedItem> importBundle(MigrationBundle bundle, ExternalEntityHeader targetFolder,
-                                                 boolean flattenFolders, boolean overwriteExisting, boolean enableServices, boolean dryRun) throws MigrationException {
+    public Collection<MigratedItem> importBundle(MigrationBundle bundle, boolean dryRun) throws MigrationException {
         boolean oldSystem = AuditContextUtils.isSystem();
         try {
             AuditContextUtils.setSystem(true);
-            return manager.importBundle(bundle, targetFolder, flattenFolders, overwriteExisting, enableServices, dryRun);
+            return manager.importBundle(bundle, dryRun);
         } catch ( MigrationException e ) {
             logger.log( Level.WARNING, "Error in Migration API '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
             throw e;

@@ -59,7 +59,8 @@ public class MigrationArtifactResource extends SecureResource {
                     try {
                         final MigrationRecord record = manager.findByPrimaryKey( Long.parseLong( id ) );
                         if ( record != null ) {
-                            final ByteArrayInputStream in = new ByteArrayInputStream( record.getData() );
+                            // todo: zip
+                            final ByteArrayInputStream in = new ByteArrayInputStream( record.serializeXml().getBytes() );
                             resource = new AbstractResourceStream(){
                                 @Override
                                 public String getContentType() {

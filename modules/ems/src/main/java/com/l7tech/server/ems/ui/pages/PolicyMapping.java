@@ -225,8 +225,7 @@ public class PolicyMapping extends EsmStandardWebPage {
                                 try {
                                     logger.fine("Deleting migration archive for migration record (OID = " + migrationId + ")");
 
-                                    record.setData( null );
-                                    record.setDataSize( 0 );
+                                    record.setBundleXml( null );
                                     migrationManager.update(record);
                                     migrationSummaryContainer.setVisible(false);
 
@@ -250,7 +249,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         YuiAjaxButton uploadArchiveButton = new YuiAjaxButton("uploadArchiveButton") {
             @Override
             protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, final Form form) {
-                PolicyMigrationUploadPanel policyMigrationUploadPanel = new PolicyMigrationUploadPanel( YuiDialog.getContentId(), getUser() ){
+                PolicyMigrationUploadPanel policyMigrationUploadPanel = new PolicyMigrationUploadPanel( YuiDialog.getContentId() ){
                     @Override
                     @SuppressWarnings({"UnusedDeclaration"})
                     protected void onSubmit(final AjaxRequestTarget target) {
@@ -346,7 +345,7 @@ public class PolicyMapping extends EsmStandardWebPage {
                         MigrationRecord migration = migrationManager.findByPrimaryKey(Long.parseLong(value));
                         if ( migration != null ) {
                             selected = true;
-                            if ( migration.getDataSize() > 0 ) {
+                            if ( migration.getBundleSize() > 0 ) {
                                 archivePresent = true;
                             }
                             selectedMigrationModel.setMigrationRecord( migration );
@@ -421,11 +420,11 @@ public class PolicyMapping extends EsmStandardWebPage {
         }
 
         public String getSourceCluster() {
-            return migration==null ? null : migration.getSourceCluster().getName();
+            return migration==null ? null : migration.getSourceClusterName();
         }
 
         public String getTargetCluster() {
-            return migration==null ? null : migration.getTargetCluster().getName();
+            return migration==null ? null : migration.getTargetClusterName();
         }
 
         public String getName() {
@@ -433,11 +432,12 @@ public class PolicyMapping extends EsmStandardWebPage {
         }
 
         public String getSize() {
-            return migration==null ? null : SizeUnit.format(migration.getDataSize());
+            return migration==null ? null : SizeUnit.format(migration.getBundleSize());
         }
 
         public String getSummary() {
-            return migration==null ? null : migration.getSummary();
+            // todo: format XML for html display
+            return migration==null ? null : migration.getSummaryXml();
         }
 
         public void setMigrationRecord(final MigrationRecord migration) {

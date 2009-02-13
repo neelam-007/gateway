@@ -16,16 +16,30 @@ public class MigratedItem {
     private ImportOperation operation;
 
     public static enum ImportOperation {
-        IGNORE,
-        CREATE,
-        UPDATE,
-        OVERWRITE {
+
+        MAP(false) {
+            public String pastParticiple() {
+                return "MAPPED";
+            }},
+        CREATE(true),
+        UPDATE(true),
+        OVERWRITE(true) {
             public String pastParticiple() {
                 return "OVERWRITTEN";
             }};
 
         public String pastParticiple() {
             return toString() + "D";
+        }
+
+        private boolean modifiesTarget;
+
+        ImportOperation(boolean modifiesTarget) {
+            this.modifiesTarget = modifiesTarget;
+        }
+
+        public boolean modifiesTarget() {
+            return modifiesTarget;
         }
     }
 

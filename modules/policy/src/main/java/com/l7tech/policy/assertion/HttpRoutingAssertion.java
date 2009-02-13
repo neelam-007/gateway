@@ -243,6 +243,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.realm = realm;
     }
 
+    @Migration(mapName = NONE, mapValue = OPTIONAL, resolver = PropertyResolver.Type.VALUE_REFERENCE)
     public String getProtectedServiceUrl() {
         return protectedServiceUrl;
     }

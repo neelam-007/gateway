@@ -12,7 +12,10 @@ import com.l7tech.policy.PolicyAlias;
 
 import javax.xml.bind.annotation.*;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import javax.xml.bind.JAXB;
 import java.util.*;
+import java.io.ByteArrayOutputStream;
+import java.io.StringReader;
 
 /**
  * A MigrationBundle contains all the relevant data exported from a source SSG that is needed to migrate functionality
@@ -164,4 +167,15 @@ public class MigrationBundle {
     public Entity getExportedEntity(ExternalEntityHeader header) {
         return hasItem(header) ? getExportedItem(header).getValue() : null;
     }
+
+    public String serializeXml() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        JAXB.marshal(this, out);
+        return out.toString();
+    }
+
+    public static MigrationBundle deserializeXml(String xml) {
+        return JAXB.unmarshal(new StringReader(xml), MigrationBundle.class);
+    }
+
 }

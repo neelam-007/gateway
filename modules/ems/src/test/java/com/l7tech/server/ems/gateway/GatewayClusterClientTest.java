@@ -16,6 +16,8 @@ import static org.junit.Assert.*;
 import org.junit.*;
 
 import javax.xml.ws.ProtocolException;
+import javax.jws.WebMethod;
+import javax.jws.WebParam;
 import java.net.ConnectException;
 import java.util.*;
 
@@ -97,7 +99,7 @@ public class GatewayClusterClientTest {
                         return null;
                     }
 
-                    public Collection<MigratedItem> importBundle(MigrationBundle bundle, ExternalEntityHeader targetFolder, boolean flattenFolders, boolean overwriteExisting, boolean enableServices, boolean dryRun) throws MigrationException {
+                    public Collection<MigratedItem> importBundle(MigrationBundle bundle, boolean dryRun) throws MigrationException {
                         return null;
                     }
                 };
@@ -123,10 +125,10 @@ public class GatewayClusterClientTest {
     }
 
     public GatewayClusterClientTest() throws Exception {
-        blahfolder = new GatewayApi.EntityInfo(EntityType.FOLDER, UUID.randomUUID().toString(), UUID.randomUUID().toString(), null, "blahfolder", null, 1);
+        blahfolder = new GatewayApi.EntityInfo(EntityType.FOLDER, UUID.randomUUID().toString(), UUID.randomUUID().toString(), null, "blahfolder", null, null, 1);
         blahfolderInfo = Collections.unmodifiableList(Arrays.asList(blahfolder));
 
-        foofolder = new GatewayApi.EntityInfo(EntityType.FOLDER, UUID.randomUUID().toString(), UUID.randomUUID().toString(), null, "foofolder", null, 1);
+        foofolder = new GatewayApi.EntityInfo(EntityType.FOLDER, UUID.randomUUID().toString(), UUID.randomUUID().toString(), null, "foofolder", null, null, 1);
         foofolderInfo = Collections.unmodifiableList(Arrays.asList(foofolder));
 
         fooCluster = new SsgCluster("foo", "test-foo.nowhere.example.com", 8443, null);

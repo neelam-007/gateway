@@ -15,6 +15,7 @@ import org.apache.wicket.validation.validator.StringValidator;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Collection;
+import java.util.HashSet;
 import java.io.IOException;
 import java.io.Serializable;
 
@@ -24,7 +25,6 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
-import com.l7tech.identity.User;
 import com.l7tech.objectmodel.ObjectModelException;
 
 /**
@@ -43,7 +43,7 @@ public class PolicyMigrationUploadPanel extends Panel {
     @SpringBean
     private MigrationRecordManager migrationRecordManager;
 
-    public PolicyMigrationUploadPanel( final String id, final User user ) {
+    public PolicyMigrationUploadPanel( final String id ) {
         super( id );
 
         final FeedbackPanel feedback = new FeedbackPanel("feedback");
@@ -71,23 +71,14 @@ public class PolicyMigrationUploadPanel extends Panel {
                     upload = archive.getFileUpload();
                     if ( upload != null ) {
                         byte[] data = IOUtils.slurpStream( upload.getInputStream() );
-
-                        // TODO validation of uploaded data and cluster lookup based on archive information
-
-                        SsgCluster sourceCluster = null;
-                        SsgCluster targetCluster = null;
-                        Collection<SsgCluster> clusters = clusterManager.findAll();
-                        if ( clusters.size() > 0 ) {
-                            sourceCluster = clusters.iterator().next();
-                            targetCluster = sourceCluster;
+                        // todo: unzip
+                        Collection<SsgCluster> validClusters = clusterManager.findAll();
+                        Collection<String> validClusterGuids = new HashSet<String>();
+                        for(SsgCluster cluster : validClusters) {
+                            validClusterGuids.add(cluster.getGuid());
                         }
-
-                        if ( sourceCluster == null || targetCluster == null ) {
-                            feedback.error( "Invalid archive, SSG Cluster not recognised." );
-                        } else {
-                            migrationRecordManager.create( model.getLabel(), user, sourceCluster, targetCluster, "Summary text here", data );
-                            success = true;
-                        }
+                        migrationRecordManager.create( model.getLabel(), data, validClusterGuids);
+                        success = true;
                     } else {
                         logger.fine("Archive not present in upload!");
                         feedback.error( "Error processing archive, please try again." );

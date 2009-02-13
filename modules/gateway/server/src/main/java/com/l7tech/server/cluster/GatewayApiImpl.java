@@ -182,7 +182,7 @@ public class GatewayApiImpl implements GatewayApi {
             String relatedOid = header.isAlias()? header.getStrId() : null;
             String entityName = header.getDisplayName() + (header.isAlias()? " alias" : "");
 
-            EntityInfo entityInfo = new EntityInfo(entityType, external.getExternalId(), entityOid, relatedOid, entityName, header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()), header.getVersion());
+            EntityInfo entityInfo = new EntityInfo(entityType, external.getExternalId(), entityOid, relatedOid, entityName, external.getDescription(), header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()), header.getVersion());
 
             if ( service != null && service.isSoap() ) {
                 try {
@@ -219,7 +219,7 @@ public class GatewayApiImpl implements GatewayApi {
             String relatedOid = header.isAlias()? header.getStrId() : null;
             String entityName = header.getName() + (header.isAlias()? " alias" : "");
 
-            info.add( new EntityInfo( entityType, external.getExternalId(), entityOid, relatedOid, entityName, header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()), header.getVersion() ) );
+            info.add( new EntityInfo( entityType, external.getExternalId(), entityOid, relatedOid, entityName, header.getDescription(), header.getFolderOid()==null ? null : Long.toString(header.getFolderOid()), header.getVersion() ) );
         }
     }
 
@@ -228,7 +228,7 @@ public class GatewayApiImpl implements GatewayApi {
 
         for ( FolderHeader header : folderHeaders ) {
             ExternalEntityHeader external = EntityHeaderUtils.toExternal(header);
-            info.add( new EntityInfo( header.getType(), external.getExternalId(), header.getStrId(), null, header.getName(), header.getParentFolderOid()==null ? null : Long.toString(header.getParentFolderOid()), null ) );
+            info.add( new EntityInfo( header.getType(), external.getExternalId(), header.getStrId(), null, header.getName(), header.getDescription(), header.getParentFolderOid()==null ? null : Long.toString(header.getParentFolderOid()), null ) );
         }
     }
 }

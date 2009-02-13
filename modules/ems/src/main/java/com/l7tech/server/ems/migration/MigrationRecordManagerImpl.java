@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.identity.User;
 
@@ -51,15 +52,34 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
     @Override
     public MigrationRecord create( final String name,
                                    final User user,
-                                   final SsgCluster source,
-                                   final SsgCluster target,
-                                   final String summary,
-                                   final byte[] data ) throws SaveException {
+                                   final MigrationSummary summary,
+                                   final MigrationBundle bundle ) throws SaveException {
 
-        MigrationRecord result = new MigrationRecord( name, System.currentTimeMillis(), user, source, target, summary, data, data==null ? 0 : data.length );
+        MigrationRecord result = new MigrationRecord( name, user, summary, bundle );
         long oid = super.save(result);
         result.setOid( oid );
         return result;
+    }
+
+    @Override
+    public MigrationRecord create(String label, byte[] data, Collection<String> validClusterGuids) throws SaveException {
+
+        MigrationRecord record;
+        try {
+            record = MigrationRecord.deserializeXml(new String(data));
+        } catch (Exception e) {
+            throw new SaveException("Error loading migration bundle data.", e);
+        }
+
+        if ( ! validClusterGuids.contains(record.getSourceClusterGuid()))
+            throw new SaveException( "Invalid archive, source SSG Cluster not recognised: " + record.getSourceClusterGuid() + " : " + record.getSourceClusterName() );
+
+        if ( ! validClusterGuids.contains(record.getTargetClusterGuid()))
+            throw new SaveException( "Invalid archive, target SSG Cluster not recognised: " + record.getTargetClusterGuid() + " : " + record.getTargetClusterName() );
+
+        long oid = super.save(record);
+        record.setOid( oid );
+        return record;
     }
 
     @Override

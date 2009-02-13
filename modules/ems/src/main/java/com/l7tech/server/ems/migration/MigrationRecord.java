@@ -1,12 +1,18 @@
 package com.l7tech.server.ems.migration;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-import com.l7tech.server.ems.enterprise.SsgCluster;
+import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.identity.User;
 
 import javax.persistence.*;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.JAXB;
 
 import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
+
+import java.io.ByteArrayOutputStream;
+import java.io.StringReader;
 
 /**
  * This entity class stores the information of a migration such as name, id, time created,
@@ -19,40 +25,36 @@ import org.hibernate.annotations.Proxy;
 @Entity
 @Proxy(lazy=false)
 @Table(name="migration")
+@XmlRootElement
 public class MigrationRecord extends NamedEntityImp {
 
     private long timeCreated;
+        
     private long provider;
     private String userId;
-    private SsgCluster sourceCluster;
-    private SsgCluster targetCluster;
-    private String summary;
-    private byte[] data;
-    private int dataSize;
+
+    private MigrationSummary summary;
+    private String summaryXml;
+
+    private MigrationBundle bundle;
+    private String bundleXml;
 
     public MigrationRecord() {
     }
 
     public MigrationRecord( final String name,
-                            final long timeCreated,
                             final User user,
-                            final SsgCluster sourceCluster,
-                            final SsgCluster targetCluster,
-                            final String summary,
-                            final byte[] data,
-                            final int dataSize ) {
+                            final MigrationSummary summary,
+                            final MigrationBundle bundle) {
         this._name = name==null ? "" : name;
-        this.timeCreated = timeCreated;
         this.provider = user.getProviderId();
         this.userId = user.getId();
-        this.sourceCluster = sourceCluster;
-        this.targetCluster = targetCluster;
-        this.summary = summary;
-        this.data = data;
-        this.dataSize = dataSize;
+        this.timeCreated = summary.getTimeCreated();
+        setSummaryXml(summary.serializeXml());
+        setBundleXml(bundle.serializeXml());
     }
 
-    @Column(name="time_created", nullable=false)
+    @Column(name="time_created", nullable=false, updatable = false)
     public long getTimeCreated() {
         return timeCreated;
     }
@@ -79,52 +81,72 @@ public class MigrationRecord extends NamedEntityImp {
         this.userId = userId;
     }
 
-    @ManyToOne(optional=false)
-    @JoinColumn(name="target_cluster_oid", nullable=false)
-    public SsgCluster getTargetCluster() {
-        return targetCluster;
+    @Column(name="summary_xml", length = 1024*1024)
+    @Lob
+    public synchronized String getSummaryXml() {
+        if (summaryXml == null && summary != null)
+            summaryXml = summary.serializeXml();
+
+        return summaryXml;
     }
 
-    public void setTargetCluster(SsgCluster targetCluster) {
-        this.targetCluster = targetCluster;
-    }
-
-    @ManyToOne(optional=false)
-    @JoinColumn(name="source_cluster_oid", nullable=false)
-    public SsgCluster getSourceCluster() {
-        return sourceCluster;
-    }
-
-    public void setSourceCluster(SsgCluster sourceCluster) {
-        this.sourceCluster = sourceCluster;
-    }
-
-    @Column(name="summary", length=10240)
-    public String getSummary() {
-        return summary;
-    }
-
-    public void setSummary(String summary) {
-        this.summary = summary;
+    public synchronized void setSummaryXml(String summaryXml) {
+        this.summaryXml = summaryXml;
+        summary = MigrationSummary.deserializeXml(summaryXml);
     }
 
     @Basic(fetch=FetchType.LAZY)
-    @Column(name="data", length=Integer.MAX_VALUE)
+    @Column(name="bundle_zipxml", length=Integer.MAX_VALUE)
+    @Type(type="com.l7tech.server.util.CompressedStringType")
     @Lob
-    public byte[] getData() {
-        return data;
+    public synchronized String getBundleXml() {
+        if (bundleXml == null && bundle != null)
+            bundleXml = bundle.serializeXml();
+
+        return bundleXml;
     }
 
-    public void setData(byte[] data) {
-        this.data = data;
+    public synchronized void setBundleXml(String bundleXml) {
+        this.bundleXml = bundleXml;
+        bundle = MigrationBundle.deserializeXml(bundleXml);
     }
 
-    @Column(name="data_size", nullable=false)
-    public int getDataSize() {
-        return dataSize;
+    // - Convenience accessors
+
+    @Transient
+    public int getBundleSize() {
+        String xml = getBundleXml();
+        return xml == null ? 0 : xml.length();
     }
 
-    public void setDataSize(int dataSize) {
-        this.dataSize = dataSize;
+    @Transient
+    public String getSourceClusterName() {
+        return summary == null ? null : summary.getSourceClusterName();
     }
+
+    @Transient
+    public String getSourceClusterGuid() {
+        return summary == null ? null : summary.getSourceClusterGuid();
+    }
+
+    @Transient
+    public String getTargetClusterName() {
+        return summary == null ? null : summary.getTargetClusterName();
+    }
+
+    @Transient
+    public String getTargetClusterGuid() {
+        return summary == null ? null : summary.getTargetClusterGuid();
+    }
+
+    public String serializeXml() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        JAXB.marshal(this, out);
+        return out.toString();
+    }
+
+    public static MigrationRecord deserializeXml(String xml) {
+        return JAXB.unmarshal(new StringReader(xml), MigrationRecord.class);
+    }
+
 }
