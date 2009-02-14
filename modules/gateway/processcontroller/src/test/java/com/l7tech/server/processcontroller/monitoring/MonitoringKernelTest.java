@@ -121,7 +121,7 @@ public class MonitoringKernelTest {
         return (MonitoringApi) pfb.create();
     }
 
-    private MonitoringConfiguration makeConfig() {
+    public static MonitoringConfiguration makeConfig() {
         Random random = new Random();
         final MonitoringConfiguration mc = new MonitoringConfiguration();
         mc.setOid(Math.abs(random.nextLong()));
@@ -169,7 +169,7 @@ public class MonitoringKernelTest {
         return mc;
     }
 
-    private void addTrigger(MonitoringConfiguration mc, final MonitorableProperty prop, final ComparisonOperator op, final String val, final long oid, final int interval, NotificationRule... rulez) {
+    public static void addTrigger(MonitoringConfiguration mc, final MonitorableProperty prop, final ComparisonOperator op, final String val, final long oid, final int interval, NotificationRule... rulez) {
         final PropertyTrigger tempTrigger = new PropertyTrigger(prop, "foo.bar.example.com", op, val, interval);
         tempTrigger.setName("idoru");
         tempTrigger.setOid(oid);
