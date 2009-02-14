@@ -124,26 +124,26 @@ public class MonitoringKernelTest {
     private MonitoringConfiguration makeConfig() {
         Random random = new Random();
         final MonitoringConfiguration mc = new MonitoringConfiguration();
-        mc.setName("My config");
         mc.setOid(Math.abs(random.nextLong()));
 
         final HttpNotificationRule rulez = new HttpNotificationRule();
-        rulez.setName("bring me a bucket");
-        rulez.setUrl("http://localhost/");
-        rulez.setMethod(HttpMethod.GET);
+        rulez.setUrl("http://localhost:8080/dump");
+        rulez.setMethod(HttpMethod.POST);
+        rulez.setRequestBody("<a>Hi there!</a>");
+        rulez.setContentType("text/xml; charset=\"utf-8\"");
         rulez.setOid(Math.abs(random.nextLong()));
         mc.getNotificationRules().add(rulez);
 
         final EmailNotificationRule rulez2 = new EmailNotificationRule();
-        rulez2.setName("spammity spam");
-        rulez2.setFrom("root@localhost");
+        rulez2.setFrom("acruise@layer7tech.com");
+        rulez2.setTo(Arrays.asList("acruise@layer7tech.com"));
         rulez2.setSubject("Uh-oh");
-        rulez2.setSmtpHost("localhost");
+        rulez2.setSmtpHost("mail.l7tech.com");
+        rulez2.setText("Here is a very nice message for you");
         rulez2.setOid(Math.abs(random.nextLong()));
         mc.getNotificationRules().add(rulez2);
 
         final SnmpTrapNotificationRule rulez3 = new SnmpTrapNotificationRule();
-        rulez3.setName("ITS A TRAP");
         rulez3.setCommunity("public");
         rulez3.setOidSuffix(1234);
         rulez3.setSnmpHost("localhost");
@@ -151,11 +151,17 @@ public class MonitoringKernelTest {
         rulez3.setOid(Math.abs(random.nextLong()));
         mc.getNotificationRules().add(rulez3);
 
-        addTrigger(mc, BuiltinMonitorables.CPU_USAGE, ComparisonOperator.GT, "90", Math.abs(random.nextLong()), 5000, rulez3);
-        addTrigger(mc, BuiltinMonitorables.AUDIT_SIZE, ComparisonOperator.LT, "100000000", Math.abs(random.nextLong()), 30000, rulez3);
-        addTrigger(mc, BuiltinMonitorables.DISK_FREE_KIB, ComparisonOperator.LT, "1000000000", Math.abs(random.nextLong()), 30000, rulez3);
-        addTrigger(mc, BuiltinMonitorables.DISK_USAGE_PERCENT, ComparisonOperator.GT, "50", Math.abs(random.nextLong()), 30000, rulez3);
-        addTrigger(mc, BuiltinMonitorables.NTP_STATUS, ComparisonOperator.NE, "OK", Math.abs(random.nextLong()), 60000, rulez2, rulez3);
+        addTrigger(mc, BuiltinMonitorables.AUDIT_SIZE, ComparisonOperator.LT, "100000000", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
+        addTrigger(mc, BuiltinMonitorables.CPU_TEMPERATURE, ComparisonOperator.GT, "50", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
+        addTrigger(mc, BuiltinMonitorables.CPU_USAGE, ComparisonOperator.GT, "90", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
+        addTrigger(mc, BuiltinMonitorables.DISK_FREE_KIB, ComparisonOperator.LT, "1000000000", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
+        addTrigger(mc, BuiltinMonitorables.DISK_USAGE_PERCENT, ComparisonOperator.GT, "50", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
+        addTrigger(mc, BuiltinMonitorables.LOG_SIZE, ComparisonOperator.GT, "10000", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
+        addTrigger(mc, BuiltinMonitorables.NODE_STATE, ComparisonOperator.NE, "RUNNING", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
+        addTrigger(mc, BuiltinMonitorables.NTP_STATUS, ComparisonOperator.NE, "OK", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
+        addTrigger(mc, BuiltinMonitorables.SWAP_FREE_KIB, ComparisonOperator.LT, "1000000", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
+        addTrigger(mc, BuiltinMonitorables.TIME, ComparisonOperator.GT, "1234567890", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
+        addTrigger(mc, BuiltinMonitorables.RAID_STATUS, ComparisonOperator.NE, "OK", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
 
         final EventTrigger anotherTrigger = new EventTrigger(new MonitorableEvent(ComponentType.HOST, "shuttingDown"), null, 1, null);
         anotherTrigger.setOid(Math.abs(random.nextLong()));

@@ -101,7 +101,7 @@ public class MonitoringServiceImpl implements MonitoringService {
             if (propertyName.equals(BuiltinMonitorables.DISK_FREE_KIB.getName())) {
                 // Convert KB to GB, since the UI displays the disk free in GB.
                 value = Long.valueOf(value.toString()) / SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR;
-            } else if (propertyName.equals(BuiltinMonitorables.SWAP_SPACE.getName())) {
+            } else if (propertyName.equals(BuiltinMonitorables.SWAP_FREE_KIB.getName())) {
                 // Convert KB to MB, since the UI displays the swap usage in MB.
                 value = Long.valueOf(value.toString()) / SystemMonitoringSetupSettingsManager.KB_MB_CONVERTOR;
             }

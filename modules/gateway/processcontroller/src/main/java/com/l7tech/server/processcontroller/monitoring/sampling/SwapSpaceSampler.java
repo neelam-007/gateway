@@ -14,7 +14,7 @@ class SwapSpaceSampler extends HostPropertySampler<Long> {
     private static final Pattern SWAPFREE_MATCHER = Pattern.compile("(?m)^SwapFree:\\s*(\\d+)\\s*kB$", Pattern.MULTILINE);
 
     public SwapSpaceSampler(String componentId) {
-        super(componentId, BuiltinMonitorables.SWAP_SPACE.getName());
+        super(componentId, BuiltinMonitorables.SWAP_FREE_KIB.getName());
     }
 
     public Long sample() throws PropertySamplingException {

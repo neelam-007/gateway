@@ -19,7 +19,7 @@ public final class BuiltinMonitorables {
     /** CPU Temperature, in °C */
     public static final MonitorableProperty CPU_TEMPERATURE = new MonitorableProperty(ComponentType.HOST, "cpuTemp", Integer.class, 30000L, ComparisonOperator.GE, "50");
     /** Free Swap space, in KiB */
-    public static final MonitorableProperty SWAP_SPACE = new MonitorableProperty(ComponentType.HOST, "swapUsage", Long.class, 30000L, ComparisonOperator.LT, "100000");
+    public static final MonitorableProperty SWAP_FREE_KIB = new MonitorableProperty(ComponentType.HOST, "swapUsage", Long.class, 30000L, ComparisonOperator.LT, "100000");
     /** Free disk space, in KiB */
     public static final MonitorableProperty DISK_FREE_KIB = new MonitorableProperty(ComponentType.HOST, "diskFree", Long.class, 120000L, ComparisonOperator.LT, "100000");
     /** Percent free space */
@@ -38,7 +38,7 @@ public final class BuiltinMonitorables {
     public static final MonitorableProperty AUDIT_SIZE = new MonitorableProperty(ComponentType.CLUSTER, "auditSize", Long.class, 600000L, ComparisonOperator.GE, "10000000");
 
     private static final Monitorable[] VALUES = new Monitorable[] {
-            CPU_USAGE, CPU_TEMPERATURE, SWAP_SPACE, DISK_FREE_KIB, DISK_USAGE_PERCENT, TIME, LOG_SIZE, NODE_STATE, NTP_STATUS, RAID_STATUS, AUDIT_SIZE
+            CPU_USAGE, CPU_TEMPERATURE, SWAP_FREE_KIB, DISK_FREE_KIB, DISK_USAGE_PERCENT, TIME, LOG_SIZE, NODE_STATE, NTP_STATUS, RAID_STATUS, AUDIT_SIZE
     };
 
     private final Map<Pair<ComponentType, String>, MonitorableProperty> builtinProperties;

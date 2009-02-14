@@ -20,16 +20,17 @@ public final class PropertySamplerFactory implements ApplicationContextAware {
     private ApplicationContext spring;
 
     private static final Map<MonitorableProperty, Class<? extends PropertySampler>> hostPropertySamplers = Collections.unmodifiableMap(new HashMap<MonitorableProperty, Class<? extends PropertySampler>>() {{
-        put(BuiltinMonitorables.CPU_USAGE, CpuUsageSampler.class);
-        put(BuiltinMonitorables.SWAP_SPACE, SwapSpaceSampler.class);
+        put(BuiltinMonitorables.AUDIT_SIZE, AuditSizeSampler.class);
         put(BuiltinMonitorables.CPU_TEMPERATURE, CpuTemperatureSampler.class);
+        put(BuiltinMonitorables.CPU_USAGE, CpuUsageSampler.class);
         put(BuiltinMonitorables.DISK_FREE_KIB, DiskFreeSampler.class);
         put(BuiltinMonitorables.DISK_USAGE_PERCENT, DiskUsagePercentSampler.class);
-        put(BuiltinMonitorables.TIME, TimeSampler.class);
-        put(BuiltinMonitorables.AUDIT_SIZE, AuditSizeSampler.class);
-        put(BuiltinMonitorables.NTP_STATUS, NtpStatusSampler.class);
         put(BuiltinMonitorables.LOG_SIZE, LogFileSampler.class);
         put(BuiltinMonitorables.NODE_STATE, NodeStateSampler.class);
+        put(BuiltinMonitorables.NTP_STATUS, NtpStatusSampler.class);
+        put(BuiltinMonitorables.RAID_STATUS, RaidStatusSampler.class);
+        put(BuiltinMonitorables.SWAP_FREE_KIB, SwapSpaceSampler.class);
+        put(BuiltinMonitorables.TIME, TimeSampler.class);
     }});
 
     @SuppressWarnings({"unchecked"})
