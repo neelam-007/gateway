@@ -555,7 +555,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                 extraProps = item.entityHeader.getExtraProperties();
             }
 
-            properties.add( new Pair<String,String>( "Name", item.getDisplayName()) );
+            properties.add( new Pair<String,String>( "Name", item.getDisplayNameWithScope()) );
             properties.add( new Pair<String,String>( "Type", item.getType() ) );
             properties.add( new Pair<String,String>( "Version", item.getVersionAsString() ) );
 
@@ -580,7 +580,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             protected void populateItem( final ListItem item ) {
                 final DependencyItem dependencyItem = ((DependencyItem)item.getModelObject());
                 item.add(new Label("optional", dependencyItem.getOptional()).setEscapeModelStrings(false));
-                item.add(new Label("name", dependencyItem.getDisplayName()));
+                item.add(new Label("name", dependencyItem.getDisplayNameWithScope()));
                 item.add(new Label("type", com.l7tech.objectmodel.EntityType.valueOf(dependencyItem.type).getName().toLowerCase()));
             }
         };
@@ -627,7 +627,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(sourceKey, targetClusterId);
             Pair<DependencyItem, Boolean> mappedItem = mappingModel.dependencyMap.get( mappingKey );
             if ( mappedItem != null && mappedItem.left != null) {
-                item.destName = mappedItem.left.getDisplayName();
+                item.destName = mappedItem.left.getDisplayNameWithScope();
                 if ( !item.isOptional() ) {
                     item.resolved = true;
                 }
@@ -649,12 +649,12 @@ public class PolicyMigration extends EsmStandardWebPage {
         final List<PropertyColumn> dependencyColumns =  Arrays.asList(
             new PropertyColumn(new Model(""), "uid"),
             new TypedPropertyColumn(new Model(""), "optional", "optional", String.class, false),
-            new PropertyColumn(new Model("Name"), "name", "name"),
+            new PropertyColumn(new Model("Name"), "displayNameWithScope", "displayNameWithScope"),
             new PropertyColumn(new Model("Type"), "type", "type"),
             new PropertyColumn(new Model("Dest. Name"), "destName", "destName")
         );
 
-        final YuiDataTable ydt = new YuiDataTable( "dependenciesTable", dependencyColumns, "name", true, items, null, false, "uid", true, null ){
+        final YuiDataTable ydt = new YuiDataTable( "dependenciesTable", dependencyColumns, "displayNameWithScope", true, items, null, false, "uid", true, null ){
             @Override
             @SuppressWarnings({"UnusedDeclaration"})
             protected void onSelect( final AjaxRequestTarget ajaxRequestTarget, final String value ) {
@@ -675,7 +675,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     //Component selectionComponent2 = ((Form)dependenciesContainer.get("dependencyControlsForm")).get("dependencyEditButton");
                     if ( selectedItem != null ) {
                         lastSourceKey = new DependencyKey( sourceClusterId, selectedItem.asEntityHeader() );
-                        candidateModel.setName( selectedItem.getDisplayName() );
+                        candidateModel.setName( selectedItem.getDisplayNameWithScope() );
                         candidateModel.setType( selectedItem.getType() );                        
                         selectionComponent.setEnabled( mappingModel.dependencyMap.containsKey(new Pair<DependencyKey,String>(lastSourceKey,lastTargetClusterId)) );
                         //selectionComponent2.setEnabled( com.l7tech.objectmodel.EntityType.valueOf(selectedItem.type) == EntityType.VALUE_REFERENCE );
@@ -787,7 +787,6 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                 item.add(radioComponent);
                 item.add(new Label("name", dependencyItem.getDisplayName()));
-                item.add(new Label("version", dependencyItem.getVersionAsString()));
             }
         });
     }
@@ -943,9 +942,9 @@ public class PolicyMigration extends EsmStandardWebPage {
      * destination cluster.</p>
      */
     private void loadMappingHistory( final EntityMappingModel mappingModel,
-                                           final String sourceClusterId,
-                                           final String targetClusterId,
-                                           final Collection<DependencyItem> dependencyItems ) throws MigrationFailedException {
+                                     final String sourceClusterId,
+                                     final String targetClusterId,
+                                     final Collection<DependencyItem> dependencyItems ) throws MigrationFailedException {
         try {
             // load mappings saved in EM db
             for ( DependencyItem item : dependencyItems ) {
@@ -1406,7 +1405,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         @Override
         public int compareTo(Object o) {
             DependencyItem otherItem = (DependencyItem) o;
-            int compared = getDisplayName().toLowerCase().compareTo( otherItem.getDisplayName().toLowerCase() );
+            int compared = getDisplayNameWithScope().toLowerCase().compareTo( otherItem.getDisplayNameWithScope().toLowerCase() );
             if ( compared == 0 ) {
                 compared = getType().compareTo( otherItem.getType() );
             }
@@ -1468,6 +1467,17 @@ public class PolicyMigration extends EsmStandardWebPage {
             }
 
             return displayName;
+        }
+
+        public String getDisplayNameWithScope() {
+            String nameWithScope = getDisplayName();
+
+            Map<String,String> extraProps = entityHeader!=null ? entityHeader.getExtraProperties() : null;
+            if ( extraProps != null && extraProps.containsKey("Scope Name") ) {
+                nameWithScope = nameWithScope + " [" + extraProps.get("Scope Name") + "]";
+            }
+
+            return nameWithScope;
         }
     }
 

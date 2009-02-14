@@ -481,7 +481,9 @@ public class MigrationManagerImpl implements MigrationManager {
         if (header instanceof ValueReferenceEntityHeader)
             return header;
         Entity ent = loadEntity(header);
-        return ent == null ? header : EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(ent));
+        ExternalEntityHeader externalEntityHeader = ent == null ? header : EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(ent));
+        enhanceHeader( externalEntityHeader );
+        return externalEntityHeader;
     }
 
     private Set<ExternalEntityHeader> resolveHeaders(final Collection<ExternalEntityHeader> headers) throws MigrationApi.MigrationException {
@@ -492,6 +494,22 @@ public class MigrationManagerImpl implements MigrationManager {
         }
 
         return resolvedHeaders;
+    }
+
+    private void enhanceHeader( final ExternalEntityHeader externalEntityHeader ) throws MigrationApi.MigrationException  {
+        if ( externalEntityHeader != null ) {
+            if ( externalEntityHeader.getType() == EntityType.USER ||
+                 externalEntityHeader.getType() == EntityType.GROUP ) {
+                try {
+                    EntityHeader header = entityCrud.findHeader( EntityType.ID_PROVIDER_CONFIG, ((IdentityHeader)EntityHeaderUtils.fromExternal(externalEntityHeader)).getProviderOid() );
+                    if ( header != null ) {
+                        externalEntityHeader.addProperty("Scope Name", header.getName());
+                    }
+                } catch ( FindException fe ) {
+                    throw new MigrationApi.MigrationException("Error loading the entity for header: " + externalEntityHeader, fe);                    
+                }
+            }
+        }
     }
 
     private String composeErrorMessage( final String summary, final ExternalEntityHeader externalHeader, final Exception root ) {
