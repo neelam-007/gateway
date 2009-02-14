@@ -1,27 +1,26 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.server.ems.ui.NavigationPage;
-import com.l7tech.server.ems.enterprise.*;
-import com.l7tech.server.ems.monitoring.*;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
+import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ems.enterprise.*;
+import com.l7tech.server.ems.monitoring.*;
+import com.l7tech.server.ems.ui.NavigationPage;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.ExceptionUtils;
-
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.*;
-
-import org.apache.wicket.spring.injection.annot.SpringBean;
-import org.apache.wicket.markup.html.form.HiddenField;
+import org.apache.wicket.RequestCycle;
 import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.protocol.http.WebRequest;
-import org.apache.wicket.RequestCycle;
+import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.mortbay.util.ajax.JSON;
+
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -611,13 +610,15 @@ public class Monitor extends EsmStandardWebPage {
                         boolean triggerEnabled = (Boolean)jsonFormatMap.get(JSONConstants.ENTITY_PROPS_SETUP.TRIGGER_ENABLED);
                         propertySetup.setTriggerEnabled(triggerEnabled);
                         if (triggerEnabled) {
-                            long triggerValue = (Long)jsonFormatMap.get(JSONConstants.ENTITY_PROPS_SETUP.TRIGGER_VALUE);
-                            if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.DISK_FREE)) {
-                                // Convert GB to KB, since the database stores the disk free KB.
-                                triggerValue *= SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR;
-                            } else if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.SWAP_USAGE)) {
-                                // Convert MB to KB, since the database stores the swap usage in KB.
-                                triggerValue *= SystemMonitoringSetupSettingsManager.KB_MB_CONVERTOR;
+                            Long triggerValue = (Long)jsonFormatMap.get(JSONConstants.ENTITY_PROPS_SETUP.TRIGGER_VALUE);
+                            if (triggerValue != null) {
+                                if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.DISK_FREE)) {
+                                    // Convert GB to KB, since the database stores the disk free KB.
+                                    triggerValue *= SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR;
+                                } else if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.SWAP_USAGE)) {
+                                    // Convert MB to KB, since the database stores the swap usage in KB.
+                                    triggerValue *= SystemMonitoringSetupSettingsManager.KB_MB_CONVERTOR;
+                                }
                             }
                             propertySetup.setTriggerValue(triggerValue);
                             propertySetup.setNotificationEnabled((Boolean)jsonFormatMap.get(JSONConstants.ENTITY_PROPS_SETUP.NOTIFICATION_ENABLED));
@@ -703,7 +704,7 @@ public class Monitor extends EsmStandardWebPage {
         // "diskFree"
         Map<String, Object> diskFreeMap = new HashMap<String, Object>();
         diskFreeMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_DISKFREE));
-        diskFreeMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     ((Long)clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_DISKFREE)) / SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR);
+        diskFreeMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     convertKbToGb(clusterPropertyFormatMap));
         diskFreeMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_DISKFREE_LOWERLIMIT)));
         diskFreeMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                      serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_DISKFREE_UNIT));
 
@@ -760,6 +761,13 @@ public class Monitor extends EsmStandardWebPage {
         jsonFormatMap.put(JSONConstants.SystemMonitoringSetup.AUDIT_UPON_NOTIFICATION,       clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_AUDITUPONNOTIFICATION));
 
         return jsonFormatMap;
+    }
+
+    private Object convertKbToGb(Map<String, Object> clusterPropertyFormatMap) {
+        Long kb = (Long)clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_DISKFREE);
+        if (kb == null)
+            return null;
+        return kb / SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR;
     }
 
     /**
