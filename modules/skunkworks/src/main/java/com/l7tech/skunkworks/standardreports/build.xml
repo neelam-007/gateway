@@ -72,6 +72,7 @@
 	<target name="run" description="Runs the report as configured in report.properties and displays the results.">
         <copy file="../../../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Styles.jrtx" todir="."/>
         <copy file="../../../../../../../../gateway/reporting/build/classes/StyleGenerator.jasper" todir="."/>
+        <copy file="${property.files.dest}/report.properties" todir="./com/l7tech/skunkworks/standardreports/test" />
         <java classname="${class.name}" fork="true">
 			<arg value="run"/>
 			<classpath refid="classpath"/>
