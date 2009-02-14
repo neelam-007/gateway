@@ -18,9 +18,7 @@ import com.l7tech.util.*;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.xml.bind.JAXB;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -167,11 +165,15 @@ public class ConfigServiceImpl implements ConfigService {
             return null;
         }
         MonitoringConfiguration config = null;
+        InputStream inputStream = null;
         try {
-            config = JAXB.unmarshal(monitoringConfigFile, MonitoringConfiguration.class);
+            inputStream = FileUtils.loadFileSafely(monitoringConfigFile.getPath());
+            config = JAXB.unmarshal(inputStream, MonitoringConfiguration.class);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to read monitoring configuration", e);
             return null;
+        } finally {
+            ResourceUtils.closeQuietly(inputStream);
         }
         return new Pair<MonitoringConfiguration, Boolean>(config, true);
     }
@@ -445,7 +447,7 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     @Override
-    public void pushMonitoringConfiguration(MonitoringConfiguration config, boolean responsibleForClusterMonitoring) {
+    public void pushMonitoringConfiguration(final MonitoringConfiguration config, boolean responsibleForClusterMonitoring) {
         this.responsibleForClusterMonitoring = responsibleForClusterMonitoring;
         this.currentMonitoringConfiguration = config;
 
@@ -454,7 +456,11 @@ public class ConfigServiceImpl implements ConfigService {
         if (monitoringConfigFile == null) return;
         
         try {
-            JAXB.marshal(config, monitoringConfigFile);
+            FileUtils.saveFileSafely(monitoringConfigFile.getPath(), new FileUtils.Saver() {
+                public void doSave(FileOutputStream fos) throws IOException {
+                    JAXB.marshal(config, fos);
+                }
+            });
         } catch (Exception e) {
             logger.log(Level.WARNING, "Couldn't save current monitoring configuration; it will need to be reconfigured on startup", e);
         }

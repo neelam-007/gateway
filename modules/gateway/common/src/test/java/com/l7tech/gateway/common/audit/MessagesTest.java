@@ -10,7 +10,6 @@ import junit.framework.TestSuite;
 
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
-import com.l7tech.gateway.common.audit.Messages;
 
 /**
  * @author $Author$
@@ -33,7 +32,7 @@ public class MessagesTest extends TestCase {
      */
     public void testMessageText() {
         for(int i=0; i<MESSAGE_MAX_ID; i++) {
-            AuditDetailMessage message = Messages.getAuditDetailMessageById(i);
+            AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(i);
             String messageText = message==null ? null : message.getMessage();
             if(messageText!=null) {
                 // Check for odd numbers of single quotes, this is a an error since a single quote should be escaped
@@ -66,7 +65,7 @@ public class MessagesTest extends TestCase {
 
             if (i == 2200) continue; // skip check for "SSG processing stopped by archiver" message; needs to be severe
 
-            AuditDetailMessage message = Messages.getAuditDetailMessageById(i);
+            AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(i);
             Level level = message==null ? null : message.getLevel();
             if(level!=null) {
                 if (level.intValue() >= Level.SEVERE.intValue()) {

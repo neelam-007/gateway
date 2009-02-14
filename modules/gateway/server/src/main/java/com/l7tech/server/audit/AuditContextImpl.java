@@ -78,7 +78,7 @@ public class AuditContextImpl implements AuditContext {
     public void addDetail(AuditDetail detail, Object source, Throwable thrown) {
         if (detail == null) throw new NullPointerException();
 
-        AuditDetailMessage message = Messages.getAuditDetailMessageById(detail.getMessageId());
+        AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(detail.getMessageId());
         Level severity = message==null ? null : message.getLevel();
         if(severity == null) throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
         detail.setOrdinal(ordinal++);
@@ -126,7 +126,7 @@ public class AuditContextImpl implements AuditContext {
         Set<AuditDetailMessage.Hint> hints = new HashSet<AuditDetailMessage.Hint>();
         for (List<AuditDetailWithInfo> list : details.values()) {
             for (AuditDetailWithInfo detailWithInfo : list) {
-                AuditDetailMessage message = Messages.getAuditDetailMessageById(detailWithInfo.detail.getMessageId());
+                AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(detailWithInfo.detail.getMessageId());
                 Set<AuditDetailMessage.Hint> dHints = message==null ? null : message.getHints();
                 if (dHints != null) {
                     hints.addAll(dHints);
@@ -205,7 +205,7 @@ public class AuditContextImpl implements AuditContext {
             for (List<AuditDetailWithInfo> list : details.values()) {
                 for (AuditDetailWithInfo detailWithInfo : list) {
                     int mid = detailWithInfo.detail.getMessageId();
-                    AuditDetailMessage message = Messages.getAuditDetailMessageById(mid);
+                    AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(mid);
                     Level severity = message==null ? null : message.getLevel();
                     if(severity == null)
                         throw new RuntimeException("Cannot find the message (id=" + mid + ")" + " in the Message Map.");

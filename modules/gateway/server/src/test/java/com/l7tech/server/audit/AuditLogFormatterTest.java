@@ -503,7 +503,7 @@ public class AuditLogFormatterTest extends TestCase {
         }
 
         protected AuditDetailMessage createAuditDetail(int did) {
-            return Messages.getAuditDetailMessageById(did);
+            return MessagesUtil.getAuditDetailMessageById(did);
         }
     }
 

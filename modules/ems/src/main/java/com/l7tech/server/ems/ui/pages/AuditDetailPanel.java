@@ -10,12 +10,7 @@ import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.extensions.markup.html.repeater.data.table.PropertyColumn;
 import org.apache.wicket.extensions.markup.html.repeater.util.SortableDataProvider;
-import com.l7tech.gateway.common.audit.AuditRecord;
-import com.l7tech.gateway.common.audit.AdminAuditRecord;
-import com.l7tech.gateway.common.audit.SystemAuditRecord;
-import com.l7tech.gateway.common.audit.AuditDetail;
-import com.l7tech.gateway.common.audit.Messages;
-import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.*;
 import static com.l7tech.gateway.common.Component.fromId;
 import com.l7tech.server.ems.ui.EsmSession;
 import com.l7tech.util.Pair;
@@ -274,7 +269,7 @@ public class AuditDetailPanel extends Panel {
 
         AuditDetailModel( final AuditDetail auditDetail ) {
             this( new Date(auditDetail.getTime()),
-                  Messages.getAuditDetailMessageById(auditDetail.getMessageId()),
+                  MessagesUtil.getAuditDetailMessageById(auditDetail.getMessageId()),
                   auditDetail.getParams() );
         }
 

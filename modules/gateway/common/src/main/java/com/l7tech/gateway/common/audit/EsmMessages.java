@@ -1,6 +1,4 @@
-package com.l7tech.server.ems.audit;
-
-import com.l7tech.gateway.common.audit.Messages;
+package com.l7tech.gateway.common.audit;
 
 import java.util.logging.Level;
 

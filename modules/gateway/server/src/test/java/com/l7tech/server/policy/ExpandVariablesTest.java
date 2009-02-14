@@ -1,7 +1,7 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.audit.Messages;
+import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.message.AbstractHttpResponseKnob;
@@ -56,7 +56,7 @@ public class ExpandVariablesTest extends TestCase {
 
     public void setUp() throws Exception {
         // put set up code here
-        Messages.getAuditDetailMessageById(0); // This really shouldn't be necessary, but somebody's gotta do it
+        MessagesUtil.getAuditDetailMessageById(0); // This really shouldn't be necessary, but somebody's gotta do it
     }
 
     public void tearDown() throws Exception {

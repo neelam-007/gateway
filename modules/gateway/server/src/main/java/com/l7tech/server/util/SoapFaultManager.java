@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.soap.SoapVersion;
@@ -294,7 +295,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                     for (AuditDetail detail : details) {
                         int msgid = detail.getMessageId();
                         // only show details FINE and higher for medium details, show all details for full details
-                        if (includeSuccesses || (Messages.getAuditDetailMessageById(msgid).getLevel().intValue() >= Level.INFO.intValue())) {
+                        if (includeSuccesses || (MessagesUtil.getAuditDetailMessageById(msgid).getLevel().intValue() >= Level.INFO.intValue())) {
                             Element detailMsgEl = tmp.createElementNS(FAULT_NS, "l7:detailMessage");
                             detailMsgEl.setAttribute("id", Long.toString(detail.getMessageId()));
                             // add text node with actual message. see below for logpanel sample:
@@ -330,7 +331,7 @@ public class SoapFaultManager implements ApplicationContextAware {
         } finally {
             lock.unlock();
         }
-        AuditDetailMessage message = Messages.getAuditDetailMessageById(msgid);
+        AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(msgid);
         return message==null ? null : message.getMessage();
     }
 

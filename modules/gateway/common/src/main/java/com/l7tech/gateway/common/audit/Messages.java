@@ -35,7 +35,7 @@ public class Messages {
      */
     public static final String OVERRIDE_PREFIX = "auditmsg.override.";
 
-    private static final Map<Integer, AuditDetailMessage> messagesById = new HashMap<Integer, AuditDetailMessage>();
+    static final Map<Integer, AuditDetailMessage> messagesById = new HashMap<Integer, AuditDetailMessage>();
 
     // must appear after the instantiation of messageById HaspMap.
     // NOTE: *_SEVERE is the same as *_WARNING since you should never log at SEVERE anything except "audits flushed"
@@ -47,16 +47,6 @@ public class Messages {
     public static final M EXCEPTION_INFO                    = m(5, Level.INFO, "Exception caught! ");
     public static final M EXCEPTION_INFO_WITH_MORE_INFO     = m(6, Level.INFO, "{0}. Exception caught! ");
     // MAX -                                                  m(0099)
-
-    static {
-        // Make sure these always get loaded, so the static intializers run (1.5 safe)
-        new CommonMessages();
-        new AssertionMessages();
-        new BootMessages();
-        new MessageProcessingMessages();
-        new SystemMessages();
-        new ServiceMessages();
-    }
 
     protected Messages() { }
 
@@ -79,9 +69,5 @@ public class Messages {
         public M(int id, Level level, String message) {
             this(id, level, message, false, false);
         }
-    }
-
-    public static AuditDetailMessage getAuditDetailMessageById(int id) {
-        return messagesById.get(id);
     }
 }
