@@ -187,7 +187,7 @@ class EmailNotifier extends Notifier<EmailNotificationRule> {
     public NotificationAttempt.StatusType doNotification(Long timestamp, Object value, Trigger trigger) throws IOException {
         try {
             final Session session = getSession();
-            final String body = ExpandVariables.process(rule.getText(), getMonitoringVariables(trigger), auditor);
+            final String body = ExpandVariables.process(rule.getText(), getMonitoringVariables(trigger, value), auditor);
 
             sendMessage( session, body );
             return NotificationAttempt.StatusType.SENT;

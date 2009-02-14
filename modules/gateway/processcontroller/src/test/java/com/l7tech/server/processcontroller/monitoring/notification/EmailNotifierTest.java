@@ -13,7 +13,7 @@ import java.io.IOException;
  *
  */
 public class EmailNotifierTest {
-    @Ignore("Sends email to mlyons when run")
+    //@Ignore("Sends email to mlyons when run")
     @Test
     public void testSendEmail() throws IOException {
 
@@ -23,11 +23,12 @@ public class EmailNotifierTest {
         rule.setSubject("Hi there from EmailNotifierTest");
         rule.setFrom("mlyons@layer7tech.com");
         rule.setTo(Arrays.asList("mlyons@layer7tech.com"));
-        rule.setText("Howdy doody do ${monitoring.context.entityType} : ${monitoring.context.entityPathName}\n" +
-                     "Property : ${monitoring.context.propertyType}\n" +
-                     "Property State : ${monitoring.context.propertyState}\n" +
-                     "Property Value : ${monitoring.context.propertyValue} ${monitoring.context.propertyUnit}\n" +
-                     "Trigger Value : ${monitoring.context.triggerValue}");
+        rule.setText("Howdy doody do!\n\n" +
+                     "${monitoring.context.entityType}: ${monitoring.context.entityPathName}\n" +
+                     "Property: ${monitoring.context.propertyType}\n" +
+                     "Property State: ${monitoring.context.propertyState}\n" +
+                     "Property Value: ${monitoring.context.propertyValue} ${monitoring.context.propertyUnit}\n" +
+                     "Trigger Value: ${monitoring.context.triggerValue}");
         rule.setCryptoType(EmailNotificationRule.CryptoType.PLAIN);
 
         EmailNotifier notifier = new EmailNotifier(rule);

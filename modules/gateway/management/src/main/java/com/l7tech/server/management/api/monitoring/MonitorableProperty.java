@@ -21,14 +21,22 @@ public class MonitorableProperty extends Monitorable {
     private final Long suggestedSamplingInterval;
     private final ComparisonOperator suggestedComparisonOperator;
     private final String suggestedComparisonValue;
+    private final String valueUnit;
 
-    public MonitorableProperty(ComponentType componentType, String propertyName, Class<? extends Serializable> valueClass) {
-        this(componentType, propertyName, valueClass, null, null, null);
-    }
-
-    public MonitorableProperty(ComponentType componentType, String name, Class<? extends Serializable> valueClass, Long suggestedSamplingInterval, ComparisonOperator suggestedComparisonOperator, String suggestedComparisonValue) {
+    /**
+     *
+     * @param componentType see {@link #getComponentType()}. Required.
+     * @param name The short machine-readable property name, ie "operatingStatus".  Required.
+     * @param valueClass the class to which all values of this property will belong, ie Long.class.  Required.
+     * @param valueUnit the unit for the values, ie "KiB"; or null if not applicable to this property.
+     * @param suggestedSamplingInterval    a default value for sampling frequency in milliseconds between sampler invocations, or null.
+     * @param suggestedComparisonOperator  a default comparison operator to use when checking if the value is out of bounds, or null.
+     * @param suggestedComparisonValue     a default value that is probably outside the bounds of normality for this property, or null.
+     */
+    public MonitorableProperty(ComponentType componentType, String name, Class<? extends Serializable> valueClass, String valueUnit, Long suggestedSamplingInterval, ComparisonOperator suggestedComparisonOperator, String suggestedComparisonValue) {
         super(componentType, name);
         this.valueClass = valueClass;
+        this.valueUnit = valueUnit;
         this.suggestedSamplingInterval = suggestedSamplingInterval;
         this.suggestedComparisonOperator = suggestedComparisonOperator;
         this.suggestedComparisonValue = suggestedComparisonValue;
@@ -37,6 +45,11 @@ public class MonitorableProperty extends Monitorable {
     /** The class of values of this property */
     public Class<? extends Serializable> getValueClass() {
         return valueClass;
+    }
+
+    /** @return The unit for this property if applicable, or null. */
+    public String getValueUnit() {
+        return valueUnit;
     }
 
     /** A suggested sampling interval, in milliseconds */

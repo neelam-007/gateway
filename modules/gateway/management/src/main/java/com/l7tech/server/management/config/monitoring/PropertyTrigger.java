@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.management.config.monitoring;
 
+import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 import com.l7tech.server.management.api.monitoring.MonitorableProperty;
 import com.l7tech.util.ComparisonOperator;
 
@@ -27,7 +28,13 @@ public class PropertyTrigger extends Trigger<MonitorableProperty> {
 
     @Override
     protected MonitorableProperty buildMonitorable() {
-        return new MonitorableProperty(componentType, monitorableId, null);
+        MonitorableProperty t = BuiltinMonitorables.getBuiltinProperty(componentType, monitorableId);
+        if (t != null) {
+            return new MonitorableProperty(componentType, monitorableId, t.getValueClass(), t.getValueUnit(),
+                    t.getSuggestedSamplingInterval(), t.getSuggestedComparisonOperator(), t.getSuggestedComparisonValue());
+        } else {
+            return new MonitorableProperty(componentType, monitorableId, null, null, null, null, null);
+        }
     }
 
     public PropertyTrigger(MonitorableProperty property, String componentId, ComparisonOperator operator, String triggerValue, long maxSamplingInterval) {

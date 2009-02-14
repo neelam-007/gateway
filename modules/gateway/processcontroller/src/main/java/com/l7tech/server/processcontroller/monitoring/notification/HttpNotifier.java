@@ -54,7 +54,7 @@ class HttpNotifier extends Notifier<HttpNotificationRule> {
     }
 
     public NotificationAttempt.StatusType doNotification(Long timestamp, Object value, Trigger trigger) throws IOException {
-        String bodyText = rule.getRequestBody() == null ? null : ExpandVariables.process(rule.getRequestBody(), getMonitoringVariables(trigger), auditor);
+        String bodyText = rule.getRequestBody() == null ? null : ExpandVariables.process(rule.getRequestBody(), getMonitoringVariables(trigger, value), auditor);
 
         GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(rule.getUrl()));
         params.setContentType(contentType);

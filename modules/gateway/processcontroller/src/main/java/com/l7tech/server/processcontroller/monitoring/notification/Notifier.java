@@ -46,24 +46,31 @@ public abstract class Notifier<RT extends NotificationRule> implements Closeable
         }
     }
 
+    private static String sn(Object in) {
+        if (in == null) return "";
+        String s = String.valueOf(in);
+        return s == null ? "" : s;
+    }
+
     /**
      * Return a new HashMap populated with interpolatable variables describing the specified Trigger.
      *
      * @param trigger the trigger to examine.  Required.
+     * @param value the value of the property
      * @return a Map full of context variables for this trigger.  Never null or empty.
      */
-    protected Map<String, String> getMonitoringVariables(Trigger trigger) {
+    protected Map<String, String> getMonitoringVariables(Trigger trigger, Object value) {
         Map<String, String> variables = new HashMap<String, String>();
-        variables.put("monitoring.context.entityType", trigger.getComponentType().toString());
-        variables.put("monitoring.context.entityPathName", trigger.getComponentId());
+        variables.put("monitoring.context.entitytype", sn(trigger.getComponentType()));
+        variables.put("monitoring.context.entitypathname", sn(trigger.getComponentId()));
 
         if (trigger instanceof PropertyTrigger) {
             PropertyTrigger ptrig = (PropertyTrigger) trigger;
-            variables.put("monitoring.context.propertyType", ptrig.getMonitorableId());
-            variables.put("monitoring.context.propertyState", "alert");
-            variables.put("monitoring.context.propertyValue", ""); // TODO
-            variables.put("monitoring.context.propertyUnit", "");  // TODO
-            variables.put("monitoring.context.triggerValue", "");  // TODO
+            variables.put("monitoring.context.propertytype", sn(ptrig.getMonitorableId()));
+            variables.put("monitoring.context.propertystate", "alert");
+            variables.put("monitoring.context.propertyvalue", sn(value));
+            variables.put("monitoring.context.propertyunit", sn(ptrig.getMonitorable().getValueUnit()));
+            variables.put("monitoring.context.triggervalue", sn(ptrig.getTriggerValue()));
         }
         return variables;
     }

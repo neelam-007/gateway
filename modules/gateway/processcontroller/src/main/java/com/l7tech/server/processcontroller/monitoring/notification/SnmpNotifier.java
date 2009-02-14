@@ -93,7 +93,7 @@ class SnmpNotifier extends Notifier<SnmpTrapNotificationRule> {
         pdu.add(new VariableBinding(SnmpConstants.sysUpTime, new TimeTicks(uptimeSeconds * 100))); // TimeTicks is s/100
         pdu.add(new VariableBinding(SnmpConstants.snmpTrapOID, trapOid));
 
-        Map<String, String> variables = getMonitoringVariables(trigger);
+        Map<String, String> variables = getMonitoringVariables(trigger, value);
 
         String body = ExpandVariables.process(text, variables, auditor);
         OctetString errorMessage;
