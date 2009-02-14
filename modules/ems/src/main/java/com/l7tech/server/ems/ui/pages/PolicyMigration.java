@@ -100,7 +100,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                 try {
                     final int before = countUnMappedDependencies( mappingModel, sourceClusterId, targetClusterId, items  );
-                    loadMappings( mappingModel, sourceClusterId, targetClusterId, items );
+                    loadMappings( mappingModel, sourceClusterId, targetClusterId, items, false );
                     final int after = countUnMappedDependencies( mappingModel, sourceClusterId, targetClusterId, items  );
                     if ( before != after ) {
                         updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
@@ -290,7 +290,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                             final boolean overwrite = Boolean.valueOf(overwriteDependencies);
 
                             // load mappings for top-level items that have been previously migrated
-                            loadMappingHistory( mappingModel, dir.clusterId, targetClusterId, buildDependencyItems(dir) );
+                            loadMappings( mappingModel, dir.clusterId, targetClusterId, retrieveDependencies(dir, null, null), true);
                             TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model(performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, dir, mappingModel, true )));
                             YuiDialog dialog = new YuiDialog("dialog", "Confirm Migration", YuiDialog.Style.OK_CANCEL, textPanel, new YuiDialog.OkCancelCallback(){
                                 @Override
@@ -335,6 +335,21 @@ public class PolicyMigration extends EsmStandardWebPage {
                             dialogContainer.replace( dialog );
                             target.addComponent( dialogContainer );
                         }
+                    } catch ( FindException fe ) {
+                        String failureMessage = ExceptionUtils.getMessage(fe);
+                        YuiDialog resultDialog = new YuiDialog("dialog", "Error Loading Previous Mappings", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                        dialogContainer.replace( resultDialog );
+                        target.addComponent( dialogContainer );
+                    } catch ( GatewayException ge ) {
+                        String failureMessage = ExceptionUtils.getMessage(ge);
+                        YuiDialog resultDialog = new YuiDialog("dialog", "Error Loading Previous Mappings", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                        dialogContainer.replace( resultDialog );
+                        target.addComponent( dialogContainer );
+                    } catch (MigrationApi.MigrationException mae) {
+                        String failureMessage = ExceptionUtils.getMessage(mae);
+                        YuiDialog resultDialog = new YuiDialog("dialog", "Error Retrieving Dependencies", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                        dialogContainer.replace( resultDialog );
+                        target.addComponent( dialogContainer );
                     } catch ( MigrationFailedException mfe ) {
                         String failureMessage = mfe.getMessage();
                         YuiDialog resultDialog;
@@ -924,52 +939,18 @@ public class PolicyMigration extends EsmStandardWebPage {
         return deps;
     }
 
-    private Collection<DependencyItem> buildDependencyItems( final DependencyItemsRequest dependencyItemsRequest ) {
-        Collection<DependencyItem> items = new ArrayList<DependencyItem>();
-
-        for ( ExternalEntityHeader entityHeader : dependencyItemsRequest.asEntityHeaders() ) {
-            items.add( new DependencyItem( entityHeader, null ) );
-        }
-
-        return items;
-    }
-
     /**
-     * Load any history for the current mappings.
+     * Populates the mapping model with the mappings persisted in the database.
      *
-     * <p>This will populate any available metadata, such as whether the mapping is for the "same" entity
-     * on the source and destination (i.e. it is a copy) and what the expected version number is on the
-     * destination cluster.</p>
+     * @param onlyIsSame If true only the mappings having the flag isSame == true are loaded
+     *                   (for entities that were created on the target cluster as a result of a previous migration);
+     *                   If false all mappings are loaded, including the ones manually configured by the EM users.
      */
-    private void loadMappingHistory( final EntityMappingModel mappingModel,
-                                     final String sourceClusterId,
-                                     final String targetClusterId,
-                                     final Collection<DependencyItem> dependencyItems ) throws MigrationFailedException {
-        try {
-            // load mappings saved in EM db
-            for ( DependencyItem item : dependencyItems ) {
-                DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
-                Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
-
-                Pair<DependencyItem,Boolean> mapValue = mappingModel.dependencyMap.get(mapKey);
-                if ( mapValue != null ) {
-                    MigrationMappingRecord mapping = migrationMappingRecordManager.findByMapping( sourceClusterId, item.asEntityHeader(), targetClusterId );
-                    if ( mapping != null && mapping.getTarget() != null && mapping.getTarget().getEntityId().equals(mapValue.left.id) ) {
-                        mappingModel.dependencyMap.put( mapKey, new Pair<DependencyItem, Boolean>(
-                            new DependencyItem(MigrationMappedEntity.asEntityHeader(mapping.getTarget()), null), mapping.isSameEntity() ));
-                    }
-                }
-            }
-        } catch ( FindException fe ) {
-            logger.log( Level.WARNING, "Error while loading mappings for migration.", fe );
-            throw new MigrationFailedException("Migration failed '"+ ExceptionUtils.getMessage(fe)+"'.");
-        } 
-    }
-
     private void loadMappings( final EntityMappingModel mappingModel,
                                final String sourceClusterId,
                                final String targetClusterId,
-                               final Collection<DependencyItem> dependencyItems )  throws FindException, GatewayException {
+                               final Collection<DependencyItem> dependencyItems,
+                               final boolean onlyIsSame) throws FindException, GatewayException {
         if ( !dependencyItems.isEmpty() ) {
             // load mappings saved in EM db
             for ( DependencyItem item : dependencyItems ) {
@@ -977,7 +958,8 @@ public class PolicyMigration extends EsmStandardWebPage {
                 Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
                 if ( !mappingModel.dependencyMap.containsKey(mapKey) ) {
                     MigrationMappingRecord mapping = migrationMappingRecordManager.findByMapping( sourceClusterId, item.asEntityHeader(), targetClusterId );
-                    if ( mapping != null && mapping.getTarget() != null ) {
+                    if ( mapping != null && mapping.getTarget() != null &&
+                         ( mapping.isSameEntity() || ! onlyIsSame) ) {
                         mappingModel.dependencyMap.put( mapKey, new Pair<DependencyItem, Boolean>(
                             new DependencyItem(MigrationMappedEntity.asEntityHeader(mapping.getTarget()), null), mapping.isSameEntity() ));
                     }
