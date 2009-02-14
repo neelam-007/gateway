@@ -164,6 +164,11 @@ public class PolicyVersioningServiceManager implements ServiceManager {
         serviceManager.updateFolder(entityId, folder);
     }
 
+    @Override
+    public void createRoles(PublishedService entity) throws SaveException {
+        serviceManager.createRoles(entity);
+    }
+
     //- PRIVATE
 
     private final ServiceManager serviceManager;

@@ -12,7 +12,7 @@ import java.util.*;
 /**
  * Stub Entity Manager
  */
-public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends EntityHeader> implements FolderedEntityManager<ET, EH> {
+public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends EntityHeader> implements FolderedEntityManager<ET, EH>, RoleAwareEntityManager<ET> {
     protected final Map<Long, ET> entities;
     protected final Map<Long, EH> headers;
     private final boolean canHasNames = NamedEntity.class.isAssignableFrom(getImpClass());
@@ -176,5 +176,9 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
     @Override
     public String getTableName() {
         return getEntityType().name().toLowerCase();
+    }
+
+    @Override
+    public void createRoles(ET entity) throws SaveException {        
     }
 }

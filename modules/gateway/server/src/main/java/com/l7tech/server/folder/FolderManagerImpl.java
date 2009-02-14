@@ -136,6 +136,12 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
         throw new FindException("No root folder!!");
     }
 
+    @Override
+    public void createRoles( final Folder folder ) throws SaveException {
+        addReadonlyFolderRole( folder );
+        addManageFolderRole( folder );
+    }
+
     /**
      * Creates management new role for the specified Folder.
      *

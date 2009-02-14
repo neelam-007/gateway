@@ -167,6 +167,11 @@ public class VersioningPolicyManager implements PolicyManager {
         return policyManager.getImpClass();
     }
 
+    @Override
+    public void createRoles(Policy entity) throws SaveException {
+        policyManager.createRoles(entity);
+    }
+
     //- PRIVATE
 
     private final PolicyManager policyManager;

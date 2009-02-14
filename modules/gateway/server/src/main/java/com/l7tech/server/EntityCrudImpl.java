@@ -121,8 +121,13 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     @Override
     public Serializable save(final Entity e) throws SaveException {
         final EntityManager manager = getManager(e.getClass());
-        if (manager != null)
-            return manager.save((PersistentEntity)e);
+        if ( manager != null ) {
+            Serializable key = manager.save((PersistentEntity)e);
+            if ( manager instanceof RoleAwareEntityManager ) {
+                ((RoleAwareEntityManager)manager).createRoles( (PersistentEntity)e );
+            }
+            return key;
+        }
 
         return (Serializable)getHibernateTemplate().execute(new HibernateCallback() {
             @Override

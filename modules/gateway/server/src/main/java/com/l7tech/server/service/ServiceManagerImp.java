@@ -215,6 +215,11 @@ public class ServiceManagerImp
         return UniqueType.NONE;
     }
 
+    @Override
+    public void createRoles( final PublishedService service ) throws SaveException {
+        addManageServiceRole(service);
+    }
+
     /**
      * Creates a new role for the specified PublishedService.
      *

@@ -236,6 +236,11 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
     }
 
     @Override
+    public void createRoles( final Policy policy ) throws SaveException {
+        addManagePolicyRole( policy );    
+    }
+
+    @Override
     public void addManagePolicyRole(Policy policy) throws SaveException {
         User currentUser = JaasUtils.getCurrentUser();
 
