@@ -98,17 +98,17 @@ public class MonitoringServiceImpl implements MonitoringService {
 
             // Case 2: SSG node property status
             String propertyName = propertyStatus.getMonitorableId();
-            if (propertyName.equals(BuiltinMonitorables.DISK_FREE_KIB.getName())) {
+            if (propertyName.equals(BuiltinMonitorables.DISK_FREE_KIB.getName()) && value != null) {
                 // Convert KB to GB, since the UI displays the disk free in GB.
-                value = Long.valueOf(value.toString()) / SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR;
+                value = Long.valueOf(String.valueOf(value)) / SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR;
             } else if (propertyName.equals(BuiltinMonitorables.SWAP_FREE_KIB.getName())) {
                 // Convert KB to MB, since the UI displays the swap usage in MB.
-                value = Long.valueOf(value.toString()) / SystemMonitoringSetupSettingsManager.KB_MB_CONVERTOR;
+                value = Long.valueOf(String.valueOf(value)) / SystemMonitoringSetupSettingsManager.KB_MB_CONVERTOR;
             }
 
             EntityMonitoringPropertyValues.PropertyValues propertyValues =
                 (EntityMonitoringPropertyValues.PropertyValues) ssgNodePropertyValuesMap.get(propertyName);
-            propertyValues.setValue(value.toString());
+            propertyValues.setValue(value == null ? null : String.valueOf(value));
             propertyValues.setAlert(alert);
         }
 
