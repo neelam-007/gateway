@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 @NavigationPage(page="Monitor",section="ManageGateways",sectionPage="Configure",pageUrl="Monitor.html")
 public class Monitor extends EsmStandardWebPage {
     private static final Logger logger = Logger.getLogger(Monitor.class.getName());
+    private final Object monitoringServiceLocker = new Object();
 
     @SpringBean(name="serverConfig")
     private ServerConfig serverConfig;
@@ -418,13 +419,15 @@ public class Monitor extends EsmStandardWebPage {
                 List<EntityMonitoringPropertyValues> entitiesList = new ArrayList<EntityMonitoringPropertyValues>();
 
                 // Use MonitoringService to call MonitoringApi to get current property statuses
-                for (SsgCluster ssgCluster: ssgClusterManager.findAll()) {
-                    // First get the current values for each SSG node.
-                    for (SsgNode ssgNode: ssgCluster.getNodes()) {
-                        entitiesList.add(monitoringService.getCurrentSsgNodePropertiesStatus(ssgNode));
+                synchronized (monitoringServiceLocker) {
+                    for (SsgCluster ssgCluster: ssgClusterManager.findAll()) {
+                        // First get the current values for each SSG node.
+                        for (SsgNode ssgNode: ssgCluster.getNodes()) {
+                            entitiesList.add(monitoringService.getCurrentSsgNodePropertiesStatus(ssgNode));
+                        }
+                        // Then, get the current value (audit size) for the SSG cluster.
+                        entitiesList.add(monitoringService.getCurrentSsgClusterPropertyStatus(ssgCluster.getGuid()));
                     }
-                    // Then, get the current value (audit size) for the SSG cluster.
-                    entitiesList.add(monitoringService.getCurrentSsgClusterPropertyStatus(ssgCluster.getGuid()));
                 }
 
                 Map<String, Object> jsonDataMap = new HashMap<String, Object>();

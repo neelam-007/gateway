@@ -42,11 +42,17 @@ public class MonitoringServiceImpl implements MonitoringService {
             entityMonitoringPropertySetupManager.findByEntityGuidAndPropertyType(ssgClusterGuid, JSONConstants.SsgClusterMonitoringProperty.AUDIT_SIZE);
         // Get the current property status of the SSG cluster from the monitoring api.
         EntityMonitoringPropertyValues.PropertyValues currentPropertyValues =
-            new EntityMonitoringPropertyValues.PropertyValues(ssgClusterPropertySetup.isMonitoringEnabled(),
-                latestSsgClusterMonitoredValue.toString(),
+            new EntityMonitoringPropertyValues.PropertyValues(
+                ssgClusterPropertySetup.isMonitoringEnabled(),
+                (latestSsgClusterMonitoredValue == null)? null : latestSsgClusterMonitoredValue.toString(),
                 ssgClusterPropertySetup.getUnit(),
                 latestSsgClusterMonitoringAlert
             );
+        // Clean these lastest values
+        latestSsgClusterMonitoringTimestamp = 0;
+        latestSsgClusterMonitoredValue = null;
+        latestSsgClusterMonitoringAlert = false;
+
         // Create an EntityMonitoringPropertyValues object in json-content format and return it to Monitor.
         Map<String, Object> ssgClusterPropertyValuesMap = new HashMap<String, Object>();
         ssgClusterPropertyValuesMap.put(JSONConstants.SsgClusterMonitoringProperty.AUDIT_SIZE, currentPropertyValues);
