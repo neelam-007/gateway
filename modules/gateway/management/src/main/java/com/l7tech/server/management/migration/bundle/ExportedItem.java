@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.ExternalEntityHeader;
 
 import javax.xml.bind.annotation.*;
+import java.io.Serializable;
 
 /**
  * An entity value exported for migration, wrapped together with its header, and optionally a mapped value,
@@ -13,7 +14,7 @@ import javax.xml.bind.annotation.*;
  */
 @XmlRootElement
 @XmlType(propOrder={"header", "value"})
-public class ExportedItem {
+public class ExportedItem implements Serializable {
 
     private ExternalEntityHeader header;
     private Entity value;

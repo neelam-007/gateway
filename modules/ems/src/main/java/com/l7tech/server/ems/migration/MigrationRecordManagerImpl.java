@@ -8,6 +8,7 @@ import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.identity.User;
+import com.l7tech.util.HexUtils;
 
 import java.util.Date;
 import java.util.Collection;
@@ -62,11 +63,13 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
     }
 
     @Override
-    public MigrationRecord create(String label, byte[] data, Collection<String> validClusterGuids) throws SaveException {
+    public MigrationRecord create( final String label,
+                                   final byte[] data,
+                                   final Collection<String> validClusterGuids ) throws SaveException {
 
         MigrationRecord record;
         try {
-            record = MigrationRecord.deserializeXml(new String(data));
+            record = MigrationRecord.deserializeXml(HexUtils.decodeUtf8(data));
         } catch (Exception e) {
             throw new SaveException("Error loading migration bundle data.", e);
         }
@@ -76,6 +79,11 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
 
         if ( ! validClusterGuids.contains(record.getTargetClusterGuid()))
             throw new SaveException( "Invalid archive, target SSG Cluster not recognised: " + record.getTargetClusterGuid() + " : " + record.getTargetClusterName() );
+
+        record.setOid( MigrationRecord.DEFAULT_OID );
+        record.setVersion( 0 );
+        record.setName( label );
+        record.calculateSize();
 
         long oid = super.save(record);
         record.setOid( oid );

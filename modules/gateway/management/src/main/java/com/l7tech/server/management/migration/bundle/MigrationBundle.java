@@ -16,6 +16,7 @@ import javax.xml.bind.JAXB;
 import java.util.*;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
+import java.io.Serializable;
 
 /**
  * A MigrationBundle contains all the relevant data exported from a source SSG that is needed to migrate functionality
@@ -43,7 +44,7 @@ import java.io.StringReader;
 @XmlRootElement
 @XmlType(propOrder={"metadata", "exportedItems"})
 @XmlSeeAlso({PublishedService.class, PublishedServiceAlias.class, PolicyAlias.class, ServiceDocument.class, ExportedItem.class})
-public class MigrationBundle {
+public class MigrationBundle implements Serializable {
 
     private MigrationMetadata metadata;
     

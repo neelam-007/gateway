@@ -3,6 +3,7 @@ package com.l7tech.server.management.migration.bundle;
 import com.l7tech.objectmodel.ExternalEntityHeader;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import java.io.Serializable;
 
 /**
  * Captures the result of a migration operation for an item, in the form of a header and a status string.
@@ -10,7 +11,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @author jbufu
  */
 @XmlRootElement
-public class MigratedItem {
+public class MigratedItem implements Serializable {
     private ExternalEntityHeader sourceHeader;
     private ExternalEntityHeader targetHeader;
     private ImportOperation operation;
@@ -18,12 +19,14 @@ public class MigratedItem {
     public static enum ImportOperation {
 
         MAP(false) {
+            @Override
             public String pastParticiple() {
                 return "MAPPED";
             }},
         CREATE(true),
         UPDATE(true),
         OVERWRITE(true) {
+            @Override
             public String pastParticiple() {
                 return "OVERWRITTEN";
             }};

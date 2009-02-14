@@ -167,7 +167,7 @@ public class PolicyMapping extends EsmStandardWebPage {
                 final MigrationRecord record = findMigrationRecordById( migrationId );
                 if ( record != null ) {
                     MigrationRecordEditPanel editPanel = new MigrationRecordEditPanel( YuiDialog.getContentId(), record );
-                    YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Migration Properties", YuiDialog.Style.OK_CANCEL, editPanel, new YuiDialog.OkCancelCallback() {
+                    YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Edit Label", YuiDialog.Style.OK_CANCEL, editPanel, new YuiDialog.OkCancelCallback() {
                         @Override
                         public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
                             if ( button == YuiDialog.Button.OK ) {
@@ -346,7 +346,7 @@ public class PolicyMapping extends EsmStandardWebPage {
                         MigrationRecord migration = migrationManager.findByPrimaryKey(Long.parseLong(value));
                         if ( migration != null ) {
                             selected = true;
-                            if ( migration.getBundleSize() > 0 ) {
+                            if ( migration.getSize() > 0 ) {
                                 archivePresent = true;
                             }
                             selectedMigrationModel.setMigrationRecord( migration );
@@ -433,7 +433,7 @@ public class PolicyMapping extends EsmStandardWebPage {
         }
 
         public String getSize() {
-            return migration==null ? null : SizeUnit.format(migration.getBundleSize());
+            return migration==null ? null : SizeUnit.format(migration.getSize());
         }
 
         public String getSummary() {

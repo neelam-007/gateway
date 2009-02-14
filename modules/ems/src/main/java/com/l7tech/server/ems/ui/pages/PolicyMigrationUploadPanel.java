@@ -20,9 +20,9 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import com.l7tech.util.SyspropUtil;
-import com.l7tech.util.IOUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.ems.migration.MigrationRecordManager;
+import com.l7tech.server.ems.migration.MigrationArtifactResource;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -70,15 +70,20 @@ public class PolicyMigrationUploadPanel extends Panel {
                 try {
                     upload = archive.getFileUpload();
                     if ( upload != null ) {
-                        byte[] data = IOUtils.slurpStream( upload.getInputStream() );
-                        // todo: unzip
-                        Collection<SsgCluster> validClusters = clusterManager.findAll();
-                        Collection<String> validClusterGuids = new HashSet<String>();
-                        for(SsgCluster cluster : validClusters) {
-                            validClusterGuids.add(cluster.getGuid());
+                        byte[] data = MigrationArtifactResource.unzip( upload.getInputStream() );
+
+                        if ( data != null ) {
+                            Collection<SsgCluster> validClusters = clusterManager.findAll();
+                            Collection<String> validClusterGuids = new HashSet<String>();
+                            for(SsgCluster cluster : validClusters) {
+                                validClusterGuids.add(cluster.getGuid());
+                            }
+                            migrationRecordManager.create( model.getLabel(), data, validClusterGuids);
+                            success = true;
+                        } else {
+                            logger.fine("Archive not present in uploaded zip!");
+                            feedback.error( "Error processing archive, please try again." );
                         }
-                        migrationRecordManager.create( model.getLabel(), data, validClusterGuids);
-                        success = true;
                     } else {
                         logger.fine("Archive not present in upload!");
                         feedback.error( "Error processing archive, please try again." );

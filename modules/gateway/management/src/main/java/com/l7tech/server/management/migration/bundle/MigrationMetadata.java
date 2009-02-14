@@ -11,6 +11,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.io.Serializable;
 
 /**
  * Summary of a Migration Bundle, consisting of:
@@ -27,7 +28,7 @@ import java.util.logging.Level;
  */
 @XmlRootElement
 @XmlType(propOrder={"headers", "dependencies", "mappings", "copies", "targetFolder"})
-public class MigrationMetadata {
+public class MigrationMetadata implements Serializable {
 
     private static final Logger logger = Logger.getLogger(MigrationMetadata.class.getName());
     private final static String ROOT_FOLDER_OID = "-5002";

@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel.migration;
 
 import javax.xml.bind.annotation.XmlAttribute;
+import java.io.Serializable;
 
 /**
  * Describes a dependency's mapping properties.
@@ -13,7 +14,7 @@ import javax.xml.bind.annotation.XmlAttribute;
  *
  * @author jbufu
  */
-public class MigrationMappingType {
+public class MigrationMappingType implements Serializable {
 
     public final static MigrationMappingType BOTH_NONE = new MigrationMappingType(MigrationMappingSelection.NONE, MigrationMappingSelection.NONE);
     public final static MigrationMappingType BOTH_OPTIONAL = new MigrationMappingType(MigrationMappingSelection.OPTIONAL, MigrationMappingSelection.OPTIONAL);
@@ -54,10 +55,12 @@ public class MigrationMappingType {
         this.valueMapping = value;
     }
 
+    @Override
     public String toString() {
         return "mapName: " + nameMapping.toString() + " mapValue: " + valueMapping;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -71,6 +74,7 @@ public class MigrationMappingType {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result;
         result = (nameMapping != null ? nameMapping.hashCode() : 0);

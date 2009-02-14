@@ -10,15 +10,21 @@ import org.apache.wicket.util.time.Time;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.Date;
+import java.util.zip.ZipOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.text.SimpleDateFormat;
 
 import com.l7tech.server.ems.ui.SecureResource;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -59,8 +65,7 @@ public class MigrationArtifactResource extends SecureResource {
                     try {
                         final MigrationRecord record = manager.findByPrimaryKey( Long.parseLong( id ) );
                         if ( record != null ) {
-                            // todo: zip
-                            final ByteArrayInputStream in = new ByteArrayInputStream( record.serializeXml().getBytes() );
+                            final ByteArrayInputStream in = new ByteArrayInputStream( zip(record.serializeXml()) );
                             resource = new AbstractResourceStream(){
                                 @Override
                                 public String getContentType() {
@@ -89,6 +94,8 @@ public class MigrationArtifactResource extends SecureResource {
                     } catch ( NumberFormatException nfe ) {
                         logger.warning("Invalid migration id when accessing migration resource '"+id+"'.");
                         resource = new StringResourceStream( "" );
+                    } catch ( IOException ioe ) {
+                        logger.log( Level.WARNING, "Error processing migration resource.", ioe );
                     } catch (FindException e) {
                         logger.log( Level.WARNING, "Error finding migration.", e );
                     }
@@ -120,6 +127,9 @@ public class MigrationArtifactResource extends SecureResource {
                     final MigrationRecord record = manager.findByPrimaryKey( Long.parseLong( id ) );
                     if ( record != null ) {
                         label = record.getName();
+                        if ( label == null || label.length()==0 ) {
+                            label = "migration";
+                        }
                         time = record.getTimeCreated();
                     }
                 } catch ( NumberFormatException nfe ) {
@@ -140,6 +150,51 @@ public class MigrationArtifactResource extends SecureResource {
         return name;
     }
 
+    /**
+     * Utility method to convert an XML migration record to a ZIP.
+     *
+     * @param data The migration record XML
+     * @return The data
+     * @throws IOException If an error occurs.
+     */
+    public static byte[] zip( final String data ) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream( 10000 );
+
+        ZipOutputStream zipOut = new ZipOutputStream( out );
+        zipOut.putNextEntry( new ZipEntry( ZIP_ENTRY_NAME ) );
+        zipOut.write( HexUtils.encodeUtf8(data) );
+        zipOut.closeEntry();
+        zipOut.close();
+
+        return out.toByteArray();
+    }
+
+    /**
+     * Utility method to extract an XML migration record from a downloaded ZIP.
+     *
+     * @param inputStream The ZIP file input stream
+     * @return The data or null if not found
+     * @throws IOException If an error occurs processing the stream
+     */
+    public static byte[] unzip( final InputStream inputStream ) throws IOException {
+        byte[] data = null;
+        
+        ZipInputStream zipIn = null;
+        try {
+            zipIn = new ZipInputStream( inputStream );
+            ZipEntry entry;
+            while ( (entry = zipIn.getNextEntry()) != null ) {
+                if ( entry.getName().equals( ZIP_ENTRY_NAME ) ) {
+                    data = IOUtils.slurpStream( zipIn );
+                }
+            }
+        } finally {
+            ResourceUtils.closeQuietly(zipIn);
+        }
+
+        return data;
+    }
+
     //- PACKAGE
 
     static MigrationRecordManager getMigrationRecordManager() {
@@ -153,6 +208,8 @@ public class MigrationArtifactResource extends SecureResource {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(MigrationArtifactResource.class.getName());
+
+    private static final String ZIP_ENTRY_NAME = "migration.xml";
 
     private static AtomicReference<MigrationRecordManager> migrationRecordManagerRef = new AtomicReference<MigrationRecordManager>();
 

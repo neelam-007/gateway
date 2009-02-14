@@ -6,13 +6,15 @@ import com.l7tech.identity.User;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.JAXB;
 
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
 
-import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.IOException;
 
 /**
  * This entity class stores the information of a migration such as name, id, time created,
@@ -39,6 +41,8 @@ public class MigrationRecord extends NamedEntityImp {
     private MigrationBundle bundle;
     private String bundleXml;
 
+    private int size;
+
     public MigrationRecord() {
     }
 
@@ -52,6 +56,7 @@ public class MigrationRecord extends NamedEntityImp {
         this.timeCreated = summary.getTimeCreated();
         setSummaryXml(summary.serializeXml());
         setBundleXml(bundle.serializeXml());
+        calculateSize();
     }
 
     @Column(name="time_created", nullable=false, updatable = false)
@@ -111,13 +116,17 @@ public class MigrationRecord extends NamedEntityImp {
         bundle = bundleXml == null ? null : MigrationBundle.deserializeXml(bundleXml);
     }
 
-    // - Convenience accessors
-
-    @Transient
-    public int getBundleSize() {
-        String xml = getBundleXml();
-        return xml == null ? 0 : xml.length();
+    @XmlTransient
+    @Column(name="size")
+    public int getSize() {
+        return size;
     }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+
+    // - Convenience accessors
 
     @Transient
     public String getSourceClusterName() {
@@ -140,8 +149,8 @@ public class MigrationRecord extends NamedEntityImp {
     }
 
     public String serializeXml() {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        JAXB.marshal(this, out);
+        StringWriter out = new StringWriter( bundleXml==null ? 4096 : bundleXml.length() );
+        JAXB.marshal( this, out );
         return out.toString();
     }
 
@@ -149,4 +158,11 @@ public class MigrationRecord extends NamedEntityImp {
         return JAXB.unmarshal(new StringReader(xml), MigrationRecord.class);
     }
 
+    void calculateSize() {
+        try {
+            this.size = MigrationArtifactResource.zip( this.serializeXml() ).length;
+        } catch ( IOException ioe ) {
+            this.size = 1; // set to non-zero value
+        }
+    }    
 }

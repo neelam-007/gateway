@@ -34,7 +34,7 @@ public interface MigrationRecordManager extends EntityManager<MigrationRecord, E
      * @param name The name for the migration (may be null)
      * @param user The user performing the migration
      * @param summary The migration summary.
-     * @param data The migration summary.
+     * @param bundle The migration summary.
      * @return a new migration record.
      * @throws SaveException if an error occurs
      */
@@ -45,7 +45,7 @@ public interface MigrationRecordManager extends EntityManager<MigrationRecord, E
      *
      * @param label An optional new label name to be given to the new record; if not null or empty, it overwrites the label in the data payload.
      * @param data  The serialized migration record.
-     * @param validClusters Clusters that are known to the ESM, used for validation of the data.
+     * @param validClusterGuids Clusters that are known to the ESM, used for validation of the data.
      */
     MigrationRecord create(String label, byte[] data, Collection<String> validClusterGuids) throws SaveException;
 

@@ -3,6 +3,7 @@ package com.l7tech.server.ems.migration;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.management.migration.bundle.MigratedItem;
 import com.l7tech.objectmodel.ExternalEntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.xml.bind.JAXB;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -10,12 +11,13 @@ import javax.xml.bind.annotation.XmlElementRef;
 import java.util.Collection;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
+import java.io.Serializable;
 
 /**
  * @author jbufu
  */
 @XmlRootElement
-public class MigrationSummary {
+public class MigrationSummary implements Serializable {
 
     private long timeCreated = System.currentTimeMillis();
 
@@ -141,46 +143,48 @@ public class MigrationSummary {
         this.enableNewServices = enableNewServices;
     }
 
+    @Override
     public String toString() {
-
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("Source Cluster: ").append(sourceClusterName).append(" (").append(sourceClusterGuid).append(")\n");
-        builder.append("Target Cluster: ").append(targetClusterName).append(" (").append(targetClusterGuid).append(")\n");
+        StringBuilder builder = new StringBuilder(1024);
 
         // overview
-        builder.append( "\nMigration Options:\n" );
-        builder.append( "Imported to folder: " );
-        builder.append( targetFolderPath );
-        builder.append( "\n" );
-        builder.append( "Services enabled on import: " );
-        builder.append( enableNewServices );
-        builder.append( "\n" );
-        builder.append( "Existing dependencies overwritten: " );
-        builder.append( overwrite );
-        builder.append( "\n" );
+        builder.append( "Migration Options:\n" );
         builder.append( "Folders migrated: " );
-        builder.append( migrateFolders );
+        builder.append( toString(migrateFolders) );
+        builder.append( "\n" );
+        builder.append( "New services enabled: " );
+        builder.append( toString(enableNewServices) );
+        builder.append( "\n" );
+        builder.append( "Existing items overwritten: " );
+        builder.append( toString(overwrite) );
+        builder.append( "\n" );
+
+        builder.append( " \nMigration Summary:\n" );
+        builder.append( "Destination folder: " );
+        builder.append( targetFolderPath );
         builder.append( "\n" );
         builder.append( "Services migrated: " );
         builder.append( count(com.l7tech.objectmodel.EntityType.SERVICE) );
         builder.append( "\n" );
         builder.append( "Policies migrated: " );
         builder.append( count(com.l7tech.objectmodel.EntityType.POLICY) );
-        builder.append( "\n\n" );
+        builder.append( "\n" );
 
         // entity details and mappings
         StringBuilder mappingBuilder = new StringBuilder();
-        builder.append( "\nMigrated Data:\n" );
+        builder.append( " \nMigrated Data:\n" );
         boolean willOverwriteAnything = false;
         MigratedItem.ImportOperation operation;
         if ( migratedItems != null ) {
             for ( MigratedItem item : migratedItems ) {
                 operation = item.getOperation();
                 if (operation == MigratedItem.ImportOperation.MAP) {
-                    mappingBuilder.append( item.getSourceHeader().getType().getName() );
+                    if ( item.getSourceHeader().getType() == EntityType.FOLDER ) {
+                        continue; // skip folder mapping since we've already described the destination folder
+                    }
+                    mappingBuilder.append( item.getSourceHeader().getType().getName().toLowerCase() );
                     mappingBuilder.append( ", " );
-                    mappingBuilder.append( item.getSourceHeader().getName() );
+                    mappingBuilder.append( item.getSourceHeader().getName()==null ? "" : item.getSourceHeader().getName() );
                     mappingBuilder.append( " (#" );
                     mappingBuilder.append( item.getSourceHeader().getExternalId() );
                     mappingBuilder.append( ") mapped to " );
@@ -194,9 +198,9 @@ public class MigrationSummary {
                     willOverwriteAnything = true;
                 }
                 ExternalEntityHeader ih = dryRun ? item.getSourceHeader() : item.getTargetHeader();
-                builder.append(ih.getType().getName()).append(", ").append(ih.getName())
-                    .append("(#").append(ih.getExternalId()).append("): ")
-                    .append(dryRun ? item.getOperation() : item.getOperation().pastParticiple()).append("\n");
+                builder.append(ih.getType().getName().toLowerCase()).append(", ").append(ih.getName()==null?"":ih.getName())
+                    .append("(#").append(ih.getExternalId()).append(")").append( dryRun ? " will be " : " was " )
+                    .append(item.getOperation().pastParticiple().toLowerCase()).append("\n");
             }
         }
 
@@ -206,12 +210,12 @@ public class MigrationSummary {
 
         String mappingText = mappingBuilder.toString();
         if ( !mappingText.isEmpty() ) {
-            builder.append( "\nMappings:\n" );
+            builder.append( " \nMappings:\n" );
             builder.append( mappingText.length() > 0 ? mappingText : "None.\n" );
         }
 
         if (willOverwriteAnything && dryRun)
-            builder.append("\nWARNING: Some enties on the target cluster may contain changes that will be overwritten!\n");
+            builder.insert(0, "WARNING: Some enties on the target cluster may contain changes that will be overwritten!\n \n");
 
         return builder.toString();
     }
@@ -226,6 +230,10 @@ public class MigrationSummary {
         }
 
         return count;
+    }
+
+    private String toString( final boolean value ) {
+        return value ? "yes" : "no";
     }
 
     public String serializeXml() {

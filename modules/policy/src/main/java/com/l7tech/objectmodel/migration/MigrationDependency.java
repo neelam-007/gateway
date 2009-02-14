@@ -3,6 +3,7 @@ package com.l7tech.objectmodel.migration;
 import com.l7tech.objectmodel.ExternalEntityHeader;
 
 import javax.xml.bind.annotation.*;
+import java.io.Serializable;
 
 /**
  * A MigrationMapping captures a dependency and mapping relationship between two entities (source and target);
@@ -22,7 +23,7 @@ import javax.xml.bind.annotation.*;
  */
 @XmlRootElement
 @XmlType(propOrder = {"dependant", "propName", "mappingType", "dependency"})
-public class MigrationDependency {
+public class MigrationDependency implements Serializable {
 
     private ExternalEntityHeader dependant;
     private ExternalEntityHeader dependency;
@@ -84,6 +85,7 @@ public class MigrationDependency {
         this.export = export;
     }
 
+    @Override
     public String toString() {
         return "dependant: " + dependant.toString() + "\npropName: " + propName + "\nmapping type: " + mappingType.toString() + "\ndependency: " + getDependency().toString();
     }
