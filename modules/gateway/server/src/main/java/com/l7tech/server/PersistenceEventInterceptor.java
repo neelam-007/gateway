@@ -12,12 +12,7 @@ import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.gateway.common.logging.SSGLogRecord;
 import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
-import com.l7tech.gateway.common.security.rbac.AttributePredicate;
-import com.l7tech.gateway.common.security.rbac.ObjectIdentityPredicate;
-import com.l7tech.gateway.common.security.rbac.Permission;
-import com.l7tech.gateway.common.security.rbac.ScopePredicate;
-import com.l7tech.gateway.common.security.rbac.FolderPredicate;
-import com.l7tech.gateway.common.security.rbac.EntityFolderAncestryPredicate;
+import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.MetricsBinDetail;
 import com.l7tech.gateway.common.transport.email.EmailListenerState;
@@ -36,6 +31,7 @@ import org.hibernate.CallbackException;
 import org.hibernate.EntityMode;
 import org.hibernate.Interceptor;
 import org.hibernate.Transaction;
+import org.hibernate.collection.PersistentCollection;
 import org.hibernate.type.Type;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -138,6 +134,55 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         return false;
     }
 
+    /**
+     * Detects creation or rereation of a PersistentCollection and fires an {@link Updated}
+     * event for the entity owning the collection
+     * if the entity isn't {@link #ignored} and the change is committed.
+     */
+    @Override
+    public void onCollectionRecreate(Object collection, Serializable key) throws CallbackException {
+        onCollectionChangedInAnyWay(collection);
+    }
+
+    /**
+     * Detects deletion of a PersistentCollection and fires an {@link Updated}
+     * event for the entity owning the collection
+     * if the entity isn't {@link #ignored} and the change is committed.
+     */
+    @Override
+    public void onCollectionRemove(Object collection, Serializable key) throws CallbackException {
+        onCollectionChangedInAnyWay(collection);
+    }
+
+    /**
+     * Detects changes to the contents of a PersistentCollection and fires an {@link Updated}
+     * event for the entity owning the collection
+     * if the entity isn't {@link #ignored} and the change is committed.
+     */
+    @Override
+    public void onCollectionUpdate(Object collection, Serializable key) throws CallbackException {
+        onCollectionChangedInAnyWay(collection);
+    }
+
+    private void onCollectionChangedInAnyWay(Object collection) {
+        if (collection instanceof PersistentCollection) {
+            PersistentCollection pc = (PersistentCollection)collection;
+            Object owner = pc.getOwner();
+            if (owner instanceof Entity) {
+                Entity entity = (Entity) owner;
+                if (!ignored(entity)) {
+                    logger.log(Level.FINE, "Updated collection in " + entity.getClass().getName() + " " + entity.getId());
+                    final Object[] propertyNames = new String[] { pc.getRole() };
+                    final Object[] oldValues = new String[] { "[collection]" };
+                    final Object[] newValues = new String[] { "[collection]" };
+                    EntityChangeSet changes = new EntityChangeSet(propertyNames, oldValues, newValues);
+                    final AdminEvent event = updatedEvent(entity, changes);
+                    event.setAuditIgnore(true); // TODO figure out why auditing one of these events triggers org.hibernate.AssertionFailure
+                    getApplicationContext().publishEvent(setsys(entity, event));
+                }
+            }
+        }
+    }
 
     private AdminEvent deletedEvent(Object obj) {
         if (obj instanceof GroupMembership) {
@@ -174,21 +219,6 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
             return new Updated<Entity>((Entity)obj, changes);
         } else
             throw new IllegalStateException("Can't make an Updated event for a " + obj.getClass().getName());
-    }
-
-    /** Ignored */
-    @Override
-    public void onCollectionRecreate(Object collection, Serializable key) throws CallbackException {
-    }
-
-    /** Ignored */
-    @Override
-    public void onCollectionRemove(Object collection, Serializable key) throws CallbackException {
-    }
-
-    /** Ignored */
-    @Override
-    public void onCollectionUpdate(Object collection, Serializable key) throws CallbackException {
     }
 
     /** Ignored */

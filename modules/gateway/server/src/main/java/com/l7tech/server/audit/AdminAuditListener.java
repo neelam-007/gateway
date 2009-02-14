@@ -51,6 +51,12 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
 
 
     public void onApplicationEvent(ApplicationEvent event) {
+        if (event instanceof AdminEvent) {
+            AdminEvent adminEvent = (AdminEvent) event;
+            if (adminEvent.isAuditIgnore())
+                return;
+        }
+
         if (event instanceof Updated) {
             Updated updated = (Updated)event;
             if (!updated.isSystem() && updated.getEntity() instanceof PublishedService) {

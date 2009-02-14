@@ -18,6 +18,7 @@ import java.util.logging.Level;
  */
 public abstract class AdminEvent extends ApplicationEvent {
     private boolean system;
+    private boolean auditIgnore;
 
     public AdminEvent(Object source) {
         super(source);
@@ -53,5 +54,19 @@ public abstract class AdminEvent extends ApplicationEvent {
      */
     public boolean isSystem() {
         return system;
+    }
+
+    /**
+     * @return true if the audit listener should ignore this event.
+     */
+    public boolean isAuditIgnore() {
+        return auditIgnore;
+    }
+
+    /**
+     * @param auditIgnore  true if the audit listener should ignore this event.
+     */
+    public void setAuditIgnore(boolean auditIgnore) {
+        this.auditIgnore = auditIgnore;
     }
 }
