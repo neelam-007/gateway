@@ -108,7 +108,7 @@ public class MigrationRecord extends NamedEntityImp {
 
     public synchronized void setBundleXml(String bundleXml) {
         this.bundleXml = bundleXml;
-        bundle = MigrationBundle.deserializeXml(bundleXml);
+        bundle = bundleXml == null ? null : MigrationBundle.deserializeXml(bundleXml);
     }
 
     // - Convenience accessors
