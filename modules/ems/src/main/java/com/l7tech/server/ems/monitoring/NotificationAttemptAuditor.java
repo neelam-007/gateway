@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.ems.audit.EsmMessages;
@@ -99,10 +100,10 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
                     List<NotificationAttempt> attempts = nodeContext.getMonitoringApi().getRecentNotificationAttempts(node.getNotificationAuditTime());
                     long timeOfMostRecentNotification = auditNotificationAttempts(node, auditContext, attempts);
                     node.setNotificationAuditTime(timeOfMostRecentNotification > 0 ? timeOfMostRecentNotification : timeBeforeQuery);
-                    ssgNodeManager.save(node);
+                    ssgNodeManager.update(node);
                 } catch (GatewayException e) {
                     logger.log(Level.INFO, "Unable to connect to process controller for node " + node.getIpAddress() + " to collect notifications: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                } catch (SaveException e) {
+                } catch (UpdateException e) {
                     logger.log(Level.WARNING, "Unable to update last notification time for node " + node.getIpAddress() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 }
             }
