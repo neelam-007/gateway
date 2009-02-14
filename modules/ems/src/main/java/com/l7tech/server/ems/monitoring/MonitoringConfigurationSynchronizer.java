@@ -218,13 +218,13 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
 
     // notificationRules is map of SystemMonitoringNotificationRule OID => NotificationRule instance
     private Collection<Trigger> convertTriggers(boolean notificationsDisabled,
-                                                Map<Long, NotificationRule> notificationRules, List<EntityMonitoringPropertySetup> setups
-    )
+                                                Map<Long, NotificationRule> notificationRules,
+                                                List<EntityMonitoringPropertySetup> setups)
     {
         Collection<Trigger> ret = new ArrayList<Trigger>();
 
         for (EntityMonitoringPropertySetup setup : setups) {
-            if (!setup.isNotificationEnabled())
+            if (!setup.isMonitoringEnabled())
                 continue;
 
             String propertyName = setup.getPropertyType();
