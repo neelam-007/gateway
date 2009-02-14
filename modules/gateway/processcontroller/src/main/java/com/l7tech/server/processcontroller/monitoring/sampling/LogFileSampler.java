@@ -26,7 +26,7 @@ class LogFileSampler extends HostPropertySampler<Long> {
     public Long sample() throws PropertySamplingException {
         try {
             ProcResult result = ProcUtils.exec(new File(SH_PATH), ProcUtils.args("-c", DU_COMMAND));
-            return matchNumber(new String(result.getOutput()), "du output", NUMBER_PATTERN) * 1024L;
+            return matchNumber(new String(result.getOutput()), "du output", NUMBER_PATTERN);
         } catch (IOException e) {
             throw new PropertySamplingException(e);
         }
