@@ -182,15 +182,16 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
 
     private void doConfigureNode(SsgCluster cluster, SsgNode node, boolean notificationsDisabled, boolean needClusterMaster) throws GatewayException, IOException, FindException {
         ProcessControllerContext ctx = gatewayContextFactory.createProcessControllerContext(node);
-        MonitoringConfiguration config = makeMonitoringConfiguration(cluster, node, notificationsDisabled);
-        ctx.getMonitoringApi().pushMonitoringConfiguration(config, needClusterMaster);
+        MonitoringConfiguration config = makeMonitoringConfiguration(cluster, node, notificationsDisabled, needClusterMaster);
+        ctx.getMonitoringApi().pushMonitoringConfiguration(config);
     }
 
-    private MonitoringConfiguration makeMonitoringConfiguration(SsgCluster cluster, SsgNode node, boolean notificationsDisabled) throws FindException {
+    private MonitoringConfiguration makeMonitoringConfiguration(SsgCluster cluster, SsgNode node, boolean notificationsDisabled, boolean responsibleForClusterMonitoring) throws FindException {
         MonitoringConfiguration config = new MonitoringConfiguration();
         config.setName(node.getName());
         config.setOid(node.getOid());
         config.setVersion(node.getVersion());
+        config.setResponsibleForClusterMonitoring(responsibleForClusterMonitoring);
 
         SsgClusterNotificationSetup clusterSetup = ssgClusterNotificationSetupManager.findByEntityGuid(cluster.getGuid());
         Map<Long, NotificationRule> notRules = convertNotificationRules(notificationsDisabled, clusterSetup.getSystemNotificationRules());

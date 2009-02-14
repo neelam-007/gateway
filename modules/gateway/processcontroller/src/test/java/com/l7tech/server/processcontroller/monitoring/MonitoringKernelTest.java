@@ -70,9 +70,10 @@ public class MonitoringKernelTest {
     @Test @Ignore("doesn't work unless a PC is running at localhost")
     public void testPushConfiguration() throws Exception {
         final MonitoringConfiguration mc = makeConfig();
+        mc.setResponsibleForClusterMonitoring(true);
 
         MonitoringApi api = getApi();
-        api.pushMonitoringConfiguration(mc, true);
+        api.pushMonitoringConfiguration(mc);
     }
 
     @Test @Ignore("doesn't work unless a PC is running at localhost")

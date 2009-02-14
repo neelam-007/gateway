@@ -32,12 +32,9 @@ public interface MonitoringApi {
      * Uploads a new or updated Monitoring Configuration to the PC.
      * 
      * @param config the new or updated Monitoring Scheme
-     * @param responsibleForClusterProperties <code>true</code> if this PC should take responsibility for monitoring
-     *                                        cluster-wide properties; <code>false</code> if it's Someone Else's 
-     *                                        Problem.
      * @throws IOException if Monitoring Scheme could not be saved to disk
      */
-    void pushMonitoringConfiguration(MonitoringConfiguration config, boolean responsibleForClusterProperties) throws IOException;
+    void pushMonitoringConfiguration(MonitoringConfiguration config) throws IOException;
 
     /**
      * Gets the status of all the properties being monitored by this PC at the present time.

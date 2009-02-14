@@ -73,7 +73,6 @@ public interface ConfigService {
     /**
      * Accept a new MonitoringConfiguration and notify the monitoring system about it
      * @param config the new configuration
-     * @param responsibleForClusterMonitoring <code>true</code> if this node is responsible for monitoring cluster-wide properties
      */
-    void pushMonitoringConfiguration(MonitoringConfiguration config, boolean responsibleForClusterMonitoring);
+    void pushMonitoringConfiguration(MonitoringConfiguration config);
 }

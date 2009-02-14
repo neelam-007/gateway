@@ -447,8 +447,8 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     @Override
-    public void pushMonitoringConfiguration(final MonitoringConfiguration config, boolean responsibleForClusterMonitoring) {
-        this.responsibleForClusterMonitoring = responsibleForClusterMonitoring;
+    public void pushMonitoringConfiguration(final MonitoringConfiguration config) {
+        this.responsibleForClusterMonitoring = config.isResponsibleForClusterMonitoring();
         this.currentMonitoringConfiguration = config;
 
         monitoringKernel.setConfiguration(config, responsibleForClusterMonitoring);

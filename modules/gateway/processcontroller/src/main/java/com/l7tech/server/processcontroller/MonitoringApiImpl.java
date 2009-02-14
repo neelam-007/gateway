@@ -37,8 +37,8 @@ public class MonitoringApiImpl implements MonitoringApi {
     }
 
     @Override
-    public void pushMonitoringConfiguration(MonitoringConfiguration config, boolean responsibleForClusterMonitoring) throws IOException {
-        configService.pushMonitoringConfiguration(config, responsibleForClusterMonitoring);
+    public void pushMonitoringConfiguration(MonitoringConfiguration config) throws IOException {
+        configService.pushMonitoringConfiguration(config);
     }
 
     @Override
