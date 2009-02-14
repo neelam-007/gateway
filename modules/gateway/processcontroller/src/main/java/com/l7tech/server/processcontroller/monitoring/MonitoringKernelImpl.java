@@ -225,10 +225,6 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         cancelDeadMonitors(buildingPstates, liveProperties, "properties");
         cancelDeadMonitors(buildingEstates, liveEvents, "events");
 
-        // Remove dead ones from current state
-        buildingPstates.keySet().retainAll(liveProperties);
-        buildingEstates.keySet().retainAll(liveEvents);
-
         currentTriggerStates = buildingTstates;
         currentPropertyStates = buildingPstates;
         for (PropertyState<?> state : buildingPstates.values()) {
@@ -351,6 +347,8 @@ public class MonitoringKernelImpl implements MonitoringKernel {
             }
             logger.log(Level.INFO, sb.toString());
         }
+
+        states.keySet().retainAll(liveOnes);
     }
 
     /**
@@ -402,6 +400,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                         // TODO parameterize max sample age, and/or figure out how/whether to handle failures specially?
                         logger.log(Level.WARNING, "Last sample for " + property + " more than " + sampleAge + "ms old");
                     }
+                    mstate.expireHistory(now - (10 * mstate.getSamplingInterval()));
 
                     // Compare the sampled value
                     final ComparisonOperator op = ptrigger.getOperator();
