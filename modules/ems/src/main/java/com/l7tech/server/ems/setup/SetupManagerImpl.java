@@ -132,12 +132,12 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
     }
 
     @Override
-    public String generateSsl( final String hostname ) throws SetupException {
+    public String generateSsl(final String hostname, final RsaKeySize rsaKeySize) throws SetupException {
         try {
             // generate key and save
             String alias = findUnusedAlias();
             SsgKeyStore sks = findFirstMutableKeystore();
-            generateKeyPair( hostname, sks, alias );
+            generateKeyPair( hostname, sks, alias, rsaKeySize );
             return alias;
         } catch ( IOException ioe ) {
             throw new SetupException( "Error during keystore configuration.", ioe );
@@ -413,10 +413,11 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
         return keystoreFile;
     }
 
-    private void generateKeyPair(final String hostname, final SsgKeyStore sks, final String alias) throws IOException {
+    private void generateKeyPair(final String hostname, final SsgKeyStore sks, final String alias,
+                                 final RsaKeySize rsaKeySize) throws IOException {
         X500Principal dn = new X500Principal("cn=" + hostname);
         try {
-            Future<X509Certificate> job = sks.generateKeyPair(alias, dn, 1024, 365 * 10, false);
+            Future<X509Certificate> job = sks.generateKeyPair(alias, dn, rsaKeySize.getKeySize(), 365 * 10, false);
             job.get();
         } catch (GeneralSecurityException e) {
             throw new IOException("Unable to create initial default SSL key: " + ExceptionUtils.getMessage(e), e);

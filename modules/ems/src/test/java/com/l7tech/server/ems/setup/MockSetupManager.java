@@ -29,7 +29,7 @@ public class MockSetupManager implements SetupManager {
     }
 
     @Override
-    public String generateSsl(String hostname) throws SetupException {
+    public String generateSsl(String hostname, RsaKeySize rsaKeySize) throws SetupException {
         return "SSL";
     }
 

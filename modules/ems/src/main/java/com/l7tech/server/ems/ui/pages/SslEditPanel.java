@@ -2,12 +2,7 @@ package com.l7tech.server.ems.ui.pages;
 
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
-import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.Radio;
-import org.apache.wicket.markup.html.form.TextField;
-import org.apache.wicket.markup.html.form.PasswordTextField;
-import org.apache.wicket.markup.html.form.RadioGroup;
-import org.apache.wicket.markup.html.form.FormComponent;
+import org.apache.wicket.markup.html.form.*;
 import org.apache.wicket.markup.html.form.validation.IFormValidator;
 import org.apache.wicket.markup.html.form.upload.FileUploadField;
 import org.apache.wicket.markup.html.form.upload.FileUpload;
@@ -24,6 +19,7 @@ import org.apache.wicket.spring.injection.annot.SpringBean;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Collections;
+import java.util.List;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -74,7 +70,10 @@ public class SslEditPanel extends Panel {
 
         TextField alias = new TextField("alias");
 
-        final Component[] generateComponents = new Component[]{ hostname };
+        List<String> rsaKeys = SetupManager.RsaKeySize.getAllKeySizes();
+        final DropDownChoice rsaKeySizeChoice = new DropDownChoice("rsaKeySize",rsaKeys);
+        
+        final Component[] generateComponents = new Component[]{ hostname, rsaKeySizeChoice };
         final Component[] keystoreComponents = new Component[]{ keystore, password, alias };
 
         sslLoad.add( new AjaxEventBehavior("onclick"){
@@ -107,16 +106,22 @@ public class SslEditPanel extends Panel {
 
                 String alias = null;
                 if ( "gen".equals( group.getConvertedInput() ) ) {
-                    String hostValue = sslFormModel.getHostname();
-                    if ( hostValue != null && !hostValue.isEmpty() ) {
+                    final String hostValue = sslFormModel.getHostname();
+                    final String rsaKey = sslFormModel.getRsaKeySize();
+                    boolean rsaKeyOk = rsaKey != null && !rsaKey.isEmpty();
+                    boolean hostValueOk = hostValue != null && !hostValue.isEmpty();
+                    
+                    if ( hostValueOk && rsaKeyOk ) {
                         try {
-                            alias = setupManager.generateSsl( hostValue );
+                            final SetupManager.RsaKeySize rsakeySize = SetupManager.RsaKeySize.getRsaKeySize(rsaKey);
+                            alias = setupManager.generateSsl( hostValue, rsakeySize);
                         } catch ( SetupException se ) {
                             feedback.error( "Could not generate SSL certificate for host '"+hostValue+"'" );
                             logger.log( Level.WARNING, "Error configuring ssl for hostname '"+hostValue+"'.", se );
                         }
                     } else {
-                        feedback.error( "Could not generate SSL certificate for host '"+hostValue+"'" );                        
+                        feedback.error( "Could not generate SSL certificate for host '"+hostValue+"' " +
+                                "with key size '"+rsaKey+"'" );                        
                     }
                 } else {
                     String passwordValue = sslFormModel.getPassword();
@@ -201,15 +206,31 @@ public class SslEditPanel extends Panel {
         sslForm.add( new IFormValidator(){
             @Override
             public void validate( final Form form ) {
-                String hostValue = hostname.getInput();
-                if ( "gen".equals( group.getConvertedInput() ) && (hostValue == null || hostValue.trim().isEmpty()) ) {
-                    form.error( new StringResourceModel("message.hostname.required", SslEditPanel.this, null).getString() );
+                if ( "gen".equals( group.getConvertedInput() )  ) {
+                    final String hostValue = hostname.getInput();
+                    if(hostValue == null || hostValue.trim().isEmpty()){
+                        form.error( new StringResourceModel("message.hostname.required", SslEditPanel.this, null).getString() );
+                    }
+
+                    final Object rsaKeyValueObj = rsaKeySizeChoice.getConvertedInput();
+                    if(rsaKeyValueObj == null || rsaKeyValueObj.toString().isEmpty()){
+                        form.error( new StringResourceModel("message.rsakeysize.required", SslEditPanel.this, null).getString() );
+                        return;
+                    }
+
+                    try{
+                        //validate the key size
+                        SetupManager.RsaKeySize.getRsaKeySize(rsaKeyValueObj.toString());
+                    }catch(Exception ex){
+                        form.error( new StringResourceModel("message.rsakeysize.invalid", SslEditPanel.this, null,
+                                new Object[]{rsaKeyValueObj.toString()}).getString() );
+                    }
                 }
             }
 
             @Override
             public FormComponent[] getDependentFormComponents() {
-                return new FormComponent[]{ group, hostname };
+                return new FormComponent[]{ group, hostname, rsaKeySizeChoice };
             }
         } );
 
@@ -217,6 +238,7 @@ public class SslEditPanel extends Panel {
         group.add( sslGenerate.setOutputMarkupId(true) );
         group.add( sslLoad.setOutputMarkupId(true) );
         group.add( hostname.setOutputMarkupId(true) );
+        group.add( rsaKeySizeChoice.setOutputMarkupId(true));
         group.add( keystore.setOutputMarkupId(true).setEnabled(false) );
         group.add( password.setOutputMarkupId(true).setEnabled(false) );
         group.add( alias.setOutputMarkupId(true).setEnabled(false) );
@@ -250,6 +272,15 @@ public class SslEditPanel extends Panel {
         private String hostname = "";
         private String password = "";
         private String alias = "";
+        private String rsaKeySize = SetupManager.RsaKeySize.rsa1024.toString();
+
+        public String getRsaKeySize() {
+            return rsaKeySize;
+        }
+
+        public void setRsaKeySize(String rsaKeySize) {
+            this.rsaKeySize = rsaKeySize;
+        }
 
         public String getAlias() {
             return alias;
