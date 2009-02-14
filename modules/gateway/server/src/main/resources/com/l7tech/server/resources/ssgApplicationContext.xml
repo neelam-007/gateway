@@ -1274,6 +1274,9 @@
                         <value>com.l7tech.server.transport.jms.prov.fiorano</value>
                         <value>com.l7tech.server.transport.jms.JmsSslCustomizerSupport</value>
                         <value>com.l7tech.server.transport.jms.JmsConfigException</value>
+                        <value>org.apache.xerces</value>
+                        <value>org.apache.xml.serializer</value>
+                        <value>org.apache.xalan</value>
                     </list>
                 </constructor-arg>
             </bean>
