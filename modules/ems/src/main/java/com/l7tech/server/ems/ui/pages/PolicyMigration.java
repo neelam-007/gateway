@@ -91,6 +91,35 @@ public class PolicyMigration extends EsmStandardWebPage {
         final CandidateModel candidateModel = new CandidateModel();
         final SearchModel searchModel = new SearchModel();
 
+        final Label javascript = new Label("javascript", "");
+        final YuiAjaxButton reloadMigrationButton = new YuiAjaxButton("reloadMigrationButton") {
+            @Override
+            protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
+                final PreviousMigrationModel model = (PreviousMigrationModel) form.get("reloadSelect").getModelObject();
+                logger.info( "Reloading migration '" + model + "'.");
+                try {
+                    MigrationRecord record = migrationRecordManager.findByPrimaryKey( model.id );
+                    if ( record != null ) {
+                        javascript.setModelObject("selectClusters( '"+record.getSourceClusterGuid()+"', "+jsArray(record.getSourceItems())+", '"+record.getTargetClusterGuid()+"', '"+record.getTargetFolderId()+"' );");
+                        ajaxRequestTarget.addComponent( javascript );
+                    }
+                } catch ( FindException fe ) {
+                    logger.log( Level.WARNING, "Unexpected error when loading previous migration.", fe );
+                    String failureMessage = ExceptionUtils.getMessage(fe);
+                    YuiDialog resultDialog = new YuiDialog("dialog", "Error Loading Previous Migration", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
+                    dialogContainer.replace( resultDialog );
+                    ajaxRequestTarget.addComponent( dialogContainer );
+                }
+            }
+        };
+
+        List<PreviousMigrationModel> previous = loadPreviousMigrations();
+        Form reloadForm = new Form("reloadForm");
+        reloadForm.add( reloadMigrationButton.setOutputMarkupId(true).setEnabled(!previous.isEmpty()) );
+        reloadForm.add( new DropDownChoice( "reloadSelect", new Model(previous.isEmpty() ? null : previous.iterator().next()), previous ) );
+        add( reloadForm );
+        add( javascript.setOutputMarkupId(true).setEscapeModelStrings(false) );
+
         final YuiAjaxButton dependencyLoadButton = new YuiAjaxButton("dependencyLoadButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
@@ -291,14 +320,14 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                             // load mappings for top-level items that have been previously migrated
                             loadMappings( mappingModel, dir.clusterId, targetClusterId, retrieveDependencies(dir, null, null), true);
-                            TextPanel textPanel = new TextPanel(YuiDialog.getContentId(), new Model(performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, dir, mappingModel, true )));
-                            YuiDialog dialog = new YuiDialog("dialog", "Confirm Migration", YuiDialog.Style.OK_CANCEL, textPanel, new YuiDialog.OkCancelCallback(){
+                            final PolicyMigrationConfirmationPanel confirmationPanel = new PolicyMigrationConfirmationPanel(YuiDialog.getContentId(), new Model(performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, dir, mappingModel, "", true )));
+                            YuiDialog dialog = new YuiDialog("dialog", "Confirm Migration", YuiDialog.Style.OK_CANCEL, confirmationPanel, new YuiDialog.OkCancelCallback(){
                                 @Override
                                 public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
                                     if ( button == YuiDialog.Button.OK ) {
                                         logger.fine("Migration confirmed.");
                                         try {
-                                            String message = performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, dir, mappingModel, false );
+                                            String message = performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, dir, mappingModel, confirmationPanel.getLabel(), false );
                                             YuiDialog resultDialog = new YuiDialog("dialog", "Migration Result", YuiDialog.Style.CLOSE, new TextPanel(YuiDialog.getContentId(), new Model(message)), null, "600px");
                                             dialogContainer.replace( resultDialog );
                                         } catch ( MigrationFailedException mfe ) {
@@ -472,6 +501,67 @@ public class PolicyMigration extends EsmStandardWebPage {
     private String lastSourceClusterId;
     private String lastTargetClusterId;
     private Collection<DependencyItem> lastDependencyItems = Collections.emptyList();
+
+    private static final class PreviousMigrationModel implements Comparable, Serializable {
+        private final String label;
+        private final long id;
+
+        public PreviousMigrationModel( final long id,
+                                       final String label )  {
+            this.id = id;
+            this.label = label;
+        }
+
+        @Override
+        public int compareTo(Object o) {
+            PreviousMigrationModel other = (PreviousMigrationModel) o;
+            return this.label.toLowerCase().compareTo(other.label.toLowerCase());
+        }
+
+        @Override
+        public String toString() {
+            return label;
+        }
+    }
+
+    private String jsArray( final Collection<String> identifiers ) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append('[');
+        boolean first = true;
+        for ( String identifier : identifiers ) {
+            if ( first ) {
+                first = false;
+            } else {
+                builder.append( "," );
+            }
+            builder.append( "'" );
+            builder.append( identifier );
+            builder.append( "'" );
+        }
+        builder.append(']');
+
+        return builder.toString();
+    }
+
+    private List<PreviousMigrationModel> loadPreviousMigrations() {
+        List<PreviousMigrationModel> previousMigrations = new ArrayList<PreviousMigrationModel>();
+
+        try {
+            Collection<MigrationRecord> records = migrationRecordManager.findPage( getUser(), MigrationRecordManager.SortProperty.NAME, true, 0, 100, null, null );
+            if ( records != null ) {
+                for ( MigrationRecord record : records ) {
+                    if ( record.getName() != null && !record.getName().isEmpty() ) {
+                        previousMigrations.add( new PreviousMigrationModel( record.getOid(), record.getName() ) );
+                    }
+                }
+            }
+        } catch ( FindException fe ) {
+            logger.log( Level.INFO, "Error loading previous migration records.", fe );
+        }
+
+        return previousMigrations;
+    }
 
     private AbstractDefaultAjaxBehavior buildDependencyDisplayBehaviour( final WebMarkupContainer itemDependenciesContainer,
                                                                          final WebMarkupContainer itemDetailsContainer,
@@ -1073,6 +1163,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                                      final boolean overwriteEntities,
                                      final DependencyItemsRequest requestedItems,
                                      final EntityMappingModel mappingModel,
+                                     final String label,
                                      final boolean dryRun ) throws MigrationFailedException {
         String summaryString = "";
         try {
@@ -1130,7 +1221,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                                 }
                             }
                         }
-                        migrationRecordManager.create( null, getUser(), summary, bundle );
+                        migrationRecordManager.create( label, getUser(), summary, bundle );
                     }
 
                     summaryString = summary.toString();

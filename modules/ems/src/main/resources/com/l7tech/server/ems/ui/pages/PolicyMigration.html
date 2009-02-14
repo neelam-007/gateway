@@ -646,6 +646,20 @@
             }
 
             YAHOO.util.Event.onDOMReady(init);
+
+            function selectClusters( sourceGuid, sourceItems, targetGuid, targetItem ) {
+                srcSSGClusterSelectorWindow.getEntityTreeTable().highlightEntity( sourceGuid, true );
+                destSSGClusterSelectorWindow.getEntityTreeTable().highlightEntity( targetGuid, true );
+
+                var callback = function() { //todo timing ...
+                    var item;
+                    for ( item in sourceItems ) {
+                        srcSSGClusterContentSelectorWindow.getEntityTreeTable().setEntityTristateCheckboxState( sourceItems[item], true );
+                    }
+                    destSSGClusterContentSelectorWindow.getEntityTreeTable().setEntityRadioButtonState( targetItem, true );
+                }
+                setTimeout( callback, 1000 );
+            }
         </script>
     </wicket:head>
 </head>
@@ -749,6 +763,23 @@
             </div>
             <div class="content">
             <wicket:extend>
+
+            <div class="panel">
+                <div class="panelTitle">Reload Migration</div>
+                <div class="panelContent">
+                    <form wicket:id="reloadForm">
+                        <table>
+                        <tr>
+                        <td>Reload to re-migrate using settings from a previous migration:</td> 
+                        <td><select wicket:id="reloadSelect"></select></td>
+                        <td><button type="submit" wicket:id="reloadMigrationButton">Reload Migration</button></td>
+                        </tr>
+                        </table>
+                    </form>
+                    <script language="javascript" wicket:id="javascript"></script>
+                </div>
+            </div>            
+
             <div class="sideBySide">
             <table>
             <tr>

@@ -1,7 +1,9 @@
 package com.l7tech.server.ems.migration;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
+import com.l7tech.server.management.migration.bundle.MigratedItem;
 import com.l7tech.identity.User;
 
 import javax.persistence.*;
@@ -15,6 +17,9 @@ import org.hibernate.annotations.Type;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * This entity class stores the information of a migration such as name, id, time created,
@@ -138,6 +143,23 @@ public class MigrationRecord extends NamedEntityImp {
         return summary == null ? null : summary.getSourceClusterGuid();
     }
 
+    @XmlTransient
+    @Transient
+    public Collection<String> getSourceItems() {
+        List<String> items = new ArrayList<String>();
+
+        if ( summary != null ) {
+            for ( MigratedItem item : summary.getMigratedItems() ) {
+                if ( item.getSourceHeader() != null &&
+                     item.getSourceHeader().getExternalId() != null ) {
+                    items.add( item.getSourceHeader().getExternalId() );
+                }
+            }
+        }
+
+        return items;
+    }
+
     @Transient
     public String getTargetClusterName() {
         return summary == null ? null : summary.getTargetClusterName();
@@ -146,6 +168,42 @@ public class MigrationRecord extends NamedEntityImp {
     @Transient
     public String getTargetClusterGuid() {
         return summary == null ? null : summary.getTargetClusterGuid();
+    }
+
+    @XmlTransient
+    @Transient
+    public Collection<String> getTargetItems() {
+        List<String> items = new ArrayList<String>();
+
+        if ( summary != null ) {
+            for ( MigratedItem item : summary.getMigratedItems() ) {
+                if ( item.getTargetHeader() != null &&
+                     item.getTargetHeader().getExternalId() != null ) {
+                    items.add( item.getTargetHeader().getExternalId() );                    
+                }
+            }
+        }
+
+        return items;
+    }
+
+    @XmlTransient
+    @Transient
+    public String getTargetFolderId() {
+        String id = "";
+
+        if ( summary != null ) {
+            for ( MigratedItem item : summary.getMigratedItems() ) {
+                if ( item.getTargetHeader() != null &&
+                     item.getTargetHeader().getExternalId() != null &&
+                     item.getTargetHeader().getType() == EntityType.FOLDER ) {
+                    id = item.getTargetHeader().getExternalId();
+                    break;
+                }
+            }
+        }
+
+        return id;
     }
 
     public String serializeXml() {

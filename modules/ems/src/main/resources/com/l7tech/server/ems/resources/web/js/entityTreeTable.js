@@ -1142,7 +1142,7 @@ if (!l7.EntityTreeTable) {
             this.setEntityRadioButtonState = function(entityId, selected) {
                 var entity = this._entitiesById[entityId];
                 if (!entity) return false;
-                if (entity._radioButton && entity._radioButton.checked != checked) {
+                if (entity._radioButton && !entity._radioButton.checked) {
                     entity._radioButton.click();
                 }
                 return true;
