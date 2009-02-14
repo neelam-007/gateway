@@ -13,7 +13,7 @@ import java.io.IOException;
  *
  */
 public class EmailNotifierTest {
-    //@Ignore("Sends email to mlyons when run")
+    @Ignore("Sends email to mlyons when run")
     @Test
     public void testSendEmail() throws IOException {
 
