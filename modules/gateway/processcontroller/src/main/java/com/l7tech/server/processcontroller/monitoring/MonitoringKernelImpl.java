@@ -247,6 +247,9 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
     @Override
     public List<MonitoredPropertyStatus> getCurrentPropertyStatuses() {
+        if (currentConfig == null)
+            return Collections.emptyList();
+
         final Map<MonitorableProperty, TransientStatus> stati = new HashMap<MonitorableProperty, TransientStatus>();
 
         final Map<MonitorableProperty, PropertyState<?>> pstates = currentPropertyStates;
