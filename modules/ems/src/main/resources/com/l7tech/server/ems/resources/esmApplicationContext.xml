@@ -236,7 +236,10 @@
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
-    <bean id="keystoreFileManager" class="com.l7tech.server.security.keystore.KeystoreFileManagerImpl" parent="hibernateBean"/>
+    <bean id="keystoreFileManager" class="com.l7tech.server.security.keystore.KeystoreFileManagerImpl" parent="hibernateBean">
+        <constructor-arg index="0"><null/></constructor-arg>
+        <constructor-arg index="1"><null/></constructor-arg>
+    </bean>
 
     <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerImpl" depends-on="setupManager">
         <constructor-arg index="0" ref="sharedKeyManager"/>
