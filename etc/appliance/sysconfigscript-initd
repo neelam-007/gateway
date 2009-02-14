@@ -9,7 +9,7 @@ if [ -z "$SSGHOME" ]; then
 	SSGHOME="/opt/SecureSpan/Gateway"
 fi                           
 
-ssgconfigutil="/usr/bin/perl /opt/SecureSpan/Appliance/sysconfig/ssg_sys_config.pl"
+ssgconfigutil="/usr/bin/perl /opt/SecureSpan/Appliance/config/ssg_sys_config.pl"
 migrationdeamon="${SSGHOME}/config/backup/ssgrestore.sh cfgdeamon"
 
 MESSAGE="Applying Network (Re)Configuration"

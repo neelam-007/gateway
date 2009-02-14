@@ -171,19 +171,6 @@ else
     echo "Not upgrading Custom Assertions.";
 fi
 
-# Set flag to enable HSM if keystore.properties if for HSM
-if [ -f "${INSTALL_DIR}/node/default/var/upgrade/keystore.properties" ] ; then
-    echo "Checking keystore.properties for SCA"
-    extractProperty "keystoretype" KEYSTORE_TYPE "${INSTALL_DIR}/node/default/var/upgrade/keystore.properties"
-    if [ "${KEYSTORE_TYPE}" == "PKCS11" ] ; then
-        echo "SCA is in use, enabling in host.properties"
-        echo "host.sca = true" >> "/opt/SecureSpan/Appliance/controller/etc/host.properties"
-        chown layer7:layer7 "/opt/SecureSpan/Appliance/controller/etc/host.properties"
-    else
-        echo "SCA not in use, not creating entry in host.properties"
-    fi
-fi
-
 # Genenerate new node.properties
 if [ -f "${INSTALL_DIR}/node/default/var/upgrade/hibernate.properties" ] && [ -f "${INSTALL_DIR}/node/default/var/upgrade/keystore.properties" ] ; then
     echo "Found hibernate.properties, creating node.properties with existing settings (keystore passphrase used as cluster passphrase)"

@@ -274,7 +274,8 @@ public class Upgrade465To50UpgradeKeystores implements UpgradeTask {
             // Create password encryption bean only after the re-encrytped cluster shared key is available
             final MasterPasswordManager passwordManager = getBean( "dbPasswordEncryption", MasterPasswordManager.class );
             hsmKeystoreFile.setProperty( "passphrase", passwordManager.encryptPassword(keystoreInfo.sslPassphrase) );
-
+            keystoreFileManager.update(hsmKeystoreFile);
+            
             // Set cluster properties for default keys using existing aliases
             setKeyClusterProperties( serverConfig, hsmKeystoreFile.getId(), keystoreInfo.sslAlias, keystoreInfo.caAlias );
         } catch (KeyStoreException e) {

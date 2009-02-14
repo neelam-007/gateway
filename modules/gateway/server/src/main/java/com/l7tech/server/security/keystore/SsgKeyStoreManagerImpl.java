@@ -3,6 +3,7 @@ package com.l7tech.server.security.keystore;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.security.keystore.sca.ScaSsgKeyStore;
@@ -39,17 +40,15 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
 
     private final KeystoreFileManager keystoreFileManager;
     private final ServerConfig serverConfig;
-    private char[] sslKeystorePassphrase;
     private MasterPasswordManager dbEncrypter;
 
     private boolean initialized = false;
     private List<SsgKeyFinder> keystores = null;
 
-    private char[] hsmInitKeystorePassword;
     private static final String GATEWAY_CONFIG_DIR = "/opt/SecureSpan/Gateway/node/default/etc/conf";
-    private static final String SSG_VAR_DIR = "/opt/SecureSpan/Gateway/node/default/var/";
-    private static final String HSM_INIT_FILE = "hsm_init.properties";
-    private static final String PROPERTY_SCA_HSMINIT_PASSWORD = "hsm.sca.password";
+//    private static final String SSG_VAR_DIR = "/opt/SecureSpan/Gateway/node/default/var/";
+//    private static final String HSM_INIT_FILE = "hsm_init.properties";
+//    private static final String PROPERTY_SCA_HSMINIT_PASSWORD = "hsm.sca.password";
 
 
     public SsgKeyStoreManagerImpl(SharedKeyManager skm, KeystoreFileManager kem, ServerConfig serverConfig, char[] sslKeystorePassphrase, MasterPasswordManager passwordManager) throws KeyStoreException, FindException {
@@ -58,7 +57,6 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
         this.keystoreFileManager = kem;
         this.softwareKeystorePasssword = toPassphrase(skm.getSharedKey());
         this.serverConfig = serverConfig;
-        this.sslKeystorePassphrase = sslKeystorePassphrase;
         this.dbEncrypter = passwordManager;
     }
 
@@ -86,6 +84,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
 
         boolean haveHsm = isHsmAvailable();
         boolean createdHsmFinder = false;
+       
         for (KeystoreFile dbFile : dbFiles) {
             long id = Long.parseLong(dbFile.getId());
             String name = dbFile.getName();
@@ -98,8 +97,10 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
                 } else {
                     if (createdHsmFinder)
                         throw new KeyStoreException("Database contains more than one keystore_file row with a format of hsm");
-                    char[] decryptedHsmPassword = getInitialKeystorePasswordAndMaybePersist(dbFile);
-                    list.add(ScaSsgKeyStore.getInstance(id, name, decryptedHsmPassword, keystoreFileManager));
+
+                    String encryptedPassword = dbFile.getProperty("passphrase");                    
+                    char[] decryptedPassword = dbEncrypter.decryptPasswordIfEncrypted(encryptedPassword);
+                    list.add(ScaSsgKeyStore.getInstance(id, name, decryptedPassword, keystoreFileManager));
                     createdHsmFinder = true;
                 }
             } else if (format.equals("ss")) {
@@ -115,7 +116,6 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
         // TODO maybe offer software keystores even if HSM is available?
         // TODO support multiple software keystores?
         keystores = Collections.unmodifiableList(list);
-        sslKeystorePassphrase = null;
         initialized = true;
     }
 
@@ -175,87 +175,5 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
 
         String whichks = scanOthers ? "any keystore" : "keystore ID " + preferredKeystoreId;
         throw new ObjectNotFoundException("No key with alias " + keyAlias + " found in " + whichks);
-    }
-
-    private char[] getInitialKeystorePasswordAndMaybePersist(KeystoreFile dbFile) throws KeyStoreException {
-
-        //reads hsm_init.properties first (if it exists), and then stores the password in the KeystoreFile
-        //if no hsm_init.properties exists, use the existing value from the KeystoreFile
-        char[] hsmInitKeystorePassword = null;
-
-        final File ssgVarDir = new File(SSG_VAR_DIR);
-        final File hsmInitFile = new File(ssgVarDir, HSM_INIT_FILE);
-
-        final Properties hsmInitProps = loadProperties(hsmInitFile);
-
-        if (hsmInitProps == null) {
-            logger.info("No HSM init file was found. Using the keystore password from the database '" + hsmInitFile.getAbsolutePath() + "'");
-            //get it from the db KeystoreFile
-            String dbEncPassword = dbFile.getProperty("passphrase");
-            hsmInitKeystorePassword = dbEncrypter.decryptPasswordIfEncrypted(dbEncPassword);
-        } else {
-            String hsmPasswordEncrypted = hsmInitProps.getProperty(PROPERTY_SCA_HSMINIT_PASSWORD);
-            if (hsmPasswordEncrypted == null) {
-                logger.warning("Found " + hsmInitFile.getAbsolutePath() + " but did not find a password. Using the database value.");
-                //get it from the db KeystoreFile
-                String dbEncPassword = dbFile.getProperty("passphrase");
-                hsmInitKeystorePassword = dbEncrypter.decryptPasswordIfEncrypted(dbEncPassword);
-            } else {
-                File configDirectory = new File(GATEWAY_CONFIG_DIR);
-                File ompFile = new File(configDirectory, "omp.dat");
-
-                //decrypt the password that was stored using the omp
-                final MasterPasswordManager masterPasswordManager =
-                            new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword());
-
-                hsmInitKeystorePassword = masterPasswordManager.decryptPasswordIfEncrypted(hsmPasswordEncrypted);
-
-                //set the password in the properties for this KeystoreFile (encrypted with the db encrypter), so we always have it from now on
-                dbFile.setProperty( "passphrase", dbEncrypter.encryptPassword(hsmInitKeystorePassword));
-
-                // Delete the upgrade files from disk once the DB updates are persisted
-                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-                    @Override
-                    public void afterCompletion(int status) {
-                        if ( status == TransactionSynchronization.STATUS_COMMITTED ) {
-                            if (hsmInitFile.exists()) {
-                                if ( hsmInitFile.delete() ) {
-                                    logger.info( "Deleted HSM init file after persisting the password to the database '"+hsmInitFile.getAbsolutePath()+"'." );
-                                } else {
-                                    logger.warning( "Unable to delete the HSM init file after persisting the password to the database '"+hsmInitFile.getAbsolutePath()+"'." );
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        return hsmInitKeystorePassword;
-    }
-
-    /**
-     * load the properties from the specified file.
-     * @param propFile the properties file to load
-     * @return a properties object populated with the values from the specified file or null if there was an error
-     * (eg. file not found or an error reading the properties file)
-     */
-    private Properties loadProperties(File propFile) {
-        Properties props = null;
-        FileInputStream fis = null;
-        try {
-            fis = new FileInputStream(propFile);
-            props = new Properties();
-            props.load(fis);
-        } catch (FileNotFoundException e) {
-            logger.info("Didn't find " + propFile.getAbsolutePath() + ").");
-            props = null;
-        } catch (IOException e) {
-            logger.severe("Error while reading " + propFile.getAbsolutePath() + ")." + ExceptionUtils.getMessage(e));
-            props = null;
-        } finally {
-            ResourceUtils.closeQuietly(fis);
-        }
-        return props;
     }
 }

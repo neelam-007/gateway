@@ -3,9 +3,9 @@ set -e
 
 trap doLogout INT
 
-SYSWIZARD="sudo -u layer7 /opt/SecureSpan/Appliance/sysconfig/systemconfig.sh"
+SYSWIZARD="sudo -u layer7 /opt/SecureSpan/Appliance/config/systemconfig.sh"
 CONFWIZARD="sudo -u layer7 /opt/SecureSpan/Gateway/config/ssgconfig.sh"
-HSMCONFIG="sudo -u layer7 /opt/SecureSpan/Appliance/hsmconfig/scahsmconfig.sh"
+HSMCONFIG="sudo -u layer7 /opt/SecureSpan/Appliance/config/scahsmconfig.sh"
 EMCONFWIZARD="sudo -u layer7 /opt/SecureSpan/EnterpriseManager/config/emconfig.sh"
 MASTERKEYMANAGE="/opt/SecureSpan/Appliance/libexec/masterkey-manage.pl"
 CHECK_USB_KEY="sudo -u layer7 ${MASTERKEYMANAGE} probe &> /dev/null"

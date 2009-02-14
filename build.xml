@@ -2610,8 +2610,8 @@
         <mkdir dir="${install.src.app.libexec}"/>
         <mkdir dir="${install.src.app.ssgconfig}"/>
         <mkdir dir="${install.src.app.ssgprofile}"/>
-        <mkdir dir="${install.src.app.sysconfigwizard}"/>
-        <mkdir dir="${install.src.app.scaconfig}"/>
+        <mkdir dir="${install.src.app.configdir}"/>
+        <!--<mkdir dir="${install.src.app.scaconfig}"/>-->
         <mkdir dir="${install.src.app.control}"/>
         <mkdir dir="${install.src.app.controlbin}"/>
         <mkdir dir="${install.src.app.controletc}"/>
@@ -2656,14 +2656,14 @@
         </copy>
 
         <!--copy the system config wizard -->
-        <copy todir="${install.src.app.sysconfigwizard}">
+        <copy todir="${install.src.app.configdir}">
             <fileset dir="${build.dir}/sysconfigwizard">
                 <include name="**/*"/>
             </fileset>
         </copy>
 
         <!--copy the sca config tool -->
-        <copy todir="${install.src.app.scaconfig}">
+        <copy todir="${install.src.app.configdir}">
             <fileset dir="${build.dir}/scaconfig">
                 <include name="**/*"/>
             </fileset>
@@ -2823,6 +2823,7 @@
                 <include name="masterkey-manage.pl"/>
                 <include name="update_firewall"/>
                 <include name="gateway_control"/>
+                <include name="hardware-stats.pl"/>
             </fileset>
         </copy>
 
@@ -2834,12 +2835,13 @@
                 <include name="ssg_appliance_startup_config.sh"/>
                 <include name="firewall_control.sh"/>
                 <include name="systeminfo.sh"/>
+                <include name="upgrade-appliance.sh"/>
             </fileset>
         </copy>
 
         <copy todir="${install.src.app.etc}">
             <fileset dir="${src.root}/etc/appliance">
-                <include name="host.properties"/>
+                <!--<include name="host.properties"/>-->
                 <include name="pkcs11_linux.cfg"/>            
             </fileset>
         </copy>

@@ -11,6 +11,7 @@ Source0: ssg-appliance.tar.gz
 Source1: jdk.tar.gz
 BuildRoot: %{_builddir}/%{name}-%{version}
 Requires: ssg >= %{version}
+Prefix: /opt/SecureSpan/Appliance
 
 # Prevents rpm build from erroring and halting
 #%undefine       __check_files
@@ -109,26 +110,17 @@ sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf
 /opt/SecureSpan/Appliance/controller/lib
 %attr(0555,layer7,layer7) /opt/SecureSpan/Appliance/controller/bin/*
 
-#System Config Wizard
+#Appliance Config Wizards
 %defattr(0444,layer7,layer7,0775)
-%dir /opt/SecureSpan/Appliance/sysconfig
-/opt/SecureSpan/Appliance/sysconfig/configfiles
-/opt/SecureSpan/Appliance/sysconfig/lib
-/opt/SecureSpan/Appliance/sysconfig/*.jar
+%dir /opt/SecureSpan/Appliance/config
+/opt/SecureSpan/Appliance/config/configfiles
+/opt/SecureSpan/Appliance/config/lib
+/opt/SecureSpan/Appliance/config/*.jar
 # this script does not need to be executable
-/opt/SecureSpan/Appliance/sysconfig/ssg_sys_config.pl
-%attr(0755,layer7,layer7) /opt/SecureSpan/Appliance/sysconfig/*.sh
+/opt/SecureSpan/Appliance/config/ssg_sys_config.pl
+%attr(0755,layer7,layer7) /opt/SecureSpan/Appliance/config/*.sh
 %defattr(0644,layer7,layer7,0775)
-/opt/SecureSpan/Appliance/sysconfig/*.properties
-
-#SCA Config Wizard
-%defattr(0444,layer7,layer7,0775)
-%dir /opt/SecureSpan/Appliance/hsmconfig
-/opt/SecureSpan/Appliance/hsmconfig/lib
-/opt/SecureSpan/Appliance/hsmconfig/*.jar
-%attr(0755,layer7,layer7) /opt/SecureSpan/Appliance/hsmconfig/*.sh
-%defattr(0644,layer7,layer7,0775)
-/opt/SecureSpan/Appliance/hsmconfig/*.properties
+/opt/SecureSpan/Appliance/config/*.properties
 
 # SSG config user files
 %defattr(0644,ssgconfig,ssgconfig,0700)
@@ -195,8 +187,8 @@ fi
 # The ssgconfig user is allowed to reboot the system, even when not at the console
 # The ssgconfig user can run system and software configuration as layer7 user
 echo "ssgconfig ALL = NOPASSWD: /sbin/reboot" >> /etc/sudoers
-echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/sysconfig/systemconfig.sh" >> /etc/sudoers
-echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/hsmconfig/scahsmconfig.sh" >> /etc/sudoers
+echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/config/systemconfig.sh" >> /etc/sudoers
+echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/config/scahsmconfig.sh" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/libexec/masterkey-manage.pl" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Gateway/config/ssgconfig.sh" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/EnterpriseManager/config/emconfig.sh" >> /etc/sudoers
@@ -249,12 +241,14 @@ if [ -z "${CONNTRACK}" ]; then
 fi
 
 # Chown any files that have been left behind by a previous installation
-[ ! -d /opt/SecureSpan/Appliance/sysconfig ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/sysconfig
-[ ! -d /opt/SecureSpan/Appliance/hsmconfig ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/hsmconfig
+[ ! -d /opt/SecureSpan/Appliance/config ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/config
 [ ! -d /opt/SecureSpan/Appliance/controller/etc ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/controller/etc
 [ ! -d /opt/SecureSpan/Appliance/controller/var ] || chown -R layer7.layer7 /opt/SecureSpan/Appliance/controller/var
 
 %post
+if [ -d "/ssg/appliance" ] ; then
+    sh %{prefix}/bin/upgrade-appliance.sh 2>&1 >> %{prefix}/config/appliance-upgrade.log
+fi
 
 # After above item has executed, on first install only
 # we need to set password for ssgconfig and pre-expire it

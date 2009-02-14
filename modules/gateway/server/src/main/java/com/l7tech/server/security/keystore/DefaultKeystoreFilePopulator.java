@@ -5,6 +5,7 @@ import com.l7tech.server.upgrade.NonfatalUpgradeException;
 import com.l7tech.server.upgrade.FatalUpgradeException;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.objectmodel.UpdateException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.hibernate.Session;
@@ -31,6 +32,8 @@ public class DefaultKeystoreFilePopulator extends HibernateDaoSupport implements
         // First, see if there is anything for us to do.  We'll take no action if there is already anything
         // in the table.
 
+        boolean alreadyPopulated = false;
+
         Session session = null;
         Connection conn = null;
         Statement st = null;
@@ -45,15 +48,17 @@ public class DefaultKeystoreFilePopulator extends HibernateDaoSupport implements
                 long numRows = rs.getLong(1);
                 if (numRows > 0) {
                     // No need to take action -- table already has stuff in it.
-                    return;
+                    alreadyPopulated = true;
                 }
             }
 
-            // Need to initialize keystore_file
-            logger.info("Creating initial keystore_file entries");
-            st.execute(INSERT_ROW_0);
-            st.execute(INSERT_ROW_1);
-            st.execute(INSERT_ROW_2);
+            if (!alreadyPopulated) {
+                // Need to initialize keystore_file
+                logger.info("Creating initial keystore_file entries");
+                st.execute(INSERT_ROW_0);
+                st.execute(INSERT_ROW_1);
+                st.execute(INSERT_ROW_2);
+            }
 
         } catch (SQLException e) {
             throw new NonfatalUpgradeException("Failed to populate keystore_file: " + ExceptionUtils.getMessage(e), e);
@@ -62,6 +67,14 @@ public class DefaultKeystoreFilePopulator extends HibernateDaoSupport implements
             ResourceUtils.closeQuietly(st);
             ResourceUtils.closeQuietly(conn);
             if (session != null) releaseSession(session);
+        }
+
+        KeystoreFileManager keystoreFileManager = (KeystoreFileManager) applicationContext.getBean("keystoreFileManager");
+        try {
+            keystoreFileManager.initializeHsmKeystorePasswordFromFile();
+        } catch (UpdateException e) {
+            logger.severe("Could not initialize the password From the HSM init file: " + ExceptionUtils.getMessage(e));
+            throw new FatalUpgradeException(e);
         }
     }
 }

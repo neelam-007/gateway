@@ -25,4 +25,5 @@ public interface KeystoreFileManager extends EntityManager<KeystoreFile, EntityH
      *                         a RuntimeException.
      */
     KeystoreFile updateDataBytes(long id, Functions.Unary<byte[], byte[]> mutator) throws UpdateException;
+    void initializeHsmKeystorePasswordFromFile() throws UpdateException;
 }
