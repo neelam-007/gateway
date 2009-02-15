@@ -5,9 +5,7 @@ package com.l7tech.server.management.api.monitoring;
 
 import com.l7tech.util.ExceptionUtils;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlEnum;
+import javax.xml.bind.annotation.*;
 
 /**
  * A record of an attempted notification
@@ -33,48 +31,57 @@ public class NotificationAttempt {
         this.throwable = null;
     }
 
-    @Deprecated // XML only
-    protected NotificationAttempt() { }
+    @Deprecated
+    // XML only
+    protected NotificationAttempt() {
+    }
 
-    @XmlAttribute
+    @XmlAttribute(name = "status")
     public StatusType getStatus() {
         return statusType;
     }
 
-    @XmlAttribute
+    @XmlAttribute(name = "timestamp")
     public long getTimestamp() {
         return timestamp;
     }
 
+    @XmlTransient
     public Throwable getThrowable() {
         return throwable;
     }
 
+    @XmlElement(name = "message")
     public String getMessage() {
         return message;
     }
 
-    @Deprecated // Only for XML
-    protected void setStatusType(StatusType statusType) {
+    @Deprecated
+    // Only for XML
+    protected void setStatus(StatusType statusType) {
         this.statusType = statusType;
     }
 
-    @Deprecated // Only for XML
+    @Deprecated
+    // Only for XML
     protected void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
 
-    @Deprecated // Only for XML
+    @Deprecated
+    // Only for XML
     protected void setMessage(String message) {
         this.message = message;
     }
 
-    @Deprecated // Only for XML
+    @Deprecated
+    // Only for XML
     protected void setThrowable(Throwable throwable) {
         this.throwable = throwable;
     }
 
-//    @XmlEnum(String.class)
+    @XmlType(name = "NotificationStatus")
+    @XmlEnum(String.class)
     public enum StatusType {
         IN_PROGRESS, // ?
         SENT,

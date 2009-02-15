@@ -17,7 +17,7 @@ import java.util.List;
  * @author alex
  */
 @WebService
-@XmlSeeAlso(MonitoredPropertyStatus.class)
+@XmlSeeAlso({MonitoredPropertyStatus.class, NotificationAttempt.class})
 public interface MonitoringApi {
     /**
      * Gets the status of the named Node; never null.
@@ -30,7 +30,7 @@ public interface MonitoringApi {
 
     /**
      * Uploads a new or updated Monitoring Configuration to the PC.
-     * 
+     *
      * @param config the new or updated Monitoring Scheme
      * @throws IOException if Monitoring Scheme could not be saved to disk
      */
@@ -38,15 +38,18 @@ public interface MonitoringApi {
 
     /**
      * Gets the status of all the properties being monitored by this PC at the present time.
+     *
      * @return the list of MonitedPropertyStatus objects
      */
-    @WebResult(name="propertyStatuses")
+    @WebResult(name = "propertyStatuses")
     List<MonitoredPropertyStatus> getCurrentPropertyStatuses();
 
     /**
      * Gets a record of attempted notifications since the specified time.
+     *
      * @param sinceWhen the time after which to return notifications.
-     * @return the list of notification attempts 
+     * @return the list of notification attempts
      */
+    @WebResult(name = "notificationAttempts")
     List<NotificationAttempt> getRecentNotificationAttempts(long sinceWhen);
 }
