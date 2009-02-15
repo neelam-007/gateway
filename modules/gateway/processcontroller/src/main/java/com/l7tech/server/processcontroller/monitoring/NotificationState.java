@@ -62,7 +62,7 @@ public class NotificationState {
     }
 
     public Map<Long, NotificationAttempt> getNotificationAttempts(long sinceWhen) {
-        return Collections.unmodifiableMap(attempts.headMap(sinceWhen));
+        return Collections.unmodifiableMap(attempts.tailMap(sinceWhen));
     }
 
     public void condition(Long when) {
