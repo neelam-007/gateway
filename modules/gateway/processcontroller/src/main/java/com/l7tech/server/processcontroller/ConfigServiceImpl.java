@@ -117,7 +117,7 @@ public class ConfigServiceImpl implements ConfigService {
         String jrePath = hostProps.getProperty(HOSTPROPERTIES_JRE);
         if (jrePath == null) jrePath = System.getProperty("java.home");
         final File javaBinary = new File(new File(jrePath), "bin" + SLASH + "java");
-        if (!javaBinary.exists() || !javaBinary.canExecute()) throw new IllegalStateException(javaBinary.getCanonicalPath() + " is not executable");
+        if (!OSDetector.isWindows()) if (!javaBinary.exists() || !javaBinary.canExecute()) throw new IllegalStateException(javaBinary.getCanonicalPath() + " is not executable");
         this.javaBinary = javaBinary.getCanonicalFile();
         logger.info("Using java binary: " + javaBinary.getPath());
 
