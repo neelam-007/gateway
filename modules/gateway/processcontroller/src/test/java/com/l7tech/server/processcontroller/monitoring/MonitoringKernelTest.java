@@ -87,7 +87,7 @@ public class MonitoringKernelTest {
     }
 
     @Test
-    //@Ignore("doesn't work unless a PC is running at localhost")
+    @Ignore("doesn't work unless a PC is running at localhost")
     public void testPushConfiguration() throws Exception {
         final MonitoringConfiguration mc = makeConfig();
         mc.setResponsibleForClusterMonitoring(true);
@@ -97,7 +97,7 @@ public class MonitoringKernelTest {
     }
 
     @Test
-    //@Ignore("doesn't work unless a PC is running at localhost")
+    @Ignore("doesn't work unless a PC is running at localhost")
     public void testGetCurrentProperties() throws Exception {
         MonitoringApi api = getApi();
         List<MonitoredPropertyStatus> stats = api.getCurrentPropertyStatuses();
@@ -105,7 +105,7 @@ public class MonitoringKernelTest {
     }
 
     @Test
-    //@Ignore("doesn't work unless a PC is running at localhost")
+    @Ignore("doesn't work unless a PC is running at localhost")
     public void testGetRecentNotifications() throws Exception {
         MonitoringApi api = getApi();
         List<NotificationAttempt> attempts = api.getRecentNotificationAttempts(0);
