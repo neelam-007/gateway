@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.processcontroller.monitoring;
 
+import com.l7tech.common.http.GenericHttpException;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.server.management.api.monitoring.*;
 import com.l7tech.server.management.config.monitoring.*;
@@ -15,8 +16,7 @@ import org.apache.cxf.interceptor.LoggingOutInterceptor;
 import org.apache.cxf.jaxb.JAXBDataBinding;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.TrustManager;
@@ -27,6 +27,7 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -35,26 +36,43 @@ import java.util.Random;
 
 public class MonitoringKernelTest {
     @Test
-    public void testMarshall() throws Exception {
-        final MonitoringConfiguration mc1 = makeConfig();
+    public void testMarshallMonitoringConfiguration() throws Exception {
+        testMarshallRoundTrip(makeConfig());
+    }
 
+    @Test
+    public void testMarshallNotificationAttemptSuccessful() throws Exception {
+        Object successfulAttempt = new NotificationAttempt(NotificationAttempt.StatusType.ACKNOWLEDGED,
+                "Message that was successfully sent to some HTTP listener that cared deeply", System.currentTimeMillis());
+        testMarshallRoundTrip(successfulAttempt);
+    }
+
+    @Test
+    public void testMarshallNotificationAttemptFailed() throws Exception {
+        //noinspection ThrowableInstanceNeverThrown
+        Object successfulAttempt = new NotificationAttempt(new GenericHttpException("Oh noes"), System.currentTimeMillis());
+        testMarshallRoundTrip(successfulAttempt);
+    }
+
+    // Test the specified object to ensure it survives a round trip through the result of makeJaxbContext()
+    private void testMarshallRoundTrip(Object toMarshall) throws JAXBException, UnsupportedEncodingException {
         JAXBContext ctx = makeJaxbContext();
 
         Marshaller marshaller = ctx.createMarshaller();
-        marshaller.setProperty( Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE );
+        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream(32768);
-        marshaller.marshal(mc1, baos);
+        marshaller.marshal(toMarshall, baos);
         String doc1 = new String(baos.toByteArray(), "UTF-8");
-        System.out.println("mc1: " + doc1);
+        System.out.println("doc1: " + doc1);
 
         Unmarshaller unmarshaller = ctx.createUnmarshaller();
-        MonitoringConfiguration mc2 = (MonitoringConfiguration) unmarshaller.unmarshal(new StringReader(doc1));
+        Object mc2 = unmarshaller.unmarshal(new StringReader(doc1));
 
         baos.reset();
         marshaller.marshal(mc2, baos);
         String doc2 = new String(baos.toByteArray(), "UTF-8");
-        System.out.println("mc2: " + doc2);
+        System.out.println("doc2: " + doc2);
 
         assertEquals(doc1, doc2);
     }
@@ -63,11 +81,13 @@ public class MonitoringKernelTest {
         return JAXBContext.newInstance(
                 MonitoringConfiguration.class,
                 PropertyTrigger.class,
-                MonitoredPropertyStatus.class
+                MonitoredPropertyStatus.class,
+                NotificationAttempt.class
         );
     }
 
-    @Test @Ignore("doesn't work unless a PC is running at localhost")
+    @Test
+    //@Ignore("doesn't work unless a PC is running at localhost")
     public void testPushConfiguration() throws Exception {
         final MonitoringConfiguration mc = makeConfig();
         mc.setResponsibleForClusterMonitoring(true);
@@ -76,13 +96,21 @@ public class MonitoringKernelTest {
         api.pushMonitoringConfiguration(mc);
     }
 
-    @Test @Ignore("doesn't work unless a PC is running at localhost")
+    @Test
+    //@Ignore("doesn't work unless a PC is running at localhost")
     public void testGetCurrentProperties() throws Exception {
         MonitoringApi api = getApi();
         List<MonitoredPropertyStatus> stats = api.getCurrentPropertyStatuses();
         System.out.println(stats);
     }
 
+    @Test
+    //@Ignore("doesn't work unless a PC is running at localhost")
+    public void testGetRecentNotifications() throws Exception {
+        MonitoringApi api = getApi();
+        List<NotificationAttempt> attempts = api.getRecentNotificationAttempts(0);
+        System.out.println(attempts);
+    }
 
     private MonitoringApi getApi() throws JAXBException {
         JaxWsProxyFactoryBean pfb = new JaxWsProxyFactoryBean();
@@ -90,21 +118,27 @@ public class MonitoringKernelTest {
         pfb.setAddress("https://localhost:8765/services/monitoringApi");
         pfb.setServiceClass(MonitoringApi.class);
         Client c = pfb.getClientFactoryBean().create();
-        c.getInInterceptors().add( new LoggingInInterceptor() );
-        c.getOutInterceptors().add( new LoggingOutInterceptor() );
-        c.getInFaultInterceptors().add( new LoggingInInterceptor() );
-        c.getOutFaultInterceptors().add( new LoggingOutInterceptor() );
+        c.getInInterceptors().add(new LoggingInInterceptor());
+        c.getOutInterceptors().add(new LoggingOutInterceptor());
+        c.getInFaultInterceptors().add(new LoggingInInterceptor());
+        c.getOutFaultInterceptors().add(new LoggingOutInterceptor());
         HTTPConduit hc = (HTTPConduit) c.getConduit();
         hc.setTlsClientParameters(new TLSClientParameters() {
             @Override
             public TrustManager[] getTrustManagers() {
-                return new TrustManager[] { new X509TrustManager() {
+                return new TrustManager[]{new X509TrustManager() {
                     @Override
-                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
+                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+                    }
+
                     @Override
-                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {}
+                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+                    }
+
                     @Override
-                    public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
                 }};
             }
 
