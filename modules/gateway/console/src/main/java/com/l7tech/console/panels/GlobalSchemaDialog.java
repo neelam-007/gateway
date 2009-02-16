@@ -6,18 +6,18 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.TableUtil;
-import com.l7tech.gui.util.Utilities;
-import static com.l7tech.objectmodel.EntityType.SCHEMA_ENTRY;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.TextUtils;
-import com.l7tech.util.DomUtils;
-import com.l7tech.gateway.common.schema.SchemaEntry;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.schema.SchemaEntry;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.TableUtil;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
+import static com.l7tech.objectmodel.EntityType.SCHEMA_ENTRY;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.TextUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -29,13 +29,13 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
 
 /**
  * A dialog for the SSM administrator to manage the global schemas loaded on a gateway.
@@ -349,13 +349,26 @@ public class GlobalSchemaDialog extends JDialog {
 
             // then check on SSG
             try {
-                if ( (importloc == null || reg.getSchemaAdmin().findByName(importloc).isEmpty()) &&
-                     reg.getSchemaAdmin().findByTNS(importns).isEmpty() ) {
+//                if ( (importloc == null || reg.getSchemaAdmin().findByName(importloc).isEmpty()) &&
+//                     reg.getSchemaAdmin().findByTNS(importns).isEmpty() ) {
+//                    if (importloc != null) {
+//                        unresolvedImportsList.add(importloc);
+//                    } else {
+//                        unresolvedImportsList.add(importns);
+//                    }
+//                }
+//
+                // bug #6569 - modify check for the case where an existing TNS
+                final boolean tnsFound = !(importns == null || reg.getSchemaAdmin().findByTNS(importns).isEmpty());
+                final boolean locFound = !(importloc == null || reg.getSchemaAdmin().findByName(importloc).isEmpty());
+                if ( !locFound ) {
                     if (importloc != null) {
                         unresolvedImportsList.add(importloc);
                     } else {
                         unresolvedImportsList.add(importns);
                     }
+                } else if ( !tnsFound ) {
+                    unresolvedImportsList.add(importns);
                 }
             } catch (ObjectModelException e) {
                 String msg = "Error trying to look for import schema in global schema";
