@@ -35,18 +35,15 @@ cd "${SSPC_HOME}" &>/dev/null || fail 2 "Directory not found: ${SSPC_HOME}"
 [ -x "${JAVA_HOME}/bin/java" ] || fail 2 "Invalid JAVA_HOME: ${JAVA_HOME}"
 
 # Run the config bootstrapper if it looks like this is the first time we've run
-if [ ! -f "${SSPC_HOME}/etc/host.properties" ] ; then
-
-  if [ -z "${PC_USER}" ] ; then
+if [ -z "${PC_USER}" ] ; then
     "${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" -Dcom.l7tech.server.processcontroller.homeDirectory="$SSPC_HOME" com.l7tech.server.processcontroller.BootstrapConfig
-  else
+else
     export JAVA_HOME SSPC_HOME PC_JAR
     runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" -classpath "${PC_JAR}" -Dcom.l7tech.server.processcontroller.homeDirectory="$SSPC_HOME" com.l7tech.server.processcontroller.BootstrapConfig'
-  fi
+fi
 
-  if [ ${?} -ne 0 ]; then
+if [ ${?} -ne 0 ]; then
     fail "${?}" "Error saving initial configuration."
-  fi
 fi
 
 if [ -f "${SSPC_HOME}/etc/DEBUG" ] ; then

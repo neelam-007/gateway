@@ -20,10 +20,10 @@ if [ -f "${INSTALL_DIR}/Gateway/node/default/var/upgrade/keystore.properties" ] 
     echo "Checking keystore.properties for SCA"
     extractProperty "keystoretype" KEYSTORE_TYPE "${INSTALL_DIR}/Gateway/node/default/var/upgrade/keystore.properties"
     if [ "${KEYSTORE_TYPE}" == "PKCS11" ] ; then
-        echo "SCA is in use, enabling in host.properties"
-        echo "host.sca = true" >> "/opt/SecureSpan/Appliance/controller/etc/host.properties"
-        chown layer7:layer7 "/opt/SecureSpan/Appliance/controller/etc/host.properties"
+        echo "SCA is in use, adding to override.properties"
+        echo "host.sca = true" >> "/opt/SecureSpan/Appliance/controller/etc/override.properties"
+        chown layer7:layer7 "/opt/SecureSpan/Appliance/controller/etc/override.properties"
     else
-        echo "SCA not in use, not creating entry in host.properties"
+        echo "SCA not in use, not enabling via override.properties"
     fi
 fi

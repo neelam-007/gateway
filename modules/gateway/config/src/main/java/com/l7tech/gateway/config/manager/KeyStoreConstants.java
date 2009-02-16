@@ -42,7 +42,7 @@ public class KeyStoreConstants {
                 "com.sun.security.sasl.Provider"
             };
 
-    public static final String PKCS11_CFG_FILE = "/ssg/appliance/pkcs11.cfg";
+    public static final String PKCS11_CFG_FILE = "/opt/SecureSpan/Appliance/etc/pkcs11_linux.cfg";
 
     public static final String[] HSM_SECURITY_PROVIDERS =
             {
