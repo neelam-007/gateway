@@ -200,6 +200,7 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
         initParams.put("contextConfigLocation", "classpath:com/l7tech/server/ems/resources/webApplicationContext.xml");
         initParams.put(INIT_PARAM_INSTANCE_ID, Long.toString(instanceId));
         initParams.put("org.mortbay.jetty.servlet.Default.dirAllowed", "false");
+        initParams.put("org.mortbay.jetty.servlet.Default.cacheControl", "max-age=1800");        
         initParams.put("org.mortbay.jetty.servlet.SessionCookie", "ESMSESSIONID");
         initParams.put("org.mortbay.jetty.servlet.SessionURL", "none"); // disable url sessionid
 
