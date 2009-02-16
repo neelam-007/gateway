@@ -349,16 +349,6 @@ public class GlobalSchemaDialog extends JDialog {
 
             // then check on SSG
             try {
-//                if ( (importloc == null || reg.getSchemaAdmin().findByName(importloc).isEmpty()) &&
-//                     reg.getSchemaAdmin().findByTNS(importns).isEmpty() ) {
-//                    if (importloc != null) {
-//                        unresolvedImportsList.add(importloc);
-//                    } else {
-//                        unresolvedImportsList.add(importns);
-//                    }
-//                }
-//
-                // bug #6569 - modify check for the case where an existing TNS
                 final boolean tnsFound = !(importns == null || reg.getSchemaAdmin().findByTNS(importns).isEmpty());
                 final boolean locFound = !(importloc == null || reg.getSchemaAdmin().findByName(importloc).isEmpty());
                 if ( !locFound ) {
