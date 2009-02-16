@@ -53,6 +53,7 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
      * @return the currently installed valid license, or null if no license is installed or present in the database.
      * @throws com.l7tech.gateway.common.InvalidLicenseException if a license is present in the database but was not installed because it was invalid.
      */
+    @Override
     public License getCurrentLicense() throws InvalidLicenseException {
         licenseUpdateLock.lock();
         try {
@@ -97,6 +98,7 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
      * @throws com.l7tech.gateway.common.InvalidLicenseException  if the license was not valid.
      * @throws com.l7tech.objectmodel.UpdateException   if the database change could not be recorded (old license restored)
      */
+    @Override
     public void installNewLicense(String newLicenseXml) throws InvalidLicenseException, UpdateException {
         licenseUpdateLock.lock();
         try {
@@ -131,6 +133,7 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
         }
     }
 
+    @Override
     @SuppressWarnings({"unchecked"})
     public boolean isAssertionEnabled(final Assertion assertion) {
         // Get extra features factory for this assertion if any
@@ -166,11 +169,13 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
         return enabled;
     }
 
+    @Override
     public boolean isFeatureEnabled(String feature) {
         check();
         return license != null && feature != null && license.isFeatureEnabled(feature);
     }
 
+    @Override
     public void requireFeature(String feature) throws LicenseException {
         if (!isFeatureEnabled(feature)) {
             checkCount.set(CHECKCOUNT_CHECK_NOW);
@@ -178,10 +183,12 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
         }
     }
 
+    @Override
     public void afterPropertiesSet() throws Exception {
     }
 
     /** Listen for the license property being changed, and update the license immediately. */
+    @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof ClusterPropertyEvent) {
             ClusterPropertyEvent evt = (ClusterPropertyEvent)applicationEvent;
@@ -195,7 +202,9 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
 
     //- PROTECTED
 
-    protected AbstractLicenseManager(ClusterPropertyManager clusterPropertyManager) {
+    protected AbstractLicenseManager( final Logger logger,
+                                      final ClusterPropertyManager clusterPropertyManager) {
+        this.logger = logger;
         this.clusterPropertyManager = clusterPropertyManager;
     }
 
@@ -203,7 +212,6 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(GatewayLicenseManager.class.getName());
     private static final long CHECK_INTERVAL = (5L * 60L * 1000L) + (new SecureRandom().nextInt(60000)); // recheck every 5 min + random desync interval
     private static final int CHECK_THRESHOLD = 30; // dont recheck more often than once per this many license hook calls
     private static final long DB_FAILURE_GRACE_PERIOD = 72L * 60L * 60L * 1000L; // ignore a DB failure for up to 72 hours before canceling any current license
@@ -212,7 +220,8 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
     private static final int CHECKCOUNT_CHECK_NOW = 10000; // high number meaning check right now
     private static final long TIME_CHECK_NOW = -20000L;// Filled in by Spring
 
-    private  final ClusterPropertyManager clusterPropertyManager;// Brake to prevent calls to System.currentTimeMillis every time a license check is made.
+    private final Logger logger;
+    private final ClusterPropertyManager clusterPropertyManager;// Brake to prevent calls to System.currentTimeMillis every time a license check is made.
     // This is unsynchronized because we don't care if some writes to it are lost, or if some reads are out-of-date.
     private final AtomicInteger checkCount = new AtomicInteger(CHECKCOUNT_CHECK_NOW);
     private final Lock licenseUpdateLock = new ReentrantLock();
@@ -364,7 +373,7 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
             return certFactory.generateCertificate(is);
         } catch (CertificateException e) {
             // Very bad news
-            logger.log(Level.SEVERE, "Unable to configure trusted issuer cert", e);
+            Logger.getLogger(AbstractLicenseManager.class.getName()).log(Level.SEVERE, "Unable to configure trusted issuer cert", e);
             return null;
         }
     }
@@ -392,6 +401,7 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
     private void fireEvent(final AuditDetailMessage message, final String suffix, final String action) {
         // Avoid firing the event while still holding the license manage lock
         Background.scheduleOneShot(new TimerTask() {
+            @Override
             public void run() {
                 String suffix2 = suffix == null ? "" : ": " + suffix;
                 getApplicationContext().publishEvent(new LicenseEvent(action, message.getLevel(), action, message.getMessage() + suffix2));
