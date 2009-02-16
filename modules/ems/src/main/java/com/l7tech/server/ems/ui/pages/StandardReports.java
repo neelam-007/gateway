@@ -156,7 +156,7 @@ public class StandardReports extends EsmStandardWebPage {
                 } catch (Exception e) {
                     String errmsg = "Cannot delete the standard report settings (OID = '" + deletedSettingsOid + "').";
                     logger.warning(errmsg);
-                    return new JSONException(new Exception(errmsg));
+                    return new JSONException(new Exception(errmsg, e));
                 }
             }
         };
@@ -288,7 +288,7 @@ public class StandardReports extends EsmStandardWebPage {
                 try {
                     jsonDataObj = JSON.parse(jsonData.toString());
                 } catch(Exception e) {
-                    returnValue = new JSONException(new Exception("Cannot parse uploaded JSON data", e.getCause()));
+                    returnValue = new JSONException("Server error: cannot parse uploaded JSON data");
                     logger.log(Level.FINER, "Cannot parse uploaded JSON data", e.getCause());
                     return;
                 }
@@ -314,7 +314,7 @@ public class StandardReports extends EsmStandardWebPage {
                     returnValue = new JSONException(new Exception("Problem running report: " + ex.getMessage(), ex.getCause()));
                 }
             } else {
-                returnValue = new JSONException(new IllegalArgumentException("jsonData must be either a JSONException or a JSON formatted String"));
+                returnValue = new JSONException("Server error: jsonData must be either a JSONException or a JSON formatted String");
             }
         }
 
@@ -363,13 +363,13 @@ public class StandardReports extends EsmStandardWebPage {
                     jsonDataObj = JSON.parse(jsonData.toString());
                 } catch(Exception e){
                     logger.log(Level.FINER, "Cannot parse uploaded JSON data", e.getCause());
-                    returnValue = new JSONException(new Exception("Cannot parse uploaded JSON data", e.getCause()));
+                    returnValue = new JSONException("Server error: cannot parse uploaded JSON data");
                     return;
                 }
 
                 if (!(jsonDataObj instanceof Map)) {
                     logger.log(Level.FINER, "Incorrect JSON data. Not convertible to a Map");
-                    returnValue = new JSONException(new Exception("Incorrect JSON data. Not convertible to a Map"));
+                    returnValue = new JSONException("Server error: uploaded JSON data is not convertible to a map");
                     return;
                 }
 
@@ -420,7 +420,7 @@ public class StandardReports extends EsmStandardWebPage {
                     }
                 }
             } else {
-                returnValue = new JSONException(new IllegalArgumentException("jsonData must be either a JSONException or a JSON formatted String"));
+                returnValue = new JSONException("Server error: jsonData must be either a JSONException or a JSON formatted String");
             }
         }
     }
@@ -472,7 +472,7 @@ public class StandardReports extends EsmStandardWebPage {
                 try {
                     StandardReportSettings reportSettings = standardReportSettingsManager.findByPrimaryKeyForUser( StandardReports.this.getUser(), Integer.parseInt(oid));
                     if ( reportSettings == null ) {
-                        returnValue = new JSONException(new NumberFormatException("The OID ('" + oid + "') is not a valid settings.."));
+                        returnValue = new JSONException("Settings OID ('" + oid + "') is invalid.");
                     } else {
                         Map<String, Object> settingsPropsMap = new HashMap<String,Object>(reportSettings.getProperties());
                         updateReportSettings(settingsPropsMap);
@@ -483,14 +483,14 @@ public class StandardReports extends EsmStandardWebPage {
                 } catch (NumberFormatException e) {
                     String errmsg = "The OID ('" + oid + "') is not an integer.";
                     logger.warning(errmsg);
-                    returnValue = new JSONException(new NumberFormatException("The OID ('" + oid + "') is not an integer."));
+                    returnValue = new JSONException("Settings OID ('" + oid + "') is not an integer.");
                 } catch (FindException e) {
                     String errmsg = "Cannot find standard reports settings by OID ('" + oid + "').";
                     logger.warning(errmsg);
-                    returnValue = new JSONException(new FindException(errmsg));
+                    returnValue = new JSONException(errmsg);
                 }
             } else {
-                returnValue = new JSONException(new IllegalArgumentException("jsonData must be either a JSONException or a JSON formatted String"));
+                returnValue = new JSONException("Server error: jsonData must be either a JSONException or a JSON formatted String");
             }
         }
     }

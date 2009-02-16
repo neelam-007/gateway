@@ -4,9 +4,9 @@ import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.GatewayContext;
+import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 
@@ -65,16 +65,16 @@ public class SSGClusterSelector extends EsmBaseWebPage {
                     return entities;
                 } catch (SOAPFaultException e) {
                     if ( GatewayContext.isNetworkException(e) ) {
-                        return new JSONException( new Exception("Gateway not available.") );
+                        return new JSONException("Gateway not available.");
                     } else if ( GatewayContext.isConfigurationException(e) ) {
-                        return new JSONException( new Exception(e.getMessage()) );
+                        return new JSONException(e.getMessage());
                     } else {
                         logger.warning(e.toString());
                         return new JSONException(e);
                     }
                 } catch (FindException fe) {
                     logger.log( Level.WARNING, "Error loading enterprise folders.", fe );
-                    return new JSONException(  new Exception("Error loading folders.")  );
+                    return new JSONException(new Exception("Error loading folders.", fe));
                 }
             }
 

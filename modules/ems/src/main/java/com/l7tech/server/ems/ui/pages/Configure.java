@@ -157,11 +157,10 @@ public class Configure extends EsmStandardWebPage {
                     if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
                         try {
                             EnterpriseFolder parentFolder = enterpriseFolderManager.findByGuid(parentFolderGuid);
-                            String errorMsg = "A folder with the name '" + newFolderName + "' already exists in the folder '"
-                                + parentFolder.getName() + "'. Please specify a different name.";
-                            return new JSONException(new DuplicateObjectException(errorMsg, e));
+                            return new JSONException("A folder with the name '" + newFolderName + "' already exists in the folder '"
+                                    + parentFolder.getName() + "'. Please specify a different name.");
                         } catch (FindException e1) {
-                            return new JSONException(e1);
+                            return new JSONException("A folder with the name '" + newFolderName + "' already exists. Please specify a different name.");
                         }
                     } else {
                         return new JSONException(e);
@@ -190,11 +189,10 @@ public class Configure extends EsmStandardWebPage {
                         try {
                             EnterpriseFolder editedFolder = enterpriseFolderManager.findByGuid(editedFolderGuid);
                             EnterpriseFolder parentFolder = editedFolder.getParentFolder();
-                            String errorMsg = "A folder with the name '" + newFolderName + "' already exists in the folder '"
-                                + parentFolder.getName() + "'. Please specify a different name.";
-                            return new JSONException(new DuplicateObjectException(errorMsg, e));
+                            return new JSONException("A folder with the name '" + newFolderName + "' already exists in the folder '"
+                                    + parentFolder.getName() + "'. Please specify a different name.");
                         } catch (FindException e1) {
-                            return new JSONException(e1);
+                            return new JSONException("A folder with the name '" + newFolderName + "' already exists. Please specify a different name.");
                         }
                     } else {
                         return new JSONException(e);
@@ -263,16 +261,14 @@ public class Configure extends EsmStandardWebPage {
                     if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
                         try {
                             EnterpriseFolder parentFolder = enterpriseFolderManager.findByGuid(parentFolderGuid);
-                            String errorMsg = "A cluster with the name '" + newClusterName + "' already exists in the folder '"
-                                + parentFolder.getName() + "'. Please specify a different name.";
-                            return new JSONException(new DuplicateObjectException(errorMsg, e));
+                            return new JSONException("A cluster with the name '" + newClusterName + "' already exists in the folder '"
+                                    + parentFolder.getName() + "'. Please specify a different name.");
                         } catch (FindException e1) {
-                            return new JSONException(e1);
+                            return new JSONException("A cluster with the same name '" + newClusterName + "' already exists. Please specify a different name.");
                         }
                     } else if (ExceptionUtils.causedBy(e, DuplicateHostnameException.class)) {
-                        String errorMsg = "A cluster with the hostname '" + hostname
-                                + "' already exists in the enterprise tree. Please specify a different hostname.";
-                        return new JSONException(new DuplicateObjectException(errorMsg, e));
+                        return new JSONException("A cluster with the hostname '" + hostname
+                                + "' already exists in the enterprise tree. Please specify a different hostname.");
                     } else {
                         return new JSONException(e);
                     }
@@ -307,16 +303,14 @@ public class Configure extends EsmStandardWebPage {
                         try {
                             SsgCluster editedCluster = ssgClusterManager.findByGuid(editedSSGClusterGuid);
                             EnterpriseFolder parentFolder = editedCluster.getParentFolder();
-                            String errorMsg = "A cluster with the name '" + newClusterName + "' already exists in the folder '"
-                                + parentFolder.getName() + "'. Please specify a different name.";
-                            return new JSONException(new DuplicateObjectException(errorMsg, e));
+                            return new JSONException("A cluster with the name '" + newClusterName + "' already exists in the folder '"
+                                    + parentFolder.getName() + "'. Please specify a different name.");
                         } catch (FindException e1) {
-                            return new JSONException(e1);
+                            return new JSONException("A cluster with the name '" + newClusterName + "' already exists. Please specify a different name.");
                         }
                     } else if (ExceptionUtils.causedBy(e, DuplicateHostnameException.class)) {
-                        String errorMsg = "A cluster with the hostname (" + newSslHostname
-                                + ") already exists in the enterprise tree. Please specify a different hostname.";
-                        return new JSONException(new DuplicateObjectException(errorMsg, e));
+                        return new JSONException("A cluster with the hostname (" + newSslHostname
+                                + ") already exists in the enterprise tree. Please specify a different hostname.");
                     } else {
                         return new JSONException(e);
                     }

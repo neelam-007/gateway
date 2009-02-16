@@ -1437,8 +1437,11 @@ if (!l7.Dialog) {
             var tippyId = divId + '_tippy';
             var stackTraceTrIdPrefix = 'l7_Dialog_stackTrace_';
             var body = beginBody
-                     + '<div style="margin-top: 10px;">' + l7.Util.escapeHtmlText(o.localizedMessage == null ? o.message : o.localizedMessage) + '</div>'
-                     + '<div class="tippy" style="margin: 10px 0 4px 0; width: 600px;">'
+                     + '<div style="margin-top: 10px;">' + l7.Util.escapeHtmlText(o.localizedMessage == null ? o.message : o.localizedMessage) + '</div>';
+                        // Prefers to show localized message over non-localized message.
+            // Includes detail section only if there is an exception chain or stack trace to show.
+            if (o.exception != '' || o.stackTrace || o.cause) {
+                body += '<div class="tippy" style="margin: 10px 0 4px 0; width: 600px;">'
                      +     '<img id="' + tippyId + '" class="tippy" src="../images/tippyCollapsed.png" alt="" onclick="l7.Tippy.toggleTippy(this, \'' + divId + '\')" />'
                      +     '<span class="clickable" onclick="l7.Tippy.toggleTippy(\'' + tippyId + '\', \'' + divId + '\')">Details</span>'
                      + '</div>'
@@ -1452,28 +1455,29 @@ if (!l7.Dialog) {
                      +                 ' Stack Trace'
                      +             '</th>'
                      +         '</tr>';
-            for (var e = o, i = 0; e != null || e != undefined; e = e.cause, ++i) {
-                if (e !== o) body += '<tr><th colspan="2" style="background-color: #d0d0d0;">Caused By:</th></tr>';
-                body += '<tr><th class="top">Exception:</th><td width="100%">' + l7.Util.escapeHtmlText(e.exception) + '</td></tr>';
-                if (e.message) {
-                    body += '<tr><th class="top">Message:</th><td class="wrap">' + l7.Util.escapeHtmlText(e.message) + '</td></tr>';
-                }
-                if (e.localizedMessage && e.localizedMessage != e.message) {
-                    body += '<tr><th class="top">Localized Message:</th><td class="wrap">' + l7.Util.escapeHtmlText(e.localizedMessage) + '</td></tr>';
-                }
-                var stackTraceTrId = stackTraceTrIdPrefix + i;
-                body += '<tr id="' + stackTraceTrId + '" style="display: none;"><th class="top">Stack Trace:</th><td>';
-                if (e.stackTrace) {
-                    for (var j in e.stackTrace) {
-                        body += '<div>' + l7.Util.escapeHtmlText(e.stackTrace[j]) + '</div>';
+                for (var e = o, i = 0; e != null || e != undefined; e = e.cause, ++i) {
+                    if (e !== o) body += '<tr><th colspan="2" style="background-color: #d0d0d0;">Caused By:</th></tr>';
+                    body += '<tr><th class="top">Exception:</th><td width="100%">' + l7.Util.escapeHtmlText(e.exception) + '</td></tr>';
+                    if (e.message) {
+                        body += '<tr><th class="top">Message:</th><td class="wrap">' + l7.Util.escapeHtmlText(e.message) + '</td></tr>';
                     }
-                } else {
-                    body += '(none)';
+                    if (e.localizedMessage && e.localizedMessage != e.message) {
+                        body += '<tr><th class="top">Localized Message:</th><td class="wrap">' + l7.Util.escapeHtmlText(e.localizedMessage) + '</td></tr>';
+                    }
+                    var stackTraceTrId = stackTraceTrIdPrefix + i;
+                    body += '<tr id="' + stackTraceTrId + '" style="display: none;"><th class="top">Stack Trace:</th><td>';
+                    if (e.stackTrace) {
+                        for (var j in e.stackTrace) {
+                            body += '<div>' + l7.Util.escapeHtmlText(e.stackTrace[j]) + '</div>';
+                        }
+                    } else {
+                        body += '(none)';
+                    }
+                    body += '</td></tr>';
                 }
-                body += '</td></tr>';
+                body +=     '</table>'
+                      + '</div>';
             }
-            body +=     '</table>'
-                  + '</div>';
             l7.Dialog.showErrorDialog(header, body, okText);
         }
 

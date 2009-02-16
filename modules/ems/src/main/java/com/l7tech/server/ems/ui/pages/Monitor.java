@@ -147,7 +147,7 @@ public class Monitor extends EsmStandardWebPage {
                 Map<String, Object> setupSettings = systemMonitoringSetupSettingsManager.findSetupSettings();
                 return toJsonFormat(setupSettings);
             } catch (Exception e) {
-                return new JSONException(new Exception("Cannot load the settings of the system monitoring setup.", e));
+                return new JSONException(e);
             }
         }
 
@@ -179,13 +179,13 @@ public class Monitor extends EsmStandardWebPage {
                     jsonDataObj = JSON.parse(jsonData.toString());
                 } catch(Exception e){
                     logger.log(Level.FINER, "Cannot parse uploaded JSON data", e.getCause());
-                    returnValue = new JSONException(new Exception("Cannot parse uploaded JSON data", e.getCause()));
+                    returnValue = new JSONException(new Exception("Server error: cannot parse uploaded JSON data", e.getCause()));
                     return;
                 }
 
                 if (!(jsonDataObj instanceof Map)) {
                     logger.log(Level.FINER, "Incorrect JSON data. Not convertible to a Map");
-                    returnValue = new JSONException(new Exception("Incorrect JSON data. Not convertible to a Map"));
+                    returnValue = new JSONException(new Exception("Server error: uploaded JSON data is not convertible to a map"));
                     return;
                 }
 
@@ -195,10 +195,10 @@ public class Monitor extends EsmStandardWebPage {
                     Map<String, Object> clusterPropertyFormatMap = toClusterPropertyFormat(jsonFormatMap);
                     systemMonitoringSetupSettingsManager.saveSetupSettings(clusterPropertyFormatMap);
                 } catch (Exception e) {
-                    returnValue = new JSONException(new Exception("Cannot save the system monitoring setup settings.", e));
+                    returnValue = new JSONException(e);
                 }
             } else {
-                returnValue = new JSONException(new IllegalArgumentException("jsonData must be either a JSONException or a JSON formatted String"));
+                returnValue = new JSONException("Server error: jsonData must be either a JSONException or a JSON formatted String");
             }
         }
     }
@@ -231,7 +231,7 @@ public class Monitor extends EsmStandardWebPage {
                 // Return the JSON data back to the browser.
                 return jsonDataMap;
             } catch (Exception e) {
-                return new JSONException(new Exception("Cannot load the system monitoring notification rules.", e));
+                return new JSONException(e);
             }
         }
 
@@ -262,14 +262,14 @@ public class Monitor extends EsmStandardWebPage {
                 try {
                     jsonDataObj = JSON.parse(jsonData.toString());
                 } catch(Exception e){
-                    logger.log(Level.FINER, "Cannot parse uploaded JSON data", e.getCause());
-                    returnValue = new JSONException(new Exception("Cannot parse uploaded JSON data", e.getCause()));
+                    logger.log(Level.FINER, "Cannot parse uploaded JSON data.", e.getCause());
+                    returnValue = new JSONException(new Exception("Server error: cannot parse uploaded JSON data", e.getCause()));
                     return;
                 }
 
                 if (!(jsonDataObj instanceof Map)) {
                     logger.log(Level.FINER, "Incorrect JSON data. Not convertible to a Map");
-                    returnValue = new JSONException(new Exception("Incorrect JSON data. Not convertible to a Map"));
+                    returnValue = new JSONException(new Exception("Server error: uploaded JSON data is not convertible to a map"));
                     return;
                 }
 
@@ -337,7 +337,7 @@ public class Monitor extends EsmStandardWebPage {
                     returnValue = null;
                 }
             } else {
-                returnValue = new JSONException(new IllegalArgumentException("jsonData must be either a JSONException or a JSON formatted String"));
+                returnValue = new JSONException("Server error: jsonData must be either a JSONException or a JSON formatted String");
             }
         }
     }
@@ -436,7 +436,7 @@ public class Monitor extends EsmStandardWebPage {
 
                 return jsonDataMap;
             } catch (Exception e) {
-                return new JSONException(new Exception("Cannot load the settings of the system monitoring setup.", e));
+                return new JSONException(e);
             }
         }
 
@@ -585,14 +585,14 @@ public class Monitor extends EsmStandardWebPage {
                 try {
                     jsonDataObj = JSON.parse(jsonData.toString());
                 } catch(Exception e){
-                    logger.log(Level.FINER, "Cannot parse uploaded JSON data", e.getCause());
-                    returnValue = new JSONException(new Exception("Cannot parse uploaded JSON data", e.getCause()));
+                    logger.log(Level.FINER, "Cannot parse uploaded JSON data.", e.getCause());
+                    returnValue = new JSONException(new Exception("Server error: cannot parse uploaded JSON data", e));
                     return;
                 }
 
                 if (!(jsonDataObj instanceof Map)) {
-                    logger.log(Level.FINER, "Incorrect JSON data. Not convertible to a Map");
-                    returnValue = new JSONException(new Exception("Incorrect JSON data. Not convertible to a Map"));
+                    logger.log(Level.FINER, "Incorrect JSON data. Not convertible to a Map.");
+                    returnValue = new JSONException("Server error: uploaded JSON data is not convertible to a map");
                     return;
                 }
 
@@ -665,7 +665,7 @@ public class Monitor extends EsmStandardWebPage {
                     returnValue = new JSONException(new Exception(errmsg, e));
                 }
             } else {
-                returnValue = new JSONException(new IllegalArgumentException("jsonData must be either a JSONException or a JSON formatted String"));
+                returnValue = new JSONException("Server error: jsonData must be either a JSONException or a JSON formatted String");
             }
         }
     }

@@ -1,25 +1,23 @@
 package com.l7tech.server.ems.ui.pages;
 
-import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.markup.html.IHeaderResponse;
-import org.apache.wicket.markup.html.WicketEventReference;
-import org.apache.wicket.behavior.AbstractAjaxBehavior;
-import org.apache.wicket.ajax.WicketAjaxReference;
+import com.l7tech.server.ems.enterprise.JSONException;
+import com.l7tech.util.IOUtils;
+import org.apache.wicket.IRequestTarget;
 import org.apache.wicket.Page;
 import org.apache.wicket.RequestCycle;
-import org.apache.wicket.IRequestTarget;
-import org.apache.wicket.protocol.http.WebResponse;
+import org.apache.wicket.ajax.WicketAjaxReference;
+import org.apache.wicket.behavior.AbstractAjaxBehavior;
+import org.apache.wicket.markup.html.IHeaderResponse;
+import org.apache.wicket.markup.html.WicketEventReference;
+import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.protocol.http.WebRequest;
+import org.apache.wicket.protocol.http.WebResponse;
 import org.mortbay.util.ajax.JSON;
 
 import javax.servlet.ServletInputStream;
-
-import com.l7tech.util.IOUtils;
-import com.l7tech.server.ems.enterprise.JSONException;
-
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * JSON Post interaction is a component that provides a JavaScript URL to which JSON data can be uploaded as the body
@@ -60,7 +58,7 @@ public class JsonPostInteraction extends Panel {
                         logger.log(Level.FINEST, "Received JSON data: " + input);
                     }
                 } catch (IOException e) {
-                    JSONException jsonException = new JSONException(e.getCause());
+                    JSONException jsonException = new JSONException(e);
                     provider.setData(jsonException);
                 }
 
@@ -83,7 +81,7 @@ public class JsonPostInteraction extends Panel {
                             response.setHeader("Pragma", "no-cache");
                             JsonPostInteraction.this.onRequest( request, response );
                         }
-                });
+                    });
                 } finally {
                      page.setVersioned(isPageVersioned);
                 }
