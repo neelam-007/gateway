@@ -21,6 +21,7 @@ import java.security.cert.*;
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.interfaces.RSAKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateKeySpec;
@@ -276,6 +277,46 @@ public class CertUtils {
         } catch ( CertificateEncodingException e ) {
             return false;
         }
+    }
+
+    /**
+     * Check the specified cert and key and throw an exception if we can tell that the key does not
+     * go with the cert.
+     * <p/>
+     * A successful return does NOT mean the key is guaranteed to match the cert.
+     * This implementation is best-effort, intended only to catch bugs, and <b>MUST NOT</b> be used for any kind of security enforcement.
+     * <p/>
+     * It will currently only detect problems with RSA certs, and only when the modulus is
+     * available for both the key from the cert and the passed-in key.  (The modulus may not be
+     * available in some cases where the Key is backed by an object stored in a PKCS#11 hardware module.)
+     * <p/>
+     * In the future this method may support DSA certs as well, so it is encouraged to call this method
+     * even if you know it's not an RSA cert.
+     *
+     * @param cert a cert to examine.  Required.
+     * @param key a key that is believed either to be the RSA public key from the cert, or the corresponding RSA private key.
+     * @throws java.security.cert.CertificateException if we can tell that the key in question definitely does not go with the specified cert.
+     */
+    public static void checkForMismatchingKey(X509Certificate cert, Key key) throws CertificateException {
+        PublicKey certPublic = cert.getPublicKey();
+
+        boolean certIsRsa = certPublic instanceof RSAKey || "RSA".equalsIgnoreCase(certPublic.getAlgorithm());
+        boolean keyIsRsa = key instanceof RSAKey || "RSA".equalsIgnoreCase(key.getAlgorithm());
+
+        if (certIsRsa != keyIsRsa)
+            throw new CertificateException("The specified key does not belong to the specified certificate.");
+
+        if (!(certPublic instanceof RSAKey) || !(key instanceof RSAKey))
+            return; // can't compare modulus, so can't help you further
+
+        BigInteger rsaKeyMod = ((RSAKey)key).getModulus();
+        BigInteger certKeyMod = ((RSAKey)certPublic).getModulus();
+
+        if (rsaKeyMod == null || certKeyMod == null)
+            return; // we can't help you.  (Plus, normally can't happen.)
+
+        if (!certKeyMod.equals(rsaKeyMod))
+            throw new CertificateException("The specified key's RSA modulus differs from that of the public key in the certificate.");
     }
 
     public static X509Certificate[] parsePemChain(String[] pemChain) throws CertificateException {

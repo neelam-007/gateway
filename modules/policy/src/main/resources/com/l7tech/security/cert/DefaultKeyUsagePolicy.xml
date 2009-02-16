@@ -1,0 +1,41 @@
+<keyusagepolicy xmlns="http://www.layer7tech.com/ws/keyusage">
+
+<!-- Allow a cert with a critical Extended Key Usage allowing "anyExtendedKeyUsage" to be used for any activity
+     (that is also allowed by the critical Key Usage, if also present). -->
+<permit><req>anyExtendedKeyUsage</req></permit>
+
+<!-- For signing some XML with the public key from the cert.
+     This normally would never occur, but if it did, we'd require either digitalSignature or nonRepudiation. -->
+<permit action="signXml"><req>digitalSignature</req></permit>
+<permit action="signXml"><req>nonRepudiation</req></permit>
+
+<!-- For verifying some XML signed with the public key from the cert.
+     We'll allow if either digitalSignature or nonRepudiation is enabled. -->
+<permit action="verifyXml"><req>digitalSignature</req></permit>
+<permit action="verifyXml"><req>nonRepudiation</req></permit>
+
+<!-- Encrypting XML with the public key from this certificate, encrypted for its corresponding private key.
+     We must be permitted to use the public key for keyEncipherment. -->
+<permit action="encryptXml"><req>keyEncipherment</req></permit>
+
+<!-- For decrypting some XML encrypted for the certified public key, encrypted with the corresponding private key.
+     This normally would never occur, but if it did, we'd require keyEncipherment. -->
+<permit action="decryptXml"><req>keyEncipherment</req></permit>
+
+<!-- Default key usage requirements for remote SSL server certs are permissive, to permit various cipher suites. -->
+<permit action="sslServerRemote"><req>keyEncipherment</req></permit>
+<permit action="sslServerRemote"><req>keyAgreement</req></permit>
+<permit action="sslServerRemote"><req>id-kp-serverAuth</req></permit>
+
+<!-- Default key usage requirements for remote SSL client certs are permissive, to permit various cipher suites. -->
+<permit action="sslClientRemote"><req>digitalSignature</req></permit>
+<permit action="sslClientRemote"><req>nonRepudiation</req></permit>
+<permit action="sslClientRemote"><req>1.3.6.1.5.5.7.3.2</req></permit>
+
+<!-- Allow use of public key to verify a client cert signed by this cert if it enables keyCertSign. -->
+<permit action="verifyClientCert"><req>keyCertSign</req></permit>
+
+<!-- Trust a signed CRL only if the signing cert allows the cRLSign key usage -->
+<permit action="verifyCrl"><req>cRLSign</req></permit>
+
+</keyusagepolicy>
