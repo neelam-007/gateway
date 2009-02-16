@@ -234,6 +234,9 @@ public class Configure extends EsmStandardWebPage {
                     enterpriseFolderManager.deleteByGuid(deletedFolderGuid);
                     return null;    // No response object expected if successful.
                 } catch (Exception e) {
+                    if (ExceptionUtils.causedBy(e, NonEmptyFolderDeletionException.class)) {
+                        return new JSONException(e.getMessage());
+                    }
                     logger.warning(e.toString());
                     return new JSONException(e);
                 }
