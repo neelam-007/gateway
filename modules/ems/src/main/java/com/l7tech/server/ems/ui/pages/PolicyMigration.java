@@ -1070,7 +1070,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             if ( validatedHeaders == null ) validatedHeaders = Collections.emptyList();
             Set<Pair<DependencyKey,String>> keysToNull = new HashSet<Pair<DependencyKey, String>>();
             for( Map.Entry<Pair<DependencyKey,String>,Pair<DependencyItem,Boolean>> entry : mappingModel.dependencyMap.entrySet() ) {
-                if ( entry.getValue() == null || entry.getValue().left == null || !entry.getKey().right.equals(targetClusterId)) continue;
+                if ( !entry.getKey().right.equals(targetClusterId) || entry.getValue() == null || entry.getValue().left == null || entry.getValue().right) continue;
                 if ( !validatedHeaders.contains( entry.getValue().left.asEntityHeader() )) {
                     keysToNull.add( entry.getKey() );
                 }
