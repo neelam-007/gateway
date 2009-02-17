@@ -84,6 +84,7 @@
                 OK : 'OK',
                 CANCEL : 'Cancel',
                 ERROR : 'Error',
+                SESSION_TIMEOUT : 'Your session has timed out.',
                 CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server.',
                 CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Unable to retrieve data for establishing trust by SSG Cluster from the server.',
                 CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT : 'Unable to retrieve data for mapping access account from the server.',
@@ -213,7 +214,7 @@
                         launchMapAccessAccountDialog(entity);
                     }
                 } else {
-                    YAHOO.log('No trust action for entity type: ' + entity.type, 'error', 'Configure.html');
+                    YAHOO.log('No trust action for entity type: ' + entity.type, 'error', 'PolicyMigration.html');
                 }
             };
 
@@ -353,7 +354,7 @@
                             document.getElementById('ssgClusterTrustForm_returnurl').value = baseURL + '?clusterguid=' + o.argument.id;
                             document.getElementById('ssgClusterTrustForm_esmToken').value = result.json.token;
                             document.getElementById('ssgClusterTrustForm').action = 'https://' + o.argument.hostName + ':' + o.argument.port + '/ssg/esmtrust?esmtrust=1';
-                            document.getElementById('ssgClusterTrustDialog_name').innerHTML = o.argument.name;
+                            document.getElementById('ssgClusterTrustDialog_name').innerHTML = l7.Util.escapeHtmlText(o.argument.name);
                             ssgClusterTrustDialog.center();
                             ssgClusterTrustDialog.show();
                         }
@@ -395,7 +396,7 @@
                             document.getElementById('mapAccessAccountForm_esmToken').value = result.json.token;
                             document.getElementById('mapAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
                             document.getElementById('mapAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/esmtrust';
-                            document.getElementById('mapAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
+                            document.getElementById('mapAccessAccountDialog_ssgClusterName').innerHTML = l7.Util.escapeHtmlText(entity.name);
                             mapAccessAccountDialog.center();
                             mapAccessAccountDialog.show();
                         }
@@ -432,7 +433,7 @@
                             document.getElementById('changeAccessAccountForm_esmToken').value = result.json.token;
                             document.getElementById('changeAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
                             document.getElementById('changeAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/esmtrust';
-                            document.getElementById('changeAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
+                            document.getElementById('changeAccessAccountDialog_ssgClusterName').innerHTML = l7.Util.escapeHtmlText(entity.name);
                             changeAccessAccountDialog.center();
                             changeAccessAccountDialog.show();
                         }

@@ -585,7 +585,7 @@ if (!l7.EntityTreeTable) {
                     entity.type == l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS) {
                     name.style.fontStyle = 'italic';
                 }
-                name.innerHTML = entity.name;
+                name.innerHTML = l7.Util.escapeHtmlText(entity.name);
                 td.appendChild(name);
                 entity._nameSpan = name;
             }
@@ -664,23 +664,23 @@ if (!l7.EntityTreeTable) {
              */
             this._initTypeCell = function(td, entity) {
                 if (entity.type == l7.Constants.ENTITY_TYPE.ENTERPRISE_FOLDER) {
-                    td.innerHTML = this._localizedStrings.ENTERPRISE_FOLDER;
+                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.ENTERPRISE_FOLDER);
                 } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_CLUSTER) {
-                    td.innerHTML = this._localizedStrings.SSG_CLUSTER;
+                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.SSG_CLUSTER);
                 } else if (entity.type == l7.Constants.ENTITY_TYPE.SSG_NODE) {
-                    td.innerHTML = this._localizedStrings.SSG_NODE;
+                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.SSG_NODE);
                 } else if (entity.type == l7.Constants.ENTITY_TYPE.SERVICE_FOLDER) {
-                    td.innerHTML = this._localizedStrings.SERVICE_FOLDER;
+                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.SERVICE_FOLDER);
                 } else if (entity.type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE) {
-                    td.innerHTML = this._localizedStrings.PUBLISHED_SERVICE;
+                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.PUBLISHED_SERVICE);
                 } else if (entity.type == l7.Constants.ENTITY_TYPE.PUBLISHED_SERVICE_ALIAS) {
-                    td.innerHTML = this._localizedStrings.PUBLISHED_SERVICE_ALIAS;
+                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.PUBLISHED_SERVICE_ALIAS);
                 } else if (entity.type == l7.Constants.ENTITY_TYPE.OPERATION) {
-                    td.innerHTML = this._localizedStrings.OPERATION;
+                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.OPERATION);
                 } else if (entity.type == l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT) {
-                    td.innerHTML = this._localizedStrings.POLICY_FRAGMENT;
+                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.POLICY_FRAGMENT);
                 } else if (entity.type == l7.Constants.ENTITY_TYPE.POLICY_FRAGMENT_ALIAS) {
-                    td.innerHTML = this._localizedStrings.POLICY_FRAGMENT_ALIAS;
+                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.POLICY_FRAGMENT_ALIAS);
                 }
             }
 
@@ -693,7 +693,7 @@ if (!l7.EntityTreeTable) {
             this._initVersionCell = function(td, entity) {
                 if (entity.version != undefined) {
                     td.className = l7.Util.isIntString(entity.version) ? 'right' : 'left';
-                    td.innerHTML = entity.version;
+                    td.innerHTML = l7.Util.escapeHtmlText(entity.version);
                 }
             }
 
@@ -894,7 +894,7 @@ if (!l7.EntityTreeTable) {
                 var entity = this._entitiesById[entityId];
                 var span = entity._nameSpan;
                 if (span != undefined) {
-                    span.innerHTML = name;
+                    span.innerHTML = l7.Util.escapeHtmlText(name);
                     return true;
                 }
                 return false;
@@ -1445,9 +1445,9 @@ if (!l7.EntityTreeTable) {
                 var td = tr.insertCell(-1);
                 td.colSpan = this._config.columns.length;
                 if (message) {
-                    td.innerHTML = message;
+                    td.innerHTML = l7.Util.escapeHtmlText(message);
                 } else {
-                    td.innerHTML = this._localizedStrings.ENTITY_DATA_ERROR;
+                    td.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.ENTITY_DATA_ERROR);
                 }
             }
 

@@ -41,14 +41,13 @@
         var localizedStrings = {
             REPORT_TYPE_PERFORMANCE : 'Performance Statistics',
             REPORT_TYPE_USAGE : 'Usage Report',
-            SAVE_DEFAULT_BUTTON_LABEL : 'Save Settings as Default for &ldquo;{0}&rdquo;',
             PUBLISHED_SERVICE_S : 'Published Service(s)',
             OPERATION_S : 'Operation(s)',
             ADD_ENTITY_BUTTON_LABEL : 'Add Checked {0}',
             REMOVE : 'Remove',
-            LOADING_SAVED_SETTINGS : "Loading settings &ldquo;{0}&rdquo;...",
-            SETTINGS_SAVED_TITLE : "Settings Saved",
-            SETTINGS_SAVED : "Settings is saved successfully.",
+            LOADING_SAVED_SETTINGS : 'Loading settings "{0}"...',
+            SETTINGS_SAVED_TITLE : 'Settings Saved',
+            SETTINGS_SAVED : 'Settings is saved successfully.',
             OK : 'OK',
             CANCEL : 'Cancel',
             YES : 'Yes',
@@ -60,16 +59,16 @@
             CANNOT_GET_DATA_TO_ESTABLISH_TRUST : 'Unable to retrieve data for establishing trust by SSG Cluster from the server.',
             CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT : 'Unable to retrieve data for mapping access account from the server.',
             CANNOT_SAVE_SETTINGS : 'Unable to save settings.',
-            CANNOT_DELETE_SETTINGS : 'Unable to delete settings &ldquo;{0}&rdquo;.',
+            CANNOT_DELETE_SETTINGS : 'Unable to delete settings "{0}".',
             CANNOT_DOWNLOAD_SAVED_SETTINGS_LIST : 'Unable to retrieve list of saved settings from the server.',
-            CANNOT_DOWNLOAD_SAVED_SETTINGS : 'Unable to retrieve saved settings &ldquo;{0}&rdquo; from the server.',
+            CANNOT_DOWNLOAD_SAVED_SETTINGS : 'Unable to retrieve saved settings "{0}" from the server.',
             DOWNLOAD_SAVED_SETTINGS_WARNING : 'Saved settings has been loaded but with problem:',
             CANNOT_DOWNLOAD_MESSAGE_CONTEXT_LIST : 'Unable to retrieve list of message context keys for the selected SSG Clusters from the server.',
             SSG_CLUSTER_NOT_APPLICABLE : 'None of the selected entities belong to this SSG Cluster. Please delete or reselect.',
             TOO_MANY_UNIQUE_MESSAGE_CONTEXT_KEYS : 'Cannot use more than 5 unique message context keys per SSG cluster',
             INVALID_GROUPINGS_REMOVED : 'Some groupings in this settings have been removed because they no longer applies.',
-            SSG_CLUSTER_NOT_EXIST : 'SSG Cluster &ldquo;{0}&rdquo; does not exist.',
-            MESSAGE_CONTEXT_KEY_NOT_EXIST : 'Message context key &ldquo;{0}&rdquo; does not exist in SSG Cluster &ldquo;{1}&rdquo;.',
+            SSG_CLUSTER_NOT_EXIST : 'SSG Cluster "{0}" does not exist.',
+            MESSAGE_CONTEXT_KEY_NOT_EXIST : 'Message context key "{0}" does not exist in SSG Cluster &ldquo;{1}&rdquo;.',
             STANDARD_MESSAGE_CONTEXT_MAPPING : 'Standard Mapping',
             CUSTOM_MESSAGE_CONTEXT_MAPPING : 'Custom Mapping',
             RELATIVE_TIME_PERIOD_HINT : 'Must be positive integer',
@@ -422,7 +421,7 @@
                 relativeTimePeriodHint.innerHTML = '';
             } else {
                 l7.Util.addClass(relativeTimePeriodTextBox, 'invalid');
-                relativeTimePeriodHint.innerHTML = '(' + localizedStrings.RELATIVE_TIME_PERIOD_HINT + ')';
+                relativeTimePeriodHint.innerHTML = l7.Util.escapeHtmlText('(' + localizedStrings.RELATIVE_TIME_PERIOD_HINT + ')');
             }
             updateSaveSettingsButton();
             updateGenerateButton();
@@ -472,7 +471,7 @@
                 timeIntervalHint.innerHTML = '';
             } else {
                l7.Util.addClass(timeIntervalTextBox, 'invalid');
-                timeIntervalHint.innerHTML = '(' + localizedStrings.TIME_INTERVAL_HINT + ')';
+                timeIntervalHint.innerHTML = l7.Util.escapeHtmlText('(' + localizedStrings.TIME_INTERVAL_HINT + ')');
             }
 
             timeIntervalTextBox.disabled = !hasTimeIntervalRadioButton.checked;
@@ -585,14 +584,14 @@
             // SSG Cluster column.
             td = tr.insertCell(-1);
             if (ssgClusterAncestors != undefined) {
-                td.innerHTML = ssgClusterAncestors.join(' / ') + ' / ' + ssgClusterName;
+                td.innerHTML = l7.Util.escapeHtmlText(ssgClusterAncestors.join(' / ') + ' / ' + ssgClusterName);
             } else {
-                td.innerHTML = ssgClusterName;
+                td.innerHTML = l7.Util.escapeHtmlText(ssgClusterName);
             }
 
             // Published Service column.
             td = tr.insertCell(-1);
-            td.innerHTML = publishedServiceName;
+            td.innerHTML = l7.Util.escapeHtmlText(publishedServiceName);
             if (relatedId != undefined) { // the selected entity is either a published service alias or an operation inside a published service alias
                 td.style.fontStyle = 'italic';
             }
@@ -603,7 +602,7 @@
             // Operation column.
             td = tr.insertCell(-1);
             if (operation) {
-                td.innerHTML = operation;
+                td.innerHTML = l7.Util.escapeHtmlText(operation);
                 tr._operation = operation;  // Stash away for later retrieval.
             } else {
                 td.className = 'notApplicable';
@@ -897,7 +896,7 @@
                         for (var i = 0; i < settings.length; ++i) {
                             var option = document.createElement('option');
                             option.value = settings[i].id
-                            option.innerHTML = settings[i].name;
+                            option.innerHTML = l7.Util.escapeHtmlText(settings[i].name);
                             settingsListDropDown.appendChild(option); // Note: HTMLSelectElement.add(option, null) doesn't work in IE7.
                         }
                     }
@@ -969,7 +968,7 @@
                         document.getElementById('ssgClusterTrustForm_returnurl').value = baseURL + '?clusterguid=' + o.argument.id;
                         document.getElementById('ssgClusterTrustForm_esmToken').value = result.json.token;
                         document.getElementById('ssgClusterTrustForm').action = 'https://' + o.argument.hostName + ':' + o.argument.port + '/ssg/esmtrust?esmtrust=1';
-                        document.getElementById('ssgClusterTrustDialog_name').innerHTML = o.argument.name;
+                        document.getElementById('ssgClusterTrustDialog_name').innerHTML = l7.Util.escapeHtmlText(o.argument.name);
                         ssgClusterTrustDialog.center();
                         ssgClusterTrustDialog.show();
                     }
@@ -1011,7 +1010,7 @@
                         document.getElementById('mapAccessAccountForm_esmToken').value = result.json.token;
                         document.getElementById('mapAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
                         document.getElementById('mapAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/esmtrust';
-                        document.getElementById('mapAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
+                        document.getElementById('mapAccessAccountDialog_ssgClusterName').innerHTML = l7.Util.escapeHtmlText(entity.name);
                         mapAccessAccountDialog.center();
                         mapAccessAccountDialog.show();
                     }
@@ -1048,7 +1047,7 @@
                         document.getElementById('changeAccessAccountForm_esmToken').value = result.json.token;
                         document.getElementById('changeAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
                         document.getElementById('changeAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/esmtrust';
-                        document.getElementById('changeAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
+                        document.getElementById('changeAccessAccountDialog_ssgClusterName').innerHTML = l7.Util.escapeHtmlText(entity.name);
                         changeAccessAccountDialog.center();
                         changeAccessAccountDialog.show();
                     }
@@ -1121,9 +1120,9 @@
                         var option = document.createElement('option');
                         option.value = entity.id;
                         if (entity.ancestors) {
-                            option.innerHTML = entity.ancestors.join(' / ') + ' / ' +  entity.name;
+                            option.innerHTML = l7.Util.escapeHtmlText(entity.ancestors.join(' / ') + ' / ' +  entity.name);
                         } else {
-                            option.innerHTML = entity.name;
+                            option.innerHTML = l7.Util.escapeHtmlText(entity.name);
                         }
                         option.disabled = !l7.Util.arrayContains(ssgClusterIdsWithSelectedEntities, option.value);
                         dropDown.appendChild(option);
@@ -1164,7 +1163,7 @@
                     for (var j = 0; j < messageContext.standard.length; ++j) {
                         var option = document.createElement('option');
                         option.value = messageContext.standard[j];
-                        option.innerHTML = messageContext.standard[j];
+                        option.innerHTML = l7.Util.escapeHtmlText(messageContext.standard[j]);
                         optGroup.appendChild(option);
                     }
 
@@ -1175,7 +1174,7 @@
                         for (j = 0; j < messageContext.custom.length; ++j) {
                             option = document.createElement('option');
                             option.value = messageContext.custom[j];
-                            option.innerHTML = messageContext.custom[j];
+                            option.innerHTML = l7.Util.escapeHtmlText(messageContext.custom[j]);
                             optGroup.appendChild(option);
                         }
                     }
@@ -1428,7 +1427,7 @@
                     launchMapAccessAccountDialog(entity);
                 }
             } else {
-                YAHOO.log('No trust action for entity type: ' + entity.type, 'error', 'Configure.html');
+                YAHOO.log('No trust action for entity type: ' + entity.type, 'error', 'StandardReports.html');
             }
         };
 

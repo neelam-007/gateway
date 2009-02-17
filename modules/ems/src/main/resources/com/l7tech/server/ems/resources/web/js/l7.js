@@ -1010,7 +1010,7 @@ if (!l7.Widget) {
 
             var dialogHeadDiv = document.createElement('div');
             dialogHeadDiv.className = 'hd';
-            dialogHeadDiv.innerHTML = title == null ? 'Choose a date:' : title;
+            dialogHeadDiv.innerHTML = l7.Util.escapeHtmlText(title == null ? 'Choose a date:' : title);
 
             var dialogBodyDiv = document.createElement('div');
             dialogBodyDiv.className = 'bd';

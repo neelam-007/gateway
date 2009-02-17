@@ -254,15 +254,6 @@
          */
         var entityTreeTable;
 
-        function showHideLogReader() {
-            var debugLogReader = document.getElementById('debugLogReader');
-            if (debugLogReader.style.display == '') {
-                debugLogReader.style.display = 'none';
-            } else {
-                debugLogReader.style.display = '';
-            }
-        }
-
         /**
          * @param {string} type     an l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY value
          * @return {string} localized string
@@ -797,7 +788,7 @@
          */
         function onClickAddOrEditNotificationRuleButton(event, args) {
             var isAdd = args.isAdd;
-            notifDlg_titleLabel.innerHTML = isAdd ? localizedStrings.ADD_NOTIFICATION_RULE : localizedStrings.EDIT_NOTIFICATION_RULE;
+            notifDlg_titleLabel.innerHTML = l7.Util.escapeHtmlText(isAdd ? localizedStrings.ADD_NOTIFICATION_RULE : localizedStrings.EDIT_NOTIFICATION_RULE);
 
             // First, clears all input fields.
             var textBoxes = l7.Util.getElementsById('notifDlg_.+TextBox', 'addOrEditNotificationRuleDialog', 'input');
@@ -954,7 +945,7 @@
                 monDlg_entityTypeLabel.innerHTML = entityTreeTableLocalizedStrings.SSG_NODE;
             }
 
-            monDlg_entityPathLabel.innerHTML = settings.entity.ancestors.join(' / ') + ' / ' +  settings.entity.name;
+            monDlg_entityPathLabel.innerHTML = l7.Util.escapeHtmlText(settings.entity.ancestors.join(' / ') + ' / ' +  settings.entity.name);
             monDlg_propertyLabel.innerHTML = getMonitoringPropertyTypeLocalizedStrings(propertyType);
             monDlg_enabledCheckBox.checked = settings.monitoringEnabled;
             monDlg_samplingIntervalLabel.innerHTML = currentSetup.propertySetup[propertyType].samplingInterval;
@@ -984,7 +975,7 @@
                 for (var i = 0; i < availableNotificationRules.length; ++i) {
                     var option = document.createElement('option');
                     option.value = availableNotificationRules[i].id;
-                    option.innerHTML = availableNotificationRules[i].name;
+                    option.innerHTML = l7.Util.escapeHtmlText(availableNotificationRules[i].name);
                     if (l7.Util.findArrayElementsByProperty(settings.notificationRules, 'id', option.value).length == 1) {
                         option.selected = true;
                     }
@@ -1096,7 +1087,7 @@
                 var tr = tbody.insertRow(-1);
                 var td = tr.insertCell(-1);
                 td.colSpan = entityTreeTable._config.columns.length;
-                td.innerHTML = localizedStrings.ENTITY_DATA_ERROR;
+                td.innerHTML = l7.Util.escapeHtmlText(localizedStrings.ENTITY_DATA_ERROR);
             }
 
             var callback = {
@@ -1383,9 +1374,6 @@
         }
 
         function init() {
-            var debugLogReader = new YAHOO.widget.LogReader('debugLogReader');
-            debugLogReader.hide();   // Initially hidden.
-
             // Precomputes UI element references for efficiency.
             monitoringSetup = document.getElementById('monitoringSetup');
 

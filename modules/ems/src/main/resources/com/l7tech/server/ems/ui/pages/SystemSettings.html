@@ -25,9 +25,6 @@
         /** Localized warning text for session timeout field. */
         var SESSION_TIMEOUT_HINT = 'Must be positive integer';
 
-        /** Localized warning text for max. no. dashboards field. */
-        var MAX_NUM_DASHBOARDS_HINT = 'Must be positive integer';
-
         /** YAHOO.widget.SimpleDialog for displaying warning messages. */
         var warningDialog;
 
@@ -54,21 +51,10 @@
                 document.getElementById('timeoutHint').innerHTML = '';
             } else {
                 YAHOO.util.Dom.addClass(timeoutTextBox, 'invalid');
-                document.getElementById('timeoutHint').innerHTML = '(' + SESSION_TIMEOUT_HINT + ')';
+                document.getElementById('timeoutHint').innerHTML = l7.Util.escapeHtmlText('(' + SESSION_TIMEOUT_HINT + ')');
             }
 
-            var maxNumDashboardsTextBox = document.getElementById('maxNumDashboards');
-            var maxNumDashboards = maxNumDashboardsTextBox.value;
-            var maxNumDashboardsValid = l7.Util.isIntString(maxNumDashboards) && maxNumDashboards >= 0;
-            if (maxNumDashboardsValid) {
-                YAHOO.util.Dom.removeClass(maxNumDashboardsTextBox, 'invalid');
-                document.getElementById('maxNumDashboardsHint').innerHTML = '';
-            } else {
-                YAHOO.util.Dom.addClass(maxNumDashboardsTextBox, 'invalid');
-                document.getElementById('maxNumDashboardsHint').innerHTML = '(' + MAX_NUM_DASHBOARDS_HINT + ')';
-            }
-
-            globalSettingsButton.set('disabled', !timeoutValid || !maxNumDashboardsValid);
+            globalSettingsButton.set('disabled', !timeoutValid);
         }
     </script>
 </head>

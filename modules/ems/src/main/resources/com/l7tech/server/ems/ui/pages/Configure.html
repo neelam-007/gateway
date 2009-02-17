@@ -97,8 +97,8 @@
                 INVALID_NAME_LEADING_SPACES : 'leading spaces not allowed',
                 INVALID_NAME_TRAILING_SPACES : 'trailing spaces not allowed',
                 SSG_CLUSTER_PORT_HINT : 'port number must be a positive integer',
-                STARTING_SSG_NODE : 'Starting SSG Node &ldquo;{0}&rdquo;...',
-                STOPPING_SSG_NODE : 'Stopping SSG Node &ldquo;{0}&rdquo;...',
+                STARTING_SSG_NODE : 'Starting SSG Node "{0}"...',
+                STOPPING_SSG_NODE : 'Stopping SSG Node "{0}"...',
                 CANNOT_ADD_FOLDER : 'Unable to add folder.',
                 CANNOT_EDIT_FOLDER : 'Unable to edit folder.',
                 CANNOT_DELETE_FOLDER : 'Unable to delete folder.',
@@ -108,7 +108,7 @@
                 WARN_MOVE_NO_CHANGE : 'Same as current parent folder.',
                 WARN_MOVE_FOLDER_INTO_SELF : 'Cannot move a folder to inside itself.',
                 WARN_MOVE_FOLDER_INTO_DESCENDENT : 'Cannot move a folder into its own descendent folder.',
-                CANNOT_MOVE: 'Unable to move {0} &ldquo;{1}&rdquo;.',
+                CANNOT_MOVE: 'Unable to move {0} "{1}".',
                 CANNOT_DELETE_SSG_CLUSTER : 'Unable to delete SSG Cluster.',
                 CANNOT_START_SSG_NODE : 'Unable to start SSG Node.',
                 CANNOT_STOP_SSG_NODE : 'Unable to stop SSG Node.'
@@ -586,7 +586,7 @@
                     document.getElementById('addFolderDialog_name_hint').innerHTML = '';
                 } else if (name.length != 0) {
                     YAHOO.util.Dom.addClass(nameTextBox, 'invalid');
-                    document.getElementById('addFolderDialog_name_hint').innerHTML = '(' + errMsg + ')';
+                    document.getElementById('addFolderDialog_name_hint').innerHTML = l7.Util.escapeHtmlText('(' + errMsg + ')');
                 }
 
                 var okButton = addFolderDialog.getButtons()[0];
@@ -607,7 +607,7 @@
                     document.getElementById('editFolderDialog_name_hint').innerHTML = '';
                 } else if (name.length != 0) {
                     YAHOO.util.Dom.addClass(nameTextBox, 'invalid');
-                    document.getElementById('editFolderDialog_name_hint').innerHTML = '(' + errMsg + ')';
+                    document.getElementById('editFolderDialog_name_hint').innerHTML = l7.Util.escapeHtmlText('(' + errMsg + ')');
                 }
 
                 var okButton = editFolderDialog.getButtons()[0];
@@ -666,7 +666,7 @@
                     document.getElementById('addSSGClusterDialog_name_hint').innerHTML = '';
                 } else if (name.length != 0) {
                     YAHOO.util.Dom.addClass(nameTextBox, 'invalid');
-                    document.getElementById('addSSGClusterDialog_name_hint').innerHTML = '(' + errMsg + ')';
+                    document.getElementById('addSSGClusterDialog_name_hint').innerHTML = l7.Util.escapeHtmlText('(' + errMsg + ')');
                 }
 
                 var hostNameIsValid = document.getElementById('addSSGClusterDialog_hostName').value.length > 0;
@@ -679,7 +679,7 @@
                     document.getElementById('addSSGClusterDialog_port_hint').innerHTML = '';
                 } else if (port.length != 0) {
                     YAHOO.util.Dom.addClass(portTextBox, 'invalid');
-                    document.getElementById('addSSGClusterDialog_port_hint').innerHTML = '(' + localizedStrings.SSG_CLUSTER_PORT_HINT + ')';
+                    document.getElementById('addSSGClusterDialog_port_hint').innerHTML = l7.Util.escapeHtmlText('(' + localizedStrings.SSG_CLUSTER_PORT_HINT + ')');
                 }
 
                 var okButton = addSSGClusterDialog.getButtons()[0];
@@ -700,7 +700,7 @@
                     document.getElementById('editSSGClusterDialog_name_hint').innerHTML = '';
                 } else if (name.length != 0) {
                     YAHOO.util.Dom.addClass(nameTextBox, 'invalid');
-                    document.getElementById('editSSGClusterDialog_name_hint').innerHTML = '(' + errMsg + ')';
+                    document.getElementById('editSSGClusterDialog_name_hint').innerHTML = l7.Util.escapeHtmlText('(' + errMsg + ')');
                 }
 
                 var hostNameIsValid = document.getElementById('editSSGClusterDialog_sslHostname').value.length > 0;
@@ -713,7 +713,7 @@
                     document.getElementById('editSSGClusterDialog_port_hint').innerHTML = '';
                 } else if (port.length != 0) {
                     YAHOO.util.Dom.addClass(portTextBox, 'invalid');
-                    document.getElementById('editSSGClusterDialog_port_hint').innerHTML = '(' + localizedStrings.SSG_CLUSTER_PORT_HINT + ')';
+                    document.getElementById('editSSGClusterDialog_port_hint').innerHTML = l7.Util.escapeHtmlText('(' + localizedStrings.SSG_CLUSTER_PORT_HINT + ')');
                 }
 
                 var okButton = editSSGClusterDialog.getButtons()[0];
@@ -878,9 +878,10 @@
                 });
                 moveFolderDialog.render();
                 moveFolderDialog.callback.success = function(o) {
+                    var entity = moveFolderDialog_entityTreeTable.getHighlightedEntity();
                     var result = l7.Connection.parseJsonResponse(o,
                                                                  true,
-                                                                 l7.Util.formatMessage(localizedStrings.CANNOT_MOVE, getEntityTypeLocalizedStrings(moveFolderDialog_entityTreeTable.getHighlightedEntity().type), moveFolderDialog_entityTreeTable.getHighlightedEntity().name),
+                                                                 l7.Util.formatMessage(localizedStrings.CANNOT_MOVE, getEntityTypeLocalizedStrings(entity.type), entity.name),
                                                                  localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                                                                  localizedStrings.SESSION_TIMEOUT,
                                                                  localizedStrings.ERROR,
@@ -891,7 +892,8 @@
                     }
                 }
                 moveFolderDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, l7.Util.formatMessage(localizedStrings.CANNOT_MOVE, getEntityTypeLocalizedStrings(moveFolderDialog_entityTreeTable.getHighlightedEntity().type), moveFolderDialog_entityTreeTable.getHighlightedEntity().name) + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
+                    var entity = moveFolderDialog_entityTreeTable.getHighlightedEntity();
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, l7.Util.formatMessage(localizedStrings.CANNOT_MOVE, getEntityTypeLocalizedStrings(entity.type), entity.name) + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -1069,9 +1071,10 @@
                 });
                 moveSSGClusterDialog.render();
                 moveSSGClusterDialog.callback.success = function(o) {
+                    var entity = moveSSGClusterDialog_entityTreeTable.getHighlightedEntity();
                     var result = l7.Connection.parseJsonResponse(o,
                                                                  true,
-                                                                 l7.Util.formatMessage(localizedStrings.CANNOT_MOVE, getEntityTypeLocalizedStrings(moveSSGClusterDialog_entityTreeTable.getHighlightedEntity().type), moveSSGClusterDialog_entityTreeTable.getHighlightedEntity().name),
+                                                                 l7.Util.formatMessage(localizedStrings.CANNOT_MOVE, getEntityTypeLocalizedStrings(entity.type), entity.name),
                                                                  localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                                                                  localizedStrings.SESSION_TIMEOUT,
                                                                  localizedStrings.ERROR,
@@ -1082,7 +1085,8 @@
                     }
                 }
                 moveSSGClusterDialog.callback.failure = function(o) {
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, l7.Util.formatMessage(localizedStrings.CANNOT_MOVE, getEntityTypeLocalizedStrings(moveSSGClusterDialog_entityTreeTable.getHighlightedEntity().type), moveSSGClusterDialog_entityTreeTable.getHighlightedEntity().name) + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
+                    var entity = moveSSGClusterDialog_entityTreeTable.getHighlightedEntity();
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, l7.Util.formatMessage(localizedStrings.CANNOT_MOVE, getEntityTypeLocalizedStrings(entity.type), entity.name) + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             }
 
@@ -1294,7 +1298,7 @@
                             document.getElementById('ssgClusterTrustForm_returnurl').value = baseURL + '?clusterguid=' + o.argument.id;
                             document.getElementById('ssgClusterTrustForm_esmToken').value = result.json.token;
                             document.getElementById('ssgClusterTrustForm').action = 'https://' + o.argument.hostName + ':' + o.argument.port + '/ssg/esmtrust?esmtrust=1';
-                            document.getElementById('ssgClusterTrustDialog_name').innerHTML = o.argument.name;
+                            document.getElementById('ssgClusterTrustDialog_name').innerHTML = l7.Util.escapeHtmlText(o.argument.name);
                             ssgClusterTrustDialog.center();
                             ssgClusterTrustDialog.show();
                         }
@@ -1336,7 +1340,7 @@
                             document.getElementById('mapAccessAccountForm_esmToken').value = result.json.token;
                             document.getElementById('mapAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
                             document.getElementById('mapAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/esmtrust';
-                            document.getElementById('mapAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
+                            document.getElementById('mapAccessAccountDialog_ssgClusterName').innerHTML = l7.Util.escapeHtmlText(entity.name);
                             mapAccessAccountDialog.center();
                             mapAccessAccountDialog.show();
                         }
@@ -1373,7 +1377,7 @@
                             document.getElementById('changeAccessAccountForm_esmToken').value = result.json.token;
                             document.getElementById('changeAccessAccountForm_returnurl').value = document.URL + '?clusterguid=' + entity.id;
                             document.getElementById('changeAccessAccountForm').action = 'https://' + entity.sslHostName + ':' + entity.adminPort + '/ssg/esmtrust';
-                            document.getElementById('changeAccessAccountDialog_ssgClusterName').innerHTML = entity.name;
+                            document.getElementById('changeAccessAccountDialog_ssgClusterName').innerHTML = l7.Util.escapeHtmlText(entity.name);
                             changeAccessAccountDialog.center();
                             changeAccessAccountDialog.show();
                         }
@@ -1525,9 +1529,6 @@
             }
 
             function init() {
-                var debugLogReader = new YAHOO.widget.LogReader('debugLogReader');
-                debugLogReader.hide();   // Initially hidden.
-
                 initDialogs();
                 initToolbar();
                 initContextMenu();

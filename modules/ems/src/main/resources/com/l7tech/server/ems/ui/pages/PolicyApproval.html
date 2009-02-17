@@ -74,15 +74,6 @@
         var rejectButton;
         var destSSGClusterContentSelectorWindow;
 
-        function showHideLogReader() {
-            var debugLogReader = document.getElementById('debugLogReader');
-            if (debugLogReader.style.display == '') {
-                debugLogReader.style.display = 'none';
-            } else {
-                debugLogReader.style.display = '';
-            }
-        }
-
         function onClickApprove() {
             // TODO
         }
@@ -150,9 +141,6 @@
         }
 
         function init() {
-            var debugLogReader = new YAHOO.widget.LogReader('debugLogReader');
-            debugLogReader.hide();   // Initially hidden.
-
             destSSGClusterContentSelectorWindow = document.getElementById('destSSGClusterContentSelector').contentWindow;
 
             initButtons();
