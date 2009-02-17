@@ -93,7 +93,11 @@ public class AuditLogFormatter<REC extends AuditRecord> {
         PolicyEnforcementContext pec = PolicyEnforcementContext.getCurrent();
         if (pec != null && pec.getService() != null) {
             this.serviceOid = (pec.getService().getOidAsLong() != null ? pec.getService().getOidAsLong().toString() : "");
-            this.serviceName = MessageFormat.format("{0} [{1}]", new String[] { pec.getService().getName(), pec.getService().getRoutingUri() });
+            if ( pec.getService().getRoutingUri() == null ) {
+                this.serviceName = pec.getService().getName();
+            } else {
+                this.serviceName = MessageFormat.format("{0} [{1}]", new String[] { pec.getService().getName(), pec.getService().getRoutingUri() });
+            }
         } else {
             this.serviceOid = "";
             this.serviceName = "";
@@ -288,14 +292,17 @@ public class AuditLogFormatter<REC extends AuditRecord> {
      *
      */
     private class DummyAuditor implements Audit {
+        @Override
         public void logAndAudit(AuditDetailMessage msg, String[] params, Throwable e) {
             // do nothing impl
         }
 
+        @Override
         public void logAndAudit(AuditDetailMessage msg, String... params) {
             // do nothing impl
         }
 
+        @Override
         public void logAndAudit(AuditDetailMessage msg) {
             // do nothing impl
         }
