@@ -14,13 +14,13 @@ import java.text.NumberFormat;
 public class SizeUnit {
     private static int next = 0;
     public static final SizeUnit BYTES = new SizeUnit(next++, "bytes", "B", 1);
-    public static final SizeUnit KIBIBYTES = new SizeUnit(next++, "kibibytes", "KiB",  1024);
-    public static final SizeUnit MEBIBYTES = new SizeUnit(next++, "mebibytes", "MiB", 1024*1024);
-    public static final SizeUnit GIBIBYTES = new SizeUnit(next++, "gibibytes", "GiB", 1024*1024*1024);
+    public static final SizeUnit KIBIBYTES = new SizeUnit(next++, "kilobytes", "KB", 1024);
+    public static final SizeUnit MEBIBYTES = new SizeUnit(next++, "megabytes", "MB", 1024*1024);
+    public static final SizeUnit GIBIBYTES = new SizeUnit(next++, "gigabytes", "GB", 1024*1024*1024);
 
     public static final SizeUnit[] ALL = new SizeUnit[] { BYTES, KIBIBYTES, MEBIBYTES, GIBIBYTES };
 
-    private static final Pattern numberPattern = Pattern.compile("(\\d*\\.?\\d*)(\\p{Lower}*)");
+    private static final Pattern numberPattern = Pattern.compile("(\\d*\\.?\\d*)(\\p{Lower}{0,2})");
 
     private final int num;
     private final String name;
