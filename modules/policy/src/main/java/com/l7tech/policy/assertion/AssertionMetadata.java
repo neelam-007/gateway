@@ -195,6 +195,7 @@ public interface AssertionMetadata {
      * <p/>
      * The default value is "${basePackage}.console.${baseName}Advice"
      */
+    @SuppressWarnings({"JavadocReference"})
     String POLICY_ADVICE_CLASSNAME = "policyAdviceClassname";
 
     /**
@@ -206,6 +207,7 @@ public interface AssertionMetadata {
      * If it is the name of an Advice subclass that can be instantiated, it will use that.
      * Otherwise, it will use null for this property.
      */
+    @SuppressWarnings({"JavadocReference"})
     String POLICY_ADVICE_INSTANCE = "policyAdviceInstance";
 
     /**
@@ -308,6 +310,7 @@ public interface AssertionMetadata {
      * a factory that uses {@link com.l7tech.console.panels.DefaultAssertionPropertiesEditor}, 
      * which is a generic bean property editor dialog.
      */
+    @SuppressWarnings({"JavadocReference"})
     String PROPERTIES_EDITOR_FACTORY = "propertiesEditorFactory";
 
     /**
