@@ -392,9 +392,14 @@
         <constructor-arg ref="messageProcessor"/>
     </bean>
 
+    <bean id="keyUsageChecker" class="com.l7tech.server.security.cert.GatewayKeyUsageChecker">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="clusterPropertyManager"/>
+    </bean>
+
     <!-- general server side HTTP client trust manager -->
     <!--suppress SpringBeanConstructorArgInspection -->
-    <bean id="trustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
+    <bean id="trustManager" class="com.l7tech.server.transport.http.SslClientTrustManager" depends-on="keyUsageChecker">
         <constructor-arg ref="trustedCertServices"/>
         <constructor-arg ref="certValidationProcessor"/>
         <constructor-arg>
@@ -407,7 +412,7 @@
 
     <!-- server side HTTP routing client trust manager -->
     <!--suppress SpringBeanConstructorArgInspection -->
-    <bean id="routingTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
+    <bean id="routingTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager" depends-on="keyUsageChecker">
         <constructor-arg ref="trustedCertServices"/>
         <constructor-arg ref="certValidationProcessor"/>
         <constructor-arg>
@@ -712,7 +717,7 @@
     </bean>
 
     <!-- keystore root cert and ssl config  -->
-    <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl">
+    <bean id="defaultKey" class="com.l7tech.server.DefaultKeyImpl" depends-on="keyUsageChecker">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="clusterPropertyManager"/>
         <constructor-arg index="2" ref="ssgKeyStoreManager"/>
