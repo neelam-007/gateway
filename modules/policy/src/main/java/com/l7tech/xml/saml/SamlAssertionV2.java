@@ -3,16 +3,18 @@ package com.l7tech.xml.saml;
 import com.ibm.xml.dsig.IDResolver;
 import com.ibm.xml.dsig.SignatureContext;
 import com.ibm.xml.dsig.Validity;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.security.cert.KeyUsageActivity;
+import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.KeyInfoElement;
-import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.HexUtils;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.TooManyChildElementsException;
 import org.apache.xmlbeans.XmlException;
@@ -330,6 +332,11 @@ public final class SamlAssertionV2 extends SamlAssertion {
             });
             WssProcessorAlgorithmFactory algFactory = new WssProcessorAlgorithmFactory(null);
             sigContext.setAlgorithmFactory(algFactory);
+            try {
+                KeyUsageChecker.requireActivity(KeyUsageActivity.verifyXml, signingCert);
+            } catch (CertificateException e) {
+                throw new CausedSignatureException(e);
+            }
             Validity validity = sigContext.verify(signature, signingKey);
 
             if (!validity.getCoreValidity()) {

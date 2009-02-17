@@ -1,5 +1,7 @@
 package com.l7tech.internal.audit;
 
+import com.l7tech.security.cert.KeyUsageActivity;
+import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.util.HexUtils;
 
 import javax.crypto.Cipher;
@@ -7,7 +9,7 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -126,7 +128,7 @@ public class DownloadedAuditRecordSignatureVerificator {
         return out;
     }
 
-    public boolean verifySignature(Certificate cert) throws IOException {
+    public boolean verifySignature(X509Certificate cert) throws IOException {
         if (!isSigned()) {
             logger.info("Verify signature fails because the record is not signed.");
             return false;
@@ -141,6 +143,7 @@ public class DownloadedAuditRecordSignatureVerificator {
         byte[] digestvalue = digest.digest(parsedRecordInSignableFormat.getBytes());
 
         try {
+            KeyUsageChecker.requireActivity(KeyUsageActivity.verifyXml, cert);
             byte[] decodedSig = HexUtils.decodeBase64(signature);
             Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             rsaCipher.init(Cipher.DECRYPT_MODE, pub);

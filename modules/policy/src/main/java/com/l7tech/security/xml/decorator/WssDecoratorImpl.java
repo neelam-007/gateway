@@ -12,6 +12,9 @@ import com.l7tech.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.kerberos.KerberosUtils;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
+import com.l7tech.security.cert.KeyUsageActivity;
+import com.l7tech.security.cert.KeyUsageChecker;
+import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.security.keys.AesKey;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.UsernameToken;
@@ -20,8 +23,8 @@ import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
 import com.l7tech.security.xml.processor.X509SigningSecurityTokenImpl;
 import com.l7tech.util.*;
+import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
-import org.w3.x2000.x09.xmldsig.KeyInfoType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -33,6 +36,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
@@ -157,11 +161,12 @@ public class WssDecoratorImpl implements WssDecorator {
             }
         }
 
-        Element saml = null;
-        if (dreq.getSenderSamlToken() != null) {
-            saml = addSamlSecurityToken(securityHeader, dreq.getSenderSamlToken());
+        SamlAssertion saml = dreq.getSenderSamlToken();
+        Element samlElement = null;
+        if (saml != null) {
+            samlElement = addSamlSecurityToken(securityHeader, saml.asElement());
             if (dreq.isIncludeSamlTokenInSignature()) {
-                signList.add(saml);
+                signList.add(samlElement);
             }
         }
 
@@ -186,22 +191,24 @@ public class WssDecoratorImpl implements WssDecorator {
         // Add sender cert
         // note [bugzilla #2551] dont include a x509 BST if this is gonna use a sc context
         // note [bugzilla #3907] dont include a x509 BST if using kerberos
-        KeyInfoDetails senderCertKeyInfo = null;
-        KeyInfoType keyInfoType = null;
+        final Pair<X509Certificate, KeyInfoDetails> senderCertKeyInfo;
         if (dreq.getSenderMessageSigningCertificate() != null &&
             !signList.isEmpty() &&
             dreq.getSecureConversationSession() == null &&
-            dreq.getKerberosTicket() == null) {
+            dreq.getKerberosTicket() == null)
+        {
+            final X509Certificate senderMessageSigningCert = dreq.getSenderMessageSigningCertificate();
             switch(dreq.getKeyInfoInclusionType()) {
-                case CERT:
+                case CERT: {
                     // Use keyinfo reference target of a BinarySecurityToken
                     Element x509Bst = addX509BinarySecurityToken(securityHeader, dreq.getSenderMessageSigningCertificate(), c);
                     String bstId = getOrCreateWsuId(c, x509Bst, null);
-                    senderCertKeyInfo = KeyInfoDetails.makeUriReference(bstId, SoapConstants.VALUETYPE_X509);
+                    final KeyInfoDetails keyinfo = KeyInfoDetails.makeUriReference(bstId, SoapUtil.VALUETYPE_X509);
+                    senderCertKeyInfo = new Pair<X509Certificate, KeyInfoDetails>(senderMessageSigningCert, keyinfo);
                     if (dreq.isProtectTokens())
                         signList.add(x509Bst);
-                    break;
-                case STR_SKI:
+                    break; }
+                case STR_SKI: {
                     // Use keyinfo reference target of a SKI
                     X509Certificate senderCert = dreq.getSenderMessageSigningCertificate();
                     byte[] senderSki = CertUtils.getSKIBytesFromCert(senderCert);
@@ -209,14 +216,17 @@ public class WssDecoratorImpl implements WssDecorator {
                         // Supposed to refer to sender cert by its SKI, but it has no SKI
                         throw new DecoratorException("suppressBst is requested, but the sender cert has no SubjectKeyIdentifier");
                     }
-                    senderCertKeyInfo = KeyInfoDetails.makeKeyId(senderSki, SoapConstants.VALUETYPE_SKI);
-                    break;
-                case ISSUER_SERIAL:
-                    senderCertKeyInfo = KeyInfoDetails.makeIssuerSerial(dreq.getSenderMessageSigningCertificate(), true);
-                    break;
+                    KeyInfoDetails keyinfo = KeyInfoDetails.makeKeyId(senderSki, SoapUtil.VALUETYPE_SKI);
+                    senderCertKeyInfo = new Pair<X509Certificate, KeyInfoDetails>(senderMessageSigningCert, keyinfo);
+                    break; }
+                case ISSUER_SERIAL: {
+                    senderCertKeyInfo = new Pair<X509Certificate, KeyInfoDetails>(senderMessageSigningCert, KeyInfoDetails.makeIssuerSerial(senderMessageSigningCert, true));
+                    break; }
                 default:
                     throw new DecoratorException("Unsupported KeyInfoInclusionType: " + dreq.getKeyInfoInclusionType());
             }
+        } else {
+            senderCertKeyInfo = new Pair<X509Certificate, KeyInfoDetails>(null, null);
         }
 
         // Add kerberos ticket reference
@@ -254,7 +264,8 @@ public class WssDecoratorImpl implements WssDecorator {
         Element addedEncKey = null;
         XencUtil.XmlEncKey addedEncKeyXmlEncKey = null;
         if (signList.size() > 0) {
-            Key senderSigningKey;
+            final X509Certificate senderSigningCert; // for key usage enforcement
+            final Key senderSigningKey;
             final KeyInfoDetails signatureKeyInfo;
             if (sct != null) {
                 // No BST; must be WS-SecureConversation
@@ -263,6 +274,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, null, session, sct);
                 String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
                 senderSigningKey = new AesKey(derivedKeyToken.derivedKey, derivedKeyToken.derivedKey.length * 8);
+                senderSigningCert = null;
                 if (c.nsf.getWsscNs().equals( SoapConstants.WSSC_NAMESPACE2)) {
                     signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2);
                 } else {
@@ -285,6 +297,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                dreq.getEncryptedKey(),
                                                "DerivedKey");
                     senderSigningKey = new XencUtil.XmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
+                    senderSigningCert = null;
                     String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
                     if (c.nsf.getWsscNs().equals( SoapConstants.WSSC_NAMESPACE2)) {
                         signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2);
@@ -295,6 +308,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 } else {
                     // Use the implicit ephemeral key directly
                     senderSigningKey = new SecretKeySpec(dreq.getEncryptedKey(), "SHA1");
+                    senderSigningCert = null;
                     signatureKeyInfo = KeyInfoDetails.makeEncryptedKeySha1Ref(dreq.getEncryptedKeySha1());
                 }
             } else if (addedKerberosBst != null) {
@@ -312,6 +326,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                                            dreq.getKerberosTicket().getKey(),
                                                                            "DerivedKey");
                 senderSigningKey = new XencUtil.XmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
+                senderSigningCert = null;
                 String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
                 signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2);
                 maybeSignDerivedKeyToken(signList, dreq, derivedKeyToken);
@@ -328,24 +343,29 @@ public class WssDecoratorImpl implements WssDecorator {
                                                                            dreq.getKerberosTicket().getKey(),
                                                                            "DerivedKey");
                 senderSigningKey = new XencUtil.XmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
+                senderSigningCert = null;
                 String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
                 signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2);
                 maybeSignDerivedKeyToken(signList, dreq, derivedKeyToken);
-            } else if (senderCertKeyInfo != null || keyInfoType != null) {
+            } else if (senderCertKeyInfo.right != null) {
                 senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
+                senderSigningCert = senderCertKeyInfo.left;
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with sender cert, but senderPrivateKey is null");
-                signatureKeyInfo = senderCertKeyInfo;
+                if (senderSigningCert == null)
+                    throw new IllegalArgumentException("Signing is requested with sender cert, but senderSigningCert is null"); // can't happen
+                signatureKeyInfo = senderCertKeyInfo.right;
             } else if (saml != null) {
                 // sign with SAML token
                 senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
                 if (senderSigningKey == null)
                     throw new IllegalArgumentException("Signing is requested with saml:Assertion, but senderPrivateKey is null");
+                senderSigningCert = saml.getMessageSigningCertificate();
 
-                final boolean saml11 = SamlConstants.NS_SAML.equals(saml.getNamespaceURI());
+                final boolean saml11 = SamlConstants.NS_SAML.equals(samlElement.getNamespaceURI());
                 final String assId = saml11 ?
-                        saml.getAttribute("AssertionID") :
-                        saml.getAttribute("ID");
+                        samlElement.getAttribute("AssertionID") :
+                        samlElement.getAttribute("ID");
                 if (assId == null || assId.length() < 1)
                     throw new InvalidDocumentFormatException("Unable to decorate: SAML Assertion has missing or empty AssertionID/ID");
 
@@ -359,7 +379,7 @@ public class WssDecoratorImpl implements WssDecorator {
                     signatureKeyInfo = KeyInfoDetails.makeKeyId(assId, false, samlValueType);
                 }
                 if (dreq.isProtectTokens() && !signList.isEmpty())
-                    signList.add(saml);
+                    signList.add(samlElement);
             } else if (dreq.getRecipientCertificate() != null) {
                 // create a new EncryptedKey and sign with that
                 String encryptionAlgorithm = dreq.getEncryptionAlgorithm();
@@ -393,6 +413,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                addedEncKeyXmlEncKey.getSecretKey().getEncoded(),
                                                "DerivedKey");
                     senderSigningKey = new XencUtil.XmlEncKey(dreq.getEncryptionAlgorithm(), derivedKeyToken.derivedKey).getSecretKey();
+                    senderSigningCert = null;
                     String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
                     if (c.nsf.getWsscNs().equals( SoapConstants.WSSC_NAMESPACE2)) {
                         signatureKeyInfo = KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2);
@@ -403,6 +424,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 } else {
                     // No derived key -- use the raw EncryptedKey directly
                     senderSigningKey = addedEncKeyXmlEncKey.getSecretKey();
+                    senderSigningCert = null;
                     signatureKeyInfo = KeyInfoDetails.makeUriReference(encKeyId, SoapConstants.VALUETYPE_ENCRYPTED_KEY);
                 }
             } else
@@ -410,6 +432,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
             signature = addSignature(c,
                 senderSigningKey,
+                senderSigningCert,
                 signList.toArray(new Element[0]),
                 signPartList.toArray(new String[0]),
                 dreq.isSignPartHeaders(),
@@ -808,6 +831,8 @@ public class WssDecoratorImpl implements WssDecorator {
      *
      * @param c                      the processing context.  Must not be null.
      * @param senderSigningKey       the Key that should be used to compute the signature.  May be RSA public or private key, or an AES symmetric key.
+     * @param senderSigningCert      if X509 certificate associated with senderSigningKey, or null if senderSigningKey is not associated with a cert.
+     *                               Must be provided if senderSigningKey is an RSA or DSA key.
      * @param elementsToSign         an array of elements that should be signed.  Must be non-null references to elements in the Document being processed.  Must not be null or empty.
      * @param securityHeader         the Security header to which the new ds:Signature element should be added.  May not be null.
      * @param keyInfoDetails         the KeyInfoDetails to use to create the KeyInfo.  Must not be null.
@@ -822,6 +847,7 @@ public class WssDecoratorImpl implements WssDecorator {
      */
     private Element addSignature(final Context c,
                                  Key senderSigningKey,
+                                 X509Certificate senderSigningCert,
                                  Element[] elementsToSign,
                                  String[] partsToSign,
                                  boolean signPartHeaders,
@@ -966,7 +992,12 @@ public class WssDecoratorImpl implements WssDecorator {
         sigContext.setEntityResolver(c.attachmentResolver);
         sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(strTransformsNodeToNode));
         try {
+            KeyUsageChecker.requireActivityForKey(KeyUsageActivity.signXml, senderSigningCert, senderSigningKey);
             sigContext.sign(emptySignatureElement, senderSigningKey);
+        } catch (KeyUsageException e) {
+            throw new DecoratorException("Unable to create XML signature due to signing cert key usage restrictions: " + ExceptionUtils.getMessage(e), e);
+        } catch (CertificateException e) {
+            throw new DecoratorException("Unable to create XML signature: unable to parse signing cert: " + ExceptionUtils.getMessage(e), e);
         } catch (XSignatureException e) {
             String msg = e.getMessage();
             if (msg != null && msg.indexOf("Found a relative URI") >= 0)       // Bug #1209
@@ -1124,6 +1155,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
             encryptionMethod.setAttribute("Algorithm", SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO_2);
             encryptedKeyBytes = XencUtil.encryptKeyWithRsaOaepMGF1SHA1(secretKey.getEncoded(),
+                                              recipientCertificate,
                                               recipientCertificate.getPublicKey(),
                                               params);
 
@@ -1137,8 +1169,8 @@ public class WssDecoratorImpl implements WssDecorator {
         } else {
             encryptionMethod.setAttribute("Algorithm", SoapConstants.SUPPORTED_ENCRYPTEDKEY_ALGO);
             encryptedKeyBytes = XencUtil.encryptKeyWithRsaAndPad(secretKey.getEncoded(),
-                                              recipientCertificate.getPublicKey(),
-                                              c.rand);
+                                              recipientCertificate,
+                                              recipientCertificate.getPublicKey());
         }
         c.lastEncryptedKeyBytes = encryptedKeyBytes;
         final String base64 = HexUtils.encodeBase64(encryptedKeyBytes, true);

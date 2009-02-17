@@ -114,7 +114,7 @@ public class WssInteropTestMessage extends TestCase {
         KeyInfoElement.assertKeyInfoMatchesCertificate(ekkinf, recipCert);
 
         // Replace the EncryptedKey payload with our own symmetric key
-        String aesKeyB64 = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(keyBytes, recipCert.getPublicKey(), new Random()), true);
+        String aesKeyB64 = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(keyBytes, recipCert, recipCert.getPublicKey()), true);
         Element ekcd = DomUtils.findFirstChildElementByName(encryptedKeyEl, (String)null, "CipherData");
         Element ekcv = DomUtils.findFirstChildElementByName(ekcd, (String)null, "CipherValue");
         ekcv.setTextContent(aesKeyB64); // XXX This is a 1.5-ism, not in the 1.4 DOM

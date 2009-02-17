@@ -3,7 +3,6 @@
  */
 package com.l7tech.security.xml;
 
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
 import com.l7tech.security.WsiBSPValidator;
@@ -15,8 +14,8 @@ import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.*;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -534,7 +533,7 @@ public class WssRoundTripTest extends TestCase {
                            ((X509SecurityToken)signer).getCertificate().equals(td.req.getSenderMessageSigningCertificate()));
             } else if (signer instanceof SamlSecurityToken) {
                 assertTrue("Timestamp signing security token must match sender cert",
-                           ((SamlSecurityToken)signer).getSubjectCertificate().equals(SamlAssertion.newInstance(td.req.getSenderSamlToken()).getSubjectCertificate()));
+                           ((SamlSecurityToken)signer).getSubjectCertificate().equals(td.req.getSenderSamlToken().getSubjectCertificate()));
             } else if (signer instanceof SecurityContextToken) {
                 SecurityContextToken sct = (SecurityContextToken)signer;
                 assertTrue("SecurityContextToken was supposed to have proven possession", sct.isPossessionProved());

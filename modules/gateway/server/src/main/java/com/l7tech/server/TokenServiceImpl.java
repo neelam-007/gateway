@@ -59,7 +59,6 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
-import javax.xml.XMLConstants;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -516,10 +515,8 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             // todo
         }
         encryptedKeyXml.append("<xenc:CipherData>" +
-                                "<xenc:CipherValue>");
-        String encryptedKeyValue = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(sharedSecret,
-                                                                    requestorCert.getPublicKey(),
-                                                                    rand),
+                               "<xenc:CipherValue>");
+        String encryptedKeyValue = HexUtils.encodeBase64(XencUtil.encryptKeyWithRsaAndPad(sharedSecret, requestorCert, requestorCert.getPublicKey()),
                                                          true);
         encryptedKeyXml.append(encryptedKeyValue);
         encryptedKeyXml.append("</xenc:CipherValue>" +

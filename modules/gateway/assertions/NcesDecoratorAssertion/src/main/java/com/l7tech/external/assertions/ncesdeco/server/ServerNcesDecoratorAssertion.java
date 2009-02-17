@@ -1,34 +1,32 @@
 package com.l7tech.external.assertions.ncesdeco.server;
 
-import com.l7tech.server.cluster.ClusterInfoManager;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.external.assertions.ncesdeco.NcesDecoratorAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
-import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SubjectStatement;
+import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.external.assertions.ncesdeco.NcesDecoratorAssertion;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
-import com.l7tech.server.policy.assertion.xmlsec.ServerResponseWssSignature;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.saml.SamlAssertion;
+import com.l7tech.xml.soap.SoapUtil;
 import org.safehaus.uuid.EthernetAddress;
 import org.safehaus.uuid.UUIDGenerator;
 import org.springframework.context.ApplicationContext;
@@ -92,7 +90,7 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
                 return AssertionStatus.NOT_APPLICABLE;
             }
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_BAD_XML, new String[] { what, ExceptionUtils.getMessage(e) }, e);
+            auditor.logAndAudit(AssertionMessages.NCESDECO_BAD_XML, new String[]{what, ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -100,7 +98,7 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
         if (assertion.isSamlIncluded() && (template == null || template.length() == 0) && context.getLastCredentials() == null) {
             auditor.logAndAudit(AssertionMessages.NCESDECO_NO_CREDS);
             if (assertion.getTarget() == TargetMessageType.REQUEST) {
-                // No point setting these flags for creds missing from non-request 
+                // No point setting these flags for creds missing from non-request
                 context.setAuthenticationMissing();
                 context.setRequestPolicyViolated();
                 return AssertionStatus.AUTH_REQUIRED;
@@ -109,7 +107,15 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
             }
         }
 
-        DecorationRequirements decoReq = new DecorationRequirements();
+        final DecorationRequirements decoReq;
+        final boolean applyImmediately;
+        if (assertion.getTarget() == TargetMessageType.RESPONSE && assertion.isDeferDecoration()) {
+            decoReq = msg.getSecurityKnob().getOrMakeDecorationRequirements();
+            applyImmediately = false;
+        } else {
+            decoReq = new DecorationRequirements();
+            applyImmediately = true;
+        }
         decoReq.setSecurityHeaderActor(null);
         decoReq.setSecurityHeaderReusable(true);
 
@@ -129,33 +135,38 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
             addMessageId(doc, decoReq);
             addTimestamp(decoReq);
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[] { what, ExceptionUtils.getMessage(e) }, e);
+            auditor.logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[]{what, ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.BAD_REQUEST;
         }
 
         decoReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
         decoReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
 
+        if (!applyImmediately) {
+            // Response decoration will be applied later, all at once
+            return AssertionStatus.NONE;
+        }
+
         try {
             martha.decorateMessage(msg, decoReq);
             return AssertionStatus.NONE;
         } catch (InvalidDocumentFormatException e) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[] { what, ExceptionUtils.getMessage(e) }, e);
+            auditor.logAndAudit(AssertionMessages.NCESDECO_IDFE, new String[]{what, ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.FAILED;
         } catch (GeneralSecurityException e) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_WARN_MISC, new String[] { what, ExceptionUtils.getMessage(e) }, e);
+            auditor.logAndAudit(AssertionMessages.NCESDECO_WARN_MISC, new String[]{what, ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.FAILED;
         } catch (DecoratorException e) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_WARN_MISC, new String[] { what, ExceptionUtils.getMessage(e) }, e);
+            auditor.logAndAudit(AssertionMessages.NCESDECO_WARN_MISC, new String[]{what, ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.FAILED;
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.NCESDECO_BAD_XML, new String[] { what, ExceptionUtils.getMessage(e) }, e);
+            auditor.logAndAudit(AssertionMessages.NCESDECO_BAD_XML, new String[]{what, ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.FAILED;
         }
     }
 
     private void addBodySignature(Document msg, DecorationRequirements decoReq) throws InvalidDocumentFormatException {
-        decoReq.getElementsToSign().add( SoapUtil.getBodyElement(msg));
+        decoReq.getElementsToSign().add(SoapUtil.getBodyElement(msg));
     }
 
     private void addMessageId(Document doc, DecorationRequirements decoReq) throws InvalidDocumentFormatException {
@@ -166,13 +177,13 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
             uuid = java.util.UUID.randomUUID().toString();
         }
         String wsaNs = assertion.getWsaNamespaceUri();
-        if (wsaNs == null || wsaNs.length() == 0) wsaNs = SoapConstants.WSA_NAMESPACE;
+        if (wsaNs == null || wsaNs.length() == 0) wsaNs = SoapUtil.WSA_NAMESPACE;
 
-        Document messageIdDoc = XmlUtil.createEmptyDocument( SoapConstants.MESSAGEID_EL_NAME, "wsa", wsaNs);
+        Document messageIdDoc = XmlUtil.createEmptyDocument(SoapUtil.MESSAGEID_EL_NAME, "wsa", wsaNs);
         Element messageIdEl = messageIdDoc.getDocumentElement();
 
-        messageIdEl.setAttributeNS( SoapConstants.WSU_NAMESPACE, "wsu:Id", SoapUtil.generateUniqueId("MessageID", 1));
-        messageIdEl.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:wsu", SoapConstants.WSU_NAMESPACE);
+        messageIdEl.setAttributeNS(SoapUtil.WSU_NAMESPACE, "wsu:Id", SoapUtil.generateUniqueId("MessageID", 1));
+        messageIdEl.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:wsu", SoapUtil.WSU_NAMESPACE);
         StringBuilder sb = new StringBuilder();
         String prefix = assertion.getMessageIdUriPrefix();
         if (prefix != null && prefix.length() > 0) {
@@ -195,10 +206,12 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
 
     private void addSaml(Document doc, Element security, DecorationRequirements decoReq, PolicyEnforcementContext context) throws InvalidDocumentFormatException {
         Element samlEl;
+        SamlAssertion samlAss;
         String template = assertion.getSamlAssertionTemplate();
         if (template != null && template.length() > 0) {
             try {
                 samlEl = XmlUtil.parse(new StringReader(ExpandVariables.process(template, context.getVariableMap(varsUsed, auditor), auditor)), false).getDocumentElement();
+                samlAss = SamlAssertion.newInstance(samlEl);
             } catch (SAXException e) {
                 throw new InvalidDocumentFormatException("Provided SAML Assertion template could not be parsed", e);
             } catch (IOException e) {
@@ -217,17 +230,20 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
 
             try {
                 samlEl = samlAssertionGenerator.createAssertion(authnStmt, opts).getDocumentElement();
+                samlAss = SamlAssertion.newInstance(samlEl);
             } catch (GeneralSecurityException e) {
                 // Can't happen as long as {@link Options#isSignAssertion()} == false
                 throw new IllegalStateException("Assertion Generator failed with a signature exception, but no signature was required");
+            } catch (SAXException e) {
+                throw new InvalidDocumentFormatException("Generated SAML Assertion could not be parsed", e);
             }
         }
 
         if (assertion.isSamlUseStrTransform()) {
-            decoReq.setSenderSamlToken(samlEl, true);
+            decoReq.setSenderSamlToken(samlAss, true);
         } else {
-            samlEl.setAttributeNS( SoapConstants.WSU_NAMESPACE, "wsu:Id", SoapUtil.generateUniqueId("SAMLAssertion", 1));
-            samlEl.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:wsu", SoapConstants.WSU_NAMESPACE);
+            samlEl.setAttributeNS(SoapUtil.WSU_NAMESPACE, "wsu:Id", SoapUtil.generateUniqueId("SAMLAssertion", 1));
+            samlEl.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns:wsu", SoapUtil.WSU_NAMESPACE);
             samlEl = (Element) doc.importNode(samlEl, true);
             security.appendChild(samlEl);
             decoReq.setSuppressSamlStrTransform(true);

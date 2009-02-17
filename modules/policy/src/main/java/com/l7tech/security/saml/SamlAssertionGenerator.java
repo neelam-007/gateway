@@ -1,22 +1,21 @@
 package com.l7tech.security.saml;
 
-import com.ibm.xml.dsig.*;
 import com.ibm.dom.util.IndentConfig;
+import com.ibm.xml.dsig.*;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.message.Message;
 import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.security.xml.KeyInfoDetails;
-import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.util.*;
 import com.l7tech.xml.MessageNotSoapException;
-import com.l7tech.util.TooManyChildElementsException;
+import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.message.Message;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.XmlUtil;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -173,7 +172,7 @@ public class SamlAssertionGenerator {
                     throw new IllegalArgumentException("Proof Of posession required, without attesting entity keys");
                 }
                 elementsToSign.add(bodyElement);
-                dr.setSenderSamlToken(assertionDoc.getDocumentElement());
+                dr.setSenderSamlToken(SamlAssertion.newInstance(assertionDoc.getDocumentElement()));
                 dr.setSenderMessageSigningPrivateKey(attestingEntity.getPrivate());
                 dr.setSenderMessageSigningCertificate(attestingEntity.getCertificateChain()[0]);
             }

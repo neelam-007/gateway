@@ -1,15 +1,18 @@
 package com.l7tech.server.tomcat;
 
+import com.l7tech.security.cert.KeyUsageActivity;
+import com.l7tech.security.cert.KeyUsageChecker;
+
+import javax.net.ssl.ManagerFactoryParameters;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactorySpi;
+import javax.net.ssl.X509TrustManager;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
-import javax.net.ssl.TrustManagerFactorySpi;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.ManagerFactoryParameters;
-import javax.net.ssl.X509TrustManager;
 
 /**
  * The Factory for our client trusting TrustManager
@@ -48,6 +51,7 @@ public class ClientTrustingTrustManagerFactorySpi extends TrustManagerFactorySpi
         }
 
         public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+            KeyUsageChecker.requireActivity(KeyUsageActivity.sslClientRemote, x509Certificates[0]);
         }
 
         public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {

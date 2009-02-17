@@ -1,19 +1,17 @@
 package com.l7tech.console.security;
 
+import com.l7tech.security.cert.KeyUsageActivity;
+import com.l7tech.security.cert.KeyUsageChecker;
+import com.l7tech.util.ExceptionUtils;
+
+import javax.net.ssl.*;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
-import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
 import java.util.logging.Level;
-import javax.net.ssl.TrustManagerFactorySpi;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.ManagerFactoryParameters;
-import javax.net.ssl.X509TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-
-import com.l7tech.util.ExceptionUtils;
+import java.util.logging.Logger;
 
 /**
  * The Factory for our TrustManager
@@ -95,6 +93,8 @@ public class ManagerTrustManagerFactorySpi extends TrustManagerFactorySpi {
                 xtm = getX509TrustManager();
                 trustManager = xtm;
             }
+
+            KeyUsageChecker.requireActivity(KeyUsageActivity.sslServerRemote, x509Certificates[0]);
 
             try {
                 xtm.checkServerTrusted(x509Certificates, s);

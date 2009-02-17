@@ -3,15 +3,18 @@ package com.l7tech.xml.saml;
 import com.ibm.xml.dsig.IDResolver;
 import com.ibm.xml.dsig.SignatureContext;
 import com.ibm.xml.dsig.Validity;
-import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.security.xml.KeyInfoElement;
-import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.HexUtils;
+import com.l7tech.security.cert.KeyUsageActivity;
+import com.l7tech.security.cert.KeyUsageChecker;
+import com.l7tech.security.cert.KeyUsageException;
+import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.xml.KeyInfoElement;
+import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.TooManyChildElementsException;
 import org.apache.xmlbeans.XmlException;
@@ -29,6 +32,7 @@ import java.math.BigInteger;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
@@ -298,6 +302,8 @@ public class SamlAssertionV1 extends SamlAssertion {
             sigContext.setEntityResolver(XmlUtil.getXss4jEntityResolver());
             WssProcessorAlgorithmFactory algFactory = new WssProcessorAlgorithmFactory(null);
             sigContext.setAlgorithmFactory(algFactory);
+
+            KeyUsageChecker.requireActivity(KeyUsageActivity.verifyXml, signingCert);
             Validity validity = sigContext.verify(signature, signingKey);
 
             if (!validity.getCoreValidity()) {
@@ -323,6 +329,10 @@ public class SamlAssertionV1 extends SamlAssertion {
         } catch ( TooManyChildElementsException e) {
             throw new CausedSignatureException(e);
         } catch (ResolveIdException e) {
+            throw new CausedSignatureException(e);
+        } catch (KeyUsageException e) {
+            throw new CausedSignatureException(e);
+        } catch (CertificateParsingException e) {
             throw new CausedSignatureException(e);
         }
     }

@@ -6,6 +6,8 @@
 
 package com.l7tech.server.transport.http;
 
+import com.l7tech.security.cert.KeyUsageActivity;
+import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
@@ -64,6 +66,8 @@ public class SslClientTrustManager implements X509TrustManager {
             // not otherwise validating the certificate.
             CertificateValidationResult result =
                     certValidationProcessor.check(certs, CertificateValidationType.PATH_VALIDATION, null, facility, new LogOnlyAuditor(logger));
+
+            KeyUsageChecker.requireActivity(KeyUsageActivity.sslServerRemote, certs[0]);
 
             if ( result != CertificateValidationResult.OK ) {
                 throw new CertificateException("Certificate path validation and/or revocation checking failed");

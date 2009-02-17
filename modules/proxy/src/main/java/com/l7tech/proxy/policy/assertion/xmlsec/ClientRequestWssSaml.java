@@ -113,12 +113,12 @@ public class ClientRequestWssSaml extends ClientAssertion {
                     }
 
                     if( ass.isHolderOfKey() ) {
-                        wssReqs.setSenderSamlToken(ass.asElement(), false);
+                        wssReqs.setSenderSamlToken(ass, false);
                     } else {
                         if (privateKey != null && certificate != null) {
                             wssReqs.setSenderMessageSigningCertificate(certificate);
                             // only sign the SAML token if the assertion is not signed
-                            wssReqs.setSenderSamlToken(ass.asElement(), !Boolean.getBoolean(PROP_SIGN_SAML_SV));
+                            wssReqs.setSenderSamlToken(ass, !Boolean.getBoolean(PROP_SIGN_SAML_SV));
                             final boolean suppress = "true".equals(ssg.getProperties().get("builtinSaml.suppressStrTransform"));
                             wssReqs.setSuppressSamlStrTransform(suppress);
                         } else {

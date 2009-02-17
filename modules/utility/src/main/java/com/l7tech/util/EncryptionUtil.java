@@ -130,6 +130,10 @@ public class EncryptionUtil {
 
     /**
      * RSA encrypts and base 64 data
+     * <p/>
+     * Caller is responsible for ensuring that the recipient certificate permits
+     * the "encryptXml" key usage activity.
+     *
      * @param toEncrypt the data to encrypt
      * @param key the key to encrypt with
      * @return a base 64 encoded version of the encrypted data

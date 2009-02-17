@@ -13,6 +13,7 @@ import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.util.DomUtils;
+import com.l7tech.xml.saml.SamlAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -181,7 +182,7 @@ public class SignedSamlTest extends TestCase {
         DecorationRequirements req = new DecorationRequirements();
         req.setSignTimestamp();
         req.getElementsToSign().add(body);
-        req.setSenderSamlToken(samlsvAssertion.getDocumentElement(), true);
+        req.setSenderSamlToken(SamlAssertion.newInstance(samlsvAssertion.getDocumentElement()), true);
         req.setSenderMessageSigningPrivateKey(caPrivateKey);
         new WssDecoratorImpl().decorateMessage(new Message(request), req);
 
@@ -205,7 +206,7 @@ public class SignedSamlTest extends TestCase {
         DecorationRequirements req = new DecorationRequirements();
         req.setSignTimestamp();
         req.getElementsToSign().add(body);
-        req.setSenderSamlToken(samlAssertion, true);
+        req.setSenderSamlToken(SamlAssertion.newInstance(samlAssertion), true);
         req.setSenderMessageSigningPrivateKey(clientPrivateKey);
         new WssDecoratorImpl().decorateMessage(new Message(request), req);
 

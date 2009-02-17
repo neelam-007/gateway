@@ -1,24 +1,25 @@
 package com.l7tech.skunkworks.saml;
 
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gui.ExceptionDialog;
 import com.l7tech.gui.util.GuiCertUtil;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.security.saml.NameIdentifierInclusionType;
+import com.l7tech.security.saml.SamlAssertionGenerator;
+import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.security.saml.SubjectStatement;
 import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.security.saml.SamlAssertionGenerator;
-import com.l7tech.security.saml.SubjectStatement;
-import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.SoapConstants;
-import com.l7tech.message.Message;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.xml.saml.SamlAssertion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -402,7 +403,7 @@ public class SamlGenerator {
                 WssDecoratorImpl deco = new WssDecoratorImpl();
                 DecorationRequirements decoReq = new DecorationRequirements();
                 decoReq.setSecurityHeaderActor(null);
-                if (assertion != null) decoReq.setSenderSamlToken(assertion.getDocumentElement(), false);
+                if (assertion != null) decoReq.setSenderSamlToken(SamlAssertion.newInstance(assertion.getDocumentElement()), false);
                 else {
                     decoReq.setSenderMessageSigningPrivateKey(subjectPrivateKey);
                     decoReq.setSenderMessageSigningCertificate(subjectCertificate);

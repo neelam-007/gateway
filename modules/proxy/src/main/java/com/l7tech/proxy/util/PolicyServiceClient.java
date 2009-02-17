@@ -75,7 +75,7 @@ public class PolicyServiceClient {
             if (samlAss.isBearerToken())
                 canSign = false;
             // if we make a signature, include the saml token in it
-            req.setSenderSamlToken(samlAss.asElement(), canSign && !samlAss.isHolderOfKey());
+            req.setSenderSamlToken(samlAss, canSign && !samlAss.isHolderOfKey());
         }
         if (canSign) {
             req.setSenderMessageSigningCertificate(clientCert);

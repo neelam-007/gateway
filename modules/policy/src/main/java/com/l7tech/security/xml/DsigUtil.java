@@ -8,8 +8,11 @@ package com.l7tech.security.xml;
 
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
-import com.l7tech.util.DomUtils;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.security.cert.KeyUsageActivity;
+import com.l7tech.security.cert.KeyUsageChecker;
+import com.l7tech.security.cert.KeyUsageException;
+import com.l7tech.util.DomUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -18,8 +21,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
@@ -46,7 +48,9 @@ public class DsigUtil {
      * @param keyInfoChildElement   Custom key info child element to use
      * @param keyName               if specified, KeyInfo will use a keyName instead of an STR or a literal cert.
      * @return the new dsig:Signature element, as a standalone element not yet attached into the document.
-     * @throws SignatureException   if there is a problem creating the signature
+     * @throws SignatureException   if there is a problem creating the signature; or,
+     *     (caused by {@link KeyUsageException}) if the key usage enforcement policy currently in effect does not permit the specified
+     *                            senderSigningCert to be used with the {@link KeyUsageActivity#signXml} activity.
      * @throws SignatureStructureException if there is a problem creating the signature
      * @throws XSignatureException  if there is a problem creating the signature
      */
@@ -124,6 +128,11 @@ public class DsigUtil {
 
             }
         });
+        try {
+            KeyUsageChecker.requireActivityForKey(KeyUsageActivity.signXml, senderSigningCert, senderSigningKey);
+        } catch (CertificateException e) {
+            throw new SignatureException(e);
+        }
         return sigContext.sign(sigElement, senderSigningKey);
     }
 
@@ -160,7 +169,9 @@ public class DsigUtil {
      *                                 it may have come from the signature itself as X509Data -- so a successful
      *                                 return from this method does NOT guarantee that the signature should be
      *                                 TRUSTED, just that it was VALID.</b>
-     * @throws SignatureException   if the signature could not be validated.
+     * @throws SignatureException   if the signature could not be validated; or,
+     *   (caused by {@link KeyUsageException}) if the key usage enforcement policy currently in effect does not permit the specified
+     *                            senderSigningCert to be used with the {@link KeyUsageActivity#verifyXml} activity.
      */
     public static X509Certificate checkSimpleEnvelopedSignature(final Element sigElement, SecurityTokenResolver securityTokenResolver) throws SignatureException {
         Element keyInfoElement = KeyInfo.searchForKeyInfo(sigElement);
@@ -189,10 +200,9 @@ public class DsigUtil {
         if (signingKey == null) throw new SignatureException("Unable to find signing key"); // can't happen
 
         try {
+            KeyUsageChecker.requireActivity(KeyUsageActivity.verifyXml, signingCert);
             signingCert.checkValidity();
-        } catch (CertificateExpiredException e) {
-            throw new SignatureException(e);
-        } catch (CertificateNotYetValidException e) {
+        } catch (CertificateException e) {
             throw new SignatureException(e);
         }
 

@@ -23,6 +23,7 @@ import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.util.DomUtils;
 import com.l7tech.xml.MessageNotSoapException;
+import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -134,7 +135,7 @@ public class WssDecoratorTest extends TestCase {
                             X509Certificate recipientCert, PrivateKey recipientKey,
                             boolean signTimestamp,
                             Element[] elementsToEncrypt,
-                            Element[] elementsToSign) {
+                            Element[] elementsToSign) throws SAXException {
             this(c, null, senderCert, senderKey, recipientCert, recipientKey, signTimestamp,
                  elementsToEncrypt, elementsToSign, null, false, KeyInfoInclusionType.CERT);
         }
@@ -146,7 +147,7 @@ public class WssDecoratorTest extends TestCase {
                             Element[] elementsToSign,
                             byte[] secureConversationKey,
                             boolean signSamlToken,
-                            KeyInfoInclusionType keyInfoInclusionType) {
+                            KeyInfoInclusionType keyInfoInclusionType) throws SAXException {
             this(c, senderSamlAssertion, senderCert, senderKey, recipientCert, recipientKey, signTimestamp,
                  elementsToEncrypt, null, elementsToSign, secureConversationKey, signSamlToken, keyInfoInclusionType, false, null, null, null, null, false, false);
         }
@@ -167,10 +168,9 @@ public class WssDecoratorTest extends TestCase {
                             String actor,
                             UsernameToken senderUsernameToken,
                             boolean useDerivedKeys,
-                            boolean signUsernameToken)
-        {
+                            boolean signUsernameToken) throws SAXException {
             this.c = c;
-            req.setSenderSamlToken(senderSamlAssertion, signSamlToken);
+            req.setSenderSamlToken(senderSamlAssertion == null ? null : SamlAssertion.newInstance(senderSamlAssertion), signSamlToken);
             req.setSenderMessageSigningCertificate(senderCert);
             req.setSenderMessageSigningPrivateKey(senderKey);
             req.setRecipientCertificate(recipientCert);

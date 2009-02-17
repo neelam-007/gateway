@@ -9,6 +9,8 @@ package com.l7tech.proxy.ssl;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.security.cert.CertVerifier;
+import com.l7tech.security.cert.KeyUsageActivity;
+import com.l7tech.security.cert.KeyUsageChecker;
 
 import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertificateException;
@@ -82,6 +84,8 @@ public class ClientProxyTrustManager implements X509TrustManager {
         try {
             CertVerifier.verifyCertificateChain(x509Certificates, trustedCert);
             log.log(Level.FINE, "Peer certificate was signed by a trusted Gateway.");
+
+            KeyUsageChecker.requireActivity(KeyUsageActivity.sslServerRemote, cert);
         } catch (CertUtils.CertificateUntrustedException e) {
             log.warning(e.getMessage()); // log in case SSL layer obscures our diagnostic info
             throw new ServerCertificateUntrustedException(e); // ssl peer already guaranteed to be set

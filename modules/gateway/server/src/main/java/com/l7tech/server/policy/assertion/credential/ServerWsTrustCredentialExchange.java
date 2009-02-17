@@ -211,7 +211,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
                 SamlAssertion samlAssertion = (SamlAssertion) rstrObj;
                 setCachedSecurityToken(context.getCache(), samlAssertion, getSamlAssertionExpiry(samlAssertion));
                 context.addCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, assertion.getClass()));
-                decoReq.setSenderSamlToken(samlAssertion.asElement(), false);
+                decoReq.setSenderSamlToken(samlAssertion, false);
             } else if (rstrObj instanceof UsernameToken) {
                 UsernameToken ut = (UsernameToken) rstrObj;
                 setCachedSecurityToken(context.getCache(), ut, getUsernameTokenExpiry(ut));

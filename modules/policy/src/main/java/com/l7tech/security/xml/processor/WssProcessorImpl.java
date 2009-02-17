@@ -4,26 +4,27 @@ import com.ibm.xml.dsig.*;
 import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
-import com.l7tech.message.Message;
-import com.l7tech.message.MimeKnob;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.PartIterator;
-import com.l7tech.security.keys.FlexKey;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.kerberos.KerberosConfigException;
 import com.l7tech.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.kerberos.KerberosUtils;
+import com.l7tech.message.Message;
+import com.l7tech.message.MimeKnob;
+import com.l7tech.security.cert.KeyUsageActivity;
+import com.l7tech.security.cert.KeyUsageChecker;
+import com.l7tech.security.keys.FlexKey;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.*;
 import com.l7tech.security.xml.*;
 import com.l7tech.util.*;
-import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.UnsupportedDocumentFormatException;
-import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.saml.SamlAssertion;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -1813,6 +1814,7 @@ public class WssProcessorImpl implements WssProcessor {
             }
         });
         sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(strToTarget));
+        KeyUsageChecker.requireActivityForKey(KeyUsageActivity.verifyXml, signingCert, signingKey);
         Validity validity = sigContext.verify(sigElement, signingKey);
 
         if (!validity.getCoreValidity()) {

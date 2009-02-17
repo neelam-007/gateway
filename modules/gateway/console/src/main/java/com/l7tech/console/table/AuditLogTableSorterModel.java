@@ -3,30 +3,32 @@
  */
 package com.l7tech.console.table;
 
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
-import com.l7tech.gateway.common.cluster.GatewayStatus;
-import com.l7tech.gateway.common.cluster.LogRequest;
-import com.l7tech.gateway.common.audit.AuditAdmin;
-import com.l7tech.gui.util.ImageCache;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.ClusterLogWorker;
+import com.l7tech.console.util.LogMessage;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.LogMessage;
+import com.l7tech.gateway.common.audit.AuditAdmin;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.cluster.GatewayStatus;
+import com.l7tech.gateway.common.cluster.LogRequest;
 import com.l7tech.gateway.common.logging.GenericLogAdmin;
+import com.l7tech.gui.util.ImageCache;
+import com.l7tech.security.cert.KeyUsageActivity;
+import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.util.HexUtils;
 
+import javax.crypto.Cipher;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.crypto.Cipher;
+import java.io.IOException;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.security.cert.X509Certificate;
-import java.security.PublicKey;
-import java.io.IOException;
+import java.util.logging.Logger;
 
 /*
  * This class extends the <CODE>FilteredLogTableModel</CODE> class for providing the sorting functionality to the log display.
@@ -609,6 +611,7 @@ public class AuditLogTableSorterModel extends FilteredLogTableModel {
         PublicKey pub = cert.getPublicKey();
         if (pub == null) return DigitalSignatureUIState.INVALID;
         try {
+            KeyUsageChecker.requireActivity(KeyUsageActivity.verifyXml, cert);
             byte[] decodedSig = HexUtils.decodeBase64(signatureToVerify);
             Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             rsaCipher.init(Cipher.DECRYPT_MODE, pub);

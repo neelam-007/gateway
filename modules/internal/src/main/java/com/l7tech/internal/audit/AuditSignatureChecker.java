@@ -3,9 +3,9 @@
  */
 package com.l7tech.internal.audit;
 
-import com.l7tech.util.BuildInfo;
-import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.gui.util.FileChooserUtil;
+import com.l7tech.util.BuildInfo;
 
 import javax.net.ssl.*;
 import javax.swing.*;
@@ -24,6 +24,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -255,7 +256,7 @@ public class AuditSignatureChecker extends JFrame {
             }
             if (rec.isSigned()) {
                 try {
-                    if (rec.verifySignature(cert[0])) {
+                    if (rec.verifySignature((X509Certificate)cert[0])) {
                         ++numValid;
                         if (verbose) out.println(rec.getAuditID() + " has a valid signature");
                     } else {

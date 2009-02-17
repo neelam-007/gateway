@@ -13,12 +13,14 @@ import com.ibm.xml.enc.type.CipherData;
 import com.ibm.xml.enc.type.CipherValue;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
-import com.l7tech.security.prov.JceProvider;
+import com.l7tech.security.cert.KeyUsageActivity;
+import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.keys.FlexKey;
-import com.l7tech.util.HexUtils;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.DomUtils;
-import com.l7tech.util.SoapConstants;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.SoapConstants;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -28,9 +30,10 @@ import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import java.io.IOException;
 import java.security.*;
-import java.security.spec.MGF1ParameterSpec;
-import java.security.spec.AlgorithmParameterSpec;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.MGF1ParameterSpec;
 import java.util.Random;
 import java.util.logging.Logger;
 
@@ -120,7 +123,7 @@ public class XencUtil {
      *                http://www.w3.org/2001/04/xmlenc#tripledes-cbc, etc)
      * @return the EncryptedData element that replaces the specified element.
      * @throws java.security.GeneralSecurityException if there is a problem encrypting the element
-     * @throws com.l7tech.security.xml.XencUtil.XencException if there is a problem encrypting the element
+     * @throws XencUtil.XencException if there is a problem encrypting the element
      */
     public static Element encryptElement(Element element, XmlEncKey encKey)
       throws XencException, GeneralSecurityException
@@ -165,15 +168,14 @@ public class XencUtil {
             throw new XencException(e); // shouldn't happen
         }
 
-        Element encryptedData = ec.getEncryptedTypeAsElement();
-        return encryptedData;
+        return ec.getEncryptedTypeAsElement();
     }
 
     /**
      * Verify that the specified EncryptedType has a supported EncryptionMethod (currently RSA1_5 or rsa-oaep-mgf1p)
      * @param encryptedType the EncryptedKey or EncryptedData to check
      * @return The encryption algorithm
-     * @throws com.l7tech.util.InvalidDocumentFormatException if the specified algorithm is not supported
+     * @throws InvalidDocumentFormatException if the specified algorithm is not supported
      */
     public static String checkEncryptionMethod(Element encryptedType) throws InvalidDocumentFormatException {
         Element encryptionMethodEl = DomUtils.findOnlyOneChildElementByName(encryptedType,
@@ -218,7 +220,7 @@ public class XencUtil {
      * @param encryptedKeyElement  the EncryptedKey element to decrypt
      * @param recipientKey         the private key to use to decrypt the element
      * @return the decrypted key bytes.  Will never be null.
-     * @throws com.l7tech.util.InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
+     * @throws InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
      * @throws java.security.GeneralSecurityException if there was a crypto problem
      */
     public static byte[] decryptKey(Element encryptedKeyElement, PrivateKey recipientKey)
@@ -238,7 +240,7 @@ public class XencUtil {
      * @param recipientKey         the private key to use to decrypt the element
      * @param cipherValueB64       the already-extracted base 64'ed cipher value.  Must not be null.
      * @return the decrypted key bytes.  Will never be null.
-     * @throws com.l7tech.util.InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
+     * @throws InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
      * @throws java.security.GeneralSecurityException if there was a crypto problem
      */
     public static byte[] decryptKey(Element encryptedKeyElement, PrivateKey recipientKey, String cipherValueB64)
@@ -305,7 +307,7 @@ public class XencUtil {
      * @param b64edEncryptedKey    the base64ed EncryptedKey value
      * @param recipientKey         the private key to use to decrypt the element
      * @return the decrypted key bytes.  Will never be null.
-     * @throws com.l7tech.util.InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
+     * @throws InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
      * @throws java.security.GeneralSecurityException if there was a crypto problem
      */
     public static byte[] decryptKey(String b64edEncryptedKey, PrivateKey recipientKey)
@@ -323,7 +325,7 @@ public class XencUtil {
      * @param oaepParams     optional param when using oaep (may be empty), or null to use RSA1.5 instead of OAEP
      * @param recipientKey         the private key to use to decrypt the element
      * @return the decrypted key bytes.  Will never be null.
-     * @throws com.l7tech.util.InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
+     * @throws InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
      * @throws java.security.GeneralSecurityException if there was a crypto problem
      */
     public static byte[] decryptKey(String b64edEncryptedKey, byte[] oaepParams, PrivateKey recipientKey)
@@ -411,16 +413,17 @@ public class XencUtil {
      * Takes the symmetric key bytes and encrypts it for a recipient's provided the recipient's public key.
      * The encrypted key is then padded according to http://www.w3.org/2001/04/xmlenc#rsa-1_5 and then base64ed.
      * @param keyBytes the bytes of the symmetric key to encrypt
+     * @param recipientCert   the certificate corresponding to the public key.  If null, this method will fail
+     *                        unless key usage enforcement is globally disabled.
      * @param publicKey the public key of the recipient of the key
-     * @param rand should probably be SecureRandom
      * @return the padded and encrypted keyBytes for the passed publicKey recipient, ready to be base64 encoded
-     * @throws GeneralSecurityException
+     * @throws GeneralSecurityException if the key wrapping fails
      */
-    public static byte[] encryptKeyWithRsaAndPad(byte[] keyBytes, PublicKey publicKey, Random rand) throws GeneralSecurityException {
+    public static byte[] encryptKeyWithRsaAndPad(byte[] keyBytes, X509Certificate recipientCert, PublicKey publicKey) throws GeneralSecurityException {
         if (!(publicKey instanceof RSAPublicKey))
             throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
                                    publicKey.getClass().getName());
-
+        KeyUsageChecker.requireActivityForKey(KeyUsageActivity.encryptXml, recipientCert, publicKey);
         Cipher rsa = JceProvider.getRsaPkcs1PaddingCipher();
         rsa.init(Cipher.ENCRYPT_MODE, publicKey);
         return rsa.doFinal(keyBytes);
@@ -430,19 +433,21 @@ public class XencUtil {
      * Takes the symmetric key bytes and encrypts it for a recipient's provided the recipient's public key.
      * The encrypted key is then base64ed.
      * @param keyBytes the bytes of the symmetric key to encrypt
+     * @param recipientCert the certificate corresponding to the public key.
      * @param publicKey the public key of the recipient of the key
      * @param oaepParams the OAEP mask generation arg (may be null)
      * @return the padded and encrypted keyBytes for the passed publicKey recipient, ready to be base64 encoded
      * @throws GeneralSecurityException if the key is not a valid RSA public key, a needed cipher is unavailable,
      *                                  or no support for OAEP is available.
      */
-    public static byte[] encryptKeyWithRsaOaepMGF1SHA1(byte[] keyBytes, PublicKey publicKey, byte[] oaepParams) throws GeneralSecurityException {
+    public static byte[] encryptKeyWithRsaOaepMGF1SHA1(byte[] keyBytes, X509Certificate recipientCert, PublicKey publicKey, byte[] oaepParams) throws GeneralSecurityException {
         if (!(publicKey instanceof RSAPublicKey))
             throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
                                    publicKey.getClass().getName());
 
         Cipher rsa = JceProvider.getRsaOaepPaddingCipher();
         try {
+            KeyUsageChecker.requireActivityForKey(KeyUsageActivity.encryptXml, recipientCert, publicKey);
             rsa.init(Cipher.ENCRYPT_MODE, publicKey, JDK5Dependent.buildOAEPMGF1SHA1ParameterSpec(oaepParams));
         }
         catch(NoClassDefFoundError ncdfe) {

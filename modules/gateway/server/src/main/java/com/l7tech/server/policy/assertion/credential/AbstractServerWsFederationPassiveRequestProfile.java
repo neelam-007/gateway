@@ -123,7 +123,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
             // don't add a timestamp if there's one already
             decoReq.setIncludeTimestamp(false);
         }
-        decoReq.setSenderSamlToken(samlAssertion.asElement(), false);
+        decoReq.setSenderSamlToken(samlAssertion, false);
         deco.decorateMessage(new Message(requestDoc), decoReq);
         requestXml.setDocument(requestDoc);
         requestSec.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, securityTokenResolver));

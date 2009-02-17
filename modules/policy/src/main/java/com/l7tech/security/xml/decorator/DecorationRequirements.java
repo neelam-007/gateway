@@ -9,6 +9,7 @@ import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.util.NamespaceFactory;
+import com.l7tech.xml.saml.SamlAssertion;
 import org.w3c.dom.Element;
 
 import java.security.PrivateKey;
@@ -172,7 +173,7 @@ public class DecorationRequirements {
         this.usernameTokenCredentials = usernameTokenCredentials;
     }
 
-    public Element getSenderSamlToken() {
+    public SamlAssertion getSenderSamlToken() {
         return senderSamlToken;
     }
 
@@ -180,9 +181,9 @@ public class DecorationRequirements {
      * Set the saml assertion token and include it into the signature
      *
      * @param senderSamlToken the sender saml token
-     * @see DecorationRequirements#setSenderSamlToken(org.w3c.dom.Element, boolean)
+     * @see DecorationRequirements#setSenderSamlToken(SamlAssertion, boolean)
      */
-    public void setSenderSamlToken(Element senderSamlToken) {
+    public void setSenderSamlToken(SamlAssertion senderSamlToken) {
         setSenderSamlToken(senderSamlToken, true);
     }
 
@@ -192,7 +193,7 @@ public class DecorationRequirements {
      * @param senderSamlToken  the sender saml token
      * @param sign include in signature or false to omitt assertion from signature
      */
-    public void setSenderSamlToken(Element senderSamlToken, boolean sign) {
+    public void setSenderSamlToken(SamlAssertion senderSamlToken, boolean sign) {
         this.senderSamlToken = senderSamlToken;
         this.includeSamlTokenInSignature = sign;
     }
@@ -609,7 +610,7 @@ public class DecorationRequirements {
     private PrivateKey senderMessageSigningPrivateKey = null;
     private UsernameToken usernameTokenCredentials = null;
     private boolean signUsernameToken = false;
-    private Element senderSamlToken = null;
+    private SamlAssertion senderSamlToken = null;
     private SecureConversationSession secureConversationSession = null;
     private boolean includeTimestamp = true;
     private boolean signTimestamp;

@@ -5,9 +5,6 @@ import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
-import com.l7tech.objectmodel.migration.PropertyResolver;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,12 +30,12 @@ import java.util.List;
  *   <li>The WS-Addressing namespace URI can be configured;
  *   <li>The reference from the Signature to the SAML assertion can be configured to use either the standards-compliant
  *       {@link #samlUseStrTransform STR Dereference Transform} or a direct, schema-forbidden wsu:Id reference.
- * </ul> 
+ * </ul>
  */
 @RequiresSOAP
 public class NcesDecoratorAssertion
     extends MessageTargetableAssertion
-    implements PrivateKeyable, UsesVariables 
+    implements PrivateKeyable, UsesVariables
 {
     private static final String META_INITIALIZED = NcesDecoratorAssertion.class.getName() + ".metadataInitialized";
 
@@ -52,6 +49,7 @@ public class NcesDecoratorAssertion
     private boolean usesDefaultKeystore = true;
     private long nonDefaultKeystoreId;
     private String keyAlias;
+    private boolean deferDecoration = false;
 
     public String getMessageIdUriPrefix() {
         return messageIdUriPrefix;
@@ -115,7 +113,6 @@ public class NcesDecoratorAssertion
         this.samlAssertionTemplate = samlAssertionTemplate;
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         List<String> vars = new ArrayList<String>();
         vars.addAll(Arrays.asList(super.getVariablesUsed()));
@@ -153,6 +150,26 @@ public class NcesDecoratorAssertion
 
     public void setSamlIncluded(boolean samlIncluded) {
         this.samlIncluded = samlIncluded;
+    }
+
+    /**
+     * @return false if decoration should always be applied immediately when the server assertion runs;
+     *     true if decoration should be deferred (if applicable) to allow additional decoration requirements to be accumulated.
+     *     <p/>
+     *     Currently this is only meaningful when decorating the Response message.
+     */
+    public boolean isDeferDecoration() {
+        return deferDecoration;
+    }
+
+    /**
+     * @param deferDecoration  false if decoration should always be applied immediately when the server assertion runs;
+     *     true if decoration should be deferred (if applicable) to allow additional decoration requirements to be accumulated.
+     *     <p/>
+     *     Currently this is only meaningful when decorating the Response message.
+     */
+    public void setDeferDecoration(boolean deferDecoration) {
+        this.deferDecoration = deferDecoration;
     }
 
     public AssertionMetadata meta() {
