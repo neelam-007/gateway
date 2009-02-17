@@ -1,29 +1,30 @@
 package com.l7tech.server.util;
 
-import com.l7tech.gateway.common.audit.AuditDetail;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.gateway.common.audit.Messages;
-import com.l7tech.gateway.common.audit.AuditDetailMessage;
-import com.l7tech.gateway.common.audit.MessagesUtil;
-import com.l7tech.xml.SoapFaultLevel;
-import com.l7tech.xml.ElementCursor;
-import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.Messages;
+import com.l7tech.gateway.common.audit.MessagesUtil;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.message.Message;
+import com.l7tech.message.XmlKnob;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.wsp.TypeMappingUtils;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.util.Pair;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.message.Message;
-import com.l7tech.message.XmlKnob;
+import com.l7tech.util.Pair;
+import com.l7tech.xml.ElementCursor;
+import com.l7tech.xml.SoapFaultLevel;
+import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -33,13 +34,13 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
+import java.io.IOException;
 import java.text.FieldPosition;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
 
 /**
  * Server side SoapFaultLevel utils.
@@ -272,7 +273,7 @@ public class SoapFaultManager implements ApplicationContextAware {
             // populate @status element
             Element policyResultEl = (Element)res.item(0);
             policyResultEl.setAttribute("status", globalstatus.getMessage());
-            policyResultEl.setAttribute("xmlns:l7p", WspConstants.L7_POLICY_NS);
+            policyResultEl.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:l7p", WspConstants.L7_POLICY_NS);
 
             // populate the faultactor value
             String actor = getRequestUrlVariable(pec);

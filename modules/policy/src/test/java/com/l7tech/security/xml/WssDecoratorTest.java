@@ -798,6 +798,34 @@ public class WssDecoratorTest extends TestCase {
                                 false, true);
     }
 
+    public void testSignedUsernameToken() throws Exception {
+        runTest(getSignedUsernameTokenTestDocument());
+    }
+
+    public TestDocument getSignedUsernameTokenTestDocument() throws Exception {
+        final Context c = new Context();
+        return new TestDocument(c,
+                                null,
+                                null,
+                                null,
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                false,
+                                null,
+                                null,
+                                new Element[0],
+                                null,
+                                false,
+                                KeyInfoInclusionType.CERT,
+                                false,
+                                null,
+                                null,
+                                null,
+                                new UsernameTokenImpl("testuser", null),
+                                false,
+                                true);
+    }
+
     public void testEncryptedUsernameTokenWithDerivedKeys() throws Exception {
         runTest(getEncryptedUsernameTokenWithDerivedKeysTestDocument());
     }

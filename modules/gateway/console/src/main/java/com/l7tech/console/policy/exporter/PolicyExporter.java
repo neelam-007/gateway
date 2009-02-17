@@ -3,8 +3,11 @@
  */
 package com.l7tech.console.policy.exporter;
 
-import com.l7tech.policy.Policy;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -12,9 +15,7 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.util.DomUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -184,9 +185,9 @@ public class PolicyExporter {
     private Element wrapExportReferencesToPolicyDocument(Document originalPolicy) {
         Element exportRoot = originalPolicy.createElementNS(ExporterConstants.EXPORTED_POL_NS,
                                                             ExporterConstants.EXPORTED_DOCROOT_ELNAME);
-        exportRoot.setAttribute("xmlns:" + ExporterConstants.EXPORTED_POL_PREFIX, ExporterConstants.EXPORTED_POL_NS);
-        exportRoot.setAttribute("xmlns:L7p", WspConstants.L7_POLICY_NS);
-        exportRoot.setAttribute("xmlns:wsp", WspConstants.WSP_POLICY_NS);
+        exportRoot.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:" + ExporterConstants.EXPORTED_POL_PREFIX, ExporterConstants.EXPORTED_POL_NS);
+        exportRoot.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:L7p", WspConstants.L7_POLICY_NS);
+        exportRoot.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:wsp", WspConstants.WSP_POLICY_NS);
 
         exportRoot.setPrefix(ExporterConstants.EXPORTED_POL_PREFIX);
         exportRoot.setAttribute(ExporterConstants.VERSION_ATTRNAME, ExporterConstants.CURRENT_VERSION);

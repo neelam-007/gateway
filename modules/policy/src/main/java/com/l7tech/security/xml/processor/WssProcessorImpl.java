@@ -1921,10 +1921,10 @@ public class WssProcessorImpl implements WssProcessor {
         final Element bst;
         if (wssePrefix == null) {
             bst = domFactory.createElementNS(wsseNs, "BinarySecurityToken");
-            bst.setAttribute("xmlns", wsseNs);
+            bst.setAttributeNS(DomUtils.XMLNS_NS, "xmlns", wsseNs);
         } else {
             bst = domFactory.createElementNS(wsseNs, wssePrefix+":BinarySecurityToken");
-            bst.setAttribute("xmlns:"+wssePrefix, wsseNs);
+            bst.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:"+wssePrefix, wsseNs);
         }
         bst.setAttribute("ValueType", SoapConstants.VALUETYPE_X509);
         DomUtils.setTextContent(bst, HexUtils.encodeBase64(certificate.getEncoded(), true));

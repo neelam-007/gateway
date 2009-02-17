@@ -163,7 +163,7 @@ public class WsdlSchemaAnalizer {
                     if (attrnode.getName().startsWith("xmlns:")) {
                         for (int ii = 0; ii < output.getLength(); ii++) {
                             Element schemael = (Element)output.item(ii);
-                            schemael.setAttribute(attrnode.getName(), attrnode.getValue());
+                            schemael.setAttributeNS(DomUtils.XMLNS_NS, attrnode.getName(), attrnode.getValue());
                         }
                     }
                 }

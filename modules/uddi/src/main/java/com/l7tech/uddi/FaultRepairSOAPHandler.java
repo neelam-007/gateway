@@ -1,27 +1,22 @@
 package com.l7tech.uddi;
 
-import java.util.Set;
-import java.util.List;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import javax.xml.ws.handler.soap.SOAPMessageContext;
-import javax.xml.ws.handler.soap.SOAPHandler;
-import javax.xml.ws.handler.MessageContext;
-import javax.xml.soap.SOAPBody;
-import javax.xml.soap.SOAPMessage;
-import javax.xml.soap.SOAPException;
+import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.ExceptionUtils;
+import org.w3c.dom.*;
+
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
-
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Attr;
-
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.ExceptionUtils;
+import javax.xml.soap.SOAPBody;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPMessage;
+import javax.xml.ws.handler.MessageContext;
+import javax.xml.ws.handler.soap.SOAPHandler;
+import javax.xml.ws.handler.soap.SOAPMessageContext;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * SOAPHandler to repair in SOAP Fault messages with invalid faults.
@@ -248,7 +243,8 @@ class FaultRepairSOAPHandler implements SOAPHandler<SOAPMessageContext>
                     faultElement.replaceChild(replacement, subelement);
 
                     // ensure empty default NS
-                    replacement.setAttribute(XMLConstants.XMLNS_ATTRIBUTE, "");
+                    replacement.removeAttribute(XMLConstants.XMLNS_ATTRIBUTE);
+                    replacement.setAttributeNS(DomUtils.XMLNS_NS, XMLConstants.XMLNS_ATTRIBUTE, "");
 
                     // copy attributes
                     NamedNodeMap attributeMap = subelement.getAttributes();

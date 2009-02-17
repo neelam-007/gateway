@@ -336,7 +336,7 @@ public class Xss4jWrapper {
             Element header = getOrMakeHeader(soapMsg);
             Element securityEl = soapMsg.createElementNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
             securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
-            securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, SECURITY_NAMESPACE);
+            securityEl.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:" + SECURITY_NAMESPACE_PREFIX, SECURITY_NAMESPACE);
             header.insertBefore(securityEl, null);
             return securityEl;
         } else {

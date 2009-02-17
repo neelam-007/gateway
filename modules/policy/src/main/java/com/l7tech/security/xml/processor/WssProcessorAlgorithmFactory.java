@@ -27,6 +27,8 @@ import java.security.NoSuchProviderException;
  *
  */
 public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
+    private static final boolean USE_IBM_EXC_C11R = Boolean.getBoolean("com.l7tech.common.security.xml.c14n.useIbmExcC11r");
+
     private final Map<Node, Node> strToTarget;
     private boolean sawEnvelopedTransform = false;
 
@@ -41,9 +43,9 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
 
     public Canonicalizer getCanonicalizer(String string) {
          if (Transform.C14N_EXCLUSIVE.equals(string)) {
-             // Fixed canonicalizer respects the PrefixList
-             // See bug 3611
-             return new FixedExclusiveC11r();
+             // Use the Sun canonicalizer to avoid some bugs in xss4j (Bug #6002)
+             // When using IBM c11r, the FixedExclusiveC11r respects the PrefixList (Bug #3611)
+             return USE_IBM_EXC_C11R ? new FixedExclusiveC11r() : new ApacheExclusiveC14nAdaptor();
          }
          return super.getCanonicalizer(string);
      }
@@ -61,6 +63,8 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
             return new AttachmentContentTransform();
         } else if ( SoapConstants.TRANSFORM_ATTACHMENT_COMPLETE.equals(s)) {
             return new AttachmentCompleteTransform();
+        } else if (Transform.C14N_EXCLUSIVE.equals(s) && !USE_IBM_EXC_C11R) {
+            return new ApacheExclusiveC14nAdaptor();
         }
         return super.getTransform(s);
     }

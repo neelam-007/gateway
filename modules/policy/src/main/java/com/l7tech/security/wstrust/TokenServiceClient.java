@@ -4,30 +4,30 @@
 package com.l7tech.security.wstrust;
 
 import com.l7tech.common.http.*;
-import com.l7tech.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.message.Message;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.*;
 import com.l7tech.security.xml.KeyInfoElement;
-import com.l7tech.security.xml.XencUtil;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.xml.UnexpectedKeyInfoException;
+import com.l7tech.security.xml.XencUtil;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.*;
 import com.l7tech.util.*;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.xml.soap.SoapFaultUtils;
-import com.l7tech.xml.saml.SamlAssertion;
-import com.l7tech.xml.WsTrustRequestType;
-import com.l7tech.xml.SoapFaultDetail;
 import com.l7tech.xml.MessageNotSoapException;
+import com.l7tech.xml.SoapFaultDetail;
 import com.l7tech.xml.UnsupportedDocumentFormatException;
-import com.l7tech.common.protocol.SecureSpanConstants;
-
-import org.w3c.dom.*;
+import com.l7tech.xml.WsTrustRequestType;
+import com.l7tech.xml.saml.SamlAssertion;
+import com.l7tech.xml.soap.SoapFaultUtils;
+import com.l7tech.xml.soap.SoapUtil;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.net.ssl.SSLException;
@@ -40,7 +40,8 @@ import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -266,7 +267,7 @@ public class TokenServiceClient {
                                                                 appliesToAddress,
                                                                 wstIssuerAddress,
                                                                 timestampCreatedDate);
-        requestDoc.getDocumentElement().setAttribute("xmlns:saml", (tokenType == null ? SecurityTokenType.SAML_ASSERTION : tokenType).getWstPrototypeElementNs());
+        requestDoc.getDocumentElement().setAttributeNS(DomUtils.XMLNS_NS, "xmlns:saml", (tokenType == null ? SecurityTokenType.SAML_ASSERTION : tokenType).getWstPrototypeElementNs());
         Object result = obtainResponse(clientCertificate, url, requestDoc, clientPrivateKey, serverCertificate, httpBasicCredentials, requireWssSignedResponse);
 
         if (!(result instanceof SamlAssertion))

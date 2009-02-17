@@ -265,7 +265,7 @@ public class SoapUtil extends SoapConstants {
         Element header = getOrMakeHeader(soapMsg);
         Element securityEl = soapMsg.createElementNS(preferredWsseNamespace, SECURITY_EL_NAME);
         securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
-        securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, preferredWsseNamespace);
+        securityEl.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:" + SECURITY_NAMESPACE_PREFIX, preferredWsseNamespace);
         if(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(soapMsg.getDocumentElement().getNamespaceURI())) {
             setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, "true");
         } else {
@@ -284,7 +284,7 @@ public class SoapUtil extends SoapConstants {
         Element header = getOrMakeHeader(soapMsg);
         Element securityEl = soapMsg.createElementNS(preferredWsseNamespace, SECURITY_EL_NAME);
         securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
-        securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, preferredWsseNamespace);
+        securityEl.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:" + SECURITY_NAMESPACE_PREFIX, preferredWsseNamespace);
         boolean isSoap12 = SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(soapMsg.getDocumentElement().getNamespaceURI());
         if(isSoap12) {
             setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, "true");
@@ -340,11 +340,10 @@ public class SoapUtil extends SoapConstants {
         String prefix = env.getPrefix();
         if (prefix == null) {
             // SOAP must be the default namespace.  We'll have to declare a prefix of our own.
-            prefix = "soap8271"; // todo - find an unused prefix
+            prefix = DomUtils.getOrCreatePrefixForNamespace(elementNeedingAttr, soapNs, "soap");
             elementNeedingAttr.setAttributeNS(soapNs,
                                               prefix + ":" + attrName,
                                               attrValue);
-            elementNeedingAttr.setAttribute("xmlns:" + prefix, soapNs);
         } else {
             elementNeedingAttr.setAttributeNS(soapNs,
                                               prefix + ":" + attrName,

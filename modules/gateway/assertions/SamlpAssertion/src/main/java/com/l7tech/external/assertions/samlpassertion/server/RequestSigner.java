@@ -2,16 +2,16 @@ package com.l7tech.external.assertions.samlpassertion.server;
 
 import com.ibm.dom.util.IndentConfig;
 import com.ibm.xml.dsig.*;
-
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.DsigUtil;
-import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.KeyInfoDetails;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.util.TooManyChildElementsException;
+import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.util.DomUtils;
 import com.l7tech.util.NamespaceFactory;
+import com.l7tech.util.TooManyChildElementsException;
+import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -154,7 +154,7 @@ public class RequestSigner {
                 throw new IllegalArgumentException("KeyInfoType must be CERT, STR_THUMBPRINT or STR_SKI");
         }
 
-        keyInfoElement.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns", SoapUtil.DIGSIG_URI);
+        keyInfoElement.setAttributeNS(DomUtils.XMLNS_NS, "xmlns", SoapUtil.DIGSIG_URI);
 
         return keyInfoElement;
     }

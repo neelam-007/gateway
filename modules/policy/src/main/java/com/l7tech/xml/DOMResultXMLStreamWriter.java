@@ -1,20 +1,17 @@
 package com.l7tech.xml;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Stack;
+import com.l7tech.util.DomUtils;
+import org.w3c.dom.*;
+
 import javax.xml.XMLConstants;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.dom.DOMResult;
-
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Stack;
 
 /**
  * Initial attempt to create a DOM from an XMLStreamWriter.
@@ -242,13 +239,13 @@ public class DOMResultXMLStreamWriter implements XMLStreamWriter {
         if (prefix == null || XMLConstants.DEFAULT_NS_PREFIX.equals(prefix)) {
             newElement = factory.createElementNS(namespaceURI, localName);
             if (!namespaceURI.equals(getNamespaceContext().getNamespaceURI(XMLConstants.DEFAULT_NS_PREFIX))) {
-                newElement.setAttribute(XMLConstants.XMLNS_ATTRIBUTE, namespaceURI);
+                newElement.setAttributeNS(DomUtils.XMLNS_NS, XMLConstants.XMLNS_ATTRIBUTE, namespaceURI);
             }
         }
         else {
             newElement = factory.createElementNS(namespaceURI, prefix + ":" + localName);
             if (!namespaceURI.equals(getNamespaceContext().getNamespaceURI(prefix))) {
-                newElement.setAttribute(XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix, namespaceURI);
+                newElement.setAttributeNS(DomUtils.XMLNS_NS, XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix, namespaceURI);
             }
         }
 
@@ -260,7 +257,7 @@ public class DOMResultXMLStreamWriter implements XMLStreamWriter {
         Element newElement = factory.createElementNS(namespaceURI, prefix + ":" + localName);
 
         if (!namespaceURI.equals(getNamespaceContext().getNamespaceURI(prefix))) {
-            newElement.setAttribute(XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix, namespaceURI);
+            newElement.setAttributeNS(DomUtils.XMLNS_NS, XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix, namespaceURI);
         }
 
         currentNode.appendChild(newElement);
@@ -298,7 +295,7 @@ public class DOMResultXMLStreamWriter implements XMLStreamWriter {
                     XMLConstants.XMLNS_ATTRIBUTE :
                     XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix;
 
-            element.setAttribute(attrName, namespaceURI);
+            element.setAttributeNS(DomUtils.XMLNS_NS, attrName, namespaceURI);
         }
     }
 
@@ -343,13 +340,13 @@ public class DOMResultXMLStreamWriter implements XMLStreamWriter {
         if (prefix == null || XMLConstants.DEFAULT_NS_PREFIX.equals(prefix)) {
             newElement = factory.createElementNS(namespaceURI, localName);
             if (!namespaceURI.equals(getNamespaceContext().getNamespaceURI(XMLConstants.DEFAULT_NS_PREFIX))) {
-                newElement.setAttribute(XMLConstants.XMLNS_ATTRIBUTE, namespaceURI);
+                newElement.setAttributeNS(DomUtils.XMLNS_NS, XMLConstants.XMLNS_ATTRIBUTE, namespaceURI);
             }
         }
         else {
             newElement = factory.createElementNS(namespaceURI, prefix + ":" + localName);
             if (!namespaceURI.equals(getNamespaceContext().getNamespaceURI(prefix))) {
-                newElement.setAttribute(XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix, namespaceURI);
+                newElement.setAttributeNS(DomUtils.XMLNS_NS, XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix, namespaceURI);
             }
         }
 
@@ -363,7 +360,7 @@ public class DOMResultXMLStreamWriter implements XMLStreamWriter {
         Element newElement = factory.createElementNS(namespaceURI, prefix + ":" + localName);
 
         if (!namespaceURI.equals(getNamespaceContext().getNamespaceURI(prefix))) {
-            newElement.setAttribute(XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix, namespaceURI);
+            newElement.setAttributeNS(DomUtils.XMLNS_NS, XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix, namespaceURI);
         }
 
         currentNode.appendChild(newElement);

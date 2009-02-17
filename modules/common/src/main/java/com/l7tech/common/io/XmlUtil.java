@@ -1,52 +1,32 @@
 package com.l7tech.common.io;
 
-import org.xml.sax.EntityResolver;
-import org.xml.sax.SAXException;
-import org.xml.sax.InputSource;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXParseException;
-import org.w3c.dom.ls.LSResourceResolver;
-import org.w3c.dom.ls.LSInput;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Attr;
+import com.ibm.xml.dsig.Canonicalizer;
+import com.ibm.xml.dsig.transform.ExclusiveC11r;
+import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.LSInputImpl;
+import com.l7tech.util.PaddingCharSequence;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
+import org.w3c.dom.*;
+import org.w3c.dom.ls.LSInput;
+import org.w3c.dom.ls.LSResourceResolver;
+import org.xml.sax.*;
 
-import javax.xml.transform.URIResolver;
-import javax.xml.transform.Result;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.Source;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.validation.Schema;
-import javax.xml.validation.Validator;
 import javax.xml.validation.SchemaFactory;
-import javax.xml.XMLConstants;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.StringWriter;
-import java.util.Stack;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Iterator;
+import javax.xml.validation.Validator;
+import java.io.*;
+import java.util.*;
 import java.util.logging.Logger;
-
-import com.l7tech.util.*;
-import com.ibm.xml.dsig.Canonicalizer;
-import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
-import com.ibm.xml.dsig.transform.ExclusiveC11r;
 
 /**
  * XmlUtil extends DomUtils to provide parsing / io features.
@@ -521,7 +501,7 @@ public class XmlUtil extends DomUtils {
                 for (int i = 0; i < attrsmap.getLength(); i++) {
                     Attr attrnode = (Attr)attrsmap.item(i);
                     if (attrnode.getName().startsWith("xmlns:")) {
-                        newRootNode.setAttribute(attrnode.getName(), attrnode.getValue());
+                        newRootNode.setAttributeNS(DomUtils.XMLNS_NS, attrnode.getName(), attrnode.getValue());
                     }
                 }
 

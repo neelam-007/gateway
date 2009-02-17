@@ -965,7 +965,7 @@ public class WsspWriter {
 
                 if (!found) {
                     if (prefix == null || XMLConstants.DEFAULT_NS_PREFIX.equals(prefix)) {
-                        targetElement.setAttribute(XMLConstants.XMLNS_ATTRIBUTE, namesp);
+                        targetElement.setAttributeNS(DomUtils.XMLNS_NS, XMLConstants.XMLNS_ATTRIBUTE, namesp);
                     } else {
                         targetElement.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, XMLConstants.XMLNS_ATTRIBUTE + ":" + prefix, namesp);
                     }
@@ -977,7 +977,7 @@ public class WsspWriter {
     private static Element buildPolicyReference(Document factory, String policyId) {
         Element policyReference = factory.createElementNS(WSP_NS, "wsp:PolicyReference");
         policyReference.setAttribute("URI", "#"+policyId);
-        policyReference.setAttribute("xmlns:wsp", WSP_NS);
+        policyReference.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:wsp", WSP_NS);
         return policyReference;
     }
 

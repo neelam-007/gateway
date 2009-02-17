@@ -160,7 +160,7 @@ public abstract class WsTrustConfig {
                     if ("".equals(prefix)) {
                         // Add NS if not redeclared on token element (default NS)
                         if (attrs.getNamedItem(XMLConstants.XMLNS_ATTRIBUTE) == null) {
-                            Attr nsAttribute = factory.createAttribute(XMLConstants.XMLNS_ATTRIBUTE);
+                            Attr nsAttribute = factory.createAttributeNS(DomUtils.XMLNS_NS, XMLConstants.XMLNS_ATTRIBUTE);
                             nsAttribute.setValue(namespace);
                             attrs.setNamedItem(nsAttribute);    
                         }

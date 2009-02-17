@@ -79,6 +79,10 @@ public class WssRoundTripTest extends TestCase {
         doTestSignedAndEncryptedUsernameToken(new SimpleSecurityTokenResolver());
     }
 
+    public void testSignedUsernameToken() throws Exception {
+        runRoundTripTest(new NamedTestDocument("signedUsernameToken", wssDecoratorTest.getSignedUsernameTokenTestDocument()));
+    }
+
     public void doTestSignedAndEncryptedUsernameToken( SecurityTokenResolver securityTokenResolver) throws Exception {
         NamedTestDocument ntd = new NamedTestDocument("Signed and Encrypted UsernameToken",
                                                       wssDecoratorTest.getSignedAndEncryptedUsernameTokenTestDocument());

@@ -3,9 +3,13 @@
  */
 package com.l7tech.security.xml;
 
-import com.l7tech.message.Message;
+import com.ibm.xml.dsig.transform.ExclusiveC11r;
+import com.l7tech.common.TestDocuments;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.message.Message;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.saml.SignedSamlTest;
 import com.l7tech.security.token.*;
@@ -13,24 +17,28 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.DecorationRequirements.SimpleSecureConversationSession;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.*;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.MessageNotSoapException;
-import com.l7tech.common.TestDocuments;
 import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.test.BugNumber;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.jcp.xml.dsig.internal.dom.DOMReference;
+import org.jcp.xml.dsig.internal.dom.DOMSubTreeData;
+import static org.junit.Assert.*;
+import org.junit.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.xml.crypto.*;
+import javax.xml.crypto.dom.DOMStructure;
+import javax.xml.crypto.dom.DOMURIReference;
+import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.crypto.dsig.XMLSignatureFactory;
+import javax.xml.crypto.dsig.dom.DOMValidateContext;
 import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -40,21 +48,9 @@ import java.util.logging.Logger;
 /**
  * @author mike
  */
-public class WssProcessorTest extends TestCase {
+public class WssProcessorTest {
     private static Logger log = Logger.getLogger(WssProcessorTest.class.getName());
     private static final Random random = new Random();
-
-    public WssProcessorTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(WssProcessorTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
 
     private void doTest(TestDocument testDocument) throws Exception {
         WssProcessor wssProcessor = new WssProcessorImpl();
@@ -154,58 +150,73 @@ public class WssProcessorTest extends TestCase {
         }
     }
 
+    @Test
     public void testDotnetEncryptedRequest() throws Exception {
         doTest(makeDotNetTestDocument("dotnet encrypted request", TestDocuments.DOTNET_ENCRYPTED_REQUEST));
     }
 
+    @Test
     public void testDotnetSignedRequest() throws Exception {
         doTest(makeDotNetTestDocument("dotnet signed request", TestDocuments.DOTNET_SIGNED_REQUEST));
     }
 
+    @Test
     public void testDotnetRequestWithUsernameToken() throws Exception {
         doTest(makeDotNetTestDocument("dotnet request with username token", TestDocuments.DOTNET_USERNAME_TOKEN));
     }
 
+    @Test
     public void testEttkSignedRequest() throws Exception {
         doTest(makeEttkTestDocument("ettk signed request", TestDocuments.ETTK_SIGNED_REQUEST));
     }
 
+    @Test
     public void testEttkEncryptedRequest() throws Exception {
         doTest(makeEttkTestDocument("ettk encrypted request", TestDocuments.ETTK_ENCRYPTED_REQUEST));
     }
 
+    @Test
     public void testEttkSignedEncryptedRequest() throws Exception {
         doTest(makeEttkTestDocument("ettk signed encrypted request", TestDocuments.ETTK_SIGNED_ENCRYPTED_REQUEST));
     }
 
+    @Test
     public void testEttkSignedRequestIssuerSerial() throws Exception {
         doTest(makeEttkTestDocument("ettk signed request (with X509IssuerSerial)", TestDocuments.GOOGLESPELLREQUEST_SIGNED_ISSUERSERIAL));
     }
 
-    /*public void testRequestWrappedL7Actor() throws Exception {
+    /*
+    @Test
+    public void testRequestWrappedL7Actor() throws Exception {
         doTest(makeDotNetTestDocument("request wrapped l7 actor", TestDocuments.WRAPED_L7ACTOR));
     }
 
+    @Test
     public void testRequestMultipleWrappedL7Actor() throws Exception {
         doTest(makeDotNetTestDocument("request multiple wrapped l7 actor", TestDocuments.MULTIPLE_WRAPED_L7ACTOR));
     }*/
 
+    @Test
     public void testDotnetSignedSecureConversationRequest() throws Exception {
         doTest(makeDotNetTestDocument("dotnet signed SecureConversation request", TestDocuments.DOTNET_SIGNED_USING_DERIVED_KEY_TOKEN));
     }
 
+    @Test
     public void testDotnetSignedEncryptedSecureConversationRequest() throws Exception {
         doTest(makeDotNetTestDocument("dotnet signed encrypted SecureConversation request", TestDocuments.DOTNET_ENCRYPTED_USING_DERIVED_KEY_TOKEN));
     }
 
+    @Test
     public void testDotnetSignedRequest2() throws Exception {
         doTest(makeDotNetTestDocument("dotnet signed request 2", TestDocuments.DOTNET_SIGNED_REQUEST2));
     }
 
+    @Test
     public void testWebsphereSignedRequest() throws Exception {
         doTest(makeEttkTestDocument("websphere signed request", TestDocuments.WEBSPHERE_SIGNED_REQUEST));
     }
 
+    @Test
     public void testSampleSignedSamlHolderOfKeyRequest() throws Exception {
         SignedSamlTest sst = new SignedSamlTest("blah");
         sst.setUp();
@@ -213,6 +224,7 @@ public class WssProcessorTest extends TestCase {
                                     /*TestDocuments.SAMPLE_SIGNED_SAML_HOLDER_OF_KEY_REQUEST*/sst.getRequestSignedWithSamlToken(false, false, false, 1)));
     }
 
+    @Test
     public void testSignedSamlSenderVouchesRequest() throws Exception {
         SignedSamlTest sst = new SignedSamlTest("blah");
         sst.setUp();
@@ -220,6 +232,7 @@ public class WssProcessorTest extends TestCase {
                                     sst.getSignedRequestWithSenderVouchesToken()));
     }
 
+    @Test
     public void testNonSoapRequest() throws Exception {
         try {
             doTest(makeEttkTestDocument("non-SOAP request",
@@ -230,6 +243,7 @@ public class WssProcessorTest extends TestCase {
         }
     }
 
+    @Test
     public void testLayer7Interop2008Response222() throws Exception {
         Document d = TestDocuments.getTestDocument(TestDocuments.DIR + "wssInterop/interop_2008_layer7_222_response.xml");
         TestDocument td = new TestDocument("Layer7Interop2008Response222", d,
@@ -241,6 +255,7 @@ public class WssProcessorTest extends TestCase {
         doTest(td);
     }
 
+    @Test
     public void testBug3736StrTransform() throws Exception {
         TestDocument result;
         Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3736_STR_TRANSFORM_REQUEST);
@@ -254,6 +269,7 @@ public class WssProcessorTest extends TestCase {
         doTest(result);
     }
 
+    @Test
     public void testBug3611SignatureInclusiveNamespaces() throws Exception {
         TestDocument result;
         Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3611_SIGNATURE_INCLUSIVE_NAMESPACES);
@@ -264,6 +280,7 @@ public class WssProcessorTest extends TestCase {
     /**
      * Test that use of unsupported XPath transform causes reasonable error (not java.lang.NoSuchMethodError).
      */
+    @Test
     public void testBug3747DsigXpath() throws Exception {
         TestDocument result;
         Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3747_DSIG_XPATH);
@@ -276,6 +293,7 @@ public class WssProcessorTest extends TestCase {
         }
     }
 
+    @Test
     public void testWssInterop2005JulyRequest() throws Exception {
         TestDocument result;
         try {
@@ -292,6 +310,7 @@ public class WssProcessorTest extends TestCase {
         doTest(result);
     }
 
+    @Test
     public void testKeyInfoThumbprintRequest() throws Exception {
         TestDocument result;
         try {
@@ -305,6 +324,7 @@ public class WssProcessorTest extends TestCase {
         doTest(result);
     }
 
+    @Test
     @BugNumber(3754)
     public void testBug3754PingReqVordelSigned() throws Exception {
         doTest(makeBug3754PingReqVordelSignedTestDocument());
@@ -315,9 +335,10 @@ public class WssProcessorTest extends TestCase {
         return new TestDocument("Bug3754PingReqVordelSigned", d, null, null, null, null, null);
     }
 
-    // disabled because the cert that signed the test message has since expired
     // TODO recreate test messsage using another cert
-    public void DISABLED_testSignedSvAssertionWithThumbprintSha1() throws Exception {
+    @Ignore("disabled because the cert that signed the test message has since expired")
+    @Test
+    public void testSignedSvAssertionWithThumbprintSha1() throws Exception {
         TestDocument r;
         Document ass = TestDocuments.getTestDocument(TestDocuments.DIR + "/egg/generatedSvThumbAssertion.xml");
         Document d = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
@@ -328,9 +349,10 @@ public class WssProcessorTest extends TestCase {
         doTest(r);
     }
 
-    // Disabled because the cert that signed the test request has since expired
     // TODO recreate test messsage using another cert
-    public void DISABLED_testCompleteEggRequest() throws Exception {
+    @Ignore("Disabled because the cert that signed the test request has since expired")
+    @Test
+    public void testCompleteEggRequest() throws Exception {
         Document d = TestDocuments.getTestDocument(TestDocuments.DIR + "/egg/ValidBlueCardRequest.xml");
 
         Element sec = SoapUtil.getSecurityElement(d);
@@ -346,6 +368,7 @@ public class WssProcessorTest extends TestCase {
         doTest(td);
     }
 
+    @Test
     public void testWssInterop2005JulyResponse() throws Exception {
         TestDocument result;
         Document d = TestDocuments.getTestDocument(TestDocuments.WSS2005JUL_RESPONSE);
@@ -422,6 +445,7 @@ public class WssProcessorTest extends TestCase {
             "s92WB+j5x91/xmvNg+ZTp+TEfyINM3wZAHwoIzXtEViopCRsXkmLr+IBGszmUpZnPd2QuqDSSkQh\n" +
             "lZmUAuNVPCTBoNuWBX/tvvAw3a3jl+DXB+Fn2JbRpoUdvkgAWCAJ6hrKgA==";
 
+    @Test
     public void testIndigoPingResponse() throws Exception {
 
         X509Certificate aliceCert = TestDocuments.getWssInteropAliceCert();
@@ -464,6 +488,7 @@ public class WssProcessorTest extends TestCase {
         return new Pair<Message, SimpleSecureConversationSession>(msg, session);
     }
 
+    @Test
     public void testPartInfoCausingPrematureDomCommit() throws Exception {
         Pair<Message, SimpleSecureConversationSession> req = makeWsscSignedMessage();
         final SimpleSecureConversationSession session = req.right;
@@ -507,6 +532,7 @@ public class WssProcessorTest extends TestCase {
         boolean configure(Document placeOrder, Element blarg) throws IOException;
     }
 
+    @Test
     public void testBug2157RejectSoapHeaders() throws Exception {
         final String blargns = "http://example.com/ns/blargle";
 
@@ -642,6 +668,7 @@ public class WssProcessorTest extends TestCase {
         }
     }
 
+    @Test
     @BugNumber(4667)
     public void testBug4667SignatureCacheBug() throws Exception {
         WssProcessor proc = new WssProcessorImpl();
@@ -669,6 +696,99 @@ public class WssProcessorTest extends TestCase {
         } catch (InvalidDocumentSignatureException e) {
             // Ok
         }
+    }
+
+    @Test
+    @BugNumber(6002)
+    public void testCanonicalizeWithCanceledDefaultNamespace() throws Exception {
+        Document doc = XmlUtil.stringToDocument("<a xmlns=\"urn:a\"><b xmlns=\"\"><c/></b></a>");
+        Element element = doc.getDocumentElement();
+
+        // Expected failure due to XSS4J excl c11r bug; see Bug #6002.  If bug is fixed, swap the next two tests
+        //assertEquals(canonicalizeWithIbm(element), canonicalizeWithSun(element));
+        assertTrue(!canonicalizeWithIbm(element).equals(canonicalizeWithSun(element)));
+    }
+
+
+    @Test
+    @BugNumber(6002)
+	public void testCanonicalizeNcesMessage() throws Exception {
+        Document doc = TestDocuments.getTestDocument(TestDocuments.NCES_REQ_WITH_CANCELED_XMLNS);
+        Element element = SoapUtil.getBodyElement(doc);
+
+        String canonResultIbm = canonicalizeWithIbm(element);
+
+        final String ibmFormatted = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(canonResultIbm));
+        final String sunFormatted = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(canonicalizeWithSun(element)));
+
+        // Expected failure due to XSS4J excl c11r bug; see Bug #6002.  If bug is fixed, swap the next two tests
+        //assertEquals(ibmFormatted, sunFormatted);
+        assertTrue(!ibmFormatted.equals(sunFormatted));
+    }
+
+    private String canonicalizeWithIbm(Element element) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        new ExclusiveC11r().canonicalize(element, baos);
+        return baos.toString();
+    }
+
+    private String canonicalizeWithSun(Element element) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        new ApacheExclusiveC14nAdaptor().canonicalize(element, baos);
+        return baos.toString();
+    }
+
+    private Document getNcesSignedRequest() throws IOException, SAXException {
+        String docXml = TestDocuments.getTestDocumentAsXml(TestDocuments.NCES_REQ_WITH_CANCELED_XMLNS);
+        return XmlUtil.stringToDocument(docXml);
+    }
+
+    @Test
+    @BugNumber(6002)
+	public void testProcessNcesSignedMessageWithTrogdor() throws Exception {
+        Document doc = getNcesSignedRequest();
+        WssProcessorImpl proc = new WssProcessorImpl(new Message(doc));
+        ProcessorResult result = proc.processMessage();
+        final SignedElement[] signed = result.getElementsThatWereSigned();
+        System.out.println("Saw " + signed.length + " signed elements:");
+        for (SignedElement signedElement : signed) {
+            System.out.println(signedElement.asElement().getNodeName());
+        }
+        assertTrue(signed.length == 4); // message ID, saml assertion, timestamp, and body
+    }
+
+    @Test
+    @BugNumber(6002)
+	public void testVerifyNcesSignatureWithSun() throws Exception {
+        final Document doc = getNcesSignedRequest();
+        Element sechdr = SoapUtil.getSecurityElement(doc);
+        Element signature = XmlUtil.findOnlyOneChildElementByName(sechdr, "http://www.w3.org/2000/09/xmldsig#", "Signature");
+
+        XMLSignatureFactory sigfac = XMLSignatureFactory.getInstance();
+        X509Certificate ncesCert = CertUtils.decodeCert(HexUtils.decodeBase64(SIGNED_WITH_NCES_CERT, true));
+        XMLSignature sig = sigfac.unmarshalXMLSignature(new DOMStructure(signature));
+        DOMValidateContext vc = new DOMValidateContext(ncesCert.getPublicKey(), doc);
+
+        vc.setURIDereferencer(new URIDereferencer() {
+            public Data dereference(URIReference uriReference, XMLCryptoContext context) throws URIReferenceException {
+                DOMURIReference ref = (DOMURIReference)uriReference;
+                final String targetUri = ref.getURI();
+                if (targetUri == null)
+                    throw new URIReferenceException("Reference lacks target URI: " + ref.getHere().getNodeName());
+                Element found = SoapUtil.getElementByWsuId(doc, targetUri);
+                if (found == null)
+                    throw new URIReferenceException("Reference target element not found: " + ref.getHere().getNodeName() + ": URI=" + targetUri);
+                return new DOMSubTreeData(found, false);
+            }
+        });
+
+        final boolean validity = sig.validate(vc);
+        List refs = sig.getSignedInfo().getReferences();
+        for (Object refobj : refs) {
+            DOMReference ref = (DOMReference) refobj;
+            System.out.printf("Ref: %s  validity:%b\n", ref.getURI(), ref.validate(vc));
+        }
+        assertTrue(validity);
     }
 
     private static Message makeMessage(String xml) throws SAXException {
@@ -701,4 +821,26 @@ public class WssProcessorTest extends TestCase {
             "    </soapenv:Body>\n" +
             "</soapenv:Envelope>";
 
+    private static final String SIGNED_WITH_NCES_CERT =
+            "MIID4DCCA0mgAwIBAgIDANPtMA0GCSqGSIb3DQEBBQUAMFcxCzAJBgNVBAYTAlVT\n" +
+            "MRgwFgYDVQQKEw9VLlMuIEdvdmVybm1lbnQxDDAKBgNVBAsTA0RvRDEMMAoGA1UE\n" +
+            "CxMDUEtJMRIwEAYDVQQDEwlET0QgQ0EtMTMwHhcNMDgwNTA5MjEzNTI5WhcNMTEw\n" +
+            "NTEwMjEzNTI5WjByMQswCQYDVQQGEwJVUzEYMBYGA1UEChMPVS5TLiBHb3Zlcm5t\n" +
+            "ZW50MQwwCgYDVQQLEwNEb0QxDDAKBgNVBAsTA1BLSTENMAsGA1UECxMEVVNBRjEe\n" +
+            "MBwGA1UEAxMVc2VjdXJpdHkubmNlcy5kb2QubWlsMIGfMA0GCSqGSIb3DQEBAQUA\n" +
+            "A4GNADCBiQKBgQCp/c/SufZ7aAfdiz4Kw0kx4JejzddFAMWQXjRib8DGTAeJQNib\n" +
+            "0cGXaS1d/gc1YPnmmlS+mPHo1r9bGMXqlpoMGqmni+0ifeFW9Xk8ZDPdtWpVYjJK\n" +
+            "OHtmRERL+8gwQtBlDmgCJVViSlsG5ZSZ8T6sSoUe0RVm/tWhalCuSUXYpQIDAQAB\n" +
+            "o4IBnTCCAZkwHwYDVR0jBBgwFoAUZGRDJaRs5w0iHWWswOR1N8wE2towHQYDVR0O\n" +
+            "BBYEFHaYFXcU4XaTudFQbmi7YnlLyzHeMA4GA1UdDwEB/wQEAwIFoDCBxwYDVR0f\n" +
+            "BIG/MIG8MC2gK6AphicgaHR0cDovL2NybC5kaXNhLm1pbC9nZXRjcmw/RE9EJTIw\n" +
+            "Q0EtMTMwgYqggYeggYSGgYEgbGRhcDovL2NybC5nZHMuZGlzYS5taWwvY24lM2RE\n" +
+            "T0QlMjBDQS0xMyUyY291JTNkUEtJJTJjb3UlM2REb0QlMmNvJTNkVS5TLiUyMEdv\n" +
+            "dmVybm1lbnQlMmNjJTNkVVM/Y2VydGlmaWNhdGVyZXZvY2F0aW9ubGlzdDtiaW5h\n" +
+            "cnkwFgYDVR0gBA8wDTALBglghkgBZQIBCwUwZQYIKwYBBQUHAQEEWTBXMDMGCCsG\n" +
+            "AQUFBzAChidodHRwOi8vY3JsLmRpc2EubWlsL2dldHNpZ24/RE9EJTIwQ0EtMTMw\n" +
+            "IAYIKwYBBQUHMAGGFGh0dHA6Ly9vY3NwLmRpc2EubWlsMA0GCSqGSIb3DQEBBQUA\n" +
+            "A4GBAKBixlrEeYq2Av8LqtFu6aC7yMINhHw5ICV+r5rsIRnbwBTeXbYAQ9HI3xZZ\n" +
+            "gL//fxSkNnWKQK1JdMRmzVSq9kPvkyOF56YHNW5t6YAmOrEkNBEcl2x8mtRUl9Wy\n" +
+            "EQTDNN63uJSIPSQnDkbOuBBywbxmJtgcPfOliMn/FnrD8NwO";
 }
