@@ -338,6 +338,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
                     }
                 }
             }
+            conn.commit();
             conn = null;
 
             // Flip expiry sign to avoid saving the same record again
