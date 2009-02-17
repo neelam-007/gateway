@@ -9,6 +9,7 @@ import com.l7tech.config.client.ConfigurationException;
 import com.l7tech.gateway.config.client.beans.UrlConfigurableBean;
 import com.l7tech.gateway.config.client.beans.ConfigResult;
 import com.l7tech.gateway.config.client.beans.ConfigurationContext;
+import com.l7tech.util.SyspropUtil;
 
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
@@ -36,6 +37,8 @@ public class TrustedCertUrl extends UrlConfigurableBean {
             HttpsURLConnection httpsURLConnection = (HttpsURLConnection)conn;
             httpsURLConnection.setSSLSocketFactory(new PermissiveSSLSocketFactory());
             httpsURLConnection.setHostnameVerifier(new PermissiveHostnameVerifier());
+            httpsURLConnection.setReadTimeout( SyspropUtil.getInteger(TrustedCertUrl.class.getName() + ".readTimeout", 30000) );
+            httpsURLConnection.setConnectTimeout( SyspropUtil.getInteger(TrustedCertUrl.class.getName() + ".connectTimeout", 30000) );
             httpsURLConnection.connect();
             Certificate[] certs = httpsURLConnection.getServerCertificates();
             if (certs == null || certs.length < 1) throw new ConfigurationException("Server presented no certificates");
