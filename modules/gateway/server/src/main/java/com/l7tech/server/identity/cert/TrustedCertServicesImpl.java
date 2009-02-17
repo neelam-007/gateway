@@ -2,6 +2,7 @@ package com.l7tech.server.identity.cert;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import org.springframework.transaction.annotation.Transactional;
@@ -78,7 +79,7 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
 
         for (TrustedCert caTrust : caTrusts) {
             X509Certificate caTrustCert = caTrust.getCertificate();
-            if (CertUtils.isVerified(serverCertChain[0], caTrustCert.getPublicKey()))
+            if (CertVerifier.isVerified(serverCertChain[0], caTrustCert))
                 return;
         }
 

@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
@@ -95,7 +96,7 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                     X509Certificate certIssuerCert;
                     try {
                         certIssuerCert = certIssuerTrust.getCertificate();
-                        CertUtils.cachedVerify(subjectCertificate, certIssuerCert.getPublicKey());
+                        CertVerifier.cachedVerify(subjectCertificate, certIssuerCert);
                         validateCertificate( subjectCertificate, true );
                     } catch (CertificateException e) {
                         throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);

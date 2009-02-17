@@ -1,44 +1,39 @@
-package com.l7tech.security;
+package com.l7tech.security.cert;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.jce.X509KeyUsage;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Used to generate certificate chains for testing with a variety of key usage and extended key usage settings.
  */
 public class TestCertificateGenerator {
-    private static final Logger logger = Logger.getLogger(TestCertificateGenerator.class.getName());
-
     private static final SecureRandom random = new SecureRandom();
 
     private BigInteger serialNumber;
     private Date notBefore;
     private Date notAfter;
+    private int daysUntilExpiry;
     private String signatureAlgorithm;
     private X509Name subjectDn;
     private int rsaBits;
     private KeyPair keyPair;
-    private int basicConstraitsPathLen;
     private int keyUsageBits;
-    private boolean includeBasicConstraints;
+    private BasicConstraints basicConstraints;
     private boolean includeKeyUsage;
     private boolean keyUsageCriticality;
     private boolean includeSki;
@@ -50,10 +45,8 @@ public class TestCertificateGenerator {
     private List<String> extendedKeyUsageKeyPurposeOids;
     private List<String> countryOfCitizenshipCountryCodes;
 
-    private X509Certificate certificate;
-
     /** Issuer certificate, or null to create self-signed. */
-    public SignerInfo issuer;
+    public Pair<X509Certificate, PrivateKey> issuer;
 
     public TestCertificateGenerator() {
         reset();
@@ -79,14 +72,14 @@ public class TestCertificateGenerator {
     public TestCertificateGenerator reset() {
         serialNumber = new BigInteger(64, random).abs();
         notBefore = new Date(new Date().getTime() - (10 * 60 * 1000L)); // default: 10 min ago
-        notAfter = new Date(notBefore.getTime() + (20 * 365 * 24 * 60 * 60 * 1000L)); // default: 20 years from now
+        daysUntilExpiry = 20 * 365;
+        notAfter = null;
         signatureAlgorithm = "SHA1WithRSA";
         subjectDn = new X509Name("cn=test");
         rsaBits = 512;
         keyPair = null;
-        basicConstraitsPathLen = -1;
+        basicConstraints = new BasicConstraints(false);
         keyUsageBits = X509KeyUsage.digitalSignature | X509KeyUsage.keyEncipherment | X509KeyUsage.nonRepudiation;
-        includeBasicConstraints = true;
         includeKeyUsage = true;
         keyUsageCriticality = true;
         includeSki = true;
@@ -102,12 +95,11 @@ public class TestCertificateGenerator {
     }
 
 
-    public X509Certificate generate() throws SignatureException, InvalidKeyException, NoSuchAlgorithmException, CertificateException {
+    public X509Certificate generate() throws GeneralSecurityException {
         return generateWithKey().left;
     }
 
-    public Pair<X509Certificate, PrivateKey> generateWithKey() throws SignatureException, InvalidKeyException, NoSuchAlgorithmException, CertificateException
-    {
+    public Pair<X509Certificate, PrivateKey> generateWithKey() throws GeneralSecurityException {
         final KeyPair subjectKeyPair = getOrMakeKeyPair();
         final PublicKey subjectPublicKey = subjectKeyPair.getPublic();
         final PrivateKey subjectPrivateKey = subjectKeyPair.getPrivate();
@@ -122,10 +114,13 @@ public class TestCertificateGenerator {
             issuerPublicKey = subjectPublicKey;
         } else {
             // Specified signing cert chain
-            issuerDn = new X509Name(issuer.getCertificateChain()[0].getSubjectDN().getName());
-            issuerPrivateKey = issuer.getPrivate();
-            issuerPublicKey = issuer.getPublic();
+            issuerDn = new X509Name(issuer.left.getSubjectDN().getName());
+            issuerPrivateKey = issuer.right;
+            issuerPublicKey = issuer.left.getPublicKey();
         }
+
+        if (notAfter == null)
+            notAfter = new Date(notBefore.getTime() + (daysUntilExpiry * 24 * 60 * 60 * 1000L));
 
         X509V3CertificateGenerator certgen = new X509V3CertificateGenerator();
 
@@ -137,12 +132,8 @@ public class TestCertificateGenerator {
         certgen.setIssuerDN(issuerDn);
         certgen.setPublicKey(subjectPublicKey);
 
-        if (includeBasicConstraints) {
-            BasicConstraints bc = basicConstraitsPathLen < 0
-                    ? new BasicConstraints(false)
-                    : new BasicConstraints(basicConstraitsPathLen);
-            certgen.addExtension(X509Extensions.BasicConstraints.getId(), true, bc);
-        }
+        if (basicConstraints != null)
+            certgen.addExtension(X509Extensions.BasicConstraints.getId(), true, basicConstraints);
 
         if (includeKeyUsage)
             certgen.addExtension(X509Extensions.KeyUsage, keyUsageCriticality, new X509KeyUsage(keyUsageBits));
@@ -160,8 +151,10 @@ public class TestCertificateGenerator {
             certgen.addExtension(X509Extensions.SubjectDirectoryAttributes.getId(), subjectDirectoryAttributesCriticality, createSubjectDirectoryAttributes(countryOfCitizenshipCountryCodes));
 
         serialNumber = serialNumber.add(BigInteger.ONE);
-        certificate = asJdkCertificate(certgen.generate(issuerPrivateKey, random));
-        return new Pair<X509Certificate, PrivateKey>(certificate, subjectPrivateKey);
+        X509Certificate generatedCert = certgen.generate(issuerPrivateKey, random);
+
+        // Ensure cert and private key are using the Sun implementation
+        return new Pair<X509Certificate, PrivateKey>(asJdkCertificate(generatedCert), subjectPrivateKey);
     }
 
     private SubjectDirectoryAttributes createSubjectDirectoryAttributes(List<String> citizenshipCountryCodes) {
@@ -176,26 +169,46 @@ public class TestCertificateGenerator {
         return new SubjectDirectoryAttributes(attrs);
     }
 
-    public TestCertificateGenerator issuer(X509Certificate issuerCert, PrivateKey issuerPrivateKey) {
-        return issuer(new SignerInfo(issuerPrivateKey, new X509Certificate[] { issuerCert }));
+    public TestCertificateGenerator keySize(int keyBits) {
+        this.rsaBits = keyBits;
+        return this;
     }
 
-    public TestCertificateGenerator issuer(SignerInfo issuer) {
+    public TestCertificateGenerator issuer(X509Certificate issuerCert, PrivateKey issuerPrivateKey) {
+        return issuer(new Pair<X509Certificate, PrivateKey>(issuerCert, issuerPrivateKey));
+    }
+
+    public TestCertificateGenerator issuer(Pair<X509Certificate, PrivateKey> issuer) {
         this.issuer = issuer;
         return this;
     }
 
     public TestCertificateGenerator subject(String subject) {
-        this.subjectDn = new X509Name(subject);
+        this.subjectDn = new X509Name(true, subject);
         return this;
     }
 
     public TestCertificateGenerator noExtensions() {
         includeAki = false;
         includeSki = false;
-        includeBasicConstraints = false;
+        basicConstraints = null;
         includeKeyUsage = false;
         includeExtendedKeyUsage = false;
+        return this;
+    }
+
+    public TestCertificateGenerator noBasicConstraints() {
+        basicConstraints = null;
+        return this;
+    }
+
+    public TestCertificateGenerator basicConstraintsNoCa() {
+        basicConstraints = new BasicConstraints(false);
+        return this;
+    }
+
+    public TestCertificateGenerator basicConstraintsCa(int pathlen) {
+        basicConstraints = new BasicConstraints(pathlen);
         return this;
     }
 
@@ -208,6 +221,23 @@ public class TestCertificateGenerator {
         includeKeyUsage = true;
         keyUsageCriticality = critical;
         keyUsageBits = kubits;
+        return this;
+    }
+
+    public void setKeyUsageBits(int keyUsageBits) {
+        this.keyUsageBits = keyUsageBits;
+    }
+
+    public int getKeyUsageBits() {
+        return keyUsageBits;
+    }
+
+    public boolean keyUsageCriticality() {
+        return keyUsageCriticality;
+    }
+
+    public TestCertificateGenerator keyUsageCriticality(boolean keyUsageCriticality) {
+        this.keyUsageCriticality = keyUsageCriticality;
         return this;
     }
 
@@ -235,11 +265,41 @@ public class TestCertificateGenerator {
         return extKeyUsage(critical, purposes);
     }
 
+    public void setExtendedKeyUsageKeyPurposeOids(List<String> extendedKeyUsageKeyPurposeOids) {
+        this.extendedKeyUsageKeyPurposeOids = extendedKeyUsageKeyPurposeOids;
+    }
+
+    public List<String> getExtendedKeyUsageKeyPurposeOids() {
+        return extendedKeyUsageKeyPurposeOids;
+    }
+
+    public boolean extendedKeyUsageCriticality() {
+        return extendedKeyUsageCriticality;
+    }
+
+    public TestCertificateGenerator extendedKeyUsageCriticality(boolean extendedKeyUsageCriticality) {
+        this.extendedKeyUsageCriticality = extendedKeyUsageCriticality;
+        return this;
+    }
+
     public TestCertificateGenerator countriesOfCitizenship(boolean critical, String... countryCodes) {
         includeSubjectDirectoryAttributes = true;
         subjectDirectoryAttributesCriticality = critical;
         countryOfCitizenshipCountryCodes = Arrays.asList(countryCodes);
         return this;
+    }
+
+    public TestCertificateGenerator daysUntilExpiry(int daysUntilExpiry) {
+        this.daysUntilExpiry = daysUntilExpiry;
+        return this;
+    }
+
+    public void setCountryOfCitizenshipCountryCodes(List<String> countryOfCitizenshipCountryCodes) {
+        this.countryOfCitizenshipCountryCodes = countryOfCitizenshipCountryCodes;
+    }
+
+    public List<String> getCountryOfCitizenshipCountryCodes() {
+        return countryOfCitizenshipCountryCodes;
     }
 
     private AuthorityKeyIdentifier createAki(PublicKey issuerPublicKey) throws InvalidKeyException {
@@ -271,27 +331,6 @@ public class TestCertificateGenerator {
         }
     }
 
-    private static java.security.cert.Certificate makeDefaultCert() {
-        try {
-            return CertUtils.getFactory().generateCertificate(new ByteArrayInputStream(TEST_CERT.getBytes()));
-        } catch (CertificateException e) {
-            logger.log(Level.SEVERE, "Unable to parse test cert with default cert factory: " + ExceptionUtils.getMessage(e), e);
-            throw new RuntimeException(e);
-        }
-    }
-    private static final String TEST_CERT =
-            "-----BEGIN CERTIFICATE-----\n" +
-            "MIIBizCCATWgAwIBAgIJAJPS9fuRnwndMA0GCSqGSIb3DQEBBQUAMA8xDTALBgNVBAMMBHRlc3Qw\n" +
-            "HhcNMDgxMTI1MTkxMDE2WhcNMjgxMTIwMTkxMDE2WjAPMQ0wCwYDVQQDDAR0ZXN0MFwwDQYJKoZI\n" +
-            "hvcNAQEBBQADSwAwSAJBAL0+cM3u6rCSF+vHrqRZ2f3P6tuMEei3okxpDyltPLYzc32bNHeKVS2z\n" +
-            "Ky9bBQZUpDv0mvEhuP3nS2khTiQEr3UCAwEAAaN0MHIwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8E\n" +
-            "BAMCBeAwEgYDVR0lAQH/BAgwBgYEVR0lADAdBgNVHQ4EFgQUN960qUtXq/yA+L8NB30LIHq1M4Iw\n" +
-            "HwYDVR0jBBgwFoAUN960qUtXq/yA+L8NB30LIHq1M4IwDQYJKoZIhvcNAQEFBQADQQARnSLmMwWb\n" +
-            "bYpq2duVZgrVB6dAgr/Tfe9fPVrxxR0bw2NQOOc00g3GElzR7s1TKU9dK2xt0aM2w7WFzn3lhMSp\n" +
-            "-----END CERTIFICATE-----";
-    private static final java.security.cert.Certificate defaultCert = makeDefaultCert();
-    private static final Class defaultCertClass = defaultCert.getClass();
-
     /**
      * Convert the specified certificate to use the default (typically Sun JDK) certificate implementation,
      * if it isn't already doing so.
@@ -304,8 +343,86 @@ public class TestCertificateGenerator {
      * @throws java.security.cert.CertificateException if there is a problem encoding the passed-in certificate
      */
     public static X509Certificate asJdkCertificate(X509Certificate cert) throws CertificateException {
-        if (defaultCertClass == cert.getClass())
-            return cert;
-        return (X509Certificate)CertUtils.getFactory().generateCertificate(new ByteArrayInputStream(cert.getEncoded()));
+        return (X509Certificate) CertUtils.getFactory().generateCertificate(new ByteArrayInputStream(cert.getEncoded()));
+    }
+
+    private static void storeAsBcPkcs12(X509Certificate[] chain, PrivateKey privateKey, char[] p12Pass, String p12Alias, OutputStream out) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, NoSuchProviderException {
+        // The Clever Dan who wrote Bouncy Castle's JDKPKCS12KeyStore hardcoded the "BC" provider name everywhere,
+        // instead of just using their own classes directly whenever such was unavoidable,
+        // so we can't use their keystore implementation unless they are registered as a crypto provider
+        if (null == Security.getProvider("BC"))
+            Security.addProvider(new BouncyCastleProvider());
+
+        KeyStore ks = KeyStore.getInstance("PKCS12-DEF", "BC");
+        ks.load(null, p12Pass);
+        ks.setKeyEntry(p12Alias, privateKey, p12Pass, chain);
+        ks.store(out, p12Pass);
+    }
+
+    private static Pair<X509Certificate[], PrivateKey> pkcs12ToSunChain(InputStream in, char[] p12Pass, String p12Alias) throws KeyStoreException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException, IOException {
+        KeyStore ks = KeyStore.getInstance("PKCS12");
+        ks.load(in, p12Pass);
+        PrivateKey privateKey = null;
+        java.security.cert.Certificate[] chain = null;
+        if (p12Alias != null && ks.isKeyEntry(p12Alias)) {
+            privateKey = (PrivateKey)ks.getKey(p12Alias, p12Pass);
+            chain = ks.getCertificateChain(p12Alias);
+        } else {
+            Enumeration<String> aliases = ks.aliases();
+            while (aliases.hasMoreElements()) {
+                String alias = aliases.nextElement();
+                if (ks.isKeyEntry(alias)) {
+                    privateKey = (PrivateKey)ks.getKey(alias, p12Pass);
+                    chain = ks.getCertificateChain(alias);
+                }
+            }
+        }
+        if (privateKey == null || chain == null)
+            throw new KeyStoreException("Specified PKCS#12 KeyStore contained no key entries");
+        X509Certificate[] x509Chain = castCertArrayToX509(chain);
+        return new Pair<X509Certificate[], PrivateKey>(x509Chain, privateKey);
+    }
+
+    private static X509Certificate[] castCertArrayToX509(Certificate[] chain) throws KeyStoreException {
+        X509Certificate[] x509Chain = new X509Certificate[chain.length];
+        for (int i = 0; i < chain.length; i++) {
+            if (!(chain[i] instanceof X509Certificate))
+                throw new KeyStoreException("Specified certificate chain contained a non-X.509 certificate");
+            x509Chain[i] = (X509Certificate)chain[i];
+        }
+        return x509Chain;
+    }
+
+    public static void saveAsPkcs12(X509Certificate[] certChain, PrivateKey privateKey, OutputStream out, String pkcs12Password)
+            throws IOException, GeneralSecurityException
+    {
+        storeAsBcPkcs12(certChain, privateKey, pkcs12Password.toCharArray(), "entry", out);
+    }
+
+    public static void saveAsPkcs12(X509Certificate[] certChain, PrivateKey privateKey, String pathname, String pkcs12Password)
+            throws IOException, GeneralSecurityException
+    {
+        FileOutputStream fos = new FileOutputStream(pathname);
+        try {
+            saveAsPkcs12(certChain, privateKey, fos, pkcs12Password);
+        } finally {
+            ResourceUtils.closeQuietly(fos);
+        }
+    }
+
+    public static Pair<X509Certificate[], PrivateKey> loadFromPkcs12(InputStream in, String pkcs12Password)
+            throws NoSuchAlgorithmException, KeyStoreException, CertificateException, UnrecoverableKeyException, IOException {
+        return pkcs12ToSunChain(in, pkcs12Password.toCharArray(), null);
+    }
+
+    public static Pair<X509Certificate[], PrivateKey> loadFromPkcs12(String pathname, String pkcs12Password)
+            throws IOException, NoSuchAlgorithmException, KeyStoreException, CertificateException, UnrecoverableKeyException
+    {
+        InputStream fis = new FileInputStream(pathname);
+        try {
+            return loadFromPkcs12(fis, pkcs12Password);
+        } finally {
+            ResourceUtils.closeQuietly(fis);
+        }
     }
 }

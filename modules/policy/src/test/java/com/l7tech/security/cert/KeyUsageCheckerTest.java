@@ -1,7 +1,6 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.common.io.EmptyInputStream;
-import com.l7tech.security.TestCertificateGenerator;
 import com.l7tech.security.keys.AesKey;
 import com.l7tech.util.FileUtils;
 import org.bouncycastle.asn1.x509.KeyPurposeId;

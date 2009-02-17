@@ -6,7 +6,7 @@
     <property name="module.main" value="com.l7tech.skunkworks"/>
     <property name="vendor.name" value="Layer 7 Technologies Inc."/>
 
-    <target name="package.custom.post" depends="package.licensegenerator, package.auditsignaturechecker"/>
+    <target name="package.custom.post" depends="package.licensegenerator, package.auditsignaturechecker, package.generatecertificate"/>
 
     <!--
       Build a Jar containing all dependencies
@@ -19,7 +19,7 @@
         <sequential>
             <delete dir="${build.dir}/onejartmp"/>
             <mkdir dir="${build.dir}/onejartmp"/>
-            <unzip src="${src.root}/lib/repository/com.simontuffs/one-jar-boot-0.96.jar" dest="${build.dir}/onejartmp">
+            <unzip src="${src.root}/lib/repository/com.simontuffs/one-jar-boot-0.96.1.jar" dest="${build.dir}/onejartmp">
                 <patternset>
                     <exclude name="boot-manifest.mf"/>
                     <exclude name="META-INF/*"/>
@@ -121,5 +121,37 @@
 
         <mkdir dir="${src.root}/build/installer"/>
         <copy file="${build.dir}/AuditSignatureChecker.jar" todir="${src.root}/build/installer"/>
+    </target>
+
+    <!--
+        Package the GenerateCertificate utility.
+        Result is a self-contained executable JAR file with dependency JARs nested inside.
+    -->
+    <target name="package.generatecertificate"
+            description="Compile and package the command line GenerateCertificate utility."
+            depends="init">
+        <property name="package.classes.dir" value="${classes.main.dir}"/>
+        <property name="package.gencertlibs.dir" value="${build.dir}/generatecertificate"/>
+        <delete dir="${package.gencertlibs.dir}/lib"/>
+        <mkdir dir="${package.gencertlibs.dir}/lib"/>
+
+        <ivy:resolve file="generatecertificate-ivy.xml"
+                     showprogress="false"
+                     log="quiet"/>
+        <ivy:retrieve pattern="${package.gencertlibs.dir}/lib/[artifact]-[revision].[ext]"/>
+
+        <jar jarfile="${package.gencertlibs.dir}/lib/GenerateCertificateMain.jar">
+            <fileset dir="${package.classes.dir}">
+                <include name="com/l7tech/internal/certgen/**/*"/>
+            </fileset>
+        </jar>
+
+        <one-jar jarfile="${build.dir}/GenerateCertificate.jar"
+                 title="GenerateCertificate"
+                 main="com.l7tech.internal.certgen.GenerateCertificate"
+                 libsDir="${package.gencertlibs.dir}"/>
+
+        <mkdir dir="${src.root}/build/installer"/>
+        <copy file="${build.dir}/GenerateCertificate.jar" todir="${src.root}/build/installer"/>
     </target>
 </project>

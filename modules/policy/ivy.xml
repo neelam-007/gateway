@@ -27,6 +27,7 @@
         <dependency name="layer7-common" rev="latest.integration" force="true" conf="core; test->default,test"/>
         <dependency name="layer7-kerberos" rev="latest.integration" force="true" conf="core"/>
         <dependency name="layer7-wsdl" rev="latest.integration" force="true" conf="core"/>
+        <dependency org="org.apache.xml.security" name="xmlsec" rev="1.4.2" force="true" conf="core"/>
         <!-- Needed when tarari is used -->
         <dependency org="antlr" name="antlr" rev="2.7.7-l7p1" conf="optional,test"/>
         <dependency org="bouncycastle" name="bcprov-jdk15" rev="141" force="true" conf="core"/>

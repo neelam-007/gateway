@@ -1,6 +1,7 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.CertUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -12,34 +13,6 @@ import java.util.*;
  */
 public class KeyUsagePolicy {
     public static final String NAMESPACE_URI = "http://www.layer7tech.com/ws/keyusage";
-
-    public static final Map<String, Integer> KEY_USAGE_BITS_BY_NAME = Collections.unmodifiableMap(new HashMap<String, Integer>() {{
-        put("encipherOnly", 1);
-        put("cRLSign", 2);
-        put("keyCertSign", 4);
-        put("keyAgreement", 8);
-        put("dataEncipherment", 16);
-        put("keyEncipherment", 32);
-        put("nonRepudiation", 64);
-        put("digitalSignature", 128);
-        put("decipherOnly", 32768);
-    }});
-
-    public static final Map<String, String> KEY_PURPOSE_IDS_BY_NAME = Collections.unmodifiableMap(new HashMap<String, String>() {{
-        put("any", "2.5.29.37.0");
-        put("anyExtendedKeyUsage", "2.5.29.37.0");
-        put("id-kp-emailProtection", "1.3.6.1.5.5.7.3.4");
-        put("id-kp-serverAuth", "1.3.6.1.5.5.7.3.1");
-        put("id-kp-clientAuth", "1.3.6.1.5.5.7.3.2");
-        put("id-kp-timeStamping", "1.3.6.1.5.5.7.3.8");
-        put("id-kp-smartcardlogon", "1.3.6.1.4.1.311.20.2.2");
-        put("id-kp-OCSPSigning", "1.3.6.1.5.5.7.3.9");
-        put("id-kp-codeSigning", "1.3.6.1.5.5.7.3.3");
-        put("id-kp-ipsecTunnel", "1.3.6.1.5.5.7.3.6");
-        put("id-kp-ipsecUser", "1.3.6.1.5.5.7.3.7");
-        put("id-kp-ipsecEndSystem", "1.3.6.1.5.5.7.3.5");
-        put("id-pkix-ocsp-nocheck", "1.3.6.1.5.5.7.48.1.5");
-    }});
 
     /** for rules that specify that a given activity is always permitted. */
     private final Set<KeyUsageActivity> activityBlanketPermits;
@@ -210,14 +183,14 @@ public class KeyUsagePolicy {
                     String str = XmlUtil.getTextValue(requirement);
 
                     // Try to parse as key usage name
-                    Integer kubit = KEY_USAGE_BITS_BY_NAME.get(str);
+                    Integer kubit = CertUtils.KEY_USAGE_BITS_BY_NAME.get(str);
                     if (kubit != null) {
                         kubits |= kubit;
                         continue;
                     }
 
                     // Try to parse as well-known extended key usage name
-                    String kpid = KEY_PURPOSE_IDS_BY_NAME.get(str);
+                    String kpid = CertUtils.KEY_PURPOSE_IDS_BY_NAME.get(str);
                     if (kpid != null) {
                         purposeOidStrings.add(kpid);
                         continue;

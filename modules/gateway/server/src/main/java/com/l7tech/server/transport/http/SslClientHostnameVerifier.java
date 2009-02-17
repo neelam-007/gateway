@@ -3,6 +3,7 @@ package com.l7tech.server.transport.http;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 
@@ -106,7 +107,7 @@ public class SslClientHostnameVerifier implements HostnameVerifier {
     // Return true iff. the specified certificate verifies with the specified issuerCert's public key
     private boolean isCertSignedByIssuer(X509Certificate certificate, TrustedCert issuerCert) {
         try {
-            CertUtils.cachedVerify(certificate, issuerCert.getCertificate().getPublicKey());
+            CertVerifier.cachedVerify(certificate, issuerCert.getCertificate());
             return true;
         } catch (Exception e) {
             return false;

@@ -1,18 +1,17 @@
 /*
- * Copyright (C) 2003-2008 Layer 7 Technologies Inc.
+ * Copyright (C) 2003-2009 Layer 7 Technologies Inc.
  */
 package com.l7tech.common.io;
 
 import com.l7tech.util.*;
-import com.whirlycott.cache.Cache;
 import org.apache.harmony.security.asn1.ASN1Integer;
 import org.apache.harmony.security.asn1.ASN1Sequence;
 import org.apache.harmony.security.asn1.ASN1Type;
 
-import javax.security.auth.x500.X500Principal;
+import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
-import javax.naming.InvalidNameException;
+import javax.security.auth.x500.X500Principal;
 import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
@@ -20,14 +19,13 @@ import java.security.cert.Certificate;
 import java.security.cert.*;
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
-import java.security.interfaces.RSAPublicKey;
 import java.security.interfaces.RSAKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateKeySpec;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,8 +49,6 @@ public class CertUtils {
     private static final String PEM_CSR_END_NEW_MARKER = "-----END NEW CERTIFICATE REQUEST-----";
 
     private static final Logger logger = Logger.getLogger(CertUtils.class.getName());
-    private static final String PROPBASE = CertUtils.class.getName();
-    private static final int CERT_VERIFY_CACHE_MAX = SyspropUtil.getInteger(PROPBASE + ".certVerifyCacheSize", 500);
     private static CertificateFactory certFactory;
 
     public static final String ALG_MD5 = "MD5";
@@ -66,6 +62,26 @@ public class CertUtils {
     public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
     public static final String X509_OID_AUTHORITYKEYID = "2.5.29.35";
     public static final String X509_OID_AUTHORITY_INFORMATION_ACCESS = "1.3.6.1.5.5.7.1.1";
+    public static final String X509_OID_BASIC_CONSTRAINTS = "2.5.29.19";
+
+    public static final int DEFAULT_X509V1_MAX_PATH_LENGTH = SyspropUtil.getInteger("com.l7tech.pkix.defaultX509v1MaxPathLength", 0);
+
+    public static final String CERT_PROP_CREATION_DATE = "Creation date";
+    public static final String CERT_PROP_EXPIRY_DATE = "Expiry date";
+    public static final String CERT_PROP_ISSUED_TO = "Issued to";
+    public static final String CERT_PROP_SERIAL_NUMBER = "Serial number";
+    public static final String CERT_PROP_ISSUER = "Issuer";
+    public static final String CERT_PROP_SHA_1_FINGERPRINT = "SHA-1 fingerprint";
+    public static final String CERT_PROP_MD5_FINGERPRINT = "MD5 fingerprint";
+    public static final String CERT_PROP_BASIC_CONSTRAINTS = "Basic constraints";
+    public static final String CERT_PROP_KEY_USAGE = "Key usage";
+    public static final String CERT_PROP_EXT_KEY_USAGE = "Ext. key usage";
+    public static final String CERT_PROP_KEY_TYPE = "Key type";
+    public static final String CERT_PROP_RSA_STRENGTH = "RSA strength";
+    public static final String CERT_PROP_RSA_PUBLIC_EXPONENT = "RSA public exponent";
+    public static final String CERT_PROP_DSA_PRIME_P = "DSA prime (P)";
+    public static final String CERT_PROP_DSA_SUBPRIME_P = "DSA subprime (P)";
+    public static final String CERT_PROP_DSA_BASE_P = "DSA base (P)";
 
     private static final Map<String,String> DN_MAP;
     static {
@@ -97,109 +113,13 @@ public class CertUtils {
     public static class MultipleCnValuesException extends Exception {}
 
 
-    // Map of VerifiedCert => Boolean.TRUE
-    private static final Cache certVerifyCache =
-            WhirlycacheFactory.createCache("certCache",
-                                           CERT_VERIFY_CACHE_MAX,
-                                           127, WhirlycacheFactory.POLICY_LRU
-            );
-
-    private static class VerifiedCert {
-        final byte[] certBytes;
-        final byte[] publicKeyBytes;
-        final int hashCode;
-
-        public VerifiedCert(X509Certificate cert, PublicKey key) throws CertificateEncodingException {
-            this(cert.getEncoded(), key.getEncoded());
-        }
-
-        public VerifiedCert(byte[] certBytes, byte[] publicKeyBytes) {
-            this.certBytes = certBytes;
-            this.publicKeyBytes = publicKeyBytes;
-            this.hashCode = makeHashCode();
-        }
-
-        /** @noinspection RedundantIfStatement*/
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            final VerifiedCert that = (VerifiedCert)o;
-
-            if (!Arrays.equals(certBytes, that.certBytes)) return false;
-            if (!Arrays.equals(publicKeyBytes, that.publicKeyBytes)) return false;
-
-            return true;
-        }
-
-        private int makeHashCode() {
-            int c = 7;
-            c += 17 * Arrays.hashCode(certBytes);
-            c += 29 * Arrays.hashCode(publicKeyBytes);
-            return c;
-        }
-
-        public int hashCode() {
-            return hashCode;
-        }
-
-        /** @return true if this cert has already been verified with this public key. */
-        public boolean isVerified() {
-            final Object got;
-            got = certVerifyCache.retrieve(this);
-            return got instanceof Boolean && (Boolean) got;
-        }
-
-        /** Report that this cert was successfully verified with its public key. */
-        public void onVerified() {
-            certVerifyCache.store(this, Boolean.TRUE);
-        }
-    }
-
-    /** Same behavior as X509Certificate.verify(publicKey), but memoizes the result. */
-    public static void cachedVerify(X509Certificate cert, PublicKey publicKey) throws NoSuchProviderException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, CertificateException {
-        VerifiedCert vc = new VerifiedCert(cert, publicKey);
-        if (vc.isVerified()) {
-            if (logger.isLoggable(Level.FINER)) logger.finer("Verified cert signature (cached): " + cert.getSubjectDN().toString());
-            return; // cache hit
-        }
-
-        cert.verify(publicKey);
-        vc.onVerified();
-    }
-
     /**
-     * Test if the specified certificate is verifiable with the specified public key, without throwing
-     * any checked exceptions.
-     * <p/>
-     * This makes use of the CertUtils certificate verification cache.
+     * Decode the specified cert bytes, which may be either PEM or DER but which must be exactly 1 certzzz.
      *
-     * @param cert  the certificate to check.  Required.
-     * @param publicKey  the public key to verify with.  Required.
-     * @return  true iff. the specified cert verifies successfully with the specified public key
+     * @param bytes Bytes of an X.509 certificate encoded as either PEM or DER.  Required.
+     * @return an X509Certificate instance.  Never null.
+     * @throws CertificateException if the certificate can't be decoded
      */
-    public static boolean isVerified(X509Certificate cert, PublicKey publicKey) {
-        try {
-            cachedVerify(cert, publicKey);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    /** Same behavior as X509Certificate.verify(publicKey, sigProvider), but memoizes the result. */
-    public static void cachedVerify(X509Certificate cert, PublicKey publicKey, String sigProvider) throws NoSuchProviderException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, CertificateException {
-        VerifiedCert vc = new VerifiedCert(cert, publicKey);
-        if (vc.isVerified()) {
-            if (logger.isLoggable(Level.FINER)) logger.finer("Verified cert signature (cached): " + cert.getSubjectDN().toString());
-            return; // cache hit
-        }
-
-        cert.verify(publicKey, sigProvider);
-        vc.onVerified();
-    }
-
-    /** Decode the specified cert bytes, which may be either PEM or DER but which must be exactly 1 certzzz. */
     public static X509Certificate decodeCert(byte[] bytes) throws CertificateException {
         // Detect PEM early, since the Sun cert parser is piss-poor unreliable at doing so on its own
         if (looksLikePem(bytes)) try {
@@ -277,6 +197,10 @@ public class CertUtils {
         } catch ( CertificateEncodingException e ) {
             return false;
         }
+    }
+
+    public static boolean arePublicKeysEqual(PublicKey pubkey1, PublicKey pubkey2) {
+        return Arrays.equals(pubkey1.getEncoded(), pubkey2.getEncoded());
     }
 
     /**
@@ -400,7 +324,7 @@ public class CertUtils {
             String encoding = "UTF-8";
             bos.write(PEM_CERT_BEGIN_MARKER.getBytes(encoding));
             bos.write("\n".getBytes(encoding));
-            bos.write( HexUtils.encodeBase64(cert).getBytes(encoding));
+            bos.write(HexUtils.encodeBase64(cert).getBytes(encoding));
             bos.write("\n".getBytes(encoding));
             bos.write(PEM_CERT_END_MARKER.getBytes(encoding));
             bos.write("\n".getBytes(encoding));
@@ -442,6 +366,7 @@ public class CertUtils {
      *
      * @param keyText the PEM encoded key data
      * @return the private key
+     * @throws java.io.IOException if a key cannot be decoded
      */
     public static PrivateKey decodeKeyFromPEM(String keyText) throws IOException {
         int startIndex = keyText.indexOf(PEM_RSAKEY_BEGIN_MARKER);
@@ -517,6 +442,52 @@ public class CertUtils {
         byte[] skiBytes = getSKIBytesFromCert(cert);
         if (skiBytes == null) return null;
         return HexUtils.encodeBase64(skiBytes);
+    }
+
+    public static String getCn(X509Certificate cert) {
+        Map dnMap = dnToAttributeMap(cert.getSubjectDN().getName());
+        List cnValues = (List)dnMap.get("CN");
+        String login = null;
+        if (cnValues != null && cnValues.size() >= 1) {
+            login = (String)cnValues.get(0);
+        }
+        return login;
+    }
+
+    public static final Map<String, Integer> KEY_USAGE_BITS_BY_NAME = Collections.unmodifiableMap(new HashMap<String, Integer>() {{
+        put("encipherOnly", 1);
+        put("cRLSign", 2);
+        put("keyCertSign", 4);
+        put("keyAgreement", 8);
+        put("dataEncipherment", 16);
+        put("keyEncipherment", 32);
+        put("nonRepudiation", 64);
+        put("digitalSignature", 128);
+        put("decipherOnly", 32768);
+    }});
+
+    public static final Map<String, String> KEY_PURPOSE_IDS_BY_NAME = Collections.unmodifiableMap(new HashMap<String, String>() {{
+        put("any", "2.5.29.37.0");
+        put("anyExtendedKeyUsage", "2.5.29.37.0");
+        put("id-kp-emailProtection", "1.3.6.1.5.5.7.3.4");
+        put("id-kp-serverAuth", "1.3.6.1.5.5.7.3.1");
+        put("id-kp-clientAuth", "1.3.6.1.5.5.7.3.2");
+        put("id-kp-timeStamping", "1.3.6.1.5.5.7.3.8");
+        put("id-kp-smartcardlogon", "1.3.6.1.4.1.311.20.2.2");
+        put("id-kp-OCSPSigning", "1.3.6.1.5.5.7.3.9");
+        put("id-kp-codeSigning", "1.3.6.1.5.5.7.3.3");
+        put("id-kp-ipsecTunnel", "1.3.6.1.5.5.7.3.6");
+        put("id-kp-ipsecUser", "1.3.6.1.5.5.7.3.7");
+        put("id-kp-ipsecEndSystem", "1.3.6.1.5.5.7.3.5");
+        put("id-pkix-ocsp-nocheck", "1.3.6.1.5.5.7.48.1.5");
+    }});
+
+    private static final Map<String, String> KEY_PURPOSE_NAMES_BY_OID_STR;
+    static {
+        Map<String, String> oidToName = new HashMap<String, String>();
+        for (Map.Entry<String, String> entry : KEY_PURPOSE_IDS_BY_NAME.entrySet())
+            oidToName.put(entry.getValue(), entry.getKey());
+        KEY_PURPOSE_NAMES_BY_OID_STR = Collections.unmodifiableMap(oidToName);
     }
 
     public static final class KeyUsage {
@@ -600,7 +571,7 @@ public class CertUtils {
                 if ( formattedDNSet.contains(entry.getKey()) ) {
                     formattedDNSet.remove(entry.getKey());
                     formattedDNSet.add(entry.getValue());
-                }                
+                }
             }
 
             valid = rawDNSet.equals(formattedDNSet);
@@ -635,7 +606,7 @@ public class CertUtils {
 
             rawDNSet.removeAll(formattedDNSet);
             if ( !rawDNSet.isEmpty() ) {
-                message = "Unrecognized DN components " + rawDNSet; 
+                message = "Unrecognized DN components " + rawDNSet;
             }
         } catch (IllegalArgumentException iae) {
             message = "Illegal DN: '" + ExceptionUtils.getMessage(iae) + "'";
@@ -758,38 +729,38 @@ public class CertUtils {
         List<Pair<String, String>> l = new ArrayList<Pair<String, String>>();
         if (cert == null) return l;
 
-        l.add(new Pair<String, String>("Creation date", nullNa(cert.getNotBefore())));
-        l.add(new Pair<String, String>("Expiry date", nullNa(cert.getNotAfter())));
-        l.add(new Pair<String, String>("Issued to", nullNa(cert.getSubjectDN())));
-        l.add(new Pair<String, String>("Serial number", nullNa(cert.getSerialNumber())));
-        l.add(new Pair<String, String>("Issuer", nullNa(cert.getIssuerDN())));
+        l.add(new Pair<String, String>(CERT_PROP_CREATION_DATE, nullNa(cert.getNotBefore())));
+        l.add(new Pair<String, String>(CERT_PROP_EXPIRY_DATE, nullNa(cert.getNotAfter())));
+        l.add(new Pair<String, String>(CERT_PROP_ISSUED_TO, nullNa(cert.getSubjectDN())));
+        l.add(new Pair<String, String>(CERT_PROP_SERIAL_NUMBER, nullNa(cert.getSerialNumber())));
+        l.add(new Pair<String, String>(CERT_PROP_ISSUER, nullNa(cert.getIssuerDN())));
 
         try {
-            l.add(new Pair<String, String>("SHA-1 fingerprint", getCertificateFingerprint(cert, "SHA1")));
-            l.add(new Pair<String, String>("MD5 fingerprint", getCertificateFingerprint(cert, "MD5")));
+            l.add(new Pair<String, String>(CERT_PROP_SHA_1_FINGERPRINT, getCertificateFingerprint(cert, "SHA1")));
+            l.add(new Pair<String, String>(CERT_PROP_MD5_FINGERPRINT, getCertificateFingerprint(cert, "MD5")));
+            l.add(new Pair<String, String>(CERT_PROP_BASIC_CONSTRAINTS, basicConstraintsToString(cert.getBasicConstraints())));
+            l.add(new Pair<String, String>(CERT_PROP_KEY_USAGE, keyUsageToString(cert.getKeyUsage())));
+            l.add(new Pair<String, String>(CERT_PROP_EXT_KEY_USAGE, extKeyUsageToString(cert)));
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e); // misconfigured VM
+        } catch (CertificateParsingException e) {
+            l.add(new Pair<String, String>(CERT_PROP_EXT_KEY_USAGE, "<Certificate parsing error>"));
         }
-
-        l.add(new Pair<String, String>("Basic constraints", basicConstraintsToString(cert.getBasicConstraints())));
-        l.add(new Pair<String, String>("Key usage", keyUsageToString(cert.getKeyUsage())));
 
         PublicKey publicKey = cert.getPublicKey();
         if (publicKey != null) {
-            l.add(new Pair<String, String>("Key type", nullNa(publicKey.getAlgorithm())));
+            l.add(new Pair<String, String>(CERT_PROP_KEY_TYPE, nullNa(publicKey.getAlgorithm())));
 
             if (publicKey instanceof RSAPublicKey) {
                 RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
-                String modulus = rsaKey.getModulus().toString(16);
-                l.add(new Pair<String, String>("RSA strength", (modulus.length() * 4) + " bits"));
-                //l.add(new Pair<String, String>("RSA modulus", modulus});
-                l.add(new Pair<String, String>("RSA public exponent", rsaKey.getPublicExponent().toString(16)));
+                l.add(new Pair<String, String>(CERT_PROP_RSA_STRENGTH, getRsaKeyBits(rsaKey) + " bits"));
+                l.add(new Pair<String, String>(CERT_PROP_RSA_PUBLIC_EXPONENT, rsaKey.getPublicExponent().toString(16)));
             } else if (publicKey instanceof DSAPublicKey) {
                 DSAPublicKey dsaKey = (DSAPublicKey) publicKey;
                 DSAParams params = dsaKey.getParams();
-                l.add(new Pair<String, String>("DSA prime (P)", params.getP().toString(16)));
-                l.add(new Pair<String, String>("DSA subprime (P)", params.getQ().toString(16)));
-                l.add(new Pair<String, String>("DSA base (P)", params.getG().toString(16)));
+                l.add(new Pair<String, String>(CERT_PROP_DSA_PRIME_P, params.getP().toString(16)));
+                l.add(new Pair<String, String>(CERT_PROP_DSA_SUBPRIME_P, params.getQ().toString(16)));
+                l.add(new Pair<String, String>(CERT_PROP_DSA_BASE_P, params.getG().toString(16)));
             }
         }
 
@@ -799,13 +770,41 @@ public class CertUtils {
     private static String basicConstraintsToString(int basicConstraints) {
         if (basicConstraints == -1) return "<Not present>";
         if (basicConstraints == Integer.MAX_VALUE) return "CA capable; unlimited path length";
-        return "CA capable; maximum path length=" + basicConstraints;        
+        return "CA capable; maximum path length=" + basicConstraints;
     }
 
     /**
+     * Get the approximate size of the specified RSA public key in bits.
+     *
+     * @param rsaKey the RSA public key to examine.
+     * @return the approximate size of this key in bits.
+     */
+    public static int getRsaKeyBits(RSAPublicKey rsaKey) {
+        return (rsaKey.getModulus().toString(16).length() * 4);
+    }
+
+    private static String extKeyUsageToString(X509Certificate cert) throws CertificateParsingException {
+        List<String> extendedKeyUsages = cert.getExtendedKeyUsage();
+        if (extendedKeyUsages == null)
+            return "<Not present>";
+        if (extendedKeyUsages.isEmpty())
+            return "<None permitted>";
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (String oidStr : extendedKeyUsages) {
+            String s = KEY_PURPOSE_NAMES_BY_OID_STR.get(oidStr);
+            if (!first) sb.append(", ");
+            sb.append(s != null ? s : oidStr);
+            first = false;
+        }
+        return sb.toString();
+    }
+
+    /**
+     * @param ku key usage array as returned by {@link java.security.cert.X509Certificate#getKeyUsage()}.  Required.
      * @return A string such as "KeyEncipherment, caCert" that describes enabled key usages for a cert, or
-     * "<None premitted>" if no usage bits are enabled, or
-     * "<Not present>" if there is no key usage extension.
+     * "&lt;None premitted&gt;" if no usage bits are enabled, or
+     * "&lt;Not present&gt;" if there is no key usage extension.
      */
     private static String keyUsageToString(boolean[] ku) {
         if (ku == null) return "<Not present>";
@@ -842,6 +841,7 @@ public class CertUtils {
      * @exception CertificateEncodingException
      *                      thrown whenever an error occurs while attempting to
      *                      encode a certificate.
+     * @throws java.security.NoSuchAlgorithmException if message digest implementation is not available
      */
     public static String getCertificateFingerprint(X509Certificate cert, String algorithm, String format)
             throws CertificateEncodingException, NoSuchAlgorithmException
@@ -877,69 +877,19 @@ public class CertUtils {
         return buff.toString();
     }
 
-    /** Convert a null object into "N/A", otherwise toString */
+    /* Convert a null object into "N/A", otherwise toString */
     private static String nullNa(Object o) {
         return o == null ? "N/A" : o.toString();
     }
 
     public static class CertificateUntrustedException extends Exception {
-        private CertificateUntrustedException(String message) {
+        public CertificateUntrustedException(String message) {
             super(message);
         }
-    }
 
-    /**
-     * Verifies that each cert in the specified certificate chain is signed by the next certificate
-     * in the chain, and that at least one is <em>signed by or identical to</em> trustedCert.
-     *
-     * @param chain An array of one or more {@link X509Certificate}s to check
-     * @param trustedCert A trusted {@link X509Certificate} to check the chain against
-     * @param maxDepth How many levels deep to search for trust.  A recommended value for this is 1, otherwise
-     *                 certain attacks may become possible.
-     * @throws CertUtils.CertificateUntrustedException if the chain could not be validated with the specified
-     *                                                       trusted certificate, but the chain otherwise appears to
-     *                                                       be internally consistent and might validate later if a
-     *                                                       different trusted certificate is used.
-     * @throws CertificateExpiredException if one of the certs in the chain has expired
-     * @throws CertificateException if the chain is seriously invalid and cannot be trusted
-     */
-    public static void verifyCertificateChain( X509Certificate[] chain,
-                                               X509Certificate trustedCert,
-                                               int maxDepth )
-            throws CertificateException, CertificateUntrustedException
-    {
-
-        Principal trustedDN = trustedCert.getSubjectDN();
-
-        for (int i = 0; i < maxDepth; i++) {
-            X509Certificate cert = chain[i];
-            cert.checkValidity(); // will abort if this throws
-            if (i + 1 < chain.length) {
-                try {
-                    cachedVerify(cert, chain[i + 1].getPublicKey());
-                } catch (Exception e) {
-                    // This is a serious problem with the cert chain presented by the peer.  Do a full abort.
-                    throw new CertificateException("Unable to verify signature in peer certificate chain: " + e);
-                }
-            }
-
-            if (cert.getIssuerDN().toString().equals(trustedDN.toString())) {
-                try {
-                    cachedVerify(cert, trustedCert.getPublicKey());
-                    return; // success
-                } catch (Exception e) {
-                    // Server SSL cert might have changed.  Attempt to reimport it
-                    throw new CertificateUntrustedException("Unable to verify peer certificate with trusted cert: " + e);
-                }
-            } else if (cert.getSubjectDN().equals(trustedDN)) {
-                if (certsAreEqual(cert, trustedCert)) {
-                    return; // success
-                }
-            }
+        public CertificateUntrustedException(String message, Throwable cause) {
+            super(message, cause);
         }
-
-        // We probably just havne't talked to this Ssg before.  Trigger a reimport of the certificate.
-        throw new CertificateUntrustedException("Couldn't find trusted certificate in peer's certificate chain");
     }
 
     /**
@@ -1089,6 +1039,10 @@ public class CertUtils {
 
     /**
      * Copied from Apache WSS4J's org.apache.ws.security.components.crypto.AbstractCrypto
+     *
+     * @param cert the certificate whose SKI to extract.  Required.
+     * @return the certificates raw SubjectKeyIdentifier, in DER, with the 4-byte DER prefix removed; or
+     *         null if no SKI could be extracted.
      */
      public static byte[] getSKIBytesFromCert(X509Certificate cert) {
         /*
@@ -1147,7 +1101,7 @@ public class CertUtils {
         return abyte0;
     }
 
-    /**
+    /*
      * Decode the ASN.1 RSA data.
      *
      * <pre>

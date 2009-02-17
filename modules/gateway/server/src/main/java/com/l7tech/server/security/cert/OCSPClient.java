@@ -1,9 +1,9 @@
 package com.l7tech.server.security.cert;
 
 import com.l7tech.common.http.*;
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.security.types.CertificateValidationResult;
+import com.l7tech.security.cert.CertVerifier;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
@@ -105,7 +105,7 @@ public class OCSPClient {
             List<String> extendedUsages = certificate.getExtendedKeyUsage();
             if ( extendedUsages!=null && extendedUsages.contains(OID_EXT_KEY_USE_OCSPSIGN) ) {
                 certificate.checkValidity();
-                CertUtils.cachedVerify(certificate, issuerCertificate.getPublicKey());
+                CertVerifier.cachedVerify(certificate, issuerCertificate);
                 permitted = true;            
             }
         } catch (GeneralSecurityException gse) {

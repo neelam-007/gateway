@@ -1,6 +1,6 @@
 package com.l7tech.server.ems.gateway;
 
-import com.l7tech.security.TestCertificateGenerator;
+import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.TestDefaultKey;
 

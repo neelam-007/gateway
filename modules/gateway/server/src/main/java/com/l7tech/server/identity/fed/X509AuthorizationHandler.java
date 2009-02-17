@@ -6,7 +6,6 @@
 
 package com.l7tech.server.identity.fed;
 
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
@@ -15,6 +14,7 @@ import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.fed.X509Config;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.audit.Auditor;
@@ -94,7 +94,7 @@ public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
 
         for (TrustedCert trustedCert : trustedCerts) {
             final X509Certificate trustedX509 = trustedCert.getCertificate();
-            if (CertUtils.isVerified(requestCert, trustedX509.getPublicKey()))
+            if (CertVerifier.isVerified(requestCert, trustedX509))
                 return;
         }
 

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.simontuffs"
+		module="one-jar-boot"
+		revision="0.96.1"
+		status="release"
+		publication="20090216182139"
+		default="true"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="one-jar-boot" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

@@ -1,0 +1,186 @@
+package com.l7tech.internal.certgen;
+
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.security.cert.TestCertificateGenerator;
+import com.l7tech.util.Pair;
+import org.bouncycastle.asn1.x509.X509Extensions;
+import static org.junit.Assert.*;
+import org.junit.*;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.NoSuchElementException;
+
+/**
+ * Unit tests for {@link GenerateCertificate} command line utility.
+ */
+public class GenerateCertificateTest {
+
+    @Test
+    public void testGenDefault() throws Exception {
+        assertNotNull(CertUtils.decodeFromPEM(generate()));
+    }
+
+    @Test
+    public void testHelp() throws Exception {
+        String got = generate("-help");
+        System.out.println(got);
+        assertTrue(got.contains("cRLSign"));
+    }
+
+    @Test
+    public void testGenCustom() throws Exception {
+        String got = generate("-keySize", "818", "-subject", "cn=2hasdfiuh2", "-noExtKeyUsagE", "-daysUntilExpiry", "17");
+        final X509Certificate cert = CertUtils.decodeFromPEM(got);
+        assertNotNull(cert);
+        assertTrue("cn=2hasdfiuh2".equalsIgnoreCase(cert.getSubjectDN().getName()));
+        int keybits = CertUtils.getRsaKeyBits((RSAPublicKey) cert.getPublicKey());
+        assertTrue("Should get at least the number of key bits we asked for", keybits >= 818);
+        assertTrue("Should not get too many key bits", keybits < 1024);
+        assertTrue("Should have default key usage", cert.getKeyUsage()[2]);
+        assertFalse("Should have default key usage", cert.getKeyUsage()[6]);
+        assertNull("Should not have ext key usage", cert.getExtendedKeyUsage());
+        assertTrue("Should have non-CA basic constraints by default", cert.getBasicConstraints() == -1);
+
+        long millis = cert.getNotAfter().getTime() - new Date().getTime();
+        assertTrue("Expiry days should be in the right range", millis > (86400 * 16 * 1000L) && millis < (86400 * 18 * 1000L));
+    }
+
+    @Test
+    public void testGenText() throws Exception {
+        String got = generate("-noBase64", "-text");
+        assertFalse(got.contains("--BEGIN"));
+        assertTrue(got.contains("Signature Algorithm:"));
+    }
+
+    @Test
+    public void testGenKeystore() throws Exception {
+        final String file = "CertificateGeneratorTest.p12";
+        try {
+            String got = generate("-noBase64", "-outfile", file, "7layer");
+            assertTrue(got.startsWith("Cert chain with private key saved to " + file));
+        } finally {
+            new File(file).delete();
+        }
+    }
+
+    @Test
+    public void testMissingParameter() throws Exception {
+        try {
+            generate("-subject");
+            fail("Expected exception was not thrown");
+        } catch (NoSuchElementException e) {
+            // Ok
+        } catch (IllegalArgumentException e) {
+            // Also ok
+        }
+    }
+
+    @Test
+    public void testMalformedSubject() throws Exception {
+        try {
+            generate("-subject", "823723");
+            fail("Expected exception was not thrown");
+        } catch (IllegalArgumentException e) {
+            // Ok
+        }
+    }
+
+    @Test
+    public void testBadArgumentName() throws Exception {
+        try {
+            generate("-blarflegortz");
+            fail("Expected exception was not thrown");
+        } catch (IllegalArgumentException e) {
+            // Ok
+        }
+    }
+
+    @Test
+    public void testBadArgumentSyntax() throws Exception {
+        try {
+            generate("subject", "cn=blah");
+            fail("Expected exception was not thrown");
+        } catch (IllegalArgumentException e) {
+            // Ok
+        }
+    }
+
+    @Test
+    public void testKeyUsage() throws Exception {
+        X509Certificate got = CertUtils.decodeFromPEM(generate("-keyusage", "encipherOnly", "-keyusage", "cRLSign"));
+        assertFalse(got.getKeyUsage()[0]); // digitalSignature
+        assertFalse(got.getKeyUsage()[8]); // decipherOnly
+        assertTrue(got.getKeyUsage()[7]); // encipherOnly
+        assertTrue(got.getKeyUsage()[6]); // cRLSign
+    }
+
+    @Test
+    public void testExtKeyUsage() throws Exception {
+        String ipsecOid = GenerateCertificate.KEY_PURPOSE_IDS_BY_NAME.get("id-kp-ipsecTunnel");
+        String smartcardOid = GenerateCertificate.KEY_PURPOSE_IDS_BY_NAME.get("id-kp-smartcardlogon");
+
+        X509Certificate got = CertUtils.decodeFromPEM(generate("-extkeyusage", "id-kp-ipsecTunnel", "-extkeyusage", smartcardOid));
+
+        assertTrue(got.getExtendedKeyUsage().contains(ipsecOid));
+        assertTrue(got.getExtendedKeyUsage().contains(smartcardOid));
+        assertTrue(got.getExtendedKeyUsage().size() == 2);
+    }
+
+    @Test
+    public void testCountriesOfCitizenship() throws Exception {
+        X509Certificate got = CertUtils.decodeFromPEM(generate("-countriesOfCitizenship", "ca", "-countriesOfCitizenship", "jp"));
+        assertNotNull(got.getExtensionValue(X509Extensions.SubjectDirectoryAttributes.getId()));
+    }
+
+    @Test
+    public void testMakeCaAndSslCerts() throws Exception {
+        final String cafile = "CertificateGeneratorTest-ca.p12";
+        final String sslfile = "CertificateGeneratorTest-ssl.p12";
+        final String pass = "7layerzz";
+        try {
+            String got = generate("-noBase64", "-subject", "cn=theca", "-outfile", cafile, pass);
+            assertTrue(got.startsWith("Cert chain with private key saved to " + cafile));
+
+            String sslGot = generate("-noBase64", "-subject", "cn=thessl", "-outfile", sslfile, pass, "-issuer", cafile, pass);
+            assertTrue(sslGot.startsWith("Cert chain with private key saved to " + sslfile));
+
+            // Make sure chain makes sense
+            Pair<X509Certificate[],PrivateKey> cachain = TestCertificateGenerator.loadFromPkcs12(cafile, pass);
+            assertTrue(cachain.left.length == 1);
+
+            Pair<X509Certificate[], PrivateKey> sslchain = TestCertificateGenerator.loadFromPkcs12(sslfile, pass);
+            assertTrue(sslchain.left.length == 2);
+            assertTrue(CertUtils.certsAreEqual(sslchain.left[1], cachain.left[0]));
+
+            // SSL cert should verify using CA cert's public key
+            sslchain.left[0].verify(cachain.left[0].getPublicKey());
+
+        } finally {
+            new File(cafile).delete();
+            new File(sslfile).delete();
+        }
+    }
+
+    private String generate(String... args) throws IOException, GeneralSecurityException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(baos);
+        new GenerateCertificate(ps, Arrays.asList(args)).generate();
+        return baos.toString();
+    }
+
+    // Test this last since the main method calls system.exit(1) on failure
+    @Test
+    public void testMainMethod() throws Exception {
+        GenerateCertificate.main(new String[0]);
+        // We'll assume it did the same thing as testGenDefault, but would have printed the base64 to System.out
+    }
+}
