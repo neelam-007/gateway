@@ -119,28 +119,28 @@ public final class EntityHeaderUtils {
         } else if (header instanceof PolicyHeader) {
             PolicyHeader policyHeader = (PolicyHeader) header;
             externalEntityHeader = new ExternalEntityHeader(policyHeader.getGuid(), header);
-            externalEntityHeader.addProperty("SOAP", Boolean.toString(policyHeader.isSoap()));
+            externalEntityHeader.setProperty("SOAP", Boolean.toString(policyHeader.isSoap()));
         } else if (header instanceof ServiceHeader) {
             ServiceHeader serviceHeader = (ServiceHeader) header;
             externalEntityHeader = new ExternalEntityHeader(serviceHeader.getStrId(), header);
-            externalEntityHeader.addProperty("Policy Version", Integer.toString(serviceHeader.getVersion()));
-            externalEntityHeader.addProperty("Display Name", serviceHeader.getDisplayName());
-            externalEntityHeader.addProperty("SOAP", Boolean.toString(serviceHeader.isSoap()));
-            externalEntityHeader.addProperty("Enabled", Boolean.toString(!serviceHeader.isDisabled()));
+            externalEntityHeader.setProperty("Policy Version", Integer.toString(serviceHeader.getVersion()));
+            externalEntityHeader.setProperty("Display Name", serviceHeader.getDisplayName());
+            externalEntityHeader.setProperty("SOAP", Boolean.toString(serviceHeader.isSoap()));
+            externalEntityHeader.setProperty("Enabled", Boolean.toString(!serviceHeader.isDisabled()));
         } else if (header instanceof IdentityHeader) {
             externalEntityHeader = new ExternalEntityHeader(((IdentityHeader)header).getProviderOid() + ":" + header.getStrId(), header);
-            externalEntityHeader.addProperty("Scope Type", EntityType.ID_PROVIDER_CONFIG.toString());
+            externalEntityHeader.setProperty("Scope Type", EntityType.ID_PROVIDER_CONFIG.toString());
         } else if (header instanceof SsgKeyHeader) {
             externalEntityHeader = new ExternalEntityHeader(((SsgKeyHeader)header).getKeystoreId() + ":" + ((SsgKeyHeader)header).getAlias(), header);
         } else if (header instanceof AliasHeader) {
             AliasHeader aliasHeader = (AliasHeader) header;
             externalEntityHeader = new ExternalEntityHeader( aliasHeader.getStrId(), aliasHeader );
             if ( aliasHeader.getAliasedEntityType() == EntityType.POLICY ) {
-                externalEntityHeader.addProperty("Alias Of Internal", Long.toString(aliasHeader.getAliasedEntityId()));
+                externalEntityHeader.setProperty("Alias Of Internal", Long.toString(aliasHeader.getAliasedEntityId()));
             } else {
-                externalEntityHeader.addProperty("Alias Of", Long.toString(aliasHeader.getAliasedEntityId()));
+                externalEntityHeader.setProperty("Alias Of", Long.toString(aliasHeader.getAliasedEntityId()));
             }
-            externalEntityHeader.addProperty("Alias Type", aliasHeader.getAliasedEntityType().toString());
+            externalEntityHeader.setProperty("Alias Type", aliasHeader.getAliasedEntityType().toString());
         } else {
             externalEntityHeader = new ExternalEntityHeader(header.getStrId(), header);
         }

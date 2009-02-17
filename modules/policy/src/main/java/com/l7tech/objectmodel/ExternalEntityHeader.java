@@ -47,7 +47,7 @@ public class ExternalEntityHeader extends EntityHeader {
         this.extraProperties = extraProperties;
     }
 
-    public void addProperty(String name, String value) {
+    public void setProperty(String name, String value) {
         extraProperties.put(name, value);
     }
 

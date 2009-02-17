@@ -12,6 +12,8 @@ import java.nio.charset.Charset;
 public class ValueReferenceEntityHeader extends ExternalEntityHeader {
 
     private final static String OWNER_TYPE = "ownerType";
+    private final static String DISPLAY_VALUE = "displayValue";
+    private final static String MAPPED_VALUE = "mappedValue";
 
     public ValueReferenceEntityHeader() {
     }
@@ -19,7 +21,7 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
     public ValueReferenceEntityHeader(ExternalEntityHeader owner, String propertyName) {
         super(HexUtils.encodeBase64(propertyName.getBytes(Charset.forName("UTF-8"))) + ":" + owner.getExternalId(), owner);
         setName(getName() + " : " + propertyName);
-        addProperty(OWNER_TYPE, owner.getType().name());
+        setProperty(OWNER_TYPE, owner.getType().name());
         this.type = EntityType.VALUE_REFERENCE;
     }
 
@@ -38,5 +40,13 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
 
     public String getPropertyName() {
         return HexUtils.decodeUtf8(HexUtils.decodeBase64(getExternalId().substring(0, getExternalId().indexOf(":"))));
+    }
+
+    public String getDisplayValue() {
+        return getProperty(DISPLAY_VALUE);
+    }
+
+    public void setMappedValue(String mappedValue) {
+        setProperty(MAPPED_VALUE, mappedValue);
     }
 }
