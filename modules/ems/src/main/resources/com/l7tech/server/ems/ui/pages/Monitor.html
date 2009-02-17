@@ -138,6 +138,12 @@
     </script>
     <script type="text/javascript">
         /**
+         * Minimum content width (in pixels) of monitoring property table cells.
+         * @final
+         */
+        var MONITORING_TD_CONTENT_MIN_WIDTH = 20;
+
+        /**
          * Default interval in seconds to refresh monitoring property values.
          * Applies when previous refresh failed.
          * @final
@@ -322,14 +328,13 @@
             var BORDER_RIGHT = 1;   // .dataTable th border-right
             var PADDING_LEFT = 7;   // .dataTable th padding-left
             var PADDING_RIGHT = 7;  // .dataTable th padding-right
-            var MIN_WIDTH = 20;
             var thDivs = l7.Util.getElementsByClassName('collapsedHeader', null, 'div');
             for (var i = 0; i < thDivs.length; ++i) {
                 var thDiv = thDivs[i];
                 var th = thDiv.parentNode;
                 thDiv.style.display = 'none';
                 var contentWidth = th.offsetWidth - BORDER_LEFT - BORDER_RIGHT - PADDING_LEFT - PADDING_RIGHT;
-                if (contentWidth < MIN_WIDTH) contentWidth = MIN_WIDTH;
+                if (contentWidth < MONITORING_TD_CONTENT_MIN_WIDTH) contentWidth = MONITORING_TD_CONTENT_MIN_WIDTH;
                 thDiv.style.width = contentWidth + 'px';
                 thDiv.style.display = '';
                 thDiv.title = thDiv.innerHTML;
@@ -1772,15 +1777,15 @@
                                         <th class="group1 topStep" colspan="2">swap space usage</th>
                                     </tr>
                                     <tr>
-                                        <th class="group0 bottomStep group0bottomStep"> </th>
-                                        <th class="group1 bottomStep group1bottomStep"> </th>
-                                        <th class="group1 bottomStep group1bottomStep"> </th>
-                                        <th class="group1 bottomStep group1bottomStep"> </th>
-                                        <th class="group1 bottomStep group1bottomStep"> </th>
-                                        <th class="group1 bottomStep group1bottomStep"> </th>
-                                        <th class="group1 bottomStep group1bottomStep"> </th>
-                                        <th class="group1 bottomStep group1bottomStep"> </th>
-                                        <th class="group1 bottomStep group1bottomStep"> </th>
+                                        <th class="group0 bottomStep group0bottomStep"><img src="/images/spacer.png" alt="" height="0" width="20" /><!-- matches MONITORING_TD_CONTENT_MIN_WIDTH --></th>
+                                        <th class="group1 bottomStep group1bottomStep"><img src="/images/spacer.png" alt="" height="0" width="20" /><!-- matches MONITORING_TD_CONTENT_MIN_WIDTH --></th>
+                                        <th class="group1 bottomStep group1bottomStep"><img src="/images/spacer.png" alt="" height="0" width="20" /><!-- matches MONITORING_TD_CONTENT_MIN_WIDTH --></th>
+                                        <th class="group1 bottomStep group1bottomStep"><img src="/images/spacer.png" alt="" height="0" width="20" /><!-- matches MONITORING_TD_CONTENT_MIN_WIDTH --></th>
+                                        <th class="group1 bottomStep group1bottomStep"><img src="/images/spacer.png" alt="" height="0" width="20" /><!-- matches MONITORING_TD_CONTENT_MIN_WIDTH --></th>
+                                        <th class="group1 bottomStep group1bottomStep"><img src="/images/spacer.png" alt="" height="0" width="20" /><!-- matches MONITORING_TD_CONTENT_MIN_WIDTH --></th>
+                                        <th class="group1 bottomStep group1bottomStep"><img src="/images/spacer.png" alt="" height="0" width="20" /><!-- matches MONITORING_TD_CONTENT_MIN_WIDTH --></th>
+                                        <th class="group1 bottomStep group1bottomStep"><img src="/images/spacer.png" alt="" height="0" width="20" /><!-- matches MONITORING_TD_CONTENT_MIN_WIDTH --></th>
+                                        <th class="group1 bottomStep group1bottomStep"><img src="/images/spacer.png" alt="" height="0" width="20" /><!-- matches MONITORING_TD_CONTENT_MIN_WIDTH --></th>
                                         <th class="group1">NTP status</th>
                                     </tr>
                                 </thead>
