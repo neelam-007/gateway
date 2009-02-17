@@ -134,6 +134,11 @@ public class MigrationRecord extends NamedEntityImp {
     // - Convenience accessors
 
     @Transient
+    public MigrationSummary getMigrationSummary() {
+        return summary;
+    }
+
+    @Transient
     public String getSourceClusterName() {
         return summary == null ? null : summary.getSourceClusterName();
     }
@@ -196,7 +201,9 @@ public class MigrationRecord extends NamedEntityImp {
             for ( MigratedItem item : summary.getMigratedItems() ) {
                 if ( item.getTargetHeader() != null &&
                      item.getTargetHeader().getExternalId() != null &&
-                     item.getTargetHeader().getType() == EntityType.FOLDER ) {
+                     item.getTargetHeader().getType() == EntityType.FOLDER &&
+                     item.getTargetHeader().getDescription() != null &&
+                     item.getTargetHeader().getDescription().equals( summary.getTargetFolderPath() )) {
                     id = item.getTargetHeader().getExternalId();
                     break;
                 }

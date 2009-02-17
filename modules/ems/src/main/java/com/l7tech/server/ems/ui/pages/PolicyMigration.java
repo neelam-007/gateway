@@ -96,11 +96,30 @@ public class PolicyMigration extends EsmStandardWebPage {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
                 final PreviousMigrationModel model = (PreviousMigrationModel) form.get("reloadSelect").getModelObject();
-                logger.info( "Reloading migration '" + model + "'.");
+                logger.fine( "Reloading migration '" + model + "'.");
                 try {
                     MigrationRecord record = migrationRecordManager.findByPrimaryKey( model.id );
                     if ( record != null ) {
-                        javascript.setModelObject("selectClusters( '"+record.getSourceClusterGuid()+"', "+jsArray(record.getSourceItems())+", '"+record.getTargetClusterGuid()+"', '"+record.getTargetFolderId()+"' );");
+                        MigrationSummary summary = record.getMigrationSummary();
+
+                        // Update model
+                        List<Pair<ExternalEntityHeader,ExternalEntityHeader>> mappings = new ArrayList<Pair<ExternalEntityHeader,ExternalEntityHeader>>();
+                        for ( MigratedItem item : summary.getMigratedItems() ) {
+                            MigratedItem.ImportOperation operation = item.getOperation();
+                            if (operation == MigratedItem.ImportOperation.MAP) {
+                                if ( item.getSourceHeader().getType() == EntityType.FOLDER ) {
+                                    continue;
+                                }
+
+                                ExternalEntityHeader source = item.getSourceHeader();
+                                ExternalEntityHeader target = item.getTargetHeader();
+                                mappings.add( new Pair<ExternalEntityHeader,ExternalEntityHeader>( source, target ) );
+                            }
+                        }
+                        validateAndRestoreMappings( mappingModel, record.getSourceClusterGuid(), record.getTargetClusterGuid(), mappings );
+
+                        // Update UI selections
+                        javascript.setModelObject("selectClusters( '"+record.getSourceClusterGuid()+"', "+jsArray(record.getSourceItems())+", '"+record.getTargetClusterGuid()+"', '"+record.getTargetFolderId()+"', "+summary.isMigrateFolders()+", "+summary.isEnableNewServices()+", "+summary.isOverwrite()+");");
                         ajaxRequestTarget.addComponent( javascript );
                     }
                 } catch ( FindException fe ) {
@@ -1079,6 +1098,70 @@ public class PolicyMigration extends EsmStandardWebPage {
                 mappingModel.dependencyMap.remove( mapKey );
             }
         }
+    }
+
+    /**
+     * Restore any of the given mappings if they are still valid.
+     */
+    private void validateAndRestoreMappings( final EntityMappingModel mappingModel,
+                                             final String sourceClusterGuid,
+                                             final String targetClusterGuid,
+                                             final List<Pair<ExternalEntityHeader, ExternalEntityHeader>> mappings ) {
+        try {
+            // discard the mappings that no longer exist on the source or target cluster
+            SsgCluster sourceCluster = ssgClusterManager.findByGuid(sourceClusterGuid);
+            GatewayClusterClient sourceContext = gatewayClusterClientManager.getGatewayClusterClient(sourceCluster, getUser());
+            MigrationApi sourceMigrationApi = sourceContext.getUncachedMigrationApi();
+
+            SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterGuid);
+            GatewayClusterClient targetContext = gatewayClusterClientManager.getGatewayClusterClient(targetCluster, getUser());
+            MigrationApi targetMigrationApi = targetContext.getUncachedMigrationApi();
+
+            List<ExternalEntityHeader> sourceHeaders = new ArrayList<ExternalEntityHeader>();
+            List<ExternalEntityHeader> targetHeaders = new ArrayList<ExternalEntityHeader>();
+            for ( Pair<ExternalEntityHeader, ExternalEntityHeader> mapping : mappings ) {
+                sourceHeaders.add( mapping.left );
+                targetHeaders.add( mapping.right );
+            }
+
+            Collection<ExternalEntityHeader> validatedSourceHeaders = sourceMigrationApi.checkHeaders( sourceHeaders );
+            Collection<ExternalEntityHeader> validatedTargetHeaders = targetMigrationApi.checkHeaders( targetHeaders );
+
+            for ( Pair<ExternalEntityHeader, ExternalEntityHeader> mapping : mappings ) {
+                if ( containsHeader( mapping.left, validatedSourceHeaders ) &&
+                     containsHeader( mapping.right, validatedTargetHeaders ) ) {
+                    DependencyKey sourceKey = new DependencyKey( sourceClusterGuid, mapping.left );
+                    Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterGuid );
+                    mappingModel.dependencyMap.put( mapKey, new Pair<DependencyItem, Boolean>(
+                                new DependencyItem(mapping.right, null), false ) );
+                }
+            }
+
+        } catch ( GatewayException ge ) {
+            logger.log( Level.INFO, "Error while reloading previous migration '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
+        } catch ( FindException fe ) {
+            logger.log( Level.WARNING, "Error while reloading previous migration.", fe );
+        } catch ( SOAPFaultException sfe ) {
+            if ( !GatewayContext.isNetworkException( sfe ) && !GatewayContext.isConfigurationException( sfe ) ) {
+                logger.log( Level.WARNING, "Error while reloading previous migrations.", sfe );
+            }
+        }
+    }
+
+    private boolean containsHeader( final ExternalEntityHeader header, final Collection<ExternalEntityHeader> headers ) {
+        boolean valid = false;
+
+        if ( headers != null ) {
+            for ( ExternalEntityHeader eeh : headers ) {
+                if ( header.getExternalId().equals( eeh.getExternalId() ) &&
+                     header.getType() == eeh.getType() ) {
+                    valid = true;
+                    break;
+                }
+            }
+        }
+
+        return valid;
     }
 
     /**

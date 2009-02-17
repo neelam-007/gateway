@@ -647,18 +647,32 @@
 
             YAHOO.util.Event.onDOMReady(init);
 
-            function selectClusters( sourceGuid, sourceItems, targetGuid, targetItem ) {
-                srcSSGClusterSelectorWindow.getEntityTreeTable().highlightEntity( sourceGuid, true );
-                destSSGClusterSelectorWindow.getEntityTreeTable().highlightEntity( targetGuid, true );
+            function selectClusters( sourceGuid, sourceItems, targetGuid, targetItem, migrateFolders, enableNewServices, overwriteDependencies ) {
+                document.getElementById('migrateFoldersCheckBox').checked = migrateFolders;
+                document.getElementById('enableNewServicesCheckBox').checked = enableNewServices;
+                document.getElementById('overwriteDependenciesCheckBox').checked = overwriteDependencies;
+                document.getElementById('destinationClusterId').value = targetGuid;
+                document.getElementById('destinationFolderId').value = targetItem;
 
-                var callback = function() { //todo timing ...
+                var resetAfterLoad = function() {
+                    updateMigrateButton();
+                    updateIdentifyDependenciesButton();
+                }
+
+                srcSSGClusterSelectorWindow.getEntityTreeTable().highlightEntity( sourceGuid, true );
+                srcSSGClusterContentSelectorWindow.setSsgClusterContentLoadedCallback( function() {
                     var item;
                     for ( item in sourceItems ) {
                         srcSSGClusterContentSelectorWindow.getEntityTreeTable().setEntityTristateCheckboxState( sourceItems[item], true );
                     }
+                    resetAfterLoad();
+                } );
+
+                destSSGClusterSelectorWindow.getEntityTreeTable().highlightEntity( targetGuid, true );
+                destSSGClusterContentSelectorWindow.setSsgClusterContentLoadedCallback( function() {
                     destSSGClusterContentSelectorWindow.getEntityTreeTable().setEntityRadioButtonState( targetItem, true );
-                }
-                setTimeout( callback, 1000 );
+                    resetAfterLoad();
+                } );
             }
         </script>
     </wicket:head>
