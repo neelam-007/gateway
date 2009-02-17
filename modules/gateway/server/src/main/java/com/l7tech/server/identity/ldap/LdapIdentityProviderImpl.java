@@ -1044,17 +1044,18 @@ public class LdapIdentityProviderImpl
             try {
                 context = getBrowseContext();
             } catch (NamingException e) {
-                // note. i am not embedding the NamingException because it sometimes
-                // contains com.sun.jndi.ldap.LdapCtx which does not implement serializable
                 String msg;
                 if (e instanceof javax.naming.AuthenticationException) {
                     msg = "Cannot connect to this directory, authentication failed.";
                     logger.log(Level.INFO, "LDAP configuration test failure. " + msg, ExceptionUtils.getDebugException(e));
                 } else {
-                    msg = "Cannot connect to this directory.";
+                    msg = "Cannot connect to this directory '"+ExceptionUtils.getMessage(e)+"'.";
                     logger.log(Level.INFO, "LDAP configuration test failure. " + msg, ExceptionUtils.getDebugException(e));
                 }
-                throw new InvalidIdProviderCfgException(msg, e);
+
+                // note. i am not embedding the NamingException because it sometimes
+                // contains com.sun.jndi.ldap.LdapCtx which does not implement serializable
+                throw new InvalidIdProviderCfgException(msg);
             }
 
             // That's all for a quick test
@@ -1069,7 +1070,9 @@ public class LdapIdentityProviderImpl
             try {
                 entrySearchEnumeration = context.search(config.getSearchBase(), "(objectClass=*)", sc);
             } catch (NamingException e) {
-                throw new InvalidIdProviderCfgException("Cannot search using base: " + config.getSearchBase(), e);
+                // note. i am not embedding the NamingException because it sometimes
+                // contains com.sun.jndi.ldap.LdapCtx which does not implement serializable
+                throw new InvalidIdProviderCfgException("Cannot search using base: " + config.getSearchBase());
             } finally {
                 ResourceUtils.closeQuietly( entrySearchEnumeration );
             }
