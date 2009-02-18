@@ -4,8 +4,8 @@ import org.apache.wicket.extensions.markup.html.form.DateTextField;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.form.AjaxFormComponentUpdatingBehavior;
@@ -38,7 +38,7 @@ public class YuiDateSelector extends Panel {
      * @param minDate Minimum permitted date (may be null)
      * @param maxDate Maximumn permitted date (may be null)
      */
-    public YuiDateSelector( final String id, final Model model, final Date minDate, final Date maxDate ) {
+    public YuiDateSelector( final String id, final IModel model, final Date minDate, final Date maxDate ) {
         this(id, null, model, minDate, maxDate, false, null) ;
     }
 
@@ -52,7 +52,7 @@ public class YuiDateSelector extends Panel {
      * @param maxDate Maximumn permitted date (may be null)
      * @param newTimeZoneUsed The new time zone used by the date selector.
      */
-    public YuiDateSelector( final String id, final String dateFieldMarkupId, final Model model, final Date minDate, final Date maxDate, final String newTimeZoneUsed) {
+    public YuiDateSelector( final String id, final String dateFieldMarkupId, final IModel model, final Date minDate, final Date maxDate, final String newTimeZoneUsed) {
         this(id, dateFieldMarkupId, model, minDate, maxDate, false, newTimeZoneUsed);
     }
 
@@ -67,7 +67,7 @@ public class YuiDateSelector extends Panel {
      * @param ignoreFirstSelect True to not pop-up on first select (useful if component is the form focus)
      * @param newTimeZoneUsed The new time zone used by the date selector.
      */
-    public YuiDateSelector(final String id, final String dateFieldMarkupId, final Model model, final Date minDate, final Date maxDate, final boolean ignoreFirstSelect, final String newTimeZoneUsed) {
+    public YuiDateSelector(final String id, final String dateFieldMarkupId, final IModel model, final Date minDate, final Date maxDate, final boolean ignoreFirstSelect, final String newTimeZoneUsed) {
         super(id, model);
         this.ignoreFirstSelect = ignoreFirstSelect;
         this.newTimeZoneUsed = newTimeZoneUsed;
@@ -230,7 +230,6 @@ public class YuiDateSelector extends Panel {
         DateSelectorModel(Date minDate, Date maxDate) {
             this.minDate = minDate;
             this.maxDate = maxDate;
-            script = buildDateSelectorJavascript(minDate, maxDate);
         }
 
         public Date getMaxDate() {
@@ -239,7 +238,7 @@ public class YuiDateSelector extends Panel {
 
         public void setMaxDate(Date maxDate) {
             this.maxDate = maxDate;
-            script = buildDateSelectorJavascript(minDate, maxDate);
+            script = null;
         }
 
         public Date getMinDate() {
@@ -248,10 +247,13 @@ public class YuiDateSelector extends Panel {
 
         public void setMinDate(Date minDate) {
             this.minDate = minDate;
-            script = buildDateSelectorJavascript(minDate, maxDate);
+            script = null;
         }
 
         public String getScript() {
+            if ( script == null ) {
+                script = buildDateSelectorJavascript(minDate, maxDate);
+            }
             return script;
         }
 

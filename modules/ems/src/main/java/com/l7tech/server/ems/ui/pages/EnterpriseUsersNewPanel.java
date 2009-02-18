@@ -120,7 +120,6 @@ public class EnterpriseUsersNewPanel extends Panel {
                 user.setDescription( model.description );
 
                 emsAccountManager.save( user );
-                setResponsePage( EnterpriseUsers.class );
             } catch (DuplicateObjectException se) {
                 // username already taken so warn the user
                 error( new StringResourceModel("message.duplicate", this, null, new Object[]{ model.userId } ).getString() );

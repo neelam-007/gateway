@@ -2,6 +2,38 @@
  * Javascript for YUI DataTable component
  */
 
+// -----------------------------------------------------------------------------
+// Creates the l7 global namespace object, if not already created.
+// -----------------------------------------------------------------------------
+if (typeof l7 == "undefined" || !l7) {
+    /**
+     * The l7 global namespace object.
+     *
+     * @class l7
+     * @static
+     */
+    var l7 = {};
+}
+
+// -----------------------------------------------------------------------------
+// DataTable
+// -----------------------------------------------------------------------------
+if (!l7.DataTable) {
+    (function(){
+        /**
+         * The l7 DataTable namespace object.
+         *
+         * @class l7.DataTable
+         */
+        l7.DataTable = {};
+
+        /**
+         * The l7 PageSize map, used to preserve page size selection on refresh of component..
+         */
+        l7.DataTable.PageSize = {};
+    })();
+}
+
 /**
  * Initialize a DataTable
  *
@@ -25,6 +57,10 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, ta
         myDataTable;  // to hold the DataTable instance
 
     var defaultPageSize = 10;
+
+    if ( l7.DataTable.PageSize[tableId] ) {
+        defaultPageSize = l7.DataTable.PageSize[tableId];   
+    }
 
     var emstdateFormat = function(elCell, oRecord, oColumn, oData) {
         var oDate = oData;
@@ -250,6 +286,10 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, ta
         myPaginator.setAttributeConfig('previousPageLinkLabel', {value:'<img src="../images/gotoPrevious.png" alt="" />', validator:YAHOO.lang.isString});
         myPaginator.setAttributeConfig('nextPageLinkLabel',     {value:'<img src="../images/gotoNext.png" alt="" />', validator:YAHOO.lang.isString});
         myPaginator.setAttributeConfig('lastPageLinkLabel',     {value:'<img src="../images/gotoLast.png" alt="" />', validator:YAHOO.lang.isString});
+
+        myPaginator.subscribe( "rowsPerPageChange", function (event, target) {
+            l7.DataTable.PageSize[tableId] = myPaginator.getRowsPerPage();
+        } );
 
         var myInitRequest = 'sort=' + sortBy + '&dir=' + ((sortDir == YAHOO.widget.DataTable.CLASS_DESC) ? 'desc' : 'asc') + '&startIndex=0&results=' + defaultPageSize;
         var myConfig = {

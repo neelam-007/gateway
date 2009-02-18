@@ -29,6 +29,7 @@ import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.StringResourceModel;
+import org.apache.wicket.model.CompoundPropertyModel;
 import org.apache.wicket.spring.injection.annot.SpringBean;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.protocol.http.WebRequest;
@@ -100,21 +101,22 @@ public class Audits extends EsmStandardWebPage {
         final FeedbackPanel feedback = new FeedbackPanel("feedback");
         Date now = new Date();
         Date last7thDay = new Date(now.getTime() - TimeUnit.DAYS.toMillis(7));
-        final Model dateStartModel = new Model(last7thDay);
-        final Model dateEndModel = new Model(now);
-        final Model typeModel = new Model(values[0]);
+
+        final DataProviderOptions options = new DataProviderOptions( values[0], last7thDay, now);
         final WebMarkupContainer tableContainer = new WebMarkupContainer("audittable.container");
         tableContainer.setOutputMarkupId(true);
-        Form auditSelectionForm = new Form("auditselectform");
-        final YuiDateSelector startDate = new YuiDateSelector("auditstart", dateStartModel, null, now );
-        final YuiDateSelector endDate = new YuiDateSelector("auditend", dateEndModel, last7thDay, now );
+        CompoundPropertyModel formModel = new CompoundPropertyModel(options);
+        Form auditSelectionForm = new Form("auditselectform", formModel);
+        final YuiDateSelector startDate = new YuiDateSelector("auditstart", formModel.bind("auditstart"), null, now );
+        final YuiDateSelector endDate = new YuiDateSelector("auditend", formModel.bind("auditend"), last7thDay, now );
 
         startDate.addInteractionWithOtherDateSelector(endDate, false, new YuiDateSelector.InteractionTasker());
         endDate.addInteractionWithOtherDateSelector(startDate, true, new YuiDateSelector.InteractionTasker());
 
+        final AuditDataProvider provider = new AuditDataProvider( options, "time", false );
         auditSelectionForm.add( startDate );
         auditSelectionForm.add( endDate );
-        auditSelectionForm.add( new DropDownChoice( "audittype", typeModel, Arrays.asList(values), new IChoiceRenderer(){
+        auditSelectionForm.add( new DropDownChoice( "audittype", null, Arrays.asList(values), new IChoiceRenderer(){
             @Override
             public Object getDisplayValue( final Object key ) {
                 return new StringResourceModel( "audit.type."+key, Audits.this, null ).getString();
@@ -127,16 +129,15 @@ public class Audits extends EsmStandardWebPage {
         auditSelectionForm.add( new YuiAjaxButton("audit.select.button"){
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                // Rebuild the data table
-                tableContainer.removeAll();
-                tableContainer.add( buildDataTable( (String)typeModel.getObject(), (Date)dateStartModel.getObject(), (Date)dateEndModel.getObject(), columns, hidden, detailsContainer ) );
+                // Update provide settings
+                provider.setOptions( options );
 
                 // Clear the display of any details
                 detailsContainer.removeAll();
                 detailsContainer.add( new WebMarkupContainer("details") );
 
-                ajaxRequestTarget.addComponent(tableContainer);
-                ajaxRequestTarget.addComponent(detailsContainer);
+                ajaxRequestTarget.addComponent( tableContainer );
+                ajaxRequestTarget.addComponent( detailsContainer );
                 ajaxRequestTarget.addComponent( feedback );
             }
 
@@ -160,7 +161,7 @@ public class Audits extends EsmStandardWebPage {
             }
         } );
 
-        tableContainer.add( buildDataTable( (String)typeModel.getObject(), (Date)dateStartModel.getObject(), (Date)dateEndModel.getObject(), columns, hidden, detailsContainer ) );
+        tableContainer.add( buildDataTable( provider, columns, hidden, detailsContainer ) );
 
         pageForm.add( downloadButton );
         pageForm.add( deleteButton );
@@ -203,16 +204,11 @@ public class Audits extends EsmStandardWebPage {
         return calendar.getTime();
     }
     
-    private YuiDataTable buildDataTable( final String type,
-                                         final Date startDate,
-                                         final Date endDate,
+    private YuiDataTable buildDataTable( final AuditDataProvider provider,
                                          final List<PropertyColumn> columns,
                                          final HiddenField hidden,
                                          final WebMarkupContainer detailsContainer ) {
-        Date start = startOfDay(startDate);
-        Date end = new Date(startOfDay(endDate).getTime() + TimeUnit.DAYS.toMillis(1));
-
-        return new YuiDataTable("audittable", columns, "time", false,  new AuditDataProvider(type, start, end, "time", false), hidden, "id", true, null ){
+        return new YuiDataTable("audittable", columns, "time", false,  provider, hidden, "id", true, null ){
             @Override
             protected void onSelect( final AjaxRequestTarget ajaxRequestTarget, final String auditIdentifier ) {
                 logger.finer("Processing selection callback for audit '"+auditIdentifier+"'.");
@@ -235,6 +231,50 @@ public class Audits extends EsmStandardWebPage {
                 }
             }
         };
+    }
+
+    private class DataProviderOptions implements Serializable {
+        private String audittype;
+        private Date auditstart;
+        private Date auditend;
+
+        public DataProviderOptions( final String type, final Date start, final Date end ) {
+            this.audittype = type;
+            this.auditstart = start;
+            this.auditend = end;
+        }
+
+        public Date getAuditend() {
+            return auditend;
+        }
+
+        public void setAuditend(Date auditend) {
+            this.auditend = auditend;
+        }
+
+        public Date getAuditstart() {
+            return auditstart;
+        }
+
+        public void setAuditstart(Date auditstart) {
+            this.auditstart = auditstart;
+        }
+
+        public String getAudittype() {
+            return audittype;
+        }
+
+        public void setAudittype(String audittype) {
+            this.audittype = audittype;
+        }
+
+        public Date getStartTime() {
+            return startOfDay(auditstart);
+        }
+
+        public Date getEndTime() {
+            return new Date(startOfDay(auditend).getTime() + TimeUnit.DAYS.toMillis(1));            
+        }
     }
 
     private class AuditModel implements Serializable {
@@ -262,24 +302,34 @@ public class Audits extends EsmStandardWebPage {
     }
 
     private class AuditDataProvider extends SortableDataProvider {
-        private final AuditSearchCriteria auditSearchCriteria;
+        private final User user;
+        private AuditSearchCriteria auditSearchCriteria;
 
-        public AuditDataProvider(final String type, final Date start, final Date end,  final String sort, final boolean asc) {
+        public AuditDataProvider( final DataProviderOptions options,  final String sort, final boolean asc ) {
             User user = null;
             if ( !securityManager.hasPermission( new AttemptedReadAll( EntityType.AUDIT_RECORD ) ) ) {
                 user = securityManager.getLoginInfo( ((WebRequest)RequestCycle.get().getRequest()).getHttpServletRequest().getSession(true) ).getUser();
             }
+            this.user = user;
 
-            auditSearchCriteria = new AuditSearchCriteria.Builder().fromTime(start).
-                    toTime(end).
-                    recordClass(getClassForType(type)).
+            auditSearchCriteria = buildCriteria( options );
+
+            setSort( sort, asc );
+        }
+
+        public void setOptions( final DataProviderOptions options ) {
+            auditSearchCriteria = buildCriteria( options );
+        }
+
+        private AuditSearchCriteria buildCriteria( final DataProviderOptions options ) {
+            return new AuditSearchCriteria.Builder().fromTime(options.getStartTime()).
+                    toTime(options.getEndTime()).
+                    recordClass(getClassForType(options.getAudittype())).
                     startMessageNumber(-1).
                     endMessageNumber(-1).
                     maxRecords(-1).
                     user(user)
                     .build();
-
-            setSort( sort, asc );
         }
 
         @Override
