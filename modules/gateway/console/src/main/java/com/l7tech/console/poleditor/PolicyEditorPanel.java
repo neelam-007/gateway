@@ -1193,7 +1193,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
                       "<html><center><b>Do you want to save changes to service policy " +
                       "for<br> '" + subjectName + "' ?</b><br>The changed policy will not be activated.</center></html>",
-                      "Save Service policy",
+                      "Save Service Policy",
                       JOptionPane.YES_NO_CANCEL_OPTION));
                     if (answer == JOptionPane.YES_OPTION) {
                         policyEditorToolbar.buttonSaveOnly.getAction().actionPerformed(null);
@@ -1201,14 +1201,21 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                         throw new ContainerVetoException(e, "User aborted");
                     }
                 } else {
-                    int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
-                      "<html><center><b>Connection Lost. Do you want to save changes to service policy " +
-                      "file?</b></center></html>",
-                      "Save Service policy",
-                      JOptionPane.YES_NO_CANCEL_OPTION));
-                    if (answer == JOptionPane.YES_OPTION) {
+                    String saveOption = "Save Policy";
+                    String discardOption = "Discard Policy";
+                    Object[] options = new String[] { saveOption, discardOption };
+
+                    int answer = JOptionPane.showOptionDialog(TopComponents.getInstance().getTopParent(),
+                            "<html><center><b>Connection Lost.  Do you want to save changes to service policy " +
+                            "file?</b></center></html>",
+                            "Save Service Policy",
+                            JOptionPane.DEFAULT_OPTION,
+                            JOptionPane.WARNING_MESSAGE,
+                            null,
+                            options,
+                            saveOption);
+                    if (answer != 1)
                         getSimpleExportAction().actionPerformed(null);
-                    }
                 }
             }
             final PolicyToolBar pt = topComponents.getPolicyToolBar();
