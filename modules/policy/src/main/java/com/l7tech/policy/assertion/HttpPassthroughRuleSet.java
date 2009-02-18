@@ -23,7 +23,7 @@ public class HttpPassthroughRuleSet implements Serializable  {
 
     public static final String[] HEADERS_NOT_TO_IMPLICITELY_FORWARD = {"host", "keep-alive", "connection",
                                                                        "server", "content-type", "date",
-                                                                       "content-length"};
+                                                                       "content-length", "transfer-encoding"};
 
     private boolean forwardAll;
     private HttpPassthroughRule[] rules;
