@@ -51,17 +51,11 @@ public class ClientProxyKeyManager implements X509KeyManager {
         SslPeer peer = CurrentSslPeer.get();
         if (peer == null)
             throw new IllegalStateException("No SSL peer is available in this thread");
-        X509Certificate[] certs = new X509Certificate[] { peer.getClientCertificate() };
-        log.info("Found " + certs.length + " client certificates with Gateway " + peer);
-        if (certs.length < 1) {
-            log.log(Level.FINE, "*** About to return NULL certificate array");
+        final X509Certificate clientCert = peer.getClientCertificate();
+        if (clientCert == null)
             return null;
-        }
-        for (int i = 0; i < certs.length; i++) {
-            X509Certificate cert = certs[i];
-            log.log(Level.FINER, "Cert #" + i + " subject=" + cert.getSubjectDN());
-        }
-        return certs;
+
+        return new X509Certificate[]{clientCert};
     }
 
     public String[] getClientAliases(String s, Principal[] principals) {
