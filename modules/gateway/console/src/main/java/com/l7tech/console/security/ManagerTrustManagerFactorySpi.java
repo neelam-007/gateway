@@ -94,8 +94,13 @@ public class ManagerTrustManagerFactorySpi extends TrustManagerFactorySpi {
                 trustManager = xtm;
             }
 
-            if (x509Certificates != null && x509Certificates.length > 0)
-                KeyUsageChecker.requireActivity(KeyUsageActivity.sslServerRemote, x509Certificates[0]);
+            try {
+                if (x509Certificates != null && x509Certificates.length > 0)
+                    KeyUsageChecker.requireActivity(KeyUsageActivity.sslServerRemote, x509Certificates[0]);
+            } catch (CertificateException e) {
+                logger.log(Level.INFO, "Rejecting server certificate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                throw e;
+            }
 
             try {
                 xtm.checkServerTrusted(x509Certificates, s);
