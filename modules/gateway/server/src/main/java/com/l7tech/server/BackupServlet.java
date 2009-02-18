@@ -24,7 +24,6 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.event.system.BackupEvent;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.HttpClientFactory;
@@ -63,14 +62,17 @@ public class BackupServlet extends AuthenticatableHttpServlet {
     private HttpClientFactory _httpClientFactory;
     private Auditor _auditor;
 
+    @Override
     protected String getFeature() {
         return GatewayFeatureSets.SERVICE_MESSAGEPROCESSOR;
     }
 
+    @Override
     protected SsgConnector.Endpoint getRequiredEndpoint() {
         return SsgConnector.Endpoint.ADMIN_APPLET;
     }
 
+    @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
 
@@ -85,6 +87,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
         _auditor = new Auditor(this, _webApplicationContext, _logger);
     }
 
+    @Override
     public void doGet(final HttpServletRequest request, final HttpServletResponse response)
             throws ServletException, IOException {
         if (!request.isSecure()) {
@@ -95,8 +98,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
 
         if (findCredentialsBasic(request) == null) {
             _logger.fine("Sending challenge response to backup request without credentials.");
-            response.setStatus(HttpConstants.STATUS_UNAUTHORIZED);
-            response.setHeader(HttpConstants.HEADER_WWW_AUTHENTICATE, "Basic realm=\"" + ServerHttpBasic.REALM + "\"");
+            doHttpBasicChallenge( response );
             return;
         }
 

@@ -85,6 +85,7 @@ import java.util.logging.Level;
  * Date: Sep 15, 2003<br/>
  */
 public class WsdlProxyServlet extends AuthenticatableHttpServlet {
+    private static final String PARAM_ANONYMOUS = "anon";
     private static final String PARAM_SERVICEDOCOID = "servdocoid";
     private static final String NOOP_WSDL = "<wsdl:definitions xmlns:wsdl=\"http://schemas.xmlsoap.org/wsdl/\"/>";
     private static final String PROPERTY_WSSP_ATTACH = "com.l7tech.server.wssp";
@@ -186,10 +187,14 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         // NOTE: sending credentials over insecure channel is treated as an anonymous request
         // (i dont care if you send me credentials in non secure manner, that is your problem
         // however, i will not send sensitive information unless the channel is secure)
-        if (results != null && results.length > 0 && req.isSecure()) {
+        if ( results != null && results.length > 0 && req.isSecure() ) {
             doAuthenticated(req, res, ps, results);
         } else {
-            doAnonymous(req, res, ps);
+            if ( req.isSecure() && req.getParameter(PARAM_ANONYMOUS)!=null && !Boolean.valueOf(req.getParameter(PARAM_ANONYMOUS)) ) {
+                doHttpBasicChallenge( res );
+            } else {
+                doAnonymous(req, res, ps);
+            }
         }
     }
 

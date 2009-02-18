@@ -2,7 +2,6 @@ package com.l7tech.server.hpsoam;
 
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.util.IOUtils;
-import com.l7tech.common.http.HttpConstants;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -14,7 +13,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.transport.TransportModule;
 import org.springframework.web.context.WebApplicationContext;
@@ -44,7 +42,6 @@ public class WSMFServlet extends AuthenticatableHttpServlet {
 
     private static final String PLACEHOLDER = "^^^INSERT_METHOD_HOST_PORT_HERE^^^";
     private static final Logger logger = Logger.getLogger(WSMFServlet.class.getName());
-    private WebApplicationContext applicationContext;
     private RoleManager roleManager;
     private WSMFService service;
 
@@ -59,19 +56,21 @@ public class WSMFServlet extends AuthenticatableHttpServlet {
     }
 
     // Implements {@link AuthenticatableHttpServlet#getRequiredEndpoint}.
+    @Override
     protected SsgConnector.Endpoint getRequiredEndpoint() {
         return SsgConnector.Endpoint.HPSOAM;
     }
 
+    @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
 
-        applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+        WebApplicationContext applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
-        roleManager = (RoleManager)applicationContext.getBean("roleManager");
-        service = (WSMFService)applicationContext.getBean("wsmfService");
+        roleManager = (RoleManager) applicationContext.getBean("roleManager");
+        service = (WSMFService) applicationContext.getBean("wsmfService");
     }
 
     public static String getFullURL(HttpServletRequest req) {
@@ -84,6 +83,7 @@ public class WSMFServlet extends AuthenticatableHttpServlet {
         return buf.toString();
     }
 
+    @Override
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         if (!checkAccess(req, res)) {
             return;
@@ -121,13 +121,13 @@ public class WSMFServlet extends AuthenticatableHttpServlet {
         res.getOutputStream().close();
     }
 
+    @Override
     public void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         if (!checkAccess(req, res)) {
             return;
         }
 
         String payload = new String( IOUtils.slurpStream(req.getInputStream()));
-        String incomingURL = getFullURL(req);
         try {
             String response = service.respondTo(payload, req);
             if (response == null) {
@@ -164,12 +164,11 @@ public class WSMFServlet extends AuthenticatableHttpServlet {
         if (WSMFService.isCredentialsRequired()) {
             if (findCredentialsBasic(req) == null) {
                 logger.fine("Sending challenge response to request without credentials.");
-                res.setStatus(HttpConstants.STATUS_UNAUTHORIZED);
-                res.setHeader(HttpConstants.HEADER_WWW_AUTHENTICATE, "Basic realm=\"" + ServerHttpBasic.REALM + "\"");
+                doHttpBasicChallenge( res );
                 return false;
             }
 
-            AuthenticationResult[] results = null;
+            AuthenticationResult[] results;
             try {
                 results = authenticateRequestBasic(req);
                 if (results.length > 0) {

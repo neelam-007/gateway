@@ -19,7 +19,6 @@ import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.TransportModule;
@@ -76,19 +75,23 @@ public class PingServlet extends AuthenticatableHttpServlet {
     private HttpClientFactory _httpClientFactory;
     private File _ssgApplianceBinDir;
 
+    @Override
     protected String getFeature() {
         return GatewayFeatureSets.SERVICE_MESSAGEPROCESSOR;
     }
 
+    @Override
     protected SsgConnector.Endpoint getRequiredEndpoint() {
         return null; // PingServlet should work on every connector, regardless of enabled endpoints (Bug #5079)
     }
 
     /** Overrided to indicate we allow HTTP Basic without SSL. */
+    @Override
     protected boolean isCleartextAllowed() {
         return true;
     }
 
+    @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
 
@@ -103,6 +106,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
         _ssgApplianceBinDir = new File(ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_SSG_HOME_DIRECTORY) + File.separator + "appliance" + File.separator + "bin");
     }
 
+    @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         // Determines the operating mode.
@@ -577,8 +581,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
 
     /** Responds with an HTTP authentication challenge. */
     private void respondChallenge(final HttpServletResponse response, final String details) {
-        response.setStatus(HttpConstants.STATUS_UNAUTHORIZED);
-        response.setHeader(HttpConstants.HEADER_WWW_AUTHENTICATE, "Basic realm=\"" + ServerHttpBasic.REALM + "\"");
+        doHttpBasicChallenge( response );
         if (_logger.isLoggable(Level.FINE)) {
             _logger.fine("Responded to Ping with authentication challenge (" + details + ").");
         }

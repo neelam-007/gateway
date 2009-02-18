@@ -31,6 +31,7 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.http.HttpConstants;
 import com.l7tech.util.CausedIOException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
@@ -170,6 +171,11 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             logger.log(Level.SEVERE, "Exception getting id providers.", e);
             return new AuthenticationResult[0];
         }
+    }
+
+    protected void doHttpBasicChallenge( final HttpServletResponse response ) {
+        response.setStatus(HttpConstants.STATUS_UNAUTHORIZED);
+        response.setHeader(HttpConstants.HEADER_WWW_AUTHENTICATE, "Basic realm=\"" + ServerHttpBasic.REALM + "\"");
     }
 
     protected static class AhsAuthResult {
