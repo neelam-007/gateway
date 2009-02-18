@@ -1,7 +1,5 @@
 package com.l7tech.util;
 
-import com.l7tech.util.IOUtils;
-
 import java.io.*;
 import java.net.URL;
 import java.util.*;
@@ -81,7 +79,10 @@ public class JdkLoggerConfigurator {
                                               final String shippedDefaults,
                                               final String shippedLoggingProperties,
                                               final boolean reloading,
-                                              final boolean redirectOtherFrameworks) {
+                                              final boolean redirectOtherFrameworks)
+    {
+        final boolean succeedSilently = shippedDefaults == null && shippedLoggingProperties == null;
+
         try {
             System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
             String cf = SyspropUtil.getProperty("java.util.logging.config.file");
@@ -112,8 +113,8 @@ public class JdkLoggerConfigurator {
             }
 
             // Check config files
-            for ( String configurationCandidate : configCandidates) {
-                configCandidate = configurationCandidate;
+            for (String nextCandidate : configCandidates) {
+                configCandidate = nextCandidate;
 
                 final File file = new File(configCandidate);
                 if (file.exists()) {
@@ -145,7 +146,8 @@ public class JdkLoggerConfigurator {
                         logger.config("Logging initialized from '" + configCandidate + "'");
                     }
                 } else {
-                    logger.warning("No logging configuration found " + configCandidates);
+                    if (probeDef != null)
+                        logger.warning("No logging configuration found " + configCandidates);
                 }
             }
 
@@ -170,7 +172,7 @@ public class JdkLoggerConfigurator {
         }
 
         if ( redirectOtherFrameworks ) {
-            setupLog4j();
+            setupLog4j(succeedSilently);
         }
     }
 
@@ -194,7 +196,7 @@ public class JdkLoggerConfigurator {
         void resetLogs();
     }
 
-    /**
+    /*
      * Read log configuration from the given URL to the given manager.
      *
      * This will read configuration from the defaults URL and from the
@@ -231,9 +233,7 @@ public class JdkLoggerConfigurator {
             }
 
             if ( fullIn != null ) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                IOUtils.copyStream(fullIn, baos);
-                byte[] configBytes = baos.toByteArray();
+                byte[] configBytes = IOUtils.slurpStream(fullIn);
 
                 // work around bug http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=5035854
                 // by ensuring all Loggers mentioned in the configuration actually exist.
@@ -285,17 +285,19 @@ public class JdkLoggerConfigurator {
     /**
      * If the Log4j library is present then configure it to use our
      * logging framework.
+     * @param succeedSilently true to suppress the INFO message on successful redirection
      */
-    private static void setupLog4j() {
+    private static void setupLog4j(boolean succeedSilently) {
         try {
-            Class configClass = Class.forName("com.l7tech.util.Log4jJdkLogAppender");
+            Class configClass = Class.forName("com.l7tech.common.util.Log4jJdkLogAppender");
             java.lang.reflect.Method configMethod = configClass.getMethod("init", new Class[0]);
             configMethod.invoke(null);
             // get logger here since we don't want this to occur on class load
-            Logger.getLogger(JdkLoggerConfigurator.class.getName()).log(Level.INFO, "Redirected Log4j logging to JDK logging.");
+            if (!succeedSilently)
+                Logger.getLogger(JdkLoggerConfigurator.class.getName()).log(Level.INFO, "Redirected Log4j logging to JDK logging.");
         }
         catch(NoClassDefFoundError ncdfe) {
-            // then we won't configure it ...            
+            // then we won't configure it ...
         }
         catch(ClassNotFoundException cnfe) {
             // then we won't configure it ...
@@ -391,7 +393,7 @@ public class JdkLoggerConfigurator {
     }
 
     /**
-     * Return the probe interval.
+     * @return the probe interval.
      */
     private static long getInterval() {
         long interval = 5L;
