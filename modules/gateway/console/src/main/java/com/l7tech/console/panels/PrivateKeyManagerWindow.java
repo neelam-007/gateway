@@ -435,7 +435,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 }
 
                 try {
-                    cert.verify(issuerCert.getPublicKey());
+                    cert.verify(issuerCert.getPublicKey()); // TODO check that issuer allows use as CA cert
                 } catch (GeneralSecurityException e) {
                     sawBadSignature = true;
                 }
