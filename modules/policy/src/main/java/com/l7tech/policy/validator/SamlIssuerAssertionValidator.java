@@ -3,7 +3,6 @@
  */
 package com.l7tech.policy.validator;
 
-import com.l7tech.wsdl.Wsdl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
@@ -13,6 +12,8 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.security.saml.NameIdentifierInclusionType;
+import com.l7tech.wsdl.Wsdl;
 
 import java.util.EnumSet;
 
@@ -23,6 +24,7 @@ public class SamlIssuerAssertionValidator implements AssertionValidator {
     private final SamlIssuerAssertion assertion;
     private final boolean holderOfKey;
     private final boolean decorateResponse;
+    private final NameIdentifierInclusionType nameIdentifierType;
 
     public SamlIssuerAssertionValidator(SamlIssuerAssertion sia) {
         this.assertion = sia;
@@ -30,6 +32,7 @@ public class SamlIssuerAssertionValidator implements AssertionValidator {
         final EnumSet<SamlIssuerAssertion.DecorationType> dts = assertion.getDecorationTypes();
         decorateResponse = dts != null && dts.contains(SamlIssuerAssertion.DecorationType.RESPONSE);
         holderOfKey = SamlIssuerAssertion.HOK_URIS.contains(assertion.getSubjectConfirmationMethodUri());
+        nameIdentifierType = assertion.getNameIdentifierType();
     }
 
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
@@ -53,9 +56,8 @@ public class SamlIssuerAssertionValidator implements AssertionValidator {
                     }
                 }
             } else if (ass == assertion) {
-                if (firstCreds == -1 || firstCreds > i) {
+                if ((firstCreds == -1 || firstCreds > i) && !NameIdentifierInclusionType.SPECIFIED.equals(nameIdentifierType))
                     result.addError(new PolicyValidatorResult.Error(assertion, path, "Must be preceded by a credential source", null));
-                }
 
                 if (holderOfKey && firstCertCred == -1 || firstCertCred > i) {
                     result.addError(new PolicyValidatorResult.Error(assertion, path, "Holder-of-Key selected, must be preceded by a certificate-based credential source", null));

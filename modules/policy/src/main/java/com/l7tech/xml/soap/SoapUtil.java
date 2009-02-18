@@ -47,8 +47,12 @@ import java.util.logging.Logger;
 /**
  * @author alex
  */
+@SuppressWarnings({"JavaDoc"})
 public class SoapUtil extends SoapConstants {
     public static final Logger log = Logger.getLogger(SoapUtil.class.getName());
+
+    // Bug #6478
+    public static final String PROPERTY_MUSTUNDERSTAND = "com.l7tech.common.security.xml.decorator.secHdrMustUnderstand";
 
     private static final String DEFAULT_UUID_PREFIX = "http://www.layer7tech.com/uuid/";
 
@@ -184,8 +188,8 @@ public class SoapUtil extends SoapConstants {
             log.warning("There is no payload namespace");
             return null;
         }
-        
-        return payloadNames.toArray(EMPTY_QNAME_ARRAY);
+
+        return payloadNames.toArray(new QName[payloadNames.size()]);
     }
 
     /**
@@ -262,34 +266,28 @@ public class SoapUtil extends SoapConstants {
      * Same as other makeSecurityElement but specifies a preferred security namesapce.
      */
     public static Element makeSecurityElement(Document soapMsg, String preferredWsseNamespace) {
-        Element header = getOrMakeHeader(soapMsg);
-        Element securityEl = soapMsg.createElementNS(preferredWsseNamespace, SECURITY_EL_NAME);
-        securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
-        securityEl.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:" + SECURITY_NAMESPACE_PREFIX, preferredWsseNamespace);
-        if(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(soapMsg.getDocumentElement().getNamespaceURI())) {
-            setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, "true");
-        } else {
-            setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, "1");
-        }
-
-        Element existing = DomUtils.findFirstChildElement(header);
-        if (existing == null)
-            header.appendChild(securityEl);
-        else
-            header.insertBefore(securityEl, existing);
-        return securityEl;
+        return makeSecurityElement(soapMsg, preferredWsseNamespace, null, isSecHdrDefaultsToMustUnderstand());
     }
 
-    public static Element makeSecurityElement(Document soapMsg, String preferredWsseNamespace, String actor) {
+    /**
+     * @return true if Security headers should be created with mustUnderstand asserted, if a preference
+     *         is not explicitly made at the time of creation.
+     */
+    public static boolean isSecHdrDefaultsToMustUnderstand() {
+        return SyspropUtil.getBoolean(PROPERTY_MUSTUNDERSTAND, true);
+    }
+
+    public static Element makeSecurityElement(Document soapMsg, String preferredWsseNamespace, String actor, boolean mustUnderstand) {
         Element header = getOrMakeHeader(soapMsg);
         Element securityEl = soapMsg.createElementNS(preferredWsseNamespace, SECURITY_EL_NAME);
         securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
         securityEl.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:" + SECURITY_NAMESPACE_PREFIX, preferredWsseNamespace);
+
         boolean isSoap12 = SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(soapMsg.getDocumentElement().getNamespaceURI());
         if(isSoap12) {
-            setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, "true");
+            setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, mustUnderstand ? "true" : "false");
         } else {
-            setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, "1");
+            setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, mustUnderstand ? "1" : "0");
         }
         if (actor != null) {
             // todo, should we create this actor with a ns ?
@@ -517,7 +515,7 @@ public class SoapUtil extends SoapConstants {
     }
 
     public static String getActorValue(Element element) {
-        String localactor = null;
+        String localactor;
         if(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(element.getOwnerDocument().getDocumentElement().getNamespaceURI())) {
             localactor = element.getAttributeNS(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE, ROLE_ATTR_NAME);
         } else {
@@ -1002,7 +1000,6 @@ public class SoapUtil extends SoapConstants {
         final String hex = HexUtils.hexDump(randbytes);
         if (includeUuidDashes) {
             // 8 4 4 4 12
-            int i = 0;
             sb.append(hex.substring(0, 8));
             sb.append("-");
             sb.append(hex.substring(8, 12));
@@ -1014,18 +1011,6 @@ public class SoapUtil extends SoapConstants {
             sb.append(hex.substring(20, 32));
         } else {
             sb.append(hex);
-        }
-        return sb.toString();
-    }
-
-    private static String makeBit(Random rand, final int len) {
-        StringBuilder sb = new StringBuilder();
-        byte[] randbytes = new byte[len];
-        rand.nextBytes(randbytes);
-        for (int i = 0; i < len; i++) {
-            final String s = Integer.toHexString(randbytes[i] & 0xff);
-            if (s.length() == 1) sb.append("0");
-            sb.append(s);
         }
         return sb.toString();
     }
@@ -1434,21 +1419,25 @@ public class SoapUtil extends SoapConstants {
             javax.wsdl.Message inputMessage = bindingOperation.getOperation().getInput().getMessage();
             if (inputMessage == null) return null;
 
+            //noinspection unchecked
             List<ExtensibilityElement> inputEels = input.getExtensibilityElements();
             List<String> partNames = null;
             for (ExtensibilityElement inputEel : inputEels) {
                 // Headers are not relevant for service resolution (yet?)
                 if (inputEel instanceof javax.wsdl.extensions.soap.SOAPBody) {
                     javax.wsdl.extensions.soap.SOAPBody inputBody = (javax.wsdl.extensions.soap.SOAPBody) inputEel;
+                    //noinspection unchecked
                     partNames = inputBody.getParts();
                 } else if (inputEel instanceof SOAP12Body) {
                     SOAP12Body inputBody = (SOAP12Body) inputEel;
+                    //noinspection unchecked
                     partNames = inputBody.getParts();
                 }
             }
 
             List<Part> parts;
             if (partNames == null) {
+                //noinspection unchecked
                 parts = inputMessage.getOrderedParts(null);
             } else {
                 parts = new ArrayList<Part>();
@@ -1496,7 +1485,7 @@ public class SoapUtil extends SoapConstants {
         NamedNodeMap attrs = element.getAttributes();
         int len = attrs.getLength();
         for (int i = 0; i < len; i++) {
-            Node attr = attrs.item(i);            
+            Node attr = attrs.item(i);
             if ("mustUnderstand".equals(attr.getLocalName()) || "mustUnderstand".equals(attr.getNodeName())) {
                 final String nodeValue = attr.getNodeValue();
                 if (value != null) {
@@ -1514,7 +1503,7 @@ public class SoapUtil extends SoapConstants {
      * Remove any empty SOAP Header from the specified SOAP document.
      *
      * @param doc the document to examine and possibly modify.  Required.
-     * @throws com.l7tech.util.InvalidDocumentFormatException if the document is not a SOAP envelope or if there is more than one Header element
+     * @throws InvalidDocumentFormatException if the document is not a SOAP envelope or if there is more than one Header element
      * @return true if an empty Header element was removed; or, false if the document was not modified.
      */
     public static boolean removeEmptySoapHeader(Document doc) throws InvalidDocumentFormatException {
@@ -1605,7 +1594,7 @@ public class SoapUtil extends SoapConstants {
                         saction = stripQuotes(requestHttp.getSoapAction());
                     }
                 }
-                return hasHttpRequestKnob.booleanValue();
+                return hasHttpRequestKnob;
             }
 
             public String getSoapaction() {

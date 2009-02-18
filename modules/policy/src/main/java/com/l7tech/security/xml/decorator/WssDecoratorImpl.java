@@ -1327,7 +1327,7 @@ public class WssDecoratorImpl implements WssDecorator {
         }
         else {
             Element securityHeader;
-            securityHeader = SoapUtil.makeSecurityElement(message, context.nsf.getWsseNs(), actor);
+            securityHeader = SoapUtil.makeSecurityElement(message, context.nsf.getWsseNs(), actor, SoapUtil.isSecHdrDefaultsToMustUnderstand());
             // Make sure wsu is declared to save duplication
             DomUtils.getOrCreatePrefixForNamespace(securityHeader, context.nsf.getWsuNs(), "wsu");
             resultSecurity = securityHeader;

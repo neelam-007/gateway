@@ -1,9 +1,8 @@
 package com.l7tech.util;
 
-import javax.xml.namespace.QName;
 import javax.xml.soap.SOAPConstants;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author steve
@@ -17,8 +16,7 @@ public class SoapConstants {
         ENVELOPE_URIS.add("http://www.w3.org/2003/05/soap-envelope");
         ENVELOPE_URIS.add("urn:schemas-xmlsoap-org:soap.v1");
     }
-    protected static final QName[] EMPTY_QNAME_ARRAY = new QName[0];
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];// Namespace prefix constants
+
     public static final String SOAP_ENV_PREFIX = "soapenv";
     public static final String SOAP_1_2_ENV_PREFIX = "s12";
     public static final String XMLNS = "xmlns";
@@ -78,7 +76,7 @@ public class SoapConstants {
         SECURITY_URIS.add(SECURITY_NAMESPACE4);
         SECURITY_URIS.add(SECURITY_NAMESPACE5);
     }
-    public static final String[] SECURITY_URIS_ARRAY = (String[])SECURITY_URIS.toArray(EMPTY_STRING_ARRAY);
+    public static final String[] SECURITY_URIS_ARRAY = (String[]) SECURITY_URIS.toArray(new String[SECURITY_URIS.size()]);
     public static final String WSU_PREFIX = "wsu";
     public static final List<String> WSU_URIS = new ArrayList<String>();
     static {
@@ -86,7 +84,7 @@ public class SoapConstants {
         WSU_URIS.add(WSU_NAMESPACE2);
         WSU_URIS.add(WSU_NAMESPACE3);
     }
-    public static final String[] WSU_URIS_ARRAY = (String[])WSU_URIS.toArray(EMPTY_STRING_ARRAY);// Attribute names
+    public static final String[] WSU_URIS_ARRAY = (String[]) WSU_URIS.toArray(new String[WSU_URIS.size()]);// Attribute names
     public static final String ID_ATTRIBUTE_NAME = "Id";
     public static final String ACTOR_ATTR_NAME = "actor";  // SOAP 1.1
     public static final String ROLE_ATTR_NAME = "role";    // SOAP 1.2

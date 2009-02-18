@@ -19,9 +19,11 @@ import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.token.UsernameTokenImpl;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.DecorationRequirements.SimpleSecureConversationSession;
+import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
@@ -34,6 +36,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -179,6 +182,23 @@ public class WssDecoratorTest extends TestCase {
             req.setEncryptUsernameToken(encryptUsernameToken);
             req.setUsernameTokenCredentials(senderUsernameToken);
 
+            initSecureConvSource(secureConversationKey, encryptedKeySha1);
+
+            if (elementsToEncrypt != null) req.getElementsToEncrypt().addAll(Arrays.asList(elementsToEncrypt));
+            if (encryptionAlgorithm != null) req.setEncryptionAlgorithm(encryptionAlgorithm);
+            if (elementsToSign != null) req.getElementsToSign().addAll(Arrays.asList(elementsToSign));
+            if (signTimestamp) req.setSignTimestamp();
+            req.setSignUsernameToken(signUsernameToken);
+
+
+            req.setKeyInfoInclusionType(keyInfoInclusionType);
+            req.setEncryptedKeySha1(encryptedKeySha1);
+            if (signatureConfirmation != null) req.addSignatureConfirmation(signatureConfirmation);
+            if (actor != null) req.setSecurityHeaderActor(actor.length() < 1 ? null : actor);
+            req.setUseDerivedKeys(useDerivedKeys);
+        }
+
+        private void initSecureConvSource(byte[] secureConversationKey, String encryptedKeySha1) {
             if (secureConversationKey != null) {
                 if (encryptedKeySha1 == null) {
                     // Use WS-SecureConversation derived key token
@@ -194,19 +214,6 @@ public class WssDecoratorTest extends TestCase {
                     req.setEncryptedKeySha1(encryptedKeySha1);
                 }
             }
-
-            if (elementsToEncrypt != null) req.getElementsToEncrypt().addAll(Arrays.asList(elementsToEncrypt));
-            if (encryptionAlgorithm != null) req.setEncryptionAlgorithm(encryptionAlgorithm);
-            if (elementsToSign != null) req.getElementsToSign().addAll(Arrays.asList(elementsToSign));
-            if (signTimestamp) req.setSignTimestamp();
-            req.setSignUsernameToken(signUsernameToken);
-
-
-            req.setKeyInfoInclusionType(keyInfoInclusionType);
-            req.setEncryptedKeySha1(encryptedKeySha1);
-            if (signatureConfirmation != null) req.addSignatureConfirmation(signatureConfirmation);
-            if (actor != null) req.setSecurityHeaderActor(actor.length() < 1 ? null : actor);
-            req.setUseDerivedKeys(useDerivedKeys);
         }
     }
 
@@ -979,5 +986,24 @@ public class WssDecoratorTest extends TestCase {
         td.req.addSignatureConfirmation("abc11SignatureConfirmationValue11blahblahblah11==");
         td.req.addSignatureConfirmation("abc11SignatureConfirmationValue22blahblahblah22==");
         return td;
+    }
+
+    public void testSecHdrMustUnderstandFalse() throws Exception {
+        doTestSecHdrMustUnderstand(false);
+    }
+
+    public void testSecHdrMustUnderstandTrue() throws Exception {
+        doTestSecHdrMustUnderstand(true);
+    }
+
+    private void doTestSecHdrMustUnderstand(boolean expect) throws IOException, SAXException, InvalidDocumentFormatException, GeneralSecurityException, DecoratorException {
+        System.setProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND, Boolean.toString(expect));
+        DecorationRequirements req = new DecorationRequirements();
+        req.setUsernameTokenCredentials(new UsernameTokenImpl("joe", "sekrit".toCharArray()));
+        Message msg = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
+        WssDecorator.DecorationResult dr = new WssDecoratorImpl().decorateMessage(msg, req);
+        Document doc = msg.getXmlKnob().getDocumentReadOnly();
+        Element sechdr = SoapUtil.getSecurityElement(doc, "secure_span");
+        assertEquals(expect ? "1" : "0", sechdr.getAttributeNS(doc.getDocumentElement().getNamespaceURI(), "mustUnderstand"));
     }
 }
