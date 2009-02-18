@@ -125,7 +125,7 @@ public class Monitor extends EsmStandardWebPage {
         boolean readonly = true;
         try {
             for (Role role: roleManager.getAssignedRoles(getUser())) {
-                if (role.getTag().equals(Role.Tag.ADMIN)) {
+                if (Role.Tag.ADMIN.equals(role.getTag())) {
                     readonly = false;
                     break;
                 }
