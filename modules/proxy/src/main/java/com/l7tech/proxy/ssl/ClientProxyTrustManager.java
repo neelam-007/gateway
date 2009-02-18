@@ -11,10 +11,12 @@ import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException
 import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
+import com.l7tech.security.cert.KeyUsageException;
 
 import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,15 +63,15 @@ public class ClientProxyTrustManager implements X509TrustManager {
 
         // Verify the hostname
         String expectedHostname = peer.getHostname();
-        String cn = "";
         X509Certificate cert = x509Certificates[0];
-        cn = CertUtils.extractFirstCommonNameFromCertificate(cert);
 
-        if (!cn.equalsIgnoreCase(expectedHostname)) {
-            final String msg = "Server certificate name (" + cn +
+        List<String> cns = CertUtils.extractCommonNamesFromCertificate(cert);
+        if (!cns.contains(expectedHostname)) {
+            final String peerdn = cert.getSubjectDN().getName();
+            final String msg = "Server certificate name (" + peerdn +
                     ") did not match the hostname we connected to (" + expectedHostname + ")";
             log.log(Level.SEVERE, msg);
-            throw new HostnameMismatchException(expectedHostname, cn, msg);
+            throw new HostnameMismatchException(expectedHostname, peerdn, msg);
         }
 
         // Get the trusted CA key for this SSG.
@@ -86,11 +88,14 @@ public class ClientProxyTrustManager implements X509TrustManager {
             log.log(Level.FINE, "Peer certificate was signed by a trusted Gateway.");
 
             KeyUsageChecker.requireActivity(KeyUsageActivity.sslServerRemote, cert);
+        } catch (KeyUsageException e) {
+            log.warning(e.getMessage()); // JSSE won't log it for us
+            throw new KeyUsageException(e);
         } catch (CertUtils.CertificateUntrustedException e) {
-            log.warning(e.getMessage()); // log in case SSL layer obscures our diagnostic info
+            log.warning(e.getMessage()); // JSSE won't log it for us
             throw new ServerCertificateUntrustedException(e); // ssl peer already guaranteed to be set
         } catch ( CertificateException e ) {
-            log.warning(e.getMessage()); // log in case SSL layer obscures our diagnostic info
+            log.warning(e.getMessage()); // JSSE won't log it for us
             throw e;
         }
     }

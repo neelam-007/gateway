@@ -8,12 +8,14 @@ package com.l7tech.server.transport.http;
 
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
+import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.net.ssl.X509TrustManager;
 import java.security.SignatureException;
@@ -73,13 +75,16 @@ public class SslClientTrustManager implements X509TrustManager {
             if ( result != CertificateValidationResult.OK ) {
                 throw new CertificateException("Certificate path validation and/or revocation checking failed");
             }
-            
+
             if (isCartel && logger.isLoggable(Level.FINE)) {
                 final String dn = certs == null || certs.length < 1 ? null : certs[0].getSubjectDN().getName();
                 logger.log(Level.FINE, "SSL server cert was issued to ''{0}'' by a globally recognized CA", dn);
             }
+        } catch (KeyUsageException e) {
+            logger.log(Level.INFO, "Rejecting server certificate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw e;
         } catch (SignatureException se) {
-            throw new CertificateException("Certificate path validation and/or revocation checking error", se);            
+            throw new CertificateException("Certificate path validation and/or revocation checking error", se);
         }
     }
 }

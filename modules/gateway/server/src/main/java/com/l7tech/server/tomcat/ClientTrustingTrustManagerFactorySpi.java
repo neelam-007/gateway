@@ -2,6 +2,7 @@ package com.l7tech.server.tomcat;
 
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.TrustManager;
@@ -12,6 +13,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -51,8 +53,13 @@ public class ClientTrustingTrustManagerFactorySpi extends TrustManagerFactorySpi
         }
 
         public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-            if (x509Certificates != null && x509Certificates.length > 0)
-                KeyUsageChecker.requireActivity(KeyUsageActivity.sslClientRemote, x509Certificates[0]);
+            try {
+                if (x509Certificates != null && x509Certificates.length > 0)
+                    KeyUsageChecker.requireActivity(KeyUsageActivity.sslClientRemote, x509Certificates[0]);
+            } catch (CertificateException e) {
+                logger.log(Level.FINE, "Rejecting client certificate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                throw e;
+            }
         }
 
         public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
