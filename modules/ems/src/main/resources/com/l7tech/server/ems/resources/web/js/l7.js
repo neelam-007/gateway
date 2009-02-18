@@ -862,6 +862,9 @@ if (!l7.Connection) {
             }
 
             var contentLocationHeader = getResponseHeader('Content-Location');
+            if (contentLocationHeader != null) {
+                contentLocationHeader = contentLocationHeader.replace(/\r$/, ''); // IE7 includes trailing CR.
+            }
             if (contentLocationHeader == '/Login') {
                 // Session timed out.
                 var dialog = new YAHOO.widget.SimpleDialog("sessionTimeoutDialog", {
