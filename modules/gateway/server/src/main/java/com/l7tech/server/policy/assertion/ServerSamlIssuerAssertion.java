@@ -13,8 +13,10 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SamlIssuerAssertion;
 import static com.l7tech.policy.assertion.SamlIssuerAssertion.DecorationType.*;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import com.l7tech.security.saml.Attribute;
 import com.l7tech.security.saml.SamlAssertionGenerator;
@@ -29,7 +31,6 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
-import com.l7tech.server.policy.assertion.xmlsec.ServerResponseWssIntegrity;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
@@ -63,6 +64,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
     private final WssDecorator decorator;
     private final SamlAssertionGenerator samlAssertionGenerator;
     private final SignerInfo signerInfo;
+    private final String authMethodUri; // overridden auth method URI or null
 
     public ServerSamlIssuerAssertion(SamlIssuerAssertion assertion, ApplicationContext spring) throws ServerPolicyException {
         super(assertion);
@@ -88,13 +90,22 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             throw new ServerPolicyException(assertion, "Unable to access configured private key: " + ExceptionUtils.getMessage(e), e);
         }
         this.samlAssertionGenerator = new SamlAssertionGenerator(signerInfo);
+
+        SamlAuthenticationStatement authnSt = assertion.getAuthenticationStatement();
+        if (authnSt != null) {
+            String[] methods = authnSt.getAuthenticationMethods();
+            authMethodUri = methods != null && methods.length > 0 && methods[0] != null
+                                ? methods[0]
+                                : null;
+        } else
+            authMethodUri = null;
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // Generate the SAML assertion
-        final TcpKnob tcpKnob = context.getRequest().getTcpKnob();
+        final TcpKnob tcpKnob = (TcpKnob) context.getRequest().getKnob(TcpKnob.class);
         final String clientAddress = tcpKnob == null ? null : tcpKnob.getRemoteAddress();
-        final LoginCredentials creds = context.getLastCredentials(); // TODO support some choice of credentials
+        LoginCredentials creds = context.getLastCredentials(); // TODO support some choice of credentials
 
         final SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
         options.setAudienceRestriction(assertion.getAudienceRestriction());
@@ -103,7 +114,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         } catch (UnknownHostException e) {
             throw new PolicyAssertionException(assertion, "Couldn't resolve client IP address", e); // Can't happen (it really is an IP address)
         }
-        
+
         if (version == 2) {
             options.setVersion(SamlAssertionGenerator.Options.VERSION_2);
         }
@@ -162,6 +173,8 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     nameValue = ExpandVariables.process(val, vars, auditor);
                 }
                 nameFormat = assertion.getNameIdentifierFormat();
+                if (creds == null)
+                    creds = new LoginCredentials(null, nameValue == null ? null : nameValue.toCharArray(), CredentialFormat.OPAQUETOKEN, SamlIssuerAssertion.class);
                 break;
             case NONE:
             default:
@@ -174,7 +187,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         if (assertion.getAttributeStatement() != null)
             statements.add(makeAttributeStatement(creds, version, vars, nameValue, nameFormat, nameQualifier));
         if (assertion.getAuthenticationStatement() != null)
-            statements.add(makeAuthenticationStatement(creds, nameValue, nameFormat, nameQualifier));
+            statements.add(makeAuthenticationStatement(creds, nameValue, nameFormat, nameQualifier, authMethodUri));
         if (assertion.getAuthorizationStatement() != null)
             statements.add(makeAuthorizationStatement(creds, vars, nameValue, nameFormat, nameQualifier));
 
@@ -292,7 +305,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 assertion.getNameIdentifierType(), overrideNameValue, overrideNameFormat, nameQualifier);
     }
 
-    private SubjectStatement makeAuthenticationStatement(LoginCredentials creds, String overrideNameValue, String overrideNameFormat, String nameQualifier) {
+    private SubjectStatement makeAuthenticationStatement(LoginCredentials creds, String overrideNameValue, String overrideNameFormat, String nameQualifier, String overrideAuthnMethodUri) {
         return SubjectStatement.createAuthenticationStatement(
                     creds,
                     confirmationMethod,
@@ -301,7 +314,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     overrideNameValue,
                     overrideNameFormat,
                     nameQualifier,
-                    null);
+                    overrideAuthnMethodUri);
     }
 
     private SubjectStatement makeAttributeStatement(LoginCredentials creds, Integer version, Map<String, Object> vars, String overrideNameValue, String overrideNameFormat, String nameQualifier) throws PolicyAssertionException {
