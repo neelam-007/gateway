@@ -170,7 +170,7 @@ public abstract class AssertionPropertiesOkCancelSupport<AT extends Assertion> e
      * @return An Ok button.  Never null.
      */
     protected JButton createOkButton() {
-        JButton okButton = new JButton("Ok");
+        JButton okButton = new JButton("OK");
         okButton.addActionListener(createOkAction());
         return okButton;
     }

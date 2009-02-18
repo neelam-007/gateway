@@ -100,7 +100,7 @@ public class LicenseDialog extends JDialog {
         JPanel buttons = new JPanel();
         buttons.setLayout(new BoxLayout(buttons, BoxLayout.X_AXIS));
 
-        JButton okButton = new JButton("Ok");
+        JButton okButton = new JButton("OK");
         JButton cancelButton = new JButton("Cancel");
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
         buttons.add(Box.createGlue());

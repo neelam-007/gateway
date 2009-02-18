@@ -131,7 +131,7 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         }
 
         private JPanel makeButtons() {
-            ok = new JButton("Ok");
+            ok = new JButton("OK");
             JButton cancel = new JButton("Cancel");
             Utilities.equalizeButtonSizes(new JButton[] { ok, cancel });
             Utilities.setEscKeyStrokeDisposes(this);

@@ -114,7 +114,7 @@ public abstract class PropertyDialog extends JDialog {
         return cancelButton;
     }
 
-    /** Get the OK button.  To update the Ok button's enable/disable state, call validator.validate(). */
+    /** Get the OK button.  To update the OK button's enable/disable state, call validator.validate(). */
     private JButton getOkButton() {
         if (okButton == null) {
             okButton = new JButton("OK");
@@ -133,7 +133,7 @@ public abstract class PropertyDialog extends JDialog {
 
     /**
      * Show the dialog modally and return the result.
-     * @return True iff. the user closed the dialog by clicking the "Ok" button.
+     * @return True iff. the user closed the dialog by clicking the "OK" button.
      */
     public boolean runDialog() {
         Utilities.centerOnScreen(this);
@@ -142,7 +142,7 @@ public abstract class PropertyDialog extends JDialog {
     }
 
     /**
-     * Called when the Ok button is pressed.
+     * Called when the OK button is pressed.
      * Should copy any updated properties into the target object and return normally.
      * Caller is responsible for hiding and disposing of the property dialog.
      */

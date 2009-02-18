@@ -782,7 +782,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     }
 
     /**
-     * Called when the Ok button is pressed.
+     * Called when the OK button is pressed.
      * Should copy any updated properties into the target object and return normally.
      * Caller is responsible for hiding and disposing of the property dialog.
      */
