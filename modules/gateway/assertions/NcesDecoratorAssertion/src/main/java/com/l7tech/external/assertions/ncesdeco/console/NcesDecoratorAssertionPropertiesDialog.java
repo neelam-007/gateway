@@ -42,7 +42,8 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
     private JTextField wsaOtherTextField;
     private JPanel targetMessagePanelHolder;
     private TargetMessagePanel targetMessagePanel = new TargetMessagePanel();
-    
+    private JCheckBox responseImmediateCheckBox;
+
     private boolean validOtherMessageVariable= true;
 
     private final RunOnChangeListener enableDisableListener = new RunOnChangeListener(new Runnable() {
@@ -82,7 +83,7 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
                           wsa10RadioButton, wsa200403RadioButton, wsa200408RadioButton, wsaOtherRadioButton);
         wsaOtherTextField.getDocument().addDocumentListener(enableDisableListener);
         samlTemplateField.getDocument().addDocumentListener(enableDisableListener);
-        
+
         uuidUriPrefixTextField.setText(assertion.getMessageIdUriPrefix());
         final String wsaNs = assertion.getWsaNamespaceUri();
         if ( SoapConstants.WSA_NAMESPACE.equals(wsaNs)) {
@@ -105,6 +106,9 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
         targetMessagePanelHolder.add( targetMessagePanel );
         targetMessagePanel.setTitle("Apply NCES Decoration To");
         targetMessagePanel.setModel(assertion);
+        responseImmediateCheckBox = new JCheckBox("Apply immediately");
+        responseImmediateCheckBox.setToolTipText("Uncheck to accumulate additional response decoration requirements");
+        targetMessagePanel.setResponseExtra(responseImmediateCheckBox);
 
         if (assertion.isNodeBasedUuid()) {
             macBasedUuidRadioButton.setSelected(true);
@@ -118,10 +122,13 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
             samlWsuIdRadioButton.setSelected(true);
         }
 
+        responseImmediateCheckBox.setSelected(!assertion.isDeferDecoration());
+
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 assertion.setMessageIdUriPrefix(uuidUriPrefixTextField.getText());
                 assertion.setNodeBasedUuid(macBasedUuidRadioButton.isSelected());
+                assertion.setDeferDecoration(!responseImmediateCheckBox.isSelected());
                 targetMessagePanel.updateModel(assertion);
 
                 if (samlNoneRadioButton.isSelected()) {

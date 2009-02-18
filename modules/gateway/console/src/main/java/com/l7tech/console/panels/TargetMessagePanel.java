@@ -27,6 +27,13 @@ public class TargetMessagePanel extends JPanel {
     private JRadioButton otherRadioButton;
     private JTextField otherMessageVariableTextfield;
     private boolean allowNonMessageVariables = false;
+    private JPanel requestExtraPanel;
+    private JPanel responseExtraPanel;
+    private JPanel otherExtraPanel;
+
+    private JComponent requestExtra;
+    private JComponent responseExtra;
+    private JComponent otherExtra;
 
     private final RunOnChangeListener listener = new RunOnChangeListener(new Runnable() {
         public void run() {
@@ -44,6 +51,9 @@ public class TargetMessagePanel extends JPanel {
 
     private void enableDisable() {
         otherMessageVariableTextfield.setEnabled(otherRadioButton.isSelected());
+        if (requestExtra != null) requestExtra.setEnabled(requestRadioButton.isSelected());
+        if (responseExtra != null) responseExtra.setEnabled(responseRadioButton.isSelected());
+        if (otherExtra != null) otherExtra.setEnabled(otherRadioButton.isSelected());
     }
 
     public TargetMessagePanel() {
@@ -131,6 +141,56 @@ public class TargetMessagePanel extends JPanel {
         varname = FIXSTART.matcher(varname).replaceAll("");
         varname = FIXEND.matcher(varname).replaceAll("");
         return varname;
+    }
+
+    private void setExtra(JPanel panel, JComponent extra) {
+        panel.removeAll();
+        panel.setLayout(new BorderLayout());
+        if (extra != null)
+            panel.add(extra, BorderLayout.CENTER);
+        enableDisable();
+    }
+
+    public JComponent getRequestExtra() {
+        return requestExtra;
+    }
+
+    /**
+     * Set an extra component that will appear next to the Request radio button.
+     *
+     * @param requestExtra An extra component to display to the right of the Request radio button, or null.
+     */
+    public void setRequestExtra(JComponent requestExtra) {
+        this.requestExtra = requestExtra;
+        setExtra(requestExtraPanel, requestExtra);
+    }
+
+    public JComponent getResponseExtra() {
+        return responseExtra;
+    }
+
+    /**
+     * Set an extra component that will appear next to the Response radio button.
+     *
+     * @param responseExtra An extra component to display to the right of the Response radio button, or null.
+     */
+    public void setResponseExtra(JComponent responseExtra) {
+        this.responseExtra = responseExtra;
+        setExtra(responseExtraPanel, responseExtra);
+    }
+
+    public JComponent getOtherExtra() {
+        return otherExtra;
+    }
+
+    /**
+     * Set an extra component that will appear next to the "Other message variable" radio button.
+     *
+     * @param otherExtra An extra component to display to the right of the "Other message variable" radio button, or null.
+     */
+    public void setOtherExtra(JComponent otherExtra) {
+        this.otherExtra = otherExtra;
+        setExtra(otherExtraPanel, otherExtra);
     }
 
     /**
