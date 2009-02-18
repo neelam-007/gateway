@@ -503,7 +503,7 @@ public class MigrationManagerImpl implements MigrationManager {
                 try {
                     EntityHeader header = entityCrud.findHeader( EntityType.ID_PROVIDER_CONFIG, ((IdentityHeader)EntityHeaderUtils.fromExternal(externalEntityHeader)).getProviderOid() );
                     if ( header != null ) {
-                        externalEntityHeader.addProperty("Scope Name", header.getName());
+                        externalEntityHeader.setProperty("Scope Name", header.getName());
                     }
                 } catch ( FindException fe ) {
                     throw new MigrationApi.MigrationException("Error loading the entity for header: " + externalEntityHeader, fe);                    
