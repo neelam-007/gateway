@@ -98,8 +98,10 @@ public class SpecificUser extends IdentityAssertion {
     @Override
     public String loggingIdentity() {
         String idtomatch = getUserLogin();
-        if (idtomatch == null)
+        if (idtomatch == null || idtomatch.trim().length() < 1)
             idtomatch = getUserName();
+        if (idtomatch == null || idtomatch.trim().length() < 1)
+            idtomatch = getUserUid();
         return idtomatch;
     }
 
