@@ -189,6 +189,15 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         context.addParameter(INIT_PARAM_INSTANCE_ID, Long.toString(instanceId));
         context.setName("");
         context.setResources(createHybridDirContext(inf));
+        context.addMimeMapping("gif", "image/gif");
+        context.addMimeMapping("png", "image/png");
+        context.addMimeMapping("jpg", "image/jpeg");
+        context.addMimeMapping("jpeg", "image/jpeg");
+        context.addMimeMapping("htm", "text/html");
+        context.addMimeMapping("html", "text/html");
+        context.addMimeMapping("xml", "text/xml");
+        context.addMimeMapping("txt", "text/plain");
+        context.addMimeMapping("css", "text/css");
 
         StandardWrapper dflt = (StandardWrapper)context.createWrapper();
         dflt.setServletClass(DefaultServlet.class.getName());
