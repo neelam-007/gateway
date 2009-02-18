@@ -1,25 +1,25 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.audit.MessagesUtil;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.message.AbstractHttpResponseKnob;
-import com.l7tech.message.HttpRequestKnob;
-import com.l7tech.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeHeader;
 import com.l7tech.common.mime.MimeHeaders;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.MessagesUtil;
+import com.l7tech.message.AbstractHttpResponseKnob;
+import com.l7tech.message.HttpRequestKnob;
+import com.l7tech.message.Message;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.test.BugNumber;
 import com.l7tech.util.IteratorEnumeration;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.*;
+import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -34,35 +34,18 @@ import java.util.logging.Logger;
  * Class ExpandVariablesTest.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
  */
-public class ExpandVariablesTest extends TestCase {
+public class ExpandVariablesTest {
     private static final Logger logger = Logger.getLogger(ExpandVariablesTest.class.getName());
     private static final Audit audit = new LogOnlyAuditor(logger);
     private static final String TINY_BODY = "<blah/>";
 
-    /**
-     * test <code>ExpandVariablesTest</code> constructor
-     */
-    public ExpandVariablesTest(String name) {
-        super(name);
-    }
-
-    /**
-     * create the <code>TestSuite</code> for the
-     * ExpandVariablesTest <code>TestCase</code>
-     */
-    public static Test suite() {
-        return new TestSuite(ExpandVariablesTest.class);
-    }
-
+    @Before
     public void setUp() throws Exception {
         // put set up code here
         MessagesUtil.getAuditDetailMessageById(0); // This really shouldn't be necessary, but somebody's gotta do it
     }
 
-    public void tearDown() throws Exception {
-        // put tear down code here
-    }
-
+    @Test
     public void testSingleVariableExpand() throws Exception {
         Map variables = new HashMap();
         String value = "value_variable1";
@@ -75,6 +58,7 @@ public class ExpandVariablesTest extends TestCase {
         assertEquals(processedMessage, expectedOutputMessage);
     }
 
+    @Test
     public void testMultipleVariableExpand() throws Exception {
         Map variables = new HashMap();
         String value1 = "value_variable1";
@@ -89,6 +73,7 @@ public class ExpandVariablesTest extends TestCase {
         assertEquals(processedMessage, expectedOutputMessage);
     }
 
+    @Test
     public void testSingleVariableNotFound() throws Exception {
         Map<String, Object> variables = new HashMap<String, Object>();
         String value = "value_variable1";
@@ -100,11 +85,13 @@ public class ExpandVariablesTest extends TestCase {
         assertEquals(out, prefix);
     }
 
+    @Test
     public void testUnterminatedRef() throws Exception {
         String[] vars = Syntax.getReferencedNames("${foo");
         assertEquals(vars.length, 0);
     }
 
+    @Test
     public void testMultivalueDelimiter() throws Exception {
         Map<String, Object> vars = new HashMap<String, Object>();
         vars.put("foo", new String[] { "bar", "baz"});
@@ -122,6 +109,7 @@ public class ExpandVariablesTest extends TestCase {
         assertEquals(out4, "bar|baz");
     }
 
+    @Test
     public void testMultivalueSubscript() throws Exception {
         Map<String, Object> vars = new HashMap<String, Object>() {{
             put("foo", new Object[] { "bar", "baz" });
@@ -150,36 +138,58 @@ public class ExpandVariablesTest extends TestCase {
         }
     }
 
+    @Ignore("Not yet fixed; for Bug #6455 we worked around this by renaming the variables")
+    @Test
+    @BugNumber(6455)
+    public void testUnrecognizedSuffix() throws Exception {
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("certificate.subject.cn", new Object[] { "blah" });
+            put("certificate.subject.o", new Object[] { "blorf" });
+            put("certificate.subject", new Object[] { "cn=blah, o=blorf" });
+        }};
+
+        assertEquals("cn=blah, o=blorf", ExpandVariables.process("${certificate.subject}", vars, audit).toLowerCase());
+        assertEquals("blah", ExpandVariables.process("${certificate.subject.cn}", vars, audit));
+        assertEquals("blorf", ExpandVariables.process("${certificate.subject.o}", vars, audit));
+        assertEquals("", ExpandVariables.process("${certificate.subject.nonexistent}", vars, audit));
+    }
+
+    @Test
     public void testMessageVariableHeader() throws Exception {
         Message foo = makeTinyRequest();
         String ctype = ExpandVariables.process("${foo.http.header.content-type}", makeVars(foo), audit);
         assertEquals("Unexpected header value", ctype, "application/octet-stream");
     }
 
+    @Test
     public void testMessageVariableMultivaluedHeaderTruncated() throws Exception {
         Message foo = makeTinyRequest();
         String magic = ExpandVariables.process("${foo.http.header.magic}", makeVars(foo), audit);
         assertEquals("Multivalued header truncated", "foo", magic);
     }
 
+    @Test
     public void testMessageVariableMultiConcatHeaderValues() throws Exception {
         Message foo = makeTinyRequest();
         String magic = ExpandVariables.process("${foo.http.headerValues.magic||}", makeVars(foo), audit);
         assertEquals("Multivalued concatenated header values", "foo|bar", magic);
     }
 
+    @Test
     public void testMessageVariableMultiLiteralHeaderValues() throws Exception {
         Message foo = makeTinyRequest();
         String[] magic = (String[]) ExpandVariables.processSingleVariableAsObject("${foo.http.headerValues.magic}", makeVars(foo), audit);
         assertTrue("Multivalued header values", Arrays.equals(new String[] {"foo", "bar"}, magic));
     }
 
+    @Test
     public void testMessageVariableMultiLiteralHeaderValuesCaseInsensitive() throws Exception {
         Message foo = makeTinyRequest();
         String[] magic = (String[]) ExpandVariables.processSingleVariableAsObject("${foo.http.HeaderVaLUes.magic}", makeVars(foo), audit);
         assertTrue("Multivalued header values", Arrays.equals(new String[] {"foo", "bar"}, magic));
     }
 
+    @Test
     public void testRequestHttpParam() throws Exception {
         PolicyEnforcementContext pec = new PolicyEnforcementContext(makeTinyRequest(), new Message());
 
@@ -188,6 +198,7 @@ public class ExpandVariablesTest extends TestCase {
         assertEquals(paramValue, "bar");
     }
 
+    @Test
     public void testRequestHttpParamCaseInsensitivity() throws Exception {
         PolicyEnforcementContext pec = new PolicyEnforcementContext(makeTinyRequest(), new Message());
 
@@ -196,6 +207,7 @@ public class ExpandVariablesTest extends TestCase {
         assertEquals(paramValue, "bar");
     }
 
+    @Test
     public void testRequestHttpParamCaseInsensitivity2() throws Exception {
         PolicyEnforcementContext pec = new PolicyEnforcementContext(makeTinyRequest(), new Message());
 
@@ -207,6 +219,7 @@ public class ExpandVariablesTest extends TestCase {
         assertEquals(paramValue, "bar");
     }
 
+    @Test
     public void testRequestHttpParamCasePreservation() throws Exception {
         final Enumeration<String> en = makeTinyRequest().getHttpRequestKnob().getParameterNames();
         String badname = null;
@@ -218,6 +231,7 @@ public class ExpandVariablesTest extends TestCase {
         fail("Expected to find original case, found " + badname);
     }
 
+    @Test
     public void testMessageVariable() throws Exception {
         final Message foo = makeTinyRequest();
         PolicyEnforcementContext pec = new PolicyEnforcementContext(new Message(), new Message());
@@ -228,6 +242,7 @@ public class ExpandVariablesTest extends TestCase {
         assertEquals(bodytext, TINY_BODY);
     }
 
+    @Test
     public void testMessageVariableCaseInsensitive() throws Exception {
         final Message foo = makeTinyRequest();
         PolicyEnforcementContext pec = new PolicyEnforcementContext(new Message(), new Message());
@@ -238,6 +253,7 @@ public class ExpandVariablesTest extends TestCase {
         assertEquals(bodytext, TINY_BODY);
     }
 
+    @Test
     public void testStrictNonexistentHeader() throws Exception {
         Message foo = makeTinyRequest();
 
@@ -249,6 +265,7 @@ public class ExpandVariablesTest extends TestCase {
         }
     }
 
+    @Test
     public void testStrictSuspiciousToString() throws Exception {
         Message foo = makeTinyRequest();
 
@@ -260,6 +277,7 @@ public class ExpandVariablesTest extends TestCase {
         }
     }
 
+    @Test
     public void testStrictStatusOnRequest() throws Exception {
         Message foo = makeTinyRequest();
 
@@ -271,12 +289,14 @@ public class ExpandVariablesTest extends TestCase {
         }
     }
 
+    @Test
     public void testRequestBody() throws Exception {
         Message foo = makeTinyRequest();
         String body = ExpandVariables.process("${foo.mainPart}", makeVars(foo), audit, true);
         assertEquals(body, TINY_BODY);
     }
 
+    @Test
     public void testRequestBodyNotText() throws Exception {
         Message foo = new Message(TestStashManagerFactory.getInstance().createStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream(TINY_BODY.getBytes("UTF-8")));
         try {
@@ -287,6 +307,7 @@ public class ExpandVariablesTest extends TestCase {
         }
     }
 
+    @Test
     public void testResponseStatus() throws Exception {
         Message resp = makeResponse();
         String status = ExpandVariables.process("${foo.http.status}", makeVars(resp), audit, true);
@@ -322,13 +343,6 @@ public class ExpandVariablesTest extends TestCase {
             }
         });
         return foo;
-    }
-
-    /**
-     * Test <code>ExpandVariablesTest</code> main.
-     */
-    public static void main(String[] args) throws Throwable {
-        junit.textui.TestRunner.run(suite());
     }
 
     private static class HttpRequestKnobAdapter implements HttpRequestKnob {

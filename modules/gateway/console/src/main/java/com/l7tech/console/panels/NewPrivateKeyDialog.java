@@ -1,33 +1,36 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.AsyncAdminMethods;
+import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.PleaseWaitDialog;
 import com.l7tech.gui.widgets.SquigglyTextField;
-import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.gateway.common.AsyncAdminMethods;
-import com.l7tech.console.util.Registry;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.PlainDocument;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.lang.reflect.InvocationTargetException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Collection;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.security.cert.X509Certificate;
 
 /**
  * Dialog that offers ways of creating a new key pair and associated metadata.
@@ -136,6 +139,11 @@ public class NewPrivateKeyDialog extends JDialog {
         });
 
         // Populate DN field if it's uncustomized
+        aliasField.setDocument(new PlainDocument() { // force to lowercase (Bug #6167)
+            public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
+                super.insertString(offs, str.toLowerCase(), a);
+            }
+        });
         aliasField.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { onChange(); }
             public void removeUpdate(DocumentEvent e) { onChange(); }

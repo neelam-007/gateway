@@ -226,7 +226,7 @@ public class SslUtils {
         // Make sure they match
         if (!certNameString.equals(csrNameString))
             throw new CertificateException("We got a certificate, but its distinguished name didn't match what we asked for.");
-        if (!cert.getPublicKey().equals(csr.getPublicKey()))
+        if (!CertUtils.arePublicKeysEqual(cert.getPublicKey(), csr.getPublicKey()))
             throw new CertificateException("We got a certificate, but it certified the wrong public key.");
 
         // TODO this doesn't work now that caCert is actually the SSL cert.  Might not be a problem though:
