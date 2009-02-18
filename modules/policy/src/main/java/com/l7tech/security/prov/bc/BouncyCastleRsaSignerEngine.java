@@ -6,8 +6,6 @@
 package com.l7tech.security.prov.bc;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.security.cert.KeyUsageActivity;
-import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.RsaSignerEngine;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -225,7 +223,6 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         // Verify before returning
         // Convert to Sun cert first so BC won't screw us over by asking for some goofy BC-only algorithm names
         cert = (X509Certificate)CertUtils.getFactory().generateCertificate(new ByteArrayInputStream(cert.getEncoded()));
-        KeyUsageChecker.requireActivity(KeyUsageActivity.verifyClientCert, caCert);
         cert.verify(caCert.getPublicKey(), providerName);
         return cert;
     }
