@@ -89,7 +89,11 @@
             IP_ADDRESS : 'IP address',
             DATABASE_HOSTS : 'database host(s)',
             SELF_HOST_NAME : 'self host name',
-            ZOOM_ICON_TOOLTIP : 'Show details'
+            ZOOM_ICON_TOOLTIP : 'Show details',
+            RAID_STATUS_NOT_RAID : 'Not RAID',
+            RAID_STATUS_OK : 'OK',
+            RAID_STATUS_BAD : 'Bad',
+            RAID_STATUS_REBUILDING : 'Rebuilding'
         };
 
         /** Localized strings for local HTML markups, e.g., toolbar buttons, context menu, error dialogs. */
@@ -1619,7 +1623,7 @@
                                                 <tr>
                                                     <td>RAID status</td>
                                                     <td class="center"><input id="raidStatusSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="raidStatusSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
-                                                    <td>upon failure</td>
+                                                    <td>upon Bad</td>
                                                 </tr>
                                                 <tr>
                                                     <td>CPU temperature</td>
@@ -2047,7 +2051,7 @@
                             <div id="monDlg_logSizeTriggerConfig">&ge; <input id="monDlg_logSizeTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_logSizeTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_diskUsageTriggerConfig">&ge; <input id="monDlg_diskUsageTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_diskUsageTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_diskFreeTriggerConfig">&le; <input id="monDlg_diskFreeTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_diskFreeTriggerValueUnitLabel"></span></div>
-                            <div id="monDlg_raidStatusTriggerConfig">upon failure</div>
+                            <div id="monDlg_raidStatusTriggerConfig">upon Bad</div>
                             <div id="monDlg_cpuTempTriggerConfig">&ge; <input id="monDlg_cpuTempTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_cpuTempTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_cpuUsageTriggerConfig">&ge; <input id="monDlg_cpuUsageTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_cpuUsageTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_swapUsageTriggerConfig">&ge; <input id="monDlg_swapUsageTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_swapUsageTriggerValueUnitLabel"></span></div>

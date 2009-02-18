@@ -94,6 +94,17 @@ if (!l7.Constants) {
         };
 
         /**
+         * Enum defined in Java class com.l7tech.server.management.api.monitoring.RaidStatus.
+         * @final
+         */
+        l7.Constants.RAID_STATUS = {
+            NOT_RAID   : 'NOT_RAID',
+            OK         : 'OK',
+            BAD        : 'BAD',
+            REBUILDING : 'REBUILDING'
+        };
+
+        /**
          * Enum of notification types.
          * @final
          */

@@ -1323,6 +1323,18 @@ if (!l7.EntityTreeTable) {
                 if (property && property.monitored) {
                     if (property.value != undefined && property.value != null) {
                         span.innerHTML = l7.Util.escapeHtmlText(property.value);
+                        // Special treatment for RAID status display value.
+                        if (propertyType == l7.Constants.SSG_NODE_MONITORING_PROPERTY.RAID_STATUS) {
+                            if (property.value == l7.Constants.RAID_STATUS.NOT_RAID) {
+                                span.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.RAID_STATUS_NOT_RAID);
+                            } else if (property.value == l7.Constants.RAID_STATUS.OK) {
+                                span.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.RAID_STATUS_OK);
+                            } else if (property.value == l7.Constants.RAID_STATUS.BAD) {
+                                span.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.RAID_STATUS_BAD);
+                            } else if (property.value == l7.Constants.RAID_STATUS.REBUILDING) {
+                                span.innerHTML = l7.Util.escapeHtmlText(this._localizedStrings.RAID_STATUS_REBUILDING);
+                            }
+                        }
                         if (propertyType != l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY.AUDIT_SIZE) { // Unit label for audit size is too long.
                             if (property.unit != undefined && property.unit != null) {
                                 span.innerHTML += ' ' + l7.Util.escapeHtmlText(property.unit);
@@ -1529,7 +1541,11 @@ if (!l7.EntityTreeTable) {
             IP_ADDRESS : 'IP address',
             DATABASE_HOSTS : 'database host(s)',
             SELF_HOST_NAME : 'self host name',
-            ZOOM_ICON_TOOLTIP : 'Show details'
+            ZOOM_ICON_TOOLTIP : 'Show details',
+            RAID_STATUS_NOT_RAID : 'Not RAID',
+            RAID_STATUS_OK : 'OK',
+            RAID_STATUS_BAD : 'Bad',
+            RAID_STATUS_REBUILDING : 'Rebuilding'
         };
 
     })();
