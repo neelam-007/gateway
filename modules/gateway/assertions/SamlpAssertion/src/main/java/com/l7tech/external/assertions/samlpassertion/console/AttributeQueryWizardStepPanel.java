@@ -273,12 +273,12 @@ public class AttributeQueryWizardStepPanel extends SamlpWizardStepPanel {
             return
         "<html>Specify the SAML attributes that the SAML statement will include; the " +
               "Attribute Name [required] The Attribute Namespace [optional] and the Attribute" +
-              "Value [required]</html>";
+              "Value</html>";
         } else {
             return
         "<html>Specify the SAML attributes that the SAML statement MUST describe; the " +
               "Attribute Name [required] The Attribute Namespace [optional] and the Attribute" +
-              "Value [required]</html>";
+              "Value</html>";
         }
     }
 
