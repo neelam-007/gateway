@@ -3,6 +3,7 @@ package com.l7tech.server.ems.ui.pages;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.RequiredTextField;
 import org.apache.wicket.markup.html.form.CheckBox;
+import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.markup.html.basic.Label;
@@ -34,7 +35,7 @@ public class PolicyMigrationMappingValueEditPanel extends Panel {
 
         final FeedbackPanel feedback = new FeedbackPanel( "feedback" );
         final Label description = new Label( "description", descriptionText );
-        final RequiredTextField source = new RequiredTextField( "source" );
+        final TextField source = new TextField( "source" );
         final RequiredTextField target = new RequiredTextField( "target" );
         final CheckBox applyToAll = new CheckBox( "applyToAll" );
 

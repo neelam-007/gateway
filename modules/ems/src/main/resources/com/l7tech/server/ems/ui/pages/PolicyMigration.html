@@ -126,7 +126,6 @@
             function validateMigrationInputs() {
                 var valid = validateIdentifyDependenciesInputs() &&
                             destSSGClusterContentSelectorWindow.getEntityTreeTable().getEntityWithRadioButtonSelected() != null;
-                // TODO also check that dependencies list matches src selection and all dependencies are mapped
                 return valid;
             }
 
@@ -152,14 +151,20 @@
             function onLoadSrcSSGClusterContent(callbackId) {
                 updateIdentifyDependenciesButton();
                 updateMigrateButton();
-                // TODO Clears item display because no item is highlighted now.
+                var entity = new Object();
+                entity.id = "";
+                entity.type = "";
+                onItemHighlighted( null, null, entity, 'srcSSGClusterContentSelector' );
             }
 
             function onLoadDestSSGClusterContent(callbackId) {
                 document.getElementById('destinationClusterId').value = destSSGClusterContentSelectorWindow.getSsgCluster().id;
                 updateIdentifyDependenciesButton();
                 updateMigrateButton();
-                // TODO Clears item display because no item is highlighted now.
+                var entity = new Object();
+                entity.id = "";
+                entity.type = "";
+                onItemHighlighted( null, null, entity, 'destSSGClusterContentSelector' );
             }
 
             function onChangeSrcSSGClusterContentSelection(event, entity, callbackId) {
@@ -642,8 +647,8 @@
                 initButtons();
                 initDialogs();
                 initActions();
-                selectItemTab(SIDE_SRC,  ITEM_TAB_SUFFIX_DEPENDENCIES); // TODO select Details tab upon page load when implemented
-                selectItemTab(SIDE_DEST, ITEM_TAB_SUFFIX_DEPENDENCIES);
+                selectItemTab(SIDE_SRC,  ITEM_TAB_SUFFIX_DETAILS);
+                selectItemTab(SIDE_DEST, ITEM_TAB_SUFFIX_DETAILS);
             }
 
             YAHOO.util.Event.onDOMReady(init);
@@ -1117,7 +1122,7 @@
                                 <form wicket:id="dependencyControlsForm">
                                     <button type="submit" wicket:id="dependencyLoadButton">Load Previous Mappings</button>
                                     <button type="submit" wicket:id="dependencyClearButton">Remove Mapping</button>
-                                    <!--<button type="submit" wicket:id="dependencyEditButton">Edit Mapping Value</button>-->
+                                    <button type="submit" wicket:id="dependencyEditButton">Edit Mapping Value</button>
                                 </form>
                             </td>
                             <td></td>

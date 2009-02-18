@@ -36,7 +36,6 @@ import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.markup.html.panel.EmptyPanel;
-import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.model.Model;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebRequest;
@@ -207,18 +206,49 @@ public class PolicyMigration extends EsmStandardWebPage {
         final YuiAjaxButton editDependencyButton = new YuiAjaxButton("dependencyEditButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                Panel mapping = new PolicyMigrationMappingValueEditPanel(YuiDialog.getContentId(), "HTTP(s) URL value.", "http://example.com/source", null, "^(?:[a-zA-Z0-9$\\-_\\.+!\\*'\\(\\),:/\\\\]{1,4096})$");
-                YuiDialog resultDialog = new YuiDialog("dialog", "Edit Mapping Value", YuiDialog.Style.OK_CANCEL, mapping, null);
-                dialogContainer.replace( resultDialog );
-                ajaxRequestTarget.addComponent( dialogContainer );
+                if ( lastSourceKey != null && lastSourceKey.header.getType() == EntityType.VALUE_REFERENCE ) {
+                    final ExternalEntityHeader editHeader = lastSourceKey.header;
+                    String displayValue = editHeader.getProperty("displayValue");
+                    if ( displayValue == null ) displayValue = "";
+
+                    String mappedValue = editHeader.getProperty("mappedValue");
+
+                    String valueType = editHeader.getProperty("valueType");
+                    if ( valueType != null ) {
+                        
+                    }
+
+                    final PolicyMigrationMappingValueEditPanel mapping = new PolicyMigrationMappingValueEditPanel(YuiDialog.getContentId(), "HTTP(s) URL value.", displayValue, mappedValue, "^(?:[a-zA-Z0-9$\\-_\\.+!\\*'\\(\\),:/\\\\]{1,4096})$");
+                    YuiDialog resultDialog = new YuiDialog("dialog", "Edit Mapping Value", YuiDialog.Style.OK_CANCEL, mapping, new YuiDialog.OkCancelCallback(){
+                        @Override
+                        public void onAction( final YuiDialog dialog, final AjaxRequestTarget ajaxRequestTarget, final YuiDialog.Button button ) {
+                            if ( button == YuiDialog.Button.OK ) {
+                                editHeader.setProperty("mappedValue", mapping.getValue());
+                                final Collection<DependencyItem> items = lastDependencyItems;
+                                if ( items != null ) {
+                                    for ( DependencyItem item : items ) {
+                                        if ( item.type.equals(editHeader.getType().toString()) && item.id.equals(editHeader.getExternalId()) ) {
+                                            item.destName = mapping.getValue(); // TODO truncate for display
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
+                                for ( String id : DEPENDENCY_REFRESH_COMPONENTS ) ajaxRequestTarget.addComponent( dependenciesContainer.get(id) );
+                            }
+                        }
+                    });
+                    dialogContainer.replace( resultDialog );
+                    ajaxRequestTarget.addComponent( dialogContainer );
+                }
             }
         };
 
         Form dependencyControlsForm = new Form("dependencyControlsForm");
         dependencyControlsForm.add( dependencyLoadButton.setOutputMarkupId(true).setEnabled(false) );
         dependencyControlsForm.add( clearDependencyButton.setOutputMarkupId(true).setEnabled(false) );
-        //TODO uncomment dependency edit when implemented
-        // dependencyControlsForm.add( editDependencyButton.setOutputMarkupId(true).setEnabled(false) );
+        dependencyControlsForm.add( editDependencyButton.setOutputMarkupId(true).setEnabled(false) );
 
         Form selectionJsonForm = new Form("selectionForm");
         final HiddenField hiddenSelectionForm = new HiddenField("selectionJson", new Model(""));
@@ -609,47 +639,52 @@ public class PolicyMigration extends EsmStandardWebPage {
                 dir.entities[0].id = id;
                 DependencyItem detailItem = null;
                 List<DependencyItem> options = Collections.emptyList();
-                try {
-                    options = new ArrayList<DependencyItem>(retrieveDependencies( dir, mappingModel, targetClusterId ));
-                    for ( Iterator<DependencyItem> itemIter = options.iterator(); itemIter.hasNext();  ) {
-                        DependencyItem item = itemIter.next();
-                        if ( item.hidden || com.l7tech.objectmodel.EntityType.FOLDER.toString().equals(item.type) ) {
-                            itemIter.remove();
-                        }
-                    }
 
-                    // discard the dependencies that no longer exist on the target cluster
-                    SsgCluster cluster = ssgClusterManager.findByGuid( dir.clusterId );
-                    GatewayClusterClient targetContext = gatewayClusterClientManager.getGatewayClusterClient(cluster, getUser());
-                    MigrationApi targetMigrationApi = targetContext.getUncachedMigrationApi();
-                    Collection<ExternalEntityHeader> headers = targetMigrationApi.checkHeaders( Collections.singleton( dir.entities[0].asEntityHeader() ) );
-                    if ( headers != null && !headers.isEmpty() ) {
-                        ExternalEntityHeader header = headers.iterator().next();
-                        if ( header.getProperty("Alias Of") != null || header.getProperty("Alias Of Internal") != null ) {
-                            // resolve alias
-                            ExternalEntityHeader aliasTargetHeader =
-                                    new ExternalEntityHeader( header.getProperty("Alias Of"),
-                                                              EntityType.valueOf(header.getProperty("Alias Type")),  
-                                                              header.getProperty("Alias Of Internal"), null, null, -1 );
-                            headers = targetMigrationApi.checkHeaders( Collections.singleton( aliasTargetHeader ) );
-                            if ( headers != null && !headers.isEmpty() ) {
-                                detailItem = new DependencyItem( headers.iterator().next(), false );
+                if ( id != null && !id.isEmpty() &&
+                     type != null && !type.isEmpty() &&
+                     clusterId != null && !clusterId.isEmpty() ) {
+                    try {
+                        options = new ArrayList<DependencyItem>(retrieveDependencies( dir, mappingModel, targetClusterId ));
+                        for ( Iterator<DependencyItem> itemIter = options.iterator(); itemIter.hasNext();  ) {
+                            DependencyItem item = itemIter.next();
+                            if ( item.hidden || com.l7tech.objectmodel.EntityType.FOLDER.toString().equals(item.type) ) {
+                                itemIter.remove();
                             }
-                        } else {
-                            detailItem = new DependencyItem( header, false );
                         }
-                    }
 
-                } catch ( MigrationApi.MigrationException me ) {
-                    logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(me)+"'." );
-                } catch ( SOAPFaultException sfe ) {
-                    if ( !GatewayContext.isNetworkException(sfe) && !GatewayContext.isConfigurationException(sfe) ) {
-                        logger.log( Level.WARNING, "Error processing selection.", sfe);
+                        // discard the dependencies that no longer exist on the target cluster
+                        SsgCluster cluster = ssgClusterManager.findByGuid( dir.clusterId );
+                        GatewayClusterClient targetContext = gatewayClusterClientManager.getGatewayClusterClient(cluster, getUser());
+                        MigrationApi targetMigrationApi = targetContext.getUncachedMigrationApi();
+                        Collection<ExternalEntityHeader> headers = targetMigrationApi.checkHeaders( Collections.singleton( dir.entities[0].asEntityHeader() ) );
+                        if ( headers != null && !headers.isEmpty() ) {
+                            ExternalEntityHeader header = headers.iterator().next();
+                            if ( header.getProperty("Alias Of") != null || header.getProperty("Alias Of Internal") != null ) {
+                                // resolve alias
+                                ExternalEntityHeader aliasTargetHeader =
+                                        new ExternalEntityHeader( header.getProperty("Alias Of"),
+                                                                  EntityType.valueOf(header.getProperty("Alias Type")),
+                                                                  header.getProperty("Alias Of Internal"), null, null, -1 );
+                                headers = targetMigrationApi.checkHeaders( Collections.singleton( aliasTargetHeader ) );
+                                if ( headers != null && !headers.isEmpty() ) {
+                                    detailItem = new DependencyItem( headers.iterator().next(), false );
+                                }
+                            } else {
+                                detailItem = new DependencyItem( header, false );
+                            }
+                        }
+
+                    } catch ( MigrationApi.MigrationException me ) {
+                        logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(me)+"'." );
+                    } catch ( SOAPFaultException sfe ) {
+                        if ( !GatewayContext.isNetworkException(sfe) && !GatewayContext.isConfigurationException(sfe) ) {
+                            logger.log( Level.WARNING, "Error processing selection.", sfe);
+                        }
+                    } catch ( GatewayException ge ) {
+                        logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
+                    } catch ( FindException fe ) {
+                        logger.log( Level.WARNING, "Error processing selection.", fe );
                     }
-                } catch ( GatewayException ge ) {
-                    logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
-                } catch ( FindException fe ) {
-                    logger.log( Level.WARNING, "Error processing selection.", fe );
                 }
 
                 Collections.sort(options);
@@ -757,14 +792,18 @@ public class PolicyMigration extends EsmStandardWebPage {
                 }
                 dependencySummaryModel.incrementTotalDependencies();
             } else {
-                item.destName = "-";
-                if ( !item.isOptional() ) {
-                    item.resolved = false;
-                }
-                if ( item.isOptional() ) {
-                    dependencySummaryModel.incrementUnmappedDependencies();
+                if ( item.type.equals(EntityType.VALUE_REFERENCE.toString()) ) {
+                    // ?
                 } else {
-                    dependencySummaryModel.incrementRequiredUnmappedDependencies();
+                    item.destName = "-";
+                    if ( !item.isOptional() ) {
+                        item.resolved = false;
+                    }
+                    if ( item.isOptional() ) {
+                        dependencySummaryModel.incrementUnmappedDependencies();
+                    } else {
+                        dependencySummaryModel.incrementRequiredUnmappedDependencies();
+                    }
                 }
             }
         }
@@ -775,7 +814,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             new TypedPropertyColumn(new Model(""), "optional", "optional", String.class, false),
             new PropertyColumn(new Model("Name"), "displayNameWithScope", "displayNameWithScope"),
             new PropertyColumn(new Model("Type"), "type", "type"),
-            new PropertyColumn(new Model("Dest. Name"), "destName", "destName")
+            new PropertyColumn(new Model("Dest. Name / Value"), "destName", "destName")
         );
 
         final YuiDataTable ydt = new YuiDataTable( "dependenciesTable", dependencyColumns, "displayNameWithScope", true, items, null, false, "uid", true, null ){
@@ -794,25 +833,24 @@ public class PolicyMigration extends EsmStandardWebPage {
                         }
                     }
 
-                    //TODO uncomment dependency edit when implemented
                     Component selectionComponent = ((Form)dependenciesContainer.get("dependencyControlsForm")).get("dependencyClearButton");
-                    //Component selectionComponent2 = ((Form)dependenciesContainer.get("dependencyControlsForm")).get("dependencyEditButton");
+                    Component selectionComponent2 = ((Form)dependenciesContainer.get("dependencyControlsForm")).get("dependencyEditButton");
                     if ( selectedItem != null ) {
                         lastSourceKey = new DependencyKey( sourceClusterId, selectedItem.asEntityHeader() );
                         candidateModel.setName( selectedItem.getDisplayNameWithScope() );
                         candidateModel.setType( selectedItem.getType() );                        
                         selectionComponent.setEnabled( mappingModel.dependencyMap.containsKey(new Pair<DependencyKey,String>(lastSourceKey,lastTargetClusterId)) );
-                        //selectionComponent2.setEnabled( com.l7tech.objectmodel.EntityType.valueOf(selectedItem.type) == EntityType.VALUE_REFERENCE );
+                        selectionComponent2.setEnabled( com.l7tech.objectmodel.EntityType.valueOf(selectedItem.type) == EntityType.VALUE_REFERENCE );
                     } else {
                         lastSourceKey = null;
                         candidateModel.reset();
                         selectionComponent.setEnabled(false);
-                        //selectionComponent2.setEnabled(false);
+                        selectionComponent2.setEnabled(false);
                     }
 
                     addDependencyOptions( dependenciesContainer, optionRefreshComponents, candidateModel, searchModel, mappingModel, dependencySummaryModel, true );
                     ajaxRequestTarget.addComponent( selectionComponent );
-                    //ajaxRequestTarget.addComponent( selectionComponent2 );
+                    ajaxRequestTarget.addComponent( selectionComponent2 );
                     for ( Component component : optionRefreshComponents ) ajaxRequestTarget.addComponent( component );
                 }
             }
@@ -927,12 +965,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                 MigrationApi api = context.getUncachedMigrationApi();
                 MigrationMetadata metadata = api.findDependencies( request.asEntityHeaders() );
                 for (ExternalEntityHeader header : metadata.getMappableDependencies()) {
-                    // TODO remove this !isSearchable( header.getType() ) check when mapping values are editable
-                    if ( !isSearchable( header.getType() ) ) {
-                        deps.add( new DependencyItem( header, metadata.isMappingRequired(header) ? isResolved( mappingModel, header, request.clusterId, targetClusterId ) : null, true ) );                        
-                    } else {
-                        deps.add( new DependencyItem( header, metadata.isMappingRequired(header) ? isResolved( mappingModel, header, request.clusterId, targetClusterId ) : null ) );
-                    }
+                    deps.add( new DependencyItem( header, metadata.isMappingRequired(header) ? isResolved( mappingModel, header, request.clusterId, targetClusterId ) : null ) );
                 }
 
                 for (ExternalEntityHeader header : metadata.getHeaders() ) {
@@ -1614,6 +1647,10 @@ public class PolicyMigration extends EsmStandardWebPage {
             return version;
         }
 
+        public String getDestName() {
+            return destName;
+        }
+
         public String getDisplayName() {
             String displayName = name;
 
@@ -1633,6 +1670,11 @@ public class PolicyMigration extends EsmStandardWebPage {
                 nameWithScope = nameWithScope + " [" + extraProps.get("Scope Name") + "]";
             }
 
+            if ( extraProps != null && extraProps.containsKey("displayValue") ) {
+                // TODO display service name 
+                nameWithScope = nameWithScope + " \n" + extraProps.containsKey("displayValue"); // TODO truncate for display? 
+            }
+
             return nameWithScope;
         }
     }
@@ -1644,6 +1686,7 @@ public class PolicyMigration extends EsmStandardWebPage {
     public final static class EntityMappingModel implements Serializable {
         private final Map<Pair<DependencyKey,String>,Pair<DependencyItem,Boolean>> dependencyMap =
             new HashMap<Pair<DependencyKey, String>, Pair<DependencyItem, Boolean>>();
+        // TODO add value map
     }
 
     private final static class SearchTarget implements Serializable, Comparable {
