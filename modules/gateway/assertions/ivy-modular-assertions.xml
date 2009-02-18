@@ -29,6 +29,7 @@
         <dependency name="EsmAssertion" rev="latest.integration" conf="default"/>
         <dependency name="MessageContextAssertion" rev="latest.integration" conf="default"/>
         <dependency name="SamlpAssertion" rev="latest.integration" conf="default"/>
+        <dependency name="CertificateAttributesAssertion" rev="latest.integration" conf="default"/>
 
         <dependency name="CaWsdmAssertion" rev="latest.integration" conf="optional"/>
     </dependencies>
