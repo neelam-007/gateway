@@ -11,7 +11,10 @@ import java.nio.charset.Charset;
 @XmlRootElement
 public class ValueReferenceEntityHeader extends ExternalEntityHeader {
 
+    public enum Type { HTTP_URL, IP_ADDRESS }
+
     private final static String OWNER_TYPE = "ownerType";
+    private final static String VALUE_TYPE = "valueType";
     private final static String DISPLAY_VALUE = "displayValue";
     private final static String MAPPED_VALUE = "mappedValue";
 
@@ -42,6 +45,18 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
         return HexUtils.decodeUtf8(HexUtils.decodeBase64(getExternalId().substring(0, getExternalId().indexOf(":"))));
     }
 
+    public void setValueType(Type type) {
+        setProperty(VALUE_TYPE, type.name());
+    }
+
+    public Type getValueType() {
+        return Type.valueOf(getProperty(VALUE_TYPE));
+    }
+
+    public void setDisplayValue(String value) {
+        setProperty(DISPLAY_VALUE, value);
+    }
+
     public String getDisplayValue() {
         return getProperty(DISPLAY_VALUE);
     }
@@ -49,4 +64,9 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
     public void setMappedValue(String mappedValue) {
         setProperty(MAPPED_VALUE, mappedValue);
     }
+
+    public String getMappedValue() {
+        return getProperty(MAPPED_VALUE);
+    }
+
 }
