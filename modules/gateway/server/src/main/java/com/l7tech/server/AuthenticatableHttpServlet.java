@@ -173,9 +173,19 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         }
     }
 
-    protected void doHttpBasicChallenge( final HttpServletResponse response ) {
+    /**
+     * Send a response with an HTTP Basic challenge (401).
+     *
+     * <p>The response is written by calling this method.</p>
+     *
+     * @param response The servlet response to use.
+     * @throws IOException If an error occurs writing the response.
+     */
+    protected void doHttpBasicChallenge( final HttpServletResponse response ) throws IOException {
         response.setStatus(HttpConstants.STATUS_UNAUTHORIZED);
         response.setHeader(HttpConstants.HEADER_WWW_AUTHENTICATE, "Basic realm=\"" + ServerHttpBasic.REALM + "\"");
+        response.setContentType("text/plain; charset=utf-8");
+        response.getWriter().println("Authentication Required.");
     }
 
     protected static class AhsAuthResult {

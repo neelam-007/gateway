@@ -580,7 +580,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
     }
 
     /** Responds with an HTTP authentication challenge. */
-    private void respondChallenge(final HttpServletResponse response, final String details) {
+    private void respondChallenge(final HttpServletResponse response, final String details) throws IOException {
         doHttpBasicChallenge( response );
         if (_logger.isLoggable(Level.FINE)) {
             _logger.fine("Responded to Ping with authentication challenge (" + details + ").");
