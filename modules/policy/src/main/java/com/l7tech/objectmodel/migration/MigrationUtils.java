@@ -2,6 +2,7 @@ package com.l7tech.objectmodel.migration;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.ValueReferenceEntityHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.Policy;
 
@@ -154,6 +155,11 @@ public class MigrationUtils {
 
         Migration annotation = property.getAnnotation(Migration.class);
         return new MigrationMappingType(annotation.mapName(), annotation.mapValue());
+    }
+
+    public static ValueReferenceEntityHeader.Type getValueType(Method property) {
+        if (! property.isAnnotationPresent(Migration.class)) return ValueReferenceEntityHeader.Type.TEXT;
+        return property.getAnnotation(Migration.class).valueType();
     }
 
     public static String propertyNameFromGetter(String getterName) {

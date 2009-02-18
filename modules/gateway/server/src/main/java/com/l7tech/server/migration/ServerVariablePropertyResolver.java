@@ -3,7 +3,6 @@ package com.l7tech.server.migration;
 import com.l7tech.objectmodel.migration.*;
 import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.policy.variable.BuiltinVariables;
 import static com.l7tech.policy.variable.BuiltinVariables.PREFIX_CLUSTER_PROPERTY;
 import static com.l7tech.policy.variable.BuiltinVariables.PREFIX_GATEWAY_TIME;
 

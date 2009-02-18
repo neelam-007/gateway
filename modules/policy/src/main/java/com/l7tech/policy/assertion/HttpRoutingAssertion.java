@@ -12,6 +12,9 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
+import static com.l7tech.objectmodel.ValueReferenceEntityHeader.Type.HTTP_URL;
+import static com.l7tech.objectmodel.ValueReferenceEntityHeader.Type.HTTP_URL_ARRAY;
+import static com.l7tech.objectmodel.ValueReferenceEntityHeader.Type.IP_ADDRESS_ARRAY;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -243,7 +246,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.realm = realm;
     }
 
-    @Migration(mapName = NONE, mapValue = OPTIONAL, resolver = PropertyResolver.Type.VALUE_REFERENCE)
+    @Migration(mapName = NONE, mapValue = OPTIONAL, valueType = HTTP_URL, resolver = PropertyResolver.Type.VALUE_REFERENCE)
     public String getProtectedServiceUrl() {
         return protectedServiceUrl;
     }
@@ -266,13 +269,13 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     }
 
     /** @return the custom IP addresses to use as an array of String, or null if no custom IP address list is configured. */
-    @Migration(mapName = NONE, mapValue = OPTIONAL, resolver = PropertyResolver.Type.VALUE_REFERENCE)
+    @Migration(mapName = NONE, mapValue = OPTIONAL, valueType = IP_ADDRESS_ARRAY, resolver = PropertyResolver.Type.VALUE_REFERENCE)
     public String[] getCustomIpAddresses() {
         return customIpAddresses;
     }
 
 
-    @Migration(mapName = NONE, mapValue = OPTIONAL, resolver = PropertyResolver.Type.VALUE_REFERENCE)
+    @Migration(mapName = NONE, mapValue = OPTIONAL, valueType = HTTP_URL_ARRAY, resolver = PropertyResolver.Type.VALUE_REFERENCE)
     public String[] getCustomURLs() {
         return customURLs;
     }

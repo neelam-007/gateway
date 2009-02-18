@@ -29,35 +29,41 @@ public class ValueReferencePropertyResolver extends AbstractPropertyResolver {
 
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
-        final MigrationMappingType type = MigrationUtils.getMappingType(property);
+        final MigrationMappingType mappingType = MigrationUtils.getMappingType(property);
+        final ValueReferenceEntityHeader.Type valueType = MigrationUtils.getValueType(property);
         final boolean exported = MigrationUtils.isExported(property);
-
-        getPropertyValue(entity, property);
+        final String displayValue = valueType.serialize(getPropertyValue(entity, property));
 
         return new HashMap<ExternalEntityHeader, Set<MigrationDependency>>() {{
-            ValueReferenceEntityHeader dependencyHeader = new ValueReferenceEntityHeader(EntityHeaderUtils.toExternal(source), propertyName);
-            put(dependencyHeader, Collections.singleton(new MigrationDependency(source, dependencyHeader, propertyName, type, exported)));
+            ValueReferenceEntityHeader dependencyHeader = new ValueReferenceEntityHeader(EntityHeaderUtils.toExternal(source), propertyName, valueType, displayValue);
+            put(dependencyHeader, Collections.singleton(new MigrationDependency(source, dependencyHeader, propertyName, mappingType, exported)));
         }};
     }
 
     public void applyMapping(Object sourceEntity, String propName, ExternalEntityHeader targetHeader, Object targetValue, ExternalEntityHeader originalHeader) throws PropertyResolverException {
-        if ( !(targetHeader instanceof ValueReferenceEntityHeader) )
+
+        if ( !(targetHeader instanceof ValueReferenceEntityHeader) ) {
             throw new PropertyResolverException("Cannot apply mapping for non ValueReferenceEntityHeader target type: " + targetHeader);
+        }
+
+        ValueReferenceEntityHeader targetValueHeader = (ValueReferenceEntityHeader) targetHeader;
 
         logger.log(Level.FINEST, "Applying mapping for {0} : {1}.", new Object[]{sourceEntity, propName});
 
         // where is the value obtained from
-        Object target = dereference(targetValue, ((ValueReferenceEntityHeader)targetHeader).getPropertyName());
-        String targetPropName = stripPropName(((ValueReferenceEntityHeader)targetHeader).getPropertyName());
+        Object value;
+        if (targetValue instanceof Entity) {
+            // mapped to an entity's property from the target cluster
+            value = getValue(targetValueHeader, targetValue);
+        } else {
+            // mapped to a value provided from the enterprise manager UI
+            value = targetValueHeader.getValueType().deserialize((String) targetValue);
+        }
 
         try {
-            // get the actual value
-            Method getter = MigrationUtils.getterForPropertyName(target, targetPropName);
-            Object value = getPropertyValue(target, getter);
-
             // apply dependency value
             if (value != null) {
-                Method setter = MigrationUtils.setterForPropertyName(sourceEntity, propName, value.getClass());
+                Method setter = MigrationUtils.setterForPropertyName(dereference(sourceEntity, propName), stripPropName(propName), value.getClass());
                 setter.invoke(sourceEntity, value);
             }
         } catch (Exception e) {
@@ -65,7 +71,24 @@ public class ValueReferencePropertyResolver extends AbstractPropertyResolver {
         }
     }
 
-    private String stripPropName(String propertyName) {
+    private static Object getValue(ValueReferenceEntityHeader vRefHeader, Object entity) throws PropertyResolverException {
+        Object value;
+        Object target = dereference(entity, vRefHeader.getPropertyName());
+        String targetPropName = stripPropName(vRefHeader.getPropertyName());
+        try {
+            // get the actual value
+            Method getter = MigrationUtils.getterForPropertyName(target, targetPropName);
+            value = getPropertyValue(target, getter);
+        } catch (Exception e) {
+            throw new PropertyResolverException("Error retrieving value from value reference header: " + vRefHeader, e);
+        }
+        return value;
+    }
+
+    /**
+     * If the property name is structured, return the actual method name (the last part of the structured name).
+     */
+    private static String stripPropName(String propertyName) {
         if (propertyName.contains(":")) {
             int index = propertyName.lastIndexOf(":");
             return index + 1 < propertyName.length()? propertyName.substring(index+1) : "";
@@ -74,7 +97,10 @@ public class ValueReferencePropertyResolver extends AbstractPropertyResolver {
         }
     }
 
-    private Object dereference(Object sourceEntity, String propName) throws PropertyResolverException {
+    /**
+     * If the property name is structured, return the entity / object that actually owns the property.
+     */
+    private static Object dereference(Object sourceEntity, String propName) throws PropertyResolverException {
         if (propName.contains(":")) {
             Policy policy;
             if (sourceEntity instanceof PublishedService) {

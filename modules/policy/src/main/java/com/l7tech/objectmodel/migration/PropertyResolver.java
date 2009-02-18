@@ -44,7 +44,10 @@ public interface PropertyResolver {
      *
      * @param sourceEntity the entity on which a new property value is set.
      * @param propName the property of the sourceEntity for which a new value is set.
-     * @param targetEntity the new value that is set for the sourceEntity's propName
+     * @param targetHeader the target value's (entity) header;
+     *                     needed if the target value is not enough to reconstruct the target header (e.g. value references)
+     * @param targetValue the new value that is set for the sourceEntity's propName
+     * @param originalHeader the dependan't header from the source cluster; needed in some cases (e.g. UsesEntities) to apply the mappings
      */
     public void applyMapping(Object sourceEntity, String propName, ExternalEntityHeader targetHeader, Object targetValue, ExternalEntityHeader originalHeader)
         throws PropertyResolverException;

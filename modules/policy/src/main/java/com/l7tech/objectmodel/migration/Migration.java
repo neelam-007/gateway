@@ -1,5 +1,7 @@
 package com.l7tech.objectmodel.migration;
 
+import com.l7tech.objectmodel.ValueReferenceEntityHeader;
+
 import java.lang.annotation.*;
 
 @Retention(RetentionPolicy.RUNTIME)
@@ -26,6 +28,11 @@ public @interface Migration {
      * @see MigrationMappingSelection for the available mapping selection modes.
      */
     MigrationMappingSelection mapValue() default MigrationMappingSelection.OPTIONAL;
+
+    /**
+     * For value mappings, specifies the type of the value.
+     */
+    ValueReferenceEntityHeader.Type valueType() default ValueReferenceEntityHeader.Type.TEXT;
 
     /**
      * Specifies the property resolver type that must be used to extract and apply

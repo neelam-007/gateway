@@ -793,7 +793,8 @@ public class PolicyMigration extends EsmStandardWebPage {
                 dependencySummaryModel.incrementTotalDependencies();
             } else {
                 if ( item.type.equals(EntityType.VALUE_REFERENCE.toString()) ) {
-                    // ?
+                    if (item.destName == null)
+                        item.destName = "-";
                 } else {
                     item.destName = "-";
                     if ( !item.isOptional() ) {
@@ -1107,6 +1108,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     }
                 }
             }
+            // todo: load/apply value mappings
 
             // discard the dependencies that no longer exist on the target cluster
             SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterId);
@@ -1299,7 +1301,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     for ( Map.Entry<Pair<DependencyKey,String>,Pair<DependencyItem,Boolean>> mapping : mappingModel.dependencyMap.entrySet() ) {
                         if ( mapping.getValue() != null && mapping.getKey().left.clusterId.equals(sourceClusterId) && mapping.getKey().right.equals(targetClusterId) ) {
                             metadata.addMappingOrCopy(mapping.getKey().left.asEntityHeader(), mapping.getValue().left.asEntityHeader(), mapping.getValue().right);
-                            migrationMappingRecordManager.persistMapping(
+                            migrationMappingRecordManager.persistMapping( // todo: make sure value-mappings are persisted as well
                                     sourceCluster.getGuid(),
                                     mapping.getKey().left.asEntityHeader(),
                                     targetCluster.getGuid(),
@@ -1672,7 +1674,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
             if ( extraProps != null && extraProps.containsKey("displayValue") ) {
                 // TODO display service name 
-                nameWithScope = nameWithScope + " \n" + extraProps.containsKey("displayValue"); // TODO truncate for display? 
+                nameWithScope = nameWithScope + ": " + extraProps.get("displayValue"); // TODO truncate for display?
             }
 
             return nameWithScope;

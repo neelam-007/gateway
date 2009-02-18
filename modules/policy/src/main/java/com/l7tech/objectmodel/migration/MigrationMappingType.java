@@ -28,7 +28,6 @@ public class MigrationMappingType implements Serializable {
     }
 
     public static MigrationMappingType defaultMappning() {
-        //todo: which one is should be the default?
         return MigrationMappingType.BOTH_OPTIONAL;
     }
 
