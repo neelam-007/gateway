@@ -49,10 +49,12 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
     // TODO configurable or heuristic size?
     private final BlockingQueue<NotifiableCondition<?>> notificationQueue = new LinkedBlockingQueue<NotifiableCondition<?>>(500);
+    private static final int OUT_OF_TOLERANCE_LOG_INTERVAL = 60000;
 
     private static abstract class TriggerState<T extends Trigger> {
         private final T trigger;
         private volatile Long outOfTolerance;
+        private volatile Long logged;
 
         private TriggerState(T trigger) {
             this.trigger = trigger;
@@ -410,16 +412,20 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     final ComparisonOperator op = ptrigger.getOperator();
                     final Comparable rvalue = ptstate.comparisonValue;
                     final Long prevOut = tstate.outOfTolerance;
+                    final Long prevLogged = tstate.logged;
                     final String sright = sample.right.toString();
                     if (op.compare(what, rvalue, false)) {
-                        logger.log(Level.INFO, "{0} value {1} is out of tolerance ({2} {3})", new Object[] { property, sright, op, rvalue });
                         if (prevOut != null) {
-                            long howlong = now - prevOut;
-                            // TODO consider suppression of repeated notifications as a configurable aspect of NotificationRules
-                            logger.log(Level.INFO, "{0} value {1} is still out of tolerance from {2}ms ago, skipping repeated notification", new Object[] { property, sright, howlong });
+                            if (now - prevLogged >= OUT_OF_TOLERANCE_LOG_INTERVAL) {
+                                // TODO consider suppression of repeated notifications as a configurable aspect of NotificationRules
+                                logger.log(Level.INFO, "{0} value {1} is still out of tolerance from {2}ms ago, skipping repeated notification", new Object[] { property, sright, now - prevOut});
+                                tstate.logged = now;
+                            }
                             continue;
                         }
+                        logger.log(Level.INFO, "{0} value {1} is out of tolerance ({2} {3})", new Object[] { property, sright, op, rvalue });
                         tstate.outOfTolerance = now;
+                        tstate.logged = now;
                         PropertyCondition cond = conditions.get(property);
                         if (cond == null) {
                             conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), when, Collections.singleton(oid), rvalue));
