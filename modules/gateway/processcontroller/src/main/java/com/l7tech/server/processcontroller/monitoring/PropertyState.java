@@ -48,7 +48,7 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
                     logger.fine("Got property value: " + value); 
                     addSample(value, now);
                 } catch (PropertySamplingException e) {
-                    logger.log(Level.WARNING, "Couldn't get property value: " + ExceptionUtils.getMessage(e), e);
+                    logger.log(Level.INFO, "Couldn't get property value: " + ExceptionUtils.getMessage(e), e);
                     addFailure(e, now);
                 }
             }

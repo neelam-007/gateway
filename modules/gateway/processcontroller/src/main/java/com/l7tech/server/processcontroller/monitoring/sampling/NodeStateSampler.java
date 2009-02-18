@@ -4,6 +4,7 @@
 package com.l7tech.server.processcontroller.monitoring.sampling;
 
 import com.l7tech.server.management.NodeStateType;
+import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.management.config.monitoring.ComponentType;
 import com.l7tech.util.Functions;
@@ -15,15 +16,15 @@ import java.util.logging.Logger;
 class NodeStateSampler extends NodePropertySampler<NodeStateType> {
     private static final Logger logger = Logger.getLogger(NodeStateSampler.class.getName());
 
-    public NodeStateSampler(ComponentType componentType, String componentId, ApplicationContext spring) {
-        super(componentType, componentId, "nodeState", spring);
+    public NodeStateSampler(String componentId, ApplicationContext spring) {
+        super(ComponentType.NODE, componentId, BuiltinMonitorables.NODE_STATE.getName(), spring);
     }
 
     public NodeStateType sample() throws PropertySamplingException {
         try {
             return invokeNodeApi(new Functions.UnaryThrows<NodeStateType, NodeApi, Exception>() {
                 @Override
-                public NodeStateType call(NodeApi nodeApi) throws Exception {
+                public NodeStateType call(NodeApi nodeApi) {
                     return nodeApi.getNodeStatus().getType();
                 }
             });

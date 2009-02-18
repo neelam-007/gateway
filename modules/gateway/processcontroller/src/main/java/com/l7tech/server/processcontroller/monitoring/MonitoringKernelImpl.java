@@ -52,7 +52,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
     private static abstract class TriggerState<T extends Trigger> {
         private final T trigger;
-        private volatile boolean outOfTolerance;
+        private volatile Long outOfTolerance;
 
         private TriggerState(T trigger) {
             this.trigger = trigger;
@@ -225,11 +225,12 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         cancelDeadMonitors(buildingPstates, liveProperties, "properties");
         cancelDeadMonitors(buildingEstates, liveEvents, "events");
 
-        currentTriggerStates = buildingTstates;
-        currentPropertyStates = buildingPstates;
         for (PropertyState<?> state : buildingPstates.values()) {
             state.schedule(samplerTimer);
         }
+
+        currentTriggerStates = buildingTstates;
+        currentPropertyStates = buildingPstates;
 
         kickTheSampler();
         kickTheNotifier(); // TODO if any notifications have changed
@@ -276,7 +277,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     stati.put(prop, transientStatus);
                 }
 
-                if (tstate.outOfTolerance) {
+                if (tstate.outOfTolerance != null) {
                     transientStatus.badTriggerOids.add(toid);
                     transientStatus.status = MonitoredStatus.StatusType.WARNING;
                 }
@@ -408,9 +409,17 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     // Compare the sampled value
                     final ComparisonOperator op = ptrigger.getOperator();
                     final Comparable rvalue = ptstate.comparisonValue;
+                    final Long prevOut = tstate.outOfTolerance;
+                    final String sright = sample.right.toString();
                     if (op.compare(what, rvalue, false)) {
-                        logger.log(Level.INFO, "{0} value {1} is out of tolerance ({2} {3} {4})", new Object[] { property, sample.right.toString(), ptrigger.getMonitorableId(), op, rvalue }); 
-                        tstate.outOfTolerance = true;
+                        logger.log(Level.INFO, "{0} value {1} is out of tolerance ({2} {3})", new Object[] { property, sright, op, rvalue });
+                        if (prevOut != null) {
+                            long howlong = now - prevOut;
+                            // TODO consider suppression of repeated notifications as a configurable aspect of NotificationRules
+                            logger.log(Level.INFO, "{0} value {1} is still out of tolerance from {2}ms ago, skipping repeated notification", new Object[] { property, sright, howlong });
+                            continue;
+                        }
+                        tstate.outOfTolerance = now;
                         PropertyCondition cond = conditions.get(property);
                         if (cond == null) {
                             conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), when, Collections.singleton(oid), rvalue));
@@ -419,7 +428,12 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                             conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), cond.getTimestamp(), Sets.union(cond.getTriggerOids(), oid), cond.getValue()));
                         }
                     } else {
-                        tstate.outOfTolerance = false;
+                        if (prevOut != null) {
+                            logger.log(Level.INFO, "{0} value {1} is back in tolerance ({2} {3})", new Object[] { property, sright, op, rvalue });
+                        } else {
+                            logger.log(Level.FINE, "{0} value {1} is in tolerance ({2} {3})", new Object[] { property, sright, op, rvalue });
+                        }
+                        tstate.outOfTolerance = null;
                     }
                 }
             }

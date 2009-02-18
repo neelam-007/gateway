@@ -126,7 +126,7 @@ public class NodeApiImpl implements NodeApi {
         checkRequest();
         logger.fine("getProperty");
         if (propertyId.equals(BuiltinMonitorables.AUDIT_SIZE.getName())) {
-            return Long.toString(auditRecordManager.findCount(new AuditSearchCriteria.Builder().build())); // TODO
+            return Long.toString(auditRecordManager.findCount(new AuditSearchCriteria.Builder().build()));
         } else {
             throw new UnsupportedPropertyException("propertyId");
         }

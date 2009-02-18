@@ -3,7 +3,6 @@
  */
 package com.l7tech.server.processcontroller.monitoring.sampling;
 
-import com.l7tech.server.management.api.monitoring.NodeStatus;
 import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.management.config.monitoring.ComponentType;
 import com.l7tech.server.processcontroller.ProcessController;
@@ -12,7 +11,6 @@ import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Map;
 
 public abstract class NodePropertySampler<V extends Serializable> extends PropertySampler<V> {
     protected NodeApi nodeApi;
@@ -24,8 +22,6 @@ public abstract class NodePropertySampler<V extends Serializable> extends Proper
     }
 
     protected <T> T invokeNodeApi(Functions.UnaryThrows<T, NodeApi, Exception> callable) throws Exception {
-        final Map<String,NodeStatus> nodes = processController.listNodes();
-        if (nodes.isEmpty()) throw new IOException("No nodes are currently known to the Process Controller");
         return processController.callNodeApi(null, callable);
     }
 

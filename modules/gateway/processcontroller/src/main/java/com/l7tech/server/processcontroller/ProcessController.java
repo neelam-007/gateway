@@ -543,9 +543,9 @@ public class ProcessController {
      * @param nodeName the name of the node to invoke the API on, or null to pick the first node in the system
      * @param callable the function to call the NodeApi with
      * @return the API method's return value
-     * @throws IOException if the node API cannot be obtained (e.g. because the node is down)
+     * @throws TemporarilyUnavailableException if the node API cannot be obtained (e.g. because the node is down)
      */
-    public <T> T callNodeApi(String nodeName, Functions.UnaryThrows<T, NodeApi, Exception> callable) throws Exception {
+    public <T, E extends Exception> T callNodeApi(String nodeName, Functions.UnaryThrows<T, NodeApi, E> callable) throws E, TemporarilyUnavailableException {
         final NodeState state;
         if (nodeName == null) {
             state = nodeStates.values().iterator().next();
@@ -555,9 +555,29 @@ public class ProcessController {
         if (state == null) throw new IllegalStateException("Unknown node " + nodeName);
         if (state instanceof HasApi) {
             NodeApi napi = ((HasApi) state).getApi();
+            if (napi == null) throw new TemporarilyUnavailableException(state.node.getName(), state.type);
             return callable.call(napi);
         } else {
-            throw new IOException(nodeName + " is currently uncommunicative (" + state.type + ")");
+            throw new TemporarilyUnavailableException(state.node.getName(), state.type);
+        }
+    }
+
+    public static class TemporarilyUnavailableException extends Exception {
+        private final String name;
+        private final NodeStateType type;
+
+        public TemporarilyUnavailableException(String name, NodeStateType type) {
+            super("Node " + name + " is temporarily unavailable (last known state was " + type + ")");
+            this.name = name;
+            this.type = type;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public NodeStateType getType() {
+            return type;
         }
     }
 
