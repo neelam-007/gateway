@@ -48,9 +48,7 @@ public class DsigUtil {
      * @param keyInfoChildElement   Custom key info child element to use
      * @param keyName               if specified, KeyInfo will use a keyName instead of an STR or a literal cert.
      * @return the new dsig:Signature element, as a standalone element not yet attached into the document.
-     * @throws SignatureException   if there is a problem creating the signature; or,
-     *     (caused by {@link KeyUsageException}) if the key usage enforcement policy currently in effect does not permit the specified
-     *                            senderSigningCert to be used with the {@link KeyUsageActivity#signXml} activity.
+     * @throws SignatureException   if there is a problem creating the signature
      * @throws SignatureStructureException if there is a problem creating the signature
      * @throws XSignatureException  if there is a problem creating the signature
      */
