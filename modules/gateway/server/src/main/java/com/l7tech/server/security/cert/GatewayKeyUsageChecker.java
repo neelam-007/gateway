@@ -31,7 +31,7 @@ public class GatewayKeyUsageChecker extends KeyUsageChecker {
         try {
             return KeyUsagePolicy.fromXml(policyXml);
         } catch (SAXException e) {
-            logger.log(Level.SEVERE, "Malformed Key Usage enforcement policy; will use default policy: " + ExceptionUtils.getMessage(e), e);
+            logger.log(Level.SEVERE, "Malformed Key Usage enforcement policy; will use default policy: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return makeDefaultPolicy();
         }
     }
