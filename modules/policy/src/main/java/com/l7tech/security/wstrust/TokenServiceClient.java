@@ -4,6 +4,7 @@
 package com.l7tech.security.wstrust;
 
 import com.l7tech.common.http.*;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.message.Message;
@@ -40,7 +41,6 @@ import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -519,9 +519,7 @@ public class TokenServiceClient {
                     throw new InvalidDocumentFormatException("Response body was signed, but not with an X509 Security Token");
                 final X509SecurityToken x509Token = (X509SecurityToken)signingSecurityToken;
                 X509Certificate signingCert = x509Token.getCertificate();
-                byte[] signingPublicKeyBytes = signingCert.getPublicKey().getEncoded();
-                byte[] desiredPublicKeyBytes = serverCertificate.getPublicKey().getEncoded();
-                if (!Arrays.equals(signingPublicKeyBytes, desiredPublicKeyBytes))
+                if (!CertUtils.arePublicKeysEqual(signingCert.getPublicKey(), serverCertificate.getPublicKey()))
                     throw new UnrecognizedServerCertException("Response body was signed with an X509 certificate, but it wasn't the server certificate.");
             }
         }
