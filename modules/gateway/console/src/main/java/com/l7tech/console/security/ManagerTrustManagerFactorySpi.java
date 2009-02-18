@@ -94,7 +94,8 @@ public class ManagerTrustManagerFactorySpi extends TrustManagerFactorySpi {
                 trustManager = xtm;
             }
 
-            KeyUsageChecker.requireActivity(KeyUsageActivity.sslServerRemote, x509Certificates[0]);
+            if (x509Certificates != null && x509Certificates.length > 0)
+                KeyUsageChecker.requireActivity(KeyUsageActivity.sslServerRemote, x509Certificates[0]);
 
             try {
                 xtm.checkServerTrusted(x509Certificates, s);

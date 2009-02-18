@@ -51,7 +51,8 @@ public class ClientTrustingTrustManagerFactorySpi extends TrustManagerFactorySpi
         }
 
         public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-            KeyUsageChecker.requireActivity(KeyUsageActivity.sslClientRemote, x509Certificates[0]);
+            if (x509Certificates != null && x509Certificates.length > 0)
+                KeyUsageChecker.requireActivity(KeyUsageActivity.sslClientRemote, x509Certificates[0]);
         }
 
         public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {

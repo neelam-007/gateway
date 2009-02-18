@@ -9,7 +9,9 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.util.DomUtils;
@@ -206,7 +208,8 @@ public class SignedSamlTest extends TestCase {
         DecorationRequirements req = new DecorationRequirements();
         req.setSignTimestamp();
         req.getElementsToSign().add(body);
-        req.setSenderSamlToken(SamlAssertion.newInstance(samlAssertion), true);
+        SecurityTokenResolver resolver = new SimpleSecurityTokenResolver(caCertChain[0]);
+        req.setSenderSamlToken(SamlAssertion.newInstance(samlAssertion, resolver), true);
         req.setSenderMessageSigningPrivateKey(clientPrivateKey);
         new WssDecoratorImpl().decorateMessage(new Message(request), req);
 

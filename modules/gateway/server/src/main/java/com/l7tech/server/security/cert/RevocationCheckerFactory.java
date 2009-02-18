@@ -1,16 +1,21 @@
 package com.l7tech.server.security.cert;
 
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.gateway.common.security.*;
+import com.l7tech.gateway.common.security.RevocationCheckPolicy;
+import com.l7tech.gateway.common.security.RevocationCheckPolicyItem;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.cert.KeyUsageActivity;
+import com.l7tech.security.cert.KeyUsageChecker;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
-import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.util.*;
-import com.l7tech.common.io.WhirlycacheFactory;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.util.ServerCertUtils;
+import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.whirlycott.cache.Cache;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 
@@ -628,6 +633,7 @@ public class RevocationCheckerFactory {
                 if ( signer != null ) {
                     try {
                         //Note that this is cached in the CRL object
+                        KeyUsageChecker.requireActivity(KeyUsageActivity.verifyCrl, signer);
                         crl.verify(signer.getPublicKey());
                     }
                     catch (Exception e) {

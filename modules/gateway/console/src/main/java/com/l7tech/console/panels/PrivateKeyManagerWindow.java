@@ -439,6 +439,9 @@ public class PrivateKeyManagerWindow extends JDialog {
                 } catch (GeneralSecurityException e) {
                     sawBadSignature = true;
                 }
+
+                // TODO warn here about key usage problems that we detect
+                // can't just use KeyUsageChecker since its Gateway-side configuration isn't known
             }
 
             try {

@@ -67,14 +67,16 @@ public class SslClientTrustManager implements X509TrustManager {
             CertificateValidationResult result =
                     certValidationProcessor.check(certs, CertificateValidationType.PATH_VALIDATION, null, facility, new LogOnlyAuditor(logger));
 
-            KeyUsageChecker.requireActivity(KeyUsageActivity.sslServerRemote, certs[0]);
+            if (certs != null && certs.length > 0)
+                KeyUsageChecker.requireActivity(KeyUsageActivity.sslServerRemote, certs[0]);
 
             if ( result != CertificateValidationResult.OK ) {
                 throw new CertificateException("Certificate path validation and/or revocation checking failed");
             }
             
             if (isCartel && logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "SSL server cert was issued to ''{0}'' by a globally recognized CA", certs[0].getSubjectDN().getName());
+                final String dn = certs == null || certs.length < 1 ? null : certs[0].getSubjectDN().getName();
+                logger.log(Level.FINE, "SSL server cert was issued to ''{0}'' by a globally recognized CA", dn);
             }
         } catch (SignatureException se) {
             throw new CertificateException("Certificate path validation and/or revocation checking error", se);            
