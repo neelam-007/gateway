@@ -3,6 +3,7 @@ package com.l7tech.objectmodel;
 import com.l7tech.util.HexUtils;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 import java.nio.charset.Charset;
 
 /**
@@ -33,14 +34,17 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
         setExtraProperties(other.getExtraProperties());
     }
 
+    @XmlTransient
     public EntityType getOwnerType() {
         return EntityType.valueOf(getProperty(OWNER_TYPE));
     }
 
+    @XmlTransient
     public String getOwnwerId() {
         return getExternalId().substring(getExternalId().indexOf(":")+1);
     }
 
+    @XmlTransient
     public String getPropertyName() {
         return HexUtils.decodeUtf8(HexUtils.decodeBase64(getExternalId().substring(0, getExternalId().indexOf(":"))));
     }
@@ -49,6 +53,7 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
         setProperty(VALUE_TYPE, type.name());
     }
 
+    @XmlTransient
     public Type getValueType() {
         return Type.valueOf(getProperty(VALUE_TYPE));
     }
@@ -57,6 +62,7 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
         setProperty(DISPLAY_VALUE, value);
     }
 
+    @XmlTransient
     public String getDisplayValue() {
         return getProperty(DISPLAY_VALUE);
     }
@@ -65,6 +71,7 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
         setProperty(MAPPED_VALUE, mappedValue);
     }
 
+    @XmlTransient
     public String getMappedValue() {
         return getProperty(MAPPED_VALUE);
     }
