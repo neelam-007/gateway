@@ -16,6 +16,9 @@ import org.hibernate.Session;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
+import org.springframework.beans.BeansException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,18 +37,18 @@ import java.util.logging.Logger;
 @Transactional(propagation= Propagation.REQUIRED)
 public class KeystoreFileManagerImpl
         extends HibernateEntityManager<KeystoreFile, EntityHeader>
-        implements KeystoreFileManager
+        implements KeystoreFileManager, ApplicationContextAware
 {
     protected static final Logger logger = Logger.getLogger(KeystoreFileManagerImpl.class.getName());
     private static final String SSG_VAR_DIR = "/opt/SecureSpan/Gateway/node/default/var/";
     private static final String HSM_INIT_FILE = "hsm_init.properties";
     private static final String PROPERTY_SCA_HSMINIT_PASSWORD = "hsm.sca.password";
     private MasterPasswordManager masterPasswordManager;
-    private MasterPasswordManager dbEncrypter;
+    private ApplicationContext appContext;
 
-    public KeystoreFileManagerImpl(MasterPasswordManager masterPasswordManager, MasterPasswordManager dbEncrypter) {
+    public KeystoreFileManagerImpl(MasterPasswordManager masterPasswordManager) {
         this.masterPasswordManager = masterPasswordManager;
-        this.dbEncrypter = dbEncrypter;
+
     }
 
     public Class<KeystoreFile> getImpClass() {
@@ -124,6 +127,7 @@ public class KeystoreFileManagerImpl
     private void updatePassword(final long id, final char[] password) throws UpdateException {
         //set the password in the properties for this KeystoreFile (encrypted with the db encrypter), so we always have it from now on
         try {
+            final MasterPasswordManager dbEncrypter = (MasterPasswordManager) appContext.getBean("dbPasswordEncryption");
             getHibernateTemplate().execute(new HibernateCallback() {
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     try {
@@ -169,5 +173,9 @@ public class KeystoreFileManagerImpl
 
     public boolean isHsmAvailable() {
         return JceProvider.PKCS11_ENGINE.equals( JceProvider.getEngineClass());
+    }
+
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.appContext = applicationContext;
     }
 }

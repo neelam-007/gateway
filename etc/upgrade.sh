@@ -122,6 +122,9 @@ if [ -f "/ssg/etc/conf/partitions/default_/hibernate.properties" ] && [ ! -f "${
 fi
 [ ! -f "/ssg/etc/conf/partitions/default_/hibernate.properties" ] || ${MV} "/ssg/etc/conf/partitions/default_/hibernate.properties" "${INSTALL_DIR}/node/default/var/upgrade/hibernate.properties"
 
+#remove pkcs11 system property from system.properties if it exists. We handle the SCA differently in 5.0
+[ ! -f "${INSTALL_DIR}/node/default/etc/conf/system.properties" ] || cat "${INSTALL_DIR}/node/default/etc/conf/system.properties" | sed '/Pkcs11JceProviderEngine/s/^/#/' > "${INSTALL_DIR}/node/default/etc/conf/system.properties"
+
 # Upgrade configuration artifacts
 [ ! -f "/ssg/etc/conf/partitions/default_/kerberos.keytab" ] || ${MV} "/ssg/etc/conf/partitions/default_/kerberos.keytab" "${INSTALL_DIR}/node/default/var/"
 if [ -d "/ssg/etc/conf/partitions/default_/keys" ] ; then
