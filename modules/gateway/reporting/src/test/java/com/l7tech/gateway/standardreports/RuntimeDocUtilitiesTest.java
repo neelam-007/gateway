@@ -354,7 +354,7 @@ public class RuntimeDocUtilitiesTest {
             Assert.assertTrue("Class attribute should equal " + expectedValue+ " Actual value was: " + classType
                     ,classType.equals(expectedValue));
 
-            if(i < list.getLength() - 1) expectedValue = "$V{COLUMN_"+(i+1)+"}";
+            if(i < list.getLength() - 1) expectedValue = "($V{COLUMN_"+(i+1)+"} == null)?new Long(0):$V{COLUMN_"+(i+1)+"}";
             else expectedValue = "$V{SERVICE_AND_OR_OPERATION_TOTAL}";
 
             Assert.assertTrue("text expression should equal " + expectedValue+ " Actual value was: " +
@@ -448,7 +448,7 @@ public class RuntimeDocUtilitiesTest {
             Assert.assertTrue("Class attribute should equal " + expectedValue+ " Actual value was: " + classType
                     ,classType.equals(expectedValue));
 
-            if(i < list.getLength() - 1) expectedValue = "$V{COLUMN_SERVICE_TOTAL_"+(i+1)+"}";
+            if(i < list.getLength() - 1) expectedValue = "($V{COLUMN_SERVICE_TOTAL_"+(i+1)+"} == null || $V{COLUMN_SERVICE_TOTAL_"+(i+1)+"}.intValue() == 0)?new Long(0):$V{COLUMN_SERVICE_TOTAL_"+(i+1)+"}";
             else expectedValue = "$V{SERVICE_ONLY_TOTAL}";
 
             Assert.assertTrue("text expression should equal " + expectedValue+ " Actual value was: " +
@@ -747,7 +747,7 @@ public class RuntimeDocUtilitiesTest {
         }
      }
 
-    private void testGroupTotalRow(String elementName, String columnVariable, String totalVariable){
+    private void testGroupTotalRow(String elementName, String columnVariable, String totalVariable, boolean includeNullTest){
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
@@ -809,7 +809,13 @@ public class RuntimeDocUtilitiesTest {
             Assert.assertTrue("Class attribute should equal " + expectedValue+ " Actual value was: " + classType
                     ,classType.equals(expectedValue));
 
-            if(i < list.getLength() - 1) expectedValue = "$V{"+columnVariable+(i+1)+"}";
+            if(i < list.getLength() - 1){
+                if(includeNullTest){
+                    expectedValue = "($V{"+columnVariable+(i+1)+"} == null)?new Long(0):$V{"+columnVariable+(i+1)+"}";
+                }else{
+                    expectedValue = "$V{"+columnVariable+(i+1)+"}";                    
+                }
+            }
             else expectedValue = "$V{"+totalVariable+"}";
 
             Assert.assertTrue("text expression should equal " + expectedValue+ " Actual value was: " +
@@ -827,17 +833,17 @@ public class RuntimeDocUtilitiesTest {
 
     @Test
     public void getUsageIntervalMasterRuntimeDoc_serviceAndOperationFooter_CheckElements(){
-        testGroupTotalRow(Utilities.SERVICE_AND_OPERATION_FOOTER,"COLUMN_OPERATION_","ROW_OPERATION_TOTAL");
+        testGroupTotalRow(Utilities.SERVICE_AND_OPERATION_FOOTER,"COLUMN_OPERATION_","ROW_OPERATION_TOTAL", true);
     }
 
     @Test
     public void getUsageIntervalMasterRuntimeDoc_serviceIdFooter_CheckElements(){
-        testGroupTotalRow(Utilities.SERVICE_ID_FOOTER,"COLUMN_SERVICE_","ROW_SERVICE_TOTAL");
+        testGroupTotalRow(Utilities.SERVICE_ID_FOOTER,"COLUMN_SERVICE_","ROW_SERVICE_TOTAL", true);
     }
 
     @Test
     public void getUsageIntervalMasterRuntimeDoc_summary_CheckElements(){
-        testGroupTotalRow(Utilities.SUMMARY,"COLUMN_REPORT_","ROW_REPORT_TOTAL");
+        testGroupTotalRow(Utilities.SUMMARY,"COLUMN_REPORT_","ROW_REPORT_TOTAL", false);
     }
 
     private void testWidths(Node rootNode, int numMappingValues){
@@ -1108,7 +1114,7 @@ public class RuntimeDocUtilitiesTest {
             Assert.assertTrue("Class attribute should equal " + expectedValue+ " Actual value was: " + classType
                     ,classType.equals(expectedValue));
 
-            if(i < list.getLength() - 1) expectedValue = "$V{COLUMN_"+(i+1)+"}";
+            if(i < list.getLength() - 1) expectedValue = "($V{COLUMN_"+(i+1)+"} == null)?new Long(0):$V{COLUMN_"+(i+1)+"}";
             else expectedValue = "$V{TOTAL}";
 
             Assert.assertTrue("text expression should equal " + expectedValue+ " Actual value was: " +

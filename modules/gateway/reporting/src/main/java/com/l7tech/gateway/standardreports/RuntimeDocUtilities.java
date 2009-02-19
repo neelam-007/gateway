@@ -74,7 +74,7 @@ public class RuntimeDocUtilities {
 
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                    "textField-ServiceOperationFooter-" + (i + 1), "java.lang.Long", "$V{COLUMN_" + (i + 1) + "}",
+                    "textField-ServiceOperationFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_" + (i + 1) + "}",
                     TABLE_CELL_STYLE, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
@@ -417,7 +417,7 @@ public class RuntimeDocUtilities {
         xPos = Utilities.CONSTANT_HEADER_START_X;
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                    "textField-ServiceOperationFooter-" + (i + 1), "java.lang.Long", "$V{COLUMN_OPERATION_" + (i + 1) + "}",
+                    "textField-ServiceOperationFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_OPERATION_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_OPERATION_" + (i + 1) + "}",
                     Utilities.ROW_TOTAL_STYLE, true);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
@@ -433,7 +433,7 @@ public class RuntimeDocUtilities {
         xPos = Utilities.CONSTANT_HEADER_START_X;
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                    "textField-ServiceIdFooter-" + (i + 1), "java.lang.Long", "$V{COLUMN_SERVICE_" + (i + 1) + "}",
+                    "textField-ServiceIdFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_SERVICE_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_SERVICE_" + (i + 1) + "}",
                     Utilities.ROW_TOTAL_STYLE, true);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
@@ -654,7 +654,7 @@ public class RuntimeDocUtilities {
         xPos = Utilities.CONSTANT_HEADER_START_X;
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                    "textField-ServiceOperationFooter-" + (i + 1), "java.lang.Long", "$V{COLUMN_" + (i + 1) + "}",
+                    "textField-ServiceOperationFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_" + (i + 1) + "}",
                     TABLE_CELL_STYLE, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
@@ -670,7 +670,7 @@ public class RuntimeDocUtilities {
         xPos = Utilities.CONSTANT_HEADER_START_X;
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                    "textField-ServiceIdFooter-" + (i + 1), "java.lang.Long", "$V{COLUMN_SERVICE_TOTAL_" + (i + 1) + "}",
+                    "textField-ServiceIdFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_SERVICE_TOTAL_" + (i + 1) + "} == null || $V{COLUMN_SERVICE_TOTAL_" + (i + 1) + "}.intValue() == 0)?new Long(0):$V{COLUMN_SERVICE_TOTAL_" + (i + 1) + "}",
                     Utilities.ROW_TOTAL_STYLE, true);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }

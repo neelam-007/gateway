@@ -142,7 +142,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue())
 		<group  name="CONSTANT_CHART" >
 			<groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
 			<groupHeader>
-			<band height="228"  isSplitAllowed="true" >
+			<band height="228"  isSplitAllowed="false" >
 				<printWhenExpression><![CDATA[$P{PRINT_CHART}]]></printWhenExpression>
 				<frame>					<reportElement
 						style="FrameTableTop"
@@ -233,7 +233,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
 		<group  name="CONSTANT" >
 			<groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
 			<groupHeader>
-			<band height="54"  isSplitAllowed="true" >
+			<band height="54"  isSplitAllowed="false" >
 				<frame>					<reportElement
 						style="MappingTitleFrame"
 						mode="Opaque"
@@ -284,7 +284,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
 				</frame>			</band>
 			</groupHeader>
 			<groupFooter>
-			<band height="18"  isSplitAllowed="true" >
+			<band height="18"  isSplitAllowed="false" >
 				<frame>					<reportElement
 						style="UsageFrameTableBottom"
 						mode="Opaque"
@@ -316,7 +316,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
 		<group  name="SERVICE_ID" >
 			<groupExpression><![CDATA[$F{SERVICE_ID}]]></groupExpression>
 			<groupHeader>
-			<band height="18"  isSplitAllowed="true" >
+			<band height="18"  isSplitAllowed="false" >
 				<printWhenExpression><![CDATA[$P{IS_DETAIL}]]></printWhenExpression>
 				<frame>					<reportElement
 						style="TitleFrame"
@@ -345,7 +345,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
 				</frame>			</band>
 			</groupHeader>
 			<groupFooter>
-			<band height="18"  isSplitAllowed="true" >
+			<band height="18"  isSplitAllowed="false" >
 				<printWhenExpression><![CDATA[$P{IS_DETAIL}]]></printWhenExpression>
 				<frame>					<reportElement
 						style="FrameDetailTableRow"
@@ -382,7 +382,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
 			</band>
 			</groupHeader>
 			<groupFooter>
-			<band height="18"  isSplitAllowed="true" >
+			<band height="18"  isSplitAllowed="false" >
 				<frame>					<reportElement
 						style="FrameDetailTableRow"
 						mode="Opaque"
@@ -810,7 +810,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 			</band>
 		</summary>
 		<noData>
-			<band height="300"  isSplitAllowed="true" >
+			<band height="300"  isSplitAllowed="false" >
 				<frame>					<reportElement
 						x="0"
 						y="0"

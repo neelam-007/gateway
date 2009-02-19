@@ -149,7 +149,7 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
 		<group  name="CONSTANT_CHART" >
 			<groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
 			<groupHeader>
-			<band height="228"  isSplitAllowed="true" >
+			<band height="228"  isSplitAllowed="false" >
 				<printWhenExpression><![CDATA[$P{PRINT_CHART}]]></printWhenExpression>
 				<frame>					<reportElement
 						style="FrameTableTop"
@@ -239,7 +239,7 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
 		<group  name="CONSTANT" >
 			<groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
 			<groupHeader>
-			<band height="18"  isSplitAllowed="true" >
+			<band height="18"  isSplitAllowed="false" >
 				<frame>					<reportElement
 						style="MappingTitleFrame"
 						mode="Opaque"
@@ -270,10 +270,10 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
 			</band>
 			</groupFooter>
 		</group>
-		<group  name="SERVICE" isReprintHeaderOnEachPage="true" >
+		<group  name="SERVICE" >
 			<groupExpression><![CDATA[$F{SERVICE_ID}]]></groupExpression>
 			<groupHeader>
-			<band height="54"  isSplitAllowed="true" >
+			<band height="54"  isSplitAllowed="false" >
 				<frame>					<reportElement
 						style="TitleFrame"
 						mode="Opaque"
@@ -323,7 +323,7 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
 				</frame>			</band>
 			</groupHeader>
 			<groupFooter>
-			<band height="18"  isSplitAllowed="true" >
+			<band height="18"  isSplitAllowed="false" >
 				<frame>					<reportElement
 						style="FrameDetailTableRow"
 						mode="Opaque"
@@ -354,7 +354,7 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
 		<group  name="SERVICE_OPERATION" >
 			<groupExpression><![CDATA[$F{SERVICE_OPERATION_VALUE}]]></groupExpression>
 			<groupHeader>
-			<band height="18"  isSplitAllowed="true" >
+			<band height="18"  isSplitAllowed="false" >
 				<printWhenExpression><![CDATA[new Boolean(
                 !com.l7tech.gateway.standardreports.Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE})
                 )]]></printWhenExpression>
@@ -384,7 +384,7 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
 				</frame>			</band>
 			</groupHeader>
 			<groupFooter>
-			<band height="18"  isSplitAllowed="true" >
+			<band height="18"  isSplitAllowed="false" >
 				<printWhenExpression><![CDATA[new Boolean(
                 !com.l7tech.gateway.standardreports.Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE})
                 )]]></printWhenExpression>
@@ -894,7 +894,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
 				</frame>			</band>
 		</summary>
 		<noData>
-			<band height="300"  isSplitAllowed="true" >
+			<band height="300"  isSplitAllowed="false" >
 				<frame>					<reportElement
 						x="0"
 						y="0"
