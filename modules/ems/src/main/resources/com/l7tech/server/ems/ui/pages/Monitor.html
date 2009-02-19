@@ -1005,6 +1005,7 @@
             var propertyType = monDlg_propertyType.value;
             var textBox = monDlg_triggerValueTextBoxes[propertyType];
             textBox.value = currentSetup.propertySetup[propertyType].defaultTriggerValue;
+            validateMonitoringPropertyDialog();
         }
 
         function refreshMonitoringProperties() {
