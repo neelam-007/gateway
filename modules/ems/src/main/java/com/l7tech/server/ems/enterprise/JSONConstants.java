@@ -124,7 +124,7 @@ public final class JSONConstants {
         public static final String PORT         = "port";
         public static final String COMMUNITY    = "community";
         public static final String TEXTDATA     = "textData";
-        public static final String OIDFUFFIX    = "oidSuffix";
+        public static final String OIDSUFFIX    = "oidSuffix";
     }
 
     /**

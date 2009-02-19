@@ -105,8 +105,9 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
         ret.setOid(getOid());
         ret.setVersion(getVersion());
         ret.setCommunity((String)getParamProp(JSONConstants.NotificationSnmpTrapParams.COMMUNITY));
-        ret.setOidSuffix(Integer.valueOf(getParamProp(JSONConstants.NotificationSnmpTrapParams.OIDFUFFIX).toString()));
-        ret.setPort(Integer.valueOf(getParamProp(JSONConstants.NotificationSnmpTrapParams.PORT).toString()));
+        ret.setOidSuffix(Integer.valueOf(getParamProp(JSONConstants.NotificationSnmpTrapParams.OIDSUFFIX).toString()));
+        final Object prop = getParamProp(JSONConstants.NotificationSnmpTrapParams.PORT);
+        if (prop != null) ret.setPort(Integer.valueOf(prop.toString()));
         ret.setSnmpHost((String)getParamProp(JSONConstants.NotificationSnmpTrapParams.HOST));
         ret.setText((String)getParamProp(JSONConstants.NotificationSnmpTrapParams.TEXTDATA));
         return ret;
@@ -122,7 +123,8 @@ public class SystemMonitoringNotificationRule extends NamedEntityImp implements 
         ret.setCc(toStringList((String)getParamProp(JSONConstants.NotificationEmailParams.CC)));
         ret.setCryptoType(obtainCryptoType((String)getParamProp(JSONConstants.NotificationEmailParams.PROTOCOL)));
         ret.setFrom((String)getParamProp(JSONConstants.NotificationEmailParams.FROM));
-        ret.setPort(Integer.valueOf(getParamProp(JSONConstants.NotificationEmailParams.PORT).toString()));
+        final Object prop = getParamProp(JSONConstants.NotificationEmailParams.PORT);
+        if (prop != null) ret.setPort(Integer.valueOf(prop.toString()));
         ret.setSmtpHost((String)getParamProp(JSONConstants.NotificationEmailParams.HOST));
         ret.setSubject((String)getParamProp(JSONConstants.NotificationEmailParams.SUBJECT));
         ret.setText((String)getParamProp(JSONConstants.NotificationEmailParams.BODY));
