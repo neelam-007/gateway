@@ -198,7 +198,9 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         config.setResponsibleForClusterMonitoring(responsibleForClusterMonitoring);
 
         SsgClusterNotificationSetup clusterSetup = ssgClusterNotificationSetupManager.findByEntityGuid(cluster.getGuid());
-        Map<Long, NotificationRule> notRules = convertNotificationRules(notificationsDisabled, clusterSetup.getSystemNotificationRules());
+        Map<Long, NotificationRule> notRules = clusterSetup==null ? 
+                Collections.<Long, NotificationRule>emptyMap() :
+                convertNotificationRules(notificationsDisabled, clusterSetup.getSystemNotificationRules());
         config.setNotificationRules(new HashSet<NotificationRule>(notRules.values()));
 
         Collection<Trigger> clusterTriggers =
