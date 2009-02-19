@@ -19,10 +19,24 @@
 
     <bean id="monitoringApiImpl" class="com.l7tech.server.processcontroller.MonitoringApiImpl"/>
 
-    <jaxws:endpoint id="nodeManagementApiEndpoint" implementor="#nodeManagementApiImpl" address="/nodeManagementApi"/>
+    <bean id="securityInterceptor" class="com.l7tech.server.processcontroller.SecurityInterceptor"/>
 
-    <jaxws:endpoint id="processControllerApiEndpoint" implementor="#processControllerApiImpl" address="/processControllerApi"/>
+    <jaxws:endpoint id="nodeManagementApiEndpoint" implementor="#nodeManagementApiImpl" address="/nodeManagementApi">
+        <jaxws:inInterceptors>
+            <ref bean="securityInterceptor"/>
+        </jaxws:inInterceptors>
+    </jaxws:endpoint>
 
-    <jaxws:endpoint id="monitoringApiEndpoint" implementor="#monitoringApiImpl" address="/monitoringApi"/>
+    <jaxws:endpoint id="processControllerApiEndpoint" implementor="#processControllerApiImpl" address="/processControllerApi">
+        <jaxws:inInterceptors>
+            <ref bean="securityInterceptor"/>
+        </jaxws:inInterceptors>
+    </jaxws:endpoint>
+
+    <jaxws:endpoint id="monitoringApiEndpoint" implementor="#monitoringApiImpl" address="/monitoringApi">
+        <jaxws:inInterceptors>
+            <ref bean="securityInterceptor"/>
+        </jaxws:inInterceptors>
+    </jaxws:endpoint>
 
 </beans>

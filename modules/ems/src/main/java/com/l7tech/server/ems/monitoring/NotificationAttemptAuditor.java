@@ -106,7 +106,7 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
                 } catch (UpdateException e) {
                     logger.log(Level.WARNING, "Unable to update last notification time for node " + node.getIpAddress() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 } catch (SOAPFaultException e) {
-                    if ( !ProcessControllerContext.isNetworkException(e) ) {
+                    if ( !ProcessControllerContext.isNetworkException(e) && !ProcessControllerContext.isConfigurationException(e) ) {
                         logger.log(Level.WARNING, "Unable to connect to process controller for node " + node.getIpAddress() + " to collect notifications: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     }
                 }
