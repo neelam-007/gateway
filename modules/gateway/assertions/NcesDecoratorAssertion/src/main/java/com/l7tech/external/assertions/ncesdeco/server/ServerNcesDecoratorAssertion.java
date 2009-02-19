@@ -21,6 +21,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
@@ -124,7 +125,7 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
             doc = msg.getXmlKnob().getDocumentWritable();
         } catch (SAXException e) {
             // Extremely unlikely--isSoap() already succeeded
-            throw new PolicyAssertionException(assertion, "Parse failure after isSoap() success");
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Parse failure after isSoap() success");
         }
 
         final Element securityEl = SoapUtil.getOrMakeSecurityElement(doc);

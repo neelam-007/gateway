@@ -19,6 +19,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.DomUtils;
@@ -113,7 +114,7 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
             try {
                 if ( SoapUtil.isBody(el)) bodySigner = sst;
             } catch ( InvalidDocumentFormatException e) {
-                throw new PolicyAssertionException(assertion, "Can't find SOAP Body element", e);
+                throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Can't find SOAP Body element", e);
             }
         }
 
