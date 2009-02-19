@@ -1234,7 +1234,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
             int index = 0;
             for ( MessageContextMapping mapping : key.getMappings() ) {
                 if ( mapping.getMappingType() == MessageContextMapping.MappingType.AUTH_USER ) {
-                    if (key != null) {
+                    if (key != null && key.getUserId() != null) {
                         valuesEntity.setAuthUserId(describe(key.getUserProviderId(), key.getUserId()));
                         valuesEntity.setAuthUserUniqueId(key.getUserId());
                         valuesEntity.setAuthUserProviderId( key.getUserProviderId() );
