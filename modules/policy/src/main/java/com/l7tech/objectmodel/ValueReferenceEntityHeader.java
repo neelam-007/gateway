@@ -15,36 +15,44 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
 
     public enum Type {
         HTTP_URL {
+            @Override
             public String serialize(Object value) {
                 return serializeString(value);
             }
+            @Override
             public Object deserialize(String serialized) {
                 return deserializeString(serialized);
             }
         },
 
         HTTP_URL_ARRAY {
+            @Override
             public String serialize(Object value) {
                 return serializeStringArray(value);
             }
+            @Override
             public Object deserialize(String serialized) {
                 return deserializeStringArray(serialized);
             }
         },
 
         IP_ADDRESS_ARRAY {
+            @Override
             public String serialize(Object value) {
                 return serializeStringArray(value);
             }
+            @Override
             public Object deserialize(String serialized) {
                 return deserializeStringArray(serialized);
             }
         },
 
         TEXT {
+            @Override
             public String serialize(Object value) {
                 return serializeString(value);
             }
+            @Override
             public Object deserialize(String serialized) {
                 return deserializeString(serialized);
             }
@@ -111,7 +119,7 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
     }
 
     @XmlTransient
-    public String getOwnwerId() {
+    public String getOwnerId() {
         return getExternalId().substring(getExternalId().indexOf(":")+1);
     }
 

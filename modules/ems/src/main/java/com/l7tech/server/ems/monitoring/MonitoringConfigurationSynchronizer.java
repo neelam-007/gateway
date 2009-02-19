@@ -173,7 +173,11 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         } catch (GatewayException e) {
             logger.log(Level.WARNING, "Unable to push down monitoring configuration to node " + node.getIpAddress() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         } catch (javax.xml.ws.soap.SOAPFaultException e) {
-            logger.log(Level.WARNING, "Unable to push down monitoring configuration to node " + node.getIpAddress() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            if ( ProcessControllerContext.isNetworkException(e) ) {
+                logger.log(Level.WARNING, "Unable to push down monitoring configuration to node " + node.getIpAddress() + " due to network error: " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e)), ExceptionUtils.getDebugException(e));
+            } else {
+                logger.log(Level.WARNING, "Unable to push down monitoring configuration to node " + node.getIpAddress() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to push down monitoring configuration to node " + node.getIpAddress() + ": " + ExceptionUtils.getMessage(e), e);
         }
