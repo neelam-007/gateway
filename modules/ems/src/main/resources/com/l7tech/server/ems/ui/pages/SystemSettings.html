@@ -188,6 +188,7 @@
                             <span class="clickable" onclick="l7.Tippy.toggleTippy('systemInformationTippy', 'systemInformation')"><wicket:message key="label.system.information"/></span>
                         </div>
                         <div id="systemInformation" class="panelContent">
+                            <div wicket:id="systemInfoFeedback" class="center"/>
                             <table class="indent spaced">
                                 <tr>
                                     <th><wicket:message key="label.host.name"/>:</th>
@@ -265,6 +266,14 @@
                                                 <td><wicket:message key="label.ssl.cert.thumbprint"/>:</td>
                                                 <td wicket:id="ssl.cert.thumbprint"></td>
                                             </tr>
+                                            <tr>
+                                                <td><wicket:message key="label.ssl.cert.creationDate"/>:</td>
+                                                <td wicket:id="ssl.cert.creationDate"></td>
+                                            </tr>
+                                            <tr>
+                                                <td><wicket:message key="label.ssl.cert.expiryDate"/>:</td>
+                                                <td wicket:id="ssl.cert.expiryDate"></td>
+                                            </tr>
                                         </table>
                                         <form method="post" action="SystemSettings.html" wicket:id="sslForm">
                                             <button type="button" wicket:id="sslChangeButton"><wicket:message key="label.change">Change</wicket:message></button>
@@ -284,7 +293,7 @@
                             <span class="clickable" onclick="l7.Tippy.toggleTippy('licenseTippy', 'license')"><wicket:message key="label.license"/></span>
                         </div>
                         <div id="license" class="panelContent">
-                            <div wicket:id="feedback" class="center"/>
+                            <div wicket:id="licenseFeedback" class="center"/>
                             <div wicket:id="license.container">
                                 <h4><wicket:message key="label.current.license"/></h4>
                                 <table class="indent spaced">

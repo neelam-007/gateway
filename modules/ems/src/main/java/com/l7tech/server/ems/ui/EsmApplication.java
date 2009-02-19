@@ -6,9 +6,18 @@ import com.l7tech.server.ems.standardreports.ReportViewResource;
 import com.l7tech.server.ems.standardreports.ReportViewCodingStrategy;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.server.ems.migration.MigrationArtifactResource;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.UpdatableLicenseManager;
+import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.TimeUnit;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.gateway.common.InvalidLicenseException;
+import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.License;
+import com.l7tech.gateway.common.security.rbac.Role;
 import org.apache.wicket.*;
 import org.apache.wicket.authorization.Action;
 import org.apache.wicket.authorization.IAuthorizationStrategy;
@@ -34,6 +43,8 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
+import java.io.IOException;
 
 /**
  * Wicket WebApplication for Enterprise Manager.
@@ -60,6 +71,13 @@ public class EsmApplication extends WebApplication {
             Session session = cycle.getSession();
             if ( session instanceof EsmSession) {
                 EsmSession emsSession = (EsmSession) session;
+
+                // Check if the EM license or the ssl certificate is about to expire.
+                CertLicExpiryStatus expiryStatus = emsSession.getCertLicExpiryStatus();
+                if (expiryStatus != null && (expiryStatus.isCertAboutToExpire() || expiryStatus.isLicAboutToExpire())) {
+                    return homePage;
+                }
+
                 if ( emsSession.getPreferredPage() != null &&
                      !emsSession.getPreferredPage().isEmpty() ) {
                     NavigationModel navigationModel = new NavigationModel("com.l7tech.server.ems.ui.pages");
@@ -91,6 +109,24 @@ public class EsmApplication extends WebApplication {
         ServletWebRequest servletWebRequest = (ServletWebRequest) request;
         HttpServletRequest servletRequest = servletWebRequest.getHttpServletRequest();
         EsmSecurityManager.LoginInfo info = getEsmSecurityManager().getLoginInfo( servletRequest.getSession(true) );
+
+        boolean isAdmin = false;
+        try {
+            for (Role role: getRoleManager().getAssignedRoles(info.getUser())) {
+                if (role.getTag().equals(Role.Tag.ADMIN)) {
+                    isAdmin = true;
+                    break;
+                }
+            }
+        } catch (FindException e) {
+        }
+        // Set the status of the license or ssl certificate about to expire.
+        // Note: non-admin users will not check expirty status.
+        if (isAdmin) {
+            CertLicExpiryStatus expiryStatus = getCertLicExpiryStatus();
+            session.setCertLicExpiryStatus(expiryStatus);
+        }
+
         if ( info != null ) {
             setUserPreferences( info.getUser(), session );
         }
@@ -290,6 +326,11 @@ public class EsmApplication extends WebApplication {
     private long timeStarted; // The time when EMS process started.
     private EsmSecurityManager esmSecurityManager;
     private UserPropertyManager userPropertyManager;
+    private RoleManager roleManager;
+    private ServerConfig config;
+    private UpdatableLicenseManager licenseManager;
+    private DefaultKey defaultKey;
+    private CertLicExpiryStatus expiryStatus;
 
     static {
         Map<String,String> dateMap = new LinkedHashMap<String,String>();
@@ -365,6 +406,56 @@ public class EsmApplication extends WebApplication {
         session.setPreferredPage(preferredpage);
     }
 
+    private CertLicExpiryStatus getCertLicExpiryStatus() {
+        CertLicExpiryStatus status = new CertLicExpiryStatus();
+
+        long expiryWarningPeriod = 0;
+        String propertyName = "license.expiryWarnAge";
+        String propStr = getServerConfig().getPropertyCached(propertyName);
+        if (propStr != null) {
+            try {
+                expiryWarningPeriod = TimeUnit.parse(propStr, TimeUnit.DAYS);
+            } catch (NumberFormatException nfe) {
+                logger.warning("Unable to parse property '" + propertyName + "' with value '" + propStr + "'.");
+                return null;
+            }
+        }
+
+        Date expiryDate;
+        try {
+            License currentLicense = getLicenseManager().getCurrentLicense();
+            if (currentLicense == null) { // the license is not installed. 
+                return status;
+            } else {
+                expiryDate = currentLicense.getExpiryDate();
+            }
+        } catch (InvalidLicenseException e) {
+            logger.warning("The license is present in the database but was not installed because it was invalid.");
+            return null;
+        }
+
+        if (expiryDate != null && (expiryDate.getTime() - expiryWarningPeriod) < System.currentTimeMillis()) {
+            status.setLicAboutToExpire(true);
+            status.setDaysLicAboutToExpire((expiryDate.getTime() - System.currentTimeMillis())/1000/3600/24);
+        }
+
+        X509Certificate sslCertificate;
+        try {
+            sslCertificate = getDefaultKey().getSslInfo().getCertificate();
+            if ( sslCertificate != null) {
+                Date sslExpiryDate = sslCertificate.getNotAfter();
+                if (sslExpiryDate!=null && (sslExpiryDate.getTime() - expiryWarningPeriod) < System.currentTimeMillis()) {
+                    status.setCertAboutToExpire(true);
+                    status.setDaysCertAboutToExpire((sslExpiryDate.getTime() - System.currentTimeMillis())/1000/3600/24);
+                }
+            }
+        } catch (IOException e) {
+            logger.warning("There is a problem reading the certificate file or the private key, or if no default SSL key is currently designated.");
+        }
+
+        return status;
+    }
+
     /**
      *
      */
@@ -389,5 +480,45 @@ public class EsmApplication extends WebApplication {
             this.userPropertyManager = userPropertyManager;
         }
         return userPropertyManager;
+    }
+
+    private RoleManager getRoleManager() {
+        RoleManager roleManager = this.roleManager;
+        if ( roleManager == null ) {
+            BeanFactory beanFactory = WebApplicationContextUtils.getWebApplicationContext(getWicketFilter().getFilterConfig().getServletContext());
+            roleManager = (RoleManager) beanFactory.getBean( "roleManager", RoleManager.class );
+            this.roleManager = roleManager;
+        }
+        return roleManager;
+    }
+
+    private ServerConfig getServerConfig() {
+        ServerConfig config = this.config;
+        if ( config == null ) {
+            BeanFactory beanFactory = WebApplicationContextUtils.getWebApplicationContext(getWicketFilter().getFilterConfig().getServletContext());
+            config = (ServerConfig) beanFactory.getBean( "serverConfig", ServerConfig.class );
+            this.config = config;
+        }
+        return config;
+    }
+
+    private DefaultKey getDefaultKey() {
+        DefaultKey defaultKey = this.defaultKey;
+        if ( defaultKey == null ) {
+            BeanFactory beanFactory = WebApplicationContextUtils.getWebApplicationContext(getWicketFilter().getFilterConfig().getServletContext());
+            defaultKey = (DefaultKey) beanFactory.getBean( "defaultKey", DefaultKey.class );
+            this.defaultKey = defaultKey;
+        }
+        return defaultKey;
+    }
+
+    private UpdatableLicenseManager getLicenseManager() {
+        UpdatableLicenseManager licenseManager = this.licenseManager;
+        if ( licenseManager == null ) {
+            BeanFactory beanFactory = WebApplicationContextUtils.getWebApplicationContext(getWicketFilter().getFilterConfig().getServletContext());
+            licenseManager = (UpdatableLicenseManager) beanFactory.getBean( "licenseManager", LicenseManager.class );
+            this.licenseManager = licenseManager;
+        }
+        return licenseManager;
     }
 }

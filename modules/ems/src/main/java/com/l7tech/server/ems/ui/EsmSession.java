@@ -50,6 +50,14 @@ public class EsmSession extends WebSession {
         this.preferredPage = preferredPage;
     }
 
+    public CertLicExpiryStatus getCertLicExpiryStatus() {
+        return certLicExpiryStatus;
+    }
+
+    public void setCertLicExpiryStatus(CertLicExpiryStatus certLicExpiryStatus) {
+        this.certLicExpiryStatus = certLicExpiryStatus;
+    }
+
     public DateFormat buildDateFormat() {
         return buildDateFormat( true );
     }
@@ -67,4 +75,5 @@ public class EsmSession extends WebSession {
     private String dateFormatPattern = EsmApplication.DEFAULT_DATE_FORMAT;
     private String timeZoneId;
     private String preferredPage;
+    private CertLicExpiryStatus certLicExpiryStatus; // The status of the EM license or the ssl certificate about to expire.
 }
