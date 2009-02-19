@@ -1492,7 +1492,7 @@
              *                              second array element is the target of the event if it was a MenuItem instance
              */
             function onContextMenuHide(eventName, args) {
-                entityTreeTable.highlightEntity(null, true);
+                // Leave entity highlighted so Move dialog can tell which entity to act on.
             }
 
             function initContextMenuItemsEventHandler() {
