@@ -137,7 +137,7 @@ fi
 # Upgrade runtime files
 if [ -d "/ssg/logs" ] ; then
     echo "Upgrading runtime files.";
-    find "/ssg/logs" -name '*.log' -exec ${MV} {} "${INSTALL_DIR}/node/default/var/logs/" \;
+    find "/ssg/logs" -name '*.log' -print -exec mv -f {} "${INSTALL_DIR}/node/default/var/logs/" \;
 else
     echo "Not upgrading runtime files.";
 fi
