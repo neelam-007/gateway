@@ -400,7 +400,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     if (sample == null) continue;
                     
                     final Long when = sample.left;
-                    final Comparable what = sample.right;
+                    final Comparable sampledValue = sample.right;
                     final long sampleAge = now - when;
                     if (sampleAge > (2 * mstate.getSamplingInterval())) {
                         // TODO parameterize max sample age, and/or figure out how/whether to handle failures specially?
@@ -410,34 +410,34 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
                     // Compare the sampled value
                     final ComparisonOperator op = ptrigger.getOperator();
-                    final Comparable rvalue = ptstate.comparisonValue;
+                    final Comparable comparisonValue = ptstate.comparisonValue;
                     final Long prevOut = tstate.outOfTolerance;
                     final Long prevLogged = tstate.logged;
-                    final String sright = sample.right.toString();
-                    if (op.compare(what, rvalue, false)) {
+                    final String sampledValueString = sample.right.toString();
+                    if (op.compare(sampledValue, comparisonValue, false)) {
                         if (prevOut != null) {
                             if (now - prevLogged >= OUT_OF_TOLERANCE_LOG_INTERVAL) {
                                 // TODO consider suppression of repeated notifications as a configurable aspect of NotificationRules
-                                logger.log(Level.INFO, "{0} value {1} is still out of tolerance from {2}ms ago, skipping repeated notification", new Object[] { property, sright, now - prevOut});
+                                logger.log(Level.INFO, "{0} value {1} is still out of tolerance from {2}ms ago, skipping repeated notification", new Object[] { property, sampledValueString, now - prevOut});
                                 tstate.logged = now;
                             }
                             continue;
                         }
-                        logger.log(Level.INFO, "{0} value {1} is out of tolerance ({2} {3})", new Object[] { property, sright, op, rvalue });
+                        logger.log(Level.INFO, "{0} value {1} is out of tolerance ({2} {3})", new Object[] { property, sampledValueString, op, comparisonValue });
                         tstate.outOfTolerance = now;
                         tstate.logged = now;
                         PropertyCondition cond = conditions.get(property);
                         if (cond == null) {
-                            conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), when, Collections.singleton(oid), rvalue));
+                            conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), when, Collections.singleton(oid), sampledValue));
                         } else {
                             // Merge the previous condition with this one
                             conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), cond.getTimestamp(), Sets.union(cond.getTriggerOids(), oid), cond.getValue()));
                         }
                     } else {
                         if (prevOut != null) {
-                            logger.log(Level.INFO, "{0} value {1} is back in tolerance ({2} {3})", new Object[] { property, sright, op, rvalue });
+                            logger.log(Level.INFO, "{0} value {1} is back in tolerance ({2} {3})", new Object[] { property, sampledValueString, op, comparisonValue });
                         } else {
-                            logger.log(Level.FINE, "{0} value {1} is in tolerance ({2} {3})", new Object[] { property, sright, op, rvalue });
+                            logger.log(Level.FINE, "{0} value {1} is in tolerance ({2} {3})", new Object[] { property, sampledValueString, op, comparisonValue });
                         }
                         tstate.outOfTolerance = null;
                     }
