@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ValueReferenceEntityHeader;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.*;
 import com.l7tech.server.ems.migration.*;
@@ -17,6 +18,7 @@ import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.TextUtils;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
 import org.apache.wicket.RequestCycle;
@@ -110,6 +112,8 @@ public class PolicyMigration extends EsmStandardWebPage {
                                     continue;
                                 }
 
+                                // TODO load value mappings to model
+
                                 ExternalEntityHeader source = item.getSourceHeader();
                                 ExternalEntityHeader target = item.getTargetHeader();
                                 mappings.add( new Pair<ExternalEntityHeader,ExternalEntityHeader>( source, target ) );
@@ -194,7 +198,8 @@ public class PolicyMigration extends EsmStandardWebPage {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
                 final Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(lastSourceKey, lastTargetClusterId);
-                mappingModel.dependencyMap.remove( mappingKey ); 
+                mappingModel.dependencyMap.remove( mappingKey );
+                mappingModel.valueMap.remove( mappingKey );
                 updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
                 setEnabled(false);
                 for ( String id : DEPENDENCY_REFRESH_COMPONENTS ) ajaxRequestTarget.addComponent( dependenciesContainer.get(id) );
@@ -215,7 +220,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                     String valueType = editHeader.getProperty("valueType");
                     if ( valueType != null ) {
-                        
+
                     }
 
                     final PolicyMigrationMappingValueEditPanel mapping = new PolicyMigrationMappingValueEditPanel(YuiDialog.getContentId(), "HTTP(s) URL value.", displayValue, mappedValue, "^(?:[a-zA-Z0-9$\\-_\\.+!\\*'\\(\\),:/\\\\]{1,4096})$");
@@ -225,11 +230,23 @@ public class PolicyMigration extends EsmStandardWebPage {
                             if ( button == YuiDialog.Button.OK ) {
                                 editHeader.setProperty("mappedValue", mapping.getValue());
                                 final Collection<DependencyItem> items = lastDependencyItems;
+                                DependencyItem updatedItem = null;
                                 if ( items != null ) {
                                     for ( DependencyItem item : items ) {
                                         if ( item.type.equals(editHeader.getType().toString()) && item.id.equals(editHeader.getExternalId()) ) {
-                                            item.destName = mapping.getValue(); // TODO truncate for display
+                                            mappingModel.valueMap.put( new Pair<DependencyKey,String>(lastSourceKey, lastTargetClusterId), mapping.getValue() );
+                                            updatedItem = item;
                                             break;
+                                        }
+                                    }
+                                }
+
+                                if ( updatedItem != null ) {
+                                    for ( DependencyItem item : items ) {
+                                        if ( item != updatedItem &&
+                                             isValueMappingSameOwnerAndTypeAndValue(item, updatedItem) ||
+                                             (isValueMappingSameTypeAndValue(item, updatedItem) && mapping.isApplyToAll())) {
+                                            mappingModel.valueMap.put( new Pair<DependencyKey,String>( new DependencyKey(lastSourceKey.clusterId,item.asEntityHeader()), lastTargetClusterId), mapping.getValue() );
                                         }
                                     }
                                 }
@@ -281,7 +298,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                     lastDependencyItems = deps;
                     lastSourceKey = null;
-                    candidateModel.reset();                    
+                    candidateModel.reset();
                     dependencyLoadButton.setEnabled(true);
 
                     updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
@@ -322,7 +339,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     } else if ( GatewayContext.isConfigurationException( e ) ) {
                         failureMessage = "Could not connect to cluster.";
                     } else {
-                        failureMessage = "Unexpected error from cluster.";                                
+                        failureMessage = "Unexpected error from cluster.";
                         logger.log( Level.WARNING, "Error processing selection.", e);
                     }
                     YuiDialog resultDialog = new YuiDialog("dialog", "Error Identifying Dependencies", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
@@ -551,6 +568,64 @@ public class PolicyMigration extends EsmStandardWebPage {
     private String lastTargetClusterId;
     private Collection<DependencyItem> lastDependencyItems = Collections.emptyList();
 
+    private static String truncateDisplayValue( final String text ) {
+        return TextUtils.truncStringMiddleExact( text, 128 );
+    }
+
+    private static boolean isValueMappingSameTypeAndValue( final DependencyItem item1,
+                                                           final DependencyItem item2 ) {
+        boolean same = false;
+
+        ExternalEntityHeader eeh1 = item1.asEntityHeader();
+        ExternalEntityHeader eeh2 = item2.asEntityHeader();
+        if ( eeh1 instanceof ValueReferenceEntityHeader &&
+             eeh2 instanceof ValueReferenceEntityHeader ) {
+            ValueReferenceEntityHeader vreh1 = (ValueReferenceEntityHeader) eeh1;
+            ValueReferenceEntityHeader vreh2 = (ValueReferenceEntityHeader) eeh2;
+
+            ValueReferenceEntityHeader.Type valueType1 = vreh1.getValueType();
+            String sourceValue1 = vreh1.getDisplayValue();
+
+            ValueReferenceEntityHeader.Type valueType2 = vreh2.getValueType();
+            String sourceValue2 = vreh2.getDisplayValue();
+
+            if ( valueType1 == valueType2 && sourceValue1 != null && sourceValue1.equals(sourceValue2) ) {
+                same = true;
+            }
+        }
+
+        return same;
+    }
+
+    private static boolean isValueMappingSameOwnerAndTypeAndValue( final DependencyItem item1,
+                                                                   final DependencyItem item2 ) {
+        boolean same = false;
+
+        ExternalEntityHeader eeh1 = item1.asEntityHeader();
+        ExternalEntityHeader eeh2 = item2.asEntityHeader();
+        if ( eeh1 instanceof ValueReferenceEntityHeader &&
+             eeh2 instanceof ValueReferenceEntityHeader ) {
+            ValueReferenceEntityHeader vreh1 = (ValueReferenceEntityHeader) eeh1;
+            ValueReferenceEntityHeader vreh2 = (ValueReferenceEntityHeader) eeh2;
+
+            EntityType type1 = vreh1.getOwnerType();
+            String id1 = vreh1.getOwnerId();
+            ValueReferenceEntityHeader.Type valueType1 = vreh1.getValueType();
+            String sourceValue1 = vreh1.getDisplayValue();
+
+            EntityType type2 = vreh2.getOwnerType();
+            String id2 = vreh2.getOwnerId();
+            ValueReferenceEntityHeader.Type valueType2 = vreh2.getValueType();
+            String sourceValue2 = vreh2.getDisplayValue();
+
+            if ( type1 == type2 && id1 != null && id1.equals(id2) && valueType1 == valueType2 && sourceValue1 != null && sourceValue1.equals(sourceValue2) ) {
+                same = true;
+            }
+        }
+
+        return same;
+    }
+
     private static final class PreviousMigrationModel implements Comparable, Serializable {
         private final String label;
         private final long id;
@@ -709,7 +784,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         List<Pair<String,String>> properties = new ArrayList<Pair<String,String>>();
 
         if ( item != null ) {
-            Map<String,String> extraProps = Collections.emptyMap(); 
+            Map<String,String> extraProps = Collections.emptyMap();
             if ( item.entityHeader != null && item.entityHeader.getExtraProperties() != null ) {
                 extraProps = item.entityHeader.getExtraProperties();
             }
@@ -784,27 +859,33 @@ public class PolicyMigration extends EsmStandardWebPage {
         for ( DependencyItem item : items ) {
             DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
             Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(sourceKey, targetClusterId);
-            Pair<DependencyItem, Boolean> mappedItem = mappingModel.dependencyMap.get( mappingKey );
-            if ( mappedItem != null && mappedItem.left != null) {
-                item.destName = mappedItem.left.getDisplayNameWithScope();
-                if ( !item.isOptional() ) {
-                    item.resolved = true;
-                }
-                dependencySummaryModel.incrementTotalDependencies();
+            DependencyItem mappedItem = mappingModel.dependencyMap.get( mappingKey );
+            boolean resolved = false;
+            if ( mappedItem != null ) {
+                item.destName = mappedItem.getDisplayNameWithScope();
+                resolved = true;
             } else {
-                if ( item.type.equals(EntityType.VALUE_REFERENCE.toString()) ) {
-                    if (item.destName == null)
-                        item.destName = "-";
+                String mappedValue = mappingModel.valueMap.get( mappingKey );
+                if ( mappedValue != null ) {
+                    item.destName = truncateDisplayValue( mappedValue );
+                    resolved = true;
                 } else {
                     item.destName = "-";
-                    if ( !item.isOptional() ) {
-                        item.resolved = false;
-                    }
-                    if ( item.isOptional() ) {
-                        dependencySummaryModel.incrementUnmappedDependencies();
-                    } else {
-                        dependencySummaryModel.incrementRequiredUnmappedDependencies();
-                    }
+                }
+            }
+
+            if ( item.isOptional() ) {
+                if ( resolved ) {
+                    dependencySummaryModel.incrementTotalDependencies();
+                } else {
+                    dependencySummaryModel.incrementUnmappedDependencies();
+                }
+            } else {
+                item.resolved = resolved; // tristate, should be null if optional
+                if ( resolved ) {
+                    dependencySummaryModel.incrementTotalDependencies();
+                } else {
+                    dependencySummaryModel.incrementRequiredUnmappedDependencies();
                 }
             }
         }
@@ -813,7 +894,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         final List<PropertyColumn> dependencyColumns =  Arrays.asList(
             new PropertyColumn(new Model(""), "uid"),
             new TypedPropertyColumn(new Model(""), "optional", "optional", String.class, false),
-            new PropertyColumn(new Model("Name"), "displayNameWithScope", "displayNameWithScope"),
+            new TypedPropertyColumn(new Model("Name"), "displayNameWithScope", "displayNameWithScope", String.class, true, true),
             new PropertyColumn(new Model("Type"), "type", "type"),
             new PropertyColumn(new Model("Dest. Name / Value"), "destName", "destName")
         );
@@ -838,9 +919,14 @@ public class PolicyMigration extends EsmStandardWebPage {
                     Component selectionComponent2 = ((Form)dependenciesContainer.get("dependencyControlsForm")).get("dependencyEditButton");
                     if ( selectedItem != null ) {
                         lastSourceKey = new DependencyKey( sourceClusterId, selectedItem.asEntityHeader() );
-                        candidateModel.setName( selectedItem.getDisplayNameWithScope() );
-                        candidateModel.setType( selectedItem.getType() );                        
-                        selectionComponent.setEnabled( mappingModel.dependencyMap.containsKey(new Pair<DependencyKey,String>(lastSourceKey,lastTargetClusterId)) );
+                        if ( isSearchable( selectedItem.asEntityHeader().getType() ) ) {
+                            candidateModel.setName( selectedItem.getDisplayNameWithScope() );
+                            candidateModel.setType( selectedItem.getType() );
+                        } else {
+                            candidateModel.reset();
+                        }
+                        Pair<DependencyKey,String> key = new Pair<DependencyKey,String>(lastSourceKey,lastTargetClusterId);
+                        selectionComponent.setEnabled( mappingModel.dependencyMap.containsKey(key) || mappingModel.valueMap.containsKey(key) );
                         selectionComponent2.setEnabled( com.l7tech.objectmodel.EntityType.valueOf(selectedItem.type) == EntityType.VALUE_REFERENCE );
                     } else {
                         lastSourceKey = null;
@@ -935,7 +1021,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     @Override
                     protected void onEvent( final AjaxRequestTarget ajaxRequestTarget ) {
                         logger.fine("Selection callback for : " + dependencyItem);
-                        mappingModel.dependencyMap.put( mappingKey, new Pair<DependencyItem, Boolean>(dependencyItem,false) );
+                        mappingModel.dependencyMap.put( mappingKey, dependencyItem );
                         updateDependencies( dependenciesContainer, optionRefreshComponents, candidateModel, searchModel, mappingModel, dependencySummaryModel );
 
                         for ( String id : DEPENDENCY_REFRESH_COMPONENTS ) ajaxRequestTarget.addComponent( dependenciesContainer.get(id) );
@@ -943,8 +1029,8 @@ public class PolicyMigration extends EsmStandardWebPage {
                     }
                 } );
 
-                Pair<DependencyItem, Boolean> currentItem = mappingModel.dependencyMap.get( mappingKey );
-                if ( currentItem!=null && currentItem.left != null && currentItem.left.equals( dependencyItem ) ) {
+                DependencyItem currentItem = mappingModel.dependencyMap.get( mappingKey );
+                if ( currentItem!=null && currentItem.equals( dependencyItem ) ) {
                     radioComponent.add( new AttributeModifier("checked", true, new Model("checked")) );
                 }
 
@@ -1103,12 +1189,14 @@ public class PolicyMigration extends EsmStandardWebPage {
                     MigrationMappingRecord mapping = migrationMappingRecordManager.findByMapping( sourceClusterId, item.asEntityHeader(), targetClusterId );
                     if ( mapping != null && mapping.getTarget() != null &&
                          ( mapping.isSameEntity() || ! onlyIsSame) ) {
-                        mappingModel.dependencyMap.put( mapKey, new Pair<DependencyItem, Boolean>(
-                            new DependencyItem(MigrationMappedEntity.asEntityHeader(mapping.getTarget()), null), mapping.isSameEntity() ));
+                        if ( mapping.getTarget().getEntityType()==null ) {
+                            mappingModel.valueMap.put( mapKey, mapping.getTarget().getEntityValue() );
+                        } else {
+                            mappingModel.dependencyMap.put( mapKey, new DependencyItem(MigrationMappedEntity.asEntityHeader(mapping.getTarget()), null, false, mapping.isSameEntity() ));
+                        }
                     }
                 }
             }
-            // todo: load/apply value mappings
 
             // discard the dependencies that no longer exist on the target cluster
             SsgCluster targetCluster = ssgClusterManager.findByGuid(targetClusterId);
@@ -1116,16 +1204,16 @@ public class PolicyMigration extends EsmStandardWebPage {
             MigrationApi targetMigrationApi = targetContext.getUncachedMigrationApi();
 
             Collection<ExternalEntityHeader> headersToCheck = new HashSet<ExternalEntityHeader>();
-            for (Map.Entry<Pair<DependencyKey,String>,Pair<DependencyItem,Boolean>> entry : mappingModel.dependencyMap.entrySet()) {
-                if ( entry.getValue() == null || entry.getValue().left == null || !entry.getKey().right.equals(targetClusterId)) continue;
-                headersToCheck.add( entry.getValue().left.asEntityHeader() );
+            for (Map.Entry<Pair<DependencyKey,String>,DependencyItem> entry : mappingModel.dependencyMap.entrySet()) {
+                if ( entry.getValue() == null || !entry.getKey().right.equals(targetClusterId)) continue;
+                headersToCheck.add( entry.getValue().asEntityHeader() );
             }
             Collection<ExternalEntityHeader> validatedHeaders = targetMigrationApi.checkHeaders(headersToCheck);
             if ( validatedHeaders == null ) validatedHeaders = Collections.emptyList();
             Set<Pair<DependencyKey,String>> keysToNull = new HashSet<Pair<DependencyKey, String>>();
-            for( Map.Entry<Pair<DependencyKey,String>,Pair<DependencyItem,Boolean>> entry : mappingModel.dependencyMap.entrySet() ) {
-                if ( !entry.getKey().right.equals(targetClusterId) || entry.getValue() == null || entry.getValue().left == null || entry.getValue().right) continue;
-                if ( !validatedHeaders.contains( entry.getValue().left.asEntityHeader() )) {
+            for( Map.Entry<Pair<DependencyKey,String>,DependencyItem> entry : mappingModel.dependencyMap.entrySet() ) {
+                if ( !entry.getKey().right.equals(targetClusterId) || entry.getValue() == null || entry.getValue().same) continue;
+                if ( !validatedHeaders.contains( entry.getValue().asEntityHeader() )) {
                     keysToNull.add( entry.getKey() );
                 }
             }
@@ -1167,8 +1255,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                      containsHeader( mapping.right, validatedTargetHeaders ) ) {
                     DependencyKey sourceKey = new DependencyKey( sourceClusterGuid, mapping.left );
                     Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterGuid );
-                    mappingModel.dependencyMap.put( mapKey, new Pair<DependencyItem, Boolean>(
-                                new DependencyItem(mapping.right, null), false ) );
+                    mappingModel.dependencyMap.put( mapKey, new DependencyItem(mapping.right, null) );
                 }
             }
 
@@ -1200,7 +1287,7 @@ public class PolicyMigration extends EsmStandardWebPage {
     }
 
     /**
-     * Count the number of unmapped dependencies in the mapping model for the given source/target cluster 
+     * Count the number of unmapped dependencies in the mapping model for the given source/target cluster
      */
     private int countUnMappedDependencies( final EntityMappingModel mappingModel,
                                            final String sourceClusterId,
@@ -1214,7 +1301,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                 DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
                 Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
-                if ( !mappingModel.dependencyMap.containsKey(mapKey) ) {
+                if ( !mappingModel.dependencyMap.containsKey(mapKey) && !mappingModel.valueMap.containsKey(mapKey) ) {
                     count++;
                 }
             }
@@ -1238,7 +1325,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     for ( DependencyItem item : items ) {
                         DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
                         Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
-                        if ( !item.isOptional() && mappingModel.dependencyMap.get(mapKey) == null ) {
+                        if ( !item.isOptional() && mappingModel.dependencyMap.get(mapKey) == null && mappingModel.valueMap.get(mapKey) == null ) {
                             ExternalEntityHeader ih = item.asEntityHeader();
                             builder.append(ih.getType().getName().toLowerCase()).append(", ").append(ih.getName())
                                 .append("(#").append(ih.getExternalId()).append(")\n");
@@ -1298,15 +1385,23 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                     MigrationBundle bundle = sourceMigrationApi.exportBundle( requestedItems.asEntityHeaders() );
                     MigrationMetadata metadata = bundle.getMetadata();
-                    for ( Map.Entry<Pair<DependencyKey,String>,Pair<DependencyItem,Boolean>> mapping : mappingModel.dependencyMap.entrySet() ) {
+                    for ( Map.Entry<Pair<DependencyKey,String>,DependencyItem> mapping : mappingModel.dependencyMap.entrySet() ) {
                         if ( mapping.getValue() != null && mapping.getKey().left.clusterId.equals(sourceClusterId) && mapping.getKey().right.equals(targetClusterId) ) {
-                            metadata.addMappingOrCopy(mapping.getKey().left.asEntityHeader(), mapping.getValue().left.asEntityHeader(), mapping.getValue().right);
-                            migrationMappingRecordManager.persistMapping( // todo: make sure value-mappings are persisted as well
+                            metadata.addMappingOrCopy(mapping.getKey().left.asEntityHeader(), mapping.getValue().asEntityHeader(), mapping.getValue().same);
+                            migrationMappingRecordManager.persistMapping(
                                     sourceCluster.getGuid(),
                                     mapping.getKey().left.asEntityHeader(),
                                     targetCluster.getGuid(),
-                                    mapping.getValue().left.asEntityHeader(),
-                                    mapping.getValue().right);
+                                    mapping.getValue().asEntityHeader(),
+                                    mapping.getValue().same);
+                        }
+                    }
+                    for ( ExternalEntityHeader eeh : metadata.getMappableDependencies() ) {
+                        DependencyKey sourceKey = new DependencyKey( sourceClusterId, eeh );
+                        String mappedValue = mappingModel.valueMap.get( new Pair<DependencyKey,String>(sourceKey,targetClusterId) );
+                        if ( mappedValue != null ) {
+                            eeh.setProperty( "mappedValue", mappedValue);
+                            migrationMappingRecordManager.persistMapping( sourceCluster.getGuid(), eeh, targetCluster.getGuid(), mappedValue );
                         }
                     }
 
@@ -1377,7 +1472,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
         builder.append("<p>Found ");
         builder.append(dependencies.size());
-        builder.append(" dependencies.</p>");        
+        builder.append(" dependencies.</p>");
 
         builder.append("<p>");
         int count = 0;
@@ -1423,8 +1518,8 @@ public class PolicyMigration extends EsmStandardWebPage {
         if ( mappingModel != null && targetClusterId != null && sourceClusterId != null) {
             DependencyKey sourceKey = new DependencyKey( sourceClusterId, externalEntityHeader );
             Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
-            Pair<DependencyItem,Boolean> mappingValue = mappingModel.dependencyMap.get( mappingKey );
-            if ( mappingValue != null && mappingValue.left != null ) {
+            DependencyItem mappingValue = mappingModel.dependencyMap.get( mappingKey );
+            if ( mappingValue != null ) {
                 resolved = true;
             }
         }
@@ -1533,10 +1628,11 @@ public class PolicyMigration extends EsmStandardWebPage {
         private String type;
         private String name;
         private Boolean resolved;
-        private boolean hidden;
+        private boolean hidden; // flag for hidden in the UI
         private Integer version;
         @SuppressWarnings({"UnusedDeclaration"})
         private String destName;
+        private boolean same; // flag for this entity is the same identity on source/target
 
         public DependencyItem() {
         }
@@ -1549,6 +1645,13 @@ public class PolicyMigration extends EsmStandardWebPage {
         public DependencyItem( final ExternalEntityHeader entityHeader,
                                final Boolean resolved,
                                final boolean hidden ) {
+            this( entityHeader, resolved, hidden, false );
+        }
+
+        public DependencyItem( final ExternalEntityHeader entityHeader,
+                               final Boolean resolved,
+                               final boolean hidden,
+                               final boolean isSame ) {
             this.entityHeader = entityHeader;
             this.uid = entityHeader.getType().toString() +":" + entityHeader.getExternalId();
             this.id = entityHeader.getExternalId();
@@ -1557,6 +1660,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             this.resolved = resolved;
             this.hidden = hidden;
             this.version = entityHeader.getVersion();
+            this.same = isSame;
         }
 
         public boolean isOptional() {
@@ -1672,9 +1776,9 @@ public class PolicyMigration extends EsmStandardWebPage {
                 nameWithScope = nameWithScope + " [" + extraProps.get("Scope Name") + "]";
             }
 
-            if ( extraProps != null && extraProps.containsKey("displayValue") ) {
-                // TODO display service name 
-                nameWithScope = nameWithScope + ": " + extraProps.get("displayValue"); // TODO truncate for display?
+            if ( extraProps != null && extraProps.get("displayValue") != null ) {
+                // TODO display service name
+                nameWithScope = nameWithScope + " \\n" + truncateDisplayValue(extraProps.get("displayValue"));
             }
 
             return nameWithScope;
@@ -1686,9 +1790,17 @@ public class PolicyMigration extends EsmStandardWebPage {
      * selected, not just mappings for currently selected source entities)
      */
     public final static class EntityMappingModel implements Serializable {
-        private final Map<Pair<DependencyKey,String>,Pair<DependencyItem,Boolean>> dependencyMap =
-            new HashMap<Pair<DependencyKey, String>, Pair<DependencyItem, Boolean>>();
-        // TODO add value map
+        /**
+         * Map for entity mappings keyed by source item / target cluster, values are the target item.
+         */
+        private final Map<Pair<DependencyKey,String>,DependencyItem> dependencyMap =
+            new HashMap<Pair<DependencyKey, String>, DependencyItem>();
+
+        /**
+         * Map for value mappings keyed by source item 
+         */
+        private final Map<Pair<DependencyKey,String>,String> valueMap =
+            new HashMap<Pair<DependencyKey,String>,String>();
     }
 
     private final static class SearchTarget implements Serializable, Comparable {

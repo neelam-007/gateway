@@ -14,9 +14,18 @@ public class TypedPropertyColumn extends PropertyColumn {
                                 final String propertyExpression,
                                 final Class columnClass,
                                 final boolean escapePropertyValue ) {
+        this( displayModel, propertyExpression, columnClass, escapePropertyValue, false );
+    }
+
+    public TypedPropertyColumn( final IModel displayModel,
+                                final String propertyExpression,
+                                final Class columnClass,
+                                final boolean escapePropertyValue,
+                                final boolean multiline ) {
         super( displayModel, propertyExpression );
         this.columnClass = columnClass;
         this.escapePropertyValue = escapePropertyValue;
+        this.multiline = multiline;
     }
 
     public TypedPropertyColumn( final IModel displayModel,
@@ -24,9 +33,19 @@ public class TypedPropertyColumn extends PropertyColumn {
                                 final String propertyExpression,
                                 final Class columnClass,
                                 final boolean escapePropertyValue ) {
+        this( displayModel, sortProperty, propertyExpression, columnClass, escapePropertyValue, false );
+    }
+
+    public TypedPropertyColumn( final IModel displayModel,
+                                final String sortProperty,
+                                final String propertyExpression,
+                                final Class columnClass,
+                                final boolean escapePropertyValue,
+                                final boolean multiline ) {
         super( displayModel, sortProperty, propertyExpression );
         this.columnClass = columnClass;
         this.escapePropertyValue = escapePropertyValue;
+        this.multiline = multiline;
     }
 
     public Class getColumnClass() {
@@ -44,5 +63,10 @@ public class TypedPropertyColumn extends PropertyColumn {
     //- PRIVATE
 
     private final Class columnClass;
+    private final boolean multiline;
     private boolean escapePropertyValue;
+
+    public boolean isMultiline() {
+        return multiline;
+    }
 }

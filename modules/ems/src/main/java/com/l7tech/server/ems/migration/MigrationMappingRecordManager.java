@@ -32,12 +32,29 @@ public interface MigrationMappingRecordManager extends EntityManager<MigrationMa
     /**
      * Save a mapping for the given source / destination.
      *
+     * <p>This will do nothing if the source or destination cluster identifiers are invalid (will return -1 in this case)</p>
+     *
      * @param sourceClusterId The identifier for the source cluster.
      * @param sourceEntityHeader The source entity.
      * @param destinationClusterId  The identifier for the destination cluster.
      * @param destinationEntityHeader The destination entity.
-     * @return the mapping OID
+     * @param sameEntity True if this mapping is for an item with the same identity on source and destination (a copy)
+     * @return the mapping OID or -1 if none was persisted
      * @throws SaveException If an error occurs when persisting
      */
     long persistMapping( String sourceClusterId, ExternalEntityHeader sourceEntityHeader, String destinationClusterId, ExternalEntityHeader destinationEntityHeader, boolean sameEntity ) throws SaveException;
+
+    /**
+     * Save a value mapping for the given source / destination.
+     *
+     * <p>This will do nothing if the source or destination cluster identifiers are invalid (will return -1 in this case)</p>
+     *
+     * @param sourceClusterId The identifier for the source cluster.
+     * @param sourceEntityHeader The source entity.
+     * @param destinationClusterId  The identifier for the destination cluster.
+     * @param value The destination value.
+     * @return the mapping OID or -1 if none was persisted
+     * @throws SaveException If an error occurs when persisting
+     */
+    long persistMapping( String sourceClusterId, ExternalEntityHeader sourceEntityHeader, String destinationClusterId, String value ) throws SaveException;
 }

@@ -660,6 +660,8 @@ public class YuiDataTable extends Panel {
                         } else if ( Number.class.isAssignableFrom(typedPropertyColumn.getColumnClass()) ) {
                             output.add( "formatter", "number" );
                             output.add( "className", "right");
+                        } else if ( typedPropertyColumn.isMultiline() ) {
+                            output.add( "formatter", "multiline" );
                         }
                     }
                 }

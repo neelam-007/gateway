@@ -43,7 +43,7 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
             throw new FindException( "Could not find cluster for GUID '"+targetClusterGuid+"'." );
         }
 
-        return findByMapping( sourceCluster, sourceEntityHeader, targetCluster, null );
+        return findByMapping( sourceCluster, sourceEntityHeader, targetCluster, (ExternalEntityHeader)null );
     }
 
     @Override
@@ -53,11 +53,60 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
         ExternalEntityHeader entityHeader = null;
 
         MigrationMappingRecord record = findByMapping( sourceClusterId, sourceEntityHeader, targetClusterId );
-        if ( record != null ) {
+        if ( record != null && record.getTarget().getEntityType() != null ) {
             entityHeader = MigrationMappedEntity.asEntityHeader(record.getTarget());
         }
 
         return entityHeader;
+    }
+
+    @Override
+    public long persistMapping( final String sourceClusterGuid,
+                                final ExternalEntityHeader sourceEntityHeader,
+                                final String targetClusterGuid,
+                                final String targetValue ) throws SaveException {
+        MigrationMappingRecord mapping = new MigrationMappingRecord();
+        try {
+            mapping.setSourceCluster( ssgClusterManager.findByGuid( sourceClusterGuid ) );
+            mapping.setTargetCluster( ssgClusterManager.findByGuid( targetClusterGuid ) );
+        } catch ( FindException fe ) {
+            throw new SaveException( "Error finding cluster by GUID when saving mapping.", fe );
+        }
+
+        long oid = -1;
+        if ( mapping.getSourceCluster() != null &&
+             mapping.getTargetCluster() != null ) {
+            try {
+                MigrationMappingRecord existingMapping =
+                        findByMapping( mapping.getSourceCluster(), sourceEntityHeader,
+                                       mapping.getTargetCluster(), targetValue );
+                if ( existingMapping == null ) {
+                    mapping.setTimestamp( System.currentTimeMillis() );
+
+                    MigrationMappedEntity sourceEntity = new MigrationMappedEntity();
+                    sourceEntity.setExternalId(sourceEntityHeader.getExternalId());
+                    sourceEntity.setEntityType( sourceEntityHeader.getType() );
+                    sourceEntity.setEntityId( sourceEntityHeader.getStrId() );
+                    sourceEntity.setEntityName( sourceEntityHeader.getName() );
+                    sourceEntity.setEntityDescription( sourceEntityHeader.getDescription() );
+                    sourceEntity.setEntityVersion( sourceEntityHeader.getVersion() );
+
+                    MigrationMappedEntity targetEntity = new MigrationMappedEntity();
+                    targetEntity.setEntityValue( targetValue );
+
+                    mapping.setSource( sourceEntity );
+                    mapping.setTarget( targetEntity );
+
+                    oid = super.save( mapping );
+                } else {
+                    oid = existingMapping.getOid();
+                }
+            } catch ( FindException fe ) {
+                throw new SaveException( "Error checking for existing mapping saving.", fe );
+            }
+        }
+
+        return oid;
     }
 
     @Override
@@ -74,42 +123,45 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
             throw new SaveException( "Error finding cluster by GUID when saving mapping.", fe );            
         }
 
-        long oid;
-        try {
-            MigrationMappingRecord existingMapping =
-                    findByMapping( mapping.getSourceCluster(), sourceEntityHeader,
-                                   mapping.getTargetCluster(), targetEntityHeader );
-            if ( existingMapping == null ) {
-                mapping.setTimestamp( System.currentTimeMillis() );
+        long oid = -1;
+        if ( mapping.getSourceCluster() != null &&
+             mapping.getTargetCluster() != null ) {
+            try {
+                MigrationMappingRecord existingMapping =
+                        findByMapping( mapping.getSourceCluster(), sourceEntityHeader,
+                                       mapping.getTargetCluster(), targetEntityHeader );
+                if ( existingMapping == null ) {
+                    mapping.setTimestamp( System.currentTimeMillis() );
 
-                MigrationMappedEntity sourceEntity = new MigrationMappedEntity();
-                sourceEntity.setExternalId(sourceEntityHeader.getExternalId());
-                sourceEntity.setEntityType( sourceEntityHeader.getType() );
-                sourceEntity.setEntityId( sourceEntityHeader.getStrId() );
-                sourceEntity.setEntityName( sourceEntityHeader.getName() );
-                sourceEntity.setEntityDescription( sourceEntityHeader.getDescription() );
-                sourceEntity.setEntityVersion( sourceEntityHeader.getVersion() );
+                    MigrationMappedEntity sourceEntity = new MigrationMappedEntity();
+                    sourceEntity.setExternalId(sourceEntityHeader.getExternalId());
+                    sourceEntity.setEntityType( sourceEntityHeader.getType() );
+                    sourceEntity.setEntityId( sourceEntityHeader.getStrId() );
+                    sourceEntity.setEntityName( sourceEntityHeader.getName() );
+                    sourceEntity.setEntityDescription( sourceEntityHeader.getDescription() );
+                    sourceEntity.setEntityVersion( sourceEntityHeader.getVersion() );
 
-                MigrationMappedEntity targetEntity = new MigrationMappedEntity();
-                targetEntity.setExternalId(targetEntityHeader.getExternalId());
-                targetEntity.setEntityType( targetEntityHeader.getType() );
-                targetEntity.setEntityId( targetEntityHeader.getStrId() );
-                targetEntity.setEntityName( targetEntityHeader.getName() );
-                targetEntity.setEntityDescription( targetEntityHeader.getDescription() );
-                targetEntity.setEntityVersion( targetEntityHeader.getVersion() );
+                    MigrationMappedEntity targetEntity = new MigrationMappedEntity();
+                    targetEntity.setExternalId(targetEntityHeader.getExternalId());
+                    targetEntity.setEntityType( targetEntityHeader.getType() );
+                    targetEntity.setEntityId( targetEntityHeader.getStrId() );
+                    targetEntity.setEntityName( targetEntityHeader.getName() );
+                    targetEntity.setEntityDescription( targetEntityHeader.getDescription() );
+                    targetEntity.setEntityVersion( targetEntityHeader.getVersion() );
 
-                mapping.setSource( sourceEntity );
-                mapping.setTarget( targetEntity );
-                mapping.setSameEntity(sameEntity);
+                    mapping.setSource( sourceEntity );
+                    mapping.setTarget( targetEntity );
+                    mapping.setSameEntity(sameEntity);
 
-                oid = super.save( mapping );
-            } else {
-                oid = existingMapping.getOid();
+                    oid = super.save( mapping );
+                } else {
+                    oid = existingMapping.getOid();
+                }
+            } catch ( FindException fe ) {
+                throw new SaveException( "Error checking for existing mapping saving.", fe );
             }
-        } catch ( FindException fe ) {
-            throw new SaveException( "Error checking for existing mapping saving.", fe );
         }
-        
+
         return oid;
     }
 
@@ -173,5 +225,36 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
         return mostRecentMatch;
     }
 
+    private MigrationMappingRecord findByMapping( final SsgCluster sourceCluster,
+                                                  final ExternalEntityHeader sourceEntityHeader,
+                                                  final SsgCluster targetCluster,
+                                                  final String targetValue ) throws FindException {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put( "sourceCluster", sourceCluster );
+        map.put( "targetCluster", targetCluster );
+
+        if ( sourceEntityHeader != null  ) {
+            map.put("source.entityType", sourceEntityHeader.getType());
+            map.put("source.externalId", sourceEntityHeader.getExternalId());
+            // source version not included in mapping lookup
+        }
+
+        if ( targetValue != null  ) {
+            map.put("target.entityValue", targetValue);
+        }
+
+        List<MigrationMappingRecord> result = findMatching(Arrays.asList(map));
+
+        MigrationMappingRecord mostRecentMatch = null;
+        for ( MigrationMappingRecord record : result ) {
+            if ( mostRecentMatch==null ) {
+                mostRecentMatch = record;
+            } else if ( mostRecentMatch.getTimestamp() < record.getTimestamp() ) {
+                mostRecentMatch = record;
+            }
+        }
+
+        return mostRecentMatch;
+    }
 
 }

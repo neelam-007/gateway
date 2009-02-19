@@ -136,6 +136,22 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, ta
 	    elCell.innerHTML = oData.label;
 	};
 
+    var multilineFormat = function(elCell, oRecord, oColumn, oData) {
+	    elCell.innerHTML = new String(oData).replace('\n','<br/>');
+	};
+
+    for ( var tcField in tableColumns ) {
+        if ( tableColumns[tcField].formatter == 'emstdate' ) {
+            tableColumns[tcField].formatter = emstdateFormat;
+        } else if ( tableColumns[tcField].formatter == 'emsdate' ) {
+            tableColumns[tcField].formatter = emsdateFormat;
+        } else if ( tableColumns[tcField].formatter == 'ordered' ) {
+            tableColumns[tcField].formatter = orderedFormat;
+        } else if ( tableColumns[tcField].formatter == 'multiline' ) {
+            tableColumns[tcField].formatter = multilineFormat;
+        }
+    }
+
     // Custom sort handler to sort "ordered" data
     var sortOrderForCurry = function(field, a, b, desc) {
         // Deal with empty values
@@ -229,14 +245,6 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, ta
 
     if ( tableData ) {
         for ( var field in tableColumns ) {
-            if ( tableColumns[field].formatter == 'emstdate' ) {
-                tableColumns[field].formatter = emstdateFormat;
-            } else if ( tableColumns[field].formatter == 'emsdate' ) {
-                tableColumns[field].formatter = emsdateFormat;
-            } else if ( tableColumns[field].formatter == 'ordered' ) {
-                tableColumns[field].formatter = orderedFormat;
-            }
-
             if ( tableColumns[field].sortOptions && tableColumns[field].sortOptions.sortFunction == 'ordered' ) {
                 tableColumns[field].sortOptions.sortFunction = curry(sortOrderForCurry, new String(tableColumns[field].key), this);  
             }
