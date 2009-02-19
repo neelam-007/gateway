@@ -1212,8 +1212,8 @@ public class PolicyMigration extends EsmStandardWebPage {
             if ( validatedHeaders == null ) validatedHeaders = Collections.emptyList();
             Set<Pair<DependencyKey,String>> keysToNull = new HashSet<Pair<DependencyKey, String>>();
             for( Map.Entry<Pair<DependencyKey,String>,DependencyItem> entry : mappingModel.dependencyMap.entrySet() ) {
-                if ( !entry.getKey().right.equals(targetClusterId) || entry.getValue() == null || entry.getValue().same) continue;
-                if ( !validatedHeaders.contains( entry.getValue().asEntityHeader() )) {
+                if ( !entry.getKey().right.equals(targetClusterId) || entry.getValue() == null || entry.getValue() == null ) continue;
+                    if ( ! containsHeader( entry.getValue().asEntityHeader(), validatedHeaders )) {
                     keysToNull.add( entry.getKey() );
                 }
             }
@@ -1429,7 +1429,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                                 ExternalEntityHeader source = item.getSourceHeader();
                                 ExternalEntityHeader target = item.getTargetHeader();
 
-                                if ( source != null && target != null && item.getOperation() != MigratedItem.ImportOperation.MAP) {
+                                if ( source != null && target != null && item.getOperation().modifiesTarget()) {
                                     migrationMappingRecordManager.persistMapping( sourceCluster.getGuid(), source, targetCluster.getGuid(), target, true );
                                 }
                             }

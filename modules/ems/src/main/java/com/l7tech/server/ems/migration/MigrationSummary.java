@@ -178,7 +178,7 @@ public class MigrationSummary implements Serializable {
         if ( migratedItems != null ) {
             for ( MigratedItem item : migratedItems ) {
                 operation = item.getOperation();
-                if (operation == MigratedItem.ImportOperation.MAP) {
+                if (! operation.modifiesTarget()) {
                     if ( item.getSourceHeader().getType() == EntityType.FOLDER ) {
                         continue; // skip folder mapping since we've already described the destination folder
                     }
@@ -188,6 +188,7 @@ public class MigrationSummary implements Serializable {
                     mappingBuilder.append( " (#" );
                     mappingBuilder.append( item.getSourceHeader().getExternalId() );
                     mappingBuilder.append( ") mapped to " );
+                    mappingBuilder.append( operation == MigratedItem.ImportOperation.MAP_EXISTING ? "existing " : "");
                     mappingBuilder.append( item.getTargetHeader().getName() );
                     mappingBuilder.append( " (#" );
                     mappingBuilder.append( item.getTargetHeader().getExternalId() );
@@ -200,7 +201,7 @@ public class MigrationSummary implements Serializable {
                 ExternalEntityHeader ih = dryRun ? item.getSourceHeader() : item.getTargetHeader();
                 builder.append(ih.getType().getName().toLowerCase()).append(", ").append(ih.getName()==null?"":ih.getName())
                     .append("(#").append(ih.getExternalId()).append(")").append( dryRun ? " will be " : " was " )
-                    .append(item.getOperation().pastParticiple().toLowerCase()).append("\n");
+                    .append(operation.pastParticiple().toLowerCase()).append("\n");
             }
         }
 

@@ -23,6 +23,11 @@ public class MigratedItem implements Serializable {
             public String pastParticiple() {
                 return "MAPPED";
             }},
+        MAP_EXISTING(false) {
+            @Override
+            public String pastParticiple() {
+                return "MAPPED";
+            }},
         CREATE(true),
         UPDATE(true),
         OVERWRITE(true) {
@@ -35,6 +40,7 @@ public class MigratedItem implements Serializable {
             return toString() + "D";
         }
 
+        // mapping operations do not modify the target cluster
         private boolean modifiesTarget;
 
         ImportOperation(boolean modifiesTarget) {

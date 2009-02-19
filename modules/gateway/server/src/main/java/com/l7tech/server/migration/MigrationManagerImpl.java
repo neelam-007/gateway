@@ -219,25 +219,23 @@ public class MigrationManagerImpl implements MigrationManager {
         if (metadata.isMapped(header)) {
             op = MAP;
             targetHeader = metadata.getCopiedOrMapped(header);
-        } else if (overwriteExisting && metadata.wasCopied(header)) {
-            if (entitiesFromTarget.containsKey(metadata.getCopied(header))) {
-                op = UPDATE;
-                targetHeader = metadata.getCopied(header);
-            } else {
-                op = OVERWRITE;
-                targetHeader = EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(loadEntity(metadata.getCopied(header))));
-            }
-        } else if (overwriteExisting && entitiesFromTarget.containsKey(header)) {
-            op = OVERWRITE;
-            targetHeader = header;
-        } else {
+        } else if ( ! metadata.wasCopied(header) && ! entitiesFromTarget.containsKey(header)) {
             op = CREATE;
             targetHeader = header;
+        } else if (! overwriteExisting) {
+            op = MAP_EXISTING;
+            targetHeader = metadata.wasCopied(header) ? metadata.getCopiedOrMapped(header) : header;
+        } else if (metadata.wasCopied(header) && entitiesFromTarget.containsKey(metadata.getCopied(header))) {
+            op = UPDATE;
+            targetHeader = metadata.getCopied(header);
+        } else {
+            op = OVERWRITE;
+            targetHeader = EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(loadEntity(metadata.getCopied(header))));
         }
 
         Entity entity;
 
-        if (op != MAP) {
+        if (op.modifiesTarget()) {
             // upload dependencies and apply value mappings first
             for (MigrationDependency dep : metadata.getDependencies(header)) {
                 upload(dep.getDependency(), bundle, entitiesFromTarget, result, overwriteExisting, enableServices, dryRun, true);
@@ -249,6 +247,7 @@ public class MigrationManagerImpl implements MigrationManager {
         // do upload
         switch (op) {
             case MAP:
+            case MAP_EXISTING:
                 entity = entitiesFromTarget.get(targetHeader);
                 break;
 
