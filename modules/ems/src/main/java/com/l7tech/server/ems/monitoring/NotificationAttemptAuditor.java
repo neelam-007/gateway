@@ -27,6 +27,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.xml.ws.soap.SOAPFaultException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -104,6 +105,10 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
                     logger.log(Level.INFO, "Unable to connect to process controller for node " + node.getIpAddress() + " to collect notifications: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 } catch (UpdateException e) {
                     logger.log(Level.WARNING, "Unable to update last notification time for node " + node.getIpAddress() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                } catch (SOAPFaultException e) {
+                    if ( !ProcessControllerContext.isNetworkException(e) ) {
+                        logger.log(Level.WARNING, "Unable to connect to process controller for node " + node.getIpAddress() + " to collect notifications: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    }
                 }
             }
         });
