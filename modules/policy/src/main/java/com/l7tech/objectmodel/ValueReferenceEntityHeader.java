@@ -128,6 +128,11 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
         return HexUtils.decodeUtf8(HexUtils.decodeBase64(getExternalId().substring(0, getExternalId().indexOf(":"))));
     }
 
+    @XmlTransient
+    public ExternalEntityHeader getOwnerHeader() {
+        return new ExternalEntityHeader(getOwnerId(), getOwnerType(), getStrId(), getName(), getDescription(), getVersion());
+    }
+
     public void setValueType(Type type) {
         setProperty(VALUE_TYPE, type.name());
     }

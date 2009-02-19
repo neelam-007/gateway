@@ -552,8 +552,7 @@ public class MigrationManagerImpl implements MigrationManager {
         try {
             // special handling for value-reference entities
             if (header instanceof ValueReferenceEntityHeader) {
-                ValueReferenceEntityHeader vrHeader = (ValueReferenceEntityHeader) header;
-                ent = entityCrud.find(EntityTypeRegistry.getEntityClass(vrHeader.getOwnerType()), vrHeader.getOwnerId());
+                ent = entityCrud.find(EntityHeaderUtils.fromExternal(((ValueReferenceEntityHeader) header).getOwnerHeader()));
             } else {
                 ent = entityCrud.find(header); // load the entity
             }
