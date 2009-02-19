@@ -3,11 +3,6 @@
  */
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
-import com.l7tech.security.saml.SamlConstants;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.saml.SamlAssertion;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
@@ -17,12 +12,16 @@ import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
+import com.l7tech.security.saml.SamlConstants;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.saml.SamlAssertion;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -99,43 +98,33 @@ public class ClientRequestWssSaml extends ClientAssertion {
         final PrivateKey privateKey = key;
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException {
-                try {
-                    DecorationRequirements wssReqs;
-                    if (data.getRecipientContext().localRecipient()) {
-                        wssReqs = context.getDefaultWssRequirements();
-                    } else {
-                        wssReqs = context.getAlternateWssRequirements(data.getRecipientContext());
-                    }
-
-                    if ( privateKey != null ) {
-                        wssReqs.setSignTimestamp();
-                        wssReqs.setSenderMessageSigningPrivateKey(privateKey);
-                    }
-
-                    if( ass.isHolderOfKey() ) {
-                        wssReqs.setSenderSamlToken(ass, false);
-                    } else {
-                        if (privateKey != null && certificate != null) {
-                            wssReqs.setSenderMessageSigningCertificate(certificate);
-                            // only sign the SAML token if the assertion is not signed
-                            wssReqs.setSenderSamlToken(ass, !Boolean.getBoolean(PROP_SIGN_SAML_SV));
-                            final boolean suppress = "true".equals(ssg.getProperties().get("builtinSaml.suppressStrTransform"));
-                            wssReqs.setSuppressSamlStrTransform(suppress);
-                        } else {
-                            logger.log(Level.WARNING, "Cannot use SAML Sender Vouches, no private key available to sign assertion.");
-                            return AssertionStatus.FALSIFIED;
-                        }
-                    }
-                    return AssertionStatus.NONE;
-                } catch (IOException e) {
-                    String msg = "Cannot initialize the recipient's  DecorationRequirements";
-                    logger.log(Level.WARNING, msg, e);
-                    throw new PolicyAssertionException(data, msg, e);
-                } catch (CertificateException e) {
-                    String msg = "Cannot initialize the recipient's  DecorationRequirements";
-                    logger.log(Level.WARNING, msg, e);
-                    throw new PolicyAssertionException(data, msg, e);
+                DecorationRequirements wssReqs;
+                if (data.getRecipientContext().localRecipient()) {
+                    wssReqs = context.getDefaultWssRequirements();
+                } else {
+                    wssReqs = context.getAlternateWssRequirements(data.getRecipientContext());
                 }
+
+                if ( privateKey != null ) {
+                    wssReqs.setSignTimestamp();
+                    wssReqs.setSenderMessageSigningPrivateKey(privateKey);
+                }
+
+                if( ass.isHolderOfKey() ) {
+                    wssReqs.setSenderSamlToken(ass, false);
+                } else {
+                    if (privateKey != null && certificate != null) {
+                        wssReqs.setSenderMessageSigningCertificate(certificate);
+                        // only sign the SAML token if the assertion is not signed
+                        wssReqs.setSenderSamlToken(ass, !Boolean.getBoolean(PROP_SIGN_SAML_SV));
+                        final boolean suppress = "true".equals(ssg.getProperties().get("builtinSaml.suppressStrTransform"));
+                        wssReqs.setSuppressSamlStrTransform(suppress);
+                    } else {
+                        logger.log(Level.WARNING, "Cannot use SAML Sender Vouches, no private key available to sign assertion.");
+                        return AssertionStatus.FALSIFIED;
+                    }
+                }
+                return AssertionStatus.NONE;
             }
         });
 

@@ -6,19 +6,18 @@
 
 package com.l7tech.proxy.policy.assertion.credential.wss;
 
-import com.l7tech.security.token.UsernameTokenImpl;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
+import com.l7tech.security.token.UsernameTokenImpl;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.security.cert.CertificateException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,11 +64,7 @@ public class ClientWssBasic extends ClientWssCredentialSource {
                     if (data.getRecipientContext().localRecipient()) {
                         wssReqs = context.getDefaultWssRequirements();
                     } else {
-                        try {
-                            wssReqs = context.getAlternateWssRequirements(data.getRecipientContext());
-                        } catch (CertificateException e) {
-                            throw new PolicyAssertionException(data, "cannot initialize recipient", e);
-                        }
+                        wssReqs = context.getAlternateWssRequirements(data.getRecipientContext());
                     }
 
                     wssReqs.setUsernameTokenCredentials(new UsernameTokenImpl(username, password));

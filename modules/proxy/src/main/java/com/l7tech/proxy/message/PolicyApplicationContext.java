@@ -5,28 +5,13 @@ package com.l7tech.proxy.message;
 
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.SimpleHttpClient;
-import com.l7tech.message.Message;
-import com.l7tech.message.ProcessingContext;
-import com.l7tech.message.SecurityKnob;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.kerberos.KerberosClient;
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.kerberos.KerberosServiceTicket;
-import com.l7tech.security.token.HasUsername;
-import com.l7tech.security.token.SecurityToken;
-import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.security.wstrust.TokenServiceClient;
-import com.l7tech.security.wstrust.WsTrustConfig;
-import com.l7tech.security.wstrust.WsTrustConfigFactory;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.socket.LocalTcpPeerIdentifierFactory;
-import com.l7tech.security.socket.LocalTcpPeerIdentifier;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.saml.SamlAssertion;
-import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.message.Message;
+import com.l7tech.message.ProcessingContext;
+import com.l7tech.message.SecurityKnob;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
@@ -36,6 +21,21 @@ import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
+import com.l7tech.security.socket.LocalTcpPeerIdentifier;
+import com.l7tech.security.socket.LocalTcpPeerIdentifierFactory;
+import com.l7tech.security.token.HasUsername;
+import com.l7tech.security.token.SecurityToken;
+import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.wstrust.TokenServiceClient;
+import com.l7tech.security.wstrust.WsTrustConfig;
+import com.l7tech.security.wstrust.WsTrustConfigFactory;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.saml.SamlAssertion;
+import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -52,7 +52,6 @@ import java.net.Socket;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
@@ -296,8 +295,7 @@ public class PolicyApplicationContext extends ProcessingContext {
      *
      * @return the decoration requirements for the recipient designated by the passed recipient
      */
-    public DecorationRequirements getAlternateWssRequirements(XmlSecurityRecipientContext recipient)
-                                                                        throws IOException, CertificateException {
+    public DecorationRequirements getAlternateWssRequirements(XmlSecurityRecipientContext recipient) {
         if (recipient.localRecipient()) {
             return getDefaultWssRequirements();
         }

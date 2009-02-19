@@ -1,22 +1,20 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.xml.XpathEvaluator;
-import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.xml.XpathEvaluator;
+import com.l7tech.xml.xpath.XpathExpression;
 import org.jaxen.JaxenException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.cert.CertificateException;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -79,14 +77,6 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
             throw new PolicyAssertionException(requestWssIntegrity, "ClientRequestWssIntegrity: " +
                                                                     "Unable to execute xpath expression \"" +
                                                                     xpathExpression.getExpression() + "\"", e);
-        } catch (IOException e) {
-            String msg = "Cannot initialize the recipient's  DecorationRequirements";
-            log.log(Level.WARNING, msg, e);
-            throw new PolicyAssertionException(requestWssIntegrity, msg, e);
-        } catch (CertificateException e) {
-            String msg = "Cannot initialize the recipient's  DecorationRequirements";
-            log.log(Level.WARNING, msg, e);
-            throw new PolicyAssertionException(requestWssIntegrity, msg, e);
         }
     }
 

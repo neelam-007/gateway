@@ -1,7 +1,5 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
-import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
@@ -10,14 +8,14 @@ import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
+import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -48,32 +46,21 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException
             {
-                try {
-                    DecorationRequirements wssReqs;
-                    if (subject.getRecipientContext().localRecipient()) {
-                        wssReqs = context.getDefaultWssRequirements();
-                    } else {
-                        wssReqs = context.getAlternateWssRequirements(subject.getRecipientContext());
-                    }
-                    String stype = ssg.getProperties().get(PROP_KEYINFOTYPE);
-                    KeyInfoInclusionType type = null;
-                    if (stype != null) type = KeyInfoInclusionType.valueOf(stype);
-                    if (type == null) type = KeyInfoInclusionType.CERT;
-                    wssReqs.setKeyInfoInclusionType(type);
-                    wssReqs.setSenderMessageSigningCertificate(userCert);
-                    wssReqs.setSenderMessageSigningPrivateKey(userPrivateKey);
-                    wssReqs.setSignTimestamp();
-                    return AssertionStatus.NONE;
-
-                } catch (IOException e) {
-                    String msg = "Cannot initialize the recipient's  DecorationRequirements";
-                    logger.log(Level.WARNING, msg, e);
-                    throw new PolicyAssertionException(subject, msg, e);
-                } catch (CertificateException e) {
-                    String msg = "Cannot initialize the recipient's  DecorationRequirements";
-                    logger.log(Level.WARNING, msg, e);
-                    throw new PolicyAssertionException(subject, msg, e);
+                DecorationRequirements wssReqs;
+                if (subject.getRecipientContext().localRecipient()) {
+                    wssReqs = context.getDefaultWssRequirements();
+                } else {
+                    wssReqs = context.getAlternateWssRequirements(subject.getRecipientContext());
                 }
+                String stype = ssg.getProperties().get(PROP_KEYINFOTYPE);
+                KeyInfoInclusionType type = null;
+                if (stype != null) type = KeyInfoInclusionType.valueOf(stype);
+                if (type == null) type = KeyInfoInclusionType.CERT;
+                wssReqs.setKeyInfoInclusionType(type);
+                wssReqs.setSenderMessageSigningCertificate(userCert);
+                wssReqs.setSenderMessageSigningPrivateKey(userPrivateKey);
+                wssReqs.setSignTimestamp();
+                return AssertionStatus.NONE;
             }
         });
 
