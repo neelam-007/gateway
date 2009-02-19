@@ -543,7 +543,7 @@ CREATE TABLE message_context_mapping_values (
   PRIMARY KEY  (objectid),
   FOREIGN KEY (mapping_keys_oid) REFERENCES message_context_mapping_keys (objectid),
   INDEX (digested)
-) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 
 --
 -- Table structure for table `audit`
