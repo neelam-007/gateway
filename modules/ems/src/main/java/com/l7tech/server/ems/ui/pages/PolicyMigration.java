@@ -876,6 +876,8 @@ public class PolicyMigration extends EsmStandardWebPage {
                 String mappedValue = mappingModel.valueMap.get( mappingKey );
                 if ( mappedValue != null ) {
                     item.destName = truncateDisplayValue( mappedValue );
+                    if (item.entityHeader instanceof ValueReferenceEntityHeader)
+                        ((ValueReferenceEntityHeader)item.entityHeader).setMappedValue(mappedValue);
                     resolved = true;
                 } else {
                     item.destName = "-";
@@ -1778,12 +1780,11 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
 
         public ExternalEntityHeader asEntityHeader() {
-            if ( entityHeader != null ) {
-                return entityHeader;
-            } else {
+            if ( entityHeader == null ) {
                 EntityType entityType = JSONConstants.EntityType.ENTITY_TYPE_MAP.get( type );
-                return new ExternalEntityHeader( id, entityType, null, name, null, getVersion() );
+                entityHeader = new ExternalEntityHeader( id, entityType, null, name, null, getVersion() );
             }
+            return entityHeader;
         }
 
         public Integer getVersion() {
