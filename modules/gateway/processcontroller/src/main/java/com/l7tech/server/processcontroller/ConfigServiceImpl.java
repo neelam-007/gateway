@@ -52,6 +52,7 @@ public class ConfigServiceImpl implements ConfigService {
     private final String sslIPAddress;
     private final File configDirectory;
     private final File varDirectory; // TODO do we want to notice if the directory gets created during runtime?
+    private final File applianceLibexecDirectory;
     private final File javaBinary;
     private final Map<String, NodeInfo> nodeInfos;
 
@@ -83,7 +84,7 @@ public class ConfigServiceImpl implements ConfigService {
             logger.log(Level.WARNING, varDirectory.getAbsolutePath() + " does not exist; monitoring configurations will not be saved");
         this.varDirectory = varDirectory;
         this.monitoringConfigFile = varDirectory == null ? null : new File(this.varDirectory, "currentMonitoringConfig.xml");
-
+        this.applianceLibexecDirectory = new File(processControllerHomeDirectory, ".." + SLASH + "libexec");
         this.masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(configDirectory, "omp.dat") ) );
 
         final File hostPropsFile = new File(getProcessControllerHomeDirectory(), "etc" + SLASH + "host.properties");
@@ -395,6 +396,10 @@ public class ConfigServiceImpl implements ConfigService {
     @Override
     public File getNodeBaseDirectory() {
         return nodeBaseDirectory;
+    }
+
+    public File getApplianceLibexecDirectory() {
+        return applianceLibexecDirectory;
     }
 
     @Override

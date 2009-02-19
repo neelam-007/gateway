@@ -41,6 +41,9 @@ public interface ConfigService {
     /** The parent directory of the node directories. */
     File getNodeBaseDirectory();
 
+    /** @return the directory containing scripts that get executed by appliance programs including process controller. */
+    File getApplianceLibexecDirectory();
+
     /** The certificate chain and private key for the PC's SSL listener */
     Pair<X509Certificate[], RSAPrivateKey> getSslKeypair();
 
