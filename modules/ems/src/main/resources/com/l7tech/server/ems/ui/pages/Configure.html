@@ -94,8 +94,6 @@
                 CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT : 'Unable to retrieve data for mapping access account from the server.',
                 INVALID_NAME_LENGTH : 'must be 1 to 128 characters',
                 INVALID_NAME_SLASH : 'slash "/" not allowed',
-                INVALID_NAME_LEADING_SPACES : 'leading spaces not allowed',
-                INVALID_NAME_TRAILING_SPACES : 'trailing spaces not allowed',
                 SSG_CLUSTER_PORT_HINT : 'port number must be a positive integer',
                 STARTING_SSG_NODE : 'Starting SSG Node "{0}"...',
                 STOPPING_SSG_NODE : 'Stopping SSG Node "{0}"...',
@@ -316,8 +314,6 @@
             function validateFolderName(name) {
                 if (name.length < 1 || name.length > 128) return localizedStrings.INVALID_NAME_LENGTH;
                 if (name.indexOf('/') != -1) return localizedStrings.INVALID_NAME_SLASH;
-                if (name.search(/^\s/) != -1) return localizedStrings.INVALID_NAME_LEADING_SPACES;
-                if (name.search(/\s$/) != -1) return localizedStrings.INVALID_NAME_TRAILING_SPACES;
                 return null;
             }
 
@@ -328,8 +324,6 @@
             function validateSSGClusterName(name) {
                 if (name.length < 1 || name.length > 128) return localizedStrings.INVALID_NAME_LENGTH;
                 if (name.indexOf('/') != -1) return localizedStrings.INVALID_NAME_SLASH;
-                if (name.search(/^\s/) != -1) return localizedStrings.INVALID_NAME_LEADING_SPACES;
-                if (name.search(/\s$/) != -1) return localizedStrings.INVALID_NAME_TRAILING_SPACES;
                 return null;
             }
 
@@ -760,6 +754,9 @@
                         {
                             text      : localizedStrings.OK,
                             handler   : function() {
+                                // Trim leading and trailing space in name.
+                                var nameTextBox = document.getElementById('addFolderDialog_name');
+                                nameTextBox.value = nameTextBox.value.replace(/^\s*(.*?)\s*$/, '$1');
                                 this.submit();
                             },
                             isDefault : true
@@ -804,6 +801,9 @@
                         {
                             text      : localizedStrings.OK,
                             handler   : function() {
+                                // Trim leading and trailing space in name.
+                                var nameTextBox = document.getElementById('editFolderDialog_name');
+                                nameTextBox.value = nameTextBox.value.replace(/^\s*(.*?)\s*$/, '$1');
                                 this.submit();
                             },
                             isDefault : true
@@ -946,6 +946,9 @@
                         {
                             text      : localizedStrings.OK,
                             handler   : function() {
+                                // Trim leading and trailing space in name.
+                                var nameTextBox = document.getElementById('addSSGClusterDialog_name');
+                                nameTextBox.value = nameTextBox.value.replace(/^\s*(.*?)\s*$/, '$1');
                                 this.submit();
                             },
                             isDefault : true
@@ -997,6 +1000,9 @@
                         {
                             text      : localizedStrings.OK,
                             handler   : function() {
+                                // Trim leading and trailing space in name.
+                                var nameTextBox = document.getElementById('editSSGClusterDialog_name');
+                                nameTextBox.value = nameTextBox.value.replace(/^\s*(.*?)\s*$/, '$1');
                                 this.submit();
                             },
                             isDefault : true
