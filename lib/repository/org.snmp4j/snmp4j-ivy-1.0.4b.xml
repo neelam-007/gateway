@@ -13,4 +13,7 @@
 	<publications>
 		<artifact name="snmp4j" type="jar" ext="jar" conf="default"/>
 	</publications>
+    <dependencies>
+        <dependency org="log4j" name="log4j" rev="1.2.14" force="true" conf="default"/>
+    </dependencies>
 </ivy-module>
