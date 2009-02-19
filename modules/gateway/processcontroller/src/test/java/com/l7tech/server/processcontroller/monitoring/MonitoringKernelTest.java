@@ -194,7 +194,7 @@ public class MonitoringKernelTest {
         addTrigger(mc, BuiltinMonitorables.LOG_SIZE, ComparisonOperator.GT, "10000", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
         addTrigger(mc, BuiltinMonitorables.NODE_STATE, ComparisonOperator.NE, "RUNNING", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
         addTrigger(mc, BuiltinMonitorables.NTP_STATUS, ComparisonOperator.NE, "OK", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
-        addTrigger(mc, BuiltinMonitorables.SWAP_FREE_KIB, ComparisonOperator.LT, "1000000", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
+        addTrigger(mc, BuiltinMonitorables.SWAP_USAGE_KIB, ComparisonOperator.GT, "100000", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
         addTrigger(mc, BuiltinMonitorables.TIME, ComparisonOperator.GT, "1234567890", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
         addTrigger(mc, BuiltinMonitorables.RAID_STATUS, ComparisonOperator.NE, "OK", Math.abs(random.nextLong()), 60000, rulez, rulez2, rulez3);
 

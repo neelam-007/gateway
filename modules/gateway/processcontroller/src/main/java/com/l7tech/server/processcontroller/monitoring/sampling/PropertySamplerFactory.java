@@ -29,7 +29,7 @@ public final class PropertySamplerFactory implements ApplicationContextAware {
         put(BuiltinMonitorables.NODE_STATE, NodeStateSampler.class);
         put(BuiltinMonitorables.NTP_STATUS, NtpStatusSampler.class);
         put(BuiltinMonitorables.RAID_STATUS, RaidStatusSampler.class);
-        put(BuiltinMonitorables.SWAP_FREE_KIB, SwapSpaceSampler.class);
+        put(BuiltinMonitorables.SWAP_USAGE_KIB, SwapUsageSampler.class);
         put(BuiltinMonitorables.TIME, TimeSampler.class);
     }});
 
