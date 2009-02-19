@@ -106,17 +106,24 @@ public class PolicyMigration extends EsmStandardWebPage {
                         // Update model
                         List<Pair<ExternalEntityHeader,ExternalEntityHeader>> mappings = new ArrayList<Pair<ExternalEntityHeader,ExternalEntityHeader>>();
                         for ( MigratedItem item : summary.getMigratedItems() ) {
+                            if ( item.getSourceHeader().getType() == EntityType.FOLDER ) {
+                                continue;
+                            }
+
                             MigratedItem.ImportOperation operation = item.getOperation();
                             if (operation == MigratedItem.ImportOperation.MAP) {
-                                if ( item.getSourceHeader().getType() == EntityType.FOLDER ) {
-                                    continue;
-                                }
-
-                                // TODO load value mappings to model
-
                                 ExternalEntityHeader source = item.getSourceHeader();
                                 ExternalEntityHeader target = item.getTargetHeader();
                                 mappings.add( new Pair<ExternalEntityHeader,ExternalEntityHeader>( source, target ) );
+                            }
+
+                            // TODO this doesn't work since the value mappings are not in the summary
+                            if ( item.getSourceHeader() instanceof ValueReferenceEntityHeader ) {
+                                ValueReferenceEntityHeader valueHeader = (ValueReferenceEntityHeader) item.getSourceHeader();
+                                if ( valueHeader.getMappedValue() != null ) {
+                                    // TODO apply value mapping in a more general sense (not assertion specific)
+                                    mappingModel.valueMap.put( new Pair<DependencyKey,String>(new DependencyKey( record.getSourceClusterGuid(), item.getSourceHeader() ), record.getTargetClusterGuid()), valueHeader.getMappedValue() );    
+                                }
                             }
                         }
                         validateAndRestoreMappings( mappingModel, record.getSourceClusterGuid(), record.getTargetClusterGuid(), mappings );
@@ -223,7 +230,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                     }
 
-                    final PolicyMigrationMappingValueEditPanel mapping = new PolicyMigrationMappingValueEditPanel(YuiDialog.getContentId(), "HTTP(s) URL value.", displayValue, mappedValue, "^(?:[a-zA-Z0-9$\\-_\\.+!\\*'\\(\\),:/\\\\]{1,4096})$");
+                    final PolicyMigrationMappingValueEditPanel mapping = new PolicyMigrationMappingValueEditPanel(YuiDialog.getContentId(), "HTTP(s) URL value.", displayValue, mappedValue, "^(?:[a-zA-Z0-9$\\-_\\.+!\\*\\?'\\(\\),:/\\\\]{1,4096})$");
                     YuiDialog resultDialog = new YuiDialog("dialog", "Edit Mapping Value", YuiDialog.Style.OK_CANCEL, mapping, new YuiDialog.OkCancelCallback(){
                         @Override
                         public void onAction( final YuiDialog dialog, final AjaxRequestTarget ajaxRequestTarget, final YuiDialog.Button button ) {
@@ -306,7 +313,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     target.addComponent( dependenciesContainer );
 
                     // build info dialog
-                    Label label = new Label(YuiDialog.getContentId(), summarize(dir, targetClusterId, visible(deps), mappingModel));
+                    Label label = new Label(YuiDialog.getContentId(), summarize(dir, targetClusterId, visible(deps,true), mappingModel));
                     label.setEscapeModelStrings(false);
                     YuiDialog dialog = new YuiDialog("dialog", "Identified Dependencies", YuiDialog.Style.CLOSE, label, null);
                     dialogContainer.replace( dialog );
@@ -770,11 +777,12 @@ public class PolicyMigration extends EsmStandardWebPage {
         };
     }
 
-    private List<DependencyItem> visible( final Collection<DependencyItem> items ) {
+    private List<DependencyItem> visible( final Collection<DependencyItem> items, final boolean showHiddenDeps ) {
         List<DependencyItem> visibleDeps = new ArrayList<DependencyItem>( items.size() );
 
         for ( DependencyItem item : items ) {
-            if ( !item.hidden ) visibleDeps.add( item );
+            // TODO renable display of values when feature is completed
+            if ( !item.hidden && (/*showHiddenDeps ||*/ !isHiddenDependency(item)) ) visibleDeps.add( item );
         }
 
         return visibleDeps;
@@ -809,7 +817,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                                    final WebMarkupContainer detailsContainer,
                                    final DependencyItem detailsItem ) {
         // dependencies
-        ListView listView = new ListView("optionRepeater", visible(options)) {
+        ListView listView = new ListView("optionRepeater", visible(options, false)) {
             @Override
             protected void populateItem( final ListItem item ) {
                 final DependencyItem dependencyItem = ((DependencyItem)item.getModelObject());
@@ -852,7 +860,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                                      final DepenencySummaryModel dependencySummaryModel ) {
         final String sourceClusterId = this.lastSourceClusterId;
         final String targetClusterId = this.lastTargetClusterId;
-        final Collection<DependencyItem> items = visible(this.lastDependencyItems);
+        final Collection<DependencyItem> items = visible(this.lastDependencyItems, true);
 
         // update dependency counts and items destination names
         dependencySummaryModel.reset();
@@ -1067,6 +1075,24 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                     if ( !alreadyPresent ) deps.add( new DependencyItem( header, null, true ) );
                 }
+
+                // populate entity owner info
+                for ( DependencyItem item : deps ) {
+                    if ( item.asEntityHeader() instanceof ValueReferenceEntityHeader ) {
+                        ValueReferenceEntityHeader vreh = (ValueReferenceEntityHeader) item.asEntityHeader();
+                        if ( vreh.getOwnerType() != null && vreh.getOwnerId() != null ) {
+                            for ( DependencyItem itemOwner : deps ) {
+                                if ( vreh.getOwnerType()==itemOwner.asEntityHeader().getType() &&
+                                     vreh.getOwnerId().equals(itemOwner.id) ) {
+                                    item.ownerName = itemOwner.getDisplayNameWithScope();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                //TODO normalize value reference headers for display. We should show one header per server/type/value
             }
         }
 
@@ -1505,8 +1531,18 @@ public class PolicyMigration extends EsmStandardWebPage {
         return icon;
     }
 
+    /**
+     * Searchable items will have the search controls enabled.
+     */
     private static boolean isSearchable( final com.l7tech.objectmodel.EntityType type ) {
         return  !(type == com.l7tech.objectmodel.EntityType.VALUE_REFERENCE);
+    }
+
+    /**
+     * Hidden dependency items are not shown in the item dependencies view, but may be mappable.
+     */
+    private static boolean isHiddenDependency( final DependencyItem item ) {
+        return  item.asEntityHeader().getType() == com.l7tech.objectmodel.EntityType.VALUE_REFERENCE;
     }
 
     public Boolean isResolved( final EntityMappingModel mappingModel,
@@ -1631,6 +1667,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         private boolean hidden; // flag for hidden in the UI
         private Integer version;
         @SuppressWarnings({"UnusedDeclaration"})
+        private String ownerName;
         private String destName;
         private boolean same; // flag for this entity is the same identity on source/target
 
@@ -1777,8 +1814,11 @@ public class PolicyMigration extends EsmStandardWebPage {
             }
 
             if ( extraProps != null && extraProps.get("displayValue") != null ) {
-                // TODO display service name
-                nameWithScope = nameWithScope + " \\n" + truncateDisplayValue(extraProps.get("displayValue"));
+                if ( ownerName != null ) {
+                    nameWithScope = ownerName + " \\n" + truncateDisplayValue(extraProps.get("displayValue"));
+                } else {
+                    nameWithScope = nameWithScope + " \\n" + truncateDisplayValue(extraProps.get("displayValue"));
+                }
             }
 
             return nameWithScope;
