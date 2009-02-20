@@ -33,7 +33,7 @@ public final class BuiltinMonitorables {
     /** Current NTP synchronization status of SSG appliance */
     public static final MonitorableProperty NTP_STATUS = new MonitorableProperty(ComponentType.HOST, "ntpStatus", NtpStatus.class, null, 120000L, ComparisonOperator.NE, NtpStatus.OK.name());
     /** Current status of appliance's RAID array */
-    public static final MonitorableProperty RAID_STATUS = new MonitorableProperty(ComponentType.HOST, "raidStatus", RaidStatus.class, null, 120000L, ComparisonOperator.NE, RaidStatus.OK.name());
+    public static final MonitorableProperty RAID_STATUS = new MonitorableProperty(ComponentType.HOST, "raidStatus", RaidStatus.class, null, 120000L, ComparisonOperator.EQ, RaidStatus.BAD.name());
     /** Number of records currently in the cluster's audit table */
     public static final MonitorableProperty AUDIT_SIZE = new MonitorableProperty(ComponentType.CLUSTER, "auditSize", Long.class, "records", 600000L, ComparisonOperator.GE, "10000000");
 
