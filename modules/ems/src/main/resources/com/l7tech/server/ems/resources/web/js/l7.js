@@ -608,6 +608,17 @@ if (!l7.Util) {
         }
 
         /**
+         * Tests loosely if a string is a legal host name.
+         * Requires that it contains only ASCII letter, digit, hypen, or dot.
+         * Does not require it starts with letter and ends with leter or digit.
+         * @param {string} s    the string to test
+         * @return {boolean} true if the given string is a legal host name
+         */
+        l7.Util.isLegalHostName = function(s) {
+            return s.search(/^[-.0-9A-Za-z]+$/) != -1;
+        }
+
+        /**
          * Returns true if a string (all of it) is the text form of an integer (excluding floating point number).
          *
          * @static

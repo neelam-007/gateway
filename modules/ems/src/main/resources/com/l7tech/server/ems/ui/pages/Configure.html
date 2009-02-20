@@ -94,6 +94,7 @@
                 CANNOT_GET_DATA_TO_MAP_ACCESS_ACCOUNT : 'Unable to retrieve data for mapping access account from the server.',
                 INVALID_NAME_LENGTH : 'must be 1 to 128 characters',
                 INVALID_NAME_SLASH : 'slash "/" not allowed',
+                HOST_NAME_HINT : 'invalid host name',
                 SSG_CLUSTER_PORT_HINT : 'port number must be a positive integer',
                 STARTING_SSG_NODE : 'Starting SSG Node "{0}"...',
                 STOPPING_SSG_NODE : 'Stopping SSG Node "{0}"...',
@@ -349,7 +350,7 @@
                 var entity = entityTreeTable.getHighlightedEntity();
                 document.getElementById('editSSGClusterDialog_id').value = entity.id;
                 document.getElementById('editSSGClusterDialog_name').value = entity.name;
-                document.getElementById('editSSGClusterDialog_sslHostname').value = entity.sslHostName;
+                document.getElementById('editSSGClusterDialog_hostName').value = entity.sslHostName;
                 document.getElementById('editSSGClusterDialog_adminPort').value = entity.adminPort;
 
                 validateEditSSGClusterDialog();
@@ -663,7 +664,16 @@
                     document.getElementById('addSSGClusterDialog_name_hint').innerHTML = l7.Util.escapeHtmlText('(' + errMsg + ')');
                 }
 
-                var hostNameIsValid = document.getElementById('addSSGClusterDialog_hostName').value.length > 0;
+                var hostNameTextBox = document.getElementById('addSSGClusterDialog_hostName');
+                var hostName = hostNameTextBox.value;
+                var hostNameIsValid = hostName.length > 0 && l7.Util.isLegalHostName(hostName);
+                if (hostNameIsValid || hostName.length == 0) {
+                    YAHOO.util.Dom.removeClass(hostNameTextBox, 'invalid');
+                    document.getElementById('addSSGClusterDialog_hostName_hint').innerHTML = '';
+                } else {
+                    YAHOO.util.Dom.addClass(hostNameTextBox, 'invalid');
+                    document.getElementById('addSSGClusterDialog_hostName_hint').innerHTML = l7.Util.escapeHtmlText('(' + localizedStrings.HOST_NAME_HINT + ')');
+                }
 
                 var portTextBox = document.getElementById('addSSGClusterDialog_port');
                 var port = portTextBox.value;
@@ -697,7 +707,16 @@
                     document.getElementById('editSSGClusterDialog_name_hint').innerHTML = l7.Util.escapeHtmlText('(' + errMsg + ')');
                 }
 
-                var hostNameIsValid = document.getElementById('editSSGClusterDialog_sslHostname').value.length > 0;
+                var hostNameTextBox = document.getElementById('editSSGClusterDialog_hostName');
+                var hostName = hostNameTextBox.value;
+                var hostNameIsValid = hostName.length > 0 && l7.Util.isLegalHostName(hostName);
+                if (hostNameIsValid || hostName.length == 0) {
+                    YAHOO.util.Dom.removeClass(hostNameTextBox, 'invalid');
+                    document.getElementById('editSSGClusterDialog_hostName_hint').innerHTML = '';
+                } else {
+                    YAHOO.util.Dom.addClass(hostNameTextBox, 'invalid');
+                    document.getElementById('editSSGClusterDialog_hostName_hint').innerHTML = l7.Util.escapeHtmlText('(' + localizedStrings.HOST_NAME_HINT + ')');
+                }
 
                 var portTextBox = document.getElementById('editSSGClusterDialog_adminPort');
                 var port = portTextBox.value;
@@ -1751,7 +1770,7 @@
                 </tr>
                 <tr>
                     <th>Host Name:</th>
-                    <td><input type="text" id="addSSGClusterDialog_hostName" wicket:id="addSSGClusterDialog_hostName" name="hostName" size="40" maxlength="128" onkeyup="validateAddSSGClusterDialog();" /></td>
+                    <td><input type="text" id="addSSGClusterDialog_hostName" wicket:id="addSSGClusterDialog_hostName" name="hostName" size="40" maxlength="128" onkeyup="validateAddSSGClusterDialog();" /> <span id="addSSGClusterDialog_hostName_hint" class="red"></span></td>
                 </tr>
                 <tr>
                     <th>Administrative Port Number:</th>
@@ -1826,7 +1845,7 @@
                 </tr>
                 <tr>
                     <th>New Host Name:</th>
-                    <td><input type="text" id="editSSGClusterDialog_sslHostname" wicket:id="editSSGClusterDialog_sslHostname" name="hostName" size="40" maxlength="128" onkeyup="validateEditSSGClusterDialog();" /></td>
+                    <td><input type="text" id="editSSGClusterDialog_hostName" wicket:id="editSSGClusterDialog_hostName" name="hostName" size="40" maxlength="128" onkeyup="validateEditSSGClusterDialog();" /> <span id="editSSGClusterDialog_hostName_hint" class="red"></span></td>
                 </tr>
                 <tr>
                     <th>New Administrative Port Number:</th>

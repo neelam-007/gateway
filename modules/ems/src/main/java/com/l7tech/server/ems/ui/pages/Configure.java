@@ -285,7 +285,7 @@ public class Configure extends EsmStandardWebPage {
 
         final HiddenField editSSGClusterDialogInputId = new HiddenField("editSSGClusterDialog_id", new Model(""));
         final RequiredTextField editSSGClusterInputName = new RequiredTextField("editSSGClusterDialog_name", new Model(""));
-        final RequiredTextField editSSGClusterInputSslHostname = new RequiredTextField("editSSGClusterDialog_sslHostname", new Model(""));
+        final RequiredTextField editSSGClusterInputSslHostname = new RequiredTextField("editSSGClusterDialog_hostName", new Model(""));
         final RequiredTextField editSSGClusterInputAdminPort = new RequiredTextField("editSSGClusterDialog_adminPort", new Model(""));
         Form editSSGClusterForm = new JsonDataResponseForm("editSSGClusterForm", new AttemptedUpdateAny( EntityType.ESM_SSG_CLUSTER )){
             @Override
