@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
 public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, EntityHeader> implements SsgClusterManager {
     private static final Logger logger = Logger.getLogger(SsgClusterManagerImpl.class.getName());
 
-    private static final String ROLE_NAME_TYPE_SUFFIX = "Cluster";
+    private static final String ROLE_NAME_TYPE_SUFFIX = "SSG Cluster Nodes";
     private static final Pattern replaceRoleName =
             Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, ROLE_NAME_TYPE_SUFFIX));
     private String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
@@ -333,7 +333,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
 
         newRole.setEntityType(ESM_SSG_CLUSTER);
         newRole.setEntityOid(id);
-        newRole.setDescription("Users assigned to the {0} role have the ability to manage the {1} cluster.");
+        newRole.setDescription("Users assigned to the {0} role have the ability to manage SSG Nodes in the {1} cluster.");
 
         roleManager.save(newRole);
     }
