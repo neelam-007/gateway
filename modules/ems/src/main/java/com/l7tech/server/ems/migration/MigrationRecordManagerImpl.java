@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 import java.sql.SQLException;
 
 import org.hibernate.criterion.Restrictions;
@@ -53,10 +54,12 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
     @Override
     public MigrationRecord create( final String name,
                                    final User user,
+                                   final SsgCluster sourceCluster,
+                                   final SsgCluster targetCluster,
                                    final MigrationSummary summary,
                                    final MigrationBundle bundle ) throws SaveException {
 
-        MigrationRecord result = new MigrationRecord( name, user, summary, bundle );
+        MigrationRecord result = new MigrationRecord( name, user, sourceCluster, targetCluster, summary, bundle );
         long oid = super.save(result);
         result.setOid( oid );
         return result;
@@ -65,7 +68,7 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
     @Override
     public MigrationRecord create( final String label,
                                    final byte[] data,
-                                   final Collection<String> validClusterGuids ) throws SaveException {
+                                   final Map<String,SsgCluster> clusters ) throws SaveException {
 
         MigrationRecord record;
         try {
@@ -74,15 +77,17 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
             throw new SaveException("Error loading migration bundle data.", e);
         }
 
-        if ( ! validClusterGuids.contains(record.getSourceClusterGuid()))
+        if ( ! clusters.containsKey(record.getSourceClusterGuid()))
             throw new SaveException( "Invalid archive, source SSG Cluster not recognised: " + record.getSourceClusterGuid() + " : " + record.getSourceClusterName() );
 
-        if ( ! validClusterGuids.contains(record.getTargetClusterGuid()))
+        if ( ! clusters.containsKey(record.getTargetClusterGuid()))
             throw new SaveException( "Invalid archive, target SSG Cluster not recognised: " + record.getTargetClusterGuid() + " : " + record.getTargetClusterName() );
 
         record.setOid( MigrationRecord.DEFAULT_OID );
         record.setVersion( 0 );
         record.setName( label );
+        record.setSourceCluster( clusters.get(record.getSourceClusterGuid()) );
+        record.setTargetCluster( clusters.get(record.getTargetClusterGuid()) );
         record.calculateSize();
 
         long oid = super.save(record);

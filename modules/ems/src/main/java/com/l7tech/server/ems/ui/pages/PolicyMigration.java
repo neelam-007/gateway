@@ -147,7 +147,12 @@ public class PolicyMigration extends EsmStandardWebPage {
         List<PreviousMigrationModel> previous = loadPreviousMigrations();
         Form reloadForm = new Form("reloadForm");
         reloadForm.add( reloadMigrationButton.setOutputMarkupId(true).setEnabled(!previous.isEmpty()) );
-        reloadForm.add( new DropDownChoice( "reloadSelect", new Model(previous.isEmpty() ? null : previous.iterator().next()), previous ) );
+        reloadForm.add( new DropDownChoice( "reloadSelect", new Model(previous.isEmpty() ? null : previous.iterator().next()), previous ){
+            @Override
+            protected String getDefaultChoice( final Object selected ) {
+                return "-";
+            }
+        } );
         add( reloadForm );
         add( javascript.setOutputMarkupId(true).setEscapeModelStrings(false) );
 
@@ -1600,7 +1605,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                                 }
                             }
                         }
-                        migrationRecordManager.create( label, getUser(), summary, bundle );
+                        migrationRecordManager.create( label, getUser(), sourceCluster, targetCluster, summary, bundle );
                     }
 
                     summaryString = summary.toString();

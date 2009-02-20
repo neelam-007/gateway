@@ -11,6 +11,7 @@ import com.l7tech.identity.User;
 
 import java.util.Date;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * @Copyright: Layer 7 Tech. Inc.
@@ -19,22 +20,27 @@ import java.util.Collection;
  */
 public class MockMigrationRecordManager extends EntityManagerStub<MigrationRecord, EntityHeader> implements MigrationRecordManager {
 
-    public MigrationRecord create(String name, User user, MigrationSummary summary, MigrationBundle bundle) throws SaveException {
+    @Override
+    public MigrationRecord create(String label, byte[] data, Map<String, SsgCluster> clusters) throws SaveException {
         return null;
     }
 
-    public MigrationRecord create(String label, byte[] data, Collection<String> validClusterGuids) throws SaveException {
+    @Override
+    public MigrationRecord create(String name, User user, SsgCluster sourceCluster, SsgCluster targetCluster, MigrationSummary summary, MigrationBundle bundle) throws SaveException {
         return null;
     }
 
+    @Override
     public int findCount(User user, Date start, Date end) throws FindException {
         return 0;
     }
 
+    @Override
     public Collection<MigrationRecord> findPage(User user, SortProperty sortProperty, boolean ascending, int offset, int count, Date start, Date end) throws FindException {
         return null;
     }
 
+    @Override
     public void deleteBySsgCluster(SsgCluster ssgCluster) throws DeleteException {
     }
 }

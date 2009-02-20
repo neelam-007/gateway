@@ -7,6 +7,7 @@ import com.l7tech.identity.User;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.Map;
 
 /**
  * This class manages the data access of Migration Entities.
@@ -33,21 +34,28 @@ public interface MigrationRecordManager extends EntityManager<MigrationRecord, E
      *
      * @param name The name for the migration (may be null)
      * @param user The user performing the migration
+     * @param sourceCluster The source SSG Cluster
+     * @param targetCluster The target SSG Cluster
      * @param summary The migration summary.
      * @param bundle The migration summary.
      * @return a new migration record.
      * @throws SaveException if an error occurs
      */
-    MigrationRecord create( final String name, final User user, final MigrationSummary summary, final MigrationBundle bundle ) throws SaveException;
+    MigrationRecord create( final String name,
+                            final User user,
+                            final SsgCluster sourceCluster,
+                            final SsgCluster targetCluster,
+                            final MigrationSummary summary,
+                            final MigrationBundle bundle ) throws SaveException;
 
     /**
      * Creates / restores a migration record from a byte array representation.
      *
      * @param label An optional new label name to be given to the new record; if not null or empty, it overwrites the label in the data payload.
      * @param data  The serialized migration record.
-     * @param validClusterGuids Clusters that are known to the ESM, used for validation of the data.
+     * @param clusters Clusters that are known to the ESM, used for validation of the data.
      */
-    MigrationRecord create(String label, byte[] data, Collection<String> validClusterGuids) throws SaveException;
+    MigrationRecord create(String label, byte[] data, Map<String,SsgCluster> clusters) throws SaveException;
 
     /**
      * Find how many migration records are dated between "start" and "end".

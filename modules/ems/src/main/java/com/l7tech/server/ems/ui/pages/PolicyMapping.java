@@ -226,6 +226,7 @@ public class PolicyMapping extends EsmStandardWebPage {
                                 try {
                                     logger.fine("Deleting migration archive for migration record (OID = " + migrationId + ")");
 
+                                    record.setSize( 0 );
                                     record.setBundleXml( null );
                                     migrationManager.update(record);
                                     migrationSummaryContainer.setVisible(false);

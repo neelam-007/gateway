@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.MigratedItem;
+import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.identity.User;
 
 import javax.persistence.*;
@@ -36,31 +37,34 @@ import java.util.ArrayList;
 public class MigrationRecord extends NamedEntityImp {
 
     private long timeCreated;
-        
     private long provider;
     private String userId;
+    private SsgCluster sourceCluster;
+    private SsgCluster targetCluster;
+    private String summaryXml;
+    private String bundleXml;
+    private int size;
 
     private MigrationSummary summary;
-    private String summaryXml;
-
     private MigrationBundle bundle;
-    private String bundleXml;
-
-    private int size;
 
     public MigrationRecord() {
     }
 
     public MigrationRecord( final String name,
                             final User user,
+                            final SsgCluster sourceCluster,
+                            final SsgCluster targetCluster,
                             final MigrationSummary summary,
                             final MigrationBundle bundle) {
         this._name = name==null ? "" : name;
         this.provider = user.getProviderId();
         this.userId = user.getId();
+        this.sourceCluster = sourceCluster;
+        this.targetCluster = targetCluster;
         this.timeCreated = summary.getTimeCreated();
-        setSummaryXml(summary.serializeXml());
-        setBundleXml(bundle.serializeXml());
+        this.summary = summary;
+        this.bundle = bundle;
         calculateSize();
     }
 
@@ -89,6 +93,28 @@ public class MigrationRecord extends NamedEntityImp {
 
     public void setUserId( final String userId ) {
         this.userId = userId;
+    }
+
+    @XmlTransient
+    @ManyToOne(optional=false)
+    @JoinColumn(name="target_cluster_oid", nullable=false)
+    public SsgCluster getTargetCluster() {
+        return targetCluster;
+    }
+
+    public void setTargetCluster(SsgCluster targetCluster) {
+        this.targetCluster = targetCluster;
+    }
+
+    @XmlTransient
+    @ManyToOne(optional=false)
+    @JoinColumn(name="source_cluster_oid", nullable=false)
+    public SsgCluster getSourceCluster() {
+        return sourceCluster;
+    }
+
+    public void setSourceCluster(SsgCluster sourceCluster) {
+        this.sourceCluster = sourceCluster;
     }
 
     @Column(name="summary_xml", length = 1024*1024)
@@ -157,6 +183,9 @@ public class MigrationRecord extends NamedEntityImp {
             for ( MigratedItem item : summary.getMigratedItems() ) {
                 if ( item.getSourceHeader() != null &&
                      item.getSourceHeader().getExternalId() != null ) {
+                    if ( item.getSourceHeader().getType() == EntityType.FOLDER )
+                        continue;
+                    
                     items.add( item.getSourceHeader().getExternalId() );
                 }
             }

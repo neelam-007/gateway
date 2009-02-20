@@ -15,7 +15,8 @@ import org.apache.wicket.validation.validator.StringValidator;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
 import java.io.IOException;
 import java.io.Serializable;
 
@@ -74,11 +75,11 @@ public class PolicyMigrationUploadPanel extends Panel {
 
                         if ( data != null ) {
                             Collection<SsgCluster> validClusters = clusterManager.findAll();
-                            Collection<String> validClusterGuids = new HashSet<String>();
+                            Map<String,SsgCluster> clusters = new HashMap<String,SsgCluster>();
                             for(SsgCluster cluster : validClusters) {
-                                validClusterGuids.add(cluster.getGuid());
+                                clusters.put(cluster.getGuid(), cluster);
                             }
-                            migrationRecordManager.create( model.getLabel(), data, validClusterGuids);
+                            migrationRecordManager.create( model.getLabel(), data, clusters);
                             success = true;
                         } else {
                             logger.fine("Archive not present in uploaded zip!");
