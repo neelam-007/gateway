@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  */
 public class FailoverHttpClient implements GenericHttpClient {
     private final GenericHttpClient client;
-    private final FailoverStrategy failoverStrategy;
+    private final FailoverStrategy<String> failoverStrategy;
     private final int maxFailoverAttempts;
     private final Logger logger;
 
@@ -38,12 +38,12 @@ public class FailoverHttpClient implements GenericHttpClient {
      * if this requires type checking and downcasting to FailoverHttpRequest.  Without an InputStreamFactory,
      * all POST request bodies will be buffered in RAM in case they need to retransmitted for failover.
      *
-     * @param client
+     * @param client   HTTP client to enhance.  Required.
      * @param failoverStrategy   strategy which must be managing servers identified as Strings containing hostnames or IP addresses.
-     * @param maxFailoverAttempts
+     * @param maxFailoverAttempts maximum number of times to invoke the failover strategy for a single request.
      * @param logger   Logger to which failure messages should be recorded, or null to do no logging of failed attempts
      */ 
-    public FailoverHttpClient(GenericHttpClient client, FailoverStrategy failoverStrategy, int maxFailoverAttempts, Logger logger) {
+    public FailoverHttpClient(GenericHttpClient client, FailoverStrategy<String> failoverStrategy, int maxFailoverAttempts, Logger logger) {
         if (client == null || failoverStrategy == null) throw new NullPointerException();
         if (maxFailoverAttempts < 1) throw new IllegalArgumentException("maxFailoverAttempts must be positive");
         this.client = client;
@@ -64,9 +64,10 @@ public class FailoverHttpClient implements GenericHttpClient {
      * request.  Without an InputStreamFactory, a failover request must read and buffer the entire request body
      * in memory before making the first attempt, in caes it fails and needs to be retried.
      *
-     * @param method
-     * @param params
-     * @throws GenericHttpException
+     * @param method the request method to use.  May be one of {@link HttpMethod#GET} or {@link HttpMethod#POST}.
+     * @param params the request params.  Must not be null.
+     * @return the HTTP request object, ready to proceed.  Never null.
+     * @throws GenericHttpException if there is a configuration, network, or HTTP problem.
      */
     public FailoverHttpRequest createFailoverRequest(final HttpMethod method, final GenericHttpRequestParams params)
             throws GenericHttpException
@@ -80,7 +81,7 @@ public class FailoverHttpClient implements GenericHttpClient {
      */
     public static class FailoverHttpRequest implements RerunnableHttpRequest {
         private final GenericHttpClient client;
-        private final FailoverStrategy failoverStrategy;
+        private final FailoverStrategy<String> failoverStrategy;
         private final int maxFailoverAttempts;
         private final Logger logger;
         private final HttpMethod method;
@@ -92,7 +93,7 @@ public class FailoverHttpClient implements GenericHttpClient {
         private List<String[]> paramList = new ArrayList<String[]>();
 
         private FailoverHttpRequest(GenericHttpClient client,
-                            FailoverStrategy failoverStrategy,
+                            FailoverStrategy<String> failoverStrategy,
                             int maxFailoverAttempts,
                             Logger logger,
                             HttpMethod method,
@@ -127,7 +128,7 @@ public class FailoverHttpClient implements GenericHttpClient {
                 GenericHttpRequest request = null;
                 GenericHttpResponse response = null;
                 try {
-                    host = (String)failoverStrategy.selectService();
+                    host = failoverStrategy.selectService();
                     params.setTargetUrl(new URL(u.getProtocol(), host, u.getPort(), u.getFile()));
                     request = client.createRequest(method, params);
 
@@ -177,7 +178,7 @@ public class FailoverHttpClient implements GenericHttpClient {
                                 // We don't have one at all.  Create an empty body.
                                 if (logger != null)
                                     logger.warning("No request InputStream provided -- transmitting empty body request");
-                                params.setContentLength(new Long(0));
+                                params.setContentLength((long) 0);
                                 factory = new InputStreamFactory() {
                                     public InputStream getInputStream() {
                                         return new EmptyInputStream();

@@ -4,8 +4,6 @@
 package com.l7tech.proxy.processor;
 
 import com.l7tech.common.http.*;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.TeeInputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -41,12 +39,9 @@ import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.*;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.SyspropUtil;
-import com.l7tech.xml.SoapFaultDetail;
+import com.l7tech.util.*;
 import com.l7tech.xml.MessageNotSoapException;
+import com.l7tech.xml.SoapFaultDetail;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
@@ -80,6 +75,7 @@ import java.util.zip.GZIPOutputStream;
 /**
  * The core of the Client Proxy.
  */
+@SuppressWarnings({"JavaDoc"})
 public class MessageProcessor {
     private static final Logger log = Logger.getLogger(MessageProcessor.class.getName());
 
@@ -116,12 +112,12 @@ public class MessageProcessor {
      * @throws OperationCanceledException     if the user declined to provide a username and password
      * @throws ConfigurationException         if a response could not be obtained from the SSG due to a problem with
      *                                        the client or server configuration, and retrying the operation
-     *                                        is unlikely to succeed until the configuration is changed.
-     * @throws ConfigurationException         if we were unable to conform to the policy, and did not get any useful
+     *                                        is unlikely to succeed until the configuration is changed; or,
+     *                                        if we were unable to conform to the policy, and did not get any useful
      *                                        SOAP fault from the SSG.
      * @throws GeneralSecurityException       if the SSG SSL certificate could not be obtained or installed
-     * @throws IOException                    if information couldn't be obtained from the SSG due to network trouble
-     * @throws IOException                    if a certificate could not be saved to disk
+     * @throws IOException                    if information couldn't be obtained from the SSG due to network trouble; or,
+     *                                        if a certificate could not be saved to disk
      * @throws SAXException                   if the client request needed to be parsed and wasn't well-formed XML
      * @throws ResponseValidationException    if the response was signed, but the signature did not validate
      * @throws HttpChallengeRequiredException if an HTTP 401 should be sent back to the client
@@ -153,7 +149,7 @@ public class MessageProcessor {
                             succeeded = true;
                             return;
                         } catch (GenericHttpException e) {
-                            SSLException sslException = (SSLException) ExceptionUtils.getCauseIfCausedBy(e, SSLException.class);
+                            SSLException sslException = ExceptionUtils.getCauseIfCausedBy(e, SSLException.class);
                             if (sslException != null)
                                 handleAnySslException(context, sslException, ssg);
                             else
@@ -392,9 +388,8 @@ public class MessageProcessor {
 
                 // Do any deferred decorations that weren't rolled back
                 if (result == AssertionStatus.NONE) {
-                    Map deferredDecorations = context.getPendingDecorations();
-                    for (Iterator i = deferredDecorations.values().iterator(); i.hasNext();) {
-                        ClientDecorator decorator = (ClientDecorator)i.next();
+                    Map<ClientAssertion, ClientDecorator> deferredDecorations = context.getPendingDecorations();
+                    for (ClientDecorator decorator : deferredDecorations.values()) {
                         result = decorator.decorateRequest(context);
                         if (result != AssertionStatus.NONE)
                             break;
@@ -592,9 +587,8 @@ public class MessageProcessor {
      */
     private URL getUrl(PolicyApplicationContext context) throws ConfigurationException {
         Ssg ssg = context.getSsg();
-        URL url = null;
         try {
-            url = new URL(ssg.getServerUrl());
+            final URL url = new URL(ssg.getServerUrl());
             if (context.isSslRequired()) {
                 if (context.isSslForbidden())
                     log.severe("Error: SSL is both forbidden and required by policy -- leaving SSL enabled");
@@ -603,21 +597,20 @@ public class MessageProcessor {
                 {
                     log.info("Changing http to https per policy for this request (using SSL port " +
                       ssg.getSslPort() + ')');
-                    url = new URL("https", url.getHost(), ssg.getSslPort(), url.getFile());
+                    return new URL("https", url.getHost(), ssg.getSslPort(), url.getFile());
                 } else
                     throw new ConfigurationException("Couldn't find an SSL-enabled version of protocol " +
                       url.getProtocol());
             }
+            return url;
         } catch (MalformedURLException e) {
             throw new ConfigurationException("Client Proxy: Gateway \"" + ssg + "\" has an invalid server url: " +
               ssg.getServerUrl());
         }
-
-        return url;
     }
 
     private static class WrappedInputStreamFactoryException extends RuntimeException {
-        private WrappedInputStreamFactoryException(Throwable t) { initCause(t); };
+        private WrappedInputStreamFactoryException(Throwable t) { initCause(t); }
     }
 
     class GZipOutput {
@@ -731,7 +724,7 @@ public class MessageProcessor {
 
             httpRequest = httpClient.createRequest(HttpMethod.POST, params);
 
-            configureRequestFailover(ssg, request, httpRequest, zippedInputStream, iscompressed);
+            configureRequestFailover(request, httpRequest, zippedInputStream, iscompressed);
 
             log.info("Posting request to Gateway " + ssg + ", url " + url);
             httpResponse = httpRequest.getResponse();
@@ -802,9 +795,7 @@ public class MessageProcessor {
                 }
             });
 
-            if("always".equals(ssg.getProperties().get("response.security.stripHeader")) ||
-               "secure_span".equals(ssg.getProperties().get("response.security.stripHeader")))
-            {
+            if (ssg.getRuntime().isEagerToProcessResponseSecurity()) {
                 response.getSecurityKnob().getOrCreateProcessorResult();
             }
 
@@ -921,7 +912,7 @@ public class MessageProcessor {
         }
     }
 
-    private void configureRequestFailover(final Ssg ssg, final Message request, GenericHttpRequest httpRequest, final InputStream zippedInputStream, final boolean iscompressed) throws IOException, NoSuchPartException {
+    private void configureRequestFailover(final Message request, GenericHttpRequest httpRequest, final InputStream zippedInputStream, final boolean iscompressed) throws IOException, NoSuchPartException {
         // If failover enabled, set an InputStreamFactory to prevent the failover client from buffering
         // everything in RAM
         if (httpRequest instanceof RerunnableHttpRequest) {
@@ -1144,10 +1135,8 @@ public class MessageProcessor {
     }
 
     private void maybeStripSecurityHeader(Ssg ssg, Message response, ProcessorResult processorResult) throws InvalidDocumentFormatException, SAXException, IOException {
-        final String stripMode = ssg.getProperties().get("response.security.stripHeader"); // "always", "when processed" or "secure_span"; default "when processed"
-
-        if ("secure_span".equals(stripMode)) {
-            // the processed security header will be deleted iff. it was explicitely addressed to us
+        if (ssg.getRuntime().isReluctantToRemoveProcessedSecurityHeader()) {
+            // the processed security header will be deleted iff. it was explicitly addressed to us
             if (processorResult.getProcessedActor() != null &&
                 (processorResult.getProcessedActor() == SecurityActor.L7ACTOR ||
                 processorResult.getProcessedActor() == SecurityActor.L7ACTOR_URI))
@@ -1318,15 +1307,15 @@ public class MessageProcessor {
         // cookies
         List values = responseHeaders.getValues(HttpConstants.HEADER_SET_COOKIE);
         if(!values.isEmpty()) {
-            Set cookieSet = new LinkedHashSet();
+            Set<HttpCookie> cookieSet = new LinkedHashSet<HttpCookie>();
 
-            for (Iterator iterator = values.iterator(); iterator.hasNext();) {
-                String setCookieValue =  (String) iterator.next();
+            for (Object value : values) {
+                String setCookieValue = (String) value;
                 try {
                     cookieSet.add(new HttpCookie(url, setCookieValue));
                 }
-                catch(HttpCookie.IllegalFormatException hcife) {
-                    log.warning("Ignoring illegal cookie header '"+setCookieValue+"'.");
+                catch (HttpCookie.IllegalFormatException hcife) {
+                    log.warning("Ignoring illegal cookie header '" + setCookieValue + "'.");
                 }
             }
 
@@ -1334,7 +1323,7 @@ public class MessageProcessor {
             if(existingCookies==null) existingCookies = new HttpCookie[0];
             cookieSet.addAll(Arrays.asList(existingCookies));
 
-            context.setSessionCookies((HttpCookie[]) cookieSet.toArray(new HttpCookie[cookieSet.size()]));
+            context.setSessionCookies(cookieSet.toArray(new HttpCookie[cookieSet.size()]));
         }
     }
 
@@ -1406,7 +1395,7 @@ public class MessageProcessor {
         if (alwaysSetContentLength || !context.isDigestAuthRequired()) {
             // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
             final long contentLength = context.getRequest().getMimeKnob().getContentLength();
-            params.setContentLength(new Long(contentLength));
+            params.setContentLength(contentLength);
         }
 
         // Do we need HTTP client auth?

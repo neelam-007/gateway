@@ -44,10 +44,13 @@ import java.util.logging.Logger;
 /**
  * Holds SSG behaviour, strategies, and transient state.
  */
+@SuppressWarnings({"JavaDoc"})
 public class SsgRuntime {
     private static final Logger log = Logger.getLogger(SsgRuntime.class.getName());
 
     private final Ssg ssg;
+
+    public static final String SSGPROP_STRIPHEADER = "response.security.stripHeader"; // "always", "when_processed", "secure_span", or "lazy"; default "always"
 
     // Maximum simultaneous outbound connections.  Throttled wide-open.
     public static final int MAX_CONNECTIONS = 60000;
@@ -57,7 +60,7 @@ public class SsgRuntime {
     public static final int MAX_LOGON_CANCEL = 1;
 
     // Maximum number of Sender Vouches tokens to cache at a time.
-    private static final int MAX_SV_USERS = Integer.getInteger("com.l7tech.proxy.maxSvUsers", 1000).intValue();
+    private static final int MAX_SV_USERS = Integer.getInteger("com.l7tech.proxy.maxSvUsers", 1000);
 
     private MultiThreadedHttpConnectionManager httpConnectionManager;
 
@@ -82,8 +85,8 @@ public class SsgRuntime {
     private Calendar secureConversationExpiryDate = null;
     private KerberosServiceTicket kerberosTicket = null;
     private long timeOffset = 0;
-    private Map tokenStrategiesByType;
-    private Map senderVouchesTokenStrategiesByUser;
+    private Map<SecurityTokenType, TokenStrategy> tokenStrategiesByType;
+    private Map<List<Object>, TokenStrategy> senderVouchesTokenStrategiesByUser;
     private SimpleHttpClient simpleHttpClient = null;
     private CredentialManager credentialManager = null;
     private SsgKeyStoreManager ssgKeyStoreManager;
@@ -145,7 +148,7 @@ public class SsgRuntime {
 
     /**
      * Replace the root policy manager.
-     * This is not called in the stand-alone SSB, but is used by 
+     * This is not called in the stand-alone SSB, but is used by
      * the {@link com.l7tech.policy.assertion.BridgeRoutingAssertion},
      * and the {@link com.l7tech.proxy.SecureSpanBridge} implementation, when a hardcoded policy is selected.
      */
@@ -248,7 +251,7 @@ public class SsgRuntime {
     }
 
     /**
-     * Set the Kerberos ticket. 
+     * Set the Kerberos ticket.
      */
     public void kerberosTicket(KerberosServiceTicket kerberosTicket) {
         this.kerberosTicket = kerberosTicket;
@@ -358,10 +361,10 @@ public class SsgRuntime {
         return null;
     }
 
-    private Map getTokenStrategiesByType() {
+    private Map<SecurityTokenType, TokenStrategy> getTokenStrategiesByType() {
         synchronized (ssg) {
             if (tokenStrategiesByType == null) {
-                tokenStrategiesByType = new HashMap();
+                tokenStrategiesByType = new HashMap<SecurityTokenType, TokenStrategy>();
                 if (ssg.isGeneric()) // Generic account does not support any security token strategies
                     return tokenStrategiesByType;
                 TokenStrategy samlStrat1 = ssg.getWsTrustSamlTokenStrategy();
@@ -374,7 +377,7 @@ public class SsgRuntime {
                 }
                 tokenStrategiesByType.put(SecurityTokenType.SAML_ASSERTION, samlStrat1);
                 if (samlStrat2 != null) {
-                    tokenStrategiesByType.put(SecurityTokenType.SAML2_ASSERTION, samlStrat2);                    
+                    tokenStrategiesByType.put(SecurityTokenType.SAML2_ASSERTION, samlStrat2);
                 }
             }
             return tokenStrategiesByType;
@@ -391,7 +394,7 @@ public class SsgRuntime {
     public TokenStrategy getTokenStrategy(SecurityTokenType tokenType) {
         if (tokenType == null) throw new NullPointerException();
         synchronized (ssg) {
-            return (TokenStrategy)getTokenStrategiesByType().get(tokenType);
+            return getTokenStrategiesByType().get(tokenType);
         }
     }
 
@@ -425,17 +428,19 @@ public class SsgRuntime {
                                                              String nameIdTemplate)
     {
         synchronized (ssg) {
-            if (senderVouchesTokenStrategiesByUser == null)
+            if (senderVouchesTokenStrategiesByUser == null) {
+                //noinspection unchecked
                 senderVouchesTokenStrategiesByUser = new LRUMap(MAX_SV_USERS);
+            }
 
-            List keyList = new ArrayList();
+            List<Object> keyList = new ArrayList<Object>();
             keyList.add(tokenType);
             keyList.add(username);
             if (nameIdFormatUri != null) keyList.add(nameIdFormatUri);
             if (authnMethodUri != null) keyList.add(authnMethodUri);
             if (nameIdTemplate != null) keyList.add(nameIdTemplate);
 
-            TokenStrategy strat = (TokenStrategy) senderVouchesTokenStrategiesByUser.get(keyList);
+            TokenStrategy strat = senderVouchesTokenStrategiesByUser.get(keyList);
             if (strat == null) {
                 strat = new SenderVouchesSamlTokenStrategy(tokenType, nameIdFormatUri, username, nameIdTemplate, authnMethodUri);
                 senderVouchesTokenStrategiesByUser.put(keyList, strat);
@@ -570,21 +575,6 @@ public class SsgRuntime {
         }
     }
 
-    // TODO remove this if it isn't needed
-    private static void logSessionCookies(HttpCookie[] sessionCookies) {
-            String cookieString = "HTTP cookies: ";
-            if (sessionCookies != null && sessionCookies.length > 0) {
-
-                for (int i = 0; i < sessionCookies.length; i++) {
-                    cookieString += "[ " + sessionCookies[i].toExternalForm() + " ], ";
-                }
-            } else {
-                cookieString += " empty";
-            }
-
-            log.info(cookieString);
-    }
-
     /**
      * Store the HTTP cookies of the user session established with SiteMinder Policy Server.
      *
@@ -681,11 +671,11 @@ public class SsgRuntime {
                 final String[] addrs = ssg.getOverrideIpAddresses();
                 if (ssg.isUseOverrideIpAddresses() && addrs != null && addrs.length > 0) {
                     log.fine("Enabling failover IP list for Gateway " + ssg);
-                    FailoverStrategy strategy;
+                    FailoverStrategy<String> strategy;
                     try {
                         strategy = FailoverStrategyFactory.createFailoverStrategy(ssg.getFailoverStrategyName(), addrs);
                     } catch (IllegalArgumentException e) {
-                        strategy = new StickyFailoverStrategy(addrs);
+                        strategy = new StickyFailoverStrategy<String>(addrs);
                     }
                     int max = addrs.length;
                     client = new FailoverHttpClient(client, strategy, max, log);
@@ -722,13 +712,16 @@ public class SsgRuntime {
         return policyServiceFile;
     }
 
-    /**
-     * Report a sighting of a Policy-URL: header sent by this SSG.  It can be used to determine whether the
-     * SSG will expect a pre-3.2 disco.modulator.
-     * @param policyUrl
-     */
-    public void reportPolicyUrl(String policyUrl) {
+    public boolean isEagerToProcessResponseSecurity() {
+        final String val = ssg.getProperties().get(SSGPROP_STRIPHEADER);
+        return val == null ||
+               "always".equals(val) ||
+               "secure_span".equals(val);
+    }
 
+    public boolean isReluctantToRemoveProcessedSecurityHeader() {
+        final String stripMode = ssg.getProperties().get(SSGPROP_STRIPHEADER);
+        return "secure_span".equals(stripMode) || "lazy".equals(stripMode);
     }
 
     // Hack to allow lazy initialization of SSL stuff

@@ -7,9 +7,7 @@ import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.http.prov.apache.StaleCheckingHttpConnectionManager;
 import com.l7tech.common.io.AliasNotFoundException;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
@@ -45,17 +43,14 @@ import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
-import com.l7tech.util.CausedIllegalStateException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.SoapConstants;
+import com.l7tech.util.*;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.X509TrustManager;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.X509TrustManager;
 import javax.wsdl.WSDLException;
 import javax.xml.namespace.QName;
 import java.io.ByteArrayInputStream;
@@ -153,11 +148,11 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         initSSGPorts(assertion, url);
         ssg.setSsgFile(url.getFile());
         ssg.setUseSslByDefault(assertion.isUseSslByDefault());
-        
+
         ssg.setCompress(assertion.isGzipEncodeDownstream());
 
         // Force processing of the security header
-        ssg.getProperties().put("response.security.stripHeader", "always");
+        ssg.getProperties().put(SsgRuntime.SSGPROP_STRIPHEADER, "always");
 
         messageProcessor = new MessageProcessor();
     }
@@ -230,10 +225,12 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     }
 
                     PolicyAttachmentKey pak = new PolicyAttachmentKey(nsUri, soapAction, origUrl.getPath());
+
+                    //noinspection UnnecessaryLocalVariable
                     Message bridgeRequest = requestMsg; // TODO see if it is unsafe to reuse this
 
                     // Determines the response message destination.
-                    Message bridgeResponse = null;
+                    final Message bridgeResponse;
                     if (assertion.getResponseMsgDest() == null) {
                         // The response will need to be re-initialized
                         bridgeResponse = context.getResponse(); // TODO see if it is unsafe to reuse this
@@ -489,7 +486,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 }
                 if ( "1.0".equals(ServerConfig.getInstance().getPropertyCached("ioHttpVersion")) ) {
                     params.setHttpVersion(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0);
-                }                
+                }
                 return super.createRequest(method, params);
             }
         };
@@ -502,12 +499,12 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
         if (ssg.isUseOverrideIpAddresses()) {
             // Attach failover client
-            FailoverStrategy strategy;
+            FailoverStrategy<String> strategy;
             String[] addrs = ssg.getOverrideIpAddresses();
             try {
                 strategy = FailoverStrategyFactory.createFailoverStrategy(assertion.getFailoverStrategyName(), addrs);
             } catch (IllegalArgumentException e) {
-                strategy = new StickyFailoverStrategy(addrs);
+                strategy = new StickyFailoverStrategy<String>(addrs);
             }
             int attempts = addrs.length;
             client = new FailoverHttpClient(client, strategy, attempts, logger);
@@ -583,7 +580,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
      * @return a request message object as configured by this assertion
      */
     private Message getRequestMessage(final PolicyEnforcementContext context) {
-        Message msg = null;
+        final Message msg;
         if (assertion.getRequestMsgSrc() == null) {
             msg = context.getRequest();
         } else {

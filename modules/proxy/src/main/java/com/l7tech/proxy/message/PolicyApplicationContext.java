@@ -20,6 +20,8 @@ import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.security.socket.LocalTcpPeerIdentifier;
 import com.l7tech.security.socket.LocalTcpPeerIdentifierFactory;
@@ -61,6 +63,7 @@ import java.util.logging.Logger;
  * Holds message processing state needed by policy application point (SSB) message processor and policy assertions.
  * This class is not intended to be used across multiple threads (nor would it make sense if it were).
  */
+@SuppressWarnings({"JavaDoc"})
 public class PolicyApplicationContext extends ProcessingContext {
 
     private static final Logger logger = Logger.getLogger(PolicyApplicationContext.class.getName());
@@ -101,9 +104,9 @@ public class PolicyApplicationContext extends ProcessingContext {
          * these wss requirements are the default ones as opposed to the ones meant for a downstream recipient
          */
         private DecorationRequirements defaultWSSRequirements = null;
-        private Map downstreamRecipientWSSRequirements = new HashMap();
+        private Map<String, DecorationRequirements> downstreamRecipientWSSRequirements = new HashMap<String, DecorationRequirements>();
         private String messageId = null;
-        private Map pendingDecorations = new LinkedHashMap();
+        private Map<ClientAssertion, ClientDecorator> pendingDecorations = new LinkedHashMap<ClientAssertion, ClientDecorator>();
         public boolean useWsaMessageId;
         private DomainIdInjectionFlags domainIdInjectionFlags = new DomainIdInjectionFlags();
         private boolean ssgRequestedCompression = false;
@@ -300,8 +303,7 @@ public class PolicyApplicationContext extends ProcessingContext {
             return getDefaultWssRequirements();
         }
         String actor = recipient.getActor();
-        DecorationRequirements output = (DecorationRequirements)policySettings.
-                                                                downstreamRecipientWSSRequirements.get(actor);
+        DecorationRequirements output = policySettings.downstreamRecipientWSSRequirements.get(actor);
         if (output == null) {
             output = new DecorationRequirements();
             X509Certificate cert = recipient.getX509Certificate();
@@ -328,7 +330,7 @@ public class PolicyApplicationContext extends ProcessingContext {
      * @return all decoration requirements (may return empty array)
      */
     public DecorationRequirements[] getAllDecorationRequirements() {
-        Set keys = policySettings.downstreamRecipientWSSRequirements.keySet();
+        Set<String> keys = policySettings.downstreamRecipientWSSRequirements.keySet();
         int size = 0;
         size += keys.size();
         if (policySettings.defaultWSSRequirements != null) {
@@ -336,9 +338,8 @@ public class PolicyApplicationContext extends ProcessingContext {
         }
         DecorationRequirements[] output = new DecorationRequirements[size];
         int i = 0;
-        for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
-            String key = (String) iterator.next();
-            output[i] = (DecorationRequirements)policySettings.downstreamRecipientWSSRequirements.get(key);
+        for (String key : keys) {
+            output[i] = policySettings.downstreamRecipientWSSRequirements.get(key);
             i++;
         }
         if (policySettings.defaultWSSRequirements != null) {
@@ -350,7 +351,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     /**
      * @return the Map of (assertion instance => ClientDecorator), containing deferred decorations to apply.
      */
-    public Map getPendingDecorations() {
+    public Map<ClientAssertion, ClientDecorator> getPendingDecorations() {
         return policySettings.pendingDecorations;
     }
 
@@ -382,13 +383,9 @@ public class PolicyApplicationContext extends ProcessingContext {
 
     public long getNonce() {
         if (nonce == null)
-            nonce = new Long(SECURE_RANDOM.nextLong());
-        return nonce.longValue();
+            nonce = SECURE_RANDOM.nextLong();
+        return nonce;
     }
-
-    /**//**//*//**//*//**//*//**//*//**//*//**//*//**//*//**//*//**//*//**/
-    /**//**//*   BEGIN STUPID SHIT   TODO: move this elsewhere   *//**//**/
-    /**//**//*//**//*//**//*//**//*//**//*//**//*//**//*//**//*//**//*//**/
 
     /**
      * Assert that credentials must be available to continue processing this request, and return the credentials.
@@ -427,7 +424,7 @@ public class PolicyApplicationContext extends ProcessingContext {
      * @deprecated Agent code should use getCredentialsForTrustedSsg() or getFederatedCredentials() instead.
      */
     public LoginCredentials getLastCredentials() {
-        throw new UnsupportedOperationException(); // TODO fix this LSP violation
+        throw new UnsupportedOperationException();
     }
 
     private PasswordAuthentication getPasswordAuthentication() {
@@ -485,8 +482,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     public PasswordAuthentication getCachedCredentialsForTrustedSsg() {
         if (ssg.isFederatedGateway())
             throw new UnsupportedOperationException("Not permitted to send real password to Federated Gateway.");
-        PasswordAuthentication pw = getPasswordAuthentication();
-        return pw;
+        return getPasswordAuthentication();
     }
 
     /**
@@ -498,7 +494,7 @@ public class PolicyApplicationContext extends ProcessingContext {
      */
     public void prepareClientCertificate() throws OperationCanceledException, KeyStoreCorruptException,
             GeneralSecurityException, ClientCertificateException,
-            ServerCertificateUntrustedException, BadCredentialsException, PolicyRetryableException, HttpChallengeRequiredException {
+            BadCredentialsException, PolicyRetryableException, HttpChallengeRequiredException {
         try {
             if (ssg.getClientCertificate() == null) {
                 logger.info("applying for client certificate");
@@ -863,7 +859,7 @@ public class PolicyApplicationContext extends ProcessingContext {
 
     /**
      * Set the flag for a Kerberos token.
-     * 
+     *
      * @param used true if a reference was used.
      */
     public void setUsedKerberosServiceTicketReference(boolean used) {
@@ -910,16 +906,14 @@ public class PolicyApplicationContext extends ProcessingContext {
                     if(!flags[flagCanceled]) {
                         try {
                             PasswordAuthentication pa = getCredentialsForTrustedSsg();
-                            for (int i = 0; i < callbacks.length; i++) {
-                                Callback callback = callbacks[i];
-                                if(callback instanceof PasswordCallback) {
+                            for (Callback callback : callbacks) {
+                                if (callback instanceof PasswordCallback) {
                                     PasswordCallback pc = (PasswordCallback) callback;
-                                    if(pa!=null) pc.setPassword(pa.getPassword());
+                                    if (pa != null) pc.setPassword(pa.getPassword());
                                     else pc.setPassword(new char[]{' '});
-                                }
-                                else if(callback instanceof NameCallback) {
+                                } else if (callback instanceof NameCallback) {
                                     NameCallback nc = (NameCallback) callback;
-                                    if(pa!=null) nc.setName(pa.getUserName());
+                                    if (pa != null) nc.setName(pa.getUserName());
                                     else nc.setName(System.getProperty("user.name", ""));
                                 }
                             }
@@ -940,7 +934,7 @@ public class PolicyApplicationContext extends ProcessingContext {
 
             setUsedKerberosServiceTicketReference(false);
             ssg.getRuntime().kerberosTicket(kst);
-            
+
             return kst;
         }
         catch(KerberosException ke) {

@@ -36,7 +36,7 @@ public interface HttpHeaders {
      * @param name the name of the header to search for.  Must not be null.
      * @return the first value for this header in this collection of HTTP headers.  May be empty but never null.
      */
-    List getValues(String name);
+    List<String> getValues(String name);
 
     /**
      * Get the complete array of headers in the original order.

@@ -3,16 +3,15 @@
  */
 package com.l7tech.message;
 
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorException;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
-
-import java.util.List;
-import java.io.IOException;
-
+import com.l7tech.security.xml.processor.ProcessorResult;
 import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
  * Provides access to any {@link SecurityToken}s that currently accompany this {@link Message}, and holds
@@ -25,7 +24,7 @@ public interface SecurityKnob extends MessageKnob {
     /**
      * @return the array of security tokens that accompany this message.  Never null, but often empty.
      */
-    List getAllSecurityTokens();
+    List<SecurityToken> getAllSecurityTokens();
 
     /**
      * Adds a {@link SecurityToken} to the current message.
@@ -49,8 +48,9 @@ public interface SecurityKnob extends MessageKnob {
      *
      * @return the ProcessorResult, or null if this Message has not been undecorated and no
      *         lazy undecoration service is available.
-     * @throws Exception if undecoration fails.  May throw any exception documented by
-     *              {@link com.l7tech.security.xml.processor.WssProcessor#undecorateMessage}.
+     * @throws ProcessorException if processing fails
+     * @throws java.io.IOException if there is a problem reading a message
+     * @throws org.xml.sax.SAXException if there is a problem parsing the XML
      */
     ProcessorResult getOrCreateProcessorResult() throws ProcessorException, SAXException, IOException;
 
@@ -65,6 +65,7 @@ public interface SecurityKnob extends MessageKnob {
      * Get the decorations that should be applied to this Message some time in the future. One DecorationRequirements
      * per recipient, the default recipient having its requirements at the end of the array. Can return an empty array
      * but never null.
+     * @return Current decoration requirements.  May be empty but never null.
      */
     DecorationRequirements[] getDecorationRequirements();
 

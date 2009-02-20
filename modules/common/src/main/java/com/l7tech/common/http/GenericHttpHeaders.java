@@ -21,8 +21,7 @@ public class GenericHttpHeaders implements HttpHeaders {
 
     public String getFirstValue(String name) {
         if (name == null) throw new NullPointerException();
-        for (int i = 0; i < headers.length; i++) {
-            HttpHeader header = headers[i];
+        for (HttpHeader header : headers) {
             if (header != null && header.getName() != null && header.getName().equalsIgnoreCase(name))
                 return header.getFullValue();
         }
@@ -32,8 +31,7 @@ public class GenericHttpHeaders implements HttpHeaders {
     public String getOnlyOneValue(String name) throws GenericHttpException {
         if (name == null) throw new NullPointerException();
         String value = null;
-        for (int i = 0; i < headers.length; i++) {
-            HttpHeader header = headers[i];
+        for (HttpHeader header : headers) {
             if (header != null && header.getName() != null && header.getName().equalsIgnoreCase(name)) {
                 if (value != null)
                     throw new GenericHttpException("Multiple values found for the HTTP header: " + name);
@@ -43,11 +41,10 @@ public class GenericHttpHeaders implements HttpHeaders {
         return value;
     }
 
-    public List getValues(String name) {
+    public List<String> getValues(String name) {
         if (name == null) throw new NullPointerException();
-        List ret = new ArrayList();
-        for (int i = 0; i < headers.length; i++) {
-            HttpHeader header = headers[i];
+        List<String> ret = new ArrayList<String>();
+        for (HttpHeader header : headers) {
             if (header != null && header.getName() != null && header.getName().equalsIgnoreCase(name))
                 ret.add(header.getFullValue());
         }
@@ -60,8 +57,7 @@ public class GenericHttpHeaders implements HttpHeaders {
 
     public String toExternalForm() {
         StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < headers.length; i++) {
-            HttpHeader header = headers[i];
+        for (HttpHeader header : headers) {
             sb.append(header.getName()).append(": ").append(header.getFullValue()).append("\n");
         }
         return sb.toString();
