@@ -546,6 +546,7 @@ public class ProcessController {
      * @throws TemporarilyUnavailableException if the node API cannot be obtained (e.g. because the node is down)
      */
     public <T, E extends Exception> T callNodeApi(String nodeName, Functions.UnaryThrows<T, NodeApi, E> callable) throws E, TemporarilyUnavailableException {
+        if (nodeStates.isEmpty()) throw new TemporarilyUnavailableException(nodeName, NodeStateType.UNKNOWN);
         final NodeState state;
         if (nodeName == null) {
             state = nodeStates.values().iterator().next();

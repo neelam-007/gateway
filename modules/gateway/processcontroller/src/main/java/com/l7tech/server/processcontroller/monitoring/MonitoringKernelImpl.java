@@ -24,6 +24,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * Drives all the monitoring behaviour of the ProcessController.
@@ -372,20 +373,22 @@ public class MonitoringKernelImpl implements MonitoringKernel {
     private class TriggerCheckTask extends TimerTask {
         @Override
         public void run() {
-            final long now = System.currentTimeMillis();
+            try {
+                final long now = System.currentTimeMillis();
 
-            final Map<MonitorableProperty, PropertyState<?>> pstates = currentPropertyStates;
-            final Map<Long, TriggerState> tstates = currentTriggerStates;
-            if (tstates == null || pstates == null) {
-                logger.fine("No configuration; skipping trigger condition check");
-                return;
-            }
+                final Map<MonitorableProperty, PropertyState<?>> pstates = currentPropertyStates;
+                final Map<Long, TriggerState> tstates = currentTriggerStates;
+                if (tstates == null || pstates == null) {
+                    logger.fine("No configuration; skipping trigger condition check");
+                    return;
+                }
 
-            final Map<MonitorableProperty, PropertyCondition> conditions = new HashMap<MonitorableProperty, PropertyCondition>();
-            for (Map.Entry<Long,TriggerState> entry : tstates.entrySet()) {
-                final Long oid = entry.getKey();
-                final TriggerState tstate = entry.getValue();
-                if (tstate.trigger instanceof PropertyTrigger) {
+                final Map<MonitorableProperty, PropertyCondition> conditions = new HashMap<MonitorableProperty, PropertyCondition>();
+                for (Map.Entry<Long,TriggerState> entry : tstates.entrySet()) {
+                    final Long oid = entry.getKey();
+                    final TriggerState tstate = entry.getValue();
+                    if (!(tstate.trigger instanceof PropertyTrigger)) continue;
+
                     final PropertyTriggerState ptstate = (PropertyTriggerState) tstate;
                     final PropertyTrigger ptrigger = (PropertyTrigger) tstate.trigger;
                     final MonitorableProperty property = ptrigger.getMonitorable();
@@ -398,7 +401,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
                     final Pair<Long, ? extends Comparable> sample = mstate.getLastSample();
                     if (sample == null) continue;
-                    
+
                     final Long when = sample.left;
                     final Comparable sampledValue = sample.right;
                     final long sampleAge = now - when;
@@ -414,7 +417,16 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     final Long prevOut = tstate.outOfTolerance;
                     final Long prevLogged = tstate.logged;
                     final String sampledValueString = sample.right.toString();
-                    if (op.compare(sampledValue, comparisonValue, false)) {
+
+                    final boolean triggerResult;
+                    try {
+                        triggerResult = op.compare(sampledValue, comparisonValue, false);
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, MessageFormat.format("{0} value {1} couldn't be compared for {2} {3}; skipping", property, sampledValueString, op, comparisonValue), e);
+                        continue;
+                    }
+
+                    if (triggerResult) {
                         if (prevOut != null) {
                             if (now - prevLogged >= OUT_OF_TOLERANCE_LOG_INTERVAL) {
                                 // TODO consider suppression of repeated notifications as a configurable aspect of NotificationRules
@@ -442,9 +454,11 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                         tstate.outOfTolerance = null;
                     }
                 }
-            }
 
-            notificationQueue.addAll(conditions.values());
+                notificationQueue.addAll(conditions.values());
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Couldn't finish trigger check task", e);
+            }
         }
     }
 
