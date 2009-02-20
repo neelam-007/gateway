@@ -45,6 +45,9 @@
             <property name="responseContentLength" column="response_length" type="int"/>
             <property name="responseHttpStatus" column="response_status" type="int"/>
             <property name="routingLatency" column="routing_latency" type="int"/>
+            <property name="mappingValuesOid" column="mapping_values_oid" type="long"/>
+
+            <many-to-one name="mappingValuesEntity" class="com.l7tech.gateway.common.mapping.MessageContextMappingValues" column="mapping_values_oid" update="false" insert="false"/>
         </joined-subclass>
 
         <joined-subclass name="com.l7tech.gateway.common.audit.AdminAuditRecord" table="audit_admin" lazy="false">
