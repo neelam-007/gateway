@@ -114,7 +114,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             int oopses = 0;
 
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
-            handleProcessedSecurityHeader(context,
+            handleProcessedSecurityHeader(context.getRequest(),
                                           assertion.getCurrentSecurityHeaderHandling(),
                                           assertion.getXmlSecurityActorToPromote());
 

@@ -51,7 +51,7 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion<EchoRouti
         // DELETE CURRENT SECURITY HEADER IF NECESSARY
         if (request.isXml()) {
             try {
-                handleProcessedSecurityHeader(context,
+                handleProcessedSecurityHeader(context.getRequest(),
                                               assertion.getCurrentSecurityHeaderHandling(),
                                               assertion.getXmlSecurityActorToPromote());
             } catch(SAXException se) {

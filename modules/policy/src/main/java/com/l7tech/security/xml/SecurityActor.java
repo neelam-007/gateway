@@ -32,7 +32,7 @@ public class SecurityActor {
         return attributeValue;
     }
 
-    protected SecurityActor(String attributeValue) {
+    private SecurityActor(String attributeValue) {
         this.attributeValue = attributeValue;
     }
 }

@@ -17,7 +17,7 @@ public class AssertionMessages extends Messages {
     // ServerHttpRoutingAssertion messages
     public static final M HTTPROUTE_SSL_INIT_FAILED         = m(4000, Level.WARNING, "Could not initialize SSL Context");
     public static final M HTTPROUTE_BEGIN                   = m(4001, Level.INFO, "Processing HTTP(S) Routing assertion");
-    public static final M HTTPROUTE_NON_SOAP_WRONG_FORMAT   = m(4002, Level.WARNING, true, false, "SOAP message expected but not found; requested option not supported by non-SOAP messages");
+    public static final M HTTPROUTE_NON_SOAP_WRONG_FORMAT   = m(4002, Level.INFO, "Requested option not supported by non-SOAP messages");
     public static final M HTTPROUTE_NON_SOAP_WRONG_POLICY   = m(4003, Level.WARNING, "Option not supported by non-SOAP messages; check policy for errors");
     public static final M HTTPROUTE_PROMOTING_ACTOR         = m(4004, Level.FINE, "Promoting actor {0}");
     public static final M HTTPROUTE_NO_SECURITY_HEADER      = m(4005, Level.INFO, "Routing assertion requested promotion of security header with actor {0}, but no such header found in message");

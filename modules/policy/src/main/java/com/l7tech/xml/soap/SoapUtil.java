@@ -833,6 +833,20 @@ public class SoapUtil extends SoapConstants {
     }
 
     /**
+     * Quickly check whether the given document has a recognized SOAP envelope and body, without
+     * attempting to validate it any further than that.
+     *
+     * @param doc the document to check.  Required.
+     * @return true if this document looks like it wants to be a SOAP envelope
+     */
+    public static boolean isSoapMessageMaybe(Document doc) {
+        Element env = doc.getDocumentElement();
+        return ENVELOPE_EL_NAME.equals(env.getLocalName()) &&
+               SoapConstants.ENVELOPE_URIS.contains(env.getNamespaceURI()) &&
+               null != DomUtils.findFirstChildElementByName(env, env.getNamespaceURI(), BODY_EL_NAME);
+    }
+
+    /**
      * Tests wheteher a given element is a SOAP Body element.
      *
      * @param element the element to test whether it is SOAP Body element

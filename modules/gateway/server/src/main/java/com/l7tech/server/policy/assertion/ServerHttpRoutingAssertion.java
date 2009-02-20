@@ -258,7 +258,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             routedRequestParams.setHostnameVerifier(hostnameVerifier);
 
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
-            handleProcessedSecurityHeader(context, assertion.getCurrentSecurityHeaderHandling(),
+            handleProcessedSecurityHeader(context.getRequest(), assertion.getCurrentSecurityHeaderHandling(),
                                           assertion.getXmlSecurityActorToPromote());
 
             String userAgent = assertion.getUserAgent();
