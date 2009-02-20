@@ -19,7 +19,18 @@ public class RandomInputStream extends InputStream {
      * @param size  the number of bytes to return before signalling EOF.
      */
     public RandomInputStream(long seed, long size) {
-        this.random = new Random(seed);
+        this(new Random(seed), size);
+    }
+
+    /**
+     *
+     * Generate a pseudorandom stream that returns size bytes before EOF, generated from the random number seed seed.
+     * @param random the already-seeded pseudo-random number generator to use.
+     * @param size  the number of bytes to return before signalling EOF.
+     */
+    public RandomInputStream(Random random, long size) {
+        if (random == null) throw new NullPointerException();
+        this.random = random;
         this.size = size;
     }
 
