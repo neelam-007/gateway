@@ -13,4 +13,6 @@ public interface FolderedEntityManager<ET extends PersistentEntity, HT extends E
     void updateFolder( long entityId, Folder folder ) throws UpdateException;
 
     void updateFolder( ET entity, Folder folder ) throws UpdateException;
+
+    void updateWithFolder( final ET entity ) throws UpdateException;
 }

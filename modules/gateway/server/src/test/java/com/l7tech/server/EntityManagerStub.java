@@ -62,6 +62,11 @@ public abstract class EntityManagerStub<ET extends PersistentEntity, EH extends 
         headers.put(entity.getOid(), header(entity));
     }
 
+    @Override
+    public void updateWithFolder(ET entity) throws UpdateException {
+        update(entity);
+    }
+
     protected EH header(ET entity) {
         return (EH) new EntityHeader(entity.getId(), getEntityType(), name(entity), null);
     }

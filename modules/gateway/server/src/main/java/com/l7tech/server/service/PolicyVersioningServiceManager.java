@@ -145,13 +145,13 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     @Override
     public void update(PublishedService service) throws UpdateException {
         serviceManager.update(service);
-        if ( service.getPolicy() != null ) {
-            try {
-                policyVersionManager.checkpointPolicy(service.getPolicy(), true, true);
-            } catch ( ObjectModelException ome ) {
-                throw new UpdateException("Unable to save policy version when saving service.", ome);
-            }
-        }
+        checkpointPolicy(service);
+    }
+
+    @Override
+    public void updateWithFolder(PublishedService service) throws UpdateException {
+        serviceManager.updateWithFolder(service);
+        checkpointPolicy(service);
     }
 
     @Override
@@ -173,4 +173,14 @@ public class PolicyVersioningServiceManager implements ServiceManager {
 
     private final ServiceManager serviceManager;
     private final PolicyVersionManager policyVersionManager;
+
+    private void checkpointPolicy(PublishedService service) throws UpdateException {
+        if ( service.getPolicy() != null ) {
+            try {
+                policyVersionManager.checkpointPolicy(service.getPolicy(), true, true);
+            } catch ( ObjectModelException ome ) {
+                throw new UpdateException("Unable to save policy version when saving service.", ome);
+            }
+        }
+    }
 }

@@ -4,6 +4,8 @@
 package com.l7tech.server;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.identity.IdentityProviderConfig;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.orm.hibernate3.HibernateCallback;
@@ -141,6 +143,9 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     public void update(final Entity e) throws UpdateException {
         final EntityManager manager = getManager(e.getClass());
         if (manager != null) {
+            if (e instanceof HasFolder && manager instanceof FolderedEntityManager) {
+                ((FolderedEntityManager)manager).updateWithFolder((PersistentEntity) e);
+            }
             manager.update((PersistentEntity)e);
             return;
         }
