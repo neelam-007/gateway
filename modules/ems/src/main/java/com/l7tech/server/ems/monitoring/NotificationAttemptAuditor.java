@@ -7,7 +7,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.AuditContextUtils;
-import com.l7tech.gateway.common.audit.EsmMessages;
+import com.l7tech.server.ems.EsmMessages;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.enterprise.SsgNode;

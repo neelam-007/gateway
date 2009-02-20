@@ -1,4 +1,7 @@
-package com.l7tech.gateway.common.audit;
+package com.l7tech.server.ems.util;
+
+import com.l7tech.server.ems.EsmMessages;
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
 
 /**
  *
@@ -10,15 +13,10 @@ public class MessagesUtil {
 
     // Make sure these always get loaded, so the static intializers run (1.5 safe)
     private static void registerWellKnownMessages() {
-        new CommonMessages();
-        new AssertionMessages();
-        new BootMessages();
-        new MessageProcessingMessages();
-        new SystemMessages();
-        new ServiceMessages();
+        new EsmMessages();
     }
 
     public static AuditDetailMessage getAuditDetailMessageById(int id) {
-        return Messages.messagesById.get(id);
+        return com.l7tech.gateway.common.audit.MessagesUtil.getAuditDetailMessageById(id);
     }
 }
