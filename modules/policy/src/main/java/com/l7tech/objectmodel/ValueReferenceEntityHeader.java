@@ -6,6 +6,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.HashMap;
 
 /**
  * @author jbufu
@@ -33,6 +34,17 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
             @Override
             public Object deserialize(String serialized) {
                 return deserializeStringArray(serialized);
+            }
+        },
+
+        IP_ADDRESS {
+            @Override
+            public String serialize(Object value) {
+                return serializeString(value);
+            }
+            @Override
+            public Object deserialize(String serialized) {
+                return deserializeString(serialized);
             }
         },
 
@@ -110,7 +122,7 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
 
     public ValueReferenceEntityHeader(ExternalEntityHeader other) {
         super(other.getExternalId(), other);
-        setExtraProperties(other.getExtraProperties());
+        setExtraProperties(new HashMap<String, String>(other.getExtraProperties()));
     }
 
     @XmlTransient
