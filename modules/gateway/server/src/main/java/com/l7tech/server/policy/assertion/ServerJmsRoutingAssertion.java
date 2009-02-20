@@ -33,6 +33,7 @@ import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsResourceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -149,7 +150,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     throw jmsException;
                 } catch (Throwable t) {
                     if (++oopses < MAX_OOPSES) {
-                        auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, t);
+                        auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, ExceptionUtils.getDebugException(t));
                         closeBagDueToError(cfg, jmsBag);
 
                         try {
@@ -394,7 +395,11 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{msg}, e);
             throw new PolicyAssertionException(assertion, msg, e);
         } catch ( Throwable t ) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound JMS request processing"}, t );
+            if (ExceptionUtils.causedBy(t, InvalidDestinationException.class)) {
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound JMS request processing: " + t.getMessage()});
+            } else {
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound JMS request processing"}, t );
+            }
 
             closeBagDueToError(cfg, jmsBag);
             return AssertionStatus.SERVER_ERROR;
