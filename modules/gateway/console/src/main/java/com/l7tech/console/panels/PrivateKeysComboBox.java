@@ -10,8 +10,7 @@ import javax.swing.*;
 import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,6 +23,7 @@ import java.util.logging.Logger;
  */
 public class PrivateKeysComboBox extends JComboBox {
     private static final Logger _logger = Logger.getLogger(PrivateKeysComboBox.class.getName());
+    private static final String DEFAULT_PRIVATE_KEY = "<Default SSL Key>";
 
     /** An item in the combo box. */
     private static class PrivateKeyItem {
@@ -40,13 +40,29 @@ public class PrivateKeysComboBox extends JComboBox {
         }
     }
 
-    private static final PrivateKeyItem ITEM_DEFAULT_SSL = new PrivateKeyItem(-1, null, null) {
+    private static final PrivateKeyItem ITEM_DEFAULT_SSL = new PrivateKeyItem(-1, null, DEFAULT_PRIVATE_KEY) {
         public String toString() {
-            return "<Default SSL Key>";
+            return DEFAULT_PRIVATE_KEY;
         }
     };
 
     private boolean _includeHardwareKeystore;
+
+    /**
+     * Sorts the private key by alias while maintaining that the default private key label is the first one
+     * on the list.
+     */
+    public static class PrivateKeyItemComparator implements Comparator<PrivateKeyItem> {
+        public int compare(PrivateKeyItem pk1, PrivateKeyItem pk2) {
+            if (pk1.keyAlias.equals(DEFAULT_PRIVATE_KEY)) {
+                return -1;
+            } else if (pk2.keyAlias.equals(DEFAULT_PRIVATE_KEY)) {
+                return 1;
+            } else {
+                return pk1.keyAlias.compareTo(pk2.keyAlias);
+            }
+        }
+    }
 
     /**
      * Creates a combo box prepopulated with a list of private keys from all SSG
@@ -81,6 +97,7 @@ public class PrivateKeysComboBox extends JComboBox {
                     items.add(new PrivateKeyItem(keystore.getOid(), keystore.getName(), entry.getAlias()));
                 }
             }
+            Collections.sort(items, new PrivateKeyItemComparator());
             setModel(new DefaultComboBoxModel(items.toArray()));
         } catch (FindException fe) {
             _logger.log(Level.WARNING, "Problem when listing keys in keystores.", fe);
