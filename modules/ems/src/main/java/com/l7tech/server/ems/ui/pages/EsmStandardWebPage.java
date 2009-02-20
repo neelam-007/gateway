@@ -3,6 +3,8 @@ package com.l7tech.server.ems.ui.pages;
 import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.user.UserPropertyManager;
+import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.objectmodel.ObjectModelException;
 import org.apache.wicket.Component;
 import org.apache.wicket.RequestListenerInterface;
 import org.apache.wicket.spring.injection.annot.SpringBean;
@@ -14,14 +16,14 @@ import org.apache.wicket.model.Model;
 import org.apache.wicket.model.StringResourceModel;
 
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Base page for EMS pages that include the standard top-level navigation tabs and controls.
  */
 @RequiredPermissionSet()
 public abstract class EsmStandardWebPage extends EsmBaseWebPage {
-    @SpringBean
-    protected UserPropertyManager userPropertyManager;
 
     //- PUBLIC
 
@@ -67,6 +69,9 @@ public abstract class EsmStandardWebPage extends EsmBaseWebPage {
 
     //- PROTECTED
 
+    @SpringBean
+    protected UserPropertyManager userPropertyManager;
+
     @Override
     protected void onBeforeRender() {
         // component is added on before render so it is the last component in the page
@@ -97,15 +102,25 @@ public abstract class EsmStandardWebPage extends EsmBaseWebPage {
         super.onBeforeRender();
     }
 
+    //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger( EsmStandardWebPage.class.getName() );
+
     /**
      * Save the page last viewed into the user property. 
      */
     private void saveLastVisitedPage() {
-        try {
-            Map<String,String> props = userPropertyManager.getUserProperties(getUser());
-            props.put("lastvisited", getPageName());
-            userPropertyManager.saveUserProperties(getUser(), props);
-        } catch (Exception e) {
-        }
+        AuditContextUtils.doAsSystem( new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Map<String,String> props = userPropertyManager.getUserProperties(getUser());
+                    props.put("lastvisited", getPageName());
+                    userPropertyManager.saveUserProperties(getUser(), props);
+                } catch ( ObjectModelException exception ) {
+                    logger.log( Level.WARNING, "Unexpected error persisting last visited page.", exception );            
+                }
+            }
+        });
     }
 }
