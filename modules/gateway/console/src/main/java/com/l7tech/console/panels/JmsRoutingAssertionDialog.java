@@ -1,18 +1,15 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gateway.common.transport.jms.JmsConnection;
-import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.JmsMessagePropertyRule;
-import com.l7tech.policy.assertion.JmsMessagePropertyRuleSet;
-import com.l7tech.policy.assertion.JmsRoutingAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
@@ -113,8 +110,9 @@ public class JmsRoutingAssertionDialog extends JDialog {
     private JButton cancelButton;
     private JButton newQueueButton;
     private JComboBox queueComboBox;
-    private JRadioButton securityHeaderRemoveRadioButton;
-    private JRadioButton securityHeaderLeaveRadioButton;
+    private JRadioButton wssIgnoreRadio;
+    private JRadioButton wssCleanupRadio;
+    private JRadioButton wssRemoveRadio;
     private JRadioButton authNoneRadio;
     private JRadioButton authSamlRadio;
     private JComboBox samlVersionComboBox;
@@ -122,6 +120,8 @@ public class JmsRoutingAssertionDialog extends JDialog {
     private JPanel samlPanel;
     private JmsMessagePropertiesPanel requestMsgPropsPanel;
     private JmsMessagePropertiesPanel responseMsgPropsPanel;
+
+    private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
 
     /**
      * notfy the listeners
@@ -183,8 +183,9 @@ public class JmsRoutingAssertionDialog extends JDialog {
         });
 
         ButtonGroup buttonGroup = new ButtonGroup();
-        buttonGroup.add(securityHeaderRemoveRadioButton);
-        buttonGroup.add(securityHeaderLeaveRadioButton);
+        for (AbstractButton button : secHdrButtons)
+            buttonGroup.add(button);
+        RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
 
         newQueueButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -209,11 +210,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
         okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                // copy view into model
-                if (securityHeaderRemoveRadioButton.isSelected())
-                    assertion.setCurrentSecurityHeaderHandling(JmsRoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER);
-                else
-                    assertion.setCurrentSecurityHeaderHandling(JmsRoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS);
+                RoutingDialogUtils.configSecurityHeaderHandling(assertion, RoutingAssertion.CLEANUP_CURRENT_SECURITY_HEADER, secHdrButtons);
 
                 JmsUtilities.QueueItem item = (JmsUtilities.QueueItem)getQueueComboBox().getSelectedItem();
                 if ( item == null ) {
@@ -278,10 +275,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
         authSamlRadio.setSelected(assertion.isAttachSamlSenderVouches());
         samlPanel.setVisible(assertion.isAttachSamlSenderVouches());
 
-        if (assertion.getCurrentSecurityHeaderHandling() == JmsRoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER)
-            securityHeaderRemoveRadioButton.setSelected(true);
-        else
-            securityHeaderLeaveRadioButton.setSelected(true);
+        RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
 
         Long endpointOid = assertion.getEndpointOid();
         try {

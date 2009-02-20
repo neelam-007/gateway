@@ -98,6 +98,9 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
                                                  String otherToPromote)
             throws SAXException, IOException
     {
+        if (secHeaderHandlingOption == RoutingAssertion.IGNORE_SECURITY_HEADER)
+            return;
+        
         final XmlKnob requestXml = (XmlKnob)message.getKnob(XmlKnob.class);
         if (requestXml == null) {
             logger.finest("skipping this because the message isn't XML");
@@ -116,10 +119,10 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
             return;
         }
 
-        if (secHeaderHandlingOption == RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS) {
+        if (secHeaderHandlingOption == RoutingAssertion.CLEANUP_CURRENT_SECURITY_HEADER) {
             ProcessorResult pr = requestSec.getProcessorResult();
             if (pr != null)
-                sanitizeProcessedSecurityHeader(message, pr.getProcessedActor());
+                cleanupProcessedSecurityHeader(message, pr.getProcessedActor());
             return;
         }
 
@@ -163,7 +166,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     }
 
     // returns false if message was not soap
-    private boolean sanitizeProcessedSecurityHeader(Message message, SecurityActor processedActor) throws SAXException, IOException {
+    private boolean cleanupProcessedSecurityHeader(Message message, SecurityActor processedActor) throws SAXException, IOException {
         Document doc = message.getXmlKnob().getDocumentReadOnly();
         if (!SoapUtil.isSoapMessageMaybe(doc))
             return false;

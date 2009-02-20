@@ -92,8 +92,9 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JRadioButton authWindowsIntegratedRadio;
     private JPanel authDetailsPanel;
 
+    private JRadioButton wssIgnoreRadio;
+    private JRadioButton wssCleanupRadio;
     private JRadioButton wssRemoveRadio;
-    private JRadioButton wssLeaveRadio;
     private JRadioButton wssPromoteRadio;
     private JComboBox wssPromoteActorCombo;
 
@@ -131,6 +132,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JTextField resMsgDestVariableTextField;
     private JLabel resMsgDestVariableStatusLabel;
     private JCheckBox gzipCheckBox;
+
+    private final AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, wssPromoteRadio };
 
     private final BaseAction okButtonAction;
     private boolean confirmed = false;
@@ -286,28 +289,24 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
         if (!policy.isSoap()) {
             authSamlRadio.setEnabled(false);
-            wssPromoteRadio.setEnabled(false);
-            wssRemoveRadio.setEnabled(false);
-            wssLeaveRadio.setEnabled(false);
+            for (AbstractButton button : secHdrButtons) {
+                button.setSelected(false);
+                button.setEnabled(false);
+            }
             wssPromoteActorCombo.setEnabled(false);
         }
 
         ButtonGroup wssButtons = new ButtonGroup();
-        wssButtons.add(wssRemoveRadio);
-        wssButtons.add(wssLeaveRadio);
-        wssButtons.add(wssPromoteRadio);
         ActionListener disenableCombo = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if (wssPromoteRadio.isSelected()) {
-                    wssPromoteActorCombo.setEnabled(true);
-                } else {
-                    wssPromoteActorCombo.setEnabled(false);
-                }
+                wssPromoteActorCombo.setEnabled(wssPromoteRadio.isSelected());
             }
         };
-        wssRemoveRadio.addActionListener(disenableCombo);
-        wssLeaveRadio.addActionListener(disenableCombo);
-        wssPromoteRadio.addActionListener(disenableCombo);
+        for (AbstractButton button : secHdrButtons) {
+            wssButtons.add(button);
+            button.addActionListener(disenableCombo);
+        }
+        RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
 
         defaultUrlButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -511,6 +510,12 @@ public class HttpRoutingAssertionDialog extends JDialog {
     }
 
     private void ok() {
+        // Do checks before we start changing the assertion, so Cancel will work as expected
+        if (wssPromoteRadio.isSelected() && null == wssPromoteActorCombo.getSelectedItem()) {
+            JOptionPane.showMessageDialog(okButton, resources.getString("actorRequiredMessage"));
+            return;
+        }
+
         // check url before accepting
         String url = urlPanel.getText();
         boolean bad = false;
@@ -539,6 +544,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
             JOptionPane.showMessageDialog(okButton, MessageFormat.format(resources.getString("invalidResMsgDestMessage"), url));
             return;
         }
+
+        // From here down we must succeed
 
         if (authPasswordRadio.isSelected())
             httpAuthPanel.updateModel();
@@ -593,22 +600,9 @@ public class HttpRoutingAssertionDialog extends JDialog {
         else
             assertion.setTimeout((Integer)readTimeoutSpinner.getValue()*1000);
 
-        if (wssPromoteRadio.isSelected()) {
-            String currentVal = (String)wssPromoteActorCombo.getSelectedItem();
-            if (currentVal != null && currentVal.length() > 0) {
-                assertion.setXmlSecurityActorToPromote(currentVal);
-                assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.PROMOTE_OTHER_SECURITY_HEADER);
-            } else {
-                JOptionPane.showMessageDialog(okButton, resources.getString("actorRequiredMessage"));
-                return;
-            }
-        } else if (wssRemoveRadio.isSelected()) {
-            assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER);
-            assertion.setXmlSecurityActorToPromote(null);
-        } else if (wssLeaveRadio.isSelected()) {
-            assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS);
-            assertion.setXmlSecurityActorToPromote(null);
-        }
+        RoutingDialogUtils.configSecurityHeaderHandling(assertion, -1, secHdrButtons);
+        if (RoutingAssertion.PROMOTE_OTHER_SECURITY_HEADER == assertion.getCurrentSecurityHeaderHandling())
+            assertion.setXmlSecurityActorToPromote(wssPromoteActorCombo.getSelectedItem().toString());
 
         assertion.setRequestMsgSrc(((MsgSrcComboBoxItem)reqMsgSrcComboBox.getSelectedItem()).getVariableName());
 
@@ -704,23 +698,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
             ((DefaultComboBoxModel) wssPromoteActorCombo.getModel()).addElement(existingActor);
         }
 
-        if (assertion.getCurrentSecurityHeaderHandling() == RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER) {
-            wssPromoteRadio.setSelected(false);
-            wssPromoteActorCombo.setEnabled(false);
-            wssRemoveRadio.setSelected(true);
-            wssLeaveRadio.setSelected(false);
-        } else if (assertion.getCurrentSecurityHeaderHandling() == RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS) {
-            wssPromoteRadio.setSelected(false);
-            wssPromoteActorCombo.setEnabled(false);
-            wssRemoveRadio.setSelected(false);
-            wssLeaveRadio.setSelected(true);
-        } else {
-            wssPromoteRadio.setSelected(true);
-            wssRemoveRadio.setSelected(false);
-            wssLeaveRadio.setSelected(false);
-            wssPromoteActorCombo.setEnabled(true);
-            wssPromoteActorCombo.getModel().setSelectedItem(assertion.getXmlSecurityActorToPromote());
-        }
+        RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, wssPromoteActorCombo, secHdrButtons);
+        wssPromoteActorCombo.getModel().setSelectedItem(assertion.getXmlSecurityActorToPromote());
 
         followRedirectCheck.setSelected(assertion.isFollowRedirects());
         if (assertion.isFailOnErrorStatus()) {

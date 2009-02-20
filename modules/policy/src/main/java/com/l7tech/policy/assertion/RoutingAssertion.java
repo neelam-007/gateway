@@ -15,8 +15,9 @@ import java.io.Serializable;
  */
 public abstract class RoutingAssertion extends Assertion implements Cloneable, Serializable, SecurityHeaderAddressable {
     public static final int REMOVE_CURRENT_SECURITY_HEADER = 0;
-    public static final int LEAVE_CURRENT_SECURITY_HEADER_AS_IS = 1;
+    public static final int CLEANUP_CURRENT_SECURITY_HEADER = 1;
     public static final int PROMOTE_OTHER_SECURITY_HEADER = 2;
+    public static final int IGNORE_SECURITY_HEADER = 3;
 
     // saml (model as a different bean when serializer supports it)
     private boolean attachSamlSenderVouches;
@@ -120,8 +121,9 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
      * This setting controls what this routing assertion should do with the current security header
      * before routing the request. Possible values are:
      * {@link #REMOVE_CURRENT_SECURITY_HEADER},
-     * {@link #LEAVE_CURRENT_SECURITY_HEADER_AS_IS},
+     * {@link #CLEANUP_CURRENT_SECURITY_HEADER},
      * {@link #PROMOTE_OTHER_SECURITY_HEADER}
+     * {@link #IGNORE_SECURITY_HEADER}
      */
     public int getCurrentSecurityHeaderHandling() {
         return currentSecurityHeaderHandling;
@@ -131,8 +133,9 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
      * Set what this routing assertion should do with the current security header
      * before routing the request. Possible values are:
      * {@link #REMOVE_CURRENT_SECURITY_HEADER},
-     * {@link #LEAVE_CURRENT_SECURITY_HEADER_AS_IS},
+     * {@link #CLEANUP_CURRENT_SECURITY_HEADER},
      * {@link #PROMOTE_OTHER_SECURITY_HEADER}
+     * {@link #IGNORE_SECURITY_HEADER}
      * @param currentSecurityHeaderHandling see description for possible values
      */
     public void setCurrentSecurityHeaderHandling(int currentSecurityHeaderHandling) {

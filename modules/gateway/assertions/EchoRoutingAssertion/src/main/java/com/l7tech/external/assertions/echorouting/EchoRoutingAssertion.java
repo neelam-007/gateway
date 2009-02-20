@@ -19,7 +19,7 @@ public class EchoRoutingAssertion extends RoutingAssertion {
     public EchoRoutingAssertion() {
         // This is because this was the effective default when the Server
         // assertion was not actually checking this property.
-        setCurrentSecurityHeaderHandling(LEAVE_CURRENT_SECURITY_HEADER_AS_IS);
+        setCurrentSecurityHeaderHandling(CLEANUP_CURRENT_SECURITY_HEADER);
     }
 
     public AssertionMetadata meta() {

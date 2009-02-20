@@ -44,6 +44,11 @@ public class ServerRoutingAssertionTest {
     private static final String VAL_SECURESPAN = SecurityActor.L7ACTOR.getValue();
 
     @Test
+    public void testIgnoreSecHeader() throws Exception {
+        assertOneSec(doHandle(SHOULD_NOT_THROW, IGNORE_SECURITY_HEADER, null), VAL_SECURESPAN, true);
+    }
+
+    @Test
     public void testHandleNonXml() throws Exception {
         Message message = new Message(new ByteArrayStashManager(), ContentTypeHeader.parseValue("application/binary"), new RandomInputStream(7, 2048));
         message.getSecurityKnob();
@@ -137,7 +142,7 @@ public class ServerRoutingAssertionTest {
 
     @Test
     public void testHandleSanitize() throws Exception {
-        assertOneSec(doHandle(SHOULD_NOT_THROW, LEAVE_CURRENT_SECURITY_HEADER_AS_IS, null), null, false);
+        assertOneSec(doHandle(SHOULD_NOT_THROW, CLEANUP_CURRENT_SECURITY_HEADER, null), null, false);
     }
 
     @Test
@@ -146,7 +151,7 @@ public class ServerRoutingAssertionTest {
         dreq.setSecurityHeaderActor(VAL_NOACTOR);
         Message message = makeProcessedMessage(dreq);
 
-        doHandle(SHOULD_NOT_THROW, message, LEAVE_CURRENT_SECURITY_HEADER_AS_IS, null);
+        doHandle(SHOULD_NOT_THROW, message, CLEANUP_CURRENT_SECURITY_HEADER, null);
         assertOneSec(message, VAL_NOACTOR, false);
     }
 
@@ -159,7 +164,7 @@ public class ServerRoutingAssertionTest {
         Node clonedHeader = header.cloneNode(true);
         header.getParentNode().insertBefore(clonedHeader, body);
 
-        doHandle(SHOULD_THROW, message, LEAVE_CURRENT_SECURITY_HEADER_AS_IS, null);
+        doHandle(SHOULD_THROW, message, CLEANUP_CURRENT_SECURITY_HEADER, null);
 
         // Have to remove mutant second header to continue examining message
         clonedHeader.getParentNode().removeChild(clonedHeader);
@@ -176,7 +181,7 @@ public class ServerRoutingAssertionTest {
     @Test
     @BugNumber(6625)
     public void testHandleNonSoapSanitizeCurrent() throws Exception {
-        assertNotSoap(doHandle(MUTATE_INTO_NON_SOAP, SHOULD_NOT_THROW, LEAVE_CURRENT_SECURITY_HEADER_AS_IS, null));
+        assertNotSoap(doHandle(MUTATE_INTO_NON_SOAP, SHOULD_NOT_THROW, CLEANUP_CURRENT_SECURITY_HEADER, null));
     }
 
     @Test

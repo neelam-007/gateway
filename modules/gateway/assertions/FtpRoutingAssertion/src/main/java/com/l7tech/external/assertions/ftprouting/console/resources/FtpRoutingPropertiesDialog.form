@@ -3,7 +3,7 @@
   <grid id="dc500" binding="_mainPanel" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="8" left="8" bottom="8" right="8"/>
     <constraints>
-      <xy x="26" y="23" width="597" height="504"/>
+      <xy x="26" y="23" width="597" height="572"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -288,7 +288,6 @@
                     <constraints>
                       <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
-                    <properties/>
                   </component>
                 </children>
               </grid>
@@ -402,7 +401,7 @@
           </grid>
         </children>
       </grid>
-      <grid id="6d0c1" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="0">
+      <grid id="6d0c1" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="0">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -410,21 +409,29 @@
         <properties/>
         <border type="etched" title="Current WSS header handling"/>
         <children>
-          <component id="287c1" class="javax.swing.JRadioButton" binding="wssRemoveRadioButton">
+          <component id="7c25e" class="javax.swing.JRadioButton" binding="wssRemoveRadio">
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <selected value="false"/>
+              <selected value="true"/>
               <text value="&amp;Remove processed Security header from request before routing"/>
             </properties>
           </component>
-          <component id="e6522" class="javax.swing.JRadioButton" binding="wssLeaveRadioButton">
+          <component id="9cfed" class="javax.swing.JRadioButton" binding="wssCleanupRadio">
             <constraints>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="&amp;Leave current Security header in request before routing"/>
+              <text value="Remove &amp;Layer 7 actor and mustUnderstand attributes from processed Security header"/>
+            </properties>
+          </component>
+          <component id="deb78" class="javax.swing.JRadioButton" binding="wssIgnoreRadio">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="&amp;Don't modify the request Security header"/>
             </properties>
           </component>
         </children>
@@ -454,6 +461,9 @@
       <member id="e6522"/>
       <member id="e6522"/>
       <member id="287c1"/>
+      <member id="deb78"/>
+      <member id="9cfed"/>
+      <member id="7c25e"/>
     </group>
   </buttonGroups>
 </form>

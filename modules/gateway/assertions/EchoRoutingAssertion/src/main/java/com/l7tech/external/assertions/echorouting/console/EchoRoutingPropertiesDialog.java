@@ -1,20 +1,21 @@
 package com.l7tech.external.assertions.echorouting.console;
 
-import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.util.EventListener;
-import javax.swing.*;
-import javax.swing.event.EventListenerList;
-
+import com.l7tech.console.event.PolicyEvent;
+import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.l7tech.console.panels.RoutingDialogUtils;
+import com.l7tech.external.assertions.echorouting.EchoRoutingAssertion;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.console.event.PolicyListener;
-import com.l7tech.console.event.PolicyEvent;
-import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.external.assertions.echorouting.EchoRoutingAssertion;
+
+import javax.swing.*;
+import javax.swing.event.EventListenerList;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.EventListener;
 
 
 /**
@@ -75,8 +76,11 @@ public class EchoRoutingPropertiesDialog extends AssertionPropertiesEditorSuppor
     private JPanel mainPanel;
     private JButton okButton;
     private JButton cancelButton;
-    private JRadioButton securityHeaderRemoveRadioButton;
-    private JRadioButton securityHeaderLeaveRadioButton;
+    private JRadioButton wssIgnoreRadio;
+    private JRadioButton wssCleanupRadio;
+    private JRadioButton wssRemoveRadio;
+
+    private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
 
     /**
      * Notify the listeners
@@ -116,8 +120,9 @@ public class EchoRoutingPropertiesDialog extends AssertionPropertiesEditorSuppor
         Utilities.setEscKeyStrokeDisposes(this);
 
         ButtonGroup buttonGroup = new ButtonGroup();
-        buttonGroup.add(securityHeaderRemoveRadioButton);
-        buttonGroup.add(securityHeaderLeaveRadioButton);
+        for (AbstractButton button : secHdrButtons)
+            buttonGroup.add(button);
+        RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -136,10 +141,7 @@ public class EchoRoutingPropertiesDialog extends AssertionPropertiesEditorSuppor
     }
 
     private void initFormData() {
-        if (assertion.getCurrentSecurityHeaderHandling() == EchoRoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER)
-            securityHeaderRemoveRadioButton.setSelected(true);
-        else
-            securityHeaderLeaveRadioButton.setSelected(true);
+        RoutingDialogUtils.configSecurityHeaderRadioButtons(assertion, -1, null, secHdrButtons);
     }
 
     public boolean isConfirmed() {
@@ -152,11 +154,7 @@ public class EchoRoutingPropertiesDialog extends AssertionPropertiesEditorSuppor
     }
 
     public EchoRoutingAssertion getData(EchoRoutingAssertion assertion) {
-        // copy view into model
-        if (securityHeaderRemoveRadioButton.isSelected())
-            assertion.setCurrentSecurityHeaderHandling(EchoRoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER);
-        else
-            assertion.setCurrentSecurityHeaderHandling(EchoRoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS);
+        RoutingDialogUtils.configSecurityHeaderHandling(assertion, -1, secHdrButtons);
         assertion.setGroupMembershipStatement(false);
         assertion.setAttachSamlSenderVouches(false);
         return assertion;

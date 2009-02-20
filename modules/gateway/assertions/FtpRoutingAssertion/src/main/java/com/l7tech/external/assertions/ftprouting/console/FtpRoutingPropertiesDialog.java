@@ -4,25 +4,25 @@
 
 package com.l7tech.external.assertions.ftprouting.console;
 
-import com.l7tech.gui.NumberField;
-import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.RunOnChangeListener;
-import com.l7tech.gateway.common.transport.ftp.FtpTestException;
-import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
-import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
-import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.panels.CancelableOperationDialog;
 import com.l7tech.console.panels.PrivateKeysComboBox;
-import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
+import com.l7tech.console.panels.RoutingDialogUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.ftprouting.FtpRoutingAssertion;
+import com.l7tech.gateway.common.transport.ftp.FtpCredentialsSource;
+import com.l7tech.gateway.common.transport.ftp.FtpFileNameSource;
+import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
+import com.l7tech.gateway.common.transport.ftp.FtpTestException;
+import com.l7tech.gui.NumberField;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -66,8 +66,9 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
     private JButton _testButton;
     private JButton _okButton;
     private JButton _cancelButton;
-    private JRadioButton wssRemoveRadioButton;
-    private JRadioButton wssLeaveRadioButton;
+    private JRadioButton wssIgnoreRadio;
+    private JRadioButton wssCleanupRadio;
+    private JRadioButton wssRemoveRadio;
     private JLabel portStatusLabel;
 
     public static final int DEFAULT_PORT_FTP = 21;
@@ -76,6 +77,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
     private FtpRoutingAssertion _assertion;
     private boolean _wasOkButtonPressed = false;
     private EventListenerList _listenerList = new EventListenerList();
+
+    private AbstractButton[] secHdrButtons = { wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
 
     /**
      * Creates new form ServicePanel
@@ -218,6 +221,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
             }
         });
 
+        RoutingDialogUtils.tagSecurityHeaderHandlingButtons(secHdrButtons);
+
         _testButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 testConnection();
@@ -275,11 +280,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
 
         _timeoutTextField.setText(Integer.toString(_assertion.getTimeout() / 1000));
 
-        if (_assertion.getCurrentSecurityHeaderHandling() == RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER) {
-            wssRemoveRadioButton.setSelected(true);
-        } else if (_assertion.getCurrentSecurityHeaderHandling() == RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS) {
-            wssLeaveRadioButton.setSelected(true);
-        }
+        RoutingDialogUtils.configSecurityHeaderRadioButtons(_assertion, -1, null, secHdrButtons);
 
         enableOrDisableComponents();
     }
@@ -397,11 +398,7 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
         }
         assertion.setTimeout(Integer.parseInt(_timeoutTextField.getText()) * 1000);
 
-        if (wssRemoveRadioButton.isSelected()) {
-            assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER);
-        } else if (wssLeaveRadioButton.isSelected()) {
-            assertion.setCurrentSecurityHeaderHandling(RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS);
-        }
+        RoutingDialogUtils.configSecurityHeaderHandling(assertion, -1, secHdrButtons);
 
         return assertion;
     }
