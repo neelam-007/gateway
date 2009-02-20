@@ -16,8 +16,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * @author: ghuang
- * @date: Feb 11, 2009
+ * The implementation of Monitoring Service Interface.
  */
 public class MonitoringServiceImpl implements MonitoringService {
     private static final Logger logger = Logger.getLogger(MonitoringServiceImpl.class.getName());
@@ -98,7 +97,10 @@ public class MonitoringServiceImpl implements MonitoringService {
 
             // Case 2: SSG node property status
             String propertyName = propertyStatus.getMonitorableId();
-            if (propertyName.equals(BuiltinMonitorables.DISK_FREE_KIB.getName()) && value != null) {
+            if (propertyName.equals(BuiltinMonitorables.LOG_SIZE.getName()) && value != null) {
+                // Convert KB to MB, since the UI displays the log size in MB.
+                value = Long.valueOf(String.valueOf(value)) / SystemMonitoringSetupSettingsManager.KB_MB_CONVERTOR;
+            } else if (propertyName.equals(BuiltinMonitorables.DISK_FREE_KIB.getName()) && value != null) {
                 // Convert KB to GB, since the UI displays the disk free in GB.
                 value = Long.valueOf(String.valueOf(value)) / SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR;
             } else if (propertyName.equals(BuiltinMonitorables.SWAP_USAGE_KIB.getName()) && value != null) {

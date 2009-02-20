@@ -73,16 +73,20 @@ public class Monitor extends EsmStandardWebPage {
         }
 
         // Wicket component for getting system monitoring setup settings
-        add(new JsonInteraction("getSystemMonitoringSetupSettings", "getSystemMonitoringSetupSettingsUrl", new GettingSystemMonitoringSetupSettingsDataProvider()));
+        add(new JsonInteraction("getSystemMonitoringSetupSettings", "getSystemMonitoringSetupSettingsUrl",
+            new GettingSystemMonitoringSetupSettingsDataProvider()));
 
         // Wicket component for saving system monitoring setup settings
-        add(new JsonPostInteraction("saveSystemMonitoringSetupSettings", "saveSystemMonitoringSetupSettingsUrl", new SavingSystemMonitoringSetupSettingsDataProvider()));
+        add(new JsonPostInteraction("saveSystemMonitoringSetupSettings", "saveSystemMonitoringSetupSettingsUrl",
+            new SavingSystemMonitoringSetupSettingsDataProvider()));
 
         // Wicket component for getting system monitoring notification rules
-        add(new JsonInteraction("getSystemMonitoringNotificationRules", "getSystemMonitoringNotificationRulesUrl", new GettingSystemMonitoringNotificationRulesDataProvider()));
+        add(new JsonInteraction("getSystemMonitoringNotificationRules", "getSystemMonitoringNotificationRulesUrl",
+            new GettingSystemMonitoringNotificationRulesDataProvider()));
 
         // Wicket component for saving/editing a system monitoring notification rule
-        add(new JsonPostInteraction("saveSystemMonitoringNotificationRule", "saveSystemMonitoringNotificationRuleUrl", new SavingSystemMonitoringNotificationRuleDataProvider()));
+        add(new JsonPostInteraction("saveSystemMonitoringNotificationRule", "saveSystemMonitoringNotificationRuleUrl",
+            new SavingSystemMonitoringNotificationRuleDataProvider()));
 
         // Wicket component for deleting a system monitoring notification rule
         final HiddenField deleteNotificationRuleDialog_id = new HiddenField("deleteNotificationRuleDialog_id", new Model(""));
@@ -108,13 +112,16 @@ public class Monitor extends EsmStandardWebPage {
         add(new JsonInteraction("getEntities", "getEntitiesUrl", new GettingEntitiesDataProvider()));
 
         // Wicket component for getting the monitoring properties of all entities
-        add(new JsonInteraction("getCurrentEntitiesPropertyValues", "getCurrentEntitiesPropertyValuesUrl", new GettingCurrentEntitiesPropertyValuesDataProvider()));
+        add(new JsonInteraction("getCurrentEntitiesPropertyValues", "getCurrentEntitiesPropertyValuesUrl",
+            new GettingCurrentEntitiesPropertyValuesDataProvider()));
 
         // Wicket component for getting entity monitoring property setup settings
-        add(new JsonInteraction("getEntityMonitoringPropertySetupSettings", "getEntityMonitoringPropertySetupSettingsUrl", new GettingEntityMonitoringPropertySetupSettingsDataProvider()));
+        add(new JsonInteraction("getEntityMonitoringPropertySetupSettings", "getEntityMonitoringPropertySetupSettingsUrl",
+            new GettingEntityMonitoringPropertySetupSettingsDataProvider()));
 
         // Wicket component for saving entity monitoring property setup settings
-        add(new JsonPostInteraction("saveEntityMonitoringPropertySetupSettings", "saveEntityMonitoringPropertySetupSettingsUrl", new SaveEntityMonitoringPropertySetupSettingsDataProvider()));
+        add(new JsonPostInteraction("saveEntityMonitoringPropertySetupSettings", "saveEntityMonitoringPropertySetupSettingsUrl",
+            new SaveEntityMonitoringPropertySetupSettingsDataProvider()));
     }
 
     /**
@@ -482,12 +489,15 @@ public class Monitor extends EsmStandardWebPage {
                     // Case 1: property setup already exists in the database.
                     if (propertySetup != null) {
                         propertySetup.setEntity(entity);
-                        if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.DISK_FREE)) {
+                        if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.LOG_SIZE)) {
+                            // Convert KB to MB, since the UI displays the log size in MB.
+                            propertySetup.setTriggerValue(convertKbToMbOrGb(true, propertySetup.getTriggerValue()));
+                        } else if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.DISK_FREE)) {
                             // Convert KB to GB, since the UI displays the disk free in GB.
-                            propertySetup.setTriggerValue(propertySetup.getTriggerValue() / SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR);
+                            propertySetup.setTriggerValue(convertKbToMbOrGb(false, propertySetup.getTriggerValue()));
                         } else if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.SWAP_USAGE)) {
                             // Convert KB to MB, since the UI displays the swap usage in MB.
-                            propertySetup.setTriggerValue(propertySetup.getTriggerValue() / SystemMonitoringSetupSettingsManager.KB_MB_CONVERTOR);
+                            propertySetup.setTriggerValue(convertKbToMbOrGb(true, propertySetup.getTriggerValue()));
                         }
                         returnValue = propertySetup;
                     }
@@ -504,12 +514,15 @@ public class Monitor extends EsmStandardWebPage {
                         Map<String, Object> systemSetup = systemMonitoringSetupSettingsManager.findSetupSettings();
                         Long triggerValue = (Long) systemSetup.get("trigger." + propertyType);
                         if (triggerValue != null) {
-                            if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.DISK_FREE)) {
+                            if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.LOG_SIZE)) {
+                                // Convert KB to MB, since the UI displays the log size in MB.
+                                triggerValue = convertKbToMbOrGb(true, triggerValue);
+                            } else if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.DISK_FREE)) {
                                 // Convert KB to GB, since the UI displays the disk free in GB.
-                                triggerValue /= SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR;
+                                triggerValue = convertKbToMbOrGb(false, triggerValue);
                             } else if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.SWAP_USAGE)) {
                                 // Convert KB to MB, since the UI displays the swap usage in MB.
-                                triggerValue /= SystemMonitoringSetupSettingsManager.KB_MB_CONVERTOR;
+                                triggerValue = convertKbToMbOrGb(true, triggerValue);
                             }
                         }
                         initSetup.setTriggerValue(triggerValue);
@@ -615,12 +628,15 @@ public class Monitor extends EsmStandardWebPage {
                         if (triggerEnabled) {
                             Long triggerValue = (Long)jsonFormatMap.get(JSONConstants.ENTITY_PROPS_SETUP.TRIGGER_VALUE);
                             if (triggerValue != null) {
-                                if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.DISK_FREE)) {
+                                if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.LOG_SIZE)) {
+                                    // Convert MB to KB, since the database stores the log size in KB.
+                                    triggerValue = convertMbOrGbToKb(true, triggerValue);
+                                } else if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.DISK_FREE)) {
                                     // Convert GB to KB, since the database stores the disk free KB.
-                                    triggerValue *= SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR;
+                                    triggerValue = convertMbOrGbToKb(false, triggerValue);
                                 } else if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.SWAP_USAGE)) {
                                     // Convert MB to KB, since the database stores the swap usage in KB.
-                                    triggerValue *= SystemMonitoringSetupSettingsManager.KB_MB_CONVERTOR;
+                                    triggerValue = convertMbOrGbToKb(true, triggerValue);
                                 }
                             }
                             propertySetup.setTriggerValue(triggerValue);
@@ -692,7 +708,7 @@ public class Monitor extends EsmStandardWebPage {
         // "logSize"
         Map<String, Object> logSizeMap = new HashMap<String, Object>();
         logSizeMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,           clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_LOGSIZE));
-        logSizeMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,       clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_LOGSIZE));
+        logSizeMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,       convertKbToMbOrGb(true, (Long)clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_LOGSIZE)));
         logSizeMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT,   Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_LOGSIZE_LOWERLIMIT)));
         logSizeMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                        serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_LOGSIZE_UNIT));
 
@@ -707,7 +723,7 @@ public class Monitor extends EsmStandardWebPage {
         // "diskFree"
         Map<String, Object> diskFreeMap = new HashMap<String, Object>();
         diskFreeMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_DISKFREE));
-        diskFreeMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     convertKbToGb(clusterPropertyFormatMap));
+        diskFreeMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     convertKbToMbOrGb(false, (Long)clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_DISKFREE)));
         diskFreeMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_DISKFREE_LOWERLIMIT)));
         diskFreeMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                      serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_DISKFREE_UNIT));
 
@@ -733,7 +749,7 @@ public class Monitor extends EsmStandardWebPage {
         // "swapUsage"
         Map<String, Object> swapUsageMap = new HashMap<String, Object>();
         swapUsageMap.put(JSONConstants.MonitoringPropertySettings.SAMPLING_INTERVAL,         clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_INTERVAL_SWAPUSAGE));
-        swapUsageMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     ((Long)clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_SWAPUSAGE)) / SystemMonitoringSetupSettingsManager.KB_MB_CONVERTOR);
+        swapUsageMap.put(JSONConstants.MonitoringPropertySettings.DEFAULT_TRIGGER_VALUE,     convertKbToMbOrGb(true, (Long)clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_SWAPUSAGE)));
         swapUsageMap.put(JSONConstants.MonitoringPropertySettings.TRIGGER_VALUE_LOWER_LIMIT, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_SWAPUSAGE_LOWERLIMIT)));
         swapUsageMap.put(JSONConstants.MonitoringPropertySettings.UNIT,                      serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_SWAPUSAGE_UNIT));
 
@@ -766,11 +782,16 @@ public class Monitor extends EsmStandardWebPage {
         return jsonFormatMap;
     }
 
-    private Object convertKbToGb(Map<String, Object> clusterPropertyFormatMap) {
-        Long kb = (Long)clusterPropertyFormatMap.get(ServerConfig.PARAM_MONITORING_TRIGGER_DISKFREE);
-        if (kb == null)
+    private Long convertKbToMbOrGb(boolean toMb, Long valInKb) {
+        if (valInKb == null)
             return null;
-        return kb / SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR;
+        return valInKb / (toMb? SystemMonitoringSetupSettingsManager.KB_MB_CONVERTOR : SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR);
+    }
+
+    private Long convertMbOrGbToKb(boolean fromMb, Long valInMbOrGb) {
+        if (valInMbOrGb == null)
+            return null;
+        return valInMbOrGb * (fromMb? SystemMonitoringSetupSettingsManager.KB_MB_CONVERTOR : SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR);
     }
 
     /**
@@ -809,7 +830,7 @@ public class Monitor extends EsmStandardWebPage {
                 clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_LOGSIZE, interval);
 
                 long triggerVal = getTriggerValue(logSizeMap, JSONConstants.SsgNodeMonitoringProperty.LOG_SIZE, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_LOGSIZE_LOWERLIMIT)), null);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_LOGSIZE, triggerVal);
+                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_LOGSIZE, convertMbOrGbToKb(true, triggerVal));
             }
 
             // "diskUsage"
@@ -831,7 +852,7 @@ public class Monitor extends EsmStandardWebPage {
                 clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_DISKFREE, interval);
 
                 long triggerVal = getTriggerValue(diskFreeMap, JSONConstants.SsgNodeMonitoringProperty.DISK_FREE, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_DISKFREE_LOWERLIMIT)), null);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DISKFREE, triggerVal * SystemMonitoringSetupSettingsManager.KB_GB_CONVERTOR);
+                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DISKFREE, convertMbOrGbToKb(false, triggerVal));
             }
 
             // "raidStatus"
@@ -870,7 +891,7 @@ public class Monitor extends EsmStandardWebPage {
                 clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_INTERVAL_SWAPUSAGE, interval);
 
                 long triggerVal = getTriggerValue(swapUsageMap, JSONConstants.SsgNodeMonitoringProperty.SWAP_USAGE, Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_SSGNODE_SWAPUSAGE_LOWERLIMIT)), null);
-                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_SWAPUSAGE, triggerVal * SystemMonitoringSetupSettingsManager.KB_MB_CONVERTOR);
+                clusterPropertyFormatMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_SWAPUSAGE, convertMbOrGbToKb(true, triggerVal));
             }
 
             // "ntpStatus"

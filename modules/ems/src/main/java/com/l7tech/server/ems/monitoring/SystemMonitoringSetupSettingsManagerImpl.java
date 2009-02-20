@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2009 Layer 7 Technologies Inc.
+ */
+
 package com.l7tech.server.ems.monitoring;
 
 import com.l7tech.server.cluster.ClusterPropertyManager;
@@ -20,11 +24,6 @@ import java.io.IOException;
 
 /**
  * The implementation of the interface, {@link SystemMonitoringSetupSettingsManager}.
- *
- * @Copyright: Layer 7 Tech. Inc.
- * @Author: ghuang
- * @Date: Jan 28, 2009
- * @since Enterprise Manager 1.0
  */
 public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitoringSetupSettingsManager {
     private static final Logger logger = Logger.getLogger(SystemMonitoringSetupSettingsManagerImpl.class.getName());
@@ -80,7 +79,7 @@ public class SystemMonitoringSetupSettingsManagerImpl implements SystemMonitorin
 
         try {
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_AUDITSIZE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_AUDITSIZE)));
-            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_LOGSIZE,          Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_LOGSIZE)));
+            initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_LOGSIZE,          Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_LOGSIZE)) * KB_MB_CONVERTOR);
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DISKUSAGE,        Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_DISKUSAGE)));
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_DISKFREE,         Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_DISKFREE)) * KB_GB_CONVERTOR);
             initialSetupSettingsMap.put(ServerConfig.PARAM_MONITORING_TRIGGER_CPUTEMPERATURE,   Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_INIT_TRIGGER_CPUTEMPERATURE)));
