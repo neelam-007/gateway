@@ -136,7 +136,7 @@ public class AuditRecordManagerImpl
 
     @Override
     public int findCount( final AuditSearchCriteria criteria ) throws FindException {
-        return super.findCount( asCriterion(criteria) );
+        return super.findCount( criteria.recordClass, asCriterion(criteria) );
     }
 
     @Override

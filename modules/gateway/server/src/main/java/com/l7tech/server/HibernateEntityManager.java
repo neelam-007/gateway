@@ -104,13 +104,13 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      * @return The number of entities matched
      * @throws FindException If an error occurs
      */
-    protected int findCount( final Criterion... restrictions ) throws FindException {
+    protected int findCount( final Class clazz, final Criterion... restrictions ) throws FindException {
         try {
             //noinspection unchecked
             return (Integer) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
                 @Override
                 protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
-                    Criteria crit = session.createCriteria(getImpClass());
+                    Criteria crit = session.createCriteria(clazz==null ? getImpClass() : clazz);
 
                     // Ensure manager specific criteria are added
                     addFindAllCriteria( crit );
@@ -122,7 +122,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
                     final ScrollableResults results = crit.scroll( ScrollMode.SCROLL_SENSITIVE );
                     results.last();
-                    return results.getRowNumber();
+                    return results.getRowNumber() + 1;
                 }
             });
         } catch (Exception e) {

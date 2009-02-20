@@ -46,12 +46,12 @@ public class StandardReportManagerImpl  extends HibernateEntityManager<StandardR
 
     @Override
     public List<StandardReport> findPage( final User user, String sortProperty, boolean ascending, int offset, int count) throws FindException {
-        return findPage( getInterfaceClass(), sortProperty, ascending, offset, count,  asCriterion(user)  );
+        return findPage( null, sortProperty, ascending, offset, count,  asCriterion(user)  );
     }
 
     @Override
     public int findCount( final User user ) throws FindException {
-        return findCount( asCriterion(user) );
+        return findCount( null, asCriterion(user) );
     }
 
     @Override

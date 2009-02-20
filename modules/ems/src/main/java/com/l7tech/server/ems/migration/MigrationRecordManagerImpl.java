@@ -132,7 +132,7 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
     public int findCount( final User user,
                           final Date start,
                           final Date end ) throws FindException {
-        return super.findCount( asCriterion( user, start, end ) );
+        return super.findCount( null, asCriterion( user, start, end ) );
     }
 
     //- PROTECTED
