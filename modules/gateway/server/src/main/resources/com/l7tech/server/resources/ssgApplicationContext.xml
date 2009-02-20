@@ -190,7 +190,7 @@
                                 <value>ioMailInTimeout</value>
                             </list>
                         </entry>
-                        <entry key="ldapIdentityProvider">
+                        <entry key="identityProviderFactory">
                             <list>
                                 <value>ldapReadTimeout</value>
                                 <value>ldapConnectionTimeout</value>

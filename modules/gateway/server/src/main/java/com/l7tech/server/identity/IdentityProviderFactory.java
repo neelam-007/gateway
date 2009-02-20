@@ -23,13 +23,15 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * This factory caches identity providers!
  *
  * @author alex
  */
-public class IdentityProviderFactory implements ApplicationContextAware, ApplicationListener {
+public class IdentityProviderFactory implements ApplicationContextAware, ApplicationListener, PropertyChangeListener {
     private ApplicationContext springContext;
     private final IdentityProviderConfigManager identityProviderConfigManager;
 
@@ -180,6 +182,17 @@ public class IdentityProviderFactory implements ApplicationContextAware, Applica
                 disposableBean.destroy();
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Unable to destroy the identity provider " + oid, e);
+            }
+        }
+    }
+
+    public void propertyChange(PropertyChangeEvent evt) {
+        Set<Long> keys = providers.keySet();
+        for (Long key : keys) {
+            IdentityProvider provider = providers.get(key);
+            if (provider != null && provider instanceof PropertyChangeListener) {
+                PropertyChangeListener listener = (PropertyChangeListener) provider;
+                listener.propertyChange(evt);
             }
         }
     }
