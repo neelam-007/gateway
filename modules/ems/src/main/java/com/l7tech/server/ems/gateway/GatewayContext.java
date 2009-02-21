@@ -8,6 +8,7 @@ import com.l7tech.util.SyspropUtil;
 
 import java.text.MessageFormat;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 /**
  * GatewayContext provides access from the ESM to APIs offered by a Gateway cluster (represented by either a
@@ -16,6 +17,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * For access to Process Controller APIs, see {@link ProcessControllerContext}.
  */
 public class GatewayContext extends ApiContext {
+    private static final Logger logger = Logger.getLogger( GatewayContext.class.getName() );
+    
     private static final String PROP_GATEWAY_URL = "com.l7tech.esm.gatewayUrl";
     private static final String PROP_REPORT_URL = "com.l7tech.esm.reportUrl";
     private static final String PROP_MIGRATION_URL = "com.l7tech.esm.migrationUrl";
@@ -40,7 +43,7 @@ public class GatewayContext extends ApiContext {
      * @param userId The ID for the EM user (null for none)
      */
     public GatewayContext(final DefaultKey defaultKey, final String host, final int gatewayPort, final String esmId, final String userId) {
-        super(defaultKey, host, esmId, userId);
+        super(logger, defaultKey, host, esmId, userId);
         gatewayUrl = MessageFormat.format(GATEWAY_URL, host, Integer.toString(gatewayPort));
         reportUrl = MessageFormat.format(REPORT_URL, host, Integer.toString(gatewayPort));
         migrationUrl = MessageFormat.format(MIGRATION_URL, host, Integer.toString(gatewayPort));

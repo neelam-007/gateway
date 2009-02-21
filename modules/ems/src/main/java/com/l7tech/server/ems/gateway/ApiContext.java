@@ -2,6 +2,7 @@ package com.l7tech.server.ems.gateway;
 
 import com.l7tech.server.DefaultKey;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.interceptor.LoggingInInterceptor;
@@ -28,7 +29,10 @@ import java.util.logging.Logger;
  * Holds common code used by ESM clients of APIs offered by the Gateway or ProcessController.
  */
 public abstract class ApiContext {
-    private static final Logger logger = Logger.getLogger(GatewayContext.class.getName());
+    private static final String PROP_CONN_TIMEOUT = "com.l7tech.server.ems.gateway.connectTimeout";
+    private static final String PROP_READ_TIMEOUT = "com.l7tech.server.ems.gateway.readTimeout";
+
+    protected final Logger logger;
     protected final String cookie;
     protected final DefaultKey defaultKey;
     protected final String host;
@@ -43,7 +47,8 @@ public abstract class ApiContext {
      * @param userId The ID for the EM user, so the provider can map our users to its users for access control purposes,
      *               or null if this ApiContext will not be consuming the API on behalf of an EM user.
      */
-    protected ApiContext(final DefaultKey defaultKey, final String host, final String esmId, final String userId) {
+    protected ApiContext(final Logger logger, final DefaultKey defaultKey, final String host, final String esmId, final String userId) {
+        this.logger = logger;
         cookie = buildCookie( esmId, userId );
         this.defaultKey = defaultKey;
         this.host = host;
@@ -121,6 +126,8 @@ public abstract class ApiContext {
         HTTPConduit hc = (HTTPConduit) c.getConduit();
         HTTPClientPolicy policy = hc.getClient();
         policy.setCookie( cookie );
+        policy.setConnectionTimeout( SyspropUtil.getLong(PROP_CONN_TIMEOUT, 30000) );
+        policy.setReceiveTimeout( SyspropUtil.getLong(PROP_READ_TIMEOUT, 60000) );
         hc.setTlsClientParameters(new TLSClientParameters() {
             @Override
             public TrustManager[] getTrustManagers() {

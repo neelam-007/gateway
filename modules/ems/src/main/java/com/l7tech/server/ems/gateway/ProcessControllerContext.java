@@ -8,11 +8,14 @@ import com.l7tech.util.SyspropUtil;
 
 import java.text.MessageFormat;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 /**
  * GatewayContext provides access from the ESM to APIs offered by a single Gateway node and its Process Controller.
  */
 public class ProcessControllerContext extends ApiContext {
+    private static final Logger logger = Logger.getLogger( ProcessControllerContext.class.getName() );
+
     private static final String PROP_CONTROLLER_URL = "com.l7tech.esm.controllerUrl";
     private static final String PROP_MONITORING_URL = "com.l7tech.esm.monitoringUrl";
     private static final String CONTROLLER_URL = SyspropUtil.getString(PROP_CONTROLLER_URL, "https://{0}:{1}/services/nodeManagementApi");
@@ -32,7 +35,7 @@ public class ProcessControllerContext extends ApiContext {
      * @param esmId The ID for the EM
      */
     public ProcessControllerContext( final DefaultKey defaultKey, final String host, final int processControllerPort, final String esmId ) {
-        super(defaultKey, host, esmId, null);
+        super(logger, defaultKey, host, esmId, null);
         if ( host == null ) throw new IllegalArgumentException("host is required");
         if ( esmId == null ) throw new IllegalArgumentException("esmId is required");
         controllerUrl = MessageFormat.format(CONTROLLER_URL, host, Integer.toString(processControllerPort));
