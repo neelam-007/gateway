@@ -270,7 +270,7 @@ public class MigrationManagerImpl implements MigrationManager {
         if (entity == null)
             throw new MigrationApi.MigrationException("Entity not found on the target cluster for header: " + header);
 
-        if (! (header instanceof ValueReferenceEntityHeader) )
+        if (! (header instanceof ValueReferenceEntityHeader) || ((ValueReferenceEntityHeader)header).getMappedValue() != null)
             result.put(header, new MigratedItem(header, EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(entity)), op));
 
         applyMappings(header, entity, targetHeader, bundle, entitiesFromTarget);

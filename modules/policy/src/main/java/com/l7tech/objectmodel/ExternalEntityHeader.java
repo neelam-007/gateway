@@ -16,7 +16,7 @@ public class ExternalEntityHeader extends EntityHeader {
 
     private String externalId;
 
-    private Map<String,String> extraProperties = new HashMap<String, String>();
+    protected Map<String,String> extraProperties = new HashMap<String, String>();
 
     public ExternalEntityHeader() {
     }
@@ -53,6 +53,15 @@ public class ExternalEntityHeader extends EntityHeader {
 
     public String getProperty(String name) {
         return extraProperties.get(name);
+    }
+
+    public String getDisplayName() {
+        return extraProperties != null && extraProperties.containsKey("Display Name") ? extraProperties.get("Display Name") : getName();
+    }
+
+    public String getDisplayNameWithScope() {
+        return getDisplayName() +
+              ((extraProperties != null && extraProperties.containsKey("Scope Name")) ? " [" + extraProperties.get("Scope Name") + "]" : "");
     }
 
     public boolean equals(Object o) {

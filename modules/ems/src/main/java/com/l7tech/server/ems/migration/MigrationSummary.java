@@ -4,6 +4,7 @@ import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.management.migration.bundle.MigratedItem;
 import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ValueReferenceEntityHeader;
 
 import javax.xml.bind.JAXB;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -198,10 +199,16 @@ public class MigrationSummary implements Serializable {
                 } else if (operation == MigratedItem.ImportOperation.OVERWRITE) {
                     willOverwriteAnything = true;
                 }
-                ExternalEntityHeader ih = dryRun ? item.getSourceHeader() : item.getTargetHeader();
-                builder.append(ih.getType().getName().toLowerCase()).append(", ").append(ih.getName()==null?"":ih.getName())
-                    .append("(#").append(ih.getExternalId()).append(")").append( dryRun ? " will be " : " was " )
-                    .append(operation.pastParticiple().toLowerCase()).append("\n");
+
+                ExternalEntityHeader sourceHeader = item.getSourceHeader();
+                if (sourceHeader instanceof ValueReferenceEntityHeader && ((ValueReferenceEntityHeader)sourceHeader).getMappedValue() != null) {
+                    mappingBuilder.append(sourceHeader.getDisplayNameWithScope()).append(" value mapped to ").append(((ValueReferenceEntityHeader)sourceHeader).getMappedValue());
+                } else {
+                    ExternalEntityHeader ih = dryRun ? item.getSourceHeader() : item.getTargetHeader();
+                    builder.append(ih.getType().getName().toLowerCase()).append(", ").append(ih.getName()==null?"":ih.getName())
+                        .append("(#").append(ih.getExternalId()).append(")").append( dryRun ? " will be " : " was " )
+                        .append(operation.pastParticiple().toLowerCase()).append("\n");
+                }
             }
         }
 

@@ -1,12 +1,14 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.TextUtils;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author jbufu
@@ -15,7 +17,7 @@ import java.util.HashMap;
 public class ValueReferenceEntityHeader extends ExternalEntityHeader {
 
     public enum Type {
-        HTTP_URL {
+        HTTP_URL("HTTP(S) URL") {
             @Override
             public String serialize(Object value) {
                 return serializeString(value);
@@ -26,7 +28,7 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
             }
         },
 
-        HTTP_URL_ARRAY {
+        HTTP_URL_ARRAY("URL List") {
             @Override
             public String serialize(Object value) {
                 return serializeStringArray(value);
@@ -37,7 +39,7 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
             }
         },
 
-        IP_ADDRESS {
+        IP_ADDRESS("IP Address") {
             @Override
             public String serialize(Object value) {
                 return serializeString(value);
@@ -48,7 +50,7 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
             }
         },
 
-        IP_ADDRESS_ARRAY {
+        IP_ADDRESS_ARRAY("IP Address List") {
             @Override
             public String serialize(Object value) {
                 return serializeStringArray(value);
@@ -59,7 +61,7 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
             }
         },
 
-        TEXT {
+        TEXT("Plain Text") {
             @Override
             public String serialize(Object value) {
                 return serializeString(value);
@@ -70,8 +72,18 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
             }
         };
 
+        private String name;
+
         public abstract String serialize(Object value);
         public abstract Object deserialize(String serialized);
+
+        private Type(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
 
         private static String serializeString(Object value) {
             if (! (value instanceof String) )
@@ -114,6 +126,9 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
     public ValueReferenceEntityHeader(ExternalEntityHeader owner, String propertyName, Type valueType, String displayValue) {
         super(HexUtils.encodeBase64(propertyName.getBytes(Charset.forName("UTF-8"))) + ":" + owner.getExternalId(), owner);
         setName(getName() + " : " + propertyName);
+        Map<String,String> ownerProperties = owner.getExtraProperties();
+        if (ownerProperties != null)
+            extraProperties = new HashMap<String,String>(ownerProperties);
         setProperty(OWNER_TYPE, owner.getType().name());
         setProperty(VALUE_TYPE, valueType.name());
         setProperty(DISPLAY_VALUE, displayValue);
@@ -172,4 +187,9 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
         return getProperty(MAPPED_VALUE);
     }
 
+    @Override
+    public String getDisplayNameWithScope() {
+        return super.getDisplayNameWithScope() +
+               (getValueType() != null ? ", " + getValueType().getName() + " " + TextUtils.truncStringMiddleExact( getDisplayValue(), 128 ) : "");
+    }
 }

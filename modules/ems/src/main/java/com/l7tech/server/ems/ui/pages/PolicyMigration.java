@@ -1939,46 +1939,11 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
 
         public String getDisplayName() {
-            String displayName = name;
-
-            Map<String,String> extraProps = entityHeader!=null ? entityHeader.getExtraProperties() : null;
-            if ( extraProps != null && extraProps.containsKey("Display Name") ) {
-                displayName = extraProps.get("Display Name");
-            }
-
-            return displayName;
+            return entityHeader != null ? entityHeader.getDisplayName() : name;
         }
 
         public String getDisplayNameWithScope() {
-            String nameWithScope = getDisplayName();
-
-            Map<String,String> extraProps = entityHeader!=null ? entityHeader.getExtraProperties() : null;
-            if ( extraProps != null && extraProps.containsKey("Scope Name") ) {
-                nameWithScope = nameWithScope + " [" + extraProps.get("Scope Name") + "]";
-            }
-
-            if ( entityHeader instanceof ValueReferenceEntityHeader ) {
-                ValueReferenceEntityHeader vreh = (ValueReferenceEntityHeader) entityHeader;
-                String typeDesc = "";
-                if ( vreh.getValueType() != null ) {
-                    switch ( vreh.getValueType() ) {
-                        case HTTP_URL:
-                            typeDesc = ", HTTP(S) URL";
-                            break;
-                        case IP_ADDRESS:
-                            typeDesc = ", IP Address";
-                            break;
-                    }
-                }
-
-                if ( ownerName != null ) {
-                    nameWithScope = ownerName + typeDesc +" \\n" + truncateDisplayValue(vreh.getDisplayValue());
-                } else {
-                    nameWithScope = nameWithScope + typeDesc + " \\n" + truncateDisplayValue(vreh.getDisplayValue());
-                }
-            }
-
-            return nameWithScope;
+            return entityHeader != null ? entityHeader.getDisplayNameWithScope() : getDisplayName();
         }
     }
 
