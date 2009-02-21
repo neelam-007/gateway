@@ -113,7 +113,7 @@ public class EsmApplication extends WebApplication {
         boolean isAdmin = false;
         try {
             for (Role role: getRoleManager().getAssignedRoles(info.getUser())) {
-                if (role.getTag().equals(Role.Tag.ADMIN)) {
+                if (Role.Tag.ADMIN == role.getTag()) {
                     isAdmin = true;
                     break;
                 }
