@@ -124,7 +124,7 @@ public class GlobalSchemaEntryEditor extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
         Utilities.setEnterAction(this, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
-                cancel();
+                ok();
             }
         });
 
