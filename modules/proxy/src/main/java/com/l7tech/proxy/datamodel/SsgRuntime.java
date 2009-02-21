@@ -368,7 +368,7 @@ public class SsgRuntime {
                 if (ssg.isGeneric()) // Generic account does not support any security token strategies
                     return tokenStrategiesByType;
                 TokenStrategy samlStrat1 = ssg.getWsTrustSamlTokenStrategy();
-                TokenStrategy samlStrat2 = null;
+                TokenStrategy samlStrat2 = ssg.getWsTrustSamlTokenStrategy();
                 if (samlStrat1 == null) {
                     Ssg tokenServerSsg = ssg.getTrustedGateway();
                     if (tokenServerSsg == null) tokenServerSsg = ssg;
