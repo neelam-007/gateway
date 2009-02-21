@@ -59,7 +59,8 @@ public final class DeleteServiceAction extends DeleteEntityNodeAction<ServiceNod
     }
 
     public String getUserConfirmationMessage() {
-        return "Are you sure you want to delete the " + node.getName() + " service?";
+        final String nodeName = node.getName().length() > 43 ? node.getName().substring(0, 40) +  "..." : node.getName();
+        return "Are you sure you want to delete the '" + nodeName + "' service?";
     }
 
     public String getUserConfirmationTitle() {

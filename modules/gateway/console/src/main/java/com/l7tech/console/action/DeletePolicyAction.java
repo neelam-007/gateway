@@ -105,7 +105,8 @@ public final class DeletePolicyAction extends DeleteEntityNodeAction<PolicyEntit
     }
 
     public String getUserConfirmationMessage() {
-        return "Are you sure you want to delete the " + node.getName() + " policy?";
+        final String nodeName = node.getName().length() > 43 ? node.getName().substring(0, 40) +  "..." : node.getName();
+        return "Are you sure you want to delete the '" + nodeName + "' policy?";
     }
 
     public String getUserConfirmationTitle() {
