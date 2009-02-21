@@ -456,6 +456,11 @@ public interface ReportApi {
          */
         public static final String IS_USING_KEYS = "IS_USING_KEYS";
 
+        /**
+         * IS_IGNORE_PAGINATION when set to true, tells the Jasper engine to create the report as one long page
+         */
+        //public static final String IS_IGNORE_PAGINATION = "IS_IGNORE_PAGINATION";
+
         //interval only ssg params
         public static final String SUB_INTERVAL_SUB_REPORT = "SUB_INTERVAL_SUB_REPORT";
         public static final String SUB_REPORT = "SUB_REPORT";

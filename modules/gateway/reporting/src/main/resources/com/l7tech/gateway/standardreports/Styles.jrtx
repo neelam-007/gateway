@@ -57,6 +57,7 @@
         <box leftPadding="5" />
     </style>
 
+    <!--Used as the style for a total row cell, which requires html formatting-->
     <style
             name="RowTotalHeadingHtml"
             isDefault="false"
@@ -75,10 +76,6 @@
             markup="html"
             >
         <box leftPadding="5">
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
-            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
-            <rightPen lineWidth="0.5" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -121,6 +118,7 @@
         <box leftPadding="5" />
     </style>
 
+    <!--This style is used for column heading cells which are the left most cell-->
     <style
             name="TableHeadingInterval"
             isDefault="false"
@@ -138,6 +136,53 @@
             isPdfEmbedded="false"
             >
         <box leftPadding="5">
+        </box>
+    </style>
+
+    <!-- Usage table column headings need color information-->
+    <style
+            name="UsageTableHeading"
+            isDefault="false"
+            mode="Opaque"
+            vAlign="Middle"
+            hAlign="Center"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            backcolor="#DBD3B0"
+            >
+        <box leftPadding="5">
+            <topPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <!-- Usage table column headings need color information-->
+    <style
+            name="UsageTableHeadingEnd"
+            isDefault="false"
+            mode="Opaque"
+            vAlign="Middle"
+            hAlign="Center"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            backcolor="#DBD3B0"
+            >
+        <box leftPadding="5">
             <topPen lineWidth="0.5" lineStyle="Solid"/>
             <leftPen lineWidth="0.5" lineStyle="Solid"/>
             <bottomPen lineWidth="0.5" lineStyle="Solid"/>
@@ -145,9 +190,9 @@
         </box>
     </style>
 
-    <!-- Usage table column headings need color information-->
+    <!-- Usage table column headings need color information. Row total cell has rhs border too-->
     <style
-            name="UsageTableHeading"
+            name="UsageTableHeadingRowTotal"
             isDefault="false"
             mode="Opaque"
             vAlign="Middle"
@@ -190,13 +235,12 @@
             >
         <box leftPadding="5">
             <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
             <bottomPen lineWidth="0.5" lineStyle="Solid"/>
-            <rightPen lineWidth="0.5" lineStyle="Solid"/>
         </box>
     </style>
 
 
+    <!--This style is used for column headings-->
     <style
             name="TableHeading"
             isDefault="false"
@@ -215,10 +259,32 @@
             markup="html"
             >
         <box>
+            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <!--This style is used for column headings which are multi lined, and this is the bottom element e.g. min
+    max and average response times-->
+    <style
+            name="TableHeadingWithTopBorder"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Center"
+            fontName="SansSerif"
+            fontSize="10"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            markup="html"
+            >
+        <box>
             <topPen lineWidth="0.5" lineStyle="Solid"/>
             <leftPen lineWidth="0.5" lineStyle="Solid"/>
-            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
-            <rightPen lineWidth="0.5" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -256,6 +322,9 @@
             isPdfEmbedded="false"
             />
 
+    <!--This style is used for columns containing totals colums, where this column contains a row heading.
+    It's the same as RowTotal apart from it's left padding = 5 and has no left border, as this is provided by the
+    enclosing frame-->
     <style
             name="RowTotalHeading"
             isDefault="false"
@@ -273,10 +342,6 @@
             isPdfEmbedded="false"
             >
         <box leftPadding="5">
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
-            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
-            <rightPen lineWidth="0.5" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -300,9 +365,30 @@
             >
         <box leftPadding="5">
             <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
             <bottomPen lineWidth="0.5" lineStyle="Solid"/>
-            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <!-- Usage reports need their background colour in the textfields-->
+    <style
+            name="UsageReportTotalHeading"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Left"
+            fontName="SansSerif"
+            fontSize="10"
+            backcolor="#D6D6D6"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            >
+        <box leftPadding="5">
+            <topPen lineWidth="0.5" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -328,10 +414,112 @@
             <topPen lineWidth="0.5" lineStyle="Solid"/>
             <leftPen lineWidth="0.5" lineStyle="Solid"/>
             <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <!-- Usage reports need their background colour in the textfields-->
+    <style
+            name="UsageReportRowTotal"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Center"
+            fontName="SansSerif"
+            fontSize="10"
+            backcolor="#D6D6D6"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            >
+        <box>
+            <topPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <!-- Usage reports need their background colour in the textfields-->
+    <style
+            name="UsageRowGrandTotal"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Center"
+            fontName="SansSerif"
+            fontSize="10"
+            backcolor="#D6D6D6"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            >
+        <box>
+            <topPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
             <rightPen lineWidth="0.5" lineStyle="Solid"/>
         </box>
     </style>
 
+    <!-- Usage reports need their background colour in the textfields-->
+    <style
+            name="UsageReportRowGrandTotal"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Center"
+            fontName="SansSerif"
+            fontSize="10"
+            backcolor="#D6D6D6"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            >
+        <box>
+            <topPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <!-- Usage reports need their background colour in the textfields. This is a minor total, on a row-->
+    <style
+            name="UsageRowTotalMinor"
+            isDefault="false"
+            mode="Transparent"
+            vAlign="Middle"
+            hAlign="Center"
+            fontName="SansSerif"
+            fontSize="10"
+            backcolor="#D6D6D6"
+            isBold="false"
+            isItalic="false"
+            isUnderline="false"
+            isStrikeThrough="false"
+            pdfFontName="Helvetica"
+            pdfEncoding="Cp1252"
+            isPdfEmbedded="false"
+            >
+        <box>
+            <topPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+        </box>
+    </style>
+
+
+    <!--This style is used for column totals in a row.-->
     <style
             name="RowTotal"
             isDefault="false"
@@ -349,10 +537,7 @@
             isPdfEmbedded="false"
             >
         <box>
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
             <leftPen lineWidth="0.5" lineStyle="Solid"/>
-            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
-            <rightPen lineWidth="0.5" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -377,6 +562,48 @@
             vAlign="Middle"
             >
         <box>
+            <leftPen lineWidth="1.0"/>
+            <bottomPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
+    <style
+            name="GroupFrameNoDetail"
+            isDefault="false"
+            backcolor="#D6D6D6"
+            vAlign="Middle"
+            >
+        <box>
+            <topPen lineWidth="1.0" />
+            <leftPen lineWidth="1.0"/>
+            <bottomPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
+    <style
+            name="ReportTotalFrameTableWithTop"
+            isDefault="false"
+            backcolor="#D6D6D6"
+            vAlign="Middle"
+            >
+        <box>
+            <topPen lineWidth="1.0" />
+            <leftPen lineWidth="1.0"/>
+            <bottomPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
+    <style
+            name="FrameTableBottomAllBorders"
+            isDefault="false"
+            backcolor="#D6D6D6"
+            vAlign="Middle"
+            >
+        <box>
+            <topPen lineWidth="1.0" />
             <leftPen lineWidth="1.0"/>
             <bottomPen lineWidth="1.0"/>
             <rightPen lineWidth="1.0"/>
@@ -411,6 +638,7 @@
         </box>
     </style>
 
+    <!--This style is used for rows containing totals. It has a border on the top, bottom and right hand sides-->
     <style
             name="FrameReportTotals"
             isDefault="false"
@@ -419,7 +647,7 @@
             >
         <box>
             <topPen lineWidth="1.0" />
-            <leftPen lineWidth="1.0"/>
+            <!--<leftPen lineWidth="1.0"/>-->
             <bottomPen lineWidth="1.0"/>
             <rightPen lineWidth="1.0"/>
         </box>
@@ -454,6 +682,7 @@
     </style>
     
 
+    <!--This style is used for the heading row of the start of a new group section-->
     <style
             name="MappingTitleFrame"
             isDefault="false"
@@ -463,11 +692,12 @@
         <box>
             <topPen lineWidth="1.0"/>
             <leftPen lineWidth="1.0"/>
-            <bottomPen lineWidth="1.0"/>            
+            <!--<bottomPen lineWidth="1.0"/>            -->
             <rightPen lineWidth="1.0"/>
         </box>
     </style>
 
+    <!--Used as the style for a frame like 'Service'-->
     <style
             name="TitleFrame"
             isDefault="false"
@@ -475,7 +705,6 @@
             vAlign="Middle"
             >
         <box>
-            <topPen lineWidth="1.0"/>
             <leftPen lineWidth="1.0"/>
             <rightPen lineWidth="1.0"/>
         </box>
@@ -494,6 +723,38 @@
             <rightPen lineWidth="1.0"/>
         </box>
     </style>
+
+    <!-- E8EDB4 #0000ff-->
+    <style
+            name="IntervalFrameTableTop"
+            isDefault="false"
+            backcolor="#E8EDB4"
+            vAlign="Middle"
+            >
+        <box>
+            <topPen lineWidth="1.0"/>
+            <leftPen lineWidth="1.0"/>
+            <bottomPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
+
+    <!-- E8EDB4 #0000ff-->
+    <style
+            name="ServiceIntervalFrameTableTop"
+            isDefault="false"
+            backcolor="#E8EDB4"
+            vAlign="Middle"
+            >
+        <box>
+            <topPen lineWidth="1.0"/>
+            <leftPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
+    <!--This style is used for column header frames-->
     <style
             name="FrameHeaderTableRow"
             isDefault="false"
@@ -501,10 +762,13 @@
             vAlign="Middle"
             >
         <box>
+            <topPen lineWidth="1.0"/>
             <leftPen lineWidth="1.0"/>
+            <bottomPen lineWidth="1.0"/>
             <rightPen lineWidth="1.0"/>
         </box>
     </style>
+
     <style
             name="FrameDetailTableRow"
             isDefault="false"
@@ -512,6 +776,40 @@
             vAlign="Middle"
             >
         <box>
+            <leftPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
+    <style
+            name="UsageTotalFrame"
+            isDefault="false"
+            backcolor="#F8F8F8"
+            vAlign="Middle"
+            >
+        <box>
+            <leftPen lineWidth="1.0"/>
+            <bottomPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
+    <style
+            name="SubIntervalDetail"
+            isDefault="false"
+            backcolor="#F8F8F8"
+            vAlign="Middle"
+            >
+    </style>
+
+    <style
+            name="FrameDetailTableRowWithTopBorder"
+            isDefault="false"
+            backcolor="#F8F8F8"
+            vAlign="Middle"
+            >
+        <box>
+            <topPen lineWidth="1.0"/>
             <leftPen lineWidth="1.0"/>
             <rightPen lineWidth="1.0"/>
         </box>
@@ -530,8 +828,39 @@
         </box>
     </style>
 
+    <!--Used as the style for service totals-->
     <style
             name="FrameTotalTableRow"
+            isDefault="false"
+            backcolor="#D6D6D6"
+            vAlign="Middle"
+            >
+        <box>
+            <topPen lineWidth="1.0"/>
+            <leftPen lineWidth="1.0"/>
+            <bottomPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
+    <!--Used as the style for operation totals, there is no bottom border-->
+    <style
+            name="FrameDetailTotalTableRow"
+            isDefault="false"
+            backcolor="#D6D6D6"
+            vAlign="Middle"
+            >
+        <box>
+            <topPen lineWidth="1.0"/>
+            <leftPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
+    <!--Style is used in interval reports for service totals, which are never followed by white space so they do
+    not have a bottom border-->
+    <style
+            name="FrameTotalTableRowBottom"
             isDefault="false"
             backcolor="#D6D6D6"
             vAlign="Middle"
@@ -541,7 +870,23 @@
             <rightPen lineWidth="1.0"/>
         </box>
     </style>
-	<style
+
+    <!--Style is used in interval reports for service totals, which are never followed by white space so they do
+    not have a bottom border-->
+    <style
+            name="FrameTotalTableRowBottomNoDetail"
+            isDefault="false"
+            backcolor="#D6D6D6"
+            vAlign="Middle"
+            >
+        <box>
+            <topPen lineWidth="1.0"/>
+            <leftPen lineWidth="1.0"/>
+            <rightPen lineWidth="1.0"/>
+        </box>
+    </style>
+
+    <style
 		name="TotalCell"
 		backcolor="#D6D6D6"
         vAlign="Middle"
@@ -557,13 +902,4 @@
     >
         <box leftPadding="5" />
     </style>
-    
-    <!--<style-->
-		<!--name="SubTableHeader"-->
-        <!--vAlign="Middle"-->
-    <!-->-->
-					<!--<box>					<leftPen lineWidth="1.0" lineStyle="Solid"/>-->
-					<!--<rightPen lineWidth="1.0" lineStyle="Solid"/>-->
-<!--</box>-->
-	<!--</style>    -->
 </jasperTemplate>

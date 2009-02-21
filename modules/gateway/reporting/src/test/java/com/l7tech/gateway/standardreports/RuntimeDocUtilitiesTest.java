@@ -251,7 +251,8 @@ public class RuntimeDocUtilitiesTest {
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node style = attributes.getNamedItem("style");
-            expectedValue = Utilities.USAGE_TABLE_HEADING_STYLE;
+            if(i < list.getLength() - 1) expectedValue = Utilities.USAGE_TABLE_HEADING_STYLE;
+            else expectedValue = Utilities.USAGE_TABLE_HEADING_ROW_TOTAL_STYLE;
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
@@ -332,7 +333,7 @@ public class RuntimeDocUtilitiesTest {
             Node style = attributes.getNamedItem("style");
             String expectedValue;
             if(i < list.getLength() - 1) expectedValue = "TableCell";
-            else expectedValue = Utilities.ROW_TOTAL_STYLE;
+            else expectedValue = Utilities.ROW_TOTAL_MINOR_STYLE;
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
@@ -428,7 +429,9 @@ public class RuntimeDocUtilitiesTest {
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node style = attributes.getNamedItem("style");
-            String expectedValue = Utilities.ROW_TOTAL_STYLE;
+            String expectedValue = null;
+            if(i < list.getLength() - 1) expectedValue = Utilities.ROW_TOTAL_STYLE;
+            else expectedValue = Utilities.ROW_GRAND_TOTAL_STYLE;
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
@@ -522,7 +525,9 @@ public class RuntimeDocUtilitiesTest {
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node style = attributes.getNamedItem("style");
-            String expectedValue = Utilities.ROW_TOTAL_STYLE;
+            String expectedValue = null;
+            if(i < list.getLength() - 1) expectedValue = Utilities.REPORT_ROW_TOTAL_STYLE;
+            else expectedValue = Utilities.REPORT_ROW_GRAND_TOTAL_STYLE;
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
@@ -679,7 +684,9 @@ public class RuntimeDocUtilitiesTest {
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node style = attributes.getNamedItem("style");
-            String expectedValue = Utilities.USAGE_TABLE_HEADING_STYLE;
+            String expectedValue = null;
+            if(i < list.getLength() - 1) expectedValue = Utilities.USAGE_TABLE_HEADING_STYLE;
+            else expectedValue = Utilities.USAGE_TABLE_HEADING_END_STYLE;
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
@@ -747,7 +754,8 @@ public class RuntimeDocUtilitiesTest {
         }
      }
 
-    private void testGroupTotalRow(String elementName, String columnVariable, String totalVariable, boolean includeNullTest){
+    private void testGroupTotalRow(final String elementName, final String columnVariable, final String totalVariable,
+                                   final boolean includeNullTest, final String rowTotalStyle, final String rowGrandTotalStyle){
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
@@ -789,7 +797,9 @@ public class RuntimeDocUtilitiesTest {
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node style = attributes.getNamedItem("style");
-            String expectedValue = Utilities.ROW_TOTAL_STYLE;
+            String expectedValue = null;
+            if(i < list.getLength() - 1) expectedValue = rowTotalStyle;
+            else expectedValue = rowGrandTotalStyle;
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
@@ -833,17 +843,20 @@ public class RuntimeDocUtilitiesTest {
 
     @Test
     public void getUsageIntervalMasterRuntimeDoc_serviceAndOperationFooter_CheckElements(){
-        testGroupTotalRow(Utilities.SERVICE_AND_OPERATION_FOOTER,"COLUMN_OPERATION_","ROW_OPERATION_TOTAL", true);
+        testGroupTotalRow(Utilities.SERVICE_AND_OPERATION_FOOTER,"COLUMN_OPERATION_","ROW_OPERATION_TOTAL",
+                true, Utilities.ROW_TOTAL_STYLE, Utilities.ROW_GRAND_TOTAL_STYLE);
     }
 
     @Test
     public void getUsageIntervalMasterRuntimeDoc_serviceIdFooter_CheckElements(){
-        testGroupTotalRow(Utilities.SERVICE_ID_FOOTER,"COLUMN_SERVICE_","ROW_SERVICE_TOTAL", true);
+        testGroupTotalRow(Utilities.SERVICE_ID_FOOTER,"COLUMN_SERVICE_","ROW_SERVICE_TOTAL", true,
+                Utilities.ROW_TOTAL_STYLE, Utilities.ROW_GRAND_TOTAL_STYLE);
     }
 
     @Test
     public void getUsageIntervalMasterRuntimeDoc_summary_CheckElements(){
-        testGroupTotalRow(Utilities.SUMMARY,"COLUMN_REPORT_","ROW_REPORT_TOTAL", false);
+        testGroupTotalRow(Utilities.SUMMARY,"COLUMN_REPORT_","ROW_REPORT_TOTAL", false,
+                Utilities.REPORT_ROW_TOTAL_STYLE, Utilities.REPORT_ROW_GRAND_TOTAL_STYLE);
     }
 
     private void testWidths(Node rootNode, int numMappingValues){
@@ -1092,7 +1105,7 @@ public class RuntimeDocUtilitiesTest {
             Node style = attributes.getNamedItem("style");
             String expectedValue;
             if(i < list.getLength() - 1) expectedValue = "TableCell";
-            else expectedValue = Utilities.ROW_TOTAL_STYLE;
+            else expectedValue = Utilities.ROW_TOTAL_MINOR_STYLE;
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));
@@ -1176,7 +1189,7 @@ public class RuntimeDocUtilitiesTest {
             Node style = attributes.getNamedItem("style");
             String expectedValue;
             if(i < list.getLength() - 1) expectedValue = "TableCell";
-            else expectedValue = Utilities.ROW_TOTAL_STYLE;
+            else expectedValue = Utilities.ROW_TOTAL_MINOR_STYLE;
 
             Assert.assertTrue("style attribute should equal " + expectedValue+ " Actual value was: " + style.getNodeValue()
                     ,style.getNodeValue().equals(expectedValue));

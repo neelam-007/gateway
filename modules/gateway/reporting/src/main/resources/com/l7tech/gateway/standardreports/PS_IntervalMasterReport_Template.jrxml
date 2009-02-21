@@ -438,8 +438,7 @@ $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())?
 (Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{AUTHENTICATED_USER}, $P{KEYS_TO_LIST_FILTER_PAIRS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}})):"1"
-]]></categoryExpression>
+$F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{THROUGHPUT_SUM_MAPPING}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
@@ -449,8 +448,7 @@ $F{MAPPING_VALUE_5}})):"1"
 							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())?
 (Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{AUTHENTICATED_USER}, $P{KEYS_TO_LIST_FILTER_PAIRS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}})):"1"
-]]></categoryExpression>
+$F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{POLICY_VIOLATIONS_MAPPING}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
@@ -460,8 +458,7 @@ $F{MAPPING_VALUE_5}})):"1"
 							<categoryExpression><![CDATA[($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())?
 (Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP},
 $F{AUTHENTICATED_USER}, $P{KEYS_TO_LIST_FILTER_PAIRS}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}})):"1"
-]]></categoryExpression>
+$F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
 							<valueExpression><![CDATA[$V{ROUTING_FAILURES_MAPPING}]]></valueExpression>
 				<itemHyperlink >
 				</itemHyperlink>
@@ -532,7 +529,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
 			<band height="36"  isSplitAllowed="true" >
 				<printWhenExpression><![CDATA[new Boolean($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())]]></printWhenExpression>
 				<frame>					<reportElement
-						style="FrameTableBottom"
+						style="FrameTableBottomAllBorders"
 						mode="Opaque"
 						x="0"
 						y="0"
@@ -699,12 +696,12 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
 				</frame>			</band>
 			</groupFooter>
 		</group>
-		<group  name="SERVICE" isReprintHeaderOnEachPage="true" >
+		<group  name="SERVICE" >
 			<groupExpression><![CDATA[$F{SERVICE_ID}]]></groupExpression>
 			<groupHeader>
 			<band height="54"  isSplitAllowed="true" >
 				<frame>					<reportElement
-						style="TitleFrame"
+						style="ServiceIntervalFrameTableTop"
 						mode="Opaque"
 						x="0"
 						y="0"
@@ -779,7 +776,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
 				</staticText>
 				<staticText>
 					<reportElement
-						style="TableHeading"
+						style="TableHeadingWithTopBorder"
 						x="678"
 						y="18"
 						width="71"
@@ -793,7 +790,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
 				</staticText>
 				<staticText>
 					<reportElement
-						style="TableHeading"
+						style="TableHeadingWithTopBorder"
 						x="323"
 						y="18"
 						width="71"
@@ -807,7 +804,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
 				</staticText>
 				<staticText>
 					<reportElement
-						style="TableHeading"
+						style="TableHeadingWithTopBorder"
 						x="394"
 						y="18"
 						width="71"
@@ -821,7 +818,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
 				</staticText>
 				<staticText>
 					<reportElement
-						style="TableHeading"
+						style="TableHeadingWithTopBorder"
 						x="465"
 						y="18"
 						width="71"
@@ -835,7 +832,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
 				</staticText>
 				<staticText>
 					<reportElement
-						style="TableHeading"
+						style="TableHeadingWithTopBorder"
 						x="536"
 						y="18"
 						width="71"
@@ -849,7 +846,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
 				</staticText>
 				<staticText>
 					<reportElement
-						style="TableHeading"
+						style="TableHeadingWithTopBorder"
 						x="607"
 						y="18"
 						width="71"
@@ -921,8 +918,11 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
 			</groupHeader>
 			<groupFooter>
 			<band height="18"  isSplitAllowed="true" >
+				<printWhenExpression><![CDATA[new Boolean(
+$P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
+)]]></printWhenExpression>
 				<frame>					<reportElement
-						style="FrameTotalTableRow"
+						style="FrameTotalTableRowBottom"
 						mode="Opaque"
 						x="0"
 						y="0"
@@ -1080,6 +1080,187 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
 						width="71"
 						height="18"
 						key="textField-166"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{ROUTING_FAILURES_SUM}]]></textFieldExpression>
+				</textField>
+				</frame>			</band>
+			</groupFooter>
+		</group>
+		<group  name="SERVICE_NO_DETAIL" >
+			<groupExpression><![CDATA[$F{SERVICE_ID}]]></groupExpression>
+			<groupHeader>
+			<band height="0"  isSplitAllowed="true" >
+			</band>
+			</groupHeader>
+			<groupFooter>
+			<band height="18"  isSplitAllowed="true" >
+				<printWhenExpression><![CDATA[new Boolean(
+($P{IS_CONTEXT_MAPPING}.booleanValue() && !$P{IS_DETAIL}.booleanValue())
+||
+!$P{IS_CONTEXT_MAPPING}.booleanValue()
+)]]></printWhenExpression>
+				<frame>					<reportElement
+						style="FrameTotalTableRowBottomNoDetail"
+						mode="Opaque"
+						x="0"
+						y="0"
+						width="820"
+						height="18"
+						key="frame-46"/>
+					<box></box>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="RowTotal"
+						x="110"
+						y="0"
+						width="71"
+						height="18"
+						key="textField-169"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{THROUGHPUT_SUM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="RowTotal"
+						x="323"
+						y="0"
+						width="71"
+						height="18"
+						key="textField-170"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($V{FRTM_MIN}.equals(new Integer(Integer.MAX_VALUE)))?"-":$V{FRTM_MIN}+"ms"]]></textFieldExpression>
+				</textField>
+				<staticText>
+					<reportElement
+						style="RowTotalHeading"
+						x="0"
+						y="0"
+						width="110"
+						height="18"
+						key="staticText-155"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<text><![CDATA[Service Totals]]></text>
+				</staticText>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="RowTotal"
+						x="394"
+						y="0"
+						width="71"
+						height="18"
+						key="textField-171"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($V{FRTMX_MAX}.equals(new Integer(Integer.MIN_VALUE)))?"-":$V{FRTMX_MAX}+"ms"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="RowTotal"
+						x="465"
+						y="0"
+						width="71"
+						height="18"
+						key="textField-172"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM}.doubleValue() == 0)? new Double(0) : new Double($V{FRONT_SUM_SUM}.doubleValue()/$V{ATTEMPTED_SUM}.doubleValue())]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="RowTotal"
+						x="536"
+						y="0"
+						width="71"
+						height="18"
+						key="textField-173"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($V{BRTM_MIN}.equals(new Integer(Integer.MAX_VALUE)))?"-":$V{BRTM_MIN}+"ms"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="RowTotal"
+						x="607"
+						y="0"
+						width="71"
+						height="18"
+						key="textField-174"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.String"><![CDATA[($V{BRTMX_MAX}.equals(new Integer(Integer.MIN_VALUE)))?"-":$V{BRTMX_MAX}+"ms"]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="RowTotal"
+						x="678"
+						y="0"
+						width="71"
+						height="18"
+						key="textField-175"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{COMPLETED_SUM}.doubleValue() == 0)? new Double(0) : new Double($V{BACK_SUM_SUM}.doubleValue()/$V{COMPLETED_SUM}.doubleValue())]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="RowTotal"
+						x="749"
+						y="0"
+						width="71"
+						height="18"
+						key="textField-176"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM}.doubleValue()>0)?
+new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleValue())/$V{ATTEMPTED_SUM}.doubleValue())))
+:new Double(0)]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="RowTotal"
+						x="181"
+						y="0"
+						width="71"
+						height="18"
+						key="textField-177"/>
+					<box></box>
+					<textElement>
+						<font/>
+					</textElement>
+				<textFieldExpression   class="java.lang.Long"><![CDATA[$V{POLICY_VIOLATIONS_SUM}]]></textFieldExpression>
+				</textField>
+				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
+					<reportElement
+						style="RowTotal"
+						x="252"
+						y="0"
+						width="71"
+						height="18"
+						key="textField-178"/>
 					<box></box>
 					<textElement>
 						<font/>

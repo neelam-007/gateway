@@ -30,6 +30,8 @@ public class RuntimeDocUtilities {
     private static final String CHART_ELEMENT = "chartElement";
     private static final int CONSTANT_HEADER_HEIGHT = 54;
     private static final int FRAME_MIN_WIDTH = 820;
+    private static final String USAGE_TABLE_HEADING_ROW_TOTAL = "UsageTableHeadingRowTotal";
+    private static final String USAGE_ROW_TOTAL_MINOR = "UsageRowTotalMinor";
 
     /**
      * Get the runtime document used as the transform parameter for a usage sub report.<br>
@@ -81,7 +83,7 @@ public class RuntimeDocUtilities {
 
         addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                 "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{TOTAL}",
-                Utilities.ROW_TOTAL_STYLE, true);
+                Utilities.ROW_MINOR_TOTAL_STYLE, true);
 
         Element noDataElement = doc.createElement(Utilities.NO_DATA);
         rootNode.appendChild(noDataElement);
@@ -95,7 +97,7 @@ public class RuntimeDocUtilities {
         }
 
         addStaticTextToElement(doc, noDataElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "noDataStaticText-Total", "NA", Utilities.ROW_TOTAL_STYLE, true);
+                "noDataStaticText-Total", "NA", Utilities.ROW_MINOR_TOTAL_STYLE, true);
         xPos += Utilities.TOTAL_COLUMN_WIDTH;
 
         //frame width is the same as page width for the subreport
@@ -377,7 +379,7 @@ public class RuntimeDocUtilities {
         }
 
         addTextFieldToElement(doc, serviceHeader, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.MAPPING_VALUE_FIELD_HEIGHT,
-                "textField-serviceHeader-ServiceTotals", "java.lang.String", "Service Totals", Utilities.USAGE_TABLE_HEADING_STYLE,
+                "textField-serviceHeader-ServiceTotals", "java.lang.String", "Service Totals", Utilities.USAGE_TABLE_HEADING_END_STYLE,
                 true);
 
         xPos += Utilities.TOTAL_COLUMN_WIDTH;
@@ -424,7 +426,7 @@ public class RuntimeDocUtilities {
 
         addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                 "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{ROW_OPERATION_TOTAL}",
-                Utilities.ROW_TOTAL_STYLE, true);
+                Utilities.ROW_GRAND_TOTAL_STYLE, true);
 
         //serviceIdFooter
         Element serviceIdFooterElement = doc.createElement(Utilities.SERVICE_ID_FOOTER);
@@ -439,7 +441,7 @@ public class RuntimeDocUtilities {
         }
 
         addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{ROW_SERVICE_TOTAL}", Utilities.ROW_TOTAL_STYLE, true);
+                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{ROW_SERVICE_TOTAL}", Utilities.ROW_GRAND_TOTAL_STYLE, true);
 
         //summary
         Element summaryElement = doc.createElement(Utilities.SUMMARY);
@@ -449,12 +451,12 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, summaryElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-constantFooter-" + (i + 1), "java.lang.Long", "$V{COLUMN_REPORT_" + (i + 1) + "}",
-                    Utilities.ROW_TOTAL_STYLE, true);
+                    Utilities.REPORT_ROW_TOTAL_STYLE, true);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, summaryElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-constantFooterTotal", "java.lang.Long", "$V{ROW_REPORT_TOTAL}", Utilities.ROW_TOTAL_STYLE, true);
+                "textField-constantFooterTotal", "java.lang.Long", "$V{ROW_REPORT_TOTAL}", Utilities.REPORT_ROW_GRAND_TOTAL_STYLE, true);
 
         rootNode.appendChild(pageWidth);
         //columnWidth -is page width - left + right margin
@@ -634,7 +636,7 @@ public class RuntimeDocUtilities {
         //move x pos along for width of a column
 
         addTextFieldToElement(doc, constantHeader, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.MAPPING_VALUE_FIELD_HEIGHT,
-                "textField-constantHeader-ServiceTotals", "java.lang.String", "Service Totals", Utilities.USAGE_TABLE_HEADING_STYLE,
+                "textField-constantHeader-ServiceTotals", "java.lang.String", "Service Totals", USAGE_TABLE_HEADING_ROW_TOTAL,
                 false);
 
         xPos += Utilities.TOTAL_COLUMN_WIDTH;
@@ -661,7 +663,7 @@ public class RuntimeDocUtilities {
 
         addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                 "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{SERVICE_AND_OR_OPERATION_TOTAL}",
-                Utilities.ROW_TOTAL_STYLE, true);
+                USAGE_ROW_TOTAL_MINOR, true);
 
         //serviceIdFooter
         Element serviceIdFooterElement = doc.createElement(Utilities.SERVICE_ID_FOOTER);
@@ -676,7 +678,7 @@ public class RuntimeDocUtilities {
         }
 
         addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{SERVICE_ONLY_TOTAL}", Utilities.ROW_TOTAL_STYLE, true);
+                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{SERVICE_ONLY_TOTAL}", Utilities.ROW_GRAND_TOTAL_STYLE, true);
 
         //constantFooter
         Element constantFooterElement = doc.createElement(Utilities.CONSTANT_FOOTER);
@@ -686,12 +688,12 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, constantFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-constantFooter-" + (i + 1), "java.lang.Long", "$V{COLUMN_MAPPING_TOTAL_" + (i + 1) + "}",
-                    Utilities.ROW_TOTAL_STYLE, true);
+                    Utilities.REPORT_ROW_TOTAL_STYLE, true);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, constantFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-constantFooterTotal", "java.lang.Long", "$V{GRAND_TOTAL}", Utilities.ROW_TOTAL_STYLE, true);
+                "textField-constantFooterTotal", "java.lang.Long", "$V{GRAND_TOTAL}", Utilities.REPORT_ROW_GRAND_TOTAL_STYLE, true);
 
 
         rootNode.appendChild(pageWidth);

@@ -42,7 +42,14 @@ public class Utilities {
      */
     public static final String SQL_PLACE_HOLDER =  ";";
     public static final String ROW_TOTAL_STYLE = "UsageRowTotal";
+    public static final String ROW_TOTAL_MINOR_STYLE = "UsageRowTotalMinor";
+    public static final String REPORT_ROW_TOTAL_STYLE = "UsageReportRowTotal";
+    public static final String ROW_MINOR_TOTAL_STYLE = "UsageRowTotalMinor";
+    public static final String ROW_GRAND_TOTAL_STYLE = "UsageRowGrandTotal";
+    public static final String REPORT_ROW_GRAND_TOTAL_STYLE = "UsageReportRowGrandTotal";
     public static final String USAGE_TABLE_HEADING_STYLE = "UsageTableHeading";
+    public static final String USAGE_TABLE_HEADING_END_STYLE = "UsageTableHeadingEnd";
+    public static final String USAGE_TABLE_HEADING_ROW_TOTAL_STYLE = "UsageTableHeadingRowTotal";
 
     private static final Logger logger = Logger.getLogger(Utilities.class.getName());
     private static final long HOUR_IN_MILLISECONDS = 3600000L;

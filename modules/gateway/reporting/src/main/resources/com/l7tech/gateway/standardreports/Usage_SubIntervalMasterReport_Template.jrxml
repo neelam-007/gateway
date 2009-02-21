@@ -5,10 +5,10 @@
 		 name="Usage_SubIntervalMasterReport_Template"
 		 columnCount="1"
 		 printOrder="Vertical"
-		 orientation="Portrait"
-		 pageWidth="564"
-		 pageHeight="802"
-		 columnWidth="564"
+		 orientation="Landscape"
+		 pageWidth="802"
+		 pageHeight="564"
+		 columnWidth="802"
 		 columnSpacing="0"
 		 leftMargin="0"
 		 rightMargin="0"
@@ -31,10 +31,10 @@
 	<parameter name="SERVICE_NAME" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="ROUTING_URI" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false" class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME"/>
-    <parameter name="INTERVAL_NUM_OF_TIME_UNITS" isForPrompting="false" class="java.lang.Integer" />
-    <parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
-    <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>    
-    <parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
+	<parameter name="INTERVAL_NUM_OF_TIME_UNITS" isForPrompting="false" class="java.lang.Integer"/>
+	<parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
+	<parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
+	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
 		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="OPERATIONS" isForPrompting="false" class="java.util.List"/>
@@ -45,12 +45,12 @@
 	<parameter name="SUBREPORT_DIRECTORY" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
 	<parameter name="SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>
-    <parameter name="SUB_REPORT_HELPER" isForPrompting="false" class="com.l7tech.gateway.standardreports.UsageSummaryAndSubReportHelper"/>
-    <parameter name="SPECIFIC_TIME_ZONE" isForPrompting="false" class="java.lang.String">
-        <defaultValueExpression ><![CDATA["Europe/London"]]></defaultValueExpression>
-    </parameter>
+	<parameter name="SUB_REPORT_HELPER" isForPrompting="false" class="com.l7tech.gateway.standardreports.UsageSummaryAndSubReportHelper"/>
+	<parameter name="SPECIFIC_TIME_ZONE" isForPrompting="false" class="java.lang.String">
+		<defaultValueExpression ><![CDATA["Europe/London"]]></defaultValueExpression>
+	</parameter>
 
-    <field name="INTERVAL_START" class="java.lang.Long"/>
+	<field name="INTERVAL_START" class="java.lang.Long"/>
 	<field name="INTERVAL_END" class="java.lang.Long"/>
 
 	<variable name="TOTAL" class="java.lang.Long" resetType="Report" calculation="Sum">
@@ -92,7 +92,7 @@
 					<reportElement
 						x="113"
 						y="0"
-						width="450"
+						width="707"
 						height="18"
 						key="subreport-1"/>
 					<subreportParameter  name="INTERVAL_START">
@@ -125,10 +125,10 @@
 					<subreportParameter  name="TEMPLATE_FILE_ABSOLUTE">
 						<subreportParameterExpression><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></subreportParameterExpression>
 					</subreportParameter>
-                    <subreportParameter  name="SPECIFIC_TIME_ZONE">
-                        <subreportParameterExpression><![CDATA[$P{SPECIFIC_TIME_ZONE}]]></subreportParameterExpression>
-                    </subreportParameter>
-                    <connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					<subreportParameter  name="SPECIFIC_TIME_ZONE">
+						<subreportParameterExpression><![CDATA[$P{SPECIFIC_TIME_ZONE}]]></subreportParameterExpression>
+					</subreportParameter>
+					<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 					<returnValue subreportVariable="TOTAL" toVariable="TOTAL" calculation="Sum"/>
 					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{SUB_REPORT}]]></subreportExpression>
 				</subreport>
