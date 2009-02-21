@@ -75,7 +75,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
             return trusted.getRuntime().getSsgKeyStoreManager().isClientCertAvailabile();
         if (ssg.isFederatedGateway()) {
             if (CertLoader.getConfiguredCertLoader() == null)
-                throw new RuntimeException("Not supported for WS-Trust federation without custom keystore");
+                return false;
         }
         if (ssg.getRuntime().getHaveClientCert() == null)
             ssg.getRuntime().setHaveClientCert(getClientCert() == null ? Boolean.FALSE : Boolean.TRUE);
@@ -189,7 +189,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
                 return cc.getPrivateKey();
             }
 
-            throw new RuntimeException("Not supported for WS-Trust federation without custom keystore");
+            return null;
         }
 
         PrivateKey gotKey = null;
@@ -271,7 +271,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
             return trusted.getRuntime().getSsgKeyStoreManager().isPasswordWorkedForPrivateKey();
         if (ssg.isFederatedGateway()) {
             if (CertLoader.getConfiguredCertLoader() == null)
-                throw new RuntimeException("Not supported for WS-Trust federation without custom keystore");
+                return false;
         }
         return ssg.getRuntime().isPasswordCorrectForPrivateKey();
     }

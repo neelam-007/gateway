@@ -766,7 +766,7 @@ public class PolicyApplicationContext extends ProcessingContext {
             PolicyRetryableException, HttpChallengeRequiredException
     {
 
-        String username = null;
+        Object username = null;
 
         // Try a separate username from the client first
         SecurityKnob sk = (SecurityKnob)getRequest().getKnob(SecurityKnob.class);
@@ -788,9 +788,15 @@ public class PolicyApplicationContext extends ProcessingContext {
                     throw new HttpChallengeRequiredException("username and password required");
 
                 PasswordAuthentication pw = ssg.getRuntime().getCredentials();
-                if (pw == null)
-                    throw new ConfigurationException("Unable to create sender vouches assertion -- no username to vouch for");
-                username = pw.getUserName();
+                if (pw == null) {
+                    // If it's a WS-Trust STS Gateway registration, try anyway, with a global cache key
+                    if (ssg.isFederatedGateway() && ssg.getTrustedGateway() == null) {
+                        logger.info("Unable to find a user to vouch for with sender-vouches.  Falling back to generic token strategy");
+                        username =  WsTrustSamlTokenStrategy.class;
+                    } else
+                        throw new ConfigurationException("Unable to create sender vouches assertion -- no username to vouch for");
+                } else
+                    username = pw.getUserName();
             }
         }
 

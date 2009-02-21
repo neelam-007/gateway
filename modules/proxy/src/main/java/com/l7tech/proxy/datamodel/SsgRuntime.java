@@ -415,14 +415,14 @@ public class SsgRuntime {
      * Get the strategy for obtaining a SAML sender-vouches assertion vouching for the specified username.
      *
      * @param tokenType the type of SecurityTokenType that is required
-     * @param username  the username to vouch for
+     * @param username  the username to vouch for (if a String), or disambiguation object if falling back to generic strategy
      * @param nameIdFormatUri an overridden NameIdentifier Format URI (null to base on credentials)
      * @param authnMethodUri an overridden Authentication Method Format URI (null to base on credentials)
      * @param nameIdTemplate a {@link java.text.MessageFormat} template to use in generating NameIdentifier values (null to use the name alone)
      * @return a strategy that will produce a token for this user.  Never null.
      */
     public TokenStrategy getSenderVouchesStrategyForUsername(SecurityTokenType tokenType,
-                                                             String username,
+                                                             Object username,
                                                              String nameIdFormatUri,
                                                              String authnMethodUri,
                                                              String nameIdTemplate)
@@ -441,8 +441,11 @@ public class SsgRuntime {
             if (nameIdTemplate != null) keyList.add(nameIdTemplate);
 
             TokenStrategy strat = senderVouchesTokenStrategiesByUser.get(keyList);
-            if (strat == null) {
-                strat = new SenderVouchesSamlTokenStrategy(tokenType, nameIdFormatUri, username, nameIdTemplate, authnMethodUri);
+            if (strat == null && username instanceof String) {
+                strat = new SenderVouchesSamlTokenStrategy(tokenType, nameIdFormatUri, (String)username, nameIdTemplate, authnMethodUri);
+                senderVouchesTokenStrategiesByUser.put(keyList, strat);
+            } else if (!(username instanceof String)) {
+                strat = getTokenStrategy(tokenType);
                 senderVouchesTokenStrategiesByUser.put(keyList, strat);
             }
             return strat;
