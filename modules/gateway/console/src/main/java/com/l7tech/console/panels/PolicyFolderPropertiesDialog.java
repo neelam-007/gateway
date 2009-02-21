@@ -94,15 +94,7 @@ public class PolicyFolderPropertiesDialog extends JDialog {
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                if(nameField.getText() == null || nameField.getText().length() == 0) {
-                    JOptionPane.showMessageDialog(PolicyFolderPropertiesDialog.this,
-                            resources.getString("settings.name.dialog.text"),
-                            resources.getString("settings.name.dialog.title"),
-                            JOptionPane.ERROR_MESSAGE);
-                } else {
-                    confirmed = true;
-                    dispose();
-                }
+                ok();
             }
         });
 
@@ -110,6 +102,18 @@ public class PolicyFolderPropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 confirmed = false;
                 dispose();
+            }
+        });
+
+        Utilities.setEscAction(this, new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                dispose();
+            }
+        });
+
+        Utilities.setEnterAction(this, new AbstractAction() {
+            public void actionPerformed(ActionEvent e) {
+                ok();
             }
         });
 
@@ -126,5 +130,17 @@ public class PolicyFolderPropertiesDialog extends JDialog {
     /** @return true if the dialog has been dismissed with the ok button */
     public boolean isConfirmed() {
         return confirmed;
+    }
+
+    private void ok() {
+        if (nameField.getText() == null || nameField.getText().length() == 0) {
+            JOptionPane.showMessageDialog(PolicyFolderPropertiesDialog.this,
+                    resources.getString("settings.name.dialog.text"),
+                    resources.getString("settings.name.dialog.title"),
+                    JOptionPane.ERROR_MESSAGE);
+        } else {
+            confirmed = true;
+            dispose();
+        }
     }
 }
