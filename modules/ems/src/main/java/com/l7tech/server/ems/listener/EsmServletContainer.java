@@ -257,7 +257,16 @@ public class EsmServletContainer implements ApplicationContextAware, Initializin
 
     @Override
     public void afterPropertiesSet() throws Exception {
+        cleanTempFiles();
         initializeServletEngine();
+    }
+
+    private void cleanTempFiles() {
+        File wicketFilestore = new File(temp, "wicketFilter-filestore");
+        if ( wicketFilestore.exists() ) {
+            logger.info("Deleting old temporary files.");
+            FileUtils.deleteDir( wicketFilestore );
+        }
     }
 
     private ListenerConfiguration buildConfiguration() throws IOException {
