@@ -260,12 +260,12 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
             Background.cancel( notificationStealerTask );
         } else {
             // Shedule once only
-            Background.scheduleRepeated( maintenanceTask, 20000, CLEANUP_PERIOD );
+            Background.scheduleRepeated( maintenanceTask, 123077, CLEANUP_PERIOD );
         }
 
         if ( notifyPeriod > 0 ) {
             logger.log( Level.INFO, "Scheduling subscription notification task with period {0}ms.", notifyPeriod);
-            Background.scheduleRepeated( notificationTask, 15000, notifyPeriod );
+            Background.scheduleRepeated( notificationTask, 15011, notifyPeriod );
             Background.scheduleRepeated( notificationStealerTask, notifyPeriod, (long)(2.49 * notifyPeriod) );
         }
     }
