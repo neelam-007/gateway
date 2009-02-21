@@ -57,7 +57,8 @@ public class ClientRequestWssSaml extends ClientAssertion {
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
             ClientCertificateException, IOException, SAXException, KeyStoreCorruptException,
             HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
-            InvalidDocumentFormatException, ConfigurationException {
+            InvalidDocumentFormatException, ConfigurationException
+    {
         final Ssg ssg = context.getSsg();
 
         // If we are capable of having client cert, then get one
@@ -113,15 +114,15 @@ public class ClientRequestWssSaml extends ClientAssertion {
                 if( ass.isHolderOfKey() ) {
                     wssReqs.setSenderSamlToken(ass, false);
                 } else {
+                    final boolean suppress = "true".equals(ssg.getProperties().get("builtinSaml.suppressStrTransform"));
+                    wssReqs.setSuppressSamlStrTransform(suppress);
                     if (privateKey != null && certificate != null) {
                         wssReqs.setSenderMessageSigningCertificate(certificate);
                         // only sign the SAML token if the assertion is not signed
                         wssReqs.setSenderSamlToken(ass, !Boolean.getBoolean(PROP_SIGN_SAML_SV));
-                        final boolean suppress = "true".equals(ssg.getProperties().get("builtinSaml.suppressStrTransform"));
-                        wssReqs.setSuppressSamlStrTransform(suppress);
                     } else {
-                        logger.log(Level.WARNING, "Cannot use SAML Sender Vouches, no private key available to sign assertion.");
-                        return AssertionStatus.FALSIFIED;
+                        logger.log(Level.INFO, "No private key available to sign assertion -- will include the assertion without a signature.");
+                        wssReqs.setSenderSamlToken(ass, false);
                     }
                 }
                 return AssertionStatus.NONE;
