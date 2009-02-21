@@ -277,10 +277,8 @@ public class YuiDataTable extends Panel {
         if (selectionComponent != null && !selectionComponent.getOutputMarkupId()) {
             throw new IllegalArgumentException("Hidden component markup id must be output.");
         }
-        Label jsContainer = new Label("script", "YAHOO.util.Event.onDOMReady( function(){ initDataTable"+tableId+"(); } );");
-        add( jsContainer );
 
-        add( new AbstractAjaxBehavior(){
+        final AbstractAjaxBehavior callbackBehaviour = new AbstractAjaxBehavior(){
             @Override
             public void renderHead( final IHeaderResponse iHeaderResponse ) {
                 super.renderHead( iHeaderResponse );
@@ -288,43 +286,13 @@ public class YuiDataTable extends Panel {
                 iHeaderResponse.renderJavascriptReference(WicketEventReference.INSTANCE);
                 iHeaderResponse.renderJavascriptReference(WicketAjaxReference.INSTANCE);
 
-                StringBuilder scriptBuilder = new StringBuilder(1024);
+                StringBuilder scriptBuilder = new StringBuilder(512);
 
                 scriptBuilder.append( "function dataTableSelectionCallback").append(tableId).append("( id ) {\n");
                 scriptBuilder.append( " wicketAjaxGet('").append(getCallbackUrl(true)).append("&selection=true&id=' + escape(id), function() { }, function() { });\n");
                 scriptBuilder.append( "}\n" );
 
-                scriptBuilder.append( "function initDataTable" );
-                scriptBuilder.append( tableId );
-                scriptBuilder.append( "(){ initDataTable( '" );
-                scriptBuilder.append( tableId );
-                scriptBuilder.append( "', ");
-                scriptBuilder.append( columnBuffer );
-                scriptBuilder.append( ", '" );
-                scriptBuilder.append( pagingId );
-                scriptBuilder.append( "', '" );
-                scriptBuilder.append( getCallbackUrl(true) );
-                scriptBuilder.append( "&data=true&', " );
-                scriptBuilder.append( fieldsBuffer );
-                scriptBuilder.append( ", " );
-                scriptBuilder.append( dataBuffer == null ? "null" : "'" + dataBuffer + "'" ); 
-                scriptBuilder.append( ", '" );
-                scriptBuilder.append( sortProperty );
-                scriptBuilder.append( "', '");
-                scriptBuilder.append( sortAscending ? "yui-dt-asc" : "yui-dt-desc" );
-                scriptBuilder.append( "', " );
-                scriptBuilder.append( buttons );
-                scriptBuilder.append( ", '" );
-                scriptBuilder.append( selectionId );
-                scriptBuilder.append( "', " );
-                scriptBuilder.append( multiSelect );
-                scriptBuilder.append( ", " );
-                scriptBuilder.append( "dataTableSelectionCallback" ).append( tableId );
-                scriptBuilder.append( ", '" );
-                scriptBuilder.append( idProperty );
-                scriptBuilder.append( "')}" );
-
-                iHeaderResponse.renderJavascript(scriptBuilder.toString(), null);
+                iHeaderResponse.renderJavascript(scriptBuilder.toString(), YuiDataTable.this.getClass().getName() + "." + tableId);
             }
 
             @Override
@@ -381,7 +349,47 @@ public class YuiDataTable extends Panel {
                      page.setVersioned(isPageVersioned);
                 }
             }
-        } );
+        };
+        add( callbackBehaviour );
+
+        Serializable scriptHolder = new Serializable(){
+            @Override
+            public String toString() {
+                StringBuilder scriptBuilder = new StringBuilder(1024);
+                scriptBuilder.append( "(function(){" );
+                scriptBuilder.append( " initDataTable( '" );
+                scriptBuilder.append( tableId );
+                scriptBuilder.append( "', ");
+                scriptBuilder.append( columnBuffer );
+                scriptBuilder.append( ", '" );
+                scriptBuilder.append( pagingId );
+                scriptBuilder.append( "', '" );
+                scriptBuilder.append( callbackBehaviour.getCallbackUrl(true) );
+                scriptBuilder.append( "&data=true&', " );
+                scriptBuilder.append( fieldsBuffer );
+                scriptBuilder.append( ", " );
+                scriptBuilder.append( dataBuffer == null ? "null" : "'" + dataBuffer + "'" );
+                scriptBuilder.append( ", '" );
+                scriptBuilder.append( sortProperty );
+                scriptBuilder.append( "', '");
+                scriptBuilder.append( sortAscending ? "yui-dt-asc" : "yui-dt-desc" );
+                scriptBuilder.append( "', " );
+                scriptBuilder.append( buttons );
+                scriptBuilder.append( ", '" );
+                scriptBuilder.append( selectionId );
+                scriptBuilder.append( "', " );
+                scriptBuilder.append( multiSelect );
+                scriptBuilder.append( ", " );
+                scriptBuilder.append( "dataTableSelectionCallback" ).append( tableId );
+                scriptBuilder.append( ", '" );
+                scriptBuilder.append( idProperty );
+                scriptBuilder.append( "'); })();" );
+                return scriptBuilder.toString();
+            }
+        };
+
+        Label jsContainer = new Label("script", new Model(scriptHolder));
+        add( jsContainer.setEscapeModelStrings(false) );
     }
 
     private String buildResultsPage(int startIndex, int results, String sortRaw, boolean dir) {
