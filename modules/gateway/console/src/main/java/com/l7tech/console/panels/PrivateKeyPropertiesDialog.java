@@ -515,8 +515,9 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 if (JFileChooser.APPROVE_OPTION == ret) {
                     try {
                         String name = chooser.getSelectedFile().getPath();
-                        if (name.indexOf('.') < 0)
+                        if (!name.endsWith(".p12")) {
                             name = name + ".p12";
+                        }
 
                         File newFile = new File(name);
 
