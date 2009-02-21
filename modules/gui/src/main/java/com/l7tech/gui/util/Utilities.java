@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class is a bag of utilites shared by panels.
@@ -594,11 +595,7 @@ public class Utilities {
         }
     }
 
-    private static final ThreadLocal<Boolean> doingWithDelayedCancelDialog = new ThreadLocal<Boolean>() {
-        protected Boolean initialValue() {
-            return false;
-        }
-    };
+    private static final AtomicBoolean isAnyThreadDoingWithDelayedCancelDialog = new AtomicBoolean(false);
 
     private static final Map<Long, Boolean> threadsCanceledByCancelDialog = new ConcurrentHashMap<Long, Boolean>();
 
@@ -607,8 +604,8 @@ public class Utilities {
      *
      * @return true iff. the current thread has a doWithDelayedCancelDialog call active.
      */
-    public static boolean isCurrentThreadDoingWithDelayedCancelDialog() {
-        return doingWithDelayedCancelDialog.get();
+    public static boolean isAnyThreadDoingWithDelayedCancelDialog() {
+        return isAnyThreadDoingWithDelayedCancelDialog.get();
     }
 
     /**
@@ -635,10 +632,31 @@ public class Utilities {
      * @throws InterruptedException if the task was canceled by the user, or the Swing thread was interrupted
      * @throws java.lang.reflect.InvocationTargetException if the callable terminated with any exception other than InterruptedException
      */
-    @SuppressWarnings({ "SynchronizationOnLocalVariableOrMethodParameter" })
     public static <T> T doWithDelayedCancelDialog(final Callable<T> callable, final JDialog cancelDlg, long msBeforeDlg)
             throws InterruptedException, InvocationTargetException
     {
+        boolean alreadyPending = isAnyThreadDoingWithDelayedCancelDialog.getAndSet(true);
+        if (alreadyPending) {
+            // Already have a cancel dialog pending; won't do another one
+            try {
+                return callable.call();
+            } catch (Exception e) {
+                throw new InvocationTargetException(e);
+            }
+        }
+
+        // The pending dialog belongs to us
+        try {
+            return doDoWithDelayedCancelDialog(callable, cancelDlg, msBeforeDlg);
+        } finally {
+            isAnyThreadDoingWithDelayedCancelDialog.set(false);
+        }
+    }
+
+    @SuppressWarnings({ "SynchronizationOnLocalVariableOrMethodParameter" })
+    private static <T> T doDoWithDelayedCancelDialog(final Callable<T> callable, final JDialog cancelDlg, long msBeforeDlg)
+                throws InterruptedException, InvocationTargetException
+        {
         if (callable == null || cancelDlg == null) throw new IllegalArgumentException();
 
         final Thread[] workerThread = { null };
@@ -651,7 +669,6 @@ public class Utilities {
                 try {
                     Thread thisThread = Thread.currentThread();
                     workerThread[0] = thisThread;
-                    doingWithDelayedCancelDialog.set(true);
                     threadsCanceledByCancelDialog.put(thisThread.getId(), false);
                     T t = callable.call(); // blocks until job complete or thread interrupted or throws
                     Boolean b = threadsCanceledByCancelDialog.get(thisThread.getId());
@@ -661,7 +678,6 @@ public class Utilities {
                 } catch (Throwable t) {
                     return new ThrowableHolder(t);
                 } finally {
-                    doingWithDelayedCancelDialog.set(false);
                     synchronized (semaphore) {
                         finished[0] = true;
                         semaphore.notifyAll();
@@ -1251,9 +1267,12 @@ public class Utilities {
      *
      * @param table The table to be sorted.
      * @param model The model for the table.
+     * @throws IllegalArgumentException if the length of the comparators array, if specified, and the order array
+     * does not match the length of the cols array
+     * @throws NullPointerException if one of the cols or order arrays are null
      */
     public static void setRowSorter( JTable table, TableModel model ) throws IllegalArgumentException, NullPointerException{
-       setRowSorter( table, model, null, null, null);
+        setRowSorter( table, model, null, null, null);
     }
 
     /**
