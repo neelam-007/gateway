@@ -31,6 +31,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.ResourceMapEntityResolver;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.management.api.node.ReportApi;
@@ -80,16 +81,16 @@ public class ReportGenerator {
                 Map<String, Object> transformParameterMap = null;
                 //only usage sub reports require transormation, all require compilation
                 if(subReportTemplate.isTransformedRequired()){
-                    runtimeDocument = getRuntimeDocument( subReportTemplate, subReportTemplate.getParameterMapName(), reportParams );
-                    transformParameterMap = getTransformationParameters( reportType, subReportTemplate.getParameterMapName(), runtimeDocument );
+                    runtimeDocument = getRuntimeDocument( subReportTemplate, reportParams );
+                    transformParameterMap = getTransformationParameters( reportType, subReportTemplate, runtimeDocument );
                 }
                 JasperReport subJasperReport = compileReportTemplate( transformerFactory, documentBuilderFactory, subReportTemplate, transformParameterMap );
                 reportParams.put( subReportTemplate.getParameterMapName(), subJasperReport );
             }
             
             // Compile main report
-            Document runtimeDocument = getRuntimeDocument( template, null, reportParams );
-            Map<String, Object> transformParameterMap = getTransformationParameters( reportType, template.getParameterMapName(), runtimeDocument );
+            Document runtimeDocument = getRuntimeDocument( template, reportParams );
+            Map<String, Object> transformParameterMap = getTransformationParameters( reportType, template, runtimeDocument );
             jasperReport = compileReportTemplate( transformerFactory, documentBuilderFactory, template, transformParameterMap );
         } catch ( Exception e ) {
             throw new ReportGenerationException( "Unexpected error during report compilation: " + e.getMessage(), e );                        
@@ -234,21 +235,21 @@ public class ReportGenerator {
         final String resourcePath = "/com/l7tech/gateway/standardreports";
 
         // Performance summary
-        templates.put( ReportApi.ReportType.PERFORMANCE_SUMMARY, new ReportTemplate(ReportApi.ReportType.PERFORMANCE_SUMMARY, "not used", resourcePath+"/PS_Summary_Template.jrxml", resourcePath+"/PS_SummaryTransform.xsl", null ) );
+        templates.put( ReportApi.ReportType.PERFORMANCE_SUMMARY, new ReportTemplate(ReportApi.ReportType.PERFORMANCE_SUMMARY, resourcePath+"/PS_Summary_Template.jrxml", resourcePath+"/PS_SummaryTransform.xsl", null) );
 
         // Performance interval
-        templates.put( ReportApi.ReportType.PERFORMANCE_INTERVAL, new ReportTemplate( ReportApi.ReportType.PERFORMANCE_INTERVAL,"not used", resourcePath+"/PS_IntervalMasterReport_Template.jrxml", resourcePath+"/PS_IntervalMasterTransform.xsl", Arrays.asList(
-            new ReportTemplate( ReportApi.ReportType.PERFORMANCE_INTERVAL, ReportApi.ReportParameters.SUB_INTERVAL_SUB_REPORT, resourcePath+"/PS_SubIntervalMasterReport.jrxml", null, null ),
-            new ReportTemplate( ReportApi.ReportType.PERFORMANCE_INTERVAL, ReportApi.ReportParameters.SUB_REPORT, resourcePath+"/PS_SubIntervalMasterReport_subreport0.jrxml", null, null )
+        templates.put( ReportApi.ReportType.PERFORMANCE_INTERVAL, new ReportTemplate( ReportApi.ReportType.PERFORMANCE_INTERVAL,resourcePath+"/PS_IntervalMasterReport_Template.jrxml", resourcePath+"/PS_IntervalMasterTransform.xsl", Arrays.asList(
+            new ReportTemplate( ReportApi.ReportParameters.SUB_INTERVAL_SUB_REPORT, ReportApi.ReportType.PERFORMANCE_INTERVAL, resourcePath+"/PS_SubIntervalMasterReport.jrxml", null, false),
+            new ReportTemplate( ReportApi.ReportParameters.SUB_REPORT, ReportApi.ReportType.PERFORMANCE_INTERVAL, resourcePath+"/PS_SubIntervalMasterReport_subreport0.jrxml", null, false)
         )) );
 
         // Usage summary
-        templates.put( ReportApi.ReportType.USAGE_SUMMARY, new ReportTemplate(ReportApi.ReportType.USAGE_SUMMARY, "not used", resourcePath+"/Usage_Summary_Template.jrxml", resourcePath+"/UsageReportTransform.xsl", null ) );
+        templates.put( ReportApi.ReportType.USAGE_SUMMARY, new ReportTemplate(ReportApi.ReportType.USAGE_SUMMARY, resourcePath+"/Usage_Summary_Template.jrxml", resourcePath+"/UsageReportTransform.xsl", null) );
 
         // Usage interval
-        templates.put( ReportApi.ReportType.USAGE_INTERVAL, new ReportTemplate( ReportApi.ReportType.USAGE_INTERVAL, "not used", resourcePath+"/Usage_IntervalMasterReport_Template.jrxml", resourcePath+"/UsageReportIntervalTransform_Master.xsl", Arrays.asList(
-                new ReportTemplate( ReportApi.ReportType.USAGE_INTERVAL, "SUB_INTERVAL_SUB_REPORT", resourcePath+"/Usage_SubIntervalMasterReport_Template.jrxml", resourcePath+"/UsageReportSubIntervalTransform_Master.xsl", null ),
-                new ReportTemplate( ReportApi.ReportType.USAGE_INTERVAL, "SUB_REPORT", resourcePath+"/Usage_SubIntervalMasterReport_subreport0_Template.jrxml", resourcePath+"/Usage_SubReport.xsl", null )
+        templates.put( ReportApi.ReportType.USAGE_INTERVAL, new ReportTemplate( ReportApi.ReportType.USAGE_INTERVAL, resourcePath+"/Usage_IntervalMasterReport_Template.jrxml", resourcePath+"/UsageReportIntervalTransform_Master.xsl", Arrays.asList(
+                new ReportTemplate( "SUB_INTERVAL_SUB_REPORT", ReportApi.ReportType.USAGE_INTERVAL, resourcePath+"/Usage_SubIntervalMasterReport_Template.jrxml", resourcePath+"/UsageReportSubIntervalTransform_Master.xsl", false),
+                new ReportTemplate( "SUB_REPORT", ReportApi.ReportType.USAGE_INTERVAL, resourcePath+"/Usage_SubIntervalMasterReport_subreport0_Template.jrxml", resourcePath+"/Usage_SubReport.xsl", false)
         )) );
 
         reportTemplates = Collections.unmodifiableMap( templates );
@@ -335,6 +336,10 @@ public class ReportGenerator {
             reportParams.put(ReportApi.ReportParameters.IS_USING_KEYS, isUsingKeys);
         }
 
+        //Tell all reports explicitly to ignore pagniation. This is always set in the isIgnorePagination attribute
+        //of the jasperReport element, however the implementation seems to ignore it
+        //reportParams.put(ReportApi.ReportParameters.IS_IGNORE_PAGINATION, new Boolean(true));
+
         String sql;
         //this is a context mapping query using keys 1-5 and auth user
         if( isContextMapping && isUsingKeys) {
@@ -415,8 +420,8 @@ public class ReportGenerator {
      * being null 
      */
     @SuppressWarnings({"unchecked"})
-    private Document getRuntimeDocument( final ReportTemplate template, final String subReportParamName,
-                                         final Map<String,Object> reportParameters  ) {
+    private Document getRuntimeDocument(final ReportTemplate template,
+                                        final Map<String, Object> reportParameters) {
         Document runtimeDocument = null;
 
         if(template.getType() == ReportApi.ReportType.PERFORMANCE_SUMMARY ||
@@ -443,11 +448,11 @@ public class ReportGenerator {
 
         if(template.getType() == ReportApi.ReportType.USAGE_SUMMARY){
             runtimeDocument = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
-        }else if(template.getType() == ReportApi.ReportType.USAGE_INTERVAL && subReportParamName == null){
+        }else if(template.getType() == ReportApi.ReportType.USAGE_INTERVAL && template.isMasterReport()){
             runtimeDocument = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
-        }else if(subReportParamName.equals(ReportApi.ReportParameters.SUB_INTERVAL_SUB_REPORT)){
+        }else if(template.getParameterMapName().equals(ReportApi.ReportParameters.SUB_INTERVAL_SUB_REPORT)){
             runtimeDocument = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
-        }else if(subReportParamName.equals(ReportApi.ReportParameters.SUB_REPORT)){
+        }else if(template.getParameterMapName().equals(ReportApi.ReportParameters.SUB_REPORT)){
             runtimeDocument = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         }
 
@@ -457,7 +462,7 @@ public class ReportGenerator {
     /**
      *
      */
-    private Map<String, Object> getTransformationParameters( ReportApi.ReportType reportType, String subReportParamName, final Document document ) {
+    private Map<String, Object> getTransformationParameters( ReportApi.ReportType reportType, final ReportTemplate reportTemplate, final Document document ) {
         final Map<String, Object> params = new HashMap<String, Object>();
 
         if(document == null) throw new NullPointerException("Document cannot be null, as it is required for every transform");
@@ -469,19 +474,31 @@ public class ReportGenerator {
             return params;
         }
 
+        //at this point we are only left with usage reports
+
         if(ReportApi.ReportType.USAGE_SUMMARY == reportType ||
-                (ReportApi.ReportType.USAGE_INTERVAL == reportType && subReportParamName == null)){
+                (ReportApi.ReportType.USAGE_INTERVAL == reportType && reportTemplate.isMasterReport())){
             params.put("FrameMinWidth", 820);
             params.put("PageMinWidth", 850);
             params.put("ReportInfoStaticTextSize", 128);
             params.put("TitleInnerFrameBuffer", 7);
-        }else if(ReportApi.ReportType.USAGE_INTERVAL == reportType
-                && (subReportParamName.equals(ReportApi.ReportParameters.SUB_INTERVAL_SUB_REPORT)
-                || subReportParamName.equals(ReportApi.ReportParameters.SUB_REPORT))){
-            params.put("PageMinWidth", 820);
+            return params;
         }
 
-        return params;
+        //at this point we are only left with usage interval sub reports
+        
+        if(!reportTemplate.isMasterReport()){//should always be
+            String subReportParamName = reportTemplate.getParameterMapName();
+            if(ReportApi.ReportType.USAGE_INTERVAL == reportType
+                    && (subReportParamName.equals(ReportApi.ReportParameters.SUB_INTERVAL_SUB_REPORT)
+                    || subReportParamName.equals(ReportApi.ReportParameters.SUB_REPORT))){
+                params.put("PageMinWidth", 820);
+                return params;
+            }
+        }
+
+        throw new IllegalStateException("Unknown combination of report type and report template");
+
     }
 
     /**
@@ -615,31 +632,53 @@ public class ReportGenerator {
         private final Collection<ReportTemplate> subReports;
         private final boolean requiresTransform;
 
-        //todo [Donal] Master templates don't need a parameter map name, we care about their type, sub reports need a
-        //todo [Donal] parameter map name, and we don't care about their type need to split out
+        private final boolean isMasterReport;
+
         /**
-         *
+         * Constructor for a Master report i.e. has subReports
          * @param type
-         * @param parameterMapName this is an important param which has two purposes: 1) it is the parameter name required
-         * in a master report for identifiying a sub report 2) it is used in ReportGenerator for making run time decisions
-         * when getting transformation parameters
          * @param reportXml
          * @param reportXsl
          * @param subReports
          */
         ReportTemplate( final ReportApi.ReportType type,
-                        final String parameterMapName,
                         final String reportXml,
                         final String reportXsl,
                         final Collection<ReportTemplate> subReports ) {
             this.type = type;
-            this.parameterMapName = parameterMapName;
             this.reportXml = reportXml;
             this.reportXsl = reportXsl;
             this.subReports = subReports == null ?
                     Collections.<ReportTemplate>emptyList() :
                     Collections.unmodifiableCollection(subReports);
             requiresTransform = (this.reportXsl != null);
+            this.isMasterReport = true;
+            this.parameterMapName = null;
+        }
+
+        /**
+         * Constructor for a sub report or a report with no sub reports
+         * @param type
+         * @param parameterMapName
+         * @param reportXml
+         * @param reportXsl
+         */
+        ReportTemplate( final String parameterMapName,
+                        final ReportApi.ReportType type,
+                        final String reportXml,
+                        final String reportXsl,
+                        final boolean isMasterReport) {
+            this.parameterMapName = parameterMapName;
+            this.type = type;
+            this.reportXml = reportXml;
+            this.reportXsl = reportXsl;
+            this.subReports = Collections.emptyList();
+            requiresTransform = (this.reportXsl != null);
+            this.isMasterReport = isMasterReport;
+        }
+
+        public boolean isMasterReport() {
+            return isMasterReport;
         }
 
         public boolean isTransformedRequired(){
@@ -651,6 +690,8 @@ public class ReportGenerator {
         }
 
         public String getParameterMapName() {
+            if(isMasterReport) throw new IllegalStateException("Master reports do not have parameter names");
+            
             return parameterMapName;
         }
 
