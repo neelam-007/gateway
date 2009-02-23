@@ -21,9 +21,15 @@ public class DefaultHttpConnectors {
 
     private static final String PROP_INIT_ADDR = "com.l7tech.server.listener.initaddr";
     private static final String PROP_INIT_PORT = "com.l7tech.server.listener.initport";
+    private static final String PROP_INIT_LISTENER_ENDPOINTS = "com.l7tech.server.listener.initendpoints";
+    private static final String PROP_INIT_LISTENER_CIPHERS = "com.l7tech.server.listener.initciphers";
+    private static final String PROP_INIT_INTERNODE_CIPHERS = "com.l7tech.server.listener.initinternodeciphers";
 
-    static final String defaultEndpoints = "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS";
-    static final String defaultStrongCiphers = "TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA";
+    static final String defaultEndpoints = SyspropUtil.getString(PROP_INIT_LISTENER_ENDPOINTS, "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS");
+    static final String defaultListenerStrongCiphers = SyspropUtil.getString(PROP_INIT_LISTENER_CIPHERS,
+            "SSL_RSA_WITH_RC4_128_MD5,SSL_RSA_WITH_RC4_128_SHA,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA," +
+            "TLS_DHE_RSA_WITH_AES_256_CBC_SHA,SSL_RSA_WITH_3DES_EDE_CBC_SHA,SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA,SSL_RSA_WITH_DES_CBC_SHA,SSL_DHE_RSA_WITH_DES_CBC_SHA");
+    static final String defaultInternodeStrongCiphers = SyspropUtil.getString(PROP_INIT_INTERNODE_CIPHERS, "TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA");
 
 
     /**
@@ -42,6 +48,7 @@ public class DefaultHttpConnectors {
             https.setName("Default HTTPS ("+initPort+")");
             https.setScheme(SsgConnector.SCHEME_HTTPS);
             https.setEndpoints(defaultEndpoints);
+            setListenerCiphers(https);
             https.setPort(initPort);
             https.setKeyAlias("SSL");
             https.setSecure(true);
@@ -61,6 +68,7 @@ public class DefaultHttpConnectors {
             https.setName("Default HTTPS (8443)");
             https.setScheme(SsgConnector.SCHEME_HTTPS);
             https.setEndpoints(defaultEndpoints);
+            setListenerCiphers(https);
             https.setPort(8443);
             https.setKeyAlias("SSL");
             https.setSecure(true);
@@ -81,6 +89,7 @@ public class DefaultHttpConnectors {
         httpsNocc.setName("Default HTTPS (9443)");
         httpsNocc.setScheme(SsgConnector.SCHEME_HTTPS);
         httpsNocc.setEndpoints(defaultEndpoints);
+        setListenerCiphers(httpsNocc);
         httpsNocc.setPort(9443);
         httpsNocc.setKeyAlias("SSL");
         httpsNocc.setSecure(true);
@@ -93,6 +102,11 @@ public class DefaultHttpConnectors {
         ret.add(nodeHttps);
 
         return ret;
+    }
+
+    private static void setListenerCiphers(SsgConnector https) {
+        if (defaultListenerStrongCiphers != null && defaultListenerStrongCiphers.trim().length() > 0)
+            https.putProperty(SsgConnector.PROP_CIPHERLIST, defaultListenerStrongCiphers);
     }
 
     public static Collection<SsgConnector> getRequiredConnectors( final Collection<SsgConnector> existingConnectors ) {
@@ -121,11 +135,11 @@ public class DefaultHttpConnectors {
         nodeHttps.setKeyAlias("SSL");
         nodeHttps.setSecure(true);
         nodeHttps.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
-        nodeHttps.putProperty(SsgConnector.PROP_CIPHERLIST, defaultStrongCiphers);
+        nodeHttps.putProperty(SsgConnector.PROP_CIPHERLIST, defaultInternodeStrongCiphers);
         return nodeHttps;
     }
 
-    /**
+    /*
      * Does any current connector have the given endpoint? (even if disabled)
      */
     private static boolean connectorExists( final Collection<SsgConnector> connectors, final SsgConnector.Endpoint endpoint ) {
@@ -141,7 +155,7 @@ public class DefaultHttpConnectors {
         return exists;
     }
 
-    /**
+    /*
      * Validate that the specified IP address actually exists.
      */
     private static void validateIpAddress( final String ipAddress ) {
