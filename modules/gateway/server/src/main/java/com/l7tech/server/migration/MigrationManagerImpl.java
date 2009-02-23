@@ -218,19 +218,19 @@ public class MigrationManagerImpl implements MigrationManager {
         ExternalEntityHeader targetHeader;
         if (metadata.isMapped(header)) {
             op = MAP;
-            targetHeader = metadata.getCopiedOrMapped(header);
+            targetHeader = getUpdatedHeader(metadata.getCopiedOrMapped(header));
         } else if ( ! metadata.wasCopied(header) && ! entitiesFromTarget.containsKey(header)) {
             op = CREATE;
             targetHeader = header;
         } else if (! overwriteExisting) {
             op = MAP_EXISTING;
-            targetHeader = metadata.wasCopied(header) ? metadata.getCopiedOrMapped(header) : header;
+            targetHeader = metadata.wasCopied(header) ? getUpdatedHeader(metadata.getCopiedOrMapped(header)) : header;
         } else if (metadata.wasCopied(header) && entitiesFromTarget.containsKey(metadata.getCopied(header))) {
             op = UPDATE;
             targetHeader = metadata.getCopied(header);
         } else {
             op = OVERWRITE;
-            targetHeader = EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(loadEntity(metadata.getCopied(header))));
+            targetHeader = getUpdatedHeader(metadata.getCopied(header));
         }
 
         Entity entity;
@@ -274,6 +274,10 @@ public class MigrationManagerImpl implements MigrationManager {
             result.put(header, new MigratedItem(header, EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(entity)), op));
 
         applyMappings(header, entity, targetHeader, bundle, entitiesFromTarget);
+    }
+
+    private ExternalEntityHeader getUpdatedHeader(ExternalEntityHeader header) throws MigrationApi.MigrationException {
+        return EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(loadEntity(header)));
     }
 
     private void applyValueMapping(ValueReferenceEntityHeader vRefHeader, MigrationBundle bundle) throws MigrationApi.MigrationException {
