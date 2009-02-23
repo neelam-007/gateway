@@ -57,14 +57,10 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         final MimeKnob mimeKnob = (MimeKnob) request.getKnob(MimeKnob.class);
 
         // DELETE CURRENT SECURITY HEADER IF NECESSARY
-        if (request.isXml()) {
-            try {
-                handleProcessedSecurityHeader(context.getRequest(),
-                                              assertion.getCurrentSecurityHeaderHandling(),
-                                              assertion.getXmlSecurityActorToPromote());
-            } catch(SAXException se) {
-                _logger.log(Level.INFO, "Error processing security header, request XML invalid ''{0}''", se.getMessage());
-            }
+        try {
+            handleProcessedSecurityHeader(request);
+        } catch(SAXException se) {
+            _logger.log(Level.INFO, "Error processing security header, request XML invalid ''{0}''", se.getMessage());
         }
 
         String userName = null;

@@ -212,7 +212,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
             applicationContext.publishEvent(new PreRoutingEvent(this, context, u));
             if (failoverStrategy == null)
-                return tryUrl(context, u);
+                return tryUrl(context, getRequestMessage(context), u);
 
             String failedHost = null;
             for (int tries = 0; tries < maxFailoverAttempts; tries++) {
@@ -230,7 +230,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 } else {
                     url = new URL(u.getProtocol(), host, u.getPort(), u.getFile());
                 }
-                AssertionStatus result = tryUrl(context, url);
+                AssertionStatus result = tryUrl(context, getRequestMessage(context), url);
                 if (result == AssertionStatus.NONE) {
                     failoverStrategy.reportSuccess(host);
                     return result;
@@ -246,7 +246,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
     }
 
-    private AssertionStatus tryUrl(PolicyEnforcementContext context, URL url) throws PolicyAssertionException {
+    private AssertionStatus tryUrl(PolicyEnforcementContext context, Message requestMessage, URL url) throws PolicyAssertionException {
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
         context.setRoutedServiceUrl(url);
         setHttpRoutingUrlContextVariables(context);
@@ -258,8 +258,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             routedRequestParams.setHostnameVerifier(hostnameVerifier);
 
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
-            handleProcessedSecurityHeader(context.getRequest(), assertion.getCurrentSecurityHeaderHandling(),
-                                          assertion.getXmlSecurityActorToPromote());
+            handleProcessedSecurityHeader(requestMessage);
 
             String userAgent = assertion.getUserAgent();
             if (userAgent == null || userAgent.length() == 0) userAgent = DEFAULT_USER_AGENT;
@@ -343,7 +342,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                         routedRequestParams);
             }
 
-            return reallyTryUrl(context, routedRequestParams, url, true, vars);
+            return reallyTryUrl(context, requestMessage, routedRequestParams, url, true, vars);
         } catch (MalformedURLException mfe) {
             thrown = mfe;
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_GENERIC_PROBLEM, url.toString(), ExceptionUtils.getMessage(thrown));
@@ -443,7 +442,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         return output;
     }
 
-    private AssertionStatus reallyTryUrl(PolicyEnforcementContext context, final GenericHttpRequestParams routedRequestParams,
+    private AssertionStatus reallyTryUrl(PolicyEnforcementContext context, Message requestMessage, final GenericHttpRequestParams routedRequestParams,
                                          URL url, boolean allowRetry, Map vars) throws PolicyAssertionException {
         GenericHttpRequest routedRequest = null;
         GenericHttpResponse routedResponse = null;
@@ -452,7 +451,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             // Set the HTTP version 1.0 for not accepting the chunked Transfer Encoding
             // todo: check if we need to support HTTP 1.1.
 
-            final MimeKnob reqMime = getRequestMessage(context).getMimeKnob();
+            final MimeKnob reqMime = requestMessage.getMimeKnob();
 
             // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
             final long contentLength = reqMime.getContentLength();
@@ -579,7 +578,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (status != HttpConstants.STATUS_OK && retryRequested) {
                 // retry after if requested by a routing result listener
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS_HANDLED, url.getPath(), String.valueOf(status));
-                return reallyTryUrl(context, routedRequestParams, url, false, vars);
+                return reallyTryUrl(context, requestMessage, routedRequestParams, url, false, vars);
             }
 
             if (status == HttpConstants.STATUS_OK)
@@ -666,33 +665,20 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
      */
     protected Message getRequestMessage(final PolicyEnforcementContext context) {
         Message msg;
-        if (assertion.getRequestMsgSrc() == null) {
-            msg = context.getRequest();
-        } else {
-            final String variableName = assertion.getRequestMsgSrc();
-            try {
-                final Object requestSrc = context.getVariable(variableName);
-                if (!(requestSrc instanceof Message)) {
-                    // Should never happen.
-                    throw new RuntimeException("Request message source (\"" + variableName +
-                            "\") is a context variable of the wrong type (expected=" + Message.class + ", actual=" + requestSrc.getClass() + ").");
-                }
-                msg = (Message)requestSrc;
+        if (assertion.getRequestMsgSrc() == null)
+            return context.getRequest();
 
-                if (msg.getKnob(HttpRequestKnob.class) == null) {
-                    // Make it a request message by inheriting the HttpRequestKnob from the default request.
-                    final HttpRequestKnob defaultHRK = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
-                    if (defaultHRK != null) {
-                        msg.attachHttpRequestKnob(defaultHRK);
-                    }
-                }
-            } catch (NoSuchVariableException e) {
-                // Should never happen.
-                throw new RuntimeException("Request message source is a non-existent context variable (\"" + variableName + "\").");
+        final String variableName = assertion.getRequestMsgSrc();
+        try {
+            final Object requestSrc = context.getVariable(variableName);
+            if (!(requestSrc instanceof Message)) {
+                throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Request message source (\"" + variableName +
+                        "\") is a context variable of the wrong type (expected=" + Message.class + ", actual=" + requestSrc.getClass() + ").");
             }
+            return (Message)requestSrc;
+        } catch (NoSuchVariableException e) {
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Request message source is a non-existent context variable (\"" + variableName + "\").");
         }
-
-        return msg;
     }
 
     /**

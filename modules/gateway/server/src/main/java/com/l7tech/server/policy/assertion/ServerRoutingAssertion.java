@@ -77,6 +77,24 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     }
 
     /**
+     * Perform security header pocessing ont he specified message according to the current assertion's
+     * secHeaderHandlingOption.
+     *
+     * @param message  the message whose Security headers to manipulate.  Required.
+     *                 <p/>
+     *                 If this message doesn't contain a SOAP envelope, this method will return without
+     *                 taking action if doing so is reasonable given the secHeaderHandlingOption; otherwise,
+     *                 it will throw AssertionStatusException.
+     * @throws SAXException if the message can't be parsed as XML.
+     * @throws IOException if there is a problem reading or writing a message.
+     * @throws AssertionStatusException if the operation cannot be performed, and this method recommends that
+     *                                  the overall assertion fail with the enclosed assertion status.
+     */
+    protected void handleProcessedSecurityHeader(Message message) throws SAXException, IOException {
+        handleProcessedSecurityHeader(message, assertion.getCurrentSecurityHeaderHandling(), assertion.getXmlSecurityActorToPromote());
+    }
+
+    /**
      * Perform security header pocessing ont he specified message according to the specified
      * secHeaderHandlingOption.
      *
@@ -93,14 +111,10 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
      * @throws AssertionStatusException if the operation cannot be performed, and this method recommends that
      *                                  the overall assertion fail with the enclosed assertion status.
      */
-    protected void handleProcessedSecurityHeader(Message message,
-                                                 int secHeaderHandlingOption,
-                                                 String otherToPromote)
-            throws SAXException, IOException
-    {
+    protected void handleProcessedSecurityHeader(Message message, int secHeaderHandlingOption, String otherToPromote) throws SAXException, IOException {
         if (secHeaderHandlingOption == RoutingAssertion.IGNORE_SECURITY_HEADER)
             return;
-        
+
         final XmlKnob requestXml = (XmlKnob)message.getKnob(XmlKnob.class);
         if (requestXml == null) {
             logger.finest("skipping this because the message isn't XML");
@@ -109,7 +123,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
 
         final SecurityKnob requestSec = (SecurityKnob)message.getKnob(SecurityKnob.class);
         if (requestSec == null || requestSec.getProcessorResult() == null) {
-            logger.finest("skipping this because no security header were processed");
+            logger.finest("skipping this because no security header was processed");
             return;
         }
 

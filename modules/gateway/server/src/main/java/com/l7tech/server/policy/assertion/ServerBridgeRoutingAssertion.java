@@ -189,9 +189,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 }
 
                 // DELETE CURRENT SECURITY HEADER IF NECESSARY
-                handleProcessedSecurityHeader(context.getRequest(),
-                                              assertion.getCurrentSecurityHeaderHandling(),
-                                              assertion.getXmlSecurityActorToPromote());
+                handleProcessedSecurityHeader(requestMsg);
 
                 if (assertion.isAttachSamlSenderVouches()) {
                     doAttachSamlSenderVouches(context, signerInfo);
