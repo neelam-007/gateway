@@ -122,37 +122,15 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         loadNotificationProperties(true);
 
         String hostname = serverConfig.getHostname();
-
-        String url = null;
-        try {
-            int httpPort = 0;
-            int httpsPort = 0;
-            final Collection<SsgConnector> conns = connectorManager.findAll();
-            for (SsgConnector conn : conns) {
-                if (!"http/https/".contains(conn.getScheme() + "/")) continue;
-                if (conn.isSecure()) {
-                    httpsPort = conn.getPort();
-                } else {
-                    httpPort = conn.getPort();
-                }
-                if (httpPort != 0 && httpsPort != 0) break;
-            }
-            if (httpPort != 0) {
-                url = "http://" + hostname + ":" + httpPort;
-            } else if (httpsPort != 0) {
-                url = "https://" + hostname + ":" + httpsPort;
-            }
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to list SSG connectors");
+        int clusterHttpPort = serverConfig.getIntProperty( "clusterhttpport", 8080);
+        String clusterHostName = serverConfig.getProperty( "clusterHost" );
+        if ( clusterHostName == null || clusterHostName.length()==0 ) {
+            clusterHostName = hostname;
         }
 
         try {
-            if (url == null) {
-                incomingUrl = new URL("http://" + hostname + ":" + 8080);
-                logger.log(Level.WARNING, "Unable to determine real SSG URL; using " + incomingUrl.toString());
-            } else {
-                incomingUrl = new URL(url);
-            }
+            incomingUrl = new URL("http://" + clusterHostName + ":" + clusterHttpPort);
+            logger.log(Level.CONFIG, "Using SSG URL '" + incomingUrl.toString() + "'.");
         } catch (MalformedURLException e) {
             throw new RuntimeException(e); // Uh-oh
         }
