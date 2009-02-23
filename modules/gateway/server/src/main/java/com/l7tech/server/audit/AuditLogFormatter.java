@@ -76,9 +76,12 @@ public class AuditLogFormatter<REC extends AuditRecord> {
 
         if (ctxVariablesMap != null) {
             Audit auditor = new DummyAuditor();
-            this.serviceHeader = ExpandVariables.process(templateServiceHeader, ctxVariablesMap, auditor, false, MAX_CONTEXT_VAR_LENGTH);
-            this.serviceFooter = ExpandVariables.process(templateServiceFooter, ctxVariablesMap, auditor, false, MAX_CONTEXT_VAR_LENGTH);
-            this.serviceDetail = ExpandVariables.process(templateServiceDetail, ctxVariablesMap, auditor, false, MAX_CONTEXT_VAR_LENGTH);
+            this.serviceHeader = removeInvalidFormatting(
+                    ExpandVariables.process(templateServiceHeader, ctxVariablesMap, auditor, false, MAX_CONTEXT_VAR_LENGTH));
+            this.serviceFooter = removeInvalidFormatting(
+                    ExpandVariables.process(templateServiceFooter, ctxVariablesMap, auditor, false, MAX_CONTEXT_VAR_LENGTH));
+            this.serviceDetail = removeInvalidFormatting(
+                    ExpandVariables.process(templateServiceDetail, ctxVariablesMap, auditor, false, MAX_CONTEXT_VAR_LENGTH));
             this.otherFormat = templateOtherFormat;
             this.otherDetail = templateOtherDetail;
         } else {
@@ -144,20 +147,37 @@ public class AuditLogFormatter<REC extends AuditRecord> {
 
     protected static void loadClusterProperties(ServerConfig serverCfg) {
 
+        final String badSyntaxRegex = "\\$\\{[\\s]*\\}|\\{[\\s]*\\}";
+
         templateServiceHeader = serverCfg.getProperty(ServerConfig.PARAM_AUDIT_LOG_FORMAT_SERVICE_HEADER);
-        if (templateServiceHeader == null) templateServiceHeader = DEFAULT_TEMPLATE_SERVICE_HEADER;
+        if (templateServiceHeader == null)
+            templateServiceHeader = DEFAULT_TEMPLATE_SERVICE_HEADER;
+        else
+            templateServiceHeader = templateServiceHeader.replaceAll(badSyntaxRegex, "");
 
         templateServiceFooter = serverCfg.getProperty(ServerConfig.PARAM_AUDIT_LOG_FORMAT_SERVICE_FOOTER);
-        if (templateServiceFooter == null) templateServiceFooter = DEFAULT_TEMPLATE_SERVICE_FOOTER;
+        if (templateServiceFooter == null)
+            templateServiceFooter = DEFAULT_TEMPLATE_SERVICE_FOOTER;
+        else
+            templateServiceFooter = templateServiceFooter.replaceAll(badSyntaxRegex, "");
 
         templateServiceDetail = serverCfg.getProperty(ServerConfig.PARAM_AUDIT_LOG_FORMAT_SERVICE_DETAIL);
-        if (templateServiceDetail == null) templateServiceDetail = DEFAULT_TEMPLATE_SERVICE_DETAIL;
+        if (templateServiceDetail == null)
+            templateServiceDetail = DEFAULT_TEMPLATE_SERVICE_DETAIL;
+        else
+            templateServiceDetail = templateServiceDetail.replaceAll(badSyntaxRegex, "");
 
         templateOtherFormat = serverCfg.getProperty(ServerConfig.PARAM_AUDIT_LOG_FORMAT_OTHER);
-        if (templateOtherFormat == null) templateOtherFormat = DEFAULT_TEMPLATE_OTHER_FORMAT;
+        if (templateOtherFormat == null)
+            templateOtherFormat = DEFAULT_TEMPLATE_OTHER_FORMAT;
+        else
+            templateOtherFormat = templateOtherFormat.replaceAll(badSyntaxRegex, "");
 
         templateOtherDetail = serverCfg.getProperty(ServerConfig.PARAM_AUDIT_LOG_FORMAT_OTHER_DETAIL);
-        if (templateOtherDetail == null) templateOtherDetail = DEFAULT_TEMPLATE_OTHER_DETAIL;
+        if (templateOtherDetail == null)
+            templateOtherDetail = DEFAULT_TEMPLATE_OTHER_DETAIL;
+        else
+            templateOtherDetail = templateOtherDetail.replaceAll(badSyntaxRegex, "");
     }
 
     private static void parseTemplatesForVariables() {
@@ -182,10 +202,31 @@ public class AuditLogFormatter<REC extends AuditRecord> {
      * @return the resultant template string without any context variables
      */
     private static String removeContextVariables(String template) {
+        final String regexPrefix = "\\$\\{";
+        final String regexSuffix = "\\}";
         for (String var : contextVariablesUsed) {
-            template = template.replaceAll("\\$\\{" + var + "\\}", "");
+            template = template.replaceAll(regexPrefix + var + regexSuffix, "");
         }
-        return template;
+
+        return removeInvalidFormatting(template);
+    }
+
+    /** Formatting filter 1 that removes the bulk of the bad replacement formats {x} {11x} {x11} {1 2} {1.2} { 1_2} etc */
+    private static final String badFormatFilter1 = "\\{[\\d\\s]*[^\\d|\\}]+[\\d\\s]*\\}";
+    /** Formatting filter 2 that removes the rest of the bad replacement formats {x1} {x11} {.1.b} {1x2x3} */
+    private static final String badFormatFilter2 = "\\{[\\D]+[^\\}]*\\}|\\{[\\d]+[^\\d\\}]+[^\\}]*\\}";
+
+    /**
+     * Removes invalid formats that causes problems in the MessageFormat formatter.
+     * E.g. include: {x} {1x} {x1} {1 1} {1x2y3} - non numeric characters.
+     *
+     * for bug #6671 - remove any unsupported formatting to prevent MessageFormat from failing
+     *
+     * @param input the string to parse
+     * @return String with formatting filters applied
+     */
+    private static String removeInvalidFormatting(String input) {
+        return input.replaceAll(badFormatFilter1, "").replaceAll(badFormatFilter2, "");
     }
 
     /**

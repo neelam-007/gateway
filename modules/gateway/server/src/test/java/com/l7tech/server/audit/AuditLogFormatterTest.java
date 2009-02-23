@@ -34,6 +34,12 @@ public class AuditLogFormatterTest extends TestCase {
     private SystemAuditGen sysAuditGenerator;
     private AdminAuditGen adminAuditGenerator;
 
+    // bug #6671
+    private final String BAD_FMT_TEMPLATE =
+            "bad tags template. >{}< {0} {1} {2} >{a}< {3} {4} {1011} >${}< >${a}< >${aa}< >${aaa}< $ " +
+            "section 2. >{     }< >{x}< >{foo}< >{ww ww}< >{2 2}< >{2123xx}< >{x3x2s3}< >{x3x_2s3}< >{n98}< >${  }< " +
+            "section 3. >{1.2 }< >{ 2.2}< >{ 3.3 }< >{1x2x2}< >{....123}< >{.2.a}< >{ .2.a}< >{.2.a }<";
+
     protected void setUp() throws Exception {
 
         if (appCtx == null) {
@@ -138,6 +144,12 @@ public class AuditLogFormatterTest extends TestCase {
             logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(ctxMap).format(testRecord, true);
             checkFormattedLog("AuditHeader-7: ctx vars", "test ctx reqId-00002, ignore=", logStr);
 
+            setCustomTestFormat(TEST_PROP, BAD_FMT_TEMPLATE);
+            logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(ctxMap).format(testRecord, true);
+            checkFormattedLog("AuditHeader-8: ctx vars, bad formatting",
+                    "bad tags template. ><   393216 >< Warehoust [/wh2] {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><",
+                    logStr);
+
             // ++test var length limit, test total msg length limit++
 
         } catch (Exception ex) {
@@ -191,6 +203,12 @@ public class AuditLogFormatterTest extends TestCase {
             setCustomTestFormat(TEST_PROP, "footer-ctx: ${requestId}, ignore=${ignoreVar}");
             logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(ctxMap).format(testRecord, false);
             checkFormattedLog("AuditFooter-8: ctx vars", "footer-ctx: reqId-00002, ignore=", logStr);
+
+            setCustomTestFormat(TEST_PROP, BAD_FMT_TEMPLATE);
+            logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(ctxMap).format(testRecord, false);
+            checkFormattedLog("AuditFooter-9: ctx vars, bad template",
+                    "bad tags template. ><  Message processed successfully 393216 >< Warehoust [/wh2] {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><",
+                    logStr);
 
         } catch (Exception ex) {
             fail("Unexpected error encountered: " + ex);
@@ -248,6 +266,12 @@ public class AuditLogFormatterTest extends TestCase {
             logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(ctxMap).formatDetail(testRecord, dtl);
             checkFormattedLog("AuditDetail-8: ctx vars", "detail-ctx: reqId-00002, ignore=", logStr);
 
+            setCustomTestFormat(TEST_PROP, BAD_FMT_TEMPLATE);
+            logStr = new TestingAuditLogFormatter<MessageSummaryAuditRecord>(ctxMap).formatDetail(testRecord, dtl);
+            checkFormattedLog("AuditDetail-9: ctx vars, bad template",
+                    "bad tags template. >< "+mid+" "+mmsg+" 393216 >< Warehoust [/wh2] {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><", 
+                    logStr);
+
         } catch (Exception ex) {
             fail("Unexpected error encountered: " + ex);
         } finally {
@@ -294,6 +318,12 @@ public class AuditLogFormatterTest extends TestCase {
             logStr = new TestingAuditLogFormatter<SystemAuditRecord>(ctxMap).format(testRecord);
             checkFormattedLog("SystemAudit-6: ctx vars", "test ctx , , ", logStr);
 
+            setCustomTestFormat(TEST_PROP, BAD_FMT_TEMPLATE);
+            logStr = new TestingAuditLogFormatter<SystemAuditRecord>(ctxMap).format(testRecord);
+            checkFormattedLog("SystemAudit-7: ctx vars, bad template",
+                    "bad tags template. ><  "+testRecord.getMessage()+"  ><  {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><",
+                    logStr);
+
         } catch (Exception ex) {
             fail("Unexpected error encountered: " + ex);
         } finally {
@@ -339,6 +369,12 @@ public class AuditLogFormatterTest extends TestCase {
             setCustomTestFormat(TEST_PROP, "test ctx ${requestId}, ${strvar1}, ${arrayVar1}");
             logStr = new TestingAuditLogFormatter<AdminAuditRecord>(ctxMap).format(testRecord);
             checkFormattedLog("AdminAudit-6: ctx vars", "test ctx , , ", logStr);
+
+            setCustomTestFormat(TEST_PROP, BAD_FMT_TEMPLATE);
+            logStr = new TestingAuditLogFormatter<AdminAuditRecord>(ctxMap).format(testRecord);
+            checkFormattedLog("AdminAudit-7: ctx vars, bad template",
+                    "bad tags template. ><  "+testRecord.getMessage()+"  ><  {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><",
+                    logStr);
 
         } catch (Exception ex) {
             fail("Unexpected error encountered: " + ex);
@@ -390,6 +426,12 @@ public class AuditLogFormatterTest extends TestCase {
             setCustomTestFormat(TEST_PROP, "detail-ctx: ${requestId}, ${strvar1}, ${dummyVar}");
             logStr = new TestingAuditLogFormatter<AdminAuditRecord>(ctxMap).formatDetail(testRecord, dtl);
             checkFormattedLog("AdminDetail-6: ctx vars", "detail-ctx: , , ", logStr);
+
+            setCustomTestFormat(TEST_PROP, BAD_FMT_TEMPLATE);
+            logStr = new TestingAuditLogFormatter<AdminAuditRecord>(ctxMap).formatDetail(testRecord, dtl);
+            checkFormattedLog("AdminDetail-7: ctx vars, bad template",
+                    "bad tags template. >< "+mid+" "+mmsg+"  ><  {4} {1011} >< >< >< >< $ section 2. >< >< >< >< >< >< >< >< >< >< section 3. >< >< >< >< >< >< >< ><",
+                    logStr);
 
         } catch (Exception ex) {
             fail("Unexpected error encountered: " + ex);
