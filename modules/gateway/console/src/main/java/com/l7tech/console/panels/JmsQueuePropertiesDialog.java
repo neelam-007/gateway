@@ -1229,7 +1229,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
 
         final boolean valid = validateForm();
-        saveButton.setEnabled(valid && flags.canCreateSome());
+        saveButton.setEnabled(valid && (flags.canCreateSome() || flags.canUpdateSome()));
         testButton.setEnabled(valid);
         enableContentTypeControls();
     }
@@ -1365,7 +1365,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 component.setEnabled(f.call());
             }
             final boolean valid = validateForm();
-            saveButton.setEnabled(valid && flags.canCreateSome());
+            saveButton.setEnabled(valid && (flags.canCreateSome() || flags.canUpdateSome()));
             testButton.setEnabled(valid);
             enableOrDisableComponents();
         }
