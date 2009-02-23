@@ -890,7 +890,11 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Ap
                 // construct server policy
                 serverAssertion = buildServerPolicy( thisPolicy );
             } catch ( ServerPolicyException spe ) {
-                auditInvalidPolicy( thisPolicy, spe, true );
+                boolean alwaysAuditException = true;
+                if (ExceptionUtils.causedBy(spe, PolicyAssertionException.class)) {
+                    alwaysAuditException = false;
+                }
+                auditInvalidPolicy( thisPolicy, spe, alwaysAuditException );
                 exception = spe;
             } catch ( ServerPolicyInstantiationException spie ) {
                 auditInvalidPolicy( thisPolicy, spie, false );

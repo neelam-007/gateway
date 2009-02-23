@@ -417,7 +417,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             status = AssertionStatus.SERVER_ERROR;
             return AssertionStatus.SERVER_ERROR;
         } catch (ServiceResolutionException sre) {
-            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{ExceptionUtils.getMessage(sre)}, sre);
+            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{ExceptionUtils.getMessage(sre)}, ExceptionUtils.getDebugException(sre));
             context.setPolicyResult(AssertionStatus.SERVER_ERROR);
             status = AssertionStatus.SERVER_ERROR;
             return AssertionStatus.SERVER_ERROR;
