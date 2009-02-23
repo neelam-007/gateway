@@ -125,7 +125,6 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
          *
          * @param commaDelimitedList a comma-delimited list of zero or more endpoint names.  May be empty but mustn't be null.
          * @return a new EnumSet of Endpoint instances.  May be empty but never null.
-         * @throws IllegalArgumentException of one of the names in the list is unrecognized.
          */
         public static Set<Endpoint> parseCommaList(String commaDelimitedList) {
             String[] names = PATTERN_WS_COMMA_WS.split(commaDelimitedList);
