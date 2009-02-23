@@ -89,11 +89,7 @@
             IP_ADDRESS : 'IP address',
             DATABASE_HOSTS : 'database host(s)',
             SELF_HOST_NAME : 'self host name',
-            ZOOM_ICON_TOOLTIP : 'Show details',
-            RAID_STATUS_NOT_RAID : 'Not RAID',
-            RAID_STATUS_OK : 'OK',
-            RAID_STATUS_BAD : 'Bad',
-            RAID_STATUS_REBUILDING : 'Rebuilding'
+            ZOOM_ICON_TOOLTIP : 'Show details'
         };
 
         /** Localized strings for local HTML markups, e.g., toolbar buttons, context menu, error dialogs. */
@@ -1604,7 +1600,7 @@
                                                 <tr>
                                                     <td>operating status</td>
                                                     <td class="center"><input id="operatingStatusSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="operatingStatusSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
-                                                    <td>upon failure</td>
+                                                    <td>upon not RUNNING</td>
                                                 </tr>
                                                 <tr>
                                                     <td>log file size</td>
@@ -1624,7 +1620,7 @@
                                                 <tr>
                                                     <td>RAID status</td>
                                                     <td class="center"><input id="raidStatusSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="raidStatusSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
-                                                    <td>upon Bad</td>
+                                                    <td>upon BAD</td>
                                                 </tr>
                                                 <tr>
                                                     <td>CPU temperature</td>
@@ -1644,7 +1640,7 @@
                                                 <tr>
                                                     <td>NTP status</td>
                                                     <td class="center"><input id="ntpStatusSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="ntpStatusSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
-                                                    <td>upon failure</td>
+                                                    <td>upon not OK</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -2048,15 +2044,15 @@
                         <td>
                             <!-- Only the matching one will be shown: -->
                             <div id="monDlg_auditSizeTriggerConfig">&ge; <input id="monDlg_auditSizeTriggerValueTextBox" class="right" type="text" size="13" maxlength="13" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_auditSizeTriggerValueUnitLabel"></span></div>
-                            <div id="monDlg_operatingStatusTriggerConfig">upon failure</div>
+                            <div id="monDlg_operatingStatusTriggerConfig">upon not RUNNING</div>
                             <div id="monDlg_logSizeTriggerConfig">&ge; <input id="monDlg_logSizeTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_logSizeTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_diskUsageTriggerConfig">&ge; <input id="monDlg_diskUsageTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_diskUsageTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_diskFreeTriggerConfig">&le; <input id="monDlg_diskFreeTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_diskFreeTriggerValueUnitLabel"></span></div>
-                            <div id="monDlg_raidStatusTriggerConfig">upon Bad</div>
+                            <div id="monDlg_raidStatusTriggerConfig">upon BAD</div>
                             <div id="monDlg_cpuTempTriggerConfig">&ge; <input id="monDlg_cpuTempTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_cpuTempTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_cpuUsageTriggerConfig">&ge; <input id="monDlg_cpuUsageTriggerValueTextBox" class="right" type="text" size="4" maxlength="4" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_cpuUsageTriggerValueUnitLabel"></span></div>
                             <div id="monDlg_swapUsageTriggerConfig">&ge; <input id="monDlg_swapUsageTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateMonitoringPropertyDialog();"/> <span id="monDlg_swapUsageTriggerValueUnitLabel"></span></div>
-                            <div id="monDlg_ntpStatusTriggerConfig">upon failure</div>
+                            <div id="monDlg_ntpStatusTriggerConfig">upon not OK</div>
                         </td>
                         <td><img id="monDlg_triggerValueWarningIcon" src="../images/warning.png"/></td>
                         <td><button id="monDlg_useDefaultTriggerValueButton" type="button" title="Reset to system-wide default">Use Default</button></td>
