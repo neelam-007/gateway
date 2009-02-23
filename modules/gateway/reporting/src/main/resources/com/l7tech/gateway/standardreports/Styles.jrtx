@@ -158,9 +158,9 @@
             backcolor="#DBD3B0"
             >
         <box leftPadding="5">
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
-            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="1" lineStyle="Solid"/>
+            <leftPen lineWidth="1" lineStyle="Solid"/>
+            <bottomPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -183,10 +183,10 @@
             backcolor="#DBD3B0"
             >
         <box leftPadding="5">
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
-            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
-            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="1" lineStyle="Solid"/>
+            <leftPen lineWidth="1" lineStyle="Solid"/>
+            <bottomPen lineWidth="1" lineStyle="Solid"/>
+            <rightPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -209,10 +209,10 @@
             backcolor="#DBD3B0"
             >
         <box leftPadding="5">
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
-            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
-            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="1" lineStyle="Solid"/>
+            <leftPen lineWidth="1" lineStyle="Solid"/>
+            <bottomPen lineWidth="1" lineStyle="Solid"/>
+            <rightPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -234,8 +234,8 @@
             backcolor="#DBD3B0"
             >
         <box leftPadding="5">
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="1" lineStyle="Solid"/>
+            <bottomPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -259,7 +259,7 @@
             markup="html"
             >
         <box>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -283,8 +283,8 @@
             markup="html"
             >
         <box>
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="1" lineStyle="Solid"/>
+            <leftPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -364,8 +364,8 @@
             isPdfEmbedded="false"
             >
         <box leftPadding="5">
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="1" lineStyle="Solid"/>
+            <bottomPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -388,7 +388,7 @@
             isPdfEmbedded="false"
             >
         <box leftPadding="5">
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -411,9 +411,9 @@
             isPdfEmbedded="false"
             >
         <box>
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
-            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="1" lineStyle="Solid"/>
+            <leftPen lineWidth="1" lineStyle="Solid"/>
+            <bottomPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -436,8 +436,8 @@
             isPdfEmbedded="false"
             >
         <box>
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="1" lineStyle="Solid"/>
+            <leftPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -460,10 +460,10 @@
             isPdfEmbedded="false"
             >
         <box>
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
-            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
-            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="1" lineStyle="Solid"/>
+            <leftPen lineWidth="1" lineStyle="Solid"/>
+            <bottomPen lineWidth="1" lineStyle="Solid"/>
+            <rightPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -486,9 +486,9 @@
             isPdfEmbedded="false"
             >
         <box>
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
-            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="1" lineStyle="Solid"/>
+            <leftPen lineWidth="1" lineStyle="Solid"/>
+            <rightPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -511,10 +511,10 @@
             isPdfEmbedded="false"
             >
         <box>
-            <topPen lineWidth="0.5" lineStyle="Solid"/>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
-            <bottomPen lineWidth="0.5" lineStyle="Solid"/>
-            <rightPen lineWidth="0.5" lineStyle="Solid"/>
+            <topPen lineWidth="1" lineStyle="Solid"/>
+            <leftPen lineWidth="1" lineStyle="Solid"/>
+            <bottomPen lineWidth="1" lineStyle="Solid"/>
+            <rightPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
@@ -537,7 +537,7 @@
             isPdfEmbedded="false"
             >
         <box>
-            <leftPen lineWidth="0.5" lineStyle="Solid"/>
+            <leftPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
