@@ -32,7 +32,8 @@ import java.text.MessageFormat;
 public class MonitoringKernelImpl implements MonitoringKernel {
     private static final Logger logger = Logger.getLogger(MonitoringKernelImpl.class.getName());
 
-    public static final int MIN_SAMPLING_INTERVAL = 1000;
+    private static final int MIN_SAMPLING_INTERVAL = 1000;
+    private static final int OUT_OF_TOLERANCE_LOG_INTERVAL = 60000;
 
     private final Timer samplerTimer = new Timer("Monitoring System / Property Sampler", true);
     private final Timer triggerCheckTimer = new Timer("Monitoring System / Trigger Condition Checker", true);
@@ -50,7 +51,6 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
     // TODO configurable or heuristic size?
     private final BlockingQueue<NotifiableCondition<?>> notificationQueue = new LinkedBlockingQueue<NotifiableCondition<?>>(500);
-    private static final int OUT_OF_TOLERANCE_LOG_INTERVAL = 60000;
 
     private static abstract class TriggerState<T extends Trigger> {
         private final T trigger;
@@ -119,14 +119,14 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         triggerCheckTask.cancel();
     }
 
-    public void setConfiguration(MonitoringConfiguration newConfiguration, boolean doClusterMonitoring) {
+    public void setConfiguration(MonitoringConfiguration newConfiguration) {
         final MonitoringConfiguration oldConfiguration;
 
         // TODO simplfy
         if (newConfiguration != null) {
             if (currentConfig != null) {
                 if (currentConfig.equals(newConfiguration)) {
-                    logger.fine("Configuration is unchanged");
+                    logger.info("Configuration is unchanged");
                     return;
                 }
 
@@ -287,7 +287,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
                 final Pair<Long, ? extends Serializable> lastSample = pstate.getLastSample();
                 if (lastSample == null) {
-                    logger.info("No sample values available for " + prop);
+                    logger.fine("No sample values available for " + prop);
                     transientStatus.timestamp = now;
                     continue;
                 }

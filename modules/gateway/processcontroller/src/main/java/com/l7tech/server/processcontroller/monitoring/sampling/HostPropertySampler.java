@@ -47,7 +47,7 @@ abstract class HostPropertySampler<V extends Serializable> extends PropertySampl
         try {
             return new String(IOUtils.slurpFile(new File(path)));
         } catch (IOException e) {
-            throw new PropertySamplingException("Unable to read file: " + path + ": " + ExceptionUtils.getMessage(e), e);
+            throw new PropertySamplingException("Unable to read file: " + path + ": " + ExceptionUtils.getMessage(e), e, false);
         }
     }
 
@@ -83,9 +83,9 @@ abstract class HostPropertySampler<V extends Serializable> extends PropertySampl
         try {
             Matcher matcher = regex.matcher(contentToMatch);
             if (!matcher.find())
-                throw new PropertySamplingException("Unable to find " + propertyName + " in " + location);
+                throw new PropertySamplingException("Unable to find " + propertyName + " in " + location, false);
             if (matcher.groupCount() < numGroups)
-                throw new PropertySamplingException("Unable to find " + propertyName + " in " + location + ": regex contains insufficient capture groups");
+                throw new PropertySamplingException("Unable to find " + propertyName + " in " + location + ": regex contains insufficient capture groups", false);
             long[] result = new long[numGroups];
             for (int i = 0; i < numGroups; i++) {
                 String what = matcher.group(i+1);
@@ -94,7 +94,7 @@ abstract class HostPropertySampler<V extends Serializable> extends PropertySampl
             return result;
         } catch (NumberFormatException e) {
             // Regex only passes digits, so this can only happen if free swap exceeps 2^64
-            throw new PropertySamplingException(e);
+            throw new PropertySamplingException(e, false);
         }
     }
 

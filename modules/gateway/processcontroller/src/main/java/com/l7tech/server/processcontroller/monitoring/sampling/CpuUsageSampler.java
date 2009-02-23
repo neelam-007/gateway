@@ -27,9 +27,9 @@ class CpuUsageSampler extends HostPropertySampler<Integer> {
             String out = new String(result.getOutput());
             return parseVmstatOutput(out);
         } catch (NumberFormatException nfe) {
-            throw new PropertySamplingException("Unable to parse vmstat output: 'id' value was not an integer", nfe);
+            throw new PropertySamplingException("Unable to parse vmstat output: 'id' value was not an integer", nfe, false);
         } catch (IOException e) {
-            throw new PropertySamplingException(e.getMessage(), e);
+            throw new PropertySamplingException(e.getMessage(), e, false);
         }
     }
 

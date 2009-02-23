@@ -7,11 +7,13 @@ import com.l7tech.server.management.NodeStateType;
 import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.management.config.monitoring.ComponentType;
+import com.l7tech.server.processcontroller.ProcessController;
 import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 class NodeStateSampler extends NodePropertySampler<NodeStateType> {
     private static final Logger logger = Logger.getLogger(NodeStateSampler.class.getName());
@@ -28,6 +30,9 @@ class NodeStateSampler extends NodePropertySampler<NodeStateType> {
                     return nodeApi.getNodeStatus().getType();
                 }
             });
+        } catch (ProcessController.TemporarilyUnavailableException e) {
+            logger.log(Level.INFO, MessageFormat.format("Node state temporarily unavailable (returning last known state, {0})", e.getType()));
+            return e.getType();
         } catch (Exception e) {
             logger.log(Level.WARNING, "Couldn't get node state", e);
             return NodeStateType.UNKNOWN;

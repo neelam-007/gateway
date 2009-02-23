@@ -10,7 +10,7 @@ import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import java.util.List;
 
 public interface MonitoringKernel {
-    void setConfiguration(MonitoringConfiguration config, boolean doCluster);
+    void setConfiguration(MonitoringConfiguration config);
 
     List<MonitoredPropertyStatus> getCurrentPropertyStatuses();
 

@@ -24,7 +24,7 @@ class DiskUsagePercentSampler extends HostPropertySampler<Integer> {
             ProcResult result = ProcUtils.exec(new File(DF_PATH));
             return (int)matchNumber(new String(result.getOutput()), "output from " + DF_PATH, DF_MATCHER);
         } catch (IOException e) {
-            throw new PropertySamplingException(e);
+            throw new PropertySamplingException(e, false);
         }
     }
 }

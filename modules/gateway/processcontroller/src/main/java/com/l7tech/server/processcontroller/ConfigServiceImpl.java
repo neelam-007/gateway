@@ -154,7 +154,7 @@ public class ConfigServiceImpl implements ConfigService {
         if (config != null) {
             currentMonitoringConfiguration = config.left;
             responsibleForClusterMonitoring = config.right;
-            monitoringKernel.setConfiguration(currentMonitoringConfiguration, responsibleForClusterMonitoring);
+            monitoringKernel.setConfiguration(currentMonitoringConfiguration);
         }
 
     }
@@ -456,7 +456,7 @@ public class ConfigServiceImpl implements ConfigService {
         this.responsibleForClusterMonitoring = config.isResponsibleForClusterMonitoring();
         this.currentMonitoringConfiguration = config;
 
-        monitoringKernel.setConfiguration(config, responsibleForClusterMonitoring);
+        monitoringKernel.setConfiguration(config);
 
         if (monitoringConfigFile == null) return;
         

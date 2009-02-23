@@ -34,7 +34,7 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
     /**
      * Create a new PropertyState with no history
      */
-    protected PropertyState(MonitorableProperty property, String componentId, final Set<Long> triggerOids, long samplingInterval, final PropertySampler<V> sampler) {
+    protected PropertyState(final MonitorableProperty property, String componentId, final Set<Long> triggerOids, long samplingInterval, final PropertySampler<V> sampler) {
         super(property, componentId, triggerOids);
         this.lastSamples = new ConcurrentSkipListMap<Long,Pair<V, PropertySamplingException>>();
         this.samplingInterval = samplingInterval;
@@ -48,8 +48,13 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
                     logger.fine("Got property value: " + value); 
                     addSample(value, now);
                 } catch (PropertySamplingException e) {
-                    logger.log(Level.INFO, "Couldn't get property value: " + ExceptionUtils.getMessage(e), e);
                     addFailure(e, now);
+                    if (e.isTemporary()) {
+                        logger.log(Level.INFO, "Couldn't get {0} value ({1})", new String[] { property.toString(), ExceptionUtils.getMessage(e) });
+                    } else {
+                        // TODO maybe disable the sampler if it's permanent?
+                        logger.log(Level.WARNING, String.format("Couldn't get %s value (%s)", property.toString(), ExceptionUtils.getMessage(e)), e);
+                    }
                 }
             }
         };

@@ -31,7 +31,7 @@ public class NtpStatusSampler extends HostPropertySampler<NtpStatus> {
                     return NtpStatus.UNKNOWN;
             }
         } catch (IOException e) {
-            throw new PropertySamplingException(e);
+            throw new PropertySamplingException(e, false);
         }
     }
 }

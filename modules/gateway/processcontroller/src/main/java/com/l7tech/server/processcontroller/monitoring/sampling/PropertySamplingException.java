@@ -7,18 +7,36 @@ package com.l7tech.server.processcontroller.monitoring.sampling;
  * Thrown to indicate that a property sample could not be obtained.
  */
 public class PropertySamplingException extends Exception {
-    public PropertySamplingException() {
-    }
+    private final boolean temporary;
 
-    public PropertySamplingException(String message) {
+    /**
+     * @param temporary <code>true</code> if this is expected to be a temporary failure
+     */
+    public PropertySamplingException(String message, boolean temporary) {
         super(message);
+        this.temporary = temporary;
     }
 
-    public PropertySamplingException(String message, Throwable cause) {
+    /**
+     * @param temporary <code>true</code> if this is expected to be a temporary failure
+     */
+    public PropertySamplingException(String message, Throwable cause, boolean temporary) {
         super(message, cause);
+        this.temporary = temporary;
     }
 
-    public PropertySamplingException(Throwable cause) {
+    /**
+     * @param temporary <code>true</code> if this is expected to be a temporary failure
+     */
+    public PropertySamplingException(Throwable cause, boolean temporary) {
         super(cause);
+        this.temporary = temporary;
+    }
+
+    /**
+      * @return <code>true</code> if this is expected to be a temporary failure; <code>false</code> otherwise.
+      */
+    public boolean isTemporary() {
+        return temporary;
     }
 }

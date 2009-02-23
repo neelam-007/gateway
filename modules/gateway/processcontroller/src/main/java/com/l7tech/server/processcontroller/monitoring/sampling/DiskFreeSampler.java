@@ -28,7 +28,7 @@ class DiskFreeSampler extends HostPropertySampler<Long> {
             ProcResult result = ProcUtils.exec(new File(DF_PATH), args("/"));
             return matchNumber(new String(result.getOutput()) + "\n", "output from " + DF_PATH, DF_MATCHER);
         } catch (IOException e) {
-            throw new PropertySamplingException(e);
+            throw new PropertySamplingException(e, false);
         }
     }
 }

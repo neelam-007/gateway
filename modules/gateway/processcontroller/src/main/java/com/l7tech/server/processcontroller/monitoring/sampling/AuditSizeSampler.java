@@ -7,6 +7,7 @@ import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 import com.l7tech.server.management.api.monitoring.MonitorableProperty;
 import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.management.config.monitoring.ComponentType;
+import com.l7tech.server.processcontroller.ProcessController;
 import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
 
@@ -26,8 +27,10 @@ public class AuditSizeSampler extends NodePropertySampler<Long> {
                     return Long.valueOf(nodeApi.getProperty(propertyName));
                 }
             });
+        } catch (ProcessController.TemporarilyUnavailableException e) {
+            throw new PropertySamplingException("Couldn't get audit size", true);
         } catch (Exception e) {
-            throw new PropertySamplingException("Couldn't get audit size", e);
+            throw new PropertySamplingException("Couldn't get audit size", e, false);
         }
     }
 }
