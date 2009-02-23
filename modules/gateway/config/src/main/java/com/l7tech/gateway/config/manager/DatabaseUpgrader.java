@@ -150,7 +150,7 @@ public class DatabaseUpgrader {
             while( !confirmed ) {
                 System.out.print("Perform upgrade? [No]: ");
 
-                String response = System.console().readLine().trim();
+                String response = fallbackReadLine(console, reader, "No");
                 exitOnQuit(response);
                 if ( Pattern.matches(OptionType.BOOLEAN.getDefaultRegex(), response)) {
                     confirmed = true;
