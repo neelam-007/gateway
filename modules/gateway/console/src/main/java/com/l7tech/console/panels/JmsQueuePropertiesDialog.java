@@ -115,6 +115,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private FormAuthorizationPreparer securityFormAuthorizationPreparer;
     private Logger logger = Logger.getLogger(JmsQueuePropertiesDialog.class.getName());
     private ContentTypeComboBoxModel contentTypeModel;
+
+    private PermissionFlags flags;
     
     public ServiceAdmin getServiceAdmin() {
         return Registry.getDefault().getServiceManager();
@@ -192,10 +194,12 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
     private JmsQueuePropertiesDialog(Frame parent) {
         super(parent, true);
+        flags = PermissionFlags.get(EntityType.JMS_ENDPOINT);
     }
 
     private JmsQueuePropertiesDialog(Dialog parent) {
         super(parent, true);
+        flags = PermissionFlags.get(EntityType.JMS_ENDPOINT);
     }
 
     /**
@@ -1225,7 +1229,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
 
         final boolean valid = validateForm();
-        saveButton.setEnabled(valid);
+        saveButton.setEnabled(valid && flags.canCreateSome());
         testButton.setEnabled(valid);
         enableContentTypeControls();
     }
@@ -1361,7 +1365,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 component.setEnabled(f.call());
             }
             final boolean valid = validateForm();
-            saveButton.setEnabled(valid);
+            saveButton.setEnabled(valid && flags.canCreateSome());
             testButton.setEnabled(valid);
             enableOrDisableComponents();
         }
