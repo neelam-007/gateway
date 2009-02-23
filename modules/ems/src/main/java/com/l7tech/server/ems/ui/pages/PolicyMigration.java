@@ -1192,7 +1192,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                             vrehEx.setExternalId( HexUtils.encodeBase64((vrehEx.getPropertyName()+"["+index+"]").getBytes(Charset.forName("UTF-8"))) + ":" + vrehEx.getOwnerId() );
                             vrehEx.setDisplayValue( value );
                             vrehEx.setValueType( type );
-                            exploded.add( new DependencyItem( vrehEx, null) );
+                            exploded.add( new DependencyItem( vrehEx ) );
                             index++;
                         }
                     }
@@ -1273,7 +1273,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                         if ( entitySet != null ) {
                             for ( ExternalEntityHeader header : entitySet ) {
                                 if ( matches( header.getName(), filter ) ) {
-                                    deps.add( new DependencyItem( header, null) );
+                                    deps.add( new DependencyItem( header ) );
                                 }
                             }
                             Collections.sort( deps );
@@ -1373,18 +1373,25 @@ public class PolicyMigration extends EsmStandardWebPage {
                 if ( entry.getValue() == null || !entry.getKey().right.equals(targetClusterId)) continue;
                 headersToCheck.add( entry.getValue().asEntityHeader() );
             }
+
             Collection<ExternalEntityHeader> validatedHeaders = targetMigrationApi.checkHeaders(headersToCheck);
-            if ( validatedHeaders == null ) validatedHeaders = Collections.emptyList();
+            if ( validatedHeaders == null )
+                validatedHeaders = Collections.emptyList();
+
+            Map<Pair<DependencyKey,String>,DependencyItem> keysToUpdate = new HashMap<Pair<DependencyKey, String>,DependencyItem>();
             Set<Pair<DependencyKey,String>> keysToNull = new HashSet<Pair<DependencyKey, String>>();
             for( Map.Entry<Pair<DependencyKey,String>,DependencyItem> entry : mappingModel.dependencyMap.entrySet() ) {
-                if ( !entry.getKey().right.equals(targetClusterId) || entry.getValue() == null || entry.getValue() == null ) continue;
-                    if ( ! containsHeader( entry.getValue().asEntityHeader(), validatedHeaders )) {
+                if ( !entry.getKey().right.equals(targetClusterId) || entry.getValue() == null || entry.getValue() == null )
+                    continue;
+
+                if ( !containsHeader( entry.getValue().asEntityHeader(), validatedHeaders ) ) {
                     keysToNull.add( entry.getKey() );
+                } else {
+                    keysToUpdate.put( entry.getKey(), new DependencyItem(getHeader( validatedHeaders, entry.getKey().left.type, entry.getKey().left.id ), entry.getValue()) );
                 }
             }
-            for( Pair<DependencyKey,String> mapKey : keysToNull ) {
-                mappingModel.dependencyMap.remove( mapKey );
-            }
+            mappingModel.dependencyMap.putAll( keysToUpdate );
+            mappingModel.dependencyMap.keySet().removeAll( keysToNull );
         }
     }
 
@@ -1420,7 +1427,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                      containsHeader( mapping.right, validatedTargetHeaders ) ) {
                     DependencyKey sourceKey = new DependencyKey( sourceClusterGuid, mapping.left );
                     Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterGuid );
-                    mappingModel.dependencyMap.put( mapKey, new DependencyItem(mapping.right, null) );
+                    mappingModel.dependencyMap.put( mapKey, new DependencyItem(mapping.right) );
                 }
             }
 
@@ -1435,20 +1442,24 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
     }
 
-    private boolean containsHeader( final ExternalEntityHeader header, final Collection<ExternalEntityHeader> headers ) {
-        boolean valid = false;
+    private ExternalEntityHeader getHeader( final Collection<ExternalEntityHeader> headers, final EntityType type, final String id ) {
+        ExternalEntityHeader eeh = null;
 
         if ( headers != null ) {
-            for ( ExternalEntityHeader eeh : headers ) {
-                if ( header.getExternalId().equals( eeh.getExternalId() ) &&
-                     header.getType() == eeh.getType() ) {
-                    valid = true;
+            for ( ExternalEntityHeader header : headers ) {
+                if ( header.getExternalId().equals( id ) &&
+                     header.getType() == type ) {
+                    eeh = header;
                     break;
                 }
             }
         }
 
-        return valid;
+        return eeh;
+    }
+
+    private boolean containsHeader( final ExternalEntityHeader header, final Collection<ExternalEntityHeader> headers ) {
+        return getHeader( headers, header.getType(), header.getExternalId() ) != null;
     }
 
     /**
@@ -1819,6 +1830,10 @@ public class PolicyMigration extends EsmStandardWebPage {
         public DependencyItem() {
         }
 
+        public DependencyItem( final ExternalEntityHeader entityHeader  ) {
+            this( entityHeader, null, false );
+        }
+
         public DependencyItem( final ExternalEntityHeader entityHeader,
                                final Boolean resolved ) {
             this( entityHeader, resolved, false );
@@ -1828,6 +1843,19 @@ public class PolicyMigration extends EsmStandardWebPage {
                                final Boolean resolved,
                                final boolean hidden ) {
             this( entityHeader, resolved, hidden, false );
+        }
+
+        /**
+         * Contructs a new dependency item copying any metadata from the given item.
+         *
+         * <p>This is useful when getting updated entity header information.</p>
+         *
+         * @param entityHeader The header to use
+         * @param dependencyItem The dependency item to use for metadata
+         */
+        public DependencyItem( final ExternalEntityHeader entityHeader,
+                               final DependencyItem dependencyItem ) {
+            this( entityHeader, dependencyItem.resolved, dependencyItem.hidden, dependencyItem.same );
         }
 
         public DependencyItem( final ExternalEntityHeader entityHeader,
@@ -1943,7 +1971,18 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
 
         public String getDisplayNameWithScope() {
-            return entityHeader != null ? entityHeader.getDisplayNameWithScope() : getDisplayName();
+            String displayName = entityHeader != null ? entityHeader.getDisplayNameWithScope() : getDisplayName();
+
+            int index = displayName.lastIndexOf("http://");
+            if ( index < 0 ) {
+                index = displayName.lastIndexOf("https://");
+            }
+
+            if ( index >= 0 ) {
+                displayName = displayName.substring( 0, index ) + " \\n" + displayName.substring( index );                
+            }
+
+            return displayName;
         }
     }
 

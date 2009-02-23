@@ -66,7 +66,9 @@ public class MigrationManagerImpl implements MigrationManager {
             for (ExternalEntityHeader header : headers) {
                 try {
                     Entity entity = loadEntity(header);
-                    result.add( entity == null ? header : EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(entity)) );
+                    ExternalEntityHeader externalHeader = entity == null ? header : EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(entity));
+                    enhanceHeader( externalHeader );
+                    result.add( externalHeader );
                 } catch (MigrationApi.MigrationException e) {
                     logger.log(Level.FINE, "Not validating header: entity not found: {0}", header);
                 }
