@@ -104,8 +104,12 @@ public class Monitor extends EsmStandardWebPage {
             protected Object getJsonResponseData() {
                 String guid = (String)deleteNotificationRuleDialog_id.getConvertedInput();
                 try {
+                    String notificationRuleName = systemMonitoringNotificationRulesManager.findByGuid(guid).getName();
                     systemMonitoringNotificationRulesManager.deleteByGuid(guid);
+
                     logger.fine("Deleting a system monitoring notification rule (GUID = "+ guid + ").");
+                    auditSystemNotificationChange(notificationRuleName, "deleted");
+
                     return null;    // No response object expected if successful.
                 } catch (Exception e) {
                     String errmsg = "Cannot delete the system monitoring notification rule (GUID = '" + guid + "').";
@@ -304,6 +308,7 @@ public class Monitor extends EsmStandardWebPage {
                     SystemMonitoringNotificationRule newNotificationRule = new SystemMonitoringNotificationRule(name, type, params);
                     try {
                         systemMonitoringNotificationRulesManager.save(newNotificationRule);
+                        auditSystemNotificationChange(name, "created");
                     } catch (DuplicateObjectException e) {
                         errmsg = "There already exists a system monitoring notification rule with the same name, '" + name + "'.";
                         err = e;
@@ -336,6 +341,7 @@ public class Monitor extends EsmStandardWebPage {
                         // Update this notification rule.
                         notificationRule.copyFrom(name, type, params);
                         systemMonitoringNotificationRulesManager.update(notificationRule);
+                        auditSystemNotificationChange(name, "updated");
                     } catch (FindException e) {
                         errmsg = "Cannot find the system monitoring notification rule (GUID = '" + guid + "').";
                         err = e;
@@ -1021,7 +1027,7 @@ public class Monitor extends EsmStandardWebPage {
             Level.INFO,
             id,
             Component.ENTERPRISE_MANAGER,
-            "Change in system monitoring setup.",
+            "Change in system monitoring setup",
             true,
             0,
             null,
@@ -1060,6 +1066,28 @@ public class Monitor extends EsmStandardWebPage {
             }
         }
 
+        auditContext.setCurrentRecord(auditRecord);
+        auditContext.flush();
+    }
+
+    private void auditSystemNotificationChange(String name, String changingAction) {
+        String id = "";
+        String ipAddress = "";
+
+        AuditRecord auditRecord = new SystemAuditRecord(
+            Level.INFO,
+            id,
+            Component.ENTERPRISE_MANAGER,
+            "Change in defined notification rule",
+            true,
+            0,
+            null,
+            null,
+            "Notification Rule Change",
+            ipAddress
+        );
+
+        auditContext.addDetail(new AuditDetail(EsmMessages.CHANGE_NOTIFICATION_SETUP_MESSAGE, new String[] {name, changingAction}), this);
         auditContext.setCurrentRecord(auditRecord);
         auditContext.flush();
     }
