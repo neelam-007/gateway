@@ -154,7 +154,7 @@ public class AssertionKeyAliasEditor extends JDialog {
                     for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(kfeh.getOid())) {
                         ComboEntry comboEntry = new ComboEntry(kfeh.getOid(), kfeh.getName(), entry.getAlias());
                         comboEntries.add(comboEntry);
-                        if (assertion.getNonDefaultKeystoreId() == kfeh.getOid() && entry.getAlias().equals(assertion.getKeyAlias()))
+                        if (assertion.getNonDefaultKeystoreId() == kfeh.getOid() && entry.getAlias().equalsIgnoreCase(assertion.getKeyAlias()))
                             toSelect = comboEntry;
                     }
                 }

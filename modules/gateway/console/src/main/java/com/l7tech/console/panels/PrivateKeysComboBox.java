@@ -59,7 +59,7 @@ public class PrivateKeysComboBox extends JComboBox {
             } else if (pk2.keyAlias.equals(DEFAULT_PRIVATE_KEY)) {
                 return 1;
             } else {
-                return pk1.keyAlias.compareTo(pk2.keyAlias);
+                return pk1.keyAlias.compareToIgnoreCase(pk2.keyAlias);
             }
         }
     }
@@ -146,7 +146,7 @@ public class PrivateKeysComboBox extends JComboBox {
 
         for (int i = 0; i < getItemCount(); ++ i) {
             final PrivateKeyItem item = (PrivateKeyItem)getItemAt(i);
-            if (item.keystoreId == keystoreId && item.keyAlias.equals(keyAlias)) {
+            if (item.keystoreId == keystoreId && item.keyAlias.equalsIgnoreCase(keyAlias)) {
                 setSelectedIndex(i);
                 return i;
             }

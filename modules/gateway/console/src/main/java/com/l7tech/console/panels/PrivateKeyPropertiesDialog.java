@@ -446,7 +446,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                     //re-get the entry from the ssg after assigning (weird but see bzilla #3852)
                     List<SsgKeyEntry> tmp = admin.findAllKeys(subject.getKeystore().getOid());
                     for (SsgKeyEntry ske : tmp) {
-                        if (ske.getAlias().equals(subject.getAlias())) {
+                        if (ske.getAlias().equalsIgnoreCase(subject.getAlias())) {
                             subject.setKeyEntry(ske);
                             break;
                         }

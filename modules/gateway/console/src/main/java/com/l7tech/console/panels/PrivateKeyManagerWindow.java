@@ -973,7 +973,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 KeyTableRow[] rowsArray = rows.toArray(new KeyTableRow[rows.size()]);
                 for (int i = 0; i < rowsArray.length; i++) {
                     KeyTableRow row = rowsArray[i];
-                    if (row.getKeystore().getOid() == keystoreId && row.getAlias().equals(newAlias))
+                    if (row.getKeystore().getOid() == keystoreId && row.getAlias().equalsIgnoreCase(newAlias))
                         return i;
                 }
                 return -1;
