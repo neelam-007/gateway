@@ -148,7 +148,7 @@ public class Utilities {
     public static final int RIGHT_MARGIN_WIDTH = 15;
     public static final int LEFT_MARGIN_WIDTH = RIGHT_MARGIN_WIDTH;
     public static final int TOTAL_COLUMN_WIDTH = 80;
-    public static final int DATA_COLUMN_WIDTH = 80;
+    public static final int DATA_COLUMN_WIDTH = 160;
     public static final String SERVICE_HEADER = "serviceHeader";
     public static final String SUB_REPORT = "subReport";
     public static final String RETURN_VALUE = "returnValue";

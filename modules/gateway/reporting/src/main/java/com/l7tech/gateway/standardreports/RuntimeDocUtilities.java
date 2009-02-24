@@ -15,6 +15,7 @@ import java.util.*;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.management.api.node.ReportApi;
+import com.l7tech.util.TextUtils;
 
 public class RuntimeDocUtilities {
     private static final String TABLE_CELL_STYLE = "TableCell";
@@ -32,6 +33,7 @@ public class RuntimeDocUtilities {
     private static final int FRAME_MIN_WIDTH = 820;
     private static final String USAGE_TABLE_HEADING_ROW_TOTAL = "UsageTableHeadingRowTotal";
     private static final String USAGE_ROW_TOTAL_MINOR = "UsageRowTotalMinor";
+    private static final int USAGE_HEADING_VALUE_MAX_SIZE = 35;
 
     /**
      * Get the runtime document used as the transform parameter for a usage sub report.<br>
@@ -857,7 +859,7 @@ public class RuntimeDocUtilities {
 
         boolean first = true;
         if (!authUser.equals(Utilities.SQL_PLACE_HOLDER)) {
-            sb.append(authUser);
+            sb.append(TextUtils.truncStringMiddleExact(authUser, USAGE_HEADING_VALUE_MAX_SIZE));
             first = false;
         }
 
@@ -866,7 +868,7 @@ public class RuntimeDocUtilities {
                 if (!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append("<br>");
             }
             first = false;
-            if (!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append(s);
+            if (!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append(TextUtils.truncStringMiddleExact(s, USAGE_HEADING_VALUE_MAX_SIZE));
         }
 
         return sb.toString();
