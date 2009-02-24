@@ -125,6 +125,17 @@ public class ValidationUtils {
     }
 
     /**
+     * Get a regular expression suitable for validation of an HTTP(S) url.
+     *
+     * <p>This is not intended to support username/password in the url (e.g. http://user:pass@example.com)</p>
+     *
+     * @return The url regex.
+     */
+    public static String getHttpUrlRegex() {
+        return REGEX_HTTP_URL;
+    }
+
+    /**
      * Check if an (absolute) URL is valid.
      *
      * @param urlText the URL text
@@ -211,4 +222,5 @@ public class ValidationUtils {
 
     private static final String DOMAIN_ALLOWED_CHARS = LETTERS_LOWER + LETTERS_UPPER + DIGITS + ".-";
     private static final String[] DOMAIN_INVALID_START_OR_END = {"-","."};
+    private static final String REGEX_HTTP_URL = "^(?:[hH][tT][tT][pP][sS]?://[a-zA-Z0-9\\._-]{1,255}(?::(?:6(?:[1-4]\\d{3}|(?:5(?:[0-4]\\d{2}|5(?:[0-2]\\d|3[0-5]))))|[1-5]\\d{4}|(?!0)\\d{2,4}|[1-9]))?(?:[\\?/][a-zA-Z0-9$\\-_\\.+!\\*\\?'\\(\\),:/\\\\%@=&;*'~#]{0,1024})?)$";
 }

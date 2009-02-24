@@ -76,9 +76,23 @@ public interface MigrationRecordManager extends EntityManager<MigrationRecord, E
      * @param count The number of items to return
      * @param start The start date
      * @param end The end date
+     * @return The matching migration records
      * @throws FindException If an error occurs
      */
     Collection<MigrationRecord> findPage(final User user, final SortProperty sortProperty, final boolean ascending, final int offset, final int count, final Date start, final Date end) throws FindException;
+
+
+    /**
+     * Find labelled migration records with the given limits.
+     *
+     * @param user The user to access migrations for (null for all users)
+     * @param count The number of items to return
+     * @param start The start date
+     * @param end The end date
+     * @return The matching migration records
+     * @throws FindException If an error occurs
+     */
+    Collection<MigrationRecord> findNamedMigrations(final User user, final int count, final Date start, final Date end) throws FindException;
 
     /**
      * Delete migration records associated with the SSG cluster, which may be the source cluster or the target cluster.

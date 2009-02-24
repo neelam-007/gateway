@@ -104,13 +104,23 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
                                            final int count,
                                            final Date start,
                                            final Date end) throws FindException {
-        return super.findPage(null, sortProperty.getPropertyName(), ascending, offset, count, asCriterion( user, start, end ));
+        return super.findPage(null, sortProperty.getPropertyName(), ascending, offset, count, asCriterion( user, start, end, false ));
+    }
+
+    @Override
+    public Collection<MigrationRecord> findNamedMigrations(
+                                           final User user,
+                                           final int count,
+                                           final Date start,
+                                           final Date end) throws FindException {
+        return super.findPage(null, "name", true, 0, count, asCriterion( user, start, end, true ));
     }
 
     @Override
     public void deleteBySsgCluster(final SsgCluster ssgCluster) throws DeleteException {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
+                @SuppressWarnings({"unchecked"})
                 @Override
                 public Object doInHibernate(Session session) throws HibernateException, SQLException {
                     final Criteria criteria = session.createCriteria(getImpClass());
@@ -132,7 +142,7 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
     public int findCount( final User user,
                           final Date start,
                           final Date end ) throws FindException {
-        return super.findCount( null, asCriterion( user, start, end ) );
+        return super.findCount( null, asCriterion( user, start, end, false ) );
     }
 
     //- PROTECTED
@@ -144,7 +154,7 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
 
     //- PRIVATE
 
-    private Criterion[] asCriterion( final User user, final Date start, final Date end ) {
+    private Criterion[] asCriterion( final User user, final Date start, final Date end, final boolean requireName ) {
         List<Criterion> criterion = new ArrayList<Criterion>();
 
         if ( user != null ) {
@@ -154,6 +164,11 @@ public class MigrationRecordManagerImpl extends HibernateEntityManager<Migration
 
         if ( start != null && end != null ) {
             criterion.add( Restrictions.between("timeCreated", start.getTime(), end.getTime()) );
+        }
+
+        if ( requireName ) {
+            criterion.add( Restrictions.isNotNull("name") );
+            criterion.add( Restrictions.ne("name", ""));
         }
 
         return criterion.toArray( new Criterion[criterion.size()] );

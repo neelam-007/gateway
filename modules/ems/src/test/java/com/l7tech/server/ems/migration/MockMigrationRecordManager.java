@@ -12,6 +12,7 @@ import com.l7tech.identity.User;
 import java.util.Date;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Collections;
 
 /**
  * @Copyright: Layer 7 Tech. Inc.
@@ -37,7 +38,12 @@ public class MockMigrationRecordManager extends EntityManagerStub<MigrationRecor
 
     @Override
     public Collection<MigrationRecord> findPage(User user, SortProperty sortProperty, boolean ascending, int offset, int count, Date start, Date end) throws FindException {
-        return null;
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Collection<MigrationRecord> findNamedMigrations(User user, int count, Date start, Date end) {
+        return Collections.emptyList();
     }
 
     @Override

@@ -20,6 +20,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.ValidationUtils;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
 import org.apache.wicket.RequestCycle;
@@ -116,15 +117,18 @@ public class PolicyMigration extends EsmStandardWebPage {
                             if (operation == MigratedItem.ImportOperation.MAP) {
                                 ExternalEntityHeader source = item.getSourceHeader();
                                 ExternalEntityHeader target = item.getTargetHeader();
-                                mappings.add( new Pair<ExternalEntityHeader,ExternalEntityHeader>( source, target ) );
-                            }
 
-                            // TODO this doesn't work since the value mappings are not in the summary
-                            if ( item.getSourceHeader() instanceof ValueReferenceEntityHeader ) {
-                                ValueReferenceEntityHeader valueHeader = (ValueReferenceEntityHeader) item.getSourceHeader();
-                                if ( valueHeader.getMappedValue() != null ) {
-                                    // TODO apply value mapping in a more general sense (not assertion specific)
-                                    //mappingModel.valueMap.put( new Pair<DependencyKey,String>(new DependencyKey( record.getSourceClusterGuid(), item.getSourceHeader() ), record.getTargetClusterGuid()), valueHeader.getMappedValue() );
+                                if ( source instanceof ValueReferenceEntityHeader &&
+                                     target instanceof ValueReferenceEntityHeader ) {
+                                    // it is a value mapping
+                                    ValueReferenceEntityHeader sourceValueHeader = (ValueReferenceEntityHeader) source;
+                                    ValueReferenceEntityHeader targetValueHeader = (ValueReferenceEntityHeader) target;
+                                    if ( targetValueHeader.getMappedValue() != null ) {
+                                        mappingModel.valueMap.put( new Pair<ValueKey,String>(new ValueKey( record.getSourceClusterGuid(), sourceValueHeader ), record.getTargetClusterGuid()), targetValueHeader.getMappedValue() );
+                                    }
+                                } else {
+                                    // it is a regular entity mapping
+                                    mappings.add( new Pair<ExternalEntityHeader,ExternalEntityHeader>( source, target ) );
                                 }
                             }
                         }
@@ -145,7 +149,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         };
 
         List<PreviousMigrationModel> previous = loadPreviousMigrations();
-        Form reloadForm = new Form("reloadForm");
+        final Form reloadForm = new Form("reloadForm");
         reloadForm.add( reloadMigrationButton.setOutputMarkupId(true).setEnabled(!previous.isEmpty()) );
         reloadForm.add( new DropDownChoice( "reloadSelect", new Model(previous.isEmpty() ? null : previous.iterator().next()), previous ){
             @Override
@@ -155,6 +159,19 @@ public class PolicyMigration extends EsmStandardWebPage {
         } );
         add( reloadForm );
         add( javascript.setOutputMarkupId(true).setEscapeModelStrings(false) );
+
+        final WebMarkupContainer container = new WebMarkupContainer("refresh");
+        container.add( new AjaxEventBehavior("onclick"){
+            @Override
+            protected void onEvent( final AjaxRequestTarget target ) {
+                List<PreviousMigrationModel> previous = loadPreviousMigrations();
+                DropDownChoice reloadDropDown = (DropDownChoice) reloadForm.get("reloadSelect");
+                reloadDropDown.setChoices( previous );
+                reloadDropDown.setModelObject( previous.isEmpty() ? null : previous.iterator().next() );
+                target.addComponent( reloadForm );
+            }
+        } );
+        add( container );
 
         final YuiAjaxButton dependencyLoadButton = new YuiAjaxButton("dependencyLoadButton") {
             @Override
@@ -241,7 +258,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     switch ( valueType ) {
                         case HTTP_URL:
                             prompt = "Enter HTTP(S) URL.";
-                            regex = "^(?:[a-zA-Z0-9$\\-_\\.+!\\*\\?'\\(\\),:/\\\\]{1,1024})$"; // TODO fix HTTP URL regex
+                            regex = ValidationUtils.getHttpUrlRegex();
                             break;
                         case IP_ADDRESS:
                             prompt = "Enter IP address.";
@@ -703,12 +720,10 @@ public class PolicyMigration extends EsmStandardWebPage {
         List<PreviousMigrationModel> previousMigrations = new ArrayList<PreviousMigrationModel>();
 
         try {
-            Collection<MigrationRecord> records = migrationRecordManager.findPage( getUser(), MigrationRecordManager.SortProperty.NAME, true, 0, 100, null, null );
+            Collection<MigrationRecord> records = migrationRecordManager.findNamedMigrations( getUser(), 100, null, null );
             if ( records != null ) {
                 for ( MigrationRecord record : records ) {
-                    if ( record.getName() != null && !record.getName().isEmpty() ) {
-                        previousMigrations.add( new PreviousMigrationModel( record.getOid(), record.getName() ) );
-                    }
+                    previousMigrations.add( new PreviousMigrationModel( record.getOid(), record.getName() ) );
                 }
             }
         } catch ( FindException fe ) {
