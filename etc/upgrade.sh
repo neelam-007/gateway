@@ -267,7 +267,9 @@ fi
 if [ ! -z "${JAVA_PROFILE}" ] ; then
     echo "Importing Java VM configuration from ${JAVA_PROFILE}."
     source "${JAVA_PROFILE}"
-    echo "node.java.path = ${SSG_JAVA_HOME}" >> "${INSTALL_DIR}/node/default/etc/conf/node.properties"
+    if [ -d "${SSG_JAVA_HOME}" ] ; then
+        echo "node.java.path = ${SSG_JAVA_HOME}" >> "${INSTALL_DIR}/node/default/etc/conf/node.properties"
+    fi
 fi
 
 echo "Setting permissions on modified files"
