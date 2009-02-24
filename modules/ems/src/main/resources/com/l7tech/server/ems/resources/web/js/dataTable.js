@@ -137,7 +137,7 @@ function initDataTable( tableId, tableColumns, pagingId, dataUrl, dataFields, ta
 	};
 
     var multilineFormat = function(elCell, oRecord, oColumn, oData) {
-	    elCell.innerHTML = new String(oData).replace('\n','<br/>');
+	    elCell.innerHTML = new String(oData).replace(/&/g, "&#38;").replace(/</g, "&#60;").replace(/>/g, "&#62;").replace('\n','<br/>');
 	};
 
     for ( var tcField in tableColumns ) {

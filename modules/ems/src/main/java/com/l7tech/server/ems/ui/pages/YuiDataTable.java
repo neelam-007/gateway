@@ -4,7 +4,6 @@ import org.apache.wicket.IRequestTarget;
 import org.apache.wicket.Page;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.Component;
-import org.apache.wicket.util.string.Strings;
 import org.apache.wicket.util.convert.IConverter;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.WicketAjaxReference;
@@ -670,8 +669,12 @@ public class YuiDataTable extends Panel {
                             output.add( "className", "right");
                         } else if ( typedPropertyColumn.isMultiline() ) {
                             output.add( "formatter", "multiline" );
+                        } else if (((TypedPropertyColumn)column).isEscapePropertyValue()) {
+                            output.add( "formatter", "text" );
                         }
                     }
+                } else {
+                    output.add( "formatter", "text" );
                 }
             }
         }
@@ -714,11 +717,6 @@ public class YuiDataTable extends Panel {
                     output.add( column.getPropertyExpression(), null);
                 } else {
                     String dataString = getConverter(object.getClass()).convertToString(object, Locale.getDefault());
-                    if ( dataString != null ) {
-                        if ( !(column instanceof TypedPropertyColumn) || ((TypedPropertyColumn)column).isEscapePropertyValue() ) {
-                            dataString = Strings.escapeMarkup(dataString, false, false).toString();
-                        }
-                    }
                     output.add( column.getPropertyExpression(), dataString);
                 }
             }
