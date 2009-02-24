@@ -3,11 +3,17 @@ package com.l7tech.server.ems.ui.pages;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.audit.SystemAuditRecord;
+import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.Component;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.monitoring.*;
 import com.l7tech.server.ems.ui.NavigationPage;
+import com.l7tech.server.ems.EsmMessages;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.wicket.RequestCycle;
@@ -59,6 +65,9 @@ public class Monitor extends EsmStandardWebPage {
 
     @SpringBean(name="monitoringService")
     private MonitoringService monitoringService;
+
+    @SpringBean(name="auditContext")
+    private AuditContext auditContext;
 
     private boolean isReadOnly;
     private Map<String, String> userProperties = Collections.emptyMap();
@@ -200,7 +209,9 @@ public class Monitor extends EsmStandardWebPage {
 
                 try {
                     Map<String, Object> clusterPropertyFormatMap = toClusterPropertyFormat(jsonFormatMap);
+                    Map<String, Object> oldSettingsMap = systemMonitoringSetupSettingsManager.findSetupSettings();
                     systemMonitoringSetupSettingsManager.saveSetupSettings(clusterPropertyFormatMap);
+                    auditSystemMonitoringSetupChange(oldSettingsMap, clusterPropertyFormatMap);
                 } catch (Exception e) {
                     returnValue = new JSONException(e);
                 }
@@ -995,5 +1006,61 @@ public class Monitor extends EsmStandardWebPage {
         }
 
         return (Boolean) option;
+    }
+
+    /**
+     * Audit the change in the system monitoring setup settings.
+     * @param oldMap: the old cluster-property-format map of setup settings.
+     * @param newMap: the new cluster-property-format map of setup settings.
+     */
+    private void auditSystemMonitoringSetupChange(Map<String, Object> oldMap, Map<String, Object> newMap) {
+        String id = "";
+        String ipAddress = "";
+
+        AuditRecord auditRecord = new SystemAuditRecord(
+            Level.INFO,
+            id,
+            Component.ENTERPRISE_MANAGER,
+            "Change in system monitoring setup.",
+            true,
+            0,
+            null,
+            null,
+            "Monitoring Setup Change",
+            ipAddress
+        );
+
+        for (String key: newMap.keySet()) {
+            Object newVal = newMap.get(key);
+            Object oldVal = oldMap.get(key);
+
+            if (newVal != null && ! newVal.equals(oldVal)) {
+                String entityType = key.equals(ServerConfig.PARAM_MONITORING_TRIGGER_AUDITSIZE)? "ssgCluster" : "ssgNode";
+                String propertyName = key.split("\\.").length < 2? key : key.split("\\.")[1];
+
+                if (key.equals(ServerConfig.PARAM_MONITORING_TRIGGER_LOGSIZE)) {
+                    // Convert KB to MB, since the UI displays the log size in MB.
+                    newVal = convertKbToMbOrGb(true, (Long)newVal);
+                } else if (key.equals(ServerConfig.PARAM_MONITORING_TRIGGER_DISKFREE)) {
+                    // Convert KB to GB, since the UI displays the disk free in GB.
+                    newVal = convertKbToMbOrGb(false, (Long)newVal);
+                } else if (key.equals(ServerConfig.PARAM_MONITORING_TRIGGER_SWAPUSAGE)) {
+                    // Convert KB to MB, since the UI displays the swap usage in MB.
+                    newVal = convertKbToMbOrGb(true, (Long)newVal);
+                }
+
+                String unit = serverConfig.getProperty("monitoring." + entityType + "." + propertyName + ".unit");
+                if (newVal instanceof Boolean) {
+                    unit = "";
+                } else if (unit == null) {
+                    unit = "sec";
+                }
+
+                auditContext.addDetail(new AuditDetail(EsmMessages.CHANGE_SYSTEM_MONITORING_SETUP_MESSAGE, new String[] {key, newVal.toString(), unit}), this);
+            }
+        }
+
+        auditContext.setCurrentRecord(auditRecord);
+        auditContext.flush();
     }
 }
