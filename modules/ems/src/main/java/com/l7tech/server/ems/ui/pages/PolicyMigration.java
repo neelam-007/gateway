@@ -113,22 +113,17 @@ public class PolicyMigration extends EsmStandardWebPage {
                                 continue;
                             }
 
+                            ExternalEntityHeader source = item.getSourceHeader();
+                            ExternalEntityHeader target = item.getTargetHeader();
                             MigratedItem.ImportOperation operation = item.getOperation();
                             if (operation == MigratedItem.ImportOperation.MAP) {
-                                ExternalEntityHeader source = item.getSourceHeader();
-                                ExternalEntityHeader target = item.getTargetHeader();
-
-                                if ( source instanceof ValueReferenceEntityHeader &&
-                                     target instanceof ValueReferenceEntityHeader ) {
-                                    // it is a value mapping
-                                    ValueReferenceEntityHeader sourceValueHeader = (ValueReferenceEntityHeader) source;
-                                    ValueReferenceEntityHeader targetValueHeader = (ValueReferenceEntityHeader) target;
-                                    if ( targetValueHeader.getMappedValue() != null ) {
-                                        mappingModel.valueMap.put( new Pair<ValueKey,String>(new ValueKey( record.getSourceClusterGuid(), sourceValueHeader ), record.getTargetClusterGuid()), targetValueHeader.getMappedValue() );
-                                    }
-                                } else {
-                                    // it is a regular entity mapping
-                                    mappings.add( new Pair<ExternalEntityHeader,ExternalEntityHeader>( source, target ) );
+                                mappings.add( new Pair<ExternalEntityHeader,ExternalEntityHeader>( source, target ) );
+                            } else if ( (operation == MigratedItem.ImportOperation.CREATE ||
+                                         operation == MigratedItem.ImportOperation.UPDATE) &&
+                                        source instanceof ValueReferenceEntityHeader ) {                                
+                                ValueReferenceEntityHeader sourceValueHeader = (ValueReferenceEntityHeader) source;
+                                if ( sourceValueHeader.getMappedValue() != null ) {
+                                    mappingModel.valueMap.put( new Pair<ValueKey,String>(new ValueKey( record.getSourceClusterGuid(), sourceValueHeader ), record.getTargetClusterGuid()), sourceValueHeader.getMappedValue() );
                                 }
                             }
                         }
@@ -137,6 +132,15 @@ public class PolicyMigration extends EsmStandardWebPage {
                         // Update UI selections
                         javascript.setModelObject("selectClusters( '"+record.getSourceClusterGuid()+"', "+jsArray(record.getSourceItems())+", '"+record.getTargetClusterGuid()+"', '"+record.getTargetFolderId()+"', "+summary.isMigrateFolders()+", "+summary.isEnableNewServices()+", "+summary.isOverwrite()+");");
                         ajaxRequestTarget.addComponent( javascript );
+
+                        // Clear dependencies mapping section
+                        lastSourceKey = null;
+                        lastSourceClusterId = null;
+                        lastTargetClusterId = null;
+                        lastDependencyItems = Collections.emptyList();
+                        updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
+                        addDependencyOptions( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel, true );
+                        ajaxRequestTarget.addComponent( dependenciesContainer );
                     }
                 } catch ( FindException fe ) {
                     logger.log( Level.WARNING, "Unexpected error when loading previous migration.", fe );
@@ -167,7 +171,9 @@ public class PolicyMigration extends EsmStandardWebPage {
                 List<PreviousMigrationModel> previous = loadPreviousMigrations();
                 DropDownChoice reloadDropDown = (DropDownChoice) reloadForm.get("reloadSelect");
                 reloadDropDown.setChoices( previous );
-                reloadDropDown.setModelObject( previous.isEmpty() ? null : previous.iterator().next() );
+                reloadDropDown.setModelObject( previous.isEmpty() ? null : previous.iterator().next() );                
+                reloadMigrationButton.setEnabled(!previous.isEmpty());
+
                 target.addComponent( reloadForm );
             }
         } );
@@ -1402,7 +1408,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                 if ( !containsHeader( entry.getValue().asEntityHeader(), validatedHeaders ) ) {
                     keysToNull.add( entry.getKey() );
                 } else {
-                    keysToUpdate.put( entry.getKey(), new DependencyItem(getHeader( validatedHeaders, entry.getKey().left.type, entry.getKey().left.id ), entry.getValue()) );
+                    keysToUpdate.put( entry.getKey(), new DependencyItem(getHeader( validatedHeaders, entry.getValue().asEntityHeader().getType(), entry.getValue().id ), entry.getValue()) );
                 }
             }
             mappingModel.dependencyMap.putAll( keysToUpdate );
@@ -1442,7 +1448,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                      containsHeader( mapping.right, validatedTargetHeaders ) ) {
                     DependencyKey sourceKey = new DependencyKey( sourceClusterGuid, mapping.left );
                     Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterGuid );
-                    mappingModel.dependencyMap.put( mapKey, new DependencyItem(mapping.right) );
+                    mappingModel.dependencyMap.put( mapKey, new DependencyItem(getHeader(validatedTargetHeaders, mapping.right.getType(), mapping.right.getExternalId())) );
                 }
             }
 
@@ -2077,7 +2083,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     final String mappedValue = valueMap.get( valueKey );
                     if ( mappedValue != null ) {
                         vreh.setMappedValue( mappedValue );
-                        vrehs.add( vreh );                                    
+                        vrehs.add( toPersistedValueHeader(vreh) );                                    
                     }
                 }
             }
