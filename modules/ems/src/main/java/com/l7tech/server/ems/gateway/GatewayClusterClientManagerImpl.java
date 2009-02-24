@@ -56,6 +56,7 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
 
     @Override
     public GatewayClusterClient getGatewayClusterClient(final SsgCluster cluster, final User user) throws GatewayException {
+        if ( cluster == null ) throw new GatewayException("Invalid SSG Cluster");
         Callable<SsgCluster> clusterFinder = new Callable<SsgCluster>() {
             @Override
             public SsgCluster call() {
@@ -65,12 +66,10 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
         return getGatewayClusterClient(cluster.getGuid(), clusterFinder, user);
     }
 
-    private SsgCluster findCluster(String clusterId, Callable<SsgCluster> cluster) throws GatewayException {
+    private SsgCluster findCluster(Callable<SsgCluster> cluster) throws GatewayException {
         SsgCluster ssgCluster;
         try {
             ssgCluster = cluster.call();
-            if (ssgCluster == null)
-                throw new GatewayException("No cluster found with ID " + clusterId);
         } catch (Exception e) {
             throw new GatewayException(e);
         }
@@ -84,10 +83,12 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
             if (client != null)
                 return client;
 
-            final SsgCluster ssgCluster = findCluster(clusterId, cluster);
+            final SsgCluster ssgCluster = findCluster(cluster);
 
+            if ( ssgCluster == null )
+                throw new GatewayException("No SSG Cluster found with ID '" + clusterId + "'.");
             if ( !ssgCluster.getTrustStatus() )
-                throw new GatewayNoTrustException("Bad trust status for cluster with ID " + clusterId);
+                throw new GatewayNoTrustException("Bad trust status for cluster with ID '" + clusterId + "'.");
             
             final int adminPort = ssgCluster.getAdminPort();
             List<GatewayContext> nodeContexts = Functions.map(ssgCluster.getNodes(), new Functions.Unary<GatewayContext, SsgNode>() {
