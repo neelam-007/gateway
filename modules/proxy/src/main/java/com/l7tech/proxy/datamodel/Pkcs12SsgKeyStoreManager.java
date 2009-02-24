@@ -167,7 +167,6 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
             FileUtils.deleteFileSafely(ssg.getKeyStoreFile().getAbsolutePath());
             ssg.getRuntime().setCachedClientCert(null);
             ssg.getRuntime().setHaveClientCert(Boolean.FALSE);
-            ssg.getRuntime().setPasswordCorrectForPrivateKey(false);
             ssg.getRuntime().keyStore(null);
             ssg.getRuntime().setCachedPrivateKey(null);
             ssg.getRuntime().setPrivateKeyPasswordHash(null);
@@ -249,11 +248,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
                     gotKey = (PrivateKey) getKeyStore(pw.getPassword()).getKey(CLIENT_CERT_ALIAS, pw.getPassword());
                 }
                 ssg.getRuntime().setCachedPrivateKey(gotKey);
-                if (pw != null)
-                    ssg.getRuntime().setPrivateKeyPasswordHash(HexUtils.getMd5Digest(toBytes(pw.getPassword())));
-                else
-                    ssg.getRuntime().setPrivateKeyPasswordHash(null);
-                ssg.getRuntime().setPasswordCorrectForPrivateKey(true);
+                ssg.getRuntime().setPrivateKeyPasswordHash(HexUtils.getMd5Digest(toBytes(pw.getPassword())));
                 return gotKey;
             } catch (KeyStoreException e) {
                 log.log(Level.SEVERE, "impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
@@ -446,7 +441,6 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
             ssg.getRuntime().trustStore(null);
             ssg.getRuntime().setCachedPrivateKey(null);
             ssg.getRuntime().setPrivateKeyPasswordHash(null);
-            ssg.getRuntime().setPasswordCorrectForPrivateKey(false);
             ssg.getRuntime().setHaveClientCert(null);
             ssg.getRuntime().setCachedClientCert(null);
             ssg.getRuntime().setCachedServerCert(null);
@@ -497,7 +491,6 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
             ssg.getRuntime().setCachedPrivateKey(privateKey);
             ssg.getRuntime().setPrivateKeyPasswordHash(HexUtils.getMd5Digest(toBytes(privateKeyPassword)));
             ssg.getRuntime().setCachedClientCert(cert);
-            ssg.getRuntime().setPasswordCorrectForPrivateKey(true);
         }
     }
 

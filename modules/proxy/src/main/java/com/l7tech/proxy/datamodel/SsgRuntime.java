@@ -74,7 +74,6 @@ public class SsgRuntime {
     private long credentialsUpdatedTimeMillis = 0;
     private PrivateKey privateKey = null; // cache of private key
     private byte[] privateKeyPasswordHash = null; // cache of private key
-    private boolean passwordWorkedForPrivateKey = false;
     private SSLContext sslContext = null;
     private X509TrustManager trustManager = null;
     private HttpCookie[] sessionCookies = null;
@@ -128,7 +127,6 @@ public class SsgRuntime {
             trustStore = null;
             haveClientCert = null;
             privateKey = null;
-            passwordWorkedForPrivateKey = false;
         }
     }
 
@@ -180,9 +178,6 @@ public class SsgRuntime {
      */
     public void setCachedPassword(final char[] password) {
         synchronized (ssg) {
-            if (this.password != password) {
-                this.passwordWorkedForPrivateKey = false;
-            }
             this.password = password;
 
             // clear session cookies when a user name is changed/set
@@ -321,16 +316,6 @@ public class SsgRuntime {
     /** Transient cache of private key password hash */
     void setPrivateKeyPasswordHash(byte[] privateKeyPasswordHash) {
         this.privateKeyPasswordHash = privateKeyPasswordHash;
-    }
-
-    /** Transient check if this password worked to unlock the private key; used by SsgKeyStoreManager. */
-    void setPasswordCorrectForPrivateKey(boolean worked) {
-        this.passwordWorkedForPrivateKey = worked;
-    }
-
-    /** Transient check if this password worked to unlock the private key; used by SsgKeyStoreManager. */
-    boolean isPasswordCorrectForPrivateKey() {
-        return this.passwordWorkedForPrivateKey;
     }
 
     public int incrementNumTimesLogonDialogCanceled() {
@@ -525,7 +510,6 @@ public class SsgRuntime {
             trustStore(null);
             setCachedPrivateKey(null);
             setPrivateKeyPasswordHash(null);
-            setPasswordCorrectForPrivateKey(false);
             setHaveClientCert(null);
             setCachedClientCert(null);
             setCachedServerCert(null);
