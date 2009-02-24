@@ -4,14 +4,19 @@ import com.l7tech.common.TestDocuments;
 import static com.l7tech.common.TestDocuments.PLACEORDER_CLEARTEXT;
 import static com.l7tech.common.TestDocuments.getTestDocument;
 import com.l7tech.common.io.RandomInputStream;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.Message;
+import com.l7tech.message.TcpKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import static com.l7tech.policy.assertion.RoutingAssertion.*;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.security.xml.SecurityActor;
+import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
@@ -34,6 +39,9 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.List;
 
 /**
@@ -57,7 +65,7 @@ public class ServerRoutingAssertionTest {
 
     @Test
     public void testHandleNoSecurityKnob() throws Exception {
-        Message message = new Message(getTestDocument(PLACEORDER_CLEARTEXT));
+        Message message = makeMessage();
         assertNoSec(doHandle(SHOULD_NOT_THROW, message, REMOVE_CURRENT_SECURITY_HEADER, null));
     }
 
@@ -288,7 +296,7 @@ public class ServerRoutingAssertionTest {
     }
 
     private Message makeProcessedMessage(DecorationRequirements dreq) throws Exception {
-        Message message = new Message(getTestDocument(PLACEORDER_CLEARTEXT));
+        Message message = makeMessage();
 
         // Decorate message
         WssDecorator decorator = new WssDecoratorImpl();
@@ -304,6 +312,10 @@ public class ServerRoutingAssertionTest {
         return message;
     }
 
+    private static Message makeMessage() throws IOException, SAXException {
+        return new Message(getTestDocument(PLACEORDER_CLEARTEXT));
+    }
+
     private TestServerRoutingAssertion makeTestSra() {
         return new TestServerRoutingAssertion();
     }
@@ -316,5 +328,52 @@ public class ServerRoutingAssertionTest {
         public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
             return AssertionStatus.NOT_APPLICABLE;
         }
+
+        public void doAttachSamlSenderVouches(Message message, LoginCredentials svInputCredentials, SignerInfo signerInfo) throws SAXException, IOException, SignatureException, CertificateException {
+            super.doAttachSamlSenderVouches(message, svInputCredentials, signerInfo);
+        }
+    }
+
+    private String toString(Message mess) throws IOException, SAXException {
+        return XmlUtil.nodeToString(mess.getXmlKnob().getDocumentReadOnly());
+    }
+
+    private static LoginCredentials makeLoginCredentials() {
+        return new LoginCredentials("joe", "password".toCharArray(), HttpBasic.class);
+    }
+
+    private static SignerInfo makeSignerInfo() throws Exception {
+        return new SignerInfo(TestDocuments.getDotNetServerPrivateKey(), new X509Certificate[] { TestDocuments.getDotNetServerCertificate() });
+    }
+
+    @Test
+    public void testAttachSamlNoCreds() throws Exception {
+        final Message mess = makeMessage();
+        String messXml = toString(mess);
+        makeTestSra().doAttachSamlSenderVouches(mess, null, null);
+        String afterXml = toString(mess);
+        assertEquals(messXml, afterXml);
+    }
+
+    @Test
+    public void testAttachSaml() throws Exception {
+        final Message mess = makeMessage();
+        mess.attachKnob(TcpKnob.class, new TcpKnob() {
+            public String getRemoteAddress() {
+                return "127.0.0.1";
+            }
+
+            public String getRemoteHost() {
+                return "127.0.0.1";
+            }
+
+            public int getLocalPort() {
+                return 8080;
+            }
+        });
+        String messXml = toString(mess);
+        makeTestSra().doAttachSamlSenderVouches(mess, makeLoginCredentials(), makeSignerInfo());
+        String afterXml = toString(mess);
+        assertFalse(messXml.equals(afterXml));
     }
 }

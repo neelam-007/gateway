@@ -250,44 +250,47 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     /**
      * Attach a sender-vouches SAML assertion to the request.
      *
-     * @param context The pec to use
+     * @param message  the Message that should be decorated with a SAML assertion.  Required.
+     * @param svInputCredentials  the credentials to assert in the SAML assertion.
+     *                             If null, this method will audit a warning and take no further action.
      * @param signerInfo For signing the assertion / message
      * @throws org.xml.sax.SAXException If the request is not XML
      * @throws java.io.IOException If there is an error getting the request document
      * @throws java.security.SignatureException If an error occurs when signing
      * @throws java.security.cert.CertificateException If the signing certificate is invalid.
      */
-    protected void doAttachSamlSenderVouches(PolicyEnforcementContext context, SignerInfo signerInfo)
-            throws SAXException, IOException, SignatureException, CertificateException {
-        LoginCredentials svInputCredentials = context.getLastCredentials();
+    protected void doAttachSamlSenderVouches(Message message, LoginCredentials svInputCredentials, SignerInfo signerInfo)
+            throws SAXException, IOException, SignatureException, CertificateException
+    {
         if (svInputCredentials == null) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_SAML_SV_NOT_AUTH);
-        } else {
-            Document document = context.getRequest().getXmlKnob().getDocumentWritable();
-            SamlAssertionGenerator ag = new SamlAssertionGenerator(signerInfo);
-            SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
-            samlOptions.setAttestingEntity(signerInfo);
-            TcpKnob requestTcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
-            if (requestTcp != null) {
-                try {
-                    InetAddress clientAddress = InetAddress.getByName(requestTcp.getRemoteAddress());
-                    samlOptions.setClientAddress(clientAddress);
-                } catch (UnknownHostException e) {
-                    auditor.logAndAudit(AssertionMessages.HTTPROUTE_CANT_RESOLVE_IP, null, e);
-                }
-            }
-            samlOptions.setVersion(assertion.getSamlAssertionVersion());
-            samlOptions.setExpiryMinutes(assertion.getSamlAssertionExpiry());
-            samlOptions.setIssuerKeyInfoType(assertion.isUseThumbprintInSamlSignature() ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT);
-            KeyInfoInclusionType keyInfoType = assertion.isUseThumbprintInSamlSubject() ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT;
-            if (assertion.getRecipientContext() != null)
-                samlOptions.setSecurityHeaderActor(assertion.getRecipientContext().getActor());
-            SubjectStatement statement = SubjectStatement.createAuthenticationStatement(
-                                                            svInputCredentials,
-                                                            SubjectStatement.SENDER_VOUCHES,
-                                                            keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
-            ag.attachStatement(document, statement, samlOptions);
+            return;
         }
+
+        Document document = message.getXmlKnob().getDocumentWritable();
+        SamlAssertionGenerator ag = new SamlAssertionGenerator(signerInfo);
+        SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
+        samlOptions.setAttestingEntity(signerInfo);
+        TcpKnob requestTcp = (TcpKnob) message.getKnob(TcpKnob.class);
+        if (requestTcp != null) {
+            try {
+                InetAddress clientAddress = InetAddress.getByName(requestTcp.getRemoteAddress());
+                samlOptions.setClientAddress(clientAddress);
+            } catch (UnknownHostException e) {
+                auditor.logAndAudit(AssertionMessages.HTTPROUTE_CANT_RESOLVE_IP, null, e);
+            }
+        }
+        samlOptions.setVersion(assertion.getSamlAssertionVersion());
+        samlOptions.setExpiryMinutes(assertion.getSamlAssertionExpiry());
+        samlOptions.setIssuerKeyInfoType(assertion.isUseThumbprintInSamlSignature() ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT);
+        KeyInfoInclusionType keyInfoType = assertion.isUseThumbprintInSamlSubject() ? KeyInfoInclusionType.STR_THUMBPRINT : KeyInfoInclusionType.CERT;
+        if (assertion.getRecipientContext() != null)
+            samlOptions.setSecurityHeaderActor(assertion.getRecipientContext().getActor());
+        SubjectStatement statement = SubjectStatement.createAuthenticationStatement(
+                svInputCredentials,
+                                                        SubjectStatement.SENDER_VOUCHES,
+                                                        keyInfoType, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
+        ag.attachStatement(document, statement, samlOptions);
     }    
 
     /**

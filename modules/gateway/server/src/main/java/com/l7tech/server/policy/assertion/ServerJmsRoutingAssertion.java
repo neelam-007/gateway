@@ -15,8 +15,7 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsOutboundMessageType;
 import com.l7tech.gateway.common.transport.jms.JmsReplyType;
-import com.l7tech.message.JmsKnob;
-import com.l7tech.message.MimeKnob;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
@@ -39,6 +38,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import javax.jms.*;
+import javax.jms.Message;
 import javax.naming.CommunicationException;
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -107,6 +107,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             return AssertionStatus.BAD_REQUEST;
         }
 
+        final com.l7tech.message.Message requestMessage = context.getRequest();
         JmsBag jmsBag = null;
         JmsEndpointConfig cfg = null;
 
@@ -115,14 +116,14 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             int oopses = 0;
 
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
-            handleProcessedSecurityHeader(context.getRequest());
+            handleProcessedSecurityHeader(requestMessage);
 
             if (assertion.isAttachSamlSenderVouches()) {
                 if (senderVouchesSignerInfo == null) {
                     auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_SAML_SIGNER);
                     return AssertionStatus.FAILED;
                 }
-                doAttachSamlSenderVouches(context, senderVouchesSignerInfo);
+                doAttachSamlSenderVouches(requestMessage, context.getLastCredentials(), senderVouchesSignerInfo);
             }
 
             // Get JMS Session
@@ -184,7 +185,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         jmsInboundDest = jmsOutboundRequest.getJMSReplyTo();
 
                     // Enforces rules on propagation of request JMS message properties.
-                    final JmsKnob jmsInboundKnob = (JmsKnob) context.getRequest().getKnob(JmsKnob.class);
+                    final JmsKnob jmsInboundKnob = (JmsKnob) requestMessage.getKnob(JmsKnob.class);
                     Map<String, Object> inboundRequestProps;
                     if ( jmsInboundKnob != null ) {
                         inboundRequestProps = jmsInboundKnob.getJmsMsgPropMap();
