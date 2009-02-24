@@ -305,7 +305,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
             sendForm(hresponse, param);
         } catch (LoginException e) {
             logger.log(Level.INFO, "Unable to establish ESM trust: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            param.put("message", "Unable to authenticate Gateway user: Invalid username or password.");
+            param.put("message", "Unable to authenticate Gateway user: " + ExceptionUtils.getMessage(e));
             sendForm(hresponse, param);
         } catch (PolicyAssertionException e) {
             logger.log(Level.WARNING, "Unable to establish ESM trust: " + ExceptionUtils.getMessage(e), e);
