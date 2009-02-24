@@ -25,7 +25,6 @@ public class ValidationUtilsTest {
         Assert.assertTrue("Valid url query", Pattern.matches(ValidationUtils.getHttpUrlRegex(), "http://example.org?" ));
         Assert.assertTrue("Valid url fragment", Pattern.matches(ValidationUtils.getHttpUrlRegex(), "http://example.org/page.html#frag" ));
         Assert.assertTrue("Valid url odd chars", Pattern.matches(ValidationUtils.getHttpUrlRegex(), "http://example.org/~,$'*;" ));
-        Assert.assertTrue("Valid url escape host", Pattern.matches(ValidationUtils.getHttpUrlRegex(), "http://caf%C3%A9.example.org" ));
     }
 
     @Test
