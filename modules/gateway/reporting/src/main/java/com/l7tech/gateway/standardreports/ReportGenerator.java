@@ -555,19 +555,7 @@ public class ReportGenerator {
         return new ResourceMapEntityResolver( null, idsToResources, null );
     }
 
-    public static LinkedHashMap<String, String> getKeyToColumnValues(LinkedHashSet<List<String>> distinctMappingSets) {
-        LinkedHashSet<String> mappingValues = RuntimeDocUtilities.getMappingValues(distinctMappingSets);
-        LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
-        int count = 1;
-        //System.out.println("Key to column map");
-        for (String s : mappingValues) {
-            keyToColumnName.put(s, "COLUMN_"+count);
-            //System.out.println(s+" " + "COLUMN_"+count);
-            count++;
-        }
-        return keyToColumnName;
-    }
-    
+
     /**
      * Get the ordered set of distinct mapping sets for the keys and values in the sql string from the db
      */
