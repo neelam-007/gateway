@@ -845,7 +845,7 @@ public class RuntimeDocUtilities {
      * Only used in usage reports. This function is used indirectly in reports via UsageSummaryAndSubReportHelper<br>
      * and also in getMapingQuery in this class<br>
      * Create a string representation of the auth user and all the mapping values to be displayed to an end user.<br>
-     * Place holder values are just ignored. The returned string is HTML formatted, and is formatted such that each
+     * Place holder values are just ignored. The returned string is formatted such that each
      * value is on it's own row, all values are separated by a line break. The returned string is used as column
      * headings but it's used in the report helper as a key into a map of distinct mapping value set to a variable
      * name. See the report scriptlet to understand this fully.
@@ -865,7 +865,7 @@ public class RuntimeDocUtilities {
 
         for (String s : mappingValues) {
             if (!first) {
-                if (!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append("<br>");
+                if (!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append("\\n");
             }
             first = false;
             if (!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append(TextUtils.truncStringMiddleExact(s, USAGE_HEADING_VALUE_MAX_SIZE));
@@ -932,7 +932,6 @@ public class RuntimeDocUtilities {
         textField.appendChild(boxElement);
 
         Element textElement = doc.createElement("textElement");
-        textElement.setAttribute("markup", "html");
         Element fontElement = doc.createElement("font");
         textElement.appendChild(fontElement);
         textField.appendChild(textElement);

@@ -361,13 +361,14 @@ public class RuntimeDocUtilitiesTest {
             Assert.assertTrue("text expression should equal " + expectedValue+ " Actual value was: " +
                     textFieldExprNode.getTextContent() ,textFieldExprNode.getTextContent().equals(expectedValue));
 
+            //No longer needed as html formatting not used, leaving in case we change back
             //make sure the html markup attribute is also specified
-            Node textElementNode = findFirstChildElementByName(textFieldNode, "textElement");
-            attributes = textElementNode.getAttributes();
-            Node markUp = attributes.getNamedItem("markup");
-            expectedValue = "html";
-            Assert.assertTrue("markup attribute should equal " + expectedValue+ " Actual value was: " +
-                    markUp.getNodeValue() ,markUp.getNodeValue().equals(expectedValue));
+//            Node textElementNode = findFirstChildElementByName(textFieldNode, "textElement");
+//            attributes = textElementNode.getAttributes();
+//            Node markUp = attributes.getNamedItem("markup");
+//            expectedValue = "html";
+//            Assert.assertTrue("markup attribute should equal " + expectedValue+ " Actual value was: " +
+//                    markUp.getNodeValue() ,markUp.getNodeValue().equals(expectedValue));
 
         }
     }
@@ -457,13 +458,14 @@ public class RuntimeDocUtilitiesTest {
             Assert.assertTrue("text expression should equal " + expectedValue+ " Actual value was: " +
                     textFieldExprNode.getTextContent() ,textFieldExprNode.getTextContent().equals(expectedValue));
 
+            //No longer needed as html formatting not used, leaving in case we change back
             //make sure the html markup attribute is also specified
-            Node textElementNode = findFirstChildElementByName(textFieldNode, "textElement");
-            attributes = textElementNode.getAttributes();
-            Node markUp = attributes.getNamedItem("markup");
-            expectedValue = "html";
-            Assert.assertTrue("markup attribute should equal " + expectedValue+ " Actual value was: " +
-                    markUp.getNodeValue() ,markUp.getNodeValue().equals(expectedValue));
+//            Node textElementNode = findFirstChildElementByName(textFieldNode, "textElement");
+//            attributes = textElementNode.getAttributes();
+//            Node markUp = attributes.getNamedItem("markup");
+//            expectedValue = "html";
+//            Assert.assertTrue("markup attribute should equal " + expectedValue+ " Actual value was: " +
+//                    markUp.getNodeValue() ,markUp.getNodeValue().equals(expectedValue));
 
         }
     }
@@ -553,13 +555,14 @@ public class RuntimeDocUtilitiesTest {
             Assert.assertTrue("text expression should equal " + expectedValue+ " Actual value was: " +
                     textFieldExprNode.getTextContent() ,textFieldExprNode.getTextContent().equals(expectedValue));
 
+            //No longer needed as html formatting not used, leaving in case we change back
             //make sure the html markup attribute is also specified
-            Node textElementNode = findFirstChildElementByName(textFieldNode, "textElement");
-            attributes = textElementNode.getAttributes();
-            Node markUp = attributes.getNamedItem("markup");
-            expectedValue = "html";
-            Assert.assertTrue("markup attribute should equal " + expectedValue+ " Actual value was: " +
-                    markUp.getNodeValue() ,markUp.getNodeValue().equals(expectedValue));
+//            Node textElementNode = findFirstChildElementByName(textFieldNode, "textElement");
+//            attributes = textElementNode.getAttributes();
+//            Node markUp = attributes.getNamedItem("markup");
+//            expectedValue = "html";
+//            Assert.assertTrue("markup attribute should equal " + expectedValue+ " Actual value was: " +
+//                    markUp.getNodeValue() ,markUp.getNodeValue().equals(expectedValue));
         }
     }
 
@@ -700,13 +703,14 @@ public class RuntimeDocUtilitiesTest {
             Assert.assertTrue("Class attribute should equal " + expectedValue+ " Actual value was: " + classType
                     ,classType.equals(expectedValue));
 
+            //No longer needed as html formatting not used, leaving in case we change back
             //make sure the html markup attribute is also specified
-            Node textElementNode = findFirstChildElementByName(textFieldNode, "textElement");
-            attributes = textElementNode.getAttributes();
-            Node markUp = attributes.getNamedItem("markup");
-            expectedValue = "html";
-            Assert.assertTrue("markup attribute should equal " + expectedValue+ " Actual value was: " +
-                    markUp.getNodeValue() ,markUp.getNodeValue().equals(expectedValue));
+//            Node textElementNode = findFirstChildElementByName(textFieldNode, "textElement");
+//            attributes = textElementNode.getAttributes();
+//            Node markUp = attributes.getNamedItem("markup");
+//            expectedValue = "html";
+//            Assert.assertTrue("markup attribute should equal " + expectedValue+ " Actual value was: " +
+//                    markUp.getNodeValue() ,markUp.getNodeValue().equals(expectedValue));
         }
     }
 
@@ -831,13 +835,14 @@ public class RuntimeDocUtilitiesTest {
             Assert.assertTrue("text expression should equal " + expectedValue+ " Actual value was: " +
                     textFieldExprNode.getTextContent() ,textFieldExprNode.getTextContent().equals(expectedValue));
 
+            //No longer needed as html formatting not used, leaving in case we change back
             //make sure the html markup attribute is also specified
-            Node textElementNode = findFirstChildElementByName(textFieldNode, "textElement");
-            attributes = textElementNode.getAttributes();
-            Node markUp = attributes.getNamedItem("markup");
-            expectedValue = "html";
-            Assert.assertTrue("markup attribute should equal " + expectedValue+ " Actual value was: " +
-                    markUp.getNodeValue() ,markUp.getNodeValue().equals(expectedValue));
+//            Node textElementNode = findFirstChildElementByName(textFieldNode, "textElement");
+//            attributes = textElementNode.getAttributes();
+//            Node markUp = attributes.getNamedItem("markup");
+//            expectedValue = "html";
+//            Assert.assertTrue("markup attribute should equal " + expectedValue+ " Actual value was: " +
+//                    markUp.getNodeValue() ,markUp.getNodeValue().equals(expectedValue));
         }
     }
 
@@ -1133,13 +1138,14 @@ public class RuntimeDocUtilitiesTest {
             Assert.assertTrue("text expression should equal " + expectedValue+ " Actual value was: " +
                     textFieldExprNode.getTextContent() ,textFieldExprNode.getTextContent().equals(expectedValue));
 
+            //No longer needed as html formatting not used, leaving in case we change back
             //make sure the html markup attribute is also specified
-            Node textElementNode = findFirstChildElementByName(textFieldNode, "textElement");
-            attributes = textElementNode.getAttributes();
-            Node markUp = attributes.getNamedItem("markup");
-            expectedValue = "html";
-            Assert.assertTrue("markup attribute should equal " + expectedValue+ " Actual value was: " +
-                    markUp.getNodeValue() ,markUp.getNodeValue().equals(expectedValue));
+//            Node textElementNode = findFirstChildElementByName(textFieldNode, "textElement");
+//            attributes = textElementNode.getAttributes();
+//            Node markUp = attributes.getNamedItem("markup");
+//            expectedValue = "html";
+//            Assert.assertTrue("markup attribute should equal " + expectedValue+ " Actual value was: " +
+//                    markUp.getNodeValue() ,markUp.getNodeValue().equals(expectedValue));
 
         }
     }

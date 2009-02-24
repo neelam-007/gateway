@@ -208,7 +208,7 @@
             isPdfEmbedded="false"
             backcolor="#DBD3B0"
             >
-        <box leftPadding="5">
+        <box>
             <topPen lineWidth="1" lineStyle="Solid"/>
             <leftPen lineWidth="1" lineStyle="Solid"/>
             <bottomPen lineWidth="1" lineStyle="Solid"/>
