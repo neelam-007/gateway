@@ -233,7 +233,9 @@ ALTER TABLE password_history MODIFY COLUMN order_id bigint(20) NOT NULL;
 -- Fix DB XML due to altered packaging
 --
 UPDATE revocation_check_policy SET revocation_policy_xml =
-  REPLACE(revocation_policy_xml, '<object class=\"com.l7tech.common.security.RevocationCheckPolicyItem', '<object class=\"com.l7tech.gateway.common.security.RevocationCheckPolicyItem');
+  REPLACE(revocation_policy_xml, 'class="com.l7tech.common.security.RevocationCheckPolicyItem', 'class="com.l7tech.gateway.common.security.RevocationCheckPolicyItem');
+UPDATE identity_provider SET properties = 
+  REPLACE(properties, 'class="com.l7tech.common.security.CertificateValidationType"', 'class="com.l7tech.security.types.CertificateValidationType"');
 
 --
 -- Drop configuration data table that is no longer used
