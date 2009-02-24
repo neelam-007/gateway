@@ -56,9 +56,7 @@ public class NodeDeleteConfigurationBeanProvider extends NodeConfigurationBeanPr
             String message = "Unexpected error saving configuration '"+sf.getMessage()+"'";
             logger.log( Level.WARNING, message, sf);
             throw new ConfigurationException( message );
-        } catch (NodeManagementApi.ForcedShutdownException e) {            
-            logger.log( Level.WARNING, "Node did not shutdown within permitted time." );
-        }
+        } 
     }
 
     //- PACKAGE

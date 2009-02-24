@@ -445,6 +445,8 @@ public class Configure extends EsmStandardWebPage {
 
                     // Return the response to the client
                     return node;
+                } catch (NodeManagementApi.StartupException e) {
+                    return new JSONException(e.getMessage());
                 } catch (Exception e) {
                     logger.warning(e.toString());
                     return new JSONException(e);

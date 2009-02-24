@@ -176,7 +176,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     }
 
     @Override
-    public void deleteNode(String nodeName, int shutdownTimeout) throws DeleteException, ForcedShutdownException {
+    public void deleteNode(String nodeName, int shutdownTimeout) throws DeleteException {
         try {
             processController.deleteNode(nodeName, shutdownTimeout);
             configService.deleteNode(nodeName);
@@ -229,7 +229,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     }
 
     @Override
-    public void stopNode(String nodeName, int timeout) throws FindException, ForcedShutdownException {
+    public void stopNode(String nodeName, int timeout) throws FindException {
         processController.stopNode(nodeName, timeout);
     }
 

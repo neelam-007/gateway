@@ -183,13 +183,12 @@ public interface NodeManagementApi {
      * @param nodeName the name of the Node to delete.
      * @param shutdownTimeout the period, in milliseconds, to wait for a clean shutdown to complete before killing the node process. Values <= 0 indicate that the PC should wait indefinitely.
      * @throws DeleteException if the node cannot be deleted
-     * @throws ForcedShutdownException if the node's process could not be shutdown cleanly and needed to be killed
      */
     void deleteNode(@WebParam(name="nodeName")
                     String nodeName,
                     @WebParam(name="shutdownTimeout")
                     int shutdownTimeout)
-        throws DeleteException, ForcedShutdownException;
+        throws DeleteException;
 
     /**
      * Uploads a new Node software bundle.  Note that uploading software bundles does not affect any existing
@@ -230,13 +229,12 @@ public interface NodeManagementApi {
 
     /**
      * Attempts to stop the named node within the provided timeout period (in milliseconds).  If the
-     * node is unable to shut down cleanly within the timeout period, its process will be killed and a
-     * {@link ForcedShutdownException} will be thrown.
+     * node is unable to shut down cleanly within the timeout period, its process will be killed.
      *
      * @param nodeName the name of the node to shutdown
      * @param timeout the period, in milliseconds, to wait for a clean shutdown to complete before killing the node process. Values <= 0 indicate that the PC should wait indefinitely.
      */
-    void stopNode(String nodeName, int timeout) throws FindException, ForcedShutdownException;
+    void stopNode(String nodeName, int timeout) throws FindException;
 
     /**
      * Attempt to create the database described by the provided configuration, including a few initial settings
@@ -278,19 +276,6 @@ public interface NodeManagementApi {
 
         public StartupException(String node, String reason) {
             this(MessageFormat.format("{0} could not be started: {1}", node, reason));
-        }
-    }
-
-    /**
-     * Thrown if a node was unable to shutdown cleanly within the provided timeout period
-     */
-    public class ForcedShutdownException extends Exception {
-        public ForcedShutdownException(String message) {
-            super(message);
-        }
-
-        public ForcedShutdownException(String nodeName, int timeout) {
-            this(MessageFormat.format("{0} did not shutdown cleanly within {1}ms and has been killed", nodeName, timeout));
         }
     }
 }

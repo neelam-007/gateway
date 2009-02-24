@@ -199,7 +199,7 @@ public class NodeManagementApiFactory {
 
             // unsupported operations
             @Override
-            public void deleteNode( String nodeName, int shutdownTimeout) throws DeleteException, ForcedShutdownException { throw new UnsupportedOperationException(); }
+            public void deleteNode( String nodeName, int shutdownTimeout) throws DeleteException { throw new UnsupportedOperationException(); }
             @Override
             public String uploadNodeSoftware(DataHandler softwareData) throws IOException, UpdateException { throw new UnsupportedOperationException(); }
             @Override
@@ -207,7 +207,7 @@ public class NodeManagementApiFactory {
             @Override
             public NodeStateType startNode(String nodeName) throws FindException, StartupException { throw new UnsupportedOperationException(); }
             @Override
-            public void stopNode(String nodeName, int timeout) throws FindException, ForcedShutdownException { throw new UnsupportedOperationException(); }
+            public void stopNode(String nodeName, int timeout) throws FindException { throw new UnsupportedOperationException(); }
         };
     }
 }
