@@ -1123,11 +1123,14 @@
         }
 
         function initNotificationRulesDataTable() {
+            function formatName(elCell, oRecord, oColumn, oData) {
+                elCell.innerHTML = l7.Util.escapeHtmlText(oData);
+            }
             function formatType(elCell, oRecord, oColumn, oData) {
                 elCell.innerHTML = getNotificationTypeLocalizedStrings(oData);
             }
             var columnDefs = [
-                {key:'name', label:'Name', resizeable:true, sortable:true, className:['nowrap']},
+                {key:'name', label:'Name', resizeable:true, sortable:true, className:['nowrap'], formatter: formatName},
                 {key:'type', label:'Type', resizeable:true, sortable:true, className:['nowrap'], formatter: formatType}
             ];
 
