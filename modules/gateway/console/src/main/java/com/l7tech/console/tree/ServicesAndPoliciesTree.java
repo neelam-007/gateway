@@ -221,6 +221,12 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
          * @param mouseEvent
          */
         private void popUpMenuHandler(MouseEvent mouseEvent) {
+            //bug 6263: sets the focus when a mouse is clicked (ie right mouse click) on the service and policy tree
+            //calling requestFocus() will set this tree to be focused and the KeyboardFocusManager (in ClipBoardActions.java)
+            // will get notified for the property "permanentFocusOwner" change. Then, KeyboardFocusManager will reset if
+            // clipboard global actions (such as Copy, Copy All, and Paste) are enabled or disabled.
+            requestFocus();
+
             JTree tree = (JTree)mouseEvent.getSource();
 
             if (mouseEvent.isPopupTrigger()) {
