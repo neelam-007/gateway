@@ -178,6 +178,10 @@ public class PrivateKeyManagerWindow extends JDialog {
             mutableKeystore = null;
         }
 
+        if (!flags.canDeleteSome()) { // Bug #6699
+            signCsrButton.setEnabled(false);
+        }
+
         Utilities.setDoubleClickAction(keyTable, propertiesButton);
 
         loadPrivateKeys();
