@@ -184,6 +184,26 @@ public class IOUtils {
     }
 
     /**
+     * Copy all of the in, right up to EOF, into out.  Does not flush or close either stream.
+     *
+     * @param in  the Reader to read.  Must not be null.
+     * @param out the Writer to write.  Must not be null.
+     * @return the number characters copied
+     * @throws java.io.IOException if in could not be read, or out could not be written
+     */
+    public static long copyStream( final Reader in, final Writer out ) throws IOException {
+        if (in == null || out == null) throw new NullPointerException("in and out must both be non-null");
+        char[] buf = new char[1024];
+        int got;
+        long total = 0;
+        while ((got = in.read(buf)) > 0) {
+            out.write(buf, 0, got);
+            total += got;
+        }
+        return total;
+    }
+
+    /**
      * Compare two InputStreams for an exact match.  This method returns true if and only if both InputStreams
      * produce exactly the same bytes when read from the current position through EOF, and that both reach EOF
      * at the same time.  If so requested, either or both streams can be closed before this method returns.

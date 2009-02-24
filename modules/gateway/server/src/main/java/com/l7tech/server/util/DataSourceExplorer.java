@@ -17,14 +17,22 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Arrays;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Clob;
+import java.io.Reader;
+import java.io.IOException;
+import java.io.StringWriter;
 
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
 
 /**
  * Enable access to DataSource via JMX.
@@ -125,6 +133,8 @@ public class DataSourceExplorer {
 
     //- PRIVATE
 
+    private static final Logger logger = Logger.getLogger( DataSourceExplorer.class.getName() );
+
     /**
      * 
      */
@@ -156,11 +166,34 @@ public class DataSourceExplorer {
             rowdata.put( "#", Integer.toString(row++) );
             for ( int i=1; i<metaData.getColumnCount()+1; i++ ) {
                 Object value = results.getObject(i);
+                if ( value instanceof Clob ) {
+                    value = slurp( (Clob) value );
+                }
                 rowdata.put( Integer.toString(i) + ":" + metaData.getColumnName(i), value==null ? "<NULL>" : value.toString() );
             }
             data.put( new CompositeDataSupport(ctype, rowdata) );
         }
 
         return data;
+    }
+
+    private String slurp( final Clob clobValue ) throws SQLException {
+        String value = "<ERROR>";
+
+        Reader reader = null;
+        StringWriter writer = null;
+        try {
+            reader = clobValue.getCharacterStream();
+            writer = new StringWriter( 8192 );
+            IOUtils.copyStream( reader, writer );
+            value = writer.toString();
+        } catch( IOException ioe ) {
+            logger.log( Level.WARNING, "Error reading CLOB '" + ExceptionUtils.getMessage(ioe) + "'.", ioe );
+        } finally {
+            ResourceUtils.closeQuietly(reader);
+            ResourceUtils.closeQuietly(writer);
+        }
+
+        return value;
     }
 }
