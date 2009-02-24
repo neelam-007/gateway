@@ -757,10 +757,6 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             throw new UnsupportedOperationException();
         }
 
-        public boolean isPasswordWorkedForPrivateKey() {
-            return true;
-        }
-
         public boolean deleteStores() {
             throw new UnsupportedOperationException();
         }

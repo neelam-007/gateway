@@ -51,13 +51,6 @@ public abstract class SsgKeyStoreManager {
             throws IOException, KeyStoreException, KeyStoreCorruptException;
 
     /**
-     * Check if the current SSG password matches the keystore private key password.
-     * <p>
-     * TODO remove this somehow, it sucks
-     */
-    public abstract boolean isPasswordWorkedForPrivateKey();
-
-    /**
      * Delete any keystore that might exist for this Ssg.
      * @return true if any files were deleted
      */

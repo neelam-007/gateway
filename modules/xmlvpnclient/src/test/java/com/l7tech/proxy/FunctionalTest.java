@@ -210,10 +210,6 @@ public class FunctionalTest {
             unlocked = false;
         }
 
-        public boolean isPasswordWorkedForPrivateKey() {
-            return unlocked;
-        }
-
         public boolean deleteStores() {
             try {
                 deleteClientCert();

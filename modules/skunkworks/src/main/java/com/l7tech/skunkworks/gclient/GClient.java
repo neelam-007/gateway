@@ -1100,10 +1100,6 @@ public class GClient {
             throw new UnsupportedOperationException();
         }
 
-        public boolean isPasswordWorkedForPrivateKey() {
-            return true;
-        }
-
         public boolean deleteStores() {
             return false;
         }

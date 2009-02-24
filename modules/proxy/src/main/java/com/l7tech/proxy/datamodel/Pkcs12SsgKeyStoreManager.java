@@ -265,17 +265,6 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
         }
     }
 
-    public boolean isPasswordWorkedForPrivateKey() {
-        Ssg trusted = ssg.getTrustedGateway();
-        if (trusted != null)
-            return trusted.getRuntime().getSsgKeyStoreManager().isPasswordWorkedForPrivateKey();
-        if (ssg.isFederatedGateway()) {
-            if (CertLoader.getConfiguredCertLoader() == null)
-                return false;
-        }
-        return ssg.getRuntime().isPasswordCorrectForPrivateKey();
-    }
-
     protected KeyStore getKeyStore(char[] password) throws KeyStoreCorruptException {
         if (!Thread.holdsLock(ssg))
             throw new IllegalStateException("Caller of getKeyStore must hold the Ssg monitor");

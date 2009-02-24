@@ -26,7 +26,6 @@ import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.SslPeer;
-import com.l7tech.proxy.util.CertificateDownloader;
 import com.l7tech.proxy.util.DomainIdInjector;
 import com.l7tech.proxy.util.SslUtils;
 import com.l7tech.security.token.KerberosSecurityToken;
@@ -247,27 +246,6 @@ public class MessageProcessor {
         if (ssg.isFederatedGateway())
             throw new OperationCanceledException("Client identity rejected by federated Gateway " + ssg.getSsgAddress(), e);
 
-        // If we have a client cert, and the current password worked to decrypt it's private key, but something
-        // has rejected the password anyway, we need to reestablish the validity of this account with the SSG.
-        if (!ssg.isGeneric() && ssg.getClientCertificate() != null && ssg.getRuntime().getSsgKeyStoreManager().isPasswordWorkedForPrivateKey()) {
-            if (securePasswordPing(context)) {
-                // password works with our keystore, and with the SSG, so why did it fail just now?
-                String message = "Recieved password failure, but it worked with our keystore and the Gateway liked it when we double-checked it.  " +
-                  "Most likely that your account exists but is not permitted to access this service.";
-                log.severe(message);
-                context.getNewCredentials();
-                return;
-            }
-            log.severe("The Gateway password that was used to obtain this client cert is no longer valid -- deleting the client cert");
-            try {
-                ssg.getRuntime().getSsgKeyStoreManager().deleteClientCert();
-            } catch (KeyStoreCorruptException e1) {
-                ssg.getRuntime().handleKeyStoreCorrupt();
-                // FALLTHROUGH -- retry, creating new keystore
-            }
-            ssg.getRuntime().resetSslContext();
-        }
-
         context.getNewCredentials();
     }
 
@@ -316,38 +294,6 @@ public class MessageProcessor {
 
         // Update SSGs to save any token strategy state changes (ie, discovered WS-Trust server SSL cert)
         federatedSsg.getRuntime().getCredentialManager().saveSsgChanges(federatedSsg);
-    }
-
-    /**
-     * Contact the SSG and determine whether this SSG password is still valid.
-     *
-     * @param context request we are processing.  must be configured with the credentials you wish to validate
-     * @return true if these credentials appear to be valid on this SSG; false otherwise
-     * @throws IOException                if we were unable to validate this password either way
-     * @throws OperationCanceledException if a logon dialog appeared and the user canceled it;
-     *                                    this shouldn't happen unless the user clears the credentials
-     */
-    private boolean securePasswordPing(PolicyApplicationContext context)
-            throws IOException, OperationCanceledException, HttpChallengeRequiredException {
-        Ssg ssg = context.getSsg();
-        if (ssg.isFederatedGateway())
-            throw new OperationCanceledException("Unable to perform password ping with Federated SSG"); // can't happen
-        if (ssg.isGeneric())
-            throw new OperationCanceledException("Unable to perform password ping with Generic SSG"); // can't happen
-
-        // We'll just use the CertificateDownloader for this.
-        CertificateDownloader cd = new CertificateDownloader(context.getHttpClient(),
-                                                             new URL(ssg.getServerUrl()),
-                                                             context.getUsername(),
-                                                             context.getPassword());
-        try {
-            // TODO: remove this stupid hack.  it doesn't help LDAP users anyway
-            cd.downloadCertificate();
-            return cd.isValidCert();
-        } catch (CertificateException e) {
-            log.log(Level.SEVERE, "Gateway sent us an invalid certificate during secure password ping", e);
-            throw new IOException("Gateway sent us an invalid certificate during secure password ping");
-        }
     }
 
     /**
@@ -609,6 +555,10 @@ public class MessageProcessor {
         }
     }
 
+    private static boolean isSslUrl(URL url) {
+        return "https".equals(url.getProtocol());
+    }
+
     private static class WrappedInputStreamFactoryException extends RuntimeException {
         private WrappedInputStreamFactoryException(Throwable t) { initCause(t); }
     }
@@ -734,7 +684,8 @@ public class MessageProcessor {
 
             HttpHeaders responseHeaders = httpResponse.getHeaders();
             if (!ssg.isHttpHeaderPassthrough()) gatherCookies(url, responseHeaders, context);  // Bug #3006
-            checkResponseCertStatus(context, httpResponse, responseHeaders);
+            if (isSslUrl(url))
+                checkResponseCertStatus(context, httpResponse, responseHeaders);
             checkResponsePolicyUrl(context, ssg, httpResponse, status, responseHeaders);
             String contentTypeStr = responseHeaders.getOnlyOneValue(MimeUtil.CONTENT_TYPE);
             checkResponseContentType(context, url, ssg, httpResponse, status, responseHeaders, contentTypeStr);
