@@ -10,6 +10,7 @@ import org.hibernate.*;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.criterion.Junction;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
@@ -412,7 +413,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     /**
      * Helper for implementing findHeaders in SearchableEntityProviders 
      */
-    protected EntityHeaderSet<HT> doFindHeaders( final int offset, final int windowSize, final Map<String,String> filters ) {
+    protected EntityHeaderSet<HT> doFindHeaders( final int offset, final int windowSize, final Map<String,String> filters, final boolean disjunction ) {
         //noinspection unchecked
         List<ET> entities = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
             @Override
@@ -422,13 +423,14 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 crit.setFetchSize(windowSize);
 
                 if ( filters != null ) {
-                    Criterion likeRestriction = null;
+                    Junction likeRestriction = disjunction ? Restrictions.disjunction() : Restrictions.conjunction();
                     for ( String filterProperty : filters.keySet() ) {
-                        String likeCondition = filters.get(filterProperty).replace('*', '%').replace('?', '_');
-                        if ( likeRestriction == null ) {
-                            likeRestriction = Restrictions.like( filterProperty, likeCondition);
+                        String filter = filters.get(filterProperty);
+                        // todo: test based on the field's type
+                        if ("true".equalsIgnoreCase(filter) || "false".equalsIgnoreCase(filter)) {
+                            likeRestriction.add(Restrictions.eq( filterProperty, Boolean.parseBoolean(filter)));
                         } else {
-                            likeRestriction = Restrictions.or( likeRestriction, Restrictions.like( filterProperty, likeCondition ));
+                            likeRestriction.add(Restrictions.like( filterProperty, filter.replace('*', '%').replace('?', '_')));
                         }
                     }
 

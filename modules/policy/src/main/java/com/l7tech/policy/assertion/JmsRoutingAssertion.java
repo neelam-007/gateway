@@ -6,6 +6,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.JmsEndpointHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -106,9 +107,9 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
         if(endpointOid != null) {
-            return new EntityHeader[] { new EntityHeader(endpointOid.toString(), EntityType.JMS_ENDPOINT, endpointName, null)};
+            return new JmsEndpointHeader[] { new JmsEndpointHeader(endpointOid.toString(), endpointName, null, -1, false)}; // always outgoing
         } else {
-            return new EntityHeader[0];
+            return new JmsEndpointHeader[0];
         }
     }
 
@@ -117,6 +118,7 @@ public class JmsRoutingAssertion extends RoutingAssertion implements UsesEntitie
                 oldEntityHeader.getOid() == endpointOid && newEntityHeader.getType().equals(EntityType.JMS_ENDPOINT))
         {
             endpointOid = newEntityHeader.getOid();
+            endpointName = newEntityHeader.getName();
         }
     }
 

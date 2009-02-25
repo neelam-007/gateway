@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.security.keystore.SsgKeyHeader;
+import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.*;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.*;
@@ -83,6 +84,9 @@ public final class EntityHeaderUtils {
             return new IdentityHeader(group.getProviderId(), group.getId(), GROUP, group.getName(), null, group.getName(), null);
         } else if (e instanceof Alias) {
             return new AliasHeader( (Alias) e );
+        } else if (e instanceof JmsEndpoint) {
+            JmsEndpoint endpoint = (JmsEndpoint) e;
+            return new JmsEndpointHeader(endpoint.getId(), endpoint.getName(), endpoint.getDestinationName(), endpoint.getVersion(), endpoint.isMessageSource());
         } else if (e instanceof PersistentEntity) {
             PersistentEntity entity = (PersistentEntity) e;
             return new EntityHeader(entity.getOid(),
@@ -141,6 +145,9 @@ public final class EntityHeaderUtils {
                 externalEntityHeader.setProperty("Alias Of", Long.toString(aliasHeader.getAliasedEntityId()));
             }
             externalEntityHeader.setProperty("Alias Type", aliasHeader.getAliasedEntityType().toString());
+        } else if (header instanceof JmsEndpointHeader) {
+            externalEntityHeader = new ExternalEntityHeader(header.getStrId(), header);
+            externalEntityHeader.setProperty("messageSource", Boolean.toString(((JmsEndpointHeader)header).isIncoming()));
         } else {
             externalEntityHeader = new ExternalEntityHeader(header.getStrId(), header);
         }
@@ -183,6 +190,9 @@ public final class EntityHeaderUtils {
                     eh.getName());
                 break;
 
+            case JMS_ENDPOINT:
+                header = new JmsEndpointHeader(eh.getStrId(), eh.getName(), eh.getDescription(), eh.getVersion(), Boolean.parseBoolean(eh.getProperty("messageSource")));
+                break;
             case VALUE_REFERENCE:
                 header = new ValueReferenceEntityHeader(eh);
                 break;

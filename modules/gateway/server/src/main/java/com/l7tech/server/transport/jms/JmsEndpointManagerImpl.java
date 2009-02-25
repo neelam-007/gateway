@@ -7,22 +7,19 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.JmsEndpointHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
 import org.springframework.dao.DataAccessException;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class JmsEndpointManagerImpl
-        extends HibernateEntityManager<JmsEndpoint, EntityHeader>
+        extends HibernateEntityManager<JmsEndpoint, JmsEndpointHeader>
         implements JmsEndpointManager
 {
     public Collection findMessageSourceEndpoints() throws FindException {
@@ -58,25 +55,38 @@ public class JmsEndpointManagerImpl
         return result.toArray(new JmsEndpoint[0]);
     }
 
-    public EntityHeader[] findEndpointHeadersForConnection(long connectionOid) throws FindException {
-        StringBuffer sql = new StringBuffer("select endpoint.oid, endpoint.name, endpoint.destinationName ");
+    public JmsEndpointHeader[] findEndpointHeadersForConnection(long connectionOid) throws FindException {
+        StringBuffer sql = new StringBuffer("select endpoint.oid, endpoint.name, endpoint.destinationName, endpoint.version, endpoint.messageSource ");
         sql.append("from endpoint in class ");
         sql.append(JmsEndpoint.class.getName());
         sql.append(" where endpoint.connectionOid = ?");
-        ArrayList<EntityHeader> result = new ArrayList<EntityHeader>();
+        ArrayList<JmsEndpointHeader> result = new ArrayList<JmsEndpointHeader>();
         try {
             List results = getHibernateTemplate().find(sql.toString(), new Long(connectionOid));
             for (Object result1 : results) {
                 Object[] row = (Object[]) result1;
                 if (row[0]instanceof Long) {
-                    EntityHeader header = new EntityHeader(row[0].toString(), EntityType.JMS_ENDPOINT, (String) row[1], (String) row[2]);
+                    JmsEndpointHeader header = new JmsEndpointHeader(row[0].toString(), (String) row[1], (String) row[2], Integer.parseInt((String) row[3]), Boolean.valueOf((String) row[4]));
                     result.add(header);
                 }
             }
-            return result.toArray(new EntityHeader[0]);
+            return result.toArray(new JmsEndpointHeader[result.size()]);
         } catch (DataAccessException e) {
             throw new FindException(e.toString(), e);
         }
+    }
+
+    @Override
+    public Collection<JmsEndpointHeader> findHeaders(int offset, int windowSize, Map<String, String> filters) throws FindException {
+        Map<String,String> jmsFilters = filters;
+        String defaultFilter = filters.get(DEFAULT_SEARCH_NAME);
+        if (defaultFilter != null && ! defaultFilter.isEmpty()) {
+            jmsFilters = new HashMap<String, String>(filters);
+            jmsFilters.put("name", defaultFilter);
+        }
+        jmsFilters.remove(DEFAULT_SEARCH_NAME);
+
+        return doFindHeaders( offset, windowSize, jmsFilters, false ); // conjunction
     }
 
 /*

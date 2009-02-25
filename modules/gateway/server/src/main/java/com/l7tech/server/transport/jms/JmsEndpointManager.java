@@ -5,14 +5,15 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.objectmodel.JmsEndpointHeader;
 
 import java.util.Collection;
 
 /**
  * @author alex
  */
-public interface JmsEndpointManager extends EntityManager<JmsEndpoint, EntityHeader> {
+public interface JmsEndpointManager extends PropertySearchableEntityManager<JmsEndpointHeader>, EntityManager<JmsEndpoint, JmsEndpointHeader>  {
     Collection findMessageSourceEndpoints() throws FindException;
     JmsEndpoint[] findEndpointsForConnection(long connectionOid) throws FindException;
-    EntityHeader[] findEndpointHeadersForConnection(long connectionOid) throws FindException;
+    JmsEndpointHeader[] findEndpointHeadersForConnection(long connectionOid) throws FindException;
 }

@@ -84,13 +84,14 @@ public class ServiceManagerImp
     @Override
     public Collection<ServiceHeader> findHeaders(int offset, int windowSize, Map<String,String> filters) throws FindException {
         Map<String,String> serviceFilters = filters;
-        if (filters.containsKey(DEFAULT_SEARCH_NAME)) {
+        String defaultFilter = filters.get(DEFAULT_SEARCH_NAME);
+        if (defaultFilter != null && ! defaultFilter.isEmpty()) {
             serviceFilters = new HashMap<String, String>(filters);
-            serviceFilters.put("name", serviceFilters.get(DEFAULT_SEARCH_NAME));
-            serviceFilters.put("routingUri", serviceFilters.get(DEFAULT_SEARCH_NAME));
-            serviceFilters.remove(DEFAULT_SEARCH_NAME);
+            serviceFilters.put("name", defaultFilter);
+            serviceFilters.put("routingUri", defaultFilter);
         }
-        return doFindHeaders( offset, windowSize, serviceFilters );
+        serviceFilters.remove(DEFAULT_SEARCH_NAME);
+        return doFindHeaders( offset, windowSize, serviceFilters, true ); // disjunction
     }
 
     @Override

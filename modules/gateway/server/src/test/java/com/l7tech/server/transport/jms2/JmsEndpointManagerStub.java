@@ -3,14 +3,11 @@
  */
 package com.l7tech.server.transport.jms2;
 
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.JmsEndpointHeader;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.server.EntityManagerStub;
-import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.gateway.common.transport.jms.JmsReplyType;
-import com.l7tech.gateway.common.transport.jms.JmsOutboundMessageType;
-import com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType;
+import com.l7tech.gateway.common.transport.jms.*;
 
 import java.util.Collection;
 
@@ -18,7 +15,7 @@ import java.util.Collection;
  *
  * @author: vchan
  */
-public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, EntityHeader> implements JmsEndpointManager {
+public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, JmsEndpointHeader> implements JmsEndpointManager {
 
     JmsConnectionManagerStub cnxMgr;
 
@@ -31,7 +28,7 @@ public class JmsEndpointManagerStub extends EntityManagerStub<JmsEndpoint, Entit
         return getEndpointForConnection(connectionOid);
     }
 
-    public EntityHeader[] findEndpointHeadersForConnection(long connectionOid) throws FindException {
+    public JmsEndpointHeader[] findEndpointHeadersForConnection(long connectionOid) throws FindException {
         throw new UnsupportedOperationException();
     }
 

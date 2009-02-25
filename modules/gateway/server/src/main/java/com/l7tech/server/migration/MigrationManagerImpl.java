@@ -119,24 +119,28 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     @Override
-    public Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, final Map<String,String> filters) throws MigrationApi.MigrationException {
+    public Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> retrieveMappingCandidates(
+                        Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, final Map<String,String> filters)
+                        throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Retrieving mapping candidates for {0}.", mappables);
         Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> result = new HashMap<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>>();
 
+        Map<String,String> customFilters;
         if ( mappables != null ) {
             for (ExternalEntityHeader header : mappables) {
                 try {
+                    customFilters = getCustomFilters(header, filters);
                     EntityHeaderSet<ExternalEntityHeader> candidates = new EntityHeaderSet<ExternalEntityHeader>();
                     if (header instanceof ValueReferenceEntityHeader) {
                         // special handling for value reference headers
                         MigrationMetadata metadata = findDependencies(EntityHeaderUtils.toExternal(
-                            entityCrud.findAll(EntityTypeRegistry.getEntityClass(((ValueReferenceEntityHeader)header).getOwnerType()), filters, 0, 50)));
+                            entityCrud.findAll(EntityTypeRegistry.getEntityClass(((ValueReferenceEntityHeader)header).getOwnerType()), customFilters, 0, 50)));
                         for (ExternalEntityHeader maybeCandidate : metadata.getHeaders()) {
                             if (maybeCandidate instanceof ValueReferenceEntityHeader)
                                 candidates.add(maybeCandidate);
                         }
                     } else {
-                        for (EntityHeader candidate : entityCrud.findAllInScope(EntityHeaderUtils.getEntityClass(header), scope, filters, 0, 50 )) {
+                        for (EntityHeader candidate : entityCrud.findAllInScope(EntityHeaderUtils.getEntityClass(header), scope, customFilters, 0, 50 )) {
                             candidates.add(resolveHeader(EntityHeaderUtils.toExternal(candidate)));
                         }
                     }
@@ -149,6 +153,17 @@ public class MigrationManagerImpl implements MigrationManager {
         }
 
         return result;
+    }
+
+    private Map<String, String> getCustomFilters(ExternalEntityHeader header, Map<String, String> filters) {
+        if (EntityType.JMS_ENDPOINT == header.getType() && header.getExtraProperties().containsKey("messageSource")) {
+            Map<String,String> customFilters = new HashMap<String, String>();
+            customFilters.put("messageSource", header.getProperty("messageSource"));
+            customFilters.putAll(filters);
+            return customFilters;
+        } else {
+            return filters;
+        }
     }
 
     @Override
