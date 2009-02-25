@@ -34,6 +34,16 @@
             vertical-align: middle;
         }
 
+        .trafficImgParent {
+            position: relative;
+        }
+
+        .trafficImg {
+            position: absolute;
+            right: 0;
+            visibility: hidden;
+        }
+
         #notifDlg_eMailConfig .panel,
         #notifDlg_snmpTrapConfig .panel,
         #notifDlg_httpRequestConfig .panel {
@@ -151,6 +161,9 @@
         var DEFAULT_MONITORING_PROPERTIES_REFRESH_INTERVAL = 10;
 
         var ALL_PROPERTY_TYPES = l7.Util.getPropertyValues(l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY, l7.Constants.SSG_NODE_MONITORING_PROPERTY);
+
+        var collapsedHeaders_trafficImg;
+        var steppedHeaders_trafficImg;
 
         var monitoringSetup;
 
@@ -1006,6 +1019,11 @@
         }
 
         function refreshMonitoringProperties() {
+            // Flashes the traffic icon for 200ms when refreshing.
+            collapsedHeaders_trafficImg.style.visibility = "visible";
+            steppedHeaders_trafficImg.style.visibility = "visible";
+            setTimeout('collapsedHeaders_trafficImg.style.visibility = "hidden"; steppedHeaders_trafficImg.style.visibility = "hidden";', 200);
+
             var nextRefreshInterval = DEFAULT_MONITORING_PROPERTIES_REFRESH_INTERVAL;
             var xhr = l7.Connection.syncRequest('GET', getCurrentEntitiesPropertyValuesUrl, null, false);
             var result = l7.Connection.parseJsonResponse(xhr, false);
@@ -1382,6 +1400,8 @@
 
         function init() {
             // Precomputes UI element references for efficiency.
+            collapsedHeaders_trafficImg = document.getElementById('collapsedHeaders_trafficImg');
+            steppedHeaders_trafficImg = document.getElementById('steppedHeaders_trafficImg');
             monitoringSetup = document.getElementById('monitoringSetup');
 
             disableAllNotificationCheckBox = document.getElementById('disableAllNotificationCheckBox');
@@ -1691,7 +1711,7 @@
                                         <th class="bottom" rowspan="2">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
                                         <th class="bottom" rowspan="2"><img src="../images/status.png" title="Online Status" alt="" /></th>
                                         <th class="bottom" rowspan="2">Type</th>
-                                        <th colspan="10"><img class="tippy" src="../images/tippyCollapsed.png" title="Click to expand headers" alt="" onclick="expandSteppedHeaders();" /><span class="clickable" title="Click to expand headers" onclick="expandSteppedHeaders();">Monitored Properties</span></th>
+                                        <th colspan="10"><div class="trafficImgParent"><img class="tippy" src="../images/tippyCollapsed.png" title="Click to expand headers" alt="" onclick="expandSteppedHeaders();" /><span class="clickable" title="Click to expand headers" onclick="expandSteppedHeaders();">Monitored Properties</span><img id="collapsedHeaders_trafficImg" class="trafficImg" src="../images/traffic.png"/></div></th>
                                     </tr>
                                     <tr>
                                         <th class="group0"><div class="collapsedHeader" style="display: none;">audit size (no. of audit events)</div></th>
@@ -1712,7 +1732,7 @@
                                         <th class="bottom" rowspan="11">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
                                         <th class="bottom" rowspan="11"><img src="../images/status.png" title="Online Status" alt="" /></th>
                                         <th class="bottom" rowspan="11">Type</th>
-                                        <th colspan="10"><img class="tippy" src="../images/tippyExpanded.png" title="Click to collapse headers" alt="" onclick="collapseSteppedHeaders();" /><span class="clickable" title="Click to collapse headers" onclick="collapseSteppedHeaders();">Monitored Properties</span></th>
+                                        <th colspan="10"><div class="trafficImgParent"><img class="tippy" src="../images/tippyExpanded.png" title="Click to collapse headers" alt="" onclick="collapseSteppedHeaders();" /><span class="clickable" title="Click to collapse headers" onclick="collapseSteppedHeaders();">Monitored Properties</span><img id="steppedHeaders_trafficImg" class="trafficImg" src="../images/traffic.png"/></div></th>
                                         <th class="parentId" rowspan="11"><!-- hidden column --></th>
                                     </tr>
                                     <tr>
