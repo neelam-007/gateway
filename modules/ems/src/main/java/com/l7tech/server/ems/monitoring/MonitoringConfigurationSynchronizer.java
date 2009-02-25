@@ -31,7 +31,7 @@ import org.springframework.context.ApplicationListener;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,15 +46,12 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
     private static final long DELAY_BETWEEN_CONFIG_PUSHES = SyspropUtil.getLong("com.l7tech.server.ems.monitoring.configPush.delayBetween", 7457L);
 
     /** We should mark all monitoring configurations as dirty any time one of these entities changes. */
-    private static final Set<Class<? extends Entity>> MONITORING_ENTITIES = Collections.unmodifiableSet(new HashSet<Class<? extends Entity>>() {{
+    private static final Set<Class<? extends Entity>> ENTITIES_TRIGGERING_COMPLETE_PUSHDOWN = Collections.unmodifiableSet(new HashSet<Class<? extends Entity>>() {{
         add(SystemMonitoringNotificationRule.class);
-        add(SsgClusterNotificationSetup.class);
-        add(EntityMonitoringPropertySetup.class);
     }});
 
     /** We should mark all monitoring configurations as dirty any time one of these cluster properties changes. */
-    // TODO It may turn out that the PCs don't care about these settings after all
-    private static final Set<String> MONITORING_CLUSTER_PROPS = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
+    private static final Set<String> CLUSTER_PROPS_TRIGGERING_COMPLETE_PUSHDOWN = Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(
             ServerConfig.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS
     )));
 
@@ -66,7 +63,8 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
     private final SystemMonitoringSetupSettingsManager systemMonitoringSetupSettingsManager;
     private final TimerTask configPusherTask = makeConfigPusherTask();
 
-    private final AtomicBoolean dirty = new AtomicBoolean(true);
+    // Contains an entry for each cluster GUID that has the latest monitoring configuration.
+    private final ConcurrentHashMap<String, Object> cleanClusters = new ConcurrentHashMap<String, Object>();
 
     public MonitoringConfigurationSynchronizer(Timer timer,
                                                SsgClusterManager ssgClusterManager,
@@ -91,12 +89,15 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
                 EntityMonitoringPropertySetup setup = (EntityMonitoringPropertySetup) entity;
                 String clusterGuid = setup.getSsgClusterNotificationSetup().getSsgClusterGuid();
                 setClusterDirty(clusterGuid);
+            } else if (entity instanceof SsgClusterNotificationSetup) {
+                SsgClusterNotificationSetup sgns = (SsgClusterNotificationSetup) entity;
+                setClusterDirty(sgns.getSsgClusterGuid());
             } else if (entity instanceof ClusterProperty) {
                 String name = ((ClusterProperty)entity).getName();
-                if (MONITORING_CLUSTER_PROPS.contains(name))
+                if (CLUSTER_PROPS_TRIGGERING_COMPLETE_PUSHDOWN.contains(name))
                     setAllDirty();
             } else if (entity != null) {
-                for (Class<? extends Entity> entClass : MONITORING_ENTITIES) {
+                for (Class<? extends Entity> entClass : ENTITIES_TRIGGERING_COMPLETE_PUSHDOWN) {
                     if (entClass.isAssignableFrom(entity.getClass())) {
                         setAllDirty();
                         return;
@@ -119,20 +120,16 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
             public void run() {
                 AuditContextUtils.doAsSystem(new Runnable() {
                     public void run() {
-                        maybePushAllConfig();
+                        pushAllConfig();
                     }
                 });
             }
         };
     }
 
-    private void maybePushAllConfig() {
-        if (!dirty.get())
-            return;
-
+    private void pushAllConfig() {
         try {
-            if (pushAllConfig())
-                dirty.set(false);
+            doPushAllConfig();
         } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Exception while pushing down monitoring configuration: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         } catch (Exception e) {
@@ -143,24 +140,31 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         }
     }
 
-    private boolean pushAllConfig() throws FindException {
-        logger.info("Pushing down monitoring configurations to all known process controllers");
-
+    private void doPushAllConfig() throws FindException {
         boolean notificationsDisabled = areNotificationsGloballyDisabled();
 
-        boolean sawFailure = false;
         Collection<SsgCluster> clusters = ssgClusterManager.findAll();
         for (SsgCluster cluster : clusters) {
-            boolean needClusterMaster = true;
-            Set<SsgNode> nodes = cluster.getNodes();
-            for (SsgNode node : nodes) {
-                if (configureNode(cluster, node, notificationsDisabled, needClusterMaster))
-                    needClusterMaster = false;
-                else
-                    sawFailure = true;
+            final String clusterGuid = cluster.getGuid();
+            if (isClusterDirty(clusterGuid)) {
+                setClusterClean(clusterGuid);
+                if (!configureCluster(cluster, notificationsDisabled))
+                    setClusterDirty(clusterGuid);
             }
         }
-        return !sawFailure;
+    }
+
+    private boolean configureCluster(SsgCluster cluster, boolean notificationsDisabled) {
+        boolean hugeSuccess = true;
+        boolean needClusterMaster = true;
+        Set<SsgNode> nodes = cluster.getNodes();
+        for (SsgNode node : nodes) {
+            if (configureNode(cluster, node, notificationsDisabled, needClusterMaster))
+                needClusterMaster = false;
+            else
+                hugeSuccess = false;
+        }
+        return hugeSuccess;
     }
 
     private boolean configureNode(SsgCluster cluster, SsgNode node, boolean notificationsDisabled, boolean needClusterMaster) {
@@ -172,7 +176,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
             logger.log(Level.INFO, "Unable to push down monitoring configuration to node " + node.getIpAddress() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         } catch (GatewayException e) {
             logger.log(Level.WARNING, "Unable to push down monitoring configuration to node " + node.getIpAddress() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-        } catch (javax.xml.ws.soap.SOAPFaultException e) {
+        } catch (javax.xml.ws.ProtocolException e) {
             if ( ProcessControllerContext.isNetworkException(e) ) {
                 logger.log(Level.WARNING, "Unable to push down monitoring configuration to node " + node.getIpAddress() + " due to network error: " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e)), ExceptionUtils.getDebugException(e));
             } else {
@@ -308,6 +312,16 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
     }
 
     /**
+     * Check if the specified cluster GUID is in need of a fresh monitoring configuration.
+     *
+     * @param clusterGuid the cluster to check.  Required.
+     * @return true if this cluster needs a new config.
+     */
+    boolean isClusterDirty(String clusterGuid) {
+        return !cleanClusters.containsKey(clusterGuid);
+    }
+
+    /**
      * Mark all monitoring configurations in the specified cluster as dirty.
      * <p/>
      * The synchronizer will push down new configuration to all PCs in this cluster next time it runs.
@@ -315,8 +329,17 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
      * @param clusterGuid GUID of a cluster whose PCs are in need of new monitoring configuration.
      */
     void setClusterDirty(String clusterGuid) {
-        // TODO dirty only the affected cluster
-        setAllDirty();
+        logger.log(Level.INFO, "Marking cluster GUID " + clusterGuid + " as in need of a monitoring configuration pushdown");
+        cleanClusters.remove(clusterGuid);
+    }
+
+    /**
+     * Mark all monitoring configurations in the specified cluster as clean.
+     *
+     * @param clusterGuid GUID of a cluster whose PCs have the latest monitoring configuraiton.
+     */
+    void setClusterClean(String clusterGuid) {
+        cleanClusters.put(clusterGuid, Boolean.TRUE);
     }
 
     /**
@@ -325,7 +348,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
      * The synchronizer will push down new configuration to all PCs in all clusters next time it runs.
      */
     void setAllDirty() {
-        // TODO keep track of dirtiness per PC GUID
-        dirty.set(true);
+        logger.log(Level.INFO, "Marking all known clusters as in need of a monitoring configuration pushdown");
+        cleanClusters.clear();
     }
 }

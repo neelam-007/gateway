@@ -10,6 +10,13 @@ import java.util.List;
  */
 public class MockSsgClusterManager extends EntityManagerStub<SsgCluster, EntityHeader> implements SsgClusterManager {
 
+    public MockSsgClusterManager() {
+    }
+
+    public MockSsgClusterManager(SsgCluster... entitiesIn) {
+        super(entitiesIn);
+    }
+
     @Override
     public SsgCluster create(String name, String sslHostName, int adminPort, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException {
         return null;
