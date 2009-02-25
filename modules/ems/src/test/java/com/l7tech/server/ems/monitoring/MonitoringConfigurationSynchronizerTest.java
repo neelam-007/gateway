@@ -83,14 +83,12 @@ public class MonitoringConfigurationSynchronizerTest {
 
     @Test
     @BugNumber(6750)
-    @Ignore("not yet fixed")
     public void testClusterPushdownAfterUpdatedSsgNode() {
         assertDoesClusterPushdownAfterEvent(makeAndStartMcs(), new Updated<SsgNode>(clusterA.node(1), null), clusterA);
     }
 
     @Test
     @BugNumber(6750)
-    @Ignore("not yet fixed")
     public void testClusterPushdownAfterUpdatedSsgCluster() {
         assertDoesClusterPushdownAfterEvent(makeAndStartMcs(), new Updated<SsgCluster>(clusterB, null), clusterB);
     }
@@ -102,7 +100,6 @@ public class MonitoringConfigurationSynchronizerTest {
 
     @Test
     @BugNumber(6750)
-    @Ignore("not yet fixed")
     public void testNewClustersTriggerPushdown() throws Exception {
         ssgClusterManager = new MockSsgClusterManager(clusterA);
         MonitoringConfigurationSynchronizer mcs = makeAndStartMcs();
@@ -112,7 +109,6 @@ public class MonitoringConfigurationSynchronizerTest {
 
     @Test
     @BugNumber(6750)
-    @Ignore("not yet fixed")
     public void testNewNodesTriggerPushdown() {
         MonitoringConfigurationSynchronizer mcs = makeAndStartMcs();
         SsgNode newNode = clusterA.addNode();

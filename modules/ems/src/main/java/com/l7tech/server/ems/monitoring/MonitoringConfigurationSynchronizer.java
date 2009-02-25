@@ -92,6 +92,10 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
             } else if (entity instanceof SsgClusterNotificationSetup) {
                 SsgClusterNotificationSetup sgns = (SsgClusterNotificationSetup) entity;
                 setClusterDirty(sgns.getSsgClusterGuid());
+            } else if (entity instanceof SsgCluster) {
+                setClusterDirty(((SsgCluster)entity).getGuid());
+            } else if (entity instanceof SsgNode) {
+                setClusterDirty(((SsgNode)entity).getSsgCluster().getGuid());
             } else if (entity instanceof ClusterProperty) {
                 String name = ((ClusterProperty)entity).getName();
                 if (CLUSTER_PROPS_TRIGGERING_COMPLETE_PUSHDOWN.contains(name))
