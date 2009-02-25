@@ -41,12 +41,11 @@ public class RuntimeDocUtilities {
      * that the report will find when it runs. The same keys, services / operations, auth_user chosen by the user that
      * was used to create the set distinctMappingSets will be the same parameters given to the report at runtime. This
      * ensures that all the distinct lists of mapping values found in distinctMappingSets, will also be found by the
-     * report when it runs 
+     * report when it runs
      *
      * @param distinctMappingSets represents the runtime report meta data, which are the distinct set of mapping values
-     * that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
-     * followed by 5 mapping values
-     *
+     *                            that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
+     *                            followed by 5 mapping values
      * @return a Document which can be used as parameter to transform a template jrxml file
      */
     public static Document getUsageSubReportRuntimeDoc(LinkedHashSet<List<String>> distinctMappingSets) {
@@ -79,13 +78,13 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-ServiceOperationFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_" + (i + 1) + "}",
-                    TABLE_CELL_STYLE, false);
+                    TABLE_CELL_STYLE, false, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                 "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{TOTAL}",
-                Utilities.ROW_MINOR_TOTAL_STYLE, true);
+                Utilities.ROW_MINOR_TOTAL_STYLE, true, false);
 
         Element noDataElement = doc.createElement(Utilities.NO_DATA);
         rootNode.appendChild(noDataElement);
@@ -180,13 +179,12 @@ public class RuntimeDocUtilities {
      * Only used in usage reports. In usage report output there is one table of data, with each column representing
      * a distinct mapping value set. The title of the table is the set of mapping keys, including AUTH_USER, which
      * was selected and what the columns of data represent the distinct sets of values for
-     * 
+     *
      * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
-     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
-     * key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
-     * and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
-     * hash map.
-
+     *                      represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     *                      key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     *                      and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     *                      hash map.
      * @return a string which can be used to display as the heading for the table of data shown in usage reports
      */
     private static String getContextKeysDiaplayString(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters) {
@@ -212,11 +210,11 @@ public class RuntimeDocUtilities {
      *
      * @param isContextMapping    are mapping keys being used or not
      * @param groupToMappingValue a map of a shortened string to the string representing a set of mapping values
-     * to display as the category value in a chart:- <br>
-     * e.g. group 1 instead of IpAddress=...Customer=..., or service 1
+     *                            to display as the category value in a chart:- <br>
+     *                            e.g. group 1 instead of IpAddress=...Customer=..., or service 1
      *                            instead of Warehouse [routing uri].....
-     * @param isUsingKeys are keys 1-5 or auth user being used? Used in conjunction with isContextMapping to tell
-     * the report if context mapping is being used ONLY to get at operation level data.
+     * @param isUsingKeys         are keys 1-5 or auth user being used? Used in conjunction with isContextMapping to tell
+     *                            the report if context mapping is being used ONLY to get at operation level data.
      * @return a Document which can be used as parameter to transform a template jrxml file
      */
     public static Document getPerfStatAnyRuntimeDoc(boolean isContextMapping, boolean isUsingKeys,
@@ -246,7 +244,7 @@ public class RuntimeDocUtilities {
         int index = 0;
         for (Map.Entry<String, String> me : groupToMappingValue.entrySet()) {
             addTextFieldToElement(doc, chartLegend, x, y, frameWidth, height, "chartLegendKey" + (index + 1), "java.lang.String",
-                    "<b>" + me.getKey() + ":</b> " + me.getValue(), "chartLegendTextField", false);
+                    "<b>" + me.getKey() + ":</b> " + Utilities.escapeHtmlCharacters(me.getValue()), "chartLegendTextField", false, true);
 
             y += height + vSpace;
             index++;
@@ -303,14 +301,14 @@ public class RuntimeDocUtilities {
      * Create a document, given the input properties, which will be used to transform the
      * template usage report.
      *
-     * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
-     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
-     * key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
-     * and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
-     * hash map.
+     * @param keysToFilters       a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     *                            represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     *                            key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     *                            and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     *                            hash map.
      * @param distinctMappingSets represents the runtime report meta data, which are the distinct set of mapping values
-     * that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
-     * followed by 5 mapping values
+     *                            that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
+     *                            followed by 5 mapping values
      * @return a Document which can be used as parameter to transform a template jrxml file
      */
     public static Document getUsageIntervalMasterRuntimeDoc(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
@@ -376,13 +374,13 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceHeader, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.MAPPING_VALUE_FIELD_HEIGHT,
                     "textField-serviceHeader-" + (i + 1), "java.lang.String", listMappingValues.get(i), Utilities.USAGE_TABLE_HEADING_STYLE,
-                    true);
+                    true, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceHeader, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.MAPPING_VALUE_FIELD_HEIGHT,
                 "textField-serviceHeader-ServiceTotals", "java.lang.String", "Service Totals", Utilities.USAGE_TABLE_HEADING_END_STYLE,
-                true);
+                true, false);
 
         xPos += Utilities.TOTAL_COLUMN_WIDTH;
 
@@ -422,13 +420,13 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-ServiceOperationFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_OPERATION_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_OPERATION_" + (i + 1) + "}",
-                    Utilities.ROW_TOTAL_STYLE, true);
+                    Utilities.ROW_TOTAL_STYLE, true, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                 "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{ROW_OPERATION_TOTAL}",
-                Utilities.ROW_GRAND_TOTAL_STYLE, true);
+                Utilities.ROW_GRAND_TOTAL_STYLE, true, false);
 
         //serviceIdFooter
         Element serviceIdFooterElement = doc.createElement(Utilities.SERVICE_ID_FOOTER);
@@ -438,12 +436,12 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-ServiceIdFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_SERVICE_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_SERVICE_" + (i + 1) + "}",
-                    Utilities.ROW_TOTAL_STYLE, true);
+                    Utilities.ROW_TOTAL_STYLE, true, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{ROW_SERVICE_TOTAL}", Utilities.ROW_GRAND_TOTAL_STYLE, true);
+                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{ROW_SERVICE_TOTAL}", Utilities.ROW_GRAND_TOTAL_STYLE, true, false);
 
         //summary
         Element summaryElement = doc.createElement(Utilities.SUMMARY);
@@ -453,12 +451,12 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, summaryElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-constantFooter-" + (i + 1), "java.lang.Long", "$V{COLUMN_REPORT_" + (i + 1) + "}",
-                    Utilities.REPORT_ROW_TOTAL_STYLE, true);
+                    Utilities.REPORT_ROW_TOTAL_STYLE, true, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, summaryElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-constantFooterTotal", "java.lang.Long", "$V{ROW_REPORT_TOTAL}", Utilities.REPORT_ROW_GRAND_TOTAL_STYLE, true);
+                "textField-constantFooterTotal", "java.lang.Long", "$V{ROW_REPORT_TOTAL}", Utilities.REPORT_ROW_GRAND_TOTAL_STYLE, true, false);
 
         rootNode.appendChild(pageWidth);
         //columnWidth -is page width - left + right margin
@@ -482,7 +480,7 @@ public class RuntimeDocUtilities {
      * Only used by usage reports<br>
      * Convert each list in distinctMappingSets into a string representation of all its values.<br>
      * Each string in the linked hash set can then be used to represent a list from distinctMappingSets.<br>
-     *
+     * <p/>
      * This function is used in the transform to know what string value to place into the column headings in the report
      * output. The returnd set also tells the runtime function, how many columns are needed, although it can also know
      * this information from the size of the distinctMappingSets parameter
@@ -490,13 +488,13 @@ public class RuntimeDocUtilities {
      * Background: A Service has a context message assertion with a set of keys. At runtime the keys get values.
      * A query can specify keys, a set of services, and only those service which have that key will be found. The
      * service may have other keys too not in the query. The data is grouped by the distinct sets of value for the keys
-     * which are found at runtime. This is what distinctMappingSets represents 
+     * which are found at runtime. This is what distinctMappingSets represents
      *
      * @param distinctMappingSets represents the runtime report meta data, which are the distinct set of mapping values
-     * that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
-     * followed by 5 mapping values
+     *                            that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
+     *                            followed by 5 mapping values
      * @return a linked has set, where each string in it represents a string representation of the list at the
-     * corresponding index in distinctMappingSets
+     *         corresponding index in distinctMappingSets
      */
     public static LinkedHashSet<String> getMappingValues(LinkedHashSet<List<String>> distinctMappingSets) {
         LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
@@ -525,13 +523,13 @@ public class RuntimeDocUtilities {
      * Convert the parameter mappingValuesLegend into a map, where each key in the map is a short textual representation
      * of the string at the same index in mappingValuesLegend. Currentlly the value at index 0 will have a key of
      * 'Group 1', the key at index 1 will have a key of 'Group 2'.<br>
-     *
+     * <p/>
      * The returned map is used when creating the chart xml. The category's on the chart will be the short 'Group x'
      * values and the legend will show the link between 'Group x' and the string in index x in mappingValuesLegend
-     * 
+     *
      * @param mappingValuesLegend a linked hash set of the distinct mapping value sets, where each string, is a string
-     * representation of all the values found for the keys at runtime. Note: A set of keys are needed to create the
-     * data structure mappingValuesLegend, see usages for how this created.
+     *                            representation of all the values found for the keys at runtime. Note: A set of keys are needed to create the
+     *                            data structure mappingValuesLegend, see usages for how this created.
      * @return a linked hash map with short key value mapped to the orginal value at the same index in mappingValuesLegend
      */
     private static LinkedHashMap<String, String> getGroupToLegendDisplayStringMap(LinkedHashSet<String> mappingValuesLegend) {
@@ -550,14 +548,14 @@ public class RuntimeDocUtilities {
      * Create a document, given the input properties, which will be used to transform the
      * template usage report.
      *
-     * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
-     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
-     * key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
-     * and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
-     * hash map.
+     * @param keysToFilters       a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     *                            represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     *                            key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     *                            and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     *                            hash map.
      * @param distinctMappingSets represents the runtime report meta data, which are the distinct set of mapping values
-     * that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
-     * followed by 5 mapping values
+     *                            that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
+     *                            followed by 5 mapping values
      * @return a Document which can be used as parameter to transform a template jrxml file
      */
     public static Document getUsageRuntimeDoc(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
@@ -632,14 +630,14 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, constantHeader, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.MAPPING_VALUE_FIELD_HEIGHT,
                     "textField-constantHeader-" + (i + 1), "java.lang.String", listMappingValues.get(i), Utilities.USAGE_TABLE_HEADING_STYLE,
-                    false);
+                    false, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
         //move x pos along for width of a column
 
         addTextFieldToElement(doc, constantHeader, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.MAPPING_VALUE_FIELD_HEIGHT,
                 "textField-constantHeader-ServiceTotals", "java.lang.String", "Service Totals", USAGE_TABLE_HEADING_ROW_TOTAL,
-                false);
+                false, false);
 
         xPos += Utilities.TOTAL_COLUMN_WIDTH;
 
@@ -659,13 +657,13 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-ServiceOperationFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_" + (i + 1) + "}",
-                    TABLE_CELL_STYLE, false);
+                    TABLE_CELL_STYLE, false, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                 "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{SERVICE_AND_OR_OPERATION_TOTAL}",
-                USAGE_ROW_TOTAL_MINOR, true);
+                USAGE_ROW_TOTAL_MINOR, true, false);
 
         //serviceIdFooter
         Element serviceIdFooterElement = doc.createElement(Utilities.SERVICE_ID_FOOTER);
@@ -675,12 +673,12 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-ServiceIdFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_SERVICE_TOTAL_" + (i + 1) + "} == null || $V{COLUMN_SERVICE_TOTAL_" + (i + 1) + "}.intValue() == 0)?new Long(0):$V{COLUMN_SERVICE_TOTAL_" + (i + 1) + "}",
-                    Utilities.ROW_TOTAL_STYLE, true);
+                    Utilities.ROW_TOTAL_STYLE, true, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{SERVICE_ONLY_TOTAL}", Utilities.ROW_GRAND_TOTAL_STYLE, true);
+                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{SERVICE_ONLY_TOTAL}", Utilities.ROW_GRAND_TOTAL_STYLE, true, false);
 
         //constantFooter
         Element constantFooterElement = doc.createElement(Utilities.CONSTANT_FOOTER);
@@ -690,12 +688,12 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, constantFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-constantFooter-" + (i + 1), "java.lang.Long", "$V{COLUMN_MAPPING_TOTAL_" + (i + 1) + "}",
-                    Utilities.REPORT_ROW_TOTAL_STYLE, true);
+                    Utilities.REPORT_ROW_TOTAL_STYLE, true, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, constantFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-constantFooterTotal", "java.lang.Long", "$V{GRAND_TOTAL}", Utilities.REPORT_ROW_GRAND_TOTAL_STYLE, true);
+                "textField-constantFooterTotal", "java.lang.Long", "$V{GRAND_TOTAL}", Utilities.REPORT_ROW_GRAND_TOTAL_STYLE, true, false);
 
 
         rootNode.appendChild(pageWidth);
@@ -721,14 +719,14 @@ public class RuntimeDocUtilities {
      * values into some method will which give it the required LinkedHashSet<List<java.lang.String>>
      * Auth User is always the first element of each list in distinctMappingSets
      *
-     * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
-     * represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
-     * key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
-     * and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
-     * hash map.
+     * @param keysToFilters       a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     *                            represent it's constraints. All keys should have at least one FilterPair supplied. If no constraint was added for a
+     *                            key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     *                            and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     *                            hash map.
      * @param distinctMappingSets represents the runtime report meta data, which are the distinct set of mapping values
-     * that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
-     * followed by 5 mapping values
+     *                            that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
+     *                            followed by 5 mapping values
      * @return
      */
     public static LinkedHashSet<String> getMappingLegendValues(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
@@ -764,15 +762,15 @@ public class RuntimeDocUtilities {
      * Add the dynamic elements of the chart xml to the supplied document, which is used to transform template jrxml
      * files. The groupToMappingValue is used for creating the legend jrxml elements.
      *
-     * @param doc the document to update
+     * @param doc                 the document to update
      * @param groupToMappingValue represents the distinct mapping sets for the keys in the query. The key is a shorted
-     * version of the string it maps to. This information is displayed in a legend element created by this function
-     * @param frameWidth the frame width in the jrxml file which will contain the chart
-     * @param minPageHeight the minimum page height of the report which will be created using the updated document
-     * passed into this function as it's transform parameter
+     *                            version of the string it maps to. This information is displayed in a legend element created by this function
+     * @param frameWidth          the frame width in the jrxml file which will contain the chart
+     * @param minPageHeight       the minimum page height of the report which will be created using the updated document
+     *                            passed into this function as it's transform parameter
      */
     private static void addChartXMLToDocument(Document doc, LinkedHashMap<String, String> groupToMappingValue,
-                                             int frameWidth, int minPageHeight) {
+                                              int frameWidth, int minPageHeight) {
         //Create all the text fields for the chart legend
         Node rootNode = doc.getFirstChild();
         Element chartElement = doc.createElement(CHART_ELEMENT);
@@ -790,7 +788,7 @@ public class RuntimeDocUtilities {
         for (Map.Entry<String, String> me : groupToMappingValue.entrySet()) {
 
             addTextFieldToElement(doc, chartLegend, x, y, frameWidth, height, "chartLegendKey" + (index + 1), "java.lang.String",
-                    "<b>" + me.getKey() + ":</b> " + me.getValue(), "chartLegendTextField", false);
+                    "<b>" + me.getKey() + ":</b> " + Utilities.escapeHtmlCharacters(me.getValue()), "chartLegendTextField", false, true);
 
             y += height + vSpace;
             index++;
@@ -849,8 +847,8 @@ public class RuntimeDocUtilities {
      * value is on it's own row, all values are separated by a line break. The returned string is used as column
      * headings but it's used in the report helper as a key into a map of distinct mapping value set to a variable
      * name. See the report scriptlet to understand this fully.
-     * 
-     * @param authUser string representation of the AUTH_USER
+     *
+     * @param authUser      string representation of the AUTH_USER
      * @param mappingValues String array of all mapping key values found at runtime.
      * @return a string representation of all parameters
      */
@@ -868,7 +866,8 @@ public class RuntimeDocUtilities {
                 if (!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append("\\n");
             }
             first = false;
-            if (!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append(TextUtils.truncStringMiddleExact(s, USAGE_HEADING_VALUE_MAX_SIZE));
+            if (!s.equals(Utilities.SQL_PLACE_HOLDER))
+                sb.append(TextUtils.truncStringMiddleExact(s, USAGE_HEADING_VALUE_MAX_SIZE));
         }
 
         return sb.toString();
@@ -894,22 +893,21 @@ public class RuntimeDocUtilities {
      * &lt /textField &gt
      * </pre>
      *
-     * @param doc the document which is used to create new elements from
-     * @param frameElement the element from the doc to update
-     * @param x x value
-     * @param y y value
-     * @param width width
-     * @param height height
-     * @param key the text field key value
+     * @param doc                      the document which is used to create new elements from
+     * @param frameElement             the element from the doc to update
+     * @param x                        x value
+     * @param y                        y value
+     * @param width                    width
+     * @param height                   height
+     * @param key                      the text field key value
      * @param textFieldExpressionClass what type of data the text field will hold - String, Integer etc...
-     * @param markedUpCData if data is to be included, then it's put inside a CDATA section to avoid any illegal chars
-     * @param style the style to apply to the text field
-     * @param opaque, if true the text field is not see through, if false the style of the element behind it will come
-     * through
+     * @param markedUpCData            if data is to be included, then it's put inside a CDATA section to avoid any illegal chars
+     * @param style                    the style to apply to the text field
+     * @param isHtmlFormatted
      */
     private static void addTextFieldToElement(Document doc, Element frameElement, int x, int y, int width, int height,
-                                             String key, String textFieldExpressionClass, String markedUpCData,
-                                             String style, boolean opaque) {
+                                              String key, String textFieldExpressionClass, String markedUpCData,
+                                              String style, boolean opaque, boolean isHtmlFormatted) {
         Element textField = doc.createElement("textField");
         textField.setAttribute("isStretchWithOverflow", "true");
         textField.setAttribute("isBlankWhenNull", "false");
@@ -932,6 +930,8 @@ public class RuntimeDocUtilities {
         textField.appendChild(boxElement);
 
         Element textElement = doc.createElement("textElement");
+        if (isHtmlFormatted) textElement.setAttribute("markup", "html");
+
         Element fontElement = doc.createElement("font");
         textElement.appendChild(fontElement);
         textField.appendChild(textElement);
@@ -968,20 +968,20 @@ public class RuntimeDocUtilities {
      * <text><![CDATA[NA]]></text>
      * </staticText>
      *
-     * @param doc the document which is used to create new elements from
-     * @param frameElement the element from the doc to update
-     * @param x x value
-     * @param y y value
-     * @param width width
-     * @param height height
-     * @param key the text field key value
+     * @param doc           the document which is used to create new elements from
+     * @param frameElement  the element from the doc to update
+     * @param x             x value
+     * @param y             y value
+     * @param width         width
+     * @param height        height
+     * @param key           the text field key value
      * @param markedUpCData if data is to be included, then it's put inside a CDATA section to avoid any illegal chars
-     * @param style the style to apply to the text field
-     * @param opaque if true the text field is not see through, if false the style of the element behind it will come
-     * through
+     * @param style         the style to apply to the text field
+     * @param opaque        if true the text field is not see through, if false the style of the element behind it will come
+     *                      through
      */
     private static void addStaticTextToElement(Document doc, Element frameElement, int x, int y, int width, int height,
-                                              String key, String markedUpCData, String style, boolean opaque) {
+                                               String key, String markedUpCData, String style, boolean opaque) {
         Element staticText = doc.createElement("staticText");
 
         Element reportElement = doc.createElement("reportElement");
@@ -1020,20 +1020,20 @@ public class RuntimeDocUtilities {
      * $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
      * </variable>
      *
-     * @param doc the document which is used to create new elements from
-     * @param variables the element from the doc to update
-     * @param varName the variable name
-     * @param varClass the java type the variable is
-     * @param resetType when the variable gets reset
-     * @param resetGroup if the resetType is 'Group', then which group resets the variable
-     * @param calc what calculation the variable performs
+     * @param doc          the document which is used to create new elements from
+     * @param variables    the element from the doc to update
+     * @param varName      the variable name
+     * @param varClass     the java type the variable is
+     * @param resetType    when the variable gets reset
+     * @param resetGroup   if the resetType is 'Group', then which group resets the variable
+     * @param calc         what calculation the variable performs
      * @param functionName the function name within the report scriptlet which the variable will call
-     * @param columnName parameter to the function which will be called at runtime when this variable is being
-     * evaluated. The column name is used within the report scriptlet to look up the correct value for this variable
+     * @param columnName   parameter to the function which will be called at runtime when this variable is being
+     *                     evaluated. The column name is used within the report scriptlet to look up the correct value for this variable
      */
     private static void addVariableToElement(Document doc, Element variables, String varName, String varClass,
-                                            String resetType, String resetGroup, String calc, String functionName,
-                                            String columnName) {
+                                             String resetType, String resetGroup, String calc, String functionName,
+                                             String columnName) {
         Element newVariable = doc.createElement(Utilities.VARIABLE);
         newVariable.setAttribute("name", varName);
         newVariable.setAttribute("class", varClass);
@@ -1057,16 +1057,16 @@ public class RuntimeDocUtilities {
      * Add an element to the supplied Element variables
      * <variable name="COLUMN_SERVICE_1" class="java.lang.Long" resetType="Group" resetGroup="SERVICE" calculation="Sum">
      *
-     * @param doc the document which is used to create new elements from
-     * @param variables the element to add the variable to
-     * @param varName variable name
-     * @param varClass variable java class type
-     * @param resetType when the variable gets reset
+     * @param doc        the document which is used to create new elements from
+     * @param variables  the element to add the variable to
+     * @param varName    variable name
+     * @param varClass   variable java class type
+     * @param resetType  when the variable gets reset
      * @param resetGroup if the resetType is 'Group', then which group resets the variable
-     * @param calc what calculation the variable performs
+     * @param calc       what calculation the variable performs
      */
     private static void addVariableToElement(Document doc, Element variables, String varName, String varClass,
-                                            String resetType, String resetGroup, String calc) {
+                                             String resetType, String resetGroup, String calc) {
         Element newVariable = doc.createElement(Utilities.VARIABLE);
         newVariable.setAttribute("name", varName);
         newVariable.setAttribute("class", varClass);
@@ -1081,15 +1081,15 @@ public class RuntimeDocUtilities {
      * Add a sub report return variable to the jrxml
      * <returnValue subreportVariable="COLUMN_1" toVariable="COLUMN_SERVICE_1" calculation="Sum"/>
      *
-     * @param doc the document which is used to create new elements from
-     * @param subReport the element to add the new element to
+     * @param doc               the document which is used to create new elements from
+     * @param subReport         the element to add the new element to
      * @param subreportVariable the sub report variable name
-     * @param toVariable the variabel name of the report this element will belong to, into which the sub report value
-     * will be placed
-     * @param calc what calculation the variable performs
+     * @param toVariable        the variabel name of the report this element will belong to, into which the sub report value
+     *                          will be placed
+     * @param calc              what calculation the variable performs
      */
     private static void addSubReportReturnVariable(Document doc, Element subReport, String subreportVariable,
-                                                  String toVariable, String calc) {
+                                                   String toVariable, String calc) {
         Element newVariable = doc.createElement(Utilities.RETURN_VALUE);
         newVariable.setAttribute("subreportVariable", subreportVariable);
         newVariable.setAttribute("toVariable", toVariable);
@@ -1108,18 +1108,17 @@ public class RuntimeDocUtilities {
      * The linked hash map allows the report scriptlet to find the column name for a distinct set of mapping values.
      *
      * @param distinctMappingSets represents the runtime report meta data, which are the distinct set of mapping values
-     * that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
-     * followed by 5 mapping values
-
+     *                            that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
+     *                            followed by 5 mapping values
      * @return a linked hash map of a string the report can make itself at runtime a virtual column name. This way
-     * the usage report helper can known when a row of data is for a particular column
+     *         the usage report helper can known when a row of data is for a particular column
      */
     public static LinkedHashMap<String, String> getKeyToColumnValues(LinkedHashSet<List<String>> distinctMappingSets) {
         LinkedHashSet<String> mappingValues = getMappingValues(distinctMappingSets);
         LinkedHashMap<String, String> keyToColumnName = new LinkedHashMap<String, String>();
         int count = 1;
         for (String s : mappingValues) {
-            keyToColumnName.put(s, "COLUMN_"+count);
+            keyToColumnName.put(s, "COLUMN_" + count);
             count++;
         }
         return keyToColumnName;

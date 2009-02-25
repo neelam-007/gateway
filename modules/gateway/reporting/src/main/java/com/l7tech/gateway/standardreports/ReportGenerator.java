@@ -605,7 +605,7 @@ public class ReportGenerator {
             while (rs.next()) {
                 String serviceName = rs.getString(Utilities.SERVICE_NAME);
                 String routingUri = rs.getString(Utilities.ROUTING_URI);
-                String service = Utilities.getServiceDisplayStringNotTruncated(serviceName, routingUri);
+                String service = Utilities.getServiceDisplayStringNotTruncatedNoEscape(serviceName, routingUri);
                 set.add(service);
             }
         } catch (SQLException ex) {
