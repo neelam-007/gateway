@@ -16,6 +16,11 @@ import com.l7tech.server.ems.enterprise.JSONConstants;
 public class EntityMonitoringPropertyValues implements JSON.Convertible {
 
     private String entityGuid;
+    /**
+     * The structure of propsMap:
+     * Key   -  String: the property name, e.g., auditSize, logSize, ntpStatus, etc.
+     * Value -  Object: the corresponding PropertyValues object containing four attributes, monitored, value, unit, and alert.
+     */
     private Map<String, Object> propsMap = new HashMap<String, Object>();
 
     @Deprecated // For serialization and persistence only

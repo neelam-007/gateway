@@ -19,8 +19,8 @@ public class EsmMessages extends Messages {
     public static final M CHANGE_ENTITY_PROPERTY_SETUP_MESSAGE     = m(100006, Level.INFO, "Change entity property setup: {0} is changed to {1} {2}");
     public static final M CHANGE_ENTITY_NOTIFICATION_SETUP_MESSAGE = m(100007, Level.INFO, "Change entity notification setup: the notification rule {0} is {1}");
 
-    public static final M AUDIT_ALERT_TRIGGERED_MESSAGE   = m(100008, Level.WARNING, "Status from normal to alert message: {0} entered trigger condition.");
-    public static final M AUDIT_ALERT_NOT_APPLIED_MESSAGE = m(100009, Level.INFO, "Status from alert to normal message: {0} cleared trigger condition.");
+    public static final M AUDIT_NORMAL_TO_ALERT_MESSAGE = m(100008, Level.WARNING, "Status from normal to alert: {0} entered trigger condition");
+    public static final M AUDIT_ALERT_TO_NORMAL_MESSAGE = m(100009, Level.INFO, "Status from alert to normal: {0} cleared trigger condition");
 
     // Highest ID reserved for EsmMessages = 99999
 }
