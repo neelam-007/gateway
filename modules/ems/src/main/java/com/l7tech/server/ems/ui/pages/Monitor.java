@@ -631,20 +631,30 @@ public class Monitor extends EsmStandardWebPage {
                 String entityGuid = (String) entityProps.get(JSONConstants.ID);
                 String entityType = (String) entityProps.get(JSONConstants.TYPE);
                 String propertyType = (String) jsonFormatMap.get(JSONConstants.ENTITY_PROPS_SETUP.PROP_TYPE);
+                List<AuditDetail> auditDetailList = new ArrayList<AuditDetail>();
                 try {
+                    // Note: propertySetup is unlikely to be null, since the manager has saved the setup settings when the browser requests the setup setting. 
                     EntityMonitoringPropertySetup propertySetup = entityMonitoringPropertySetupManager.findByEntityGuidAndPropertyType(entityGuid, propertyType);
 
                     // Update monitoring enable status
                     boolean monitoringEnabled = (Boolean)jsonFormatMap.get(JSONConstants.ENTITY_PROPS_SETUP.MONITORING_ENABLED);
-                    propertySetup.setMonitoringEnabled(monitoringEnabled);
+                    if (propertySetup.isMonitoringEnabled() != monitoringEnabled) {
+                        propertySetup.setMonitoringEnabled(monitoringEnabled);
+                        auditDetailList.add(getEntityPropertySetupAuditDetail(JSONConstants.ENTITY_PROPS_SETUP.MONITORING_ENABLED, monitoringEnabled, null));
+                    }
 
                     // Update trigger enable status.  Also update trigger value and notification enable status if appliable.
                     if (monitoringEnabled) {
                         boolean triggerEnabled = (Boolean)jsonFormatMap.get(JSONConstants.ENTITY_PROPS_SETUP.TRIGGER_ENABLED);
-                        propertySetup.setTriggerEnabled(triggerEnabled);
+                        if (propertySetup.isTriggerEnabled() != triggerEnabled) {
+                            propertySetup.setTriggerEnabled(triggerEnabled);
+                            auditDetailList.add(getEntityPropertySetupAuditDetail(JSONConstants.ENTITY_PROPS_SETUP.TRIGGER_ENABLED, monitoringEnabled, null));
+                        }
+
                         if (triggerEnabled) {
                             Long triggerValue = (Long)jsonFormatMap.get(JSONConstants.ENTITY_PROPS_SETUP.TRIGGER_VALUE);
                             if (triggerValue != null) {
+                                Long guiValue = triggerValue;
                                 if (propertyType.equals(JSONConstants.SsgNodeMonitoringProperty.LOG_SIZE)) {
                                     // Convert MB to KB, since the database stores the log size in KB.
                                     triggerValue = convertMbOrGbToKb(true, triggerValue);
@@ -655,18 +665,34 @@ public class Monitor extends EsmStandardWebPage {
                                     // Convert MB to KB, since the database stores the swap usage in KB.
                                     triggerValue = convertMbOrGbToKb(true, triggerValue);
                                 }
+
+                                if (! propertySetup.getTriggerValue().equals(triggerValue)) {
+                                    String unit = (String)jsonFormatMap.get(JSONConstants.ENTITY_PROPS_SETUP.UNIT);
+                                    auditDetailList.add(getEntityPropertySetupAuditDetail(JSONConstants.ENTITY_PROPS_SETUP.TRIGGER_VALUE, guiValue, unit));
+                                }
                             }
                             propertySetup.setTriggerValue(triggerValue);
-                            propertySetup.setNotificationEnabled((Boolean)jsonFormatMap.get(JSONConstants.ENTITY_PROPS_SETUP.NOTIFICATION_ENABLED));
+
+                            boolean notificationEnabled = (Boolean)jsonFormatMap.get(JSONConstants.ENTITY_PROPS_SETUP.NOTIFICATION_ENABLED);
+                            if (propertySetup.isNotificationEnabled() != notificationEnabled) {
+                                propertySetup.setNotificationEnabled(notificationEnabled);
+                                auditDetailList.add(getEntityPropertySetupAuditDetail(JSONConstants.ENTITY_PROPS_SETUP.NOTIFICATION_ENABLED, notificationEnabled, null));
+                            }
                         }
                     }
 
                     // Find and update notification rules
                     NamedEntity entity;
+                    boolean isSsgNode;
+                    String ipAddress;
                     if (entityType.equals(JSONConstants.EntityType.SSG_CLUSTER)) {
                         entity = ssgClusterManager.findByGuid(entityGuid);
+                        isSsgNode = false;
+                        ipAddress = ((SsgCluster)entity).getIpAddress();
                     } else if (entityType.equals(JSONConstants.EntityType.SSG_NODE)) {
                         entity = ssgNodeManager.findByGuid(entityGuid);
+                        isSsgNode = true;
+                        ipAddress = ((SsgNode)entity).getIpAddress();
                     } else {
                         throw new InvalidMonitoringSetupSettingException("Entity type ('" + entityType + "') is invalid.");
                     }
@@ -677,24 +703,33 @@ public class Monitor extends EsmStandardWebPage {
                         ssgClusterNotificationSetup = new SsgClusterNotificationSetup(ssgClusterGuid);
                     }
                     Object[] notificationRuleMaps = (Object[]) jsonFormatMap.get(JSONConstants.ENTITY_PROPS_SETUP.NOTIFICATION_RULES);
-                    Set<SystemMonitoringNotificationRule> systemNotificationRules = new HashSet<SystemMonitoringNotificationRule>();
+                    Set<SystemMonitoringNotificationRule> newNotificationSet = new HashSet<SystemMonitoringNotificationRule>();
                     for (Object ruleMap: notificationRuleMaps) {
                         String guid = (String) ((Map<String, Object>)ruleMap).get(JSONConstants.ID);
-                        systemNotificationRules.add(systemMonitoringNotificationRulesManager.findByGuid(guid));
+                        newNotificationSet.add(systemMonitoringNotificationRulesManager.findByGuid(guid));
                     }
-                    ssgClusterNotificationSetup.setSystemNotificationRules(systemNotificationRules);
-                    ssgClusterNotificationSetupManager.update(ssgClusterNotificationSetup);
-                    propertySetup.setSsgClusterNotificationSetup(ssgClusterNotificationSetup);
+
+                    Set<SystemMonitoringNotificationRule> previousNotificationSet = propertySetup.getSsgClusterNotificationSetup().getSystemNotificationRules();
+                    if (! previousNotificationSet.equals(newNotificationSet)) {
+                        ssgClusterNotificationSetup.setSystemNotificationRules(newNotificationSet);
+                        ssgClusterNotificationSetupManager.update(ssgClusterNotificationSetup);
+                        propertySetup.setSsgClusterNotificationSetup(ssgClusterNotificationSetup);
+
+                        setEntityNotificationSetupAuditDetails(previousNotificationSet, newNotificationSet, auditDetailList);
+                    }
 
                     // Update the entity monitoring property setup settings
                     entityMonitoringPropertySetupManager.update(propertySetup);
 
+                    if (!auditDetailList.isEmpty()) {
+                        auditEntityPropertySetupChange(isSsgNode, entityGuid, ipAddress, auditDetailList);
+                    }
+
                     // Send null if saving is successful.
                     returnValue = null;
                 } catch (Exception e) {
-                    e.printStackTrace();
                     String errmsg = "Cannot save the entity property setup (Entity_GUID = '" + entityGuid + "' and Entity_TYPE = '" + entityType + "').";
-                    logger.log(Level.WARNING, errmsg);
+                    logger.log(Level.WARNING, errmsg, e);
                     returnValue = new JSONException(new Exception(errmsg, e));
                 }
             } else {
@@ -1020,20 +1055,17 @@ public class Monitor extends EsmStandardWebPage {
      * @param newMap: the new cluster-property-format map of setup settings.
      */
     private void auditSystemMonitoringSetupChange(Map<String, Object> oldMap, Map<String, Object> newMap) {
-        String id = "";
-        String ipAddress = "";
-
         AuditRecord auditRecord = new SystemAuditRecord(
             Level.INFO,
-            id,
+            "",
             Component.ENTERPRISE_MANAGER,
-            "Change in system monitoring setup",
+            "Change in the system monitoring setup",
             true,
             0,
             null,
             null,
             "Monitoring Setup Change",
-            ipAddress
+            ""
         );
 
         for (String key: newMap.keySet()) {
@@ -1055,11 +1087,14 @@ public class Monitor extends EsmStandardWebPage {
                     newVal = convertKbToMbOrGb(true, (Long)newVal);
                 }
 
-                String unit = serverConfig.getProperty("monitoring." + entityType + "." + propertyName + ".unit");
-                if (newVal instanceof Boolean) {
-                    unit = "";
-                } else if (unit == null) {
+                String unit;
+                if (key.startsWith("interval.")) {
                     unit = "sec";
+                } else {
+                    unit = serverConfig.getProperty("monitoring." + entityType + "." + propertyName + ".unit");
+                    if (unit == null) {
+                        unit = "";
+                    }
                 }
 
                 auditContext.addDetail(new AuditDetail(EsmMessages.CHANGE_SYSTEM_MONITORING_SETUP_MESSAGE, new String[] {key, newVal.toString(), unit}), this);
@@ -1070,25 +1105,87 @@ public class Monitor extends EsmStandardWebPage {
         auditContext.flush();
     }
 
+    /**
+     * Audit the change in a notification rule such as create, update, or delete.
+     * @param name: the name of the notification rule
+     * @param changingAction: the action applied on the notification, such as create, update, or delete.
+     */
     private void auditSystemNotificationChange(String name, String changingAction) {
-        String id = "";
-        String ipAddress = "";
-
         AuditRecord auditRecord = new SystemAuditRecord(
             Level.INFO,
-            id,
+            "",
             Component.ENTERPRISE_MANAGER,
-            "Change in defined notification rule",
+            "Change in a defined notification rule (create, update, or delete)",
             true,
             0,
             null,
             null,
             "Notification Rule Change",
-            ipAddress
+            ""
         );
 
         auditContext.addDetail(new AuditDetail(EsmMessages.CHANGE_NOTIFICATION_SETUP_MESSAGE, new String[] {name, changingAction}), this);
         auditContext.setCurrentRecord(auditRecord);
         auditContext.flush();
+    }
+
+    /**
+     * Audit the changes in entity property setup.
+     * @param isSsgNode: a flag indicating if the entity is a SSG node or a SSG cluster.
+     * @param entityGuid: the GUID of the entity
+     * @param ipAddress: the IP Address associated with the entity
+     * @param auditDetailList: the list of AuditDetail objects for entity property setup changes.
+     */
+    private void auditEntityPropertySetupChange(boolean isSsgNode, String entityGuid, String ipAddress, List<AuditDetail> auditDetailList) {
+        AuditRecord auditRecord = new SystemAuditRecord(
+            Level.INFO,
+            isSsgNode? entityGuid : "",
+            Component.ENTERPRISE_MANAGER,
+            "Change in the monitoring property settings of an individual " + (isSsgNode? "SSG node" : "SSG cluster"),
+            true,
+            0,
+            null,
+            null,
+            "Entity Property Setup Change",
+            isSsgNode? ipAddress : ""
+        );
+        for (AuditDetail auditDetail: auditDetailList) {
+            auditContext.addDetail(auditDetail, this);
+        }
+        auditContext.setCurrentRecord(auditRecord);
+        auditContext.flush();
+    }
+
+    /**
+     * Create an AuditDetail if there is change in entity property setup.
+     * @param name: the property name
+     * @param value: the value of the property setup
+     * @param unit: the unit of the property
+     * @return an AuditDetail object.
+     */
+    private AuditDetail getEntityPropertySetupAuditDetail(String name, Object value, String  unit) {
+        if (unit == null) unit = "";
+        
+        return new AuditDetail(EsmMessages.CHANGE_ENTITY_PROPERTY_SETUP_MESSAGE, new String[] {name, value.toString(), unit});
+    }
+
+    /**
+     * Add all AuditDetail objects into the audit detail list if there are changes in entity notification rule setup.
+     * @param previousSet: the pervious notification rule set before any setup changes made.
+     * @param newSet: the new notification rule set after any setup changes made.
+     * @param auditDetailList: the list to store the added AuditDetail objects
+     */
+    private void setEntityNotificationSetupAuditDetails(Set<SystemMonitoringNotificationRule> previousSet, Set<SystemMonitoringNotificationRule> newSet, List<AuditDetail> auditDetailList) {
+        Set<SystemMonitoringNotificationRule> tempNewSet = new HashSet(newSet);
+        tempNewSet.removeAll(previousSet);
+        for (SystemMonitoringNotificationRule rule: tempNewSet) {
+            auditDetailList.add(new AuditDetail(EsmMessages.CHANGE_ENTITY_NOTIFICATION_SETUP_MESSAGE, new String[] {rule.getName(), "selected"}));
+        }
+
+        Set<SystemMonitoringNotificationRule> tempPrevSet = new HashSet(previousSet);
+        tempPrevSet.removeAll(newSet);
+        for (SystemMonitoringNotificationRule rule: tempPrevSet) {
+            auditDetailList.add(new AuditDetail(EsmMessages.CHANGE_ENTITY_NOTIFICATION_SETUP_MESSAGE, new String[] {rule.getName(), "unselected"}));
+        }
     }
 }

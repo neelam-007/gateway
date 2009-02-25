@@ -705,6 +705,7 @@
                 if (settings.triggerEnabled) {
                     if (monDlg_triggerValueTextBoxes[settings.propertyType] != null) {
                         settings.triggerValue = parseFloat(monDlg_triggerValueTextBoxes[settings.propertyType].value);
+                        settings.unit = monDlg_triggerValueUnitLabels[monDlg_propertyType.value].innerHTML;
                     }
                     settings.notificationEnabled = monDlg_notificationEnabledCheckBox.checked;
                 }

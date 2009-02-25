@@ -56,4 +56,26 @@ public class SsgClusterNotificationSetup extends PersistentEntityImp {
     public void setSystemNotificationRules(Set<SystemMonitoringNotificationRule> systemNotificationRules) {
         this.systemNotificationRules = systemNotificationRules;
     }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SsgClusterNotificationSetup)) return false;
+        if (!super.equals(o)) return false;
+
+        SsgClusterNotificationSetup that = (SsgClusterNotificationSetup) o;
+
+        if (ssgClusterGuid != null ? !ssgClusterGuid.equals(that.ssgClusterGuid) : that.ssgClusterGuid != null)
+            return false;
+        if (systemNotificationRules != null ? !systemNotificationRules.equals(that.systemNotificationRules) : that.systemNotificationRules != null)
+            return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (ssgClusterGuid != null ? ssgClusterGuid.hashCode() : 0);
+        result = 31 * result + (systemNotificationRules != null ? systemNotificationRules.hashCode() : 0);
+        return result;
+    }
 }
