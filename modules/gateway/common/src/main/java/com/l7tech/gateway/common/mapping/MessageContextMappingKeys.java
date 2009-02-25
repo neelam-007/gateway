@@ -243,19 +243,19 @@ public class MessageContextMappingKeys extends PersistentEntityImp {
      */
     @SuppressWarnings({"RedundantIfStatement"})
     public boolean matches( final MessageContextMappingKeys keys ) {
-        if (mapping1_key != null ? !mapping1_key.equals(keys.mapping1_key) : keys.mapping1_key != null) return false;
+        if (mapping1_key != null ? !mapping1_key.equalsIgnoreCase(keys.mapping1_key) : keys.mapping1_key != null) return false;
         if (mapping1_type != null ? !mapping1_type.equals(keys.mapping1_type) : keys.mapping1_type != null)
             return false;
-        if (mapping2_key != null ? !mapping2_key.equals(keys.mapping2_key) : keys.mapping2_key != null) return false;
+        if (mapping2_key != null ? !mapping2_key.equalsIgnoreCase(keys.mapping2_key) : keys.mapping2_key != null) return false;
         if (mapping2_type != null ? !mapping2_type.equals(keys.mapping2_type) : keys.mapping2_type != null)
             return false;
-        if (mapping3_key != null ? !mapping3_key.equals(keys.mapping3_key) : keys.mapping3_key != null) return false;
+        if (mapping3_key != null ? !mapping3_key.equalsIgnoreCase(keys.mapping3_key) : keys.mapping3_key != null) return false;
         if (mapping3_type != null ? !mapping3_type.equals(keys.mapping3_type) : keys.mapping3_type != null)
             return false;
-        if (mapping4_key != null ? !mapping4_key.equals(keys.mapping4_key) : keys.mapping4_key != null) return false;
+        if (mapping4_key != null ? !mapping4_key.equalsIgnoreCase(keys.mapping4_key) : keys.mapping4_key != null) return false;
         if (mapping4_type != null ? !mapping4_type.equals(keys.mapping4_type) : keys.mapping4_type != null)
             return false;
-        if (mapping5_key != null ? !mapping5_key.equals(keys.mapping5_key) : keys.mapping5_key != null) return false;
+        if (mapping5_key != null ? !mapping5_key.equalsIgnoreCase(keys.mapping5_key) : keys.mapping5_key != null) return false;
         if (mapping5_type != null ? !mapping5_type.equals(keys.mapping5_type) : keys.mapping5_type != null)
             return false;
 
