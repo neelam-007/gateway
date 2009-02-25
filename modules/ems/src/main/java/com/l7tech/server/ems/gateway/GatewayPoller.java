@@ -50,6 +50,7 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
             public void run() {
                 try {
                     AuditContextUtils.doAsSystem(new Runnable() {
+                        @Override
                         public void run() {
                             pollGateways();
                         }
@@ -204,12 +205,7 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
 
                                 // Periodically update SSG Nodes.
                                 Set<GatewayApi.GatewayInfo> currInfoSet = cluster.obtainGatewayInfoSet();
-                                if (newInfoSet == null) {
-                                    cluster.getNodes().clear();
-                                    cluster.setTrustStatus(false);
-                                    refreshClusterStatus(cluster);
-                                    ssgClusterManager.update(cluster);
-                                } else if ( !newInfoSet.equals(currInfoSet) ) {
+                                if ( newInfoSet != null && !newInfoSet.equals(currInfoSet) ) {
                                     Set<SsgNode> nodes = new HashSet<SsgNode>();
 
                                     for (GatewayApi.GatewayInfo newInfo: newInfoSet) {

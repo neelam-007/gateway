@@ -54,7 +54,9 @@ public class ProcessController {
     private static final int NODE_CRASH_DETECTION_TIME = 15000;
     /** The amount of time the PC should wait after asking a node to shutdown before killing it */
     static final int DEFAULT_STOP_TIMEOUT = 10000;
-    /** The amount of time the PC should wait, during shutdown, after asking a node to shutdown before killing it */ 
+    /** The amount of time the PC should wait between checks to see if someone else started the node */
+    static final int DEFAULT_STOPPED_TIMEOUT = 30000;
+    /** The amount of time the PC should wait, during shutdown, after asking a node to shutdown before killing it */
     private static final int NODE_SHUTDOWN_TIMEOUT = 5000;
 
     private final Map<String, NodeState> nodeStates = new ConcurrentHashMap<String, NodeState>();
@@ -261,8 +263,17 @@ public class ProcessController {
     }
 
     private class StoppedNodeState extends NodeState {
-        public StoppedNodeState(PCNodeConfig node) {
+        private final NodeApi api;
+        private final int timeout;
+
+        public StoppedNodeState(PCNodeConfig node, NodeApi api, int timeout) {
             super(node, STOPPED);
+            this.api = api;
+            this.timeout = timeout;
+        }
+
+        public NodeApi getApi() {
+            return api;
         }
     }
 
@@ -304,7 +315,7 @@ public class ProcessController {
                     handleStoppingState(node, (StoppingNodeState)state);
                     break;
                 case STOPPED:
-                    // TODO Nothing to see here, folks.
+                    handleStoppedState(node, (StoppedNodeState)state);
                     break;
             }
 
@@ -328,12 +339,12 @@ public class ProcessController {
             try {
                 final int status = state.process.exitValue();
                 logger.info(node.getName() + " exited with status " + status);
-                nodeStates.put(node.getName(), new StoppedNodeState(node));
+                nodeStates.put(node.getName(), new StoppedNodeState(node, state.api, DEFAULT_STOPPED_TIMEOUT));
             } catch (IllegalThreadStateException e) {
                 if (timedOut) {
                     logger.warning(node.getName() + " has taken " + howLong + "ms to shutdown; killing");
                     state.process.destroy();
-                    nodeStates.put(node.getName(), new StoppedNodeState(node));
+                    nodeStates.put(node.getName(), new StoppedNodeState(node, state.api, DEFAULT_STOPPED_TIMEOUT));
                 } else {
                     logger.fine(node.getName() + " still hasn't stopped after " + howLong + "ms; will wait up to " + state.timeout);
                 }
@@ -342,15 +353,37 @@ public class ProcessController {
             try {
                 state.api.ping();
             } catch (Exception e) {
-                nodeStates.put(node.getName(), new StoppedNodeState(node));
-                if (ExceptionUtils.causedBy(e, ConnectException.class))
+                if (ExceptionUtils.causedBy(e, ConnectException.class)) {
+                    nodeStates.put(node.getName(), new StoppedNodeState(node, state.api, DEFAULT_STOPPED_TIMEOUT));
                     logger.info(node.getName() + " stopped.");
-                else
-                    logger.log(Level.WARNING, node.getName() + " is probably stopped--TODO detect other kinds of clean shutdown", e);
+                } else {
+                    logger.log(Level.FINE, "Error when checking node "+node.getName()+" status during shutdown '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+                }
             }
         } else if (timedOut) {
             osKill(node);
-            nodeStates.put(node.getName(), new StoppedNodeState(node));
+            nodeStates.put(node.getName(), new StoppedNodeState(node, state.api, DEFAULT_STOPPED_TIMEOUT));
+        }
+    }
+
+    private void handleStoppedState(PCNodeConfig node, StoppedNodeState state) {
+        final long howLong = System.currentTimeMillis() - state.sinceWhen;
+        final boolean timedOut = (howLong > state.timeout);
+
+        if ( timedOut ) {
+            if (state.api != null) {
+                try {
+                    state.api.ping();
+                    logger.info(node.getName() + " start detected.");
+                    nodeStates.put(node.getName(), new RunningNodeState(node, null, state.api));
+                } catch (Exception e) {
+                    if ( ExceptionUtils.causedBy(e, ConnectException.class) ) {
+                        logger.fine("Node " + node.getName() + " is not running.");
+                    } else {
+                        logger.log(Level.FINE, "Error when checking node "+node.getName()+" status when stopped '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+                    }
+                }
+            }
         }
     }
 
