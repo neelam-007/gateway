@@ -30,14 +30,18 @@ class RaidStatusSampler extends HostPropertySampler<RaidStatus> {
             return RaidStatus.NOT_RAID;
 
         String mdstat = readFile(PATH_MDSTAT);
-        
-        if (!ANY_ARRAYS_PRESENT_PATTERN.matcher(mdstat).matches())
+
+        return parseOutput(mdstat);
+    }
+
+    static RaidStatus parseOutput(String mdstat) {
+        if (!ANY_ARRAYS_PRESENT_PATTERN.matcher(mdstat).find())
             return RaidStatus.NOT_RAID;
 
-        if (ANY_DRIVE_NOT_UP_AND_NOT_RECOVERING_PATTERN.matcher(mdstat).matches())
+        if (ANY_DRIVE_NOT_UP_AND_NOT_RECOVERING_PATTERN.matcher(mdstat).find())
             return RaidStatus.BAD;
 
-        if (ANY_DRIVE_NOT_UP_BUT_RECOVERING_PATTERN.matcher(mdstat).matches())
+        if (ANY_DRIVE_NOT_UP_BUT_RECOVERING_PATTERN.matcher(mdstat).find())
             return RaidStatus.REBUILDING;
 
         return RaidStatus.OK;
