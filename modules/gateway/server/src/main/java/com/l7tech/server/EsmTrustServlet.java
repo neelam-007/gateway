@@ -162,18 +162,23 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
             return;
         }
 
-        // Check license
-        if ( !licenseManager.isFeatureEnabled( GatewayFeatureSets.SERVICE_REMOTE_MANAGEMENT ) ) {
-            sendError( hresp, "Not licensed. Please install a Gateway license that enables this feature." );
-            return;
-        }
-
         ContentTypeHeader ctype = ContentTypeHeader.parseValue(hreq.getContentType());
         Message req = new Message();
         req.initialize(new ByteArrayStashManager(), ctype, hreq.getInputStream());
         req.attachHttpRequestKnob(new HttpServletRequestKnob(hreq));
         //noinspection unchecked
         FormParams param = new FormParams(req.getHttpRequestKnob().getParameterMap());
+
+        // Check license
+        if ( !licenseManager.isFeatureEnabled( GatewayFeatureSets.SERVICE_REMOTE_MANAGEMENT ) ) {
+            String returnurl = param.get("returnurl");
+            String returnString = "";
+            URL url;
+            if (returnurl != null && ((url = parseUrl(returnurl)) != null))
+                returnString = "\n\n<p><a href=\"" + url.toExternalForm() + "\">Return to the ESM</a>\n";
+            sendError( hresp, "Not licensed. Please install a Gateway license that enables this feature." + returnString );
+            return;
+        }
 
         if (isInitialRequest(param)) {
             // kick out any untrusted params
