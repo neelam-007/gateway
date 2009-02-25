@@ -55,8 +55,8 @@ public class PolicyVersioningServiceManager implements ServiceManager {
     }
 
     @Override
-    public Collection<ServiceHeader> findHeaders(int offset, int windowSize, String filter) throws FindException {
-        return serviceManager.findHeaders(offset, windowSize, filter);
+    public Collection<ServiceHeader> findHeaders(int offset, int windowSize, Map<String,String> filters) throws FindException {
+        return serviceManager.findHeaders(offset, windowSize, filters);
     }
 
     @Override

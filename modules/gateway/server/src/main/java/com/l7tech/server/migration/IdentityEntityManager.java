@@ -1,13 +1,7 @@
 package com.l7tech.server.migration;
 
-import com.l7tech.objectmodel.ReadOnlyEntityManager;
-import com.l7tech.objectmodel.IdentityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.EntityHeaderSet;
-import com.l7tech.objectmodel.EntityTypeRegistry;
-import com.l7tech.objectmodel.ScopedSearchableEntityManager;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.*;
+import static com.l7tech.objectmodel.SearchableEntityManager.DEFAULT_SEARCH_NAME;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.Identity;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -15,6 +9,7 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * IdentityEntityManager provides a method to search Identity entities in a more generic way.
@@ -32,13 +27,11 @@ public class IdentityEntityManager implements ReadOnlyEntityManager<Identity, Id
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public Collection<IdentityHeader> findHeadersInScope( final int offset, final int windowSize, final EntityHeader scopeEntityHeader, final String filter) throws FindException {
+    public Collection<IdentityHeader> findHeadersInScope( final int offset, final int windowSize, final EntityHeader scopeEntityHeader, final Map<String,String> filters) throws FindException {
         Collection<IdentityHeader> headers = new ArrayList<IdentityHeader>();
 
-        String searchFilter = filter;
-        if ( filter == null || filter.isEmpty() ) {
-            searchFilter = "*";
-        }
+        String searchFilter = filters != null ? filters.get(DEFAULT_SEARCH_NAME) : null;
+        if (searchFilter == null || searchFilter.isEmpty()) searchFilter = "*";
 
         for ( IdentityProvider provider : identityProviderFactory.findAllIdentityProviders() ) {
             if ( provider.getConfig().getOid() == scopeEntityHeader.getOid() ) {

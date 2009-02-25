@@ -21,7 +21,7 @@ public interface MigrationManager {
 
     public MigrationBundle exportBundle(Collection<ExternalEntityHeader> headers) throws MigrationApi.MigrationException;
 
-    public Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, String filter) throws MigrationApi.MigrationException;
+    public Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, Map<String,String> filters) throws MigrationApi.MigrationException;
 
     public Collection<MigratedItem> importBundle(MigrationBundle bundle, boolean dryRun) throws MigrationApi.MigrationException;
 }

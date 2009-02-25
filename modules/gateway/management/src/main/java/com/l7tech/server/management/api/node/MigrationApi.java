@@ -3,6 +3,7 @@ package com.l7tech.server.management.api.node;
 import com.l7tech.objectmodel.EntityHeaderSet;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.ExternalEntityHeader;
+import com.l7tech.objectmodel.JaxbMapType;
 import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.server.management.migration.bundle.MigrationBundle;
 import com.l7tech.server.management.migration.bundle.MigratedItem;
@@ -11,6 +12,7 @@ import javax.jws.WebService;
 import javax.jws.WebMethod;
 import javax.jws.WebParam;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.*;
 
 /**
@@ -36,7 +38,7 @@ public interface MigrationApi {
     @WebMethod(operationName="RetrieveMappingCandidates")
     Collection<MappingCandidate> retrieveMappingCandidates( @WebParam(name="ExternalEntityHeaders") Collection<ExternalEntityHeader> mappables,
                                                             @WebParam(name="Scope") ExternalEntityHeader scope,
-                                                            @WebParam(name="Filter") String filter ) throws MigrationException;
+                                                            @WebParam(name="Filter") @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class) Map<String,String> filters ) throws MigrationException;
 
     @WebMethod(operationName="ImportBundle")
     Collection<MigratedItem> importBundle( @WebParam(name="Bundle") MigrationBundle bundle,

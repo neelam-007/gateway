@@ -16,8 +16,6 @@ import static org.junit.Assert.*;
 import org.junit.*;
 
 import javax.xml.ws.ProtocolException;
-import javax.jws.WebMethod;
-import javax.jws.WebParam;
 import java.net.ConnectException;
 import java.util.*;
 
@@ -95,7 +93,7 @@ public class GatewayClusterClientTest {
                         return null;
                     }
 
-                    public Collection<MappingCandidate> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, String filter) throws MigrationException {
+                    public Collection<MappingCandidate> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, Map<String,String> filters) throws MigrationException {
                         return null;
                     }
 

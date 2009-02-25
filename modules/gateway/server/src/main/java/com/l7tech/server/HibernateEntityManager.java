@@ -412,7 +412,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     /**
      * Helper for implementing findHeaders in SearchableEntityProviders 
      */
-    protected EntityHeaderSet<HT> doFindHeaders( final int offset, final int windowSize, final String filter, final String... filterProperties ) {
+    protected EntityHeaderSet<HT> doFindHeaders( final int offset, final int windowSize, final Map<String,String> filters ) {
         //noinspection unchecked
         List<ET> entities = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
             @Override
@@ -421,13 +421,12 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 crit.setFirstResult(offset);
                 crit.setFetchSize(windowSize);
 
-                if ( filter != null ) {
-                    String likeCondition = filter.replace('*', '%').replace('?', '_');
+                if ( filters != null ) {
                     Criterion likeRestriction = null;
-
-                    for ( String filterProperty : filterProperties ) {
+                    for ( String filterProperty : filters.keySet() ) {
+                        String likeCondition = filters.get(filterProperty).replace('*', '%').replace('?', '_');
                         if ( likeRestriction == null ) {
-                            likeRestriction = Restrictions.like( filterProperty, likeCondition );
+                            likeRestriction = Restrictions.like( filterProperty, likeCondition);
                         } else {
                             likeRestriction = Restrictions.or( likeRestriction, Restrictions.like( filterProperty, likeCondition ));
                         }

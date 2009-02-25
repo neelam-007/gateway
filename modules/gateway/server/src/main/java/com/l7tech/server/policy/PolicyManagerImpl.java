@@ -153,8 +153,14 @@ public class PolicyManagerImpl extends FolderSupportHibernateEntityManager<Polic
     }
 
     @Override
-    public Collection<PolicyHeader> findHeaders(int offset, int windowSize, String filter) throws FindException {
-        return doFindHeaders( offset, windowSize, filter, "name" );
+    public Collection<PolicyHeader> findHeaders(int offset, int windowSize, Map<String,String> filters) throws FindException {
+        Map<String,String> policyFilters = filters;
+        if (filters.containsKey(DEFAULT_SEARCH_NAME)) {
+            policyFilters = new HashMap<String, String>(filters);
+            policyFilters.put("name", policyFilters.get(DEFAULT_SEARCH_NAME));
+            policyFilters.remove(DEFAULT_SEARCH_NAME);
+        }
+        return doFindHeaders( offset, windowSize, policyFilters );
     }
 
     @Override

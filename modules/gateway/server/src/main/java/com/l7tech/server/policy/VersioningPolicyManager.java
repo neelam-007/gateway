@@ -160,8 +160,8 @@ public class VersioningPolicyManager implements PolicyManager {
     }
 
     @Override
-    public Collection<PolicyHeader> findHeaders(int offset, int windowSize, String filter) throws FindException {
-        return policyManager.findHeaders(offset, windowSize, filter);
+    public Collection<PolicyHeader> findHeaders(int offset, int windowSize, Map<String,String> filters) throws FindException {
+        return policyManager.findHeaders(offset, windowSize, filters);
     }
 
     @Override

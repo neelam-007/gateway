@@ -3,11 +3,7 @@
  */
 package com.l7tech.server.policy;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.GuidBasedEntityManager;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.SearchableEntityManager;
-import com.l7tech.objectmodel.RoleAwareEntityManager;
+import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.FolderedEntityManager;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
@@ -19,7 +15,7 @@ import java.util.Set;
 /**
  * @author alex
  */
-public interface PolicyManager extends FolderedEntityManager<Policy, PolicyHeader>, GuidBasedEntityManager<Policy>, SearchableEntityManager<Policy, PolicyHeader>, RoleAwareEntityManager<Policy> {
+public interface PolicyManager extends FolderedEntityManager<Policy, PolicyHeader>, GuidBasedEntityManager<Policy>, PropertySearchableEntityManager<PolicyHeader>, RoleAwareEntityManager<Policy> {
 
     /**
      * Find headers for policies of the given type.

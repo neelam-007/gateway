@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * Generic CRUD access to persistent entities
@@ -36,10 +37,10 @@ public interface EntityCrud extends EntityFinder {
     EntityHeaderSet<EntityHeader> findAll(Class<? extends Entity> entityClass) throws FindException;
 
     @Secured(stereotype=MethodStereotype.FIND_HEADERS)
-    EntityHeaderSet<EntityHeader> findAll(Class<? extends Entity> entityClass, String filter, int offset, int max) throws FindException;
+    EntityHeaderSet<EntityHeader> findAll(Class<? extends Entity> entityClass, Map<String,String> filters, int offset, int max) throws FindException;
 
     @Secured(stereotype=MethodStereotype.FIND_HEADERS)
-    EntityHeaderSet<EntityHeader> findAllInScope(Class<? extends Entity> entityClass, EntityHeader header, String filter, int offset, int max) throws FindException;
+    EntityHeaderSet<EntityHeader> findAllInScope(Class<? extends Entity> entityClass, EntityHeader header, Map<String,String> filters, int offset, int max) throws FindException;
 
     @Secured(stereotype=MethodStereotype.FIND_ENTITIES)
     @Override

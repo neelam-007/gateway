@@ -19,6 +19,7 @@ import com.l7tech.identity.User;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 
 /**
  * RBAC aware delegating EntityCrud implementation
@@ -66,13 +67,13 @@ public class SecuredEntityCrud implements EntityCrud {
     }
 
     @Override
-    public EntityHeaderSet<EntityHeader> findAll(Class<? extends Entity> entityClass, String filter, int offset, int max) throws FindException {
-        return (EntityHeaderSet<EntityHeader>) securityFilter.filter(  entityCrud.findAll(entityClass, filter, offset, max), getUser(), OperationType.READ, null );
+    public EntityHeaderSet<EntityHeader> findAll(Class<? extends Entity> entityClass, Map<String,String> filters, int offset, int max) throws FindException {
+        return (EntityHeaderSet<EntityHeader>) securityFilter.filter(  entityCrud.findAll(entityClass, filters, offset, max), getUser(), OperationType.READ, null );
     }
 
     @Override
-    public EntityHeaderSet<EntityHeader> findAllInScope(Class<? extends Entity> entityClass, EntityHeader header, String filter, int offset, int max) throws FindException {
-        return (EntityHeaderSet<EntityHeader>) securityFilter.filter(  entityCrud.findAllInScope(entityClass, header, filter, offset, max), getUser(), OperationType.READ, null );
+    public EntityHeaderSet<EntityHeader> findAllInScope(Class<? extends Entity> entityClass, EntityHeader header, Map<String,String> filters, int offset, int max) throws FindException {
+        return (EntityHeaderSet<EntityHeader>) securityFilter.filter(  entityCrud.findAllInScope(entityClass, header, filters, offset, max), getUser(), OperationType.READ, null );
     }
 
     @Override

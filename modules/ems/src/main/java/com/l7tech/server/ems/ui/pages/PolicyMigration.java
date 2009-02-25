@@ -1,11 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.objectmodel.EntityHeaderSet;
-import com.l7tech.objectmodel.ExternalEntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.ValueReferenceEntityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.*;
 import com.l7tech.server.ems.migration.*;
@@ -1288,7 +1283,10 @@ public class PolicyMigration extends EsmStandardWebPage {
                     GatewayClusterClient context = gatewayClusterClientManager.getGatewayClusterClient(cluster, getUser());
                     MigrationApi api = context.getUncachedMigrationApi();
                     ExternalEntityHeader entityHeader = sourceKey.asEntityHeader();
-                    Map candidates = MigrationApi.MappingCandidate.fromCandidates(api.retrieveMappingCandidates( Collections.singletonList( entityHeader ), scope==null?null:scope.asEntityHeader(), filter ));
+                    Map candidates = MigrationApi.MappingCandidate.fromCandidates(api.retrieveMappingCandidates(
+                                Collections.singletonList( entityHeader ),
+                                scope == null ? null : scope.asEntityHeader(),
+                                new HashMap<String,String>() {{put(SearchableEntityManager.DEFAULT_SEARCH_NAME, filter);}} ));
                     if ( candidates != null && candidates.containsKey(entityHeader) ) {
                         EntityHeaderSet<ExternalEntityHeader> entitySet = (EntityHeaderSet<ExternalEntityHeader>) candidates.get(entityHeader);
                         if ( entitySet != null ) {

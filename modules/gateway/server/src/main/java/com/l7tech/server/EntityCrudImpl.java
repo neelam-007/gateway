@@ -54,12 +54,12 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     }
 
     @Override
-    public EntityHeaderSet<EntityHeader> findAll(final Class<? extends Entity> entityClass, final String filter, final int offset, final int max) throws FindException {
+    public EntityHeaderSet<EntityHeader> findAll(final Class<? extends Entity> entityClass, final Map<String,String> filters, final int offset, final int max) throws FindException {
         ReadOnlyEntityManager manager = getReadOnlyManager(entityClass);
         if ( manager != null ){
             Collection<EntityHeader> headers;
             if ( manager instanceof SearchableEntityManager ) {
-                headers = ((SearchableEntityManager)manager).findHeaders( offset, max, filter );
+                headers = ((PropertySearchableEntityManager)manager).findHeaders( offset, max, filters );
             } else {
                 headers = manager.findAllHeaders( offset, max );
             }
@@ -69,14 +69,14 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     }
 
     @Override
-    public EntityHeaderSet<EntityHeader> findAllInScope(final Class<? extends Entity> entityClass, EntityHeader scope, final String filter, final int offset, final int max) throws FindException {
+    public EntityHeaderSet<EntityHeader> findAllInScope(final Class<? extends Entity> entityClass, EntityHeader scope, final Map<String,String> filters, final int offset, final int max) throws FindException {
         ReadOnlyEntityManager manager = getReadOnlyManager(entityClass);
         if ( manager != null ){
             Collection<EntityHeader> headers;
             if ( scope != null && manager instanceof ScopedSearchableEntityManager ) {
-                headers = ((ScopedSearchableEntityManager)manager).findHeadersInScope( offset, max, scope, filter );
+                headers = ((ScopedSearchableEntityManager)manager).findHeadersInScope( offset, max, scope, filters );
             } else if ( manager instanceof SearchableEntityManager ) {
-                headers = ((SearchableEntityManager)manager).findHeaders( offset, max, filter );
+                headers = ((PropertySearchableEntityManager)manager).findHeaders( offset, max, filters );
             } else {
                 headers = manager.findAllHeaders( offset, max );
             }

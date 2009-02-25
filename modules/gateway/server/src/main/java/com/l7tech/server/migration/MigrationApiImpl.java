@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.util.ExceptionUtils;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -71,9 +72,9 @@ public class MigrationApiImpl implements MigrationApi {
     }
 
     @Override
-    public Collection<MappingCandidate> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, String filter) throws MigrationException {
+    public Collection<MappingCandidate> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, final Map<String,String> filters) throws MigrationException {
         try {
-            return MigrationApi.MappingCandidate.asCandidates(manager.retrieveMappingCandidates(mappables, scope, filter));
+            return MigrationApi.MappingCandidate.asCandidates(manager.retrieveMappingCandidates(mappables, scope, filters));
         } catch ( RuntimeException re ) {
             logger.log( Level.WARNING, "Unexpected error in Migration API.", re );
             throw re;

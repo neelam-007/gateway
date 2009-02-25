@@ -119,7 +119,7 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     @Override
-    public Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, String filter) throws MigrationApi.MigrationException {
+    public Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, final Map<String,String> filters) throws MigrationApi.MigrationException {
         logger.log(Level.FINEST, "Retrieving mapping candidates for {0}.", mappables);
         Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> result = new HashMap<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>>();
 
@@ -130,13 +130,13 @@ public class MigrationManagerImpl implements MigrationManager {
                     if (header instanceof ValueReferenceEntityHeader) {
                         // special handling for value reference headers
                         MigrationMetadata metadata = findDependencies(EntityHeaderUtils.toExternal(
-                            entityCrud.findAll(EntityTypeRegistry.getEntityClass(((ValueReferenceEntityHeader)header).getOwnerType()), filter, 0, 50)));
+                            entityCrud.findAll(EntityTypeRegistry.getEntityClass(((ValueReferenceEntityHeader)header).getOwnerType()), filters, 0, 50)));
                         for (ExternalEntityHeader maybeCandidate : metadata.getHeaders()) {
                             if (maybeCandidate instanceof ValueReferenceEntityHeader)
                                 candidates.add(maybeCandidate);
                         }
                     } else {
-                        for (EntityHeader candidate : entityCrud.findAllInScope(EntityHeaderUtils.getEntityClass(header), scope, filter, 0, 50 )) {
+                        for (EntityHeader candidate : entityCrud.findAllInScope(EntityHeaderUtils.getEntityClass(header), scope, filters, 0, 50 )) {
                             candidates.add(resolveHeader(EntityHeaderUtils.toExternal(candidate)));
                         }
                     }
