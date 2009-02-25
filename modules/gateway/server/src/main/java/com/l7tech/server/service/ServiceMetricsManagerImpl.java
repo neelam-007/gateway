@@ -441,6 +441,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
         "    period_start>=?  AND\n" +
         "    period_start+interval_size<=?\n" +
         "GROUP BY nodeid,published_service_oid,resolution\n" +
+        "HAVING min(start_time) > 0\n" +
         "ON DUPLICATE KEY UPDATE\n" +
         "    start_time=values(start_time),\n" +
         "    end_time=values(end_time),\n" +
