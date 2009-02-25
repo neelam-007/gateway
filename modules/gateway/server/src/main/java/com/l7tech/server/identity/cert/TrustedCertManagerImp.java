@@ -188,15 +188,17 @@ public class TrustedCertManagerImp
             auditor.logAndAudit(SystemMessages.CERT_EXPIRY_BAD_PERIOD, value, DEFAULT_CHECK_PERIOD);
             period = TimeUnit.parse(DEFAULT_CHECK_PERIOD);
         }
-        reschedule(period);
+        reschedule(period, false);
     }
 
-    private void reschedule(long period) {
+    private void reschedule(long period, boolean immediately) {
         synchronized(timer) {
             if (expiryCheckerTask != null) expiryCheckerTask.cancel();
             expiryCheckerTask = new ExpiryCheckerTask();
         }
-        timer.schedule(expiryCheckerTask, 0, period);
+        long delay = immediately?0: TimeUnit.MINUTES.toMillis(1);
+
+        timer.schedule(expiryCheckerTask, delay, period);
     }
 
     @Override
@@ -222,7 +224,7 @@ public class TrustedCertManagerImp
             final String ov = evt.getOldValue() == null ? null : evt.getOldValue().toString();
             final String nv = evt.getNewValue().toString();
             try {
-                reschedule(TimeUnit.parse(nv));
+                reschedule(TimeUnit.parse(nv), true);
             } catch (Exception e) {
                 auditor.logAndAudit(SystemMessages.CERT_EXPIRY_BAD_PERIOD, nv, ov);
             }

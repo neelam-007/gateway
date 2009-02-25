@@ -9,6 +9,8 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.gateway.common.audit.BootMessages;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.BuildInfo;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.event.system.Started;
@@ -17,10 +19,16 @@ import com.l7tech.server.event.system.SystemEvent;
 import com.l7tech.server.upgrade.FatalUpgradeException;
 import com.l7tech.server.upgrade.NonfatalUpgradeException;
 import com.l7tech.server.upgrade.UpgradeTask;
+import com.l7tech.server.LifecycleException;
+import com.l7tech.server.RuntimeLifecycleException;
 import org.hibernate.TransactionException;
+import org.hibernate.SessionFactory;
+import org.hibernate.Session;
+import org.hibernate.jdbc.Work;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -29,6 +37,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.*;
 import java.util.logging.Logger;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 /**
  * Bean that checks sanity of the database/cluster/local configuration before allowing bootup to proceed.
@@ -70,6 +82,10 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
     private List<ClusterProperty> taskProps;
     private UpgradeTask[] earlyTasks;
 
+    public static final String SSG_VERSION_TABLE="ssg_version";
+    public static final String CURRENT_VERSION_COLUMN="current_version";
+    public static final String CHECK_VERSION_STMT="SELECT " + CURRENT_VERSION_COLUMN + " FROM " + SSG_VERSION_TABLE;
+
     public GatewaySanityChecker(PlatformTransactionManager transactionManager,
                                 ClusterPropertyManager clusterPropertyManager)
     {
@@ -81,6 +97,45 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
     @Override
     public void afterPropertiesSet() throws Exception {
         this.auditor = new Auditor(this, getApplicationContext(), logger);
+
+
+        ApplicationContext appCtx = getApplicationContext();
+        //Check if the DB is the right version. This will only work for newer (5.0+) gateways, but it's at least a good start.
+        SessionFactory sf = ((SessionFactory)appCtx.getBean("sessionFactory"));
+
+        Session session;
+        session = sf.openSession();
+
+        final String myVersion = BuildInfo.getFormalProductVersion();
+        session.doWork(new Work() {
+            public void execute(Connection connection) throws SQLException {
+                Statement st =  null;
+                ResultSet rs = null;
+
+                try {
+                    st = connection.createStatement();
+                    String errMsg = null;
+                    try {
+                        rs = st.executeQuery(CHECK_VERSION_STMT);
+                        if (rs.next()) {
+                            //we have a table, now check the contents
+                            String dbVersion = rs.getString(CURRENT_VERSION_COLUMN);
+                            if (!myVersion.equalsIgnoreCase(dbVersion)) {
+                                errMsg = "The database is not the right version for this product (found, " + dbVersion + ", expected " + myVersion + "). Please check or upgrade the database before starting the gateway.";
+                            }
+                        } else {
+                            errMsg = "Could not find a correct version (" + myVersion + ") in the database. Please check or upgrade the database before starting the gateway.";
+                        }
+                    } catch (SQLException e) {
+                        errMsg = "The database is not an SSG Database or is not the right version (" + myVersion + "). Please check or upgrade the database before starting the gateway.";
+                    }
+                    if (errMsg != null) throw new RuntimeLifecycleException(errMsg);
+                } finally {
+                    ResourceUtils.closeQuietly(rs);
+                    ResourceUtils.closeQuietly(st);
+                }
+            }
+        });
 
         // Run nonconditional sanity checking tasks
         if (earlyTasks != null) {
@@ -224,6 +279,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
             new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
                 @Override
                 protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                    boolean completedTask = false;
                     try {
                         // If triggered by a cluster property, remove it so noone else repeats the work
                         if (propToDelete != null)
@@ -231,7 +287,7 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
 
                         // Do the actual work
                         task.upgrade(getApplicationContext());
-
+                        completedTask = true;
                     } catch (NonfatalUpgradeException e) {
                         enonfatal[0] = e;
                         transactionStatus.setRollbackOnly();
@@ -243,6 +299,8 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
                         efatal[0] = new FatalUpgradeException("Unable to delete upgrade task property: " + propToDelete.getName() + ": " +
                                 ExceptionUtils.getMessage(e), e);
                         transactionStatus.setRollbackOnly();
+                    } finally {
+                        if (!completedTask) transactionStatus.setRollbackOnly();
                     }
                 }
             });

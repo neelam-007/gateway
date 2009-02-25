@@ -361,6 +361,12 @@ ALTER TABLE connector_property DROP COLUMN objectid, DROP COLUMN version;
 -- Add properties to keystore files
 ALTER TABLE keystore_file ADD COLUMN properties mediumtext AFTER databytes;
 
+CREATE TABLE ssg_version (
+   current_version char(10) NOT NULL
+) TYPE=InnoDB DEFAULT CHARACTER SET utf8;
+
+INSERT INTO ssg_version (current_version) VALUES ("5.0.0");
+
 --
 -- Reenable FK at very end of script
 --
