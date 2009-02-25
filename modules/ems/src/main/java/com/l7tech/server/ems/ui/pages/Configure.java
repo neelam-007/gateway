@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  *
  */
 @SuppressWarnings({"UnusedDeclaration"})
-@NavigationPage(page="Configure",pageIndex=100,section="ManageGateways",sectionPage="Configure",pageUrl="Configure.html")
+@NavigationPage(page="Configure",pageIndex=100,section="ManageGateways",sectionPage="Monitor",pageUrl="Configure.html")
 public class Configure extends EsmStandardWebPage {
 
     private static final Logger logger = Logger.getLogger(Configure.class.getName());

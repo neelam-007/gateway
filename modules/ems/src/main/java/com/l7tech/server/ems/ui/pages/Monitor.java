@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 /**
  *
  */
-@NavigationPage(page="Monitor",section="ManageGateways",sectionPage="Configure",pageUrl="Monitor.html")
+@NavigationPage(page="Monitor",section="ManageGateways",sectionPage="Monitor",pageUrl="Monitor.html")
 public class Monitor extends EsmStandardWebPage {
     private static final Logger logger = Logger.getLogger(Monitor.class.getName());
     private final transient Object monitoringServiceLocker = new Object();
