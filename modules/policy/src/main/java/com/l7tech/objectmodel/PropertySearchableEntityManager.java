@@ -8,6 +8,7 @@ import java.util.Map;
  */
 public interface PropertySearchableEntityManager<HT extends EntityHeader> extends SearchableEntityManager {
 
+    // todo: document filter criteria specification
     Collection<HT> findHeaders(int offset, int windowSize, Map<String,String> filters) throws FindException;
 
 }
