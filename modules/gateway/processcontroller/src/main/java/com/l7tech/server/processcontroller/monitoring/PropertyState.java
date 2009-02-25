@@ -30,6 +30,8 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
 
     private volatile Pair<Long, V> lastSample;
     private volatile Pair<Long, PropertySamplingException> lastFailure;
+    private volatile Long lastLogged;
+    private static final int REPEATED_FAILURE_LOG_INTERVAL = 5 * 60000;
 
     /**
      * Create a new PropertyState with no history
@@ -49,12 +51,15 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
                     addSample(value, now);
                 } catch (PropertySamplingException e) {
                     addFailure(e, now);
-                    if (e.isTemporary()) {
-                        logger.log(Level.INFO, "Couldn't get {0} value ({1})", new String[] { property.toString(), ExceptionUtils.getMessage(e) });
+                    final Map.Entry<Long,Pair<V,PropertySamplingException>> entry = lastSamples.firstEntry();
+                    if (entry.getValue().right == null || lastLogged == null || now - lastLogged > REPEATED_FAILURE_LOG_INTERVAL) {
+                        logger.log(Level.INFO, "Couldn''t get {0} value ({1})", new Object[] { property.toString(), ExceptionUtils.getMessage(e) });
+                        lastLogged = now;
                     } else {
-                        // TODO maybe disable the sampler if it's permanent?
-                        logger.log(Level.WARNING, String.format("Couldn't get %s value (%s)", property.toString(), ExceptionUtils.getMessage(e)), e);
+                        logger.log(Level.FINE, "Previous failure continues: Couldn''t get {0} value ({1})", new Object[] { property.toString(), ExceptionUtils.getMessage(e) });
                     }
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Unexpected exception in property sampler: " + ExceptionUtils.getMessage(e), e);
                 }
             }
         };
