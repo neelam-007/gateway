@@ -25,7 +25,6 @@ public class ThreatProtectionFolderNode extends AbstractPaletteFolderNode {
         insert( new CodeInjectionProtectionAssertionPaletteNode(), index++);
         insert( new RequestSizeLimitPaletteNode(), index++ );
         insert( new OversizedTextAssertionPaletteNode(), index++ );
-        insert( new RequestWssReplayProtectionNode(), index++ );
         insert( new SchemaValidationPaletteNode(), index++ );
         //insert(new FaultLevelPaletteNode(), index++);
         index = insertMatchingModularAssertions(index);

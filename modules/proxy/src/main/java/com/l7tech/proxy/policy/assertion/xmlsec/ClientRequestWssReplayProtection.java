@@ -51,7 +51,7 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
                     KeyStoreCorruptException, BadCredentialsException, ClientCertificateException,
                     PolicyRetryableException, HttpChallengeRequiredException
             {
-                DecorationRequirements wssReqs = context.getDefaultWssRequirements();
+                DecorationRequirements wssReqs = context.getWssRequirements(requestWssReplayProtection);
 
                 // Prepare a client cert if we haven't seen a signature source yet.
                 // not necessary for any policy that passed the policy validator

@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
 import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.token.UsernameTokenImpl;
@@ -38,6 +39,11 @@ public class ServerWssDigest extends AbstractServerAssertion<WssDigest> {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if (!SecurityHeaderAddressableSupport.isLocalRecipient(assertion)) {
+            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
+            return AssertionStatus.NONE;
+        }
+
         Message req = context.getRequest();
         try {
             if (!req.isSoap()) {

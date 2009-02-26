@@ -458,6 +458,13 @@ class PathValidator {
             }
         }
 
+        if (a instanceof SecurityHeaderAddressable) {
+            if (!SecurityHeaderAddressableSupport.isLocalRecipient(a) && Assertion.isRequest(a) && !hasFlag(a, ValidatorFlag.PROCESSES_NON_LOCAL_WSS_RECIPIENT)) {
+                String msg = "A WSSRecipient other than \"Default\" will not be enforced by the gateway.  This assertion will always succeed.";
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, msg, null));
+            }
+        }
+
         if (a instanceof RequestWssIntegrity ||
                     a instanceof ResponseWssConfidentiality ||
                    (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired() && ((RequestWssTimestamp)a).getTarget() == TargetMessageType.REQUEST) ||

@@ -46,12 +46,7 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException
             {
-                DecorationRequirements wssReqs;
-                if (subject.getRecipientContext().localRecipient()) {
-                    wssReqs = context.getDefaultWssRequirements();
-                } else {
-                    wssReqs = context.getAlternateWssRequirements(subject.getRecipientContext());
-                }
+                DecorationRequirements wssReqs = context.getWssRequirements(subject);
                 String stype = ssg.getProperties().get(PROP_KEYINFOTYPE);
                 KeyInfoInclusionType type = null;
                 if (stype != null) type = KeyInfoInclusionType.valueOf(stype);

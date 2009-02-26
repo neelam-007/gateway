@@ -3,8 +3,9 @@
  */
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
+import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -23,12 +24,7 @@ public class EncryptedUsernameTokenAssertionTreeNode extends LeafAssertionTreeNo
      * @return the node name that is displayed
      */
     public String getName() {
-        if (!assertion.getRecipientContext().localRecipient()) {
-            return "Require Encrypted UsernameToken Authentication [\'" +
-                   assertion.getRecipientContext().getActor() + "\' actor]";
-        } else {
-            return "Require Encrypted UsernameToken Authentication";
-        }
+        return "Require Encrypted UsernameToken Authentication" + SecurityHeaderAddressableSupport.getActorSuffix(assertion);
     }
 
     public Action[] getActions() {

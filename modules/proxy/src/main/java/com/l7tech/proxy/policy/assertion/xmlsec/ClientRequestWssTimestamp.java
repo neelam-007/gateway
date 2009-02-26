@@ -38,12 +38,7 @@ public class ClientRequestWssTimestamp extends ClientAssertion {
 
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException, ConfigurationException {
-                DecorationRequirements wssReqs;
-                if (assertion.getRecipientContext().localRecipient()) {
-                    wssReqs = context.getDefaultWssRequirements();
-                } else {
-                    wssReqs = context.getAlternateWssRequirements(assertion.getRecipientContext());
-                }
+                DecorationRequirements wssReqs = context.getWssRequirements(assertion);
                 if (assertion.isSignatureRequired())
                     wssReqs.setSignTimestamp();
                 return AssertionStatus.NONE;

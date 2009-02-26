@@ -156,7 +156,7 @@ public interface AssertionMetadata {
      * if using DefaultAssertionPolicyNode.  This is a generator rather than just simple String so that it can
      * vary based on the configuration of the particular assertion whose policy node is being displayed.
      * <p/>
-     * Defaults to a generator that returns POLICY_NODE_NAME, if there is one, or the assertion classname otherwise.
+     * Defaults to null.
      */
     String POLICY_NODE_NAME_FACTORY = "policyNodeNameFactory";
 

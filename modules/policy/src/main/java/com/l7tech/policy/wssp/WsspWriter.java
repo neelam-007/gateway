@@ -375,7 +375,7 @@ public class WsspWriter {
         ResponseWssConfidentiality.class
     ));
 
-    private static final Collection<Class<? extends Assertion>> SYMMETRIC_ASSERTIONS = Collections.unmodifiableCollection(Arrays.asList(
+    private static final Collection<Class<? extends Assertion>> SYMMETRIC_ASSERTIONS = Collections.<Class<? extends Assertion>>unmodifiableCollection(Arrays.asList(
         EncryptedUsernameTokenAssertion.class,
         SecureConversation.class
     ));

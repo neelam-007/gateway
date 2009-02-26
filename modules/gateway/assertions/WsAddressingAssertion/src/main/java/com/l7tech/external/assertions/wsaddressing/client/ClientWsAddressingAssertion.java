@@ -61,7 +61,7 @@ public class ClientWsAddressingAssertion extends ClientAssertion {
         final String id = context.prepareWsaMessageId(true, ns, uuidPrefix);
         Element wsaMessageIdEl = SoapUtil.setWsaMessageId(context.getRequest().getXmlKnob().getDocumentWritable(), ns, id);
         if (assertion.isRequireSignature()) {
-            context.getDefaultWssRequirements().getElementsToSign().add(wsaMessageIdEl);
+            context.getWssRequirements(assertion).getElementsToSign().add(wsaMessageIdEl);
         }
         return AssertionStatus.NONE;
     }

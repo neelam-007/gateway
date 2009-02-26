@@ -1,7 +1,8 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -24,11 +25,7 @@ public class RequestWssX509CertTreeNode extends LeafAssertionTreeNode {
     }
 
     public String getName() {
-        if (!data.getRecipientContext().localRecipient()) {
-            return "WSS Sign SOAP Request [\'" + data.getRecipientContext().getActor() + "\' actor]";
-        } else {
-            return "WSS Sign SOAP Request";
-        }
+        return "WSS Sign SOAP Request" + SecurityHeaderAddressableSupport.getActorSuffix(data);
     }
 
     protected String iconResource(boolean open) {

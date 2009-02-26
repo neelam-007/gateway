@@ -3,8 +3,9 @@
  */
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -23,12 +24,7 @@ public class WssBasicAuthAssertionTreeNode extends LeafAssertionTreeNode<WssBasi
      * @return the node name that is displayed
      */
     public String getName() {
-        if (!assertion.getRecipientContext().localRecipient()) {
-            return "Require WSS UsernameToken Basic Authentication [\'" +
-                   assertion.getRecipientContext().getActor() + "\' actor]";
-        } else {
-            return "Require WSS UsernameToken Basic Authentication";
-        }
+        return "Require WSS UsernameToken Basic Authentication" + SecurityHeaderAddressableSupport.getActorSuffix(assertion);
     }
 
     public Action[] getActions() {

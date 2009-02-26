@@ -11,6 +11,7 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.xml.XpathEvaluator;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.jaxen.JaxenException;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -60,22 +61,16 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
         try {
             final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getRequest().getXmlKnob().getDocumentReadOnly(),
                                                                     xpathExpression.getNamespaces());
-            List elements = eval.selectElements(xpathExpression.getExpression());
+            List<Element> elements = eval.selectElements(xpathExpression.getExpression());
             if (elements == null || elements.size() < 1) {
                 log.info("ClientRequestWssConfidentiality: No elements matched xpath expression \"" +
                          xpathExpression.getExpression() + "\".  " +
                          "Assertion therefore fails.");
                 return AssertionStatus.FALSIFIED;
             }
-            DecorationRequirements wssReqs;
-            if (requestWssConfidentiality.getRecipientContext().localRecipient()) {
-                wssReqs = context.getDefaultWssRequirements();
-                if (serverCert != null) {
+            DecorationRequirements wssReqs = context.getWssRequirements(requestWssConfidentiality);
+            if (serverCert != null && requestWssConfidentiality.getRecipientContext().localRecipient())
                     wssReqs.setRecipientCertificate(serverCert);
-                }
-            } else {
-                wssReqs = context.getAlternateWssRequirements(requestWssConfidentiality.getRecipientContext());
-            }
             wssReqs.getElementsToEncrypt().addAll(elements);
             if (requestWssConfidentiality.getXEncAlgorithm() !=null) {
                 wssReqs.setEncryptionAlgorithm(requestWssConfidentiality.getXEncAlgorithm());

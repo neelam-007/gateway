@@ -1,8 +1,7 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 
 /**
  * This assertion verifies that the soap request contained
@@ -19,15 +18,7 @@ import com.l7tech.policy.assertion.annotation.ProcessesRequest;
  */
 @ProcessesRequest
 @RequiresSOAP(wss=true)
-public class RequestWssX509Cert extends Assertion implements SecurityHeaderAddressable {
-    public XmlSecurityRecipientContext getRecipientContext() {
-        return recipientContext;
-    }
-
-    public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
-        this.recipientContext = recipientContext;
-    }
-
+public class RequestWssX509Cert extends SecurityHeaderAddressableSupport {
     /**
      * The WSS X509 security token is credential source.
      *
@@ -36,6 +27,4 @@ public class RequestWssX509Cert extends Assertion implements SecurityHeaderAddre
     public boolean isCredentialSource() {
         return true;
     }
-
-    private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
 }

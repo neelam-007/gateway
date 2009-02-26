@@ -476,9 +476,10 @@ public class GClient {
                 if (!AssertionStatus.NONE.equals(result))
                     throw new RuntimeException("Decoration failed: " + result.toString());
 
-                DecorationRequirements wssReq = context.getDefaultWssRequirements();
                 Document document = request.getXmlKnob().getDocumentWritable();
-                new WssDecoratorImpl().decorateMessage(new Message(document), wssReq);
+                final Message mess = new Message(document);
+                for (DecorationRequirements wssReq : context.getAllDecorationRequirements())
+                    new WssDecoratorImpl().decorateMessage(mess, wssReq);
 
                 requestTextArea.setText(XmlUtil.nodeToString(document));
                 clearThrowable();

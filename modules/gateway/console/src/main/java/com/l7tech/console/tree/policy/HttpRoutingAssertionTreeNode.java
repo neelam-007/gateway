@@ -9,7 +9,7 @@ import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -26,12 +26,7 @@ public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode {
      */
     public String getName() {
         HttpRoutingAssertion assertion = ((HttpRoutingAssertion)getUserObject());
-        String actor = "";
-        XmlSecurityRecipientContext context = assertion.getRecipientContext();
-        if (context != null)
-            actor = context.localRecipient()
-                    ? ""
-                    : " [\'" + assertion.getRecipientContext().getActor() + "\' actor]";
+        String actor = SecurityHeaderAddressableSupport.getActorSuffix(assertion);
         String url = assertion.getProtectedServiceUrl();
         if (url != null) {
             return "Route to " + url + actor;

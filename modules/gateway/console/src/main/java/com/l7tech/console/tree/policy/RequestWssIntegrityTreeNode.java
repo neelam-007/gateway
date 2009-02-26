@@ -2,6 +2,7 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 
 /**
  * Class <code>XmlDsigReqAssertionTreeNode</code> specifies the policy
@@ -26,9 +27,7 @@ public class RequestWssIntegrityTreeNode extends XpathBasedAssertionTreeNode {
         } else {
             name = new StringBuffer("Sign request element " + data.getXpathExpression().getExpression());
         }
-        if (!data.getRecipientContext().localRecipient()) {
-            name.append(" [\'" + data.getRecipientContext().getActor() + "\' actor]");
-        }
+        name.append(SecurityHeaderAddressableSupport.getActorSuffix(data));
         return name.toString();
     }
     private RequestWssIntegrity data;

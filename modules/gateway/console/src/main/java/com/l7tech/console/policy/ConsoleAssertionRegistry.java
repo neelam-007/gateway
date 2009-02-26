@@ -61,11 +61,11 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
 
         putDefaultGetter(POLICY_NODE_FACTORY, new PolicyNodeFactoryMetadataFinder());
 
-        putDefaultGetter(POLICY_NODE_NAME_FACTORY, new MetadataFinder() {
+        putDefaultGetter(POLICY_NODE_NAME, new MetadataFinder() {
             public Object get(final AssertionMetadata meta, String key) {
                 return cache(meta, key, new Functions.Unary<String, Assertion>() {
                     public String call(Assertion assertion) {
-                        Object name = meta.get(POLICY_NODE_NAME);
+                        Object name = meta.get(SHORT_NAME);
                         if (name != null)
                             return name.toString();
                         if (assertion != null)

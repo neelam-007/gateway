@@ -1,15 +1,15 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.console.action.JmsRoutingAssertionPropertiesAction;
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
+import com.l7tech.console.action.JmsRoutingAssertionPropertiesAction;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
-import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -32,12 +32,7 @@ public class JmsRoutingAssertionTreeNode extends LeafAssertionTreeNode {
     public String getName() {
         final String name = "Route to JMS Queue ";
         JmsRoutingAssertion ass = (JmsRoutingAssertion) getUserObject();
-        String actor = "";
-        XmlSecurityRecipientContext context = ass.getRecipientContext();
-        if (context != null)
-            actor = context.localRecipient()
-                    ? ""
-                    : " [\'" + ass.getRecipientContext().getActor() + "\' actor]";
+        String actor = SecurityHeaderAddressableSupport.getActorSuffix(ass);
         String endpointName = null;
         if (ass.getEndpointOid() == null) {
             return name + "(Not Yet Specified)" + actor;

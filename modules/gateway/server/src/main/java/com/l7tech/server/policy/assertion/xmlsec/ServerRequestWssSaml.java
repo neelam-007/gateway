@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -77,6 +78,10 @@ public class ServerRequestWssSaml extends AbstractServerAssertion implements Ser
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
       throws IOException, PolicyAssertionException {
+        if (!SecurityHeaderAddressableSupport.isLocalRecipient(assertion)) {
+            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
+            return AssertionStatus.NONE;
+        }
 
         try {
             final XmlKnob xmlKnob = context.getRequest().getXmlKnob();

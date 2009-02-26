@@ -1,12 +1,15 @@
 package com.l7tech.external.assertions.wsaddressing;
 
-import com.l7tech.util.Functions;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.util.Functions;
 
-import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Set;
 
 /**
@@ -16,7 +19,7 @@ import java.util.Set;
  *
  * <p>Optionally sets variables for the message properties found.</p> 
  */
-public class WsAddressingAssertion extends MessageTargetableAssertion implements SetsVariables {
+public class WsAddressingAssertion extends MessageTargetableAssertion implements SetsVariables, SecurityHeaderAddressable {
     //- PUBLIC
     
     public static final String VAR_SUFFIX_TO = "to";
@@ -152,6 +155,14 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
         }
     }
 
+    public XmlSecurityRecipientContext getRecipientContext() {
+        return recipientContext;
+    }
+
+    public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
+        this.recipientContext = recipientContext;
+    }
+
     /**
      * Get the meta data for this assertion.
      *
@@ -177,6 +188,7 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
     private String variablePrefix;
     private boolean requireSignature;
     private String enableOtherNamespace = null;
+    private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
 
 
     /**
@@ -204,21 +216,29 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
                 sb.append("WS-Addressing in ");
                 sb.append(addressingAssertion.getTargetName());
 
+                sb.append(SecurityHeaderAddressableSupport.getActorSuffix(addressingAssertion));
+
                 return sb.toString();
             }
         });
 
         meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, WsAddressingAssertion>(){
             public Set<ValidatorFlag> call(WsAddressingAssertion assertion) {
-                Set<ValidatorFlag> flags = Collections.emptySet();
+                Set<ValidatorFlag> flags = EnumSet.noneOf(ValidatorFlag.class);
 
                 if ( assertion.getTarget() == TargetMessageType.REQUEST && assertion.isRequireSignature() ) {
-                    flags = Collections.singleton(ValidatorFlag.REQUIRE_SIGNATURE);
+                    flags.add(ValidatorFlag.REQUIRE_SIGNATURE);
                 }
+
+                // Suppress warning on non-local WSS recipient since this assertion will still enforce presence
+                // of WS-Addressing headers in the SOAP Header.  (They don't go in the Security header.)
+                flags.add(ValidatorFlag.PROCESSES_NON_LOCAL_WSS_RECIPIENT);
 
                 return flags;
             }
         });
+
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.external.assertions.wsaddressing.WsAddressingAssertionValidator");
 
         meta.put(AssertionMetadata.USED_BY_CLIENT, true);
 

@@ -7,7 +7,9 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.xmlsec.RequestWssTimestamp;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
@@ -51,6 +53,11 @@ public class ServerRequestWssTimestamp extends AbstractServerAssertion<RequestWs
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if (!SecurityHeaderAddressableSupport.isLocalRecipient(assertion) && TargetMessageType.REQUEST.equals(assertion.getTarget())) {
+            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
+            return AssertionStatus.NONE;
+        }
+
         final String what = assertion.getTargetName();
         final Message msg;
         try {

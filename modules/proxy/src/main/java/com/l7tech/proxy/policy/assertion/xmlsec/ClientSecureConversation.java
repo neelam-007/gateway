@@ -33,8 +33,10 @@ import java.util.logging.Logger;
  * $Id$<br/>
  */
 public class ClientSecureConversation extends ClientAssertion {
+    private SecureConversation data;
+
     public ClientSecureConversation(SecureConversation assertion) {
-        // nothing in assertion we need to remember
+        this.data = assertion;
     }
 
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
@@ -50,7 +52,7 @@ public class ClientSecureConversation extends ClientAssertion {
         // Configure outbound decoration to use WS-SecureConversation
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) {
-                DecorationRequirements wssReqs = context.getDefaultWssRequirements();
+                DecorationRequirements wssReqs = context.getWssRequirements(data);
                 wssReqs.setSignTimestamp();
                 wssReqs.setSecureConversationSession(new SimpleSecureConversationSession(sessionId, sessionKey, SoapUtil.WSSC_NAMESPACE));
                 return AssertionStatus.NONE;

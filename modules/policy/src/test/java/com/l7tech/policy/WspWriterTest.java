@@ -5,15 +5,19 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml2;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.LSInputImpl;
 import com.l7tech.wsdl.BindingInfo;
 import com.l7tech.wsdl.BindingOperationInfo;
@@ -30,7 +34,10 @@ import javax.xml.XMLConstants;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
 import java.util.logging.Logger;
@@ -304,6 +311,13 @@ public class WspWriterTest extends TestCase {
         Document doc = XmlUtil.stringToDocument(got);
         assertTrue(doc.getDocumentElement().getFirstChild().getNextSibling().getFirstChild().getNextSibling().getNextSibling().getNextSibling().getLocalName().equals("UnknownAssertion"));
         log.info("Serialized: " + got);
+    }
+    
+    public void testInheritedProperties() throws Exception {
+        final WssBasic wssBasic = new WssBasic();
+        wssBasic.setRecipientContext(new XmlSecurityRecipientContext("myfunkyactor", HexUtils.encodeBase64(new TestCertificateGenerator().generate().getEncoded())));
+        String got = WspWriter.getPolicyXml(wssBasic);
+        assertTrue(got.contains("myfunkyactor"));
     }
 
     public void testSslAssertionOptionChange() throws Exception {

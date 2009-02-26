@@ -2,6 +2,7 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 
 /**
  * Class <code>XmlDsigResAssertionTreeNode</code> specifies the policy
@@ -26,9 +27,7 @@ public class ResponseWssConfidentialityTreeNode extends XpathBasedAssertionTreeN
         } else {
             name = new StringBuffer("Encrypt response element " + data.getXpathExpression().getExpression());
         }
-        if (!data.getRecipientContext().localRecipient()) {
-            name.append(" [\'" + data.getRecipientContext().getActor() + "\' actor]");
-        }
+        name.append(SecurityHeaderAddressableSupport.getActorSuffix(data));
         return name.toString();
     }
 

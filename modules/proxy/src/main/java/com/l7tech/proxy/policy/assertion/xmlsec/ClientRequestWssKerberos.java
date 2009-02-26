@@ -20,10 +20,12 @@ import java.util.logging.Logger;
  * This assertion means that the request must provide a kerberos ticket for the service/gateway.
  */
 public class ClientRequestWssKerberos extends ClientAssertion {
+    private final RequestWssKerberos data;
 
     //- PUBLIC
 
     public ClientRequestWssKerberos(RequestWssKerberos requestWssKerberos) {
+        this.data = requestWssKerberos;
     }
 
     public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException,
@@ -40,7 +42,7 @@ public class ClientRequestWssKerberos extends ClientAssertion {
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException
             {
-                DecorationRequirements wssReqs = context.getDefaultWssRequirements();
+                DecorationRequirements wssReqs = context.getWssRequirements(data);
 
                 if(kerberosId!=null) {
                     context.setUsedKerberosServiceTicketReference(true);

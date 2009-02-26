@@ -14,6 +14,7 @@ import com.l7tech.message.ProcessingContext;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.NullRequestInterceptor;
@@ -31,6 +32,7 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.wstrust.TokenServiceClient;
 import com.l7tech.security.wstrust.WsTrustConfig;
 import com.l7tech.security.wstrust.WsTrustConfigFactory;
+import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
@@ -293,13 +295,23 @@ public class PolicyApplicationContext extends ProcessingContext {
     }
 
     /**
+     * Get the existing DecorationRequirements for this assertion's recipient, if this does not yet exist creates a new one
+     * and set the recipient cert as part of the creation.
+     *
+     * @return the decoration requirements for the recipient designated by the passed recipient
+     */
+    public DecorationRequirements getWssRequirements(SecurityHeaderAddressable assertion) {
+        return getAlternateWssRequirements(assertion.getRecipientContext());
+    }
+
+    /**
      * Get the existing DecorationRequirements for this recipient, if this does not yet exist creates a new one
      * and set the recipient cert as part of the creation.
      *
      * @return the decoration requirements for the recipient designated by the passed recipient
      */
-    public DecorationRequirements getAlternateWssRequirements(XmlSecurityRecipientContext recipient) {
-        if (recipient.localRecipient()) {
+    private DecorationRequirements getAlternateWssRequirements(XmlSecurityRecipientContext recipient) {
+        if (recipient == null || recipient.localRecipient()) {
             return getDefaultWssRequirements();
         }
         String actor = recipient.getActor();
@@ -317,11 +329,17 @@ public class PolicyApplicationContext extends ProcessingContext {
     /**
      * Those requirements will be created the first time this is called.
      * Not intended to be used across multiple threads.
+     * <p/>
+     * Most assertions should NOT use this method.  Instead, they should use {@link #getWssRequirements(com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable)},
+     * which will respect the SecurityHeaderAddressable setting.
+     *
      * @return the decoration requirements for the immediate recipient (as opposed to further downstream recipients)
      */
-    public DecorationRequirements getDefaultWssRequirements() {
+    private DecorationRequirements getDefaultWssRequirements() {
         if (policySettings.defaultWSSRequirements == null) {
             policySettings.defaultWSSRequirements = new DecorationRequirements();
+            if (ssg.isGeneric())
+                policySettings.defaultWSSRequirements.setSecurityHeaderActor(SecurityActor.NOACTOR.getValue());
         }
         return policySettings.defaultWSSRequirements;
     }

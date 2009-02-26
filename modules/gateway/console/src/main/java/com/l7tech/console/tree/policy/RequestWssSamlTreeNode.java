@@ -5,6 +5,7 @@ import com.l7tech.console.action.EditRequestWssSamlAction;
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -37,11 +38,7 @@ public class RequestWssSamlTreeNode extends LeafAssertionTreeNode {
             st = "v" + data.getVersion().intValue() + " " + st;
         }
 
-        if (!data.getRecipientContext().localRecipient()) {
-            return "SAML "+st+" [\'" + data.getRecipientContext().getActor() + "\' actor]";
-        } else {
-            return "SAML "+st;
-        }
+        return "SAML " + st + SecurityHeaderAddressableSupport.getActorSuffix(data);
     }
 
     /**

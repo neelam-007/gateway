@@ -571,12 +571,20 @@ public abstract class Assertion implements Cloneable, Serializable {
         return null;
     }
 
+    private static TargetMessageType getMessageTarget(Assertion assertion) {
+        if (assertion instanceof MessageTargetable) {
+            MessageTargetable mt = (MessageTargetable) assertion;
+            return mt.getTarget();
+        }
+        return null;
+    }
+
     public static boolean isRequest(Assertion assertion) {
-        return hasAnnotation(assertion, ProcessesRequest.class);
+        return TargetMessageType.REQUEST.equals(getMessageTarget(assertion)) || hasAnnotation(assertion, ProcessesRequest.class);
     }
 
     public static boolean isResponse(Assertion assertion) {
-        return hasAnnotation(assertion, ProcessesResponse.class);
+        return TargetMessageType.RESPONSE.equals(getMessageTarget(assertion)) || hasAnnotation(assertion, ProcessesResponse.class);
     }
 
     public static boolean isHardwareAccelerated(Assertion assertion) {

@@ -1,25 +1,17 @@
 package com.l7tech.policy.assertion.credential.wss;
 
-import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
 /**
  * WSS Digest authentication.
  */
-public class WssDigest extends WssCredentialSourceAssertion implements SecurityHeaderAddressable {
+@ProcessesRequest
+public class WssDigest extends WssCredentialSourceAssertion {
     private boolean requireNonce = false;
     private boolean requireTimestamp = false;
     private String requiredPassword = null;
-
-    public XmlSecurityRecipientContext getRecipientContext() {
-        return recipientContext;
-    }
-
-    public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
-        this.recipientContext = recipientContext;
-    }
 
     public boolean isRequireNonce() {
         return requireNonce;
@@ -44,8 +36,6 @@ public class WssDigest extends WssCredentialSourceAssertion implements SecurityH
     public void setRequiredPassword(String requiredPassword) {
         this.requiredPassword = requiredPassword;
     }
-
-    private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
 
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();

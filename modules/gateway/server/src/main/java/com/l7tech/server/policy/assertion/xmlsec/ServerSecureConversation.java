@@ -15,6 +15,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -56,6 +57,11 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if (!SecurityHeaderAddressableSupport.isLocalRecipient(assertion)) {
+            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
+            return AssertionStatus.NONE;
+        }
+
         ProcessorResult wssResults;
 
         try {

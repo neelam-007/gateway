@@ -5,19 +5,19 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.security.token.ParsedElement;
 import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorResultUtil;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.XpathBasedAssertion;
-import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.util.CausedIOException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -40,13 +40,9 @@ public abstract class ServerRequestWssOperation extends AbstractServerAssertion 
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-
-        if (data instanceof SecurityHeaderAddressable) {
-            SecurityHeaderAddressable sha = (SecurityHeaderAddressable)data;
-            if (!sha.getRecipientContext().localRecipient()) {
-                auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
-                return AssertionStatus.NONE;
-            }
+        if (!SecurityHeaderAddressableSupport.isLocalRecipient(data)) {
+            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
+            return AssertionStatus.NONE;
         }
 
         ProcessorResult wssResults;

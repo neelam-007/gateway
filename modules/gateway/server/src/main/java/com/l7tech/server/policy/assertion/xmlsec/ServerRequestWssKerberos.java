@@ -1,30 +1,27 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.kerberos.KerberosGSSAPReqTicket;
-import com.l7tech.kerberos.KerberosServiceTicket;
-import com.l7tech.kerberos.KerberosUtils;
-import com.l7tech.kerberos.KerberosClient;
-import com.l7tech.kerberos.KerberosException;
+import com.l7tech.kerberos.*;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.security.token.KerberosSecurityToken;
 import com.l7tech.security.token.SecurityContextToken;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.SecurityContext;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.util.CausedIOException;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -51,6 +48,11 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
 
     @SuppressWarnings( { "RedundantArrayCreation" } )
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if (!SecurityHeaderAddressableSupport.isLocalRecipient(requestWssKerberos)) {
+            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
+            return AssertionStatus.NONE;
+        }
+
         ProcessorResult wssResults;
         try {
             if (!context.getRequest().isSoap()) {

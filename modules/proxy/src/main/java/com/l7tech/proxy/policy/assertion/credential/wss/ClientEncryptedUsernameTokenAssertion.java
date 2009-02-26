@@ -51,12 +51,7 @@ public class ClientEncryptedUsernameTokenAssertion extends ClientWssCredentialSo
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context)
                                                         throws PolicyAssertionException, IOException {
-                DecorationRequirements wssReqs;
-                if (data.getRecipientContext().localRecipient()) {
-                    wssReqs = context.getDefaultWssRequirements();
-                } else {
-                    wssReqs = context.getAlternateWssRequirements(data.getRecipientContext());
-                }
+                DecorationRequirements wssReqs = context.getWssRequirements(data);
 
                 wssReqs.setUsernameTokenCredentials(new UsernameTokenImpl(username, password));
                 wssReqs.setRecipientCertificate(serverCert);

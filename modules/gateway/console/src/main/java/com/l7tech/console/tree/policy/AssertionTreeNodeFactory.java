@@ -60,8 +60,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(WssBasic.class, WssBasicAuthAssertionTreeNode.class);
         assertionMap.put(EncryptedUsernameTokenAssertion.class, EncryptedUsernameTokenAssertionTreeNode.class);
         assertionMap.put(RequestWssX509Cert.class, RequestWssX509CertTreeNode.class);
-        assertionMap.put(SecureConversation.class, SecureConversationTreeNode.class);
-        assertionMap.put(RequestWssReplayProtection.class, RequestWssReplayProtectionTreeNode.class);
         assertionMap.put(CookieCredentialSourceAssertion.class, CookieCredentialSourceAssertionTreeNode.class);
 
         assertionMap.put(RoutingAssertion.class, HttpRoutingAssertionTreeNode.class);
@@ -102,7 +100,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(ResponseWssTimestamp.class, ResponseWssTimestampPolicyNode.class);
         assertionMap.put(RequestWssTimestamp.class, RequestWssTimestampPolicyNode.class);
         assertionMap.put(ResponseWssSecurityToken.class, ResponseWssSecurityTokenPolicyNode.class);
-        assertionMap.put(RequestWssKerberos.class, KerberosTreeNode.class);
         assertionMap.put(WsiBspAssertion.class, WsiBspAssertionPolicyNode.class);
         assertionMap.put(WsiSamlAssertion.class, WsiSamlAssertionPolicyNode.class);
         assertionMap.put(FaultLevel.class, FaultLevelTreeNode.class);

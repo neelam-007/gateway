@@ -99,12 +99,7 @@ public class ClientRequestWssSaml extends ClientAssertion {
         final PrivateKey privateKey = key;
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException {
-                DecorationRequirements wssReqs;
-                if (data.getRecipientContext().localRecipient()) {
-                    wssReqs = context.getDefaultWssRequirements();
-                } else {
-                    wssReqs = context.getAlternateWssRequirements(data.getRecipientContext());
-                }
+                DecorationRequirements wssReqs = context.getWssRequirements(data);
 
                 if ( privateKey != null ) {
                     wssReqs.setSignTimestamp();

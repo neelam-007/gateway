@@ -39,14 +39,11 @@ public class AccessControlFolderNode extends AbstractPaletteFolderNode {
         insert(new WsTokenBasicAuthNode(), index++);
         insert(new EncryptedUsernameTokenPaletteNode(), index++);
         insert(new RequestWssX509Node(), index++);
-        insert(new SecureConversationNode(), index++);
         insert(new RequestWssSamlNode(), index++);
         insert(new WsTrustCredentialExchangePaletteNode(), index++);
         insert(new WsFederationPassiveTokenRequestPaletteNode(), index++);
         insert(new XpathCredentialSourcePaletteNode(), index++);
         insert(new SamlBrowserArtifactPaletteNode(), index++);
-        insert(new KerberosPaletteNode(), index++);
-//        insert(new MappingAssertionPaletteNode(), index++);
         index = insertMatchingModularAssertions(index);
         insertMatchingCustomAssertions(index, Category.ACCESS_CONTROL);        
     }

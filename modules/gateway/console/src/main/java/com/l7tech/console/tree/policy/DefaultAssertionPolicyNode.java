@@ -3,11 +3,14 @@
  */
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.console.action.EditKeyAliasForAssertion;
+import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.PrivateKeyable;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.util.Functions;
-import com.l7tech.console.action.EditKeyAliasForAssertion;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -39,13 +42,28 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
             name = unary.call(asAssertion());
         } else if (factory != null) {
             // Very common error to set this to a string instead of a factory, so we'll support it here
-            name = factory.toString();
+            name = addSuffixes(factory.toString());
         } else {
             Object obj = meta.get(AssertionMetadata.POLICY_NODE_NAME);
             if (obj != null)
-                name = obj.toString();
+                name = addSuffixes(obj.toString());
         }
         return name != null ? name : asAssertion().getClass().getName();
+    }
+
+    /**
+     * Add any suffixes to a static name based on supported suffix features (like SecurityHeaderAddressable).
+     * <p/>
+     * This method is never invoked if the name is already a dynamic name, having come from a POLICY_NODE_NAME_FACTORY.
+     *
+     * @param name
+     * @return the name, possibly with one or more suffixes added.
+     */
+    protected String addSuffixes(String name) {
+        AT ass = asAssertion();
+        if (ass instanceof SecurityHeaderAddressable)
+            return name + SecurityHeaderAddressableSupport.getActorSuffix(ass);
+        return name;
     }
 
     protected String iconResource(boolean open) {
@@ -56,9 +74,11 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
     public Action[] getActions() {
         java.util.List<Action> list = new ArrayList<Action>();
         list.addAll(Arrays.asList(super.getActions()));
+        if (asAssertion() instanceof SecurityHeaderAddressable)
+            list.add(new EditXmlSecurityRecipientContextAction(this));
         if (asAssertion() instanceof PrivateKeyable)
             list.add(new EditKeyAliasForAssertion(this));
-        return list.toArray(new Action[0]);
+        return list.toArray(new Action[list.size()]);
     }
 
     public  Action getPreferredAction() {

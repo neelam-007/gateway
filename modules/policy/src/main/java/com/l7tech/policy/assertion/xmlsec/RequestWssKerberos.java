@@ -1,11 +1,12 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SetsVariables;
-import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
-import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
 
 /**
  * Specifies that a kerberos ticket is required.
@@ -15,7 +16,7 @@ import com.l7tech.policy.variable.DataType;
  */
 @ProcessesRequest
 @RequiresSOAP(wss=true)
-public class RequestWssKerberos extends Assertion implements SetsVariables {
+public class RequestWssKerberos extends SecurityHeaderAddressableSupport implements SetsVariables {
 
     //- PUBLIC
 
@@ -60,5 +61,17 @@ public class RequestWssKerberos extends Assertion implements SetsVariables {
         return new VariableMetadata[] {
             new VariableMetadata("kerberos.realm", false, false, "kerberos.realm", false, DataType.STRING),
         };
+    }
+
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(AssertionMetadata.SHORT_NAME, "WSS Kerberos");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
+        meta.put(AssertionMetadata.POLICY_NODE_NAME,  "Require WSS Kerberos Token");
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
+        meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
+        
+        return meta;
     }
 }

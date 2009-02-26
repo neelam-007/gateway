@@ -247,11 +247,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
 
         putDefaultGetter(POLICY_NODE_NAME_FACTORY, new MetadataFinder() {
             public Object get(final AssertionMetadata meta, String key) {
-                return cache(meta, key, new Functions.Unary< String, Assertion >() {
-                    public String call(Assertion assertion) {
-                        return (String)meta.get(AssertionMetadata.SHORT_NAME);
-                    }
-                });
+                return cache(meta, key, null);
             }
         });
 

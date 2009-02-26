@@ -5,15 +5,15 @@
  */
 package com.l7tech.policy.assertion.credential.wss;
 
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 
 /**
  * @author alex
  * @version $Revision$
  */
 @RequiresSOAP(wss=true)
-public abstract class WssCredentialSourceAssertion extends Assertion {
+public abstract class WssCredentialSourceAssertion extends SecurityHeaderAddressableSupport {
     /**
      * Always an credential source
      *

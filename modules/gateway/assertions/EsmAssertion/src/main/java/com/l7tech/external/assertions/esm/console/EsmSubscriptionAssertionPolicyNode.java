@@ -1,17 +1,14 @@
 package com.l7tech.external.assertions.esm.console;
 
-import com.l7tech.external.assertions.esm.EsmMetricsAssertion;
-import com.l7tech.external.assertions.esm.EsmSubscriptionAssertion;
 import com.l7tech.console.tree.policy.DefaultAssertionPolicyNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.external.assertions.esm.EsmSubscriptionAssertion;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
-
-import javax.swing.*;
-import java.util.logging.Logger;
-import java.text.MessageFormat;
-
 import org.apache.commons.lang.StringUtils;
+
+import java.text.MessageFormat;
+import java.util.logging.Logger;
 
 /**
  * Created by IntelliJ IDEA.
@@ -48,9 +45,5 @@ public class EsmSubscriptionAssertionPolicyNode extends DefaultAssertionPolicyNo
 
     public boolean canDelete() {
         return true;
-    }
-
-    public Action[] getActions() {
-        return super.getActions();
     }
 }
