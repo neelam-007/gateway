@@ -255,8 +255,7 @@ public class UserRoles extends EsmStandardWebPage {
         public SelectRoleForm(final String componentName) {
             super(componentName);
             try {
-                @SuppressWarnings({"ToArrayCallWithZeroLengthArrayArgument"})
-                final List<Role> roles = Arrays.asList(roleManager.findAll().toArray(new Role[0]));
+                final List<Role> roles = new ArrayList<Role>(roleManager.findAll());
                 ListChoice listChoice = new ListChoice("listChoice.roleList", new PropertyModel(roleModel, "selectedRole"),
                     new LoadableDetachableModel() {
                         @Override
@@ -399,6 +398,7 @@ public class UserRoles extends EsmStandardWebPage {
             String searchManner = usersAssigned? searchAssignedUsersModel.getSearchManner() : searchUnassignedUsersModel.getSearchManner();
             String searchValue = usersAssigned? searchAssignedUsersModel.getSearchValue() : searchUnassignedUsersModel.getSearchValue();
             if (searchManner == null || searchValue == null || searchValue.isEmpty()) return users;
+            searchValue = searchValue.toLowerCase();
 
             List<InternalUser> filteredUsers = new ArrayList<InternalUser>();
             String searchMannerContains = new StringResourceModel("search.manner.contains", UserRoles.this, null).getString();
@@ -406,11 +406,11 @@ public class UserRoles extends EsmStandardWebPage {
 
             for (InternalUser user: users) {
                 if (searchManner.equals(searchMannerContains)) {
-                    if (user.getLogin() != null && user.getLogin().contains(searchValue)) {
+                    if (user.getLogin() != null && user.getLogin().toLowerCase().contains(searchValue)) {
                         filteredUsers.add(user);
                     }
                 } else if (searchManner.equals(searchMannerStartswith)) {
-                    if (user.getLogin() != null && user.getLogin().startsWith(searchValue)) {
+                    if (user.getLogin() != null && user.getLogin().toLowerCase().startsWith(searchValue)) {
                         filteredUsers.add(user);
                     }
                 } else {
