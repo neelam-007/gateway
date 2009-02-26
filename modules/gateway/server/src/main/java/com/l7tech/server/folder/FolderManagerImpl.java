@@ -218,6 +218,8 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
 
         role.addFolderPermission(READ, SERVICE, folder, true);
         role.addFolderPermission(READ, POLICY, folder, true);
+        role.addFolderPermission(READ, SERVICE_ALIAS, folder, true);
+        role.addFolderPermission(READ, POLICY_ALIAS, folder, true);
         role.addFolderPermission(READ, FOLDER, folder, true);
 
         // Search all identities (for adding IdentityAssertions)
