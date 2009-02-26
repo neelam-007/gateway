@@ -1,17 +1,18 @@
 package com.l7tech.common.io;
 
-import com.l7tech.common.io.ProcResult;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.ResourceUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utilities for easily invoking subprocesses such as Unix commands and exchanging byte arrays with them via
@@ -202,30 +203,34 @@ public class ProcUtils {
 
         if (logger.isLoggable(Level.FINEST)) logger.finest("Running program: " + program.getName());
         Process proc = null;
+        InputStream is = null;
+        OutputStream os = null;
         try {
             proc = new ProcessBuilder(cmdArray).directory(cwd).redirectErrorStream(true).start();
 
-            final OutputStream os = proc.getOutputStream();
+            os = proc.getOutputStream();
             if (stdin != null) {
                 if (logger.isLoggable(Level.FINEST)) logger.finest("Sending " + stdin.length + " bytes of input into program: " + program.getName());
                 os.write(stdin);
                 os.flush();
             }
-            os.close();
+            os.close(); os = null;
 
             if (logger.isLoggable(Level.FINEST)) logger.finest("Reading output from program: " + program.getName());
-            byte[] slurped = IOUtils.slurpStream(proc.getInputStream());
-            proc.getInputStream().close();
+            is = proc.getInputStream();
+            byte[] slurped = IOUtils.slurpStream(is);
+            is.close(); is = null;
             if (logger.isLoggable(Level.FINEST)) logger.finest("Read " + slurped.length + " bytes of output from program: " + program.getName());
 
             int status = proc.waitFor();
-            proc = null;
             if (logger.isLoggable(Level.FINEST)) logger.finest("Program " + program.getName() + " exited status code " + status);
             if (!allowNonzeroExit && status != 0)
                 throw new IOException("Program " + program.getName() + " exited with nonzero status " + status + ".  Output: " + new String(slurped));
 
             return new ProcResult(status, slurped);
         } finally {
+            ResourceUtils.closeQuietly(is);
+            ResourceUtils.closeQuietly(os);
             if (proc != null)
                 proc.destroy();
         }
