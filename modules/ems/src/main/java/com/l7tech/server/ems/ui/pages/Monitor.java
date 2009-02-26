@@ -652,7 +652,7 @@ public class Monitor extends EsmStandardWebPage {
                 String propertyType = (String) jsonFormatMap.get(JSONConstants.ENTITY_PROPS_SETUP.PROP_TYPE);
                 List<AuditDetail> auditDetailList = new ArrayList<AuditDetail>();
                 try {
-                    // Note: propertySetup is unlikely to be null, since the manager has saved the setup settings when the browser requests the setup setting. 
+                    // Note: propertySetup is unlikely to be null, since the manager has saved the setup settings after the browser requests property setup. 
                     EntityMonitoringPropertySetup propertySetup = entityMonitoringPropertySetupManager.findByEntityGuidAndPropertyType(entityGuid, propertyType);
 
                     // Update monitoring enable status
@@ -697,7 +697,12 @@ public class Monitor extends EsmStandardWebPage {
                                 propertySetup.setNotificationEnabled(notificationEnabled);
                                 auditDetailList.add(getAuditDetailForEntityPropertySetupChanging(JSONConstants.ENTITY_PROPS_SETUP.NOTIFICATION_ENABLED, notificationEnabled, null));
                             }
+                        } else {
+                            propertySetup.setNotificationEnabled(false);
                         }
+                    } else {
+                        propertySetup.setTriggerEnabled(false);
+                        propertySetup.setNotificationEnabled(false);
                     }
 
                     // Find and update notification rules
