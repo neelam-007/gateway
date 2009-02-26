@@ -11,8 +11,8 @@ import org.springframework.beans.factory.BeanCreationException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.LogManager;
 import java.net.BindException;
 
 /** @author alex */
@@ -28,26 +28,39 @@ public final class ProcessControllerDaemon {
         "/com/l7tech/server/processcontroller/resources/processControllerServletContainerContext.xml",
     };
 
-    private ProcessControllerDaemon(String[] args) {
+    private ProcessControllerDaemon() {
         Runtime.getRuntime().addShutdownHook(new Thread() {
-                    @Override
-                    public void run() {
-                        shutdown = true;
-                        synchronized (this) {
-                            if (processController!=null) processController.stopNodes();
-                            notifyAll();
-                            // Kick the loop to enact the changes immediately
+            @Override
+            public void run() {
+                try {
+                    shutdown = true;
+                    synchronized (this) {
+                        if (processController!=null) {
+                            processController.stopNodes();
+                            ctx.close();
                         }
+                        notifyAll();
+                        // Kick the loop to enact the changes immediately
                     }
-                });
+                } finally {
+                    LogManager logManager = LogManager.getLogManager();
+                    if ( logManager instanceof PCLogManager ) {
+                        ((PCLogManager)logManager).resetLogs();
+                    }
+                }
+            }
+        });
 
         // This is here so that the logging system's shutdown hook runs after mine
         logger = Logger.getLogger(ProcessControllerDaemon.class.getName());
     }
 
     public static void main(String[] args) throws IOException {
+        if ( System.getProperty("java.util.logging.manager") == null ) {
+            System.setProperty("java.util.logging.manager", ProcessControllerDaemon.PCLogManager.class.getName());
+        }
         Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionLogger());
-        new ProcessControllerDaemon(args).runUntilShutdown();
+        new ProcessControllerDaemon().runUntilShutdown();
     }
 
     private synchronized void runUntilShutdown() throws IOException {
@@ -77,7 +90,6 @@ public final class ProcessControllerDaemon {
 
             processController.visitNodes();
         } while (!shutdown);
-        stop(0);
     }
 
     private void init() {
@@ -92,7 +104,6 @@ public final class ProcessControllerDaemon {
         logger.info("Starting Process Controller...");
 
         final ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext(DAEMON_CONTEXTS);
-        ctx.registerShutdownHook();
         this.ctx = ctx;
         this.processController = (ProcessController)ctx.getBean("processController");
         processController.setDaemon(true);
@@ -100,15 +111,22 @@ public final class ProcessControllerDaemon {
         processController.visitNodes(); // Detect states for any nodes that are already running
     }
 
-    private int stop(int exitCode) {
-        logger.info("Shutting down");
-        try {
-            processController.stopNodes();
-            ctx.close();
-            return exitCode;
-        } catch (Throwable t) {
-            logger.log(Level.WARNING, "Caught exception on shutdown", t);
-            return 1;
+   /**
+     * This prevents JDK logging shutdown when the JUL shutdown hook is invoked.
+     *
+     * <p>The PC will reset the underlying manager when shutdown of components
+     * is completed.</p>
+     *
+     * Perhaps inspired by JBossJDKLogManager.
+     */
+    public static final class PCLogManager extends LogManager implements JdkLoggerConfigurator.ResettableLogManager {
+        @Override
+        public void reset() throws SecurityException {
+        }
+
+        @Override
+        public void resetLogs() throws SecurityException {
+            super.reset();
         }
     }
 }

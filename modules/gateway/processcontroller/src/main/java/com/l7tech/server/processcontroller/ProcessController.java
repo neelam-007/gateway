@@ -18,6 +18,7 @@ import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import com.l7tech.common.io.ProcUtils;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
@@ -29,7 +30,9 @@ import javax.net.ssl.X509TrustManager;
 import javax.xml.ws.soap.SOAPFaultException;
 import java.io.*;
 import java.net.ConnectException;
-import java.net.SocketException;
+import java.net.NoRouteToHostException;
+import java.net.UnknownHostException;
+import java.net.SocketTimeoutException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.*;
@@ -58,6 +61,8 @@ public class ProcessController {
     static final int DEFAULT_STOPPED_TIMEOUT = 30000;
     /** The amount of time the PC should wait, during shutdown, after asking a node to shutdown before killing it */
     private static final int NODE_SHUTDOWN_TIMEOUT = 5000;
+    /** The amount of time the PC should wait for nodes to shutdown before exiting */
+    private static final int PC_SHUTDOWN_TIMEOUT = 15000;
 
     private final Map<String, NodeState> nodeStates = new ConcurrentHashMap<String, NodeState>();
     private final Map<String, ProcessBuilder> processBuilders = new HashMap<String, ProcessBuilder>();
@@ -78,12 +83,30 @@ public class ProcessController {
             api.shutdown();
             nodeStates.put(nodeName, new StoppingNodeState(state.node, process, api, timeout));
         } catch (Exception e) {
-            if (ExceptionUtils.causedBy(e, SocketException.class)) {
-                logger.warning("Unable to contact node; assuming it crashed.");
-                nodeStates.put(nodeName, new SimpleNodeState(state.node, CRASHED));
-            } else {
-                logger.log(Level.WARNING, "Unable to contact node, but not for any expected reason. Assuming it's crashed.", e);
-                nodeStates.put(nodeName, new SimpleNodeState(state.node, CRASHED));
+            nodeStates.put(nodeName, new SimpleNodeState(state.node, CRASHED));
+            boolean dead = false;
+            if ( process != null ) {
+                try {
+                    process.exitValue();
+                    // if we get here it is dead
+                    dead = true;
+                    if ( isNetworkException(e) ) {
+                        logger.warning("Unable to contact node; assuming it crashed.");
+                    } else {
+                        logger.log(Level.WARNING, "Unable to contact node, but not for any expected reason. Assuming it's crashed.", e);
+                    }
+                } catch (IllegalThreadStateException itse) {
+                    // is alive, so will be killed below
+                }
+            }
+
+            if ( !dead ) {
+                // TODO do an OS shutdown and put into shutting down state ...
+                if ( isNetworkException(e) ) {
+                    logger.warning("Unable to contact node; killing process.");
+                } else {
+                    logger.log(Level.WARNING, "Unable to contact node, but not for any expected reason.  killing process.", e);
+                }
                 osKill(state.node);
             }
         }
@@ -130,7 +153,7 @@ public class ProcessController {
     }
 
     public List<SoftwareVersion> getAvailableNodeVersions() {
-        return Collections.singletonList(SoftwareVersion.fromString("5.0")); //TODO
+        return Collections.singletonList(SoftwareVersion.fromString("5.0"));
     }
 
     public void setDaemon(boolean daemon) {
@@ -230,10 +253,12 @@ public class ProcessController {
             this.api = api;
         }
 
+        @Override
         public Process getProcess() {
             return process;
         }
 
+        @Override
         public NodeApi getApi() {
             return api;
         }
@@ -253,10 +278,12 @@ public class ProcessController {
             this.timeout = timeout;
         }
 
+        @Override
         public Process getProcess() {
             return process;
         }
 
+        @Override
         public NodeApi getApi() {
             return api;
         }
@@ -343,7 +370,7 @@ public class ProcessController {
             } catch (IllegalThreadStateException e) {
                 if (timedOut) {
                     logger.warning(node.getName() + " has taken " + howLong + "ms to shutdown; killing");
-                    state.process.destroy();
+                    osKill(node);
                     nodeStates.put(node.getName(), new StoppedNodeState(node, state.api, DEFAULT_STOPPED_TIMEOUT));
                 } else {
                     logger.fine(node.getName() + " still hasn't stopped after " + howLong + "ms; will wait up to " + state.timeout);
@@ -387,13 +414,19 @@ public class ProcessController {
         }
     }
 
-    private void osKill(PCNodeConfig node) {
+    private void osKill( final PCNodeConfig node ) {
         logger.warning("Killing " + node.getName());
-        // TODO implement!
-        // TODO implement!
-        // TODO implement!
-        // TODO implement!
-        // TODO implement!
+        final File nodesDir = configService.getNodeBaseDirectory();
+        if (!(nodesDir.exists() && nodesDir.isDirectory())) throw new IllegalStateException("Couldn't find node directory " + nodesDir.getAbsolutePath());
+
+        File ssgPwd = new File(nodesDir, node.getName());
+        if (!(ssgPwd.exists() && ssgPwd.isDirectory())) throw new IllegalStateException("Node directory " + ssgPwd.getAbsolutePath() + " does not exist or is not a directory");
+
+        try {
+            ProcUtils.exec(ssgPwd, new File("/opt/SecureSpan/Appliance/libexec/gateway_control"), new String[]{"stop", "-force"}, null, false );
+        } catch ( IOException ioe ) {
+            logger.log(Level.WARNING, "Failed to kill node '"+node.getName()+"':\n" + ioe.getMessage() );
+        }
     }
 
     private void handleRunningState(PCNodeConfig node, RunningNodeState state) {
@@ -414,7 +447,7 @@ public class ProcessController {
         } catch (Exception e) {
             final long howLong = now - state.sinceWhen;
             if (howLong > NODE_CRASH_DETECTION_TIME) {
-                logger.log(Level.WARNING, MessageFormat.format("{0} is supposedly running but has not responded to a ping in {1}ms.  Killing and restarting.", node.getName(), howLong), e);
+                logger.log(Level.WARNING, MessageFormat.format("{0} is supposedly running but has not responded to a ping in {1}ms.  Killing and restarting.", node.getName(), howLong), filterException(e));
                 if (state.process != null) {
                     state.process.destroy();
                 } else {
@@ -423,7 +456,7 @@ public class ProcessController {
 
                 nodeStates.put(node.getName(), new SimpleNodeState(node, CRASHED));
             } else {
-                logger.log(Level.WARNING, MessageFormat.format("{0} is supposedly running but has not responded to a ping in {1}ms.  Will keep retrying up to {2} ms.", node.getName(), howLong, NODE_CRASH_DETECTION_TIME), e);
+                logger.log(Level.WARNING, MessageFormat.format("{0} is supposedly running but has not responded to a ping in {1}ms.  Will keep retrying up to {2} ms.", node.getName(), howLong, NODE_CRASH_DETECTION_TIME), filterException(e));
             }
         }
     }
@@ -460,13 +493,18 @@ public class ProcessController {
             nodeStates.put(node.getName(), new SimpleNodeState(node, WONT_START));
         } else if (status instanceof StartingNodeState.Died) {
             final StartingNodeState.Died died = (StartingNodeState.Died)status;
-            logger.warning(node.getName() + " crashed on startup with exit code " + died.exitValue);
+            if ( died.exitValue == 33 ) {
+                logger.warning(node.getName() + " is already running");    
+                nodeStates.put(node.getName(), new RunningNodeState(node, null, getNodeApi(node)));
+            } else {
+                logger.warning(node.getName() + " crashed on startup with exit code " + died.exitValue);
 
-            logger.warning(node.getName() + " crashed on startup; copying its output:");
-            spew("STDERR", died.stderr);
-            spew("STDOUT", died.stdout);
+                logger.warning(node.getName() + " crashed on startup; copying its output:");
+                spew("STDERR", died.stderr);
+                spew("STDOUT", died.stdout);
 
-            nodeStates.put(node.getName(), new SimpleNodeState(node, WONT_START));
+                nodeStates.put(node.getName(), new SimpleNodeState(node, WONT_START));
+            }
         } else {
             logger.warning("Unexpected StartStatus: " + status);
             nodeStates.put(node.getName(), new SimpleNodeState(node, WONT_START));
@@ -623,14 +661,19 @@ public class ProcessController {
         Client c = pfb.getClientFactoryBean().create();
         HTTPConduit httpConduit = (HTTPConduit)c.getConduit();
         httpConduit.setTlsClientParameters(new TLSClientParameters() {
+            @Override
             public boolean isDisableCNCheck() {
                 return true;
             }
 
+            @Override
             public TrustManager[] getTrustManagers() {
                 return new TrustManager[] { new X509TrustManager() {
+                    @Override
                     public void checkClientTrusted(X509Certificate[] x509Certificates, String s) {}
+                    @Override
                     public void checkServerTrusted(X509Certificate[] x509Certificates, String s) {}
+                    @Override
                     public X509Certificate[] getAcceptedIssuers() {return new X509Certificate[0];}
                 }};
             }
@@ -639,7 +682,7 @@ public class ProcessController {
     }
 
     private void spew(String what, byte[] outBytes) {
-        BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(outBytes) /* TODO Note platform default encoding is actually wanted here */));
+        BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(outBytes) /* Note platform default encoding is actually wanted here */));
         String line;
         try {
             while ((line = br.readLine()) != null) {
@@ -654,12 +697,51 @@ public class ProcessController {
         // Reset any running node states to STOPPING
         for (Map.Entry<String, NodeState> entry : nodeStates.entrySet()) {
             final String name = entry.getKey();
-            logger.info(name + " stopping"); // TODO find some cleaner way of ensuring this log text gets flushed promptly
+            logger.info(name + " stopping");
             final NodeState state = entry.getValue();
             if (EnumSet.of(RUNNING, UNKNOWN, STARTING).contains(state.type)) {
                 stopNode(name, NODE_SHUTDOWN_TIMEOUT);
             }
         }
+
+        long time = System.currentTimeMillis();
+        while( (System.currentTimeMillis()-PC_SHUTDOWN_TIMEOUT) < time ) {
+            boolean allStopped = true;
+            for (Map.Entry<String, NodeState> entry : nodeStates.entrySet()) {
+                final NodeState state = entry.getValue();
+                if ( !EnumSet.of(WONT_START, CRASHED, STOPPED).contains(state.type) ) {
+                    allStopped = false;
+                }
+            }
+            
+            if ( allStopped ) break;
+
+            try {
+                Thread.sleep( 1000L );
+            } catch ( InterruptedException ie ) {
+                break;
+            }
+        }
     }
+
+    private static Exception filterException( final Exception thrown ) {
+        Exception showThrown;
+
+        if ( isNetworkException(thrown) ) {
+            showThrown = ExceptionUtils.getDebugException( thrown );    
+        } else {
+            showThrown = thrown;
+        }
+
+        return showThrown;
+    }
+
+    public static boolean isNetworkException( final Exception exception ) {
+        return ExceptionUtils.causedBy( exception, ConnectException.class ) ||
+               ExceptionUtils.causedBy( exception, NoRouteToHostException.class ) ||
+               ExceptionUtils.causedBy( exception, UnknownHostException.class ) ||
+               ExceptionUtils.causedBy( exception, SocketTimeoutException.class );
+    }
+
 
 }

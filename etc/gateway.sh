@@ -113,6 +113,15 @@ wait_for_pid() {
   return 1
 }
 
+ensureNotRunning() {
+    if [ ! -z "${GATEWAY_PID}" ]; then
+        if ! pid_exited ; then
+            echo "Gateway is already running."
+            exit 33
+        fi
+    fi
+}
+
 echoOptions() {
     echo "Gateway commands:"
     echo -e "\trun   - Run the gateway with console output"
@@ -147,6 +156,8 @@ if [ "$1" = "start" ] ; then
         JAVA_OPTS="${JAVA_OPTS} -Dcom.l7tech.server.log.console=true"
     fi
 
+    ensureNotRunning
+
     #enable logging of stdout/stderr using JDK logging as well as the standard SSG logging facilities
     "${SSG_JAVA_HOME}/bin/java" -Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "${SSGARGS[@]}" &
 
@@ -157,6 +168,8 @@ if [ "$1" = "start" ] ; then
 
 elif [ "$1" = "run" ] ; then
     shift
+
+    ensureNotRunning
 
     if [ -n "${GATEWAY_PID}" ]; then
         rm -f "${GATEWAY_PID}"
@@ -200,7 +213,7 @@ elif [ "$1" = "stop" ] ; then
     if [ ! -z "$GATEWAY_PID" ]; then
        echo "Killing: `cat $GATEWAY_PID`"
        kill -9 `cat $GATEWAY_PID`
-       exit 21
+       exit 0
     else
        echo "Kill failed: \$GATEWAY_PID not set"
        exit 21;
