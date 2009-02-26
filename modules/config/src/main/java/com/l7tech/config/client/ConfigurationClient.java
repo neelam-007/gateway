@@ -50,34 +50,41 @@ public class ConfigurationClient extends Interaction {
      */
     @Override
     public boolean doInteraction() throws IOException {
-        boolean success = false;                
+        boolean success = false;
+        boolean reconfigure = false;
+        Map<String,ConfigurationBean> configBeans = new TreeMap<String,ConfigurationBean>();
+        initConfig(optionSet, configBeans, configBeanList);
         try {
-            Map<String,ConfigurationBean> configBeans = new TreeMap<String,ConfigurationBean>();
-            initConfig( optionSet, configBeans, configBeanList  );
+            do {
+                boolean store = false;
+                if (COMMAND_WIZARD.equals(command)) {
+                    store = doWizard(optionSet, configBeans);
+                } else if (COMMAND_EDIT.equals(command)) {
+                    store = doEdit(optionSet, configBeans);
+                } else if (COMMAND_SHOW.equals(command)) {
+                    doShow(optionSet, configBeans, false, true);
+                    promptContinue();
+                }
 
-            boolean store = false;
-            if ( COMMAND_WIZARD.equals(command) ) {
-                store = doWizard( optionSet, configBeans  );
-            } else if ( COMMAND_EDIT.equals(command) ) {
-                store = doEdit( optionSet, configBeans  );
-            } else if ( COMMAND_SHOW.equals(command) ) {
-                doShow( optionSet, configBeans, false, true  );
-                promptContinue();
-            }
+                if (store) {
+                    System.out.println(bundle.getString("message.results.pleasewait"));
+                    try {
+                        provider.storeConfiguration(configBeans.values());
+                        System.out.println(bundle.getString("message.results.success"));
+                        success = true;
+                    } catch (ConfigurationException ce) {
+                        System.out.println(bundle.getString("message.results.failure"));
+                        System.out.println(ce.getMessage());
 
-            if ( store ) {
-                System.out.println( bundle.getString("message.results.pleasewait") );
-                try {
-                    provider.storeConfiguration( configBeans.values() );    
-                    System.out.println( bundle.getString("message.results.success") );
+                        //prompt if user would like to reconfigure to fix the problem 
+                        reconfigure = promptConfirm(bundle.getString("message.reconfigure"), true);
+                    }
+                } else {
                     success = true;
-                } catch ( ConfigurationException ce ) {
-                    System.out.println( bundle.getString("message.results.failure") );
-                    System.out.println(ce.getMessage());
-                }                                  
-            } else {
-                success = true;
-            }
+                }
+
+            } while (reconfigure);
+
         } catch ( WizardNavigationException wne ) {
             logger.log(Level.WARNING, "Navigation error during configuration", wne );
         }
