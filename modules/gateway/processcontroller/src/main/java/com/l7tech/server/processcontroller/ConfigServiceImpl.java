@@ -341,7 +341,7 @@ public class ConfigServiceImpl implements ConfigService {
         try {
             hostname = InetAddress.getLocalHost().getHostName();
         } catch (UnknownHostException e) {
-            logger.log(Level.WARNING, "Unable to get local hostname; using localhost", e);
+            logger.log(Level.WARNING, "Unable to get local hostname '"+ExceptionUtils.getMessage(e)+"'; using localhost", ExceptionUtils.getDebugException(e));
             hostname = "localhost";
         }
         return hostname;
