@@ -71,6 +71,9 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         ignoredClassNames.add(EmailListenerState.class.getName());
         ignoredClassNames.add("com.l7tech.server.ems.standardreports.StandardReportArtifact");
         ignoredClassNames.add("com.l7tech.server.ems.migration.MigrationMappingRecord");
+        ignoredClassNames.add("com.l7tech.server.ems.monitoring.SystemMonitoringNotificationRule");
+        ignoredClassNames.add("com.l7tech.server.ems.monitoring.SsgClusterNotificationSetup");
+        ignoredClassNames.add("com.l7tech.server.ems.monitoring.EntityMonitoringPropertySetup");
 
         // System entities that should generate application events but should not be audited
         noAuditClassNames = new HashSet<String>();

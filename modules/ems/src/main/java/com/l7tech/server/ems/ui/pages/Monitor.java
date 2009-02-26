@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.monitoring.*;
 import com.l7tech.server.ems.ui.NavigationPage;
@@ -213,10 +214,25 @@ public class Monitor extends EsmStandardWebPage {
                 Map<String, Object> jsonFormatMap = (Map<String, Object>) jsonDataObj;
 
                 try {
-                    Map<String, Object> clusterPropertyFormatMap = toClusterPropertyFormat(jsonFormatMap);
-                    Map<String, Object> oldSettingsMap = systemMonitoringSetupSettingsManager.findSetupSettings();
-                    systemMonitoringSetupSettingsManager.saveSetupSettings(clusterPropertyFormatMap);
-                    auditSystemMonitoringSetupChange(oldSettingsMap, clusterPropertyFormatMap);
+                    final Map<String, Object> clusterPropertyFormatMap = toClusterPropertyFormat(jsonFormatMap);
+                    final Map<String, Object> oldSettingsMap = systemMonitoringSetupSettingsManager.findSetupSettings();
+                    final Object[] exceptionHolder = new Object[1];
+                    
+                    AuditContextUtils.doAsSystem(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                systemMonitoringSetupSettingsManager.saveSetupSettings(clusterPropertyFormatMap);
+                                auditSystemMonitoringSetupChange(oldSettingsMap, clusterPropertyFormatMap);
+                            } catch (Exception e) {
+                                exceptionHolder[0] = e;
+                            }
+                        }
+                    });
+
+                    if (exceptionHolder[0] != null && (exceptionHolder[0] instanceof Exception)) {
+                        throw (Exception) exceptionHolder[0];
+                    }
                 } catch (Exception e) {
                     returnValue = new JSONException(e);
                 }
