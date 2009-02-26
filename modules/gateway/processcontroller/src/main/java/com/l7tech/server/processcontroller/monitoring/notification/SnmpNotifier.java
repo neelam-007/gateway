@@ -10,6 +10,7 @@ import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.UptimeMonitor;
+import com.l7tech.server.processcontroller.monitoring.InOut;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.UptimeMetrics;
 import org.snmp4j.MessageDispatcher;
@@ -80,7 +81,7 @@ class SnmpNotifier extends Notifier<SnmpTrapNotificationRule> {
         auditor = new LogOnlyAuditor(logger);
     }
 
-    public NotificationAttempt.StatusType doNotification(Long timestamp, Object value, Trigger trigger) throws IOException {
+    public NotificationAttempt.StatusType doNotification(Long timestamp, InOut inOut, Object value, Trigger trigger) throws IOException {
         PDU pdu = new PDU();
         pdu.setType(PDU.TRAP);
         UptimeMetrics um = UptimeMonitor.getLastUptime();
@@ -93,7 +94,7 @@ class SnmpNotifier extends Notifier<SnmpTrapNotificationRule> {
         pdu.add(new VariableBinding(SnmpConstants.sysUpTime, new TimeTicks(uptimeSeconds * 100))); // TimeTicks is s/100
         pdu.add(new VariableBinding(SnmpConstants.snmpTrapOID, trapOid));
 
-        Map<String, String> variables = getMonitoringVariables(trigger, value);
+        Map<String, String> variables = getMonitoringVariables(trigger, inOut, value);
 
         String body = ExpandVariables.process(text, variables, auditor);
         OctetString errorMessage;

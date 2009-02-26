@@ -10,8 +10,8 @@ import java.util.Set;
 public class PropertyCondition extends NotifiableCondition<MonitorableProperty> {
     private final Object value;
 
-    protected PropertyCondition(MonitorableProperty monitorable, String componentId, Long timestamp, Set<Long> triggerOids, Object value) {
-        super(monitorable, componentId, timestamp, triggerOids);
+    protected PropertyCondition(MonitorableProperty monitorable, String componentId, InOut inOut, Long timestamp, Set<Long> triggerOids, Object value) {
+        super(monitorable, componentId, inOut, timestamp, triggerOids);
         this.value = value;
     }
 

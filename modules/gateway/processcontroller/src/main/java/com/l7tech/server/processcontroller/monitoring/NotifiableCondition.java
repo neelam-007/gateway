@@ -17,9 +17,11 @@ abstract class NotifiableCondition<MT extends Monitorable> {
     private final String componentId;
     private final Long timestamp;
     private final Set<Long> triggerOids;
+    private final InOut inOut;
 
-    protected NotifiableCondition(MT monitorable, String componentId, Long timestamp, Set<Long> triggerOids) {
+    protected NotifiableCondition(MT monitorable, String componentId, InOut inOut, Long timestamp, Set<Long> triggerOids) {
         this.monitorable = monitorable;
+        this.inOut = inOut;
         this.componentId = componentId;
         this.timestamp = timestamp;
         this.triggerOids = triggerOids;
@@ -45,5 +47,9 @@ abstract class NotifiableCondition<MT extends Monitorable> {
     /** The ID of the component that has the condition */
     public String getComponentId() {
         return componentId;
+    }
+
+    public InOut getInOut() {
+        return inOut;
     }
 }

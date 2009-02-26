@@ -33,7 +33,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
     private static final Logger logger = Logger.getLogger(MonitoringKernelImpl.class.getName());
 
     private static final int MIN_SAMPLING_INTERVAL = 1000;
-    private static final int OUT_OF_TOLERANCE_LOG_INTERVAL = 60000;
+    private static final int TOLERANCE_LOG_INTERVAL = 60000;
 
     private final Timer samplerTimer = new Timer("Monitoring System / Property Sampler", true);
     private final Timer triggerCheckTimer = new Timer("Monitoring System / Trigger Condition Checker", true);
@@ -54,25 +54,25 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
     private static abstract class TriggerState<T extends Trigger> {
         private final T trigger;
-        private volatile Long outOfTolerance;
-        private volatile Long logged;
+        private volatile Tolerance tolerance;
 
-        private TriggerState(T trigger) {
+        private TriggerState(T trigger, Tolerance tolerance) {
             this.trigger = trigger;
+            this.tolerance = tolerance;
         }
     }
 
     private static class EventTriggerState extends TriggerState<EventTrigger> {
-        private EventTriggerState(EventTrigger trigger) {
-            super(trigger);
+        private EventTriggerState(EventTrigger trigger, Tolerance tolerance) {
+            super(trigger, tolerance);
         }
     }
 
     private static class PropertyTriggerState<T extends Serializable & Comparable> extends TriggerState<PropertyTrigger> {
         private final Comparable comparisonValue;
 
-        private PropertyTriggerState(PropertyTrigger trigger) {
-            super(trigger);
+        private PropertyTriggerState(PropertyTrigger trigger, Tolerance tolerance) {
+            super(trigger, tolerance);
             final MonitorableProperty prop = BuiltinMonitorables.getBuiltinProperty(trigger.getComponentType(), trigger.getMonitorableId());
             final String tval = trigger.getTriggerValue();
             if (prop == null) {
@@ -158,6 +158,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
             logger.info("Monitoring Configuration has been updated");
         }
 
+        final Map<Long, TriggerState> priorTstates = currentTriggerStates;
         final Map<Long, TriggerState> buildingTstates = new HashMap<Long, TriggerState>();
 
         // Check for properties that are starting to be monitored or are no longer being monitored
@@ -176,10 +177,11 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         for (Map.Entry<Long, Trigger> entry : newTriggers.entrySet()) {
             final Long triggerOid = entry.getKey();
             final Trigger<?> trigger = entry.getValue();
+            final TriggerState priorTs = priorTstates == null ? null : priorTstates.get(triggerOid);
 
             if (trigger instanceof PropertyTrigger) {
                 PropertyTrigger pt = (PropertyTrigger) trigger;
-                buildingTstates.put(triggerOid, new PropertyTriggerState(pt)); // TODO inherit anything from predecessor version?
+                buildingTstates.put(triggerOid, new PropertyTriggerState(pt, priorTs == null ? null : priorTs.tolerance));
                 MonitorableProperty mp = pt.getMonitorable();
                 liveProperties.add(mp);
                 PropertyState<?> ps = buildingPstates.get(mp);
@@ -209,7 +211,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 buildingPstates.put(mp, ps);
             } else if (trigger instanceof EventTrigger) {
                 EventTrigger et = (EventTrigger) trigger;
-                buildingTstates.put(triggerOid, new EventTriggerState(et)); // TODO inherit anything from predecessor version?
+                buildingTstates.put(triggerOid, new EventTriggerState(et, priorTs == null ? null : priorTs.tolerance));
                 MonitorableEvent me = et.getMonitorable();
                 liveEvents.add(me);
                 EventState es = buildingEstates.get(me);
@@ -280,7 +282,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     stati.put(prop, transientStatus);
                 }
 
-                if (tstate.outOfTolerance != null) {
+                if (tstate.tolerance != null && tstate.tolerance.inOut == InOut.OUT) {
                     transientStatus.badTriggerOids.add(toid);
                     transientStatus.status = MonitoredStatus.StatusType.WARNING;
                 }
@@ -370,6 +372,19 @@ public class MonitoringKernelImpl implements MonitoringKernel {
     private void kickTheNotifier() {
     }
 
+    private class Tolerance {
+        private InOut inOut;
+        private Long sinceWhen;
+        private Long logged;
+
+        private Tolerance(Tolerance prevTolerance) {
+            if (prevTolerance == null) return;
+            this.inOut = prevTolerance.inOut;
+            this.sinceWhen = prevTolerance.sinceWhen;
+            this.logged = prevTolerance.logged;
+        }
+    }
+
     private class TriggerCheckTask extends TimerTask {
         @Override
         public void run() {
@@ -414,45 +429,54 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     // Compare the sampled value
                     final ComparisonOperator op = ptrigger.getOperator();
                     final Comparable comparisonValue = ptstate.comparisonValue;
-                    final Long prevOut = tstate.outOfTolerance;
-                    final Long prevLogged = tstate.logged;
+                    final Tolerance prevTolerance = tstate.tolerance;
                     final String sampledValueString = sample.right.toString();
 
-                    final boolean triggerResult;
+                    final Tolerance newTolerance = new Tolerance(prevTolerance);
+
+                    final InOut currentInOut;
                     try {
-                        triggerResult = op.compare(sampledValue, comparisonValue, false);
+                        currentInOut = op.compare(sampledValue, comparisonValue, false) ? InOut.OUT : InOut.IN;
                     } catch (Exception e) {
                         logger.log(Level.WARNING, MessageFormat.format("{0} value {1} couldn't be compared for {2} {3}; skipping", property, sampledValueString, op, comparisonValue), e);
                         continue;
                     }
 
-                    if (triggerResult) {
-                        if (prevOut != null) {
-                            if (now - prevLogged >= OUT_OF_TOLERANCE_LOG_INTERVAL) {
-                                // TODO consider suppression of repeated notifications as a configurable aspect of NotificationRules
-                                logger.log(Level.INFO, "{0} value {1} is still out of tolerance from {2}ms ago, skipping repeated notification", new Object[] { property, sampledValueString, now - prevOut});
-                                tstate.logged = now;
-                            }
-                            continue;
-                        }
-                        logger.log(Level.INFO, "{0} value {1} is out of tolerance ({2} {3})", new Object[] { property, sampledValueString, op, comparisonValue });
-                        tstate.outOfTolerance = now;
-                        tstate.logged = now;
+                    newTolerance.inOut = currentInOut;
+
+                    final boolean log, notify;
+                    // TODO consider suppression of repeated notifications as a configurable aspect of NotificationRules
+
+                    if (prevTolerance == null) {
+                        // log & notify initial state only if it's OUT
+                        log = currentInOut == InOut.OUT;
+                        notify = currentInOut == InOut.OUT;
+                    } else if (prevTolerance.inOut != currentInOut) {
+                        // log & notify all state transitions
+                        log = true;
+                        notify = true;
+                    } else {
+                        // State unchanged since last time. Don't notify; log if enough time has elapsed
+                        log = prevTolerance.logged != null && now - prevTolerance.logged >= TOLERANCE_LOG_INTERVAL;
+                        notify = false;
+                    }
+
+                    if (log) {
+                        logger.log(Level.INFO, "{0} value {1} is {2} ({3} {4})", new Object[] { property, sampledValueString, currentInOut, op, comparisonValue });
+                        newTolerance.logged = now;
+                    }
+
+                    if (notify) {
                         PropertyCondition cond = conditions.get(property);
                         if (cond == null) {
-                            conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), when, Collections.singleton(oid), sampledValue));
+                            conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), currentInOut, when, Collections.singleton(oid), sampledValue));
                         } else {
                             // Merge the previous condition with this one
-                            conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), cond.getTimestamp(), Sets.union(cond.getTriggerOids(), oid), cond.getValue()));
+                            conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), currentInOut, cond.getTimestamp(), Sets.union(cond.getTriggerOids(), oid), cond.getValue()));
                         }
-                    } else {
-                        if (prevOut != null) {
-                            logger.log(Level.INFO, "{0} value {1} is back in tolerance ({2} {3})", new Object[] { property, sampledValueString, op, comparisonValue });
-                        } else {
-                            logger.log(Level.FINE, "{0} value {1} is in tolerance ({2} {3})", new Object[] { property, sampledValueString, op, comparisonValue });
-                        }
-                        tstate.outOfTolerance = null;
                     }
+
+                    tstate.tolerance = newTolerance;
                 }
 
                 notificationQueue.addAll(conditions.values());
@@ -476,6 +500,8 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                         logger.warning("Got a condition with no trigger OIDs");
                         continue;
                     }
+
+                    final InOut inOut = got.getInOut();
 
                     final Map<Long, TriggerState> tstates = currentTriggerStates;
                     final Map<Long, NotificationState> nstates = currentNotificationStates;
@@ -520,7 +546,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                                 notifierThreadPool.submit(new Runnable() {
                                     public void run() {
                                         try {
-                                            final NotificationAttempt.StatusType status = notifier.doNotification(got.getTimestamp(), pc.getValue(), trigger);
+                                            final NotificationAttempt.StatusType status = notifier.doNotification(got.getTimestamp(), inOut, pc.getValue(), trigger);
                                             nstate1.notified(new NotificationAttempt(status, null, System.currentTimeMillis()));
                                         } catch (Exception e) {
                                             logger.log(Level.WARNING, "Couldn't notify for " + rule, e);

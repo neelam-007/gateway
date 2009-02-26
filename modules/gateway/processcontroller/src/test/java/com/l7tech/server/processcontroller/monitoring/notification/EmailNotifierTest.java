@@ -4,6 +4,7 @@ import com.l7tech.server.management.config.monitoring.EmailNotificationRule;
 import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.server.processcontroller.monitoring.MonitoringKernelTest;
+import com.l7tech.server.processcontroller.monitoring.InOut;
 import org.junit.*;
 
 import java.util.Arrays;
@@ -37,6 +38,6 @@ public class EmailNotifierTest {
         config.getNotificationRules().add(rule);
         Trigger trigger = config.getTriggers().iterator().next();
 
-        notifier.doNotification(System.currentTimeMillis(), "44", trigger);
+        notifier.doNotification(System.currentTimeMillis(), InOut.OUT, "44", trigger);
     }
 }

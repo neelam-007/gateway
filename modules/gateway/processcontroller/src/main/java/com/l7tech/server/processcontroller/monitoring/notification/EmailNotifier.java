@@ -13,6 +13,7 @@ import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.transport.email.EmailUtils;
 import com.l7tech.server.transport.http.SslClientSocketFactory;
+import com.l7tech.server.processcontroller.monitoring.InOut;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 
@@ -184,10 +185,10 @@ class EmailNotifier extends Notifier<EmailNotificationRule> {
     }
 
     @Override
-    public NotificationAttempt.StatusType doNotification(Long timestamp, Object value, Trigger trigger) throws IOException {
+    public NotificationAttempt.StatusType doNotification(Long timestamp, InOut inOut, Object value, Trigger trigger) throws IOException {
         try {
             final Session session = getSession();
-            final String body = ExpandVariables.process(rule.getText(), getMonitoringVariables(trigger, value), auditor);
+            final String body = ExpandVariables.process(rule.getText(), getMonitoringVariables(trigger, inOut, value), auditor);
 
             sendMessage( session, body );
             return NotificationAttempt.StatusType.SENT;

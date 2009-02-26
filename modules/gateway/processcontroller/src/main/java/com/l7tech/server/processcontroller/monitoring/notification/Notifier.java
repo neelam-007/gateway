@@ -7,6 +7,7 @@ import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.server.management.config.monitoring.NotificationRule;
 import com.l7tech.server.management.config.monitoring.PropertyTrigger;
 import com.l7tech.server.management.config.monitoring.Trigger;
+import com.l7tech.server.processcontroller.monitoring.InOut;
 import com.l7tech.util.Closeable;
 
 import java.io.IOException;
@@ -28,11 +29,12 @@ public abstract class Notifier<RT extends NotificationRule> implements Closeable
      * Do the notification.
      *
      * @param timestamp the time when the trigger fired (usually quite recent)
-     * @param value the value that was observed
+     * @param inOut indicates whether the trigger is in or out of tolerance
+     * @param o the value that was observed
      * @param trigger the trigger that fired
      * @throws IOException if the notification could be done
      */
-    public abstract NotificationAttempt.StatusType doNotification(Long timestamp, Object value, Trigger trigger) throws IOException;
+    public abstract NotificationAttempt.StatusType doNotification(Long timestamp, InOut inOut, Object o, Trigger trigger) throws IOException;
 
     @Override
     public void close() { }
@@ -56,10 +58,10 @@ public abstract class Notifier<RT extends NotificationRule> implements Closeable
      * Return a new HashMap populated with interpolatable variables describing the specified Trigger.
      *
      * @param trigger the trigger to examine.  Required.
-     * @param value the value of the property
-     * @return a Map full of context variables for this trigger.  Never null or empty.
+     * @param inOut
+     *@param value @return a Map full of context variables for this trigger.  Never null or empty.
      */
-    protected Map<String, String> getMonitoringVariables(Trigger trigger, Object value) {
+    protected Map<String, String> getMonitoringVariables(Trigger trigger, InOut inOut, Object value) {
         Map<String, String> variables = new HashMap<String, String>();
         variables.put("monitoring.context.entitytype", sn(trigger.getComponentType()));
         variables.put("monitoring.context.entitypathname", sn(trigger.getComponentId()));
@@ -67,7 +69,7 @@ public abstract class Notifier<RT extends NotificationRule> implements Closeable
         if (trigger instanceof PropertyTrigger) {
             PropertyTrigger ptrig = (PropertyTrigger) trigger;
             variables.put("monitoring.context.propertytype", sn(ptrig.getMonitorableId()));
-            variables.put("monitoring.context.propertystate", "alert");
+            variables.put("monitoring.context.propertystate", inOut.getShortName());
             variables.put("monitoring.context.propertyvalue", sn(value));
             variables.put("monitoring.context.propertyunit", sn(ptrig.getMonitorable().getValueUnit()));
             variables.put("monitoring.context.triggervalue", sn(ptrig.getTriggerValue()));

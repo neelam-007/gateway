@@ -14,6 +14,7 @@ import com.l7tech.server.management.config.monitoring.Header;
 import com.l7tech.server.management.config.monitoring.HttpNotificationRule;
 import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.server.processcontroller.monitoring.InOut;
 import com.l7tech.util.ResourceUtils;
 
 import java.io.ByteArrayInputStream;
@@ -53,8 +54,8 @@ class HttpNotifier extends Notifier<HttpNotificationRule> {
         }
     }
 
-    public NotificationAttempt.StatusType doNotification(Long timestamp, Object value, Trigger trigger) throws IOException {
-        String bodyText = rule.getRequestBody() == null ? null : ExpandVariables.process(rule.getRequestBody(), getMonitoringVariables(trigger, value), auditor);
+    public NotificationAttempt.StatusType doNotification(Long timestamp, InOut inOut, Object value, Trigger trigger) throws IOException {
+        String bodyText = rule.getRequestBody() == null ? null : ExpandVariables.process(rule.getRequestBody(), getMonitoringVariables(trigger, inOut, value), auditor);
 
         GenericHttpRequestParams params = new GenericHttpRequestParams(new URL(rule.getUrl()));
         params.setContentType(contentType);
