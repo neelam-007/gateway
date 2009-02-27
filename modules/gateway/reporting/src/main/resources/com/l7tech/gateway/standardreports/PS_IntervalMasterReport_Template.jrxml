@@ -838,7 +838,8 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String"><![CDATA["Interval"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.String">
+                            <![CDATA["Interval" + Utilities.getIntervalDateInfoString($P{INTERVAL_TIME_UNIT})]]></textFieldExpression>
                     </textField>
                     <staticText>
                         <reportElement

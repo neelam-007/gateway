@@ -652,6 +652,22 @@ public class Utilities {
     }
 
     /**
+     * Interval reports show the interval information in column 0. The heading for this column is 'Interval'. Hourly
+     * and weekly intervals show date using MM/dd format, so for these intervals we can update the column heading
+     * so that the reader of a report knows what the month and day order is.
+     *
+     * @param intervalUnitOfTime unit of time that an interval report is using
+     * @return String to add to the 'Interval' column heading. Empty string for Day and Month intervals
+     */
+    public static String getIntervalDateInfoString(UNIT_OF_TIME intervalUnitOfTime) {
+
+        if (intervalUnitOfTime == UNIT_OF_TIME.HOUR || intervalUnitOfTime == UNIT_OF_TIME.WEEK) {
+            return new String(" (mm/dd)");
+        }
+        return "";
+    }
+
+    /**
      * Create a string representation of all string values contained in the values collection
      *
      * @param values The Collection of strings to be placed into a single string for display purposes
@@ -699,8 +715,8 @@ public class Utilities {
      * @param isUsage                 needed in order to validate the input parameters
      * @return sql string, ready to be ran against a database. This sql query will ALWAYS produce the following columns
      *         of data: <pre>
-     *                 AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                 </pre>
+     *                         AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                         </pre>
      *         Note operation is not included. It is a mapping key under the covers but it has special meaning. Notice how
      *         authenticated_user is returned. To the user and to business logic, authenticated user is a normal mapping key
      */
@@ -785,8 +801,8 @@ public class Utilities {
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
      * @return a valid sql string ready to be ran against a database. The sql will always produce the following fields:-
      *         <pre>
-     *                 SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
-     *                 </pre>
+     *                         SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
+     *                         </pre>
      */
     public static String getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                      Map<String, Set<String>> serviceIdToOperations,
@@ -869,9 +885,9 @@ public class Utilities {
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
      * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
      *         <pre>
-     *                  SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                 </pre>
+     *                          SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                         </pre>
      */
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                        Map<String, Set<String>> serviceIdToOperations,
@@ -973,9 +989,9 @@ public class Utilities {
      * @param operation               the operation, if isDetail is true, that we want usage data for
      * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
      *         <pre>
-     *                  SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                 </pre>
+     *                          SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                         </pre>
      */
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                        Long serviceId,

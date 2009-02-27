@@ -355,7 +355,8 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String"><![CDATA["Interval"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.String">
+                            <![CDATA["Interval" + Utilities.getIntervalDateInfoString($P{INTERVAL_TIME_UNIT})]]></textFieldExpression>
                     </textField>
                 </frame>
             </band>
