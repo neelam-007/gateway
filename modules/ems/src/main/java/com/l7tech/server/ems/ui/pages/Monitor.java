@@ -1,20 +1,20 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.gateway.common.Component;
+import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.AuditRecord;
+import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.audit.SystemAuditRecord;
-import com.l7tech.gateway.common.audit.AuditRecord;
-import com.l7tech.gateway.common.audit.AuditDetail;
-import com.l7tech.gateway.common.Component;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.server.ems.EsmMessages;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.monitoring.*;
 import com.l7tech.server.ems.ui.NavigationPage;
-import com.l7tech.server.ems.EsmMessages;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.wicket.RequestCycle;
@@ -262,10 +262,8 @@ public class Monitor extends EsmStandardWebPage {
 
                 // Form the JSON content map
                 Map<String, Object> jsonDataMap = new HashMap<String, Object>();
-                if (notificationRules != null && !notificationRules.isEmpty()) {
-                    jsonDataMap.put(JSONConstants.READONLY, isReadOnly);
-                    jsonDataMap.put(JSONConstants.NotifiationRule.RECORDS, notificationRules);
-                }
+                jsonDataMap.put(JSONConstants.READONLY, isReadOnly);
+                jsonDataMap.put(JSONConstants.NotifiationRule.RECORDS, notificationRules);
 
                 // Return the JSON data back to the browser.
                 return jsonDataMap;
