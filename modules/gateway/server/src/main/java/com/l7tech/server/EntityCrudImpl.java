@@ -145,8 +145,9 @@ public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
         if (manager != null) {
             if (e instanceof HasFolder && manager instanceof FolderedEntityManager) {
                 ((FolderedEntityManager)manager).updateWithFolder((PersistentEntity) e);
+            } else {
+                manager.update((PersistentEntity)e);
             }
-            manager.update((PersistentEntity)e);
             return;
         }
 
