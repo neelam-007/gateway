@@ -522,7 +522,12 @@ public class MigrationManagerImpl implements MigrationManager {
     private ExternalEntityHeader resolveHeader(final ExternalEntityHeader header) throws MigrationApi.MigrationException {
         if (header instanceof ValueReferenceEntityHeader)
             return header;
-        Entity ent = loadEntity(header);
+        Entity ent = null;
+        try {
+            ent = loadEntity(header);
+        } catch (MigrationApi.MigrationException e) {
+            logger.log(Level.WARNING, "Error resolving header: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
         ExternalEntityHeader externalEntityHeader = ent == null ? header : EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(ent));
         enhanceHeader( externalEntityHeader );
         return externalEntityHeader;
