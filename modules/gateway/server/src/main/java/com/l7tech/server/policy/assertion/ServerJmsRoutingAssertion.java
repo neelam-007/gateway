@@ -336,7 +336,11 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     if ( messageSent ) throw jmse;
 
                     if (++oopses < MAX_OOPSES) {
-                        auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, jmse);
+                        if (ExceptionUtils.causedBy(jmse, InvalidDestinationException.class)) {
+                            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, ExceptionUtils.getDebugException(jmse));
+                        } else {
+                            auditor.logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(RETRY_DELAY)}, jmse);
+                        }
                         closeDestinationIfTemporaryQueue( jmsInboundDest );
                         jmsInboundDest = null;
                         closeBagDueToError(cfg, jmsBag);
@@ -381,7 +385,11 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error in outbound JMS request processing"}, e );
             return AssertionStatus.FAILED;
         } catch ( JMSException e ) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error outbound JMS request processing"}, e );
+            if (ExceptionUtils.causedBy(e, InvalidDestinationException.class)) {
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error outbound JMS request processing"}, ExceptionUtils.getDebugException(e) );
+            } else {
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error outbound JMS request processing"}, e );
+            }
 
             closeBagDueToError(cfg, jmsBag);
             return AssertionStatus.FAILED;

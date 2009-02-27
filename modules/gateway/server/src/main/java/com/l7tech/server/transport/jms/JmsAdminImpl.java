@@ -194,7 +194,11 @@ public class JmsAdminImpl implements JmsAdmin {
                         logger.fine("Unable to receive with this queue, will try to open a sender");
                         jmsQueueSender = qs.createSender(q);
                     } catch (JMSException e) {
-                        logger.log(Level.INFO, "This queue cannot be opened for sending nor receiving", e);
+                        if (ExceptionUtils.causedBy(e, InvalidDestinationException.class)) {
+                            logger.log(Level.INFO, "This queue cannot be opened for sending nor receiving", ExceptionUtils.getDebugException(e));
+                        } else {
+                            logger.log(Level.INFO, "This queue cannot be opened for sending nor receiving", e);
+                        }
                         if (laste != null) throw laste;
                         else throw e;
                     }
