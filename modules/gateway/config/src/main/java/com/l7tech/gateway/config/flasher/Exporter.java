@@ -110,9 +110,8 @@ public class Exporter extends ImportExportUtility {
             logger.info("no target image path specified");
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ". i dont know where to output the image to.");
         }
-        if (!testCanWrite(outputpathval)) {
-            logger.warning("cannot write to the target image path specified: " + outputpathval);
-            throw new IOException("cannot write to " + outputpathval);
+        if (!testCanWriteSilently(outputpathval)) {            
+            throw new IOException("cannot write image to " + outputpathval);
         }
 
         // check whether or not we are expected to include audit in export
@@ -162,7 +161,7 @@ public class Exporter extends ImportExportUtility {
                 // produce template mapping if necessary
                 String mappingFileName = FlashUtilityLauncher.getAbsolutePath(arguments.get(MAPPING_PATH.name));
                 if (mappingFileName != null) {
-                    if (!testCanWrite(mappingFileName)) {
+                    if (!testCanWriteSilently(mappingFileName)) {
                         throw new FlashUtilityLauncher.InvalidArgumentException("cannot write to the mapping template path provided: " + mappingFileName);
                     }
                     // read policy files from this dump, collect all potential mapping in order to produce mapping template file
@@ -212,6 +211,7 @@ public class Exporter extends ImportExportUtility {
         }
     }
 
+    @Deprecated
     private boolean testCanWrite(String path) {
         try {
             FileOutputStream fos = new FileOutputStream(path);
@@ -225,6 +225,26 @@ public class Exporter extends ImportExportUtility {
         }
         (new File(path)).delete();
         logger.info("successfully tested write permission for " + path);
+        return true;
+    }
+
+    /**
+     * Quietly test if the given path have permissions to write.  This method is similar to
+     * testCanWrite except that it will not output any error messages, instead, they will be logged.
+     *
+     * @param path  Path to test
+     * @return  TRUE if can write on the given path, otherwise FALSE.
+     */
+    private boolean testCanWriteSilently(String path) {
+        try {
+            FileOutputStream fos = new FileOutputStream(path);
+            fos.close();
+            (new File(path)).delete();
+            logger.warning("Successfully tested write permission for " + path);
+        } catch (Exception e) {
+            logger.warning("Cannot write to " + path + ". ");
+            return false;
+        }
         return true;
     }
 

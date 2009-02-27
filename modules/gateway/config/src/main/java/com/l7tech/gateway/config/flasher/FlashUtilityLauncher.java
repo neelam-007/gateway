@@ -68,9 +68,9 @@ public class FlashUtilityLauncher {
             printusage();
             System.exit(1);
         } catch (IOException e) {
-            System.out.println("Error, consult log file.");
-            logger.log(Level.WARNING, "Could not perform operation", e);
-            System.out.println(e.getMessage());
+            String message = "Error occurred due to '" + e.getMessage() + "'.";
+            System.out.println(message);
+            logger.log(Level.WARNING, message);
             System.exit(1);
         } catch (FatalException e) {
             String message = "Import failed due to '" + e.getMessage() + "'.";
