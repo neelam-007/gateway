@@ -41,7 +41,7 @@ public final class License implements Serializable {
     private final String licenseeName;
     private final String licenseeContactEmail;
     private final String eulaText;
-    private final Set allEnabledFeatures;
+    private final Set<String> allEnabledFeatures;
     private final Set<String> attributes;
 
     // Grant information -- details of how grants are expressed and stored is not exposed in the License interface.
@@ -74,7 +74,7 @@ public final class License implements Serializable {
          *         but this isn't strictly necessary.  Must never return null.  Returning the empty set
          *         will cause all features to be disabled, roughly equivalent to rejecting the entire license.
          */
-        Set getAllEnabledFeatures(Set inputSet);
+        Set<String> getAllEnabledFeatures(Set<String> inputSet);
     }
 
     /**
@@ -290,7 +290,7 @@ public final class License implements Serializable {
         expiryDateUt = expiryDate != null ? expiryDate.getTime() : Long.MAX_VALUE;
         final String desc = parseWildcardStringElement(ld, "description");
         description = "*".equals(desc) ? null : desc;
-        attributes = parseWildcardStringLicenseAttributes(ld, "licenseAttributes", "attribute");
+        attributes = Collections.unmodifiableSet(parseWildcardStringLicenseAttributes(ld, "licenseAttributes", "attribute"));
         String hostname = parseWildcardStringAttribute(ld, "host", "name");
         String ip = parseWildcardStringAttribute(ld, "ip", "address");
         String product = parseWildcardStringAttribute(ld, "product", "name");
@@ -300,13 +300,12 @@ public final class License implements Serializable {
 
         this.eulaText = parseEulaText(ld);
 
-        Set featureSets = new HashSet();
+        Set<String> featureSets = new HashSet<String>();
         collectFeatureSets(ld, "product", "featureset", featureSets);
-        allEnabledFeatures = featureSetExpander == null ? featureSets : featureSetExpander.getAllEnabledFeatures(featureSets);
+        allEnabledFeatures = Collections.unmodifiableSet(featureSetExpander == null ? featureSets : featureSetExpander.getAllEnabledFeatures(featureSets));
 
         //noinspection unchecked
-        this.g = new LicenseGrants(hostname, ip, product, versionMajor, versionMinor,
-                                   (String[])featureSets.toArray(new String[0]), featureLabel);
+        this.g = new LicenseGrants(hostname, ip, product, versionMajor, versionMinor, featureSets.toArray(new String[featureSets.size()]), featureLabel);
         licenseeName = parseWildcardStringAttribute(ld, "licensee", "name");
         requireValue("licensee name", licenseeName);
         final String cemail = parseWildcardStringAttribute(ld, "licensee", "contactEmail");
@@ -316,7 +315,7 @@ public final class License implements Serializable {
         Element signature = DomUtils.findOnlyOneChildElementByName(lic, DsigUtil.DIGSIG_URI, "Signature");
         if (signature != null && trustedIssuers != null) {
             // See if it is valid and if we trust it
-            X509Certificate gotCert = null;
+            final X509Certificate gotCert;
             try {
                 gotCert = DsigUtil.checkSimpleEnvelopedSignature(signature, new SimpleSecurityTokenResolver(trustedIssuers));
             } catch (CertificateEncodingException e) {

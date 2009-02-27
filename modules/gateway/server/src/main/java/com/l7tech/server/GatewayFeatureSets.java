@@ -632,9 +632,8 @@ public class GatewayFeatureSets {
     public static License.FeatureSetExpander getFeatureSetExpander() {
         return new License.FeatureSetExpander() {
             @Override
-            public Set getAllEnabledFeatures(Set inputSet) {
-                //noinspection unchecked
-                Set<String> ret = new HashSet<String>((Set<String>)inputSet);
+            public Set<String> getAllEnabledFeatures(Set<String> inputSet) {
+                Set<String> ret = new HashSet<String>(inputSet);
 
                 if (ret.isEmpty()) {
                     // Backwards compatibility mode for licenses that never contained any featureset elements
@@ -642,8 +641,7 @@ public class GatewayFeatureSets {
                     return ret;
                 }
 
-                //noinspection unchecked
-                for (String topName : (Iterable<String>)inputSet) {
+                for (String topName : inputSet) {
                     GatewayFeatureSet fs = sets.get(topName);
                     if (fs == null) {
                         logger.fine("Ignoring unrecognized feature set name: " + topName);

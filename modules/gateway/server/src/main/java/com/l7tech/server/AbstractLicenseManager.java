@@ -1,42 +1,42 @@
 package com.l7tech.server;
 
-import org.springframework.context.support.ApplicationObjectSupport;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.ApplicationEvent;
-import org.springframework.beans.factory.InitializingBean;
+import com.l7tech.gateway.common.InvalidLicenseException;
+import com.l7tech.gateway.common.License;
+import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.gateway.common.LicenseException;
-import com.l7tech.gateway.common.InvalidLicenseException;
-import com.l7tech.gateway.common.License;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.audit.SystemMessages;
-import com.l7tech.gateway.common.audit.AuditDetailMessage;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.BuildInfo;
-import com.l7tech.util.Background;
-import com.l7tech.util.Functions;
-import com.l7tech.server.event.system.LicenseEvent;
-import com.l7tech.server.event.admin.ClusterPropertyEvent;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.event.admin.ClusterPropertyEvent;
+import com.l7tech.server.event.system.LicenseEvent;
+import com.l7tech.util.Background;
+import com.l7tech.util.BuildInfo;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.support.ApplicationObjectSupport;
 
-import java.security.cert.CertificateFactory;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.security.SecureRandom;
-import java.io.InputStream;
 import java.io.ByteArrayInputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.TimerTask;
+import java.io.InputStream;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -58,6 +58,7 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
         licenseUpdateLock.lock();
         try {
             reloadLicenseFromDatabase();
+            License license = current.get();
             if (license != null)
                 return license;
             if (licenseLastError != null)
@@ -103,7 +104,7 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
         licenseUpdateLock.lock();
         try {
             long oldLoadTime = this.licenseLoaded;
-            License oldLicense = this.license;
+            License oldLicense = current.get();
             validateAndInstallLicense(newLicenseXml);
 
             // It was valid.  Save to db so the other cluster nodes can bask in its glory
@@ -149,8 +150,9 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
             Set<String> features = extraFeaturesFactory.call(assertion);
 
             if ( features != null ) {
+                License license = current.get();
                 for ( String feature : features ) {
-                    if ( !license.isFeatureEnabled( feature ) ) {
+                    if ( license == null || !license.isFeatureEnabled( feature ) ) {
                         enabled = false;
 
                         if ( logger.isLoggable(Level.INFO) ) {
@@ -172,13 +174,13 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
     @Override
     public boolean isFeatureEnabled(String feature) {
         check();
+        License license = current.get();
         return license != null && feature != null && license.isFeatureEnabled(feature);
     }
 
     @Override
     public void requireFeature(String feature) throws LicenseException {
         if (!isFeatureEnabled(feature)) {
-            checkCount.set(CHECKCOUNT_CHECK_NOW);
             throw new LicenseException("The specified feature is not supported on this Gateway: " + feature);
         }
     }
@@ -213,31 +215,29 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
     //- PRIVATE
 
     private static final long CHECK_INTERVAL = (5L * 60L * 1000L) + (new SecureRandom().nextInt(60000)); // recheck every 5 min + random desync interval
-    private static final int CHECK_THRESHOLD = 30; // dont recheck more often than once per this many license hook calls
     private static final long DB_FAILURE_GRACE_PERIOD = 72L * 60L * 60L * 1000L; // ignore a DB failure for up to 72 hours before canceling any current license
     private static final String LICENSE_PROPERTY_NAME = "license";
     private static final Object LICENSE_PROPERTY_VAL = getVal();
-    private static final int CHECKCOUNT_CHECK_NOW = 10000; // high number meaning check right now
     private static final long TIME_CHECK_NOW = -20000L;// Filled in by Spring
 
     private final Logger logger;
     private final ClusterPropertyManager clusterPropertyManager;// Brake to prevent calls to System.currentTimeMillis every time a license check is made.
     // This is unsynchronized because we don't care if some writes to it are lost, or if some reads are out-of-date.
-    private final AtomicInteger checkCount = new AtomicInteger(CHECKCOUNT_CHECK_NOW);
     private final Lock licenseUpdateLock = new ReentrantLock();
     private long lastCheck = TIME_CHECK_NOW;
     private boolean licenseSet = false;
-    private License license = null;
+    private final AtomicReference<License> current = new AtomicReference<License>(null);
     private InvalidLicenseException licenseLastError = null;
     private long licenseLoaded = TIME_CHECK_NOW;
 
     /** Update the license if we haven't done so in a while.  Returns quickly if no update is indicated. */
     private void check() {
-        if (checkCount.getAndIncrement() < CHECK_THRESHOLD)
+        long now = System.currentTimeMillis();
+        if ((now - lastCheck) <= CHECK_INTERVAL)
             return;
         boolean gotLock = false;
         try {
-            if (license != null) {
+            if (current.get() != null) {
                 // if we already have a licence then just try a lock so we don't wait if another thread
                 // is holding the lock
                 gotLock = licenseUpdateLock.tryLock();
@@ -246,15 +246,11 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
                 licenseUpdateLock.lock();
             }
 
-            if (!gotLock || checkCount.get() < CHECK_THRESHOLD) // see if someone else got here first
+            if (!gotLock) // see if someone else got here first
                 return;
 
-            long now = System.currentTimeMillis();
-            if ((now - lastCheck) > CHECK_INTERVAL) {
-                reloadLicenseFromDatabase();
-                lastCheck = System.currentTimeMillis();
-            }
-            checkCount.set(0);
+            reloadLicenseFromDatabase();
+            lastCheck = System.currentTimeMillis();
         } finally {
             if (gotLock) licenseUpdateLock.unlock();
         }
@@ -272,7 +268,7 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
                 licenseXml = clusterPropertyManager.getProperty(LICENSE_PROPERTY_NAME);
             } catch (FindException e) {
                 // We'll let this slide and keep the current license, if any, unless it was loaded more than 1 day ago
-                if (license != null && (System.currentTimeMillis() - licenseLoaded < DB_FAILURE_GRACE_PERIOD)) {
+                if (current.get() != null && (System.currentTimeMillis() - licenseLoaded < DB_FAILURE_GRACE_PERIOD)) {
                     fireEvent(SystemMessages.LICENSE_DB_ERROR_RETRY, null, "Retrying");
                     return;
                 } else {
@@ -318,7 +314,7 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
         licenseUpdateLock.lock();
         try {
             final License license;
-            final License oldLicense = this.license;
+            final License oldLicense = current.get();
             boolean updated = false;
             try {
                 if (oldLicense != null && oldLicense.asXml().equals(licenseXml)) {
@@ -421,10 +417,10 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
     private void setLicense(License license) {
         licenseUpdateLock.lock();
         try {
-            License old = this.license;
-            this.license = license; // always replace the object with the new one...
+            License old = current.get();
+            current.set(license); // always replace the object with the new one...
             // ...but suppress the event/audit message if we are just reinstalling an identical license
-            if (licenseSet && (old == license || (old != null && old.equals(this.license))))
+            if (licenseSet && (old == license || (old != null && old.equals(license))))
                 return;
             this.licenseSet = true;
             fireEvent(SystemMessages.LICENSE_UPDATED, license == null ? "<none>" : license.toString(), "Updated");
@@ -440,7 +436,6 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
     private void requestReload() {
         licenseUpdateLock.lock();
         try {
-            checkCount.set(CHECKCOUNT_CHECK_NOW);
             lastCheck = TIME_CHECK_NOW;
         }
         finally {

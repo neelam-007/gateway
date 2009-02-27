@@ -88,12 +88,10 @@ public class EsmFeatureSets {
     public static License.FeatureSetExpander getFeatureSetExpander() {
         return new License.FeatureSetExpander() {
             @Override
-            public Set getAllEnabledFeatures(Set inputSet) {
-                //noinspection unchecked
-                Set<String> ret = new HashSet<String>((Set<String>)inputSet);
+            public Set<String> getAllEnabledFeatures(Set<String> inputSet) {
+                Set<String> ret = new HashSet<String>(inputSet);
 
-                //noinspection unchecked
-                for (String topName : (Iterable<String>)inputSet) {
+                for (String topName : inputSet) {
                     EsmFeatureSet fs = sets.get(topName);
                     if (fs == null) {
                         logger.fine("Ignoring unrecognized feature set name: " + topName);
