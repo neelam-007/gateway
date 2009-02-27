@@ -178,10 +178,6 @@ public class PrivateKeyManagerWindow extends JDialog {
             mutableKeystore = null;
         }
 
-        if (!flags.canDeleteSome()) { // Bug #6699
-            signCsrButton.setEnabled(false);
-        }
-
         Utilities.setDoubleClickAction(keyTable, propertiesButton);
 
         loadPrivateKeys();
@@ -640,7 +636,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         KeyTableRow row = getSelectedObject();
         boolean certSelected = row != null && activeKeypairJob == null;
         propertiesButton.setEnabled(certSelected);
-        signCsrButton.setEnabled(certSelected);
+        signCsrButton.setEnabled(certSelected && flags.canDeleteSome());
     }
 
     /**
