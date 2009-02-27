@@ -1314,6 +1314,10 @@ if (!l7.EntityTreeTable) {
              */
             this.setMonitoredProperty = function(entityId, propertyType, property) {
                 var entity = this._entitiesById[entityId];
+                if (!entity) {
+                    YAHOO.log('No entity with ID = ' + entityId, 'warning', 'l7.EntityTreeTable.setMonitoredProperty')
+                    return false;
+                }
                 var td = entity._monitoredPropertyTds[propertyType];
                 var span = entity._monitoredPropertySpans[propertyType];
                 if (!td || !span) {

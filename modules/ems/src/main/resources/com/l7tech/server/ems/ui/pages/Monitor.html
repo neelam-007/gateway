@@ -268,6 +268,11 @@
         var availableNotificationRulesReadOnly = false;
 
         /**
+         * Timeout ID returned by setTimeout method.
+         */
+        var refreshMonitoringPropertiesTimer;
+
+        /**
          * The enterpries tree table object.
          * @type l7.EntityTreeTable
          */
@@ -1031,8 +1036,10 @@
                 if (result.json.entities) {
                     for (var i = 0; i < result.json.entities.length; ++i) {
                         var entity = result.json.entities[i];
-                        for (var propertyType in entity.monitoringProperties) {
-                            entityTreeTable.setMonitoredProperty(entity.id, propertyType, entity.monitoringProperties[propertyType]);
+                        if (entity.monitoringProperties) {
+                            for (var propertyType in entity.monitoringProperties) {
+                                entityTreeTable.setMonitoredProperty(entity.id, propertyType, entity.monitoringProperties[propertyType]);
+                            }
                         }
                     }
                     resetCollapsedHeaderWidths();
@@ -1131,7 +1138,9 @@
                     var entities = result.json;
                     entityTreeTable.load(entities);
                     resetCollapsedHeaderWidths();
-                    setTimeout('refreshMonitoringProperties()', 0);
+                    if (!refreshMonitoringPropertiesTimer) {
+                        refreshMonitoringPropertiesTimer = setTimeout('refreshMonitoringProperties()', 0);
+                    }
                 },
                 failure : function(o) {
                     displayError();
