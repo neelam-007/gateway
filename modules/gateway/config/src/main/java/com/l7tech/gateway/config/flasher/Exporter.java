@@ -11,8 +11,7 @@ import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.zip.ZipEntry;
@@ -30,7 +29,7 @@ import org.xml.sax.SAXException;
  * User: flascell<br/>
  * Date: Nov 8, 2006<br/>
  */
-public class Exporter {
+public class Exporter extends ImportExportUtility {
 
     private static final Logger logger = Logger.getLogger(Exporter.class.getName());
 
@@ -47,6 +46,10 @@ public class Exporter {
                                                                                "path of the output mapping template file",
                                                                                true, false);
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, MAPPING_PATH};
+    
+    public static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
+            new CommandLineOption("-p", "Ignored parameter for partition", true, false) };
+
     public static final String VERSIONFILENAME = "version";
     public static final String SRCPARTNMFILENAME = "sourcepartitionname";
 
@@ -268,5 +271,20 @@ public class Exporter {
             out.closeEntry();
             in.close();
         }
+    }
+
+    @Override
+    public List<CommandLineOption> getIgnoredOptions() {
+        return Arrays.asList(ALL_IGNORED_OPTIONS);
+    }
+
+    @Override
+    public List<CommandLineOption> getValidOptions() {
+        return Arrays.asList(ALLOPTIONS);
+    }
+
+    @Override
+    public String getUtilityType() {
+        return "export";
     }
 }

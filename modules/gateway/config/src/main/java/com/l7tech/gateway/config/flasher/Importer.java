@@ -19,6 +19,8 @@ import java.io.*;
 import java.sql.*;
 import java.util.Map;
 import java.util.UUID;
+import java.util.List;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
@@ -35,7 +37,7 @@ import java.net.NetworkInterface;
  * User: flascell<br/>
  * Date: Nov 8, 2006<br/>
  */
-class Importer {
+class Importer extends ImportExportUtility {
 
     private static final Logger logger = Logger.getLogger(Importer.class.getName());
     // importer options
@@ -56,6 +58,11 @@ class Importer {
     public static final CommandLineOption CLUSTER_PASSPHRASE = new CommandLineOption("-cp", "the cluster passphrase for the (resulting) database");
 
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, MAPPING_PATH, DB_HOST_NAME, DB_NAME, DB_PASSWD, DB_USER, OS_OVERWRITE, Exporter.AUDIT, CONFIG_ONLY, CLUSTER_PASSPHRASE};
+
+    public static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
+            new CommandLineOption("-p", "Ignored parameter for partition", true, false),
+            new CommandLineOption("-mode", "Ignored parameter for mode type", true, false) };
+
 
     private static final String CONFIG_PATH = "../../node/default/etc/conf/";
     private static final String[] CONFIG_FILES = new String[]{
@@ -636,4 +643,18 @@ class Importer {
         }
     }
 
+    @Override
+    public List<CommandLineOption> getIgnoredOptions() {
+        return Arrays.asList(ALL_IGNORED_OPTIONS);
+    }
+
+    @Override
+    public List<CommandLineOption> getValidOptions() {
+        return Arrays.asList(ALLOPTIONS);
+    }
+
+    @Override
+    public String getUtilityType() {
+        return "import";
+    }
 }

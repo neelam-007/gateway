@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -40,13 +41,15 @@ public class FlashUtilityLauncher {
         initializeLogging();
 
         try {
-            HashMap<String, String> passedArgs = parseArguments(args);
+            Map<String, String> passedArgs = new HashMap<String, String>();
             if (args[0].toLowerCase().equals("import")) {
                 Importer importer = new Importer();
+                passedArgs = importer.getParameters(args);
                 importer.doIt(passedArgs);
                 System.out.println("\nImport completed with no errors.");
             } else if (args[0].toLowerCase().equals("export")) {
                 Exporter exporter = new Exporter(null, System.out, System.err);
+                passedArgs = exporter.getParameters(args);
                 exporter.doIt(passedArgs);
                 System.out.println("\nExport of SecureSpan Gateway image completed with no errors.");
             } else if (args[0].toLowerCase().equals("cfgdeamon")) {
