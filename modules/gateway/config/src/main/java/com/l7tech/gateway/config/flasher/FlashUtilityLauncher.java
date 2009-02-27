@@ -5,10 +5,7 @@ import com.l7tech.util.SyspropUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Arrays;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -27,13 +24,17 @@ public class FlashUtilityLauncher {
     /** System property used as base directory for all relative paths. */
     private static final String BASE_DIR_PROPERTY = "com.l7tech.server.flasher.basedir";
     private static final String LOGCONFIG_NAME = "backuputilitylogging.properties";
+    private static final String SSGBACKUP_SH = "ssgbackup.sh";
+    private static final String SSGRESTORE_SH = "ssgrestore.sh";
+    private static final String IMPORT_TYPE = "import";
+    private static final String EXPORT_TYPE = "export";
     private static final Logger logger = Logger.getLogger(FlashUtilityLauncher.class.getName());
     private static ArrayList<CommandLineOption> allRuntimeOptions = null;
     private static int argparseri = 0;
 
     public static void main(String[] args) {
         if (args == null || args.length < 1) {
-            printusage();
+            System.out.println(getUsage(null));
             return;
         }
 
@@ -41,7 +42,7 @@ public class FlashUtilityLauncher {
         initializeLogging();
 
         try {
-            Map<String, String> passedArgs = new HashMap<String, String>();
+            Map<String, String> passedArgs;
             if (args[0].toLowerCase().equals("import")) {
                 Importer importer = new Importer();
                 passedArgs = importer.getParameters(args);
@@ -58,14 +59,15 @@ public class FlashUtilityLauncher {
                 String issue = "unsupported option " + args[0];
                 logger.warning(issue);
                 System.out.println(issue);
-                printusage();
+                System.out.println(getUsage(args[0]));
                 return;
             }
             logger.info("Operation complete without errors");
         } catch (InvalidArgumentException e) {
-            System.out.println(e.getMessage());
-            logger.log(Level.INFO, "User error. Bad arguments.", e);
-            printusage();
+            String message = "Invalid argument due to '" + e.getMessage() + "'.";
+            System.out.println(message);
+            logger.log(Level.INFO, message);            
+            System.out.println(getUsage(args[0]));
             System.exit(1);
         } catch (IOException e) {
             String message = "Error occurred due to '" + e.getMessage() + "'.";
@@ -77,50 +79,6 @@ public class FlashUtilityLauncher {
             System.out.println(message);
             logger.log(Level.WARNING, message);
             System.exit(1);
-        }
-    }
-
-    private static HashMap<String, String> parseArguments(String[] args) throws InvalidArgumentException {
-        HashMap<String, String> output = new HashMap<String, String>();
-        for (argparseri = 1; argparseri < args.length; argparseri++) {
-            String arg = args[argparseri];
-            boolean isPath = isOptionPath(arg);
-            boolean hasNoValue = hasOptionNoValue(arg);
-            if (arg != null && arg.length() > 0) {
-                if (!arg.startsWith("-")) {
-                    throw new InvalidArgumentException("Invalid argument name: " + arg);
-                }
-                if (hasNoValue) {
-                    output.put(arg, "");
-                } else {
-                    if ((argparseri+1) >= args.length) {
-                        output.put(arg, "");
-                    } else if (isOption(args[argparseri+1])) {
-                        output.put(arg, "");
-                    } else {
-                        argparseri++;
-                        String val = getFullValue(args, isPath);
-                        output.put(arg, val);
-                    }
-                }
-            }
-        }
-        return output;
-    }
-
-    private static String getFullValue(String[] in, boolean ispath) {
-        if (!ispath) {
-            return in[argparseri];
-        } else {
-            String tmp = in[argparseri];
-            while ((argparseri+1) < in.length) {
-                if (!isOption(in[argparseri+1])) {
-                    tmp = tmp + " " + in[argparseri+1];
-                    argparseri++;
-                } else break;
-            }
-            logger.fine("reconstructing option value " + tmp);
-            return tmp;
         }
     }
 
@@ -148,19 +106,94 @@ public class FlashUtilityLauncher {
         }
     }
 
-    private static void printusage() {
+    /**
+     * Prints the usages for the given utility type (import/export).
+     *
+     * @param utilityType   import or export
+     * @return  The string containing the usages
+     */
+    private static String getUsage(final String utilityType) {
         StringBuffer output = new StringBuffer();
-        output.append("usage: ssgmigration.sh [import | export] [OPTIONS]").append(EOL_CHAR);
-        output.append("\tIMPORT OPTIONS:").append(EOL_CHAR);
-        for (CommandLineOption option : Importer.ALLOPTIONS) {
-            output.append("\t").append(option.name).append("\t\t").append(option.description).append(EOL_CHAR);
+
+        //determine what is the utility type
+        if (utilityType == null || "".equals(utilityType)) {
+            //from legacy code (ssgmigration.sh) will perform based on import/export.  So for now, we'll
+            //just output that if you do not specify import/export, it is required as a parameter
+            //otherwise the ssgbackup.sh will always use export and ssgrestore.sh will always use import
+            output.append("usage: [import | export] [OPTIONS]").append(EOL_CHAR);
+            output.append("\tIMPORT OPTIONS:").append(EOL_CHAR);
+            int largestNameStringSize = getLargestNameStringSize(Arrays.asList(Importer.ALLOPTIONS));
+            for (CommandLineOption option : Importer.ALLOPTIONS) {
+                output.append("\t")
+                        .append(option.name)
+                        .append(createSpace(largestNameStringSize-option.name.length() + 1))
+                        .append(option.description)
+                        .append(EOL_CHAR);
+            }
+            output.append(EOL_CHAR);
+            output.append("\tEXPORT OPTIONS:").append(EOL_CHAR);
+            largestNameStringSize = getLargestNameStringSize(Arrays.asList(Exporter.ALLOPTIONS));
+            for (CommandLineOption option : Exporter.ALLOPTIONS) {
+                output.append("\t")
+                        .append(option.name)
+                        .append(createSpace(largestNameStringSize-option.name.length() + 1))
+                        .append(option.description)
+                        .append(EOL_CHAR);
+            }
+        } else if (utilityType.equals(IMPORT_TYPE)) {
+            output.append("usage: " + SSGRESTORE_SH + " [OPTIONS]").append(EOL_CHAR);
+            output.append("\tOPTIONS:").append(EOL_CHAR);
+            int largestNameStringSize = getLargestNameStringSize(Arrays.asList(Importer.ALLOPTIONS));
+            for (CommandLineOption option : Importer.ALLOPTIONS) {
+                output.append("\t")
+                        .append(option.name)
+                        .append(createSpace(largestNameStringSize-option.name.length() + 1))
+                        .append(option.description)
+                        .append(EOL_CHAR);
+            }
+        } else if (utilityType.equals(EXPORT_TYPE)) {
+            output.append("usage: " + SSGBACKUP_SH + " [OPTIONS]").append(EOL_CHAR);
+            output.append("\tOPTIONS:").append(EOL_CHAR);
+            int largestNameStringSize = getLargestNameStringSize(Arrays.asList(Importer.ALLOPTIONS));
+            for (CommandLineOption option : Exporter.ALLOPTIONS) {
+                output.append("\t")
+                        .append(option.name)
+                        .append(createSpace(largestNameStringSize-option.name.length() + 1))
+                        .append(option.description)
+                        .append(EOL_CHAR);
+            }
         }
-        output.append(EOL_CHAR);
-        output.append("\tEXPORT OPTIONS:").append(EOL_CHAR);
-        for (CommandLineOption option : Exporter.ALLOPTIONS) {
-            output.append("\t").append(option.name).append("\t\t").append(option.description).append(EOL_CHAR);
+        return output.toString();
+    }
+
+    /**
+     * Traverses the list of options and determine the length of the longest option name.
+     *
+     * @param options   The list of options
+     * @return          The length of the longest option name
+     */
+    private static int getLargestNameStringSize(final List<CommandLineOption> options) {
+        int largestStringSize = 0;
+        for (CommandLineOption option : options) {
+            if (option.name != null && option.name.length() > largestStringSize) {
+                largestStringSize = option.name.length();
+            }
         }
-        System.out.println(output);
+        return largestStringSize;
+    }
+
+    /**
+     * Creates the padding spaces string
+     *
+     * @param space The number of spaces to create
+     * @return  The space string
+     */
+    private static String createSpace(int space) {
+        StringBuffer spaces = new StringBuffer();
+        for (int i=0; i <= space; i++) {
+            spaces.append(" ");
+        }
+        return spaces.toString();
     }
 
     public static class InvalidArgumentException extends Exception {
@@ -169,45 +202,6 @@ public class FlashUtilityLauncher {
 
     public static class FatalException extends Exception {
         public FatalException(String reason) {super(reason);}
-    }
-
-    public static boolean isOptionPath(String optionname) throws InvalidArgumentException {
-        getOptions();
-        for (CommandLineOption commandLineOption : allRuntimeOptions) {
-            if (commandLineOption.name.equals(optionname)) {
-                return commandLineOption.isValuePath;
-            }
-        }
-        throw new InvalidArgumentException("option " + optionname + " is invalid");
-    }
-
-    private static ArrayList<CommandLineOption> getOptions() {
-        if (allRuntimeOptions == null) {
-            allRuntimeOptions = new ArrayList<CommandLineOption>();
-            allRuntimeOptions.addAll(Arrays.asList(Importer.ALLOPTIONS));
-            allRuntimeOptions.addAll(Arrays.asList(Exporter.ALLOPTIONS));
-        }
-        return allRuntimeOptions;
-    }
-
-    public static boolean hasOptionNoValue(String optionname) throws InvalidArgumentException {
-        getOptions();
-        for (CommandLineOption commandLineOption : allRuntimeOptions) {
-            if (commandLineOption.name.equals(optionname)) {
-                return commandLineOption.hasNoValue;
-            }
-        }
-        throw new InvalidArgumentException("option " + optionname + " is invalid");
-    }
-
-    private static boolean isOption(String optionname) {
-        getOptions();
-        for (CommandLineOption commandLineOption : allRuntimeOptions) {
-            if (commandLineOption.name.equals(optionname)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**

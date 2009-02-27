@@ -52,7 +52,7 @@ class Importer extends ImportExportUtility {
     public static final CommandLineOption DB_PASSWD = new CommandLineOption("-dbp", "database root password");
     public static final CommandLineOption DB_USER = new CommandLineOption("-dbu", "database root username");
     public static final CommandLineOption OS_OVERWRITE = new CommandLineOption("-os",
-            "overwrite os level config files (only allowed in cloning mode and on non-partitioned systems)",
+            "overwrite os level config files",
             false, true);
     public static final CommandLineOption CONFIG_ONLY = new CommandLineOption("-config", "only restore configuration files, no database restore", false, true);
     public static final CommandLineOption CLUSTER_PASSPHRASE = new CommandLineOption("-cp", "the cluster passphrase for the (resulting) database");
@@ -87,7 +87,7 @@ class Importer extends ImportExportUtility {
         String inputpathval = FlashUtilityLauncher.getAbsolutePath(arguments.get(IMAGE_PATH.name));
         if (inputpathval == null) {
             logger.info("Error, no image provided for import");
-            throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ". i don't know what to import");
+            throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ", required for importing image");
         }
 
         suppliedClusterPassphrase = arguments.get(CLUSTER_PASSPHRASE.name);

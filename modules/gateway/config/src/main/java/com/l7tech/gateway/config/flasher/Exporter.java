@@ -108,7 +108,7 @@ public class Exporter extends ImportExportUtility {
         String outputpathval = FlashUtilityLauncher.getAbsolutePath(arguments.get(IMAGE_PATH.name));
         if (outputpathval == null) {
             logger.info("no target image path specified");
-            throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ". i dont know where to output the image to.");
+            throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ", required for exporting image");
         }
         if (!testCanWriteSilently(outputpathval)) {            
             throw new IOException("cannot write image to " + outputpathval);
