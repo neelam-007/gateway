@@ -88,7 +88,7 @@ COMMIT
 # Allow inbound UDP on port 7001-7100 on eth0/private side
 [0:0] -A INPUT -i eth0 -p udp -m udp --dport 7001:7100 -j ACCEPT
 #
-# ADD CUSTOM ACCEPT RULES HERE
+# ADD CUSTOM ALLOW RULES HERE
 #
 # open on eth0/private even if SSG's are  not up
 [0:0] -A INPUT -i eth0 -p tcp -m tcp --dport 3306 -j ACCEPT

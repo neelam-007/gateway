@@ -24,7 +24,7 @@ if [ ! -z "${1}" ] ; then
     fi
 
     find "${RULES_FILES}" -type f -exec cat {} \; > "${RULES_HOME}/${RULES_EXT}"
-    sed "/# ADD CUSTOM ACCEPT RULES HERE/ r ${RULES_HOME}/${RULES_EXT}" "${RULES_SOURCE}" > "${RULES_HOME}/${RULES_ALL}" 
+    sed "/# ADD CUSTOM ALLOW RULES HERE/ r ${RULES_HOME}/${RULES_EXT}" "${RULES_SOURCE}" > "${RULES_HOME}/${RULES_ALL}" 
     
     cat "${RULES_HOME}/${RULES_ALL}" | "${RESTORE_COMMAND}"    
 fi
