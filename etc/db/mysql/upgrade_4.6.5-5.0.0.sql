@@ -368,6 +368,11 @@ CREATE TABLE ssg_version (
 INSERT INTO ssg_version (current_version) VALUES ("5.0.0");
 
 --
+-- Remove service metrics index for resolution, this is not useful since there are only 3 values for resolution.
+--
+DROP INDEX i_sm_resolution on service_metrics;
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;

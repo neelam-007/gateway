@@ -735,7 +735,6 @@ CREATE TABLE service_metrics (
   service_state VARCHAR(16),
   INDEX i_sm_nodeid (nodeid),
   INDEX i_sm_serviceoid (published_service_oid),
-  INDEX i_sm_resolution (resolution),
   INDEX i_sm_pstart (period_start),
   PRIMARY KEY (objectid),
   UNIQUE (nodeid, published_service_oid, resolution, period_start)
