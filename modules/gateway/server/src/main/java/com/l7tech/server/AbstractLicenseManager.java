@@ -32,6 +32,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Set;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -224,7 +225,7 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
     private final ClusterPropertyManager clusterPropertyManager;// Brake to prevent calls to System.currentTimeMillis every time a license check is made.
     // This is unsynchronized because we don't care if some writes to it are lost, or if some reads are out-of-date.
     private final Lock licenseUpdateLock = new ReentrantLock();
-    private long lastCheck = TIME_CHECK_NOW;
+    private final AtomicLong lastCheck = new AtomicLong(TIME_CHECK_NOW);
     private boolean licenseSet = false;
     private final AtomicReference<License> current = new AtomicReference<License>(null);
     private InvalidLicenseException licenseLastError = null;
@@ -233,8 +234,9 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
     /** Update the license if we haven't done so in a while.  Returns quickly if no update is indicated. */
     private void check() {
         long now = System.currentTimeMillis();
-        if ((now - lastCheck) <= CHECK_INTERVAL)
+        if ((now - lastCheck.get()) <= CHECK_INTERVAL)
             return;
+
         boolean gotLock = false;
         try {
             if (current.get() != null) {
@@ -250,7 +252,7 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
                 return;
 
             reloadLicenseFromDatabase();
-            lastCheck = System.currentTimeMillis();
+            lastCheck.set(System.currentTimeMillis());
         } finally {
             if (gotLock) licenseUpdateLock.unlock();
         }
@@ -436,7 +438,7 @@ public abstract class AbstractLicenseManager extends ApplicationObjectSupport im
     private void requestReload() {
         licenseUpdateLock.lock();
         try {
-            lastCheck = TIME_CHECK_NOW;
+            lastCheck.set(TIME_CHECK_NOW);
         }
         finally {
             licenseUpdateLock.unlock();
