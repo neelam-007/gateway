@@ -145,7 +145,7 @@ public class VersioningPolicyManager implements PolicyManager {
 
     @Override
     public void updateWithFolder(Policy policy) throws UpdateException {
-        policyManager.update(policy);
+        policyManager.updateWithFolder(policy);
         checkpointPolicy(policy);
     }
 
