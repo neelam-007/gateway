@@ -26,11 +26,6 @@
     <import value="net.sf.jasperreports.engine.data.*"/>
     <template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
-    <style
-            name="DefaultText"
-            isDefault="true"
-            >
-    </style>
 
     <parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
     <parameter name="SERVICE_NAME" isForPrompting="false" class="java.lang.String"/>
@@ -117,21 +112,15 @@
                         height="18"
                         key="textField"
                         isPrintWhenDetailOverflows="true"/>
-                <box leftPadding="2" rightPadding="2">
-                    <topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-                    <leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-                    <bottomPen lineWidth="0.0" lineColor="#000000"/>
-                    <rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
-                </box>
                 <textElement>
-                    <font fontName="Times-Roman" size="10"/>
+                    <font/>
                 </textElement>
                 <textFieldExpression class="java.lang.String"><![CDATA[com.l7tech.gateway.standardreports.Utilities.
 getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_TIME}, $P{INTERVAL_NUM_OF_TIME_UNITS}, $P{SPECIFIC_TIME_ZONE})]]></textFieldExpression>
             </textField>
             <subreport isUsingCache="false">
                 <reportElement
-                        style="DefaultText"
+                        style="DefaultStyle"
                         x="110"
                         y="0"
                         width="710"

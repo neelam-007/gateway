@@ -2331,7 +2331,7 @@ new Double((1 - (($V{AUTHORIZED_OPERATION_SUM}.doubleValue() - $V{COMPLETED_OPER
                             style="LeftPaddedHeadingBold"
                             x="0"
                             y="0"
-                            width="105"
+                            width="394"
                             height="18"
                             key="staticText-32"/>
                     <box></box>
@@ -2396,9 +2396,9 @@ new Double((1 - (($V{AUTHORIZED_OPERATION_SUM}.doubleValue() - $V{COMPLETED_OPER
                     <staticText>
                         <reportElement
                                 style="LeftPaddedHeadingBold"
-                                x="419"
+                                x="479"
                                 y="0"
-                                width="120"
+                                width="140"
                                 height="18"
                                 key="staticText-146"
                                 positionType="Float"/>
@@ -2412,9 +2412,9 @@ new Double((1 - (($V{AUTHORIZED_OPERATION_SUM}.doubleValue() - $V{COMPLETED_OPER
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="DefaultStyle"
-                                x="540"
+                                x="620"
                                 y="0"
-                                width="280"
+                                width="200"
                                 height="18"
                                 key="textField-178"
                                 positionType="Float"/>
@@ -2470,9 +2470,9 @@ new Double((1 - (($V{AUTHORIZED_OPERATION_SUM}.doubleValue() - $V{COMPLETED_OPER
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="DefaultStyle"
-                                x="540"
+                                x="620"
                                 y="0"
-                                width="280"
+                                width="200"
                                 height="18"
                                 key="textField-180"
                                 positionType="Float"/>
@@ -2486,9 +2486,9 @@ new Double((1 - (($V{AUTHORIZED_OPERATION_SUM}.doubleValue() - $V{COMPLETED_OPER
                     <staticText>
                         <reportElement
                                 style="LeftPaddedHeadingBold"
-                                x="419"
+                                x="479"
                                 y="0"
-                                width="120"
+                                width="140"
                                 height="18"
                                 key="staticText-148"
                                 positionType="Float"/>
@@ -2515,7 +2515,7 @@ new Double((1 - (($V{AUTHORIZED_OPERATION_SUM}.doubleValue() - $V{COMPLETED_OPER
                                 style="DefaultStyle"
                                 x="121"
                                 y="0"
-                                width="291"
+                                width="351"
                                 height="18"
                                 key="textField-181"/>
                         <box></box>
@@ -2547,9 +2547,9 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="DefaultStyle"
-                                x="540"
+                                x="620"
                                 y="0"
-                                width="280"
+                                width="200"
                                 height="18"
                                 key="textField-182"/>
                         <box></box>
@@ -2562,9 +2562,9 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     <staticText>
                         <reportElement
                                 style="LeftPaddedHeadingBold"
-                                x="419"
+                                x="479"
                                 y="0"
-                                width="120"
+                                width="140"
                                 height="18"
                                 key="staticText-150"/>
                         <box></box>

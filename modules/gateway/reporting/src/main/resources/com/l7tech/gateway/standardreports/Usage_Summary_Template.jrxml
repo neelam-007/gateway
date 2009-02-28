@@ -27,15 +27,6 @@
     <import value="com.l7tech.gateway.standardreports.*"/>
     <template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
-
-    <subDataset name="ReportTotalDataSet">
-
-
-        <field name="name" class="java.lang.String"/>
-        <field name="value" class="java.lang.Long"/>
-
-    </subDataset>
-
     <parameter name="REPORT_TYPE" isForPrompting="false" class="java.lang.String">
         <defaultValueExpression><![CDATA["NA"]]></defaultValueExpression>
     </parameter>
@@ -486,7 +477,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
                             style="LeftPaddedHeadingBold"
                             x="0"
                             y="0"
-                            width="105"
+                            width="401"
                             height="18"
                             key="staticText-32"/>
                     <box></box>
@@ -551,9 +542,9 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
                     <staticText>
                         <reportElement
                                 style="LeftPaddedHeadingBold"
-                                x="419"
+                                x="479"
                                 y="0"
-                                width="120"
+                                width="140"
                                 height="18"
                                 key="staticText-120"
                                 positionType="Float"/>
@@ -567,9 +558,9 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="DefaultStyle"
-                                x="540"
+                                x="620"
                                 y="0"
-                                width="280"
+                                width="200"
                                 height="18"
                                 key="textField-198"
                                 positionType="Float"/>
@@ -624,9 +615,9 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
                     <staticText>
                         <reportElement
                                 style="LeftPaddedHeadingBold"
-                                x="419"
+                                x="479"
                                 y="0"
-                                width="120"
+                                width="140"
                                 height="18"
                                 key="staticText-121"
                                 positionType="Float"/>
@@ -640,9 +631,9 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="DefaultStyle"
-                                x="540"
+                                x="620"
                                 y="0"
-                                width="280"
+                                width="200"
                                 height="18"
                                 key="textField-199"
                                 positionType="Float"/>
@@ -670,7 +661,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
                                 style="DefaultStyle"
                                 x="121"
                                 y="0"
-                                width="291"
+                                width="351"
                                 height="18"
                                 key="textField-144"/>
                         <box></box>
@@ -701,9 +692,9 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     <staticText>
                         <reportElement
                                 style="LeftPaddedHeadingBold"
-                                x="419"
+                                x="479"
                                 y="0"
-                                width="120"
+                                width="140"
                                 height="18"
                                 key="staticText-122"/>
                         <box></box>
@@ -716,9 +707,9 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="DefaultStyle"
-                                x="540"
+                                x="620"
                                 y="0"
-                                width="280"
+                                width="200"
                                 height="18"
                                 key="textField-200"/>
                         <box></box>
