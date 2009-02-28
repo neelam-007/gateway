@@ -34,6 +34,7 @@ public class ClientRequestWssSaml extends ClientAssertion {
     private static final String PROP_SIGN_SAML_SV = "com.l7tech.proxy.signSamlSenderVouchesAssertion";
     private RequestWssSaml data;
     private boolean senderVouches = false;
+    private final int samlVersion;
 
     public ClientRequestWssSaml(RequestWssSaml data) {
         this.data = data;
@@ -47,6 +48,7 @@ public class ClientRequestWssSaml extends ClientAssertion {
                 break;
             }
         }
+        this.samlVersion = data.getVersion() == null || data.getVersion() == 1 ? 1 : 2;
     }
 
     public boolean isSenderVouches() {
@@ -137,7 +139,7 @@ public class ClientRequestWssSaml extends ClientAssertion {
     }
 
     public String getName() {
-        return isSenderVouches() ? "SAML v1 Sender-Vouches Authentication Statement" : "SAML v1 Holder-of-Key Authentication Statement";
+        return data.describe();
     }
 
     public String iconResource(boolean open) {
@@ -148,26 +150,11 @@ public class ClientRequestWssSaml extends ClientAssertion {
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
             ClientCertificateException, IOException, SAXException, KeyStoreCorruptException,
             HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
-            InvalidDocumentFormatException, ConfigurationException {
+            InvalidDocumentFormatException, ConfigurationException
+    {
 
-
-        final SamlAssertion ass;
-        if (isSenderVouches()) {
-            if (data.getVersion()==null || data.getVersion().intValue()==1) {
-                ass = context.getOrCreateSamlSenderVouchesAssertion(1);
-            }
-            else {
-                ass = context.getOrCreateSamlSenderVouchesAssertion(2);
-            }
-        } else {
-            // Look up or apply for SAML ticket
-            if (data.getVersion()==null || data.getVersion().intValue()==1) {
-                ass = context.getOrCreateSamlHolderOfKeyAssertion(1);
-            }
-            else {
-                ass = context.getOrCreateSamlHolderOfKeyAssertion(2);
-            }
-        }
-        return ass;
+        return isSenderVouches()
+                ? context.getOrCreateSamlSenderVouchesAssertion(samlVersion)
+                : context.getOrCreateSamlHolderOfKeyAssertion(samlVersion);
     }
 }

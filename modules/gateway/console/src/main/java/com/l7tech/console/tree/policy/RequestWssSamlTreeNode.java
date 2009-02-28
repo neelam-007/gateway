@@ -5,7 +5,6 @@ import com.l7tech.console.action.EditRequestWssSamlAction;
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -24,21 +23,7 @@ public class RequestWssSamlTreeNode extends LeafAssertionTreeNode {
 
     public String getName() {
         RequestWssSaml data = (RequestWssSaml) getUserObject();
-
-        String st = "Unknown Statement";
-        if (data.getAuthenticationStatement() != null) {
-            st = "Authentication Statement";
-        } else if (data.getAttributeStatement() !=null) {
-            st = "Attribute Statement";
-        } else if (data.getAuthorizationStatement() !=null) {
-            st = "Authorization Decision Statement";
-        }
-
-        if (data.getVersion() != null && data.getVersion().intValue() != 0) {
-            st = "v" + data.getVersion().intValue() + " " + st;
-        }
-
-        return "SAML " + st + SecurityHeaderAddressableSupport.getActorSuffix(data);
+        return data.describe();
     }
 
     /**

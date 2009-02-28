@@ -176,4 +176,21 @@ public class RequestWssSaml extends SamlPolicyAssertion implements SecurityHeade
 
         return assertion;
     }
+
+    public String describe() {
+        String st = "Unknown Statement";
+        if (getAuthenticationStatement() != null) {
+            st = "Authentication Statement";
+        } else if (getAttributeStatement() !=null) {
+            st = "Attribute Statement";
+        } else if (getAuthorizationStatement() !=null) {
+            st = "Authorization Decision Statement";
+        }
+
+        if (this.getVersion() != null && this.getVersion() != 0) {
+            st = "v" + this.getVersion() + " " + st;
+        }
+
+        return "SAML " + st + SecurityHeaderAddressableSupport.getActorSuffix(this);
+    }
 }
