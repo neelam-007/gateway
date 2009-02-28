@@ -1,149 +1,156 @@
 <?xml version="1.0" encoding="UTF-8"  ?>
 <!-- Created with iReport - A designer for JasperReports -->
-<!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
+<!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN"
+        "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
 <jasperReport
-		 name="Usage_SubIntervalMasterReport_Template"
-		 columnCount="1"
-		 printOrder="Vertical"
-		 orientation="Landscape"
-		 pageWidth="802"
-		 pageHeight="564"
-		 columnWidth="802"
-		 columnSpacing="0"
-		 leftMargin="0"
-		 rightMargin="0"
-		 topMargin="0"
-		 bottomMargin="0"
-		 whenNoDataType="AllSectionsNoDetail"
-		 isTitleNewPage="false"
-		 isSummaryNewPage="false"
-		 whenResourceMissingType="Error">
-	<property name="ireport.scriptlethandling" value="0" />
-	<property name="ireport.encoding" value="UTF-8" />
-	<import value="java.util.*" />
-	<import value="net.sf.jasperreports.engine.*" />
-	<import value="net.sf.jasperreports.engine.data.*" />
-	<import value="com.l7tech.gateway.standardreports.*" />
-	<template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
+        name="Usage_SubIntervalMasterReport_Template"
+        columnCount="1"
+        printOrder="Vertical"
+        orientation="Landscape"
+        pageWidth="802"
+        pageHeight="564"
+        columnWidth="802"
+        columnSpacing="0"
+        leftMargin="0"
+        rightMargin="0"
+        topMargin="0"
+        bottomMargin="0"
+        whenNoDataType="AllSectionsNoDetail"
+        isTitleNewPage="false"
+        isSummaryNewPage="false"
+        whenResourceMissingType="Error">
+    <property name="ireport.scriptlethandling" value="0"/>
+    <property name="ireport.encoding" value="UTF-8"/>
+    <import value="java.util.*"/>
+    <import value="net.sf.jasperreports.engine.*"/>
+    <import value="net.sf.jasperreports.engine.data.*"/>
+    <import value="com.l7tech.gateway.standardreports.*"/>
+    <template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
 
-	<parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="SERVICE_NAME" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="ROUTING_URI" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false" class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME"/>
-	<parameter name="INTERVAL_NUM_OF_TIME_UNITS" isForPrompting="false" class="java.lang.Integer"/>
-	<parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
-	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
-		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
-	</parameter>
-	<parameter name="OPERATIONS" isForPrompting="false" class="java.util.List"/>
-	<parameter name="RESOLUTION" isForPrompting="false" class="java.lang.Integer"/>
-	<parameter name="IS_CONTEXT_MAPPING" isForPrompting="false" class="java.lang.Boolean">
-		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
-	</parameter>
-	<parameter name="SUBREPORT_DIRECTORY" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>
-	<parameter name="SUB_REPORT_HELPER" isForPrompting="false" class="com.l7tech.gateway.standardreports.UsageSummaryAndSubReportHelper"/>
-	<parameter name="SPECIFIC_TIME_ZONE" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA["Europe/London"]]></defaultValueExpression>
-	</parameter>
+    <parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
+    <parameter name="SERVICE_NAME" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="ROUTING_URI" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false"
+               class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME"/>
+    <parameter name="INTERVAL_NUM_OF_TIME_UNITS" isForPrompting="false" class="java.lang.Integer"/>
+    <parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
+    <parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
+        <defaultValueExpression><![CDATA[new Boolean(false)]]></defaultValueExpression>
+    </parameter>
+    <parameter name="OPERATIONS" isForPrompting="false" class="java.util.List"/>
+    <parameter name="RESOLUTION" isForPrompting="false" class="java.lang.Integer"/>
+    <parameter name="IS_CONTEXT_MAPPING" isForPrompting="false" class="java.lang.Boolean">
+        <defaultValueExpression><![CDATA[new Boolean(false)]]></defaultValueExpression>
+    </parameter>
+    <parameter name="SUBREPORT_DIRECTORY" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>
+    <parameter name="SUB_REPORT_HELPER" isForPrompting="false"
+               class="com.l7tech.gateway.standardreports.UsageSummaryAndSubReportHelper"/>
+    <parameter name="SPECIFIC_TIME_ZONE" isForPrompting="false" class="java.lang.String">
+        <defaultValueExpression><![CDATA["Europe/London"]]></defaultValueExpression>
+    </parameter>
 
-	<field name="INTERVAL_START" class="java.lang.Long"/>
-	<field name="INTERVAL_END" class="java.lang.Long"/>
+    <field name="INTERVAL_START" class="java.lang.Long"/>
+    <field name="INTERVAL_END" class="java.lang.Long"/>
 
-	<variable name="TOTAL" class="java.lang.Long" resetType="Report" calculation="Sum">
-	</variable>
-		<background>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</background>
-		<title>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</title>
-		<pageHeader>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</pageHeader>
-		<columnHeader>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</columnHeader>
-		<detail>
-			<band height="18"  isSplitAllowed="true" >
-				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="true" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="SummaryRowHeading"
-						x="0"
-						y="0"
-						width="113"
-						height="18"
-						key="textField"
-						isPrintWhenDetailOverflows="true"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[com.l7tech.gateway.standardreports.Utilities.getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_TIME}, $P{INTERVAL_NUM_OF_TIME_UNITS}, $P{SPECIFIC_TIME_ZONE})]]></textFieldExpression>
-				</textField>
-				<subreport  isUsingCache="false">
-					<reportElement
-						x="113"
-						y="0"
-						width="707"
-						height="18"
-						key="subreport-1"/>
-					<subreportParameter  name="INTERVAL_START">
-						<subreportParameterExpression><![CDATA[$F{INTERVAL_START}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="INTERVAL_END">
-						<subreportParameterExpression><![CDATA[$F{INTERVAL_END}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="SERVICE_ID">
-						<subreportParameterExpression><![CDATA[$P{SERVICE_ID}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="INTERVAL_UNIT_OF_TIME">
-						<subreportParameterExpression><![CDATA[$P{INTERVAL_UNIT_OF_TIME}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="SERVICE_OPERATION_VALUE">
-						<subreportParameterExpression><![CDATA[$P{SERVICE_OPERATION_VALUE}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="KEYS_TO_LIST_FILTER_PAIRS">
-						<subreportParameterExpression><![CDATA[$P{KEYS_TO_LIST_FILTER_PAIRS}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="IS_DETAIL">
-						<subreportParameterExpression><![CDATA[$P{IS_DETAIL}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="RESOLUTION">
-						<subreportParameterExpression><![CDATA[$P{RESOLUTION}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="REPORT_SCRIPTLET">
-						<subreportParameterExpression><![CDATA[$P{SUB_REPORT_HELPER}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="TEMPLATE_FILE_ABSOLUTE">
-						<subreportParameterExpression><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></subreportParameterExpression>
-					</subreportParameter>
-					<subreportParameter  name="SPECIFIC_TIME_ZONE">
-						<subreportParameterExpression><![CDATA[$P{SPECIFIC_TIME_ZONE}]]></subreportParameterExpression>
-					</subreportParameter>
-					<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
-					<returnValue subreportVariable="TOTAL" toVariable="TOTAL" calculation="Sum"/>
-					<subreportExpression  class="net.sf.jasperreports.engine.JasperReport"><![CDATA[$P{SUB_REPORT}]]></subreportExpression>
-				</subreport>
-			</band>
-		</detail>
-		<columnFooter>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</columnFooter>
-		<pageFooter>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</pageFooter>
-		<summary>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</summary>
+    <variable name="TOTAL" class="java.lang.Long" resetType="Report" calculation="Sum">
+    </variable>
+    <background>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </background>
+    <title>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </title>
+    <pageHeader>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </pageHeader>
+    <columnHeader>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </columnHeader>
+    <detail>
+        <band height="18" isSplitAllowed="true">
+            <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="true" evaluationTime="Now"
+                       hyperlinkType="None" hyperlinkTarget="Self">
+                <reportElement
+                        style="LeftPaddedHeading"
+                        x="0"
+                        y="0"
+                        width="113"
+                        height="18"
+                        key="textField"
+                        isPrintWhenDetailOverflows="true"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String">
+                    <![CDATA[com.l7tech.gateway.standardreports.Utilities.getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_TIME}, $P{INTERVAL_NUM_OF_TIME_UNITS}, $P{SPECIFIC_TIME_ZONE})]]></textFieldExpression>
+            </textField>
+            <subreport isUsingCache="false">
+                <reportElement
+                        x="113"
+                        y="0"
+                        width="707"
+                        height="18"
+                        key="subreport-1"/>
+                <subreportParameter name="INTERVAL_START">
+                    <subreportParameterExpression><![CDATA[$F{INTERVAL_START}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="INTERVAL_END">
+                    <subreportParameterExpression><![CDATA[$F{INTERVAL_END}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="SERVICE_ID">
+                    <subreportParameterExpression><![CDATA[$P{SERVICE_ID}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="INTERVAL_UNIT_OF_TIME">
+                    <subreportParameterExpression><![CDATA[$P{INTERVAL_UNIT_OF_TIME}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="SERVICE_OPERATION_VALUE">
+                    <subreportParameterExpression><![CDATA[$P{SERVICE_OPERATION_VALUE}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="KEYS_TO_LIST_FILTER_PAIRS">
+                    <subreportParameterExpression>
+                        <![CDATA[$P{KEYS_TO_LIST_FILTER_PAIRS}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="IS_DETAIL">
+                    <subreportParameterExpression><![CDATA[$P{IS_DETAIL}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="RESOLUTION">
+                    <subreportParameterExpression><![CDATA[$P{RESOLUTION}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="REPORT_SCRIPTLET">
+                    <subreportParameterExpression><![CDATA[$P{SUB_REPORT_HELPER}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="TEMPLATE_FILE_ABSOLUTE">
+                    <subreportParameterExpression><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="SPECIFIC_TIME_ZONE">
+                    <subreportParameterExpression><![CDATA[$P{SPECIFIC_TIME_ZONE}]]></subreportParameterExpression>
+                </subreportParameter>
+                <connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+                <returnValue subreportVariable="TOTAL" toVariable="TOTAL" calculation="Sum"/>
+                <subreportExpression class="net.sf.jasperreports.engine.JasperReport">
+                    <![CDATA[$P{SUB_REPORT}]]></subreportExpression>
+            </subreport>
+        </band>
+    </detail>
+    <columnFooter>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </columnFooter>
+    <pageFooter>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </pageFooter>
+    <summary>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </summary>
 </jasperReport>

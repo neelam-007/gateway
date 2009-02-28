@@ -1,126 +1,131 @@
 <?xml version="1.0" encoding="UTF-8"  ?>
 <!-- Created with iReport - A designer for JasperReports -->
-<!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
+<!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN"
+        "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
 <jasperReport
-		 name="Usage_SubIntervalMasterReport_subreport0_Template"
-		 columnCount="1"
-		 printOrder="Vertical"
-		 orientation="Landscape"
-		 pageWidth="707"
-		 pageHeight="564"
-		 columnWidth="707"
-		 columnSpacing="0"
-		 leftMargin="0"
-		 rightMargin="0"
-		 topMargin="0"
-		 bottomMargin="0"
-		 whenNoDataType="NoDataSection"
-		 isTitleNewPage="false"
-		 isSummaryNewPage="false">
-	<property name="ireport.scriptlethandling" value="0" />
-	<property name="ireport.encoding" value="UTF-8" />
-	<import value="java.util.*" />
-	<import value="net.sf.jasperreports.engine.*" />
-	<import value="net.sf.jasperreports.engine.data.*" />
-	<import value="com.l7tech.gateway.standardreports.*" />
-	<template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
+        name="Usage_SubIntervalMasterReport_subreport0_Template"
+        columnCount="1"
+        printOrder="Vertical"
+        orientation="Landscape"
+        pageWidth="707"
+        pageHeight="564"
+        columnWidth="707"
+        columnSpacing="0"
+        leftMargin="0"
+        rightMargin="0"
+        topMargin="0"
+        bottomMargin="0"
+        whenNoDataType="NoDataSection"
+        isTitleNewPage="false"
+        isSummaryNewPage="false">
+    <property name="ireport.scriptlethandling" value="0"/>
+    <property name="ireport.encoding" value="UTF-8"/>
+    <import value="java.util.*"/>
+    <import value="net.sf.jasperreports.engine.*"/>
+    <import value="net.sf.jasperreports.engine.data.*"/>
+    <import value="com.l7tech.gateway.standardreports.*"/>
+    <template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
 
-	<parameter name="INTERVAL_START" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="INTERVAL_END" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
-	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
-		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
-	</parameter>
-	<parameter name="RESOLUTION" isForPrompting="false" class="java.lang.Integer"/>
-	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[Utilities.getUsageQuery($P{INTERVAL_START},
+    <parameter name="INTERVAL_START" isForPrompting="false" class="java.lang.Long"/>
+    <parameter name="INTERVAL_END" isForPrompting="false" class="java.lang.Long"/>
+    <parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
+    <parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
+    <parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
+        <defaultValueExpression><![CDATA[new Boolean(false)]]></defaultValueExpression>
+    </parameter>
+    <parameter name="RESOLUTION" isForPrompting="false" class="java.lang.Integer"/>
+    <parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
+        <defaultValueExpression><![CDATA[Utilities.getUsageQuery($P{INTERVAL_START},
 $P{INTERVAL_END},$P{SERVICE_ID}, $P{KEYS_TO_LIST_FILTER_PAIRS}, $P{RESOLUTION}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VALUE})
 ]]></defaultValueExpression>
-	</parameter>
-	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
-	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
+    </parameter>
+    <parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
+    <queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
-	<field name="SERVICE_ID" class="java.lang.Long"/>
-	<field name="SERVICE_NAME" class="java.lang.String"/>
-	<field name="ROUTING_URI" class="java.lang.String"/>
-	<field name="USAGE_SUM" class="java.lang.Long"/>
-	<field name="SERVICE_OPERATION_VALUE" class="java.lang.String"/>
-	<field name="MAPPING_VALUE_1" class="java.lang.String"/>
-	<field name="MAPPING_VALUE_2" class="java.lang.String"/>
-	<field name="MAPPING_VALUE_3" class="java.lang.String"/>
-	<field name="MAPPING_VALUE_4" class="java.lang.String"/>
-	<field name="MAPPING_VALUE_5" class="java.lang.String"/>
-	<field name="AUTHENTICATED_USER" class="java.lang.String"/>
-	<field name="CONSTANT_GROUP" class="java.lang.String"/>
+    <field name="SERVICE_ID" class="java.lang.Long"/>
+    <field name="SERVICE_NAME" class="java.lang.String"/>
+    <field name="ROUTING_URI" class="java.lang.String"/>
+    <field name="USAGE_SUM" class="java.lang.Long"/>
+    <field name="SERVICE_OPERATION_VALUE" class="java.lang.String"/>
+    <field name="MAPPING_VALUE_1" class="java.lang.String"/>
+    <field name="MAPPING_VALUE_2" class="java.lang.String"/>
+    <field name="MAPPING_VALUE_3" class="java.lang.String"/>
+    <field name="MAPPING_VALUE_4" class="java.lang.String"/>
+    <field name="MAPPING_VALUE_5" class="java.lang.String"/>
+    <field name="AUTHENTICATED_USER" class="java.lang.String"/>
+    <field name="CONSTANT_GROUP" class="java.lang.String"/>
 
-	<variable name="TOTAL" class="java.lang.Long" resetType="Report" calculation="Sum">
-		<variableExpression><![CDATA[$F{USAGE_SUM}]]></variableExpression>
-	</variable>
+    <variable name="TOTAL" class="java.lang.Long" resetType="Report" calculation="Sum">
+        <variableExpression><![CDATA[$F{USAGE_SUM}]]></variableExpression>
+    </variable>
 
-		<group  name="SERVICE_AND_OPERATION" >
-			<groupExpression><![CDATA[$F{SERVICE_ID}+$F{SERVICE_OPERATION_VALUE}]]></groupExpression>
-			<groupHeader>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-			</groupHeader>
-			<groupFooter>
-			<band height="18"  isSplitAllowed="true" >
-				<frame>					<reportElement
-						style="TableCell"
-						x="0"
-						y="0"
-						width="707"
-						height="18"
-						key="frame-1"/>
-					<box></box>
-				</frame>			</band>
-			</groupFooter>
-		</group>
-		<background>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</background>
-		<title>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</title>
-		<pageHeader>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</pageHeader>
-		<columnHeader>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</columnHeader>
-		<detail>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</detail>
-		<columnFooter>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</columnFooter>
-		<pageFooter>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</pageFooter>
-		<summary>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</summary>
-		<noData>
-			<band height="18"  isSplitAllowed="true" >
-				<frame>					<reportElement
-						style="TableCell"
-						x="0"
-						y="0"
-						width="707"
-						height="18"
-						key="frame-2"/>
-					<box></box>
-				</frame>			</band>
-		</noData>
+    <group name="SERVICE_AND_OPERATION">
+        <groupExpression><![CDATA[$F{SERVICE_ID}+$F{SERVICE_OPERATION_VALUE}]]></groupExpression>
+        <groupHeader>
+            <band height="0" isSplitAllowed="true">
+            </band>
+        </groupHeader>
+        <groupFooter>
+            <band height="18" isSplitAllowed="true">
+                <frame>
+                    <reportElement
+                            style="DefaultCenterAligned"
+                            x="0"
+                            y="0"
+                            width="707"
+                            height="18"
+                            key="frame-1"/>
+                    <box></box>
+                </frame>
+            </band>
+        </groupFooter>
+    </group>
+    <background>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </background>
+    <title>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </title>
+    <pageHeader>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </pageHeader>
+    <columnHeader>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </columnHeader>
+    <detail>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </detail>
+    <columnFooter>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </columnFooter>
+    <pageFooter>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </pageFooter>
+    <summary>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </summary>
+    <noData>
+        <band height="18" isSplitAllowed="true">
+            <frame>
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="0"
+                        y="0"
+                        width="707"
+                        height="18"
+                        key="frame-2"/>
+                <box></box>
+            </frame>
+        </band>
+    </noData>
 </jasperReport>

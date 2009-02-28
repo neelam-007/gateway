@@ -3,11 +3,17 @@
         "http://jasperreports.sourceforge.net/dtds/jaspertemplate.dtd">
 <jasperTemplate>
 
+    <!--
+    Style names follow the following convention:
+    Border Properties, Padding, Colour, Horizontal Alignment, formatting
+    e.g. LeftPaddedHeadingHtml, it's obvious from the Camel case what property is referred to
+    -->
     <style
             name="DefaultStyle"
             isDefault="true"
             mode="Transparent"
             vAlign="Middle"
+            hAlign="Left"
             fontName="SansSerif"
             fontSize="10"
             isBold="false"
@@ -19,194 +25,48 @@
             isPdfEmbedded="false"
             />
 
+    <!--Used where all default are needed, but text must be center aligned-->
     <style
-            name="FrameTitle"
+            name="DefaultCenterAligned"
             isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Left"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="true"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            >
-        <box leftPadding="5" />
+            style="DefaultStyle"
+            hAlign="Center"
+            />
+
+    <!-- ALL STYLES FOR leftPadding-->
+    <style name="leftPadding"
+           isDefault="false"
+           style="DefaultStyle">
+        <box leftPadding="5"/>
     </style>
 
     <style
-            name="SummaryRowHeading"
+            name="LeftPaddedHeading"
             isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Left"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            >
-        <box leftPadding="5" />
-    </style>
+            style="leftPadding"
+            />
 
-    <!--Used as the style for a total row cell, which requires html formatting-->
     <style
-            name="RowTotalHeadingHtml"
+            name="LeftPaddedHeadingHtml"
             isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Left"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
+            style="leftPadding"
             markup="html"
-            >
-        <box leftPadding="5">
-        </box>
-    </style>
+            />
 
     <style
-            name="SummaryRowHeadingHtml"
+            name="LeftPaddedHeadingBold"
             isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Left"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            markup="html"
-            >
-        <box leftPadding="5" />
-    </style>
-
-    <style
-            name="ReportInfo"
-            isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Left"
-            fontName="SansSerif"
-            fontSize="10"
+            style="leftPadding"
             isBold="true"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            >
-        <box leftPadding="5" />
-    </style>
+            />
 
-    <!--This style is used for column heading cells which are the left most cell-->
-    <style
-            name="TableHeadingInterval"
-            isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Left"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            >
-        <box leftPadding="5">
-        </box>
-    </style>
+    <!-- All styles from here down use a border-->
 
-    <!-- Usage table column headings need color information-->
+    <!-- STYLES INHERITING AllBorders-->
     <style
-            name="UsageTableHeading"
+            name="AllBorders"
             isDefault="false"
-            mode="Opaque"
-            vAlign="Middle"
-            hAlign="Center"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            backcolor="#DBD3B0"
-            >
-        <box>
-            <topPen lineWidth="1" lineStyle="Solid"/>
-            <leftPen lineWidth="1" lineStyle="Solid"/>
-            <bottomPen lineWidth="1" lineStyle="Solid"/>
-        </box>
-    </style>
-
-    <!-- Usage table column headings need color information-->
-    <style
-            name="UsageTableHeadingEnd"
-            isDefault="false"
-            mode="Opaque"
-            vAlign="Middle"
-            hAlign="Center"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            backcolor="#DBD3B0"
-            >
-        <box leftPadding="5">
-            <topPen lineWidth="1" lineStyle="Solid"/>
-            <leftPen lineWidth="1" lineStyle="Solid"/>
-            <bottomPen lineWidth="1" lineStyle="Solid"/>
-            <rightPen lineWidth="1" lineStyle="Solid"/>
-        </box>
-    </style>
-
-    <!-- Usage table column headings need color information. Row total cell has rhs border too-->
-    <style
-            name="UsageTableHeadingRowTotal"
-            isDefault="false"
-            mode="Opaque"
-            vAlign="Middle"
-            hAlign="Center"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            backcolor="#DBD3B0"
+            style="DefaultStyle"
             >
         <box>
             <topPen lineWidth="1" lineStyle="Solid"/>
@@ -217,48 +77,153 @@
     </style>
 
     <style
-            name="UsageTableHeadingFirst"
+            name="AllBordersGrey"
             isDefault="false"
+            style="AllBorders"
+            backcolor="#D6D6D6"
+            >
+    </style>
+
+    <style
+            name="AllBordersBrown"
+            isDefault="false"
+            style="AllBorders"
+            backcolor="#DBD3B0"
+            />
+
+    <style
+            name="AllBordersLightGrey"
+            isDefault="false"
+            style="AllBorders"
+            backcolor="#F8F8F8"
+            >
+    </style>
+
+    <!-- Usage reports need their background colour in the textfields-->
+    <style
+            name="AllBordersGreyCenter"
+            isDefault="false"
+            style="AllBorders"
+            hAlign="Center"
+            backcolor="#D6D6D6"
+            />
+
+    <style
+            name="AllBordersOpaqueCenterBrown"
+            isDefault="false"
+            style="AllBorders"
             mode="Opaque"
-            vAlign="Middle"
-            hAlign="Left"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
+            hAlign="Center"
+            backcolor="#DBD3B0"
+            />
+
+    <style
+            name="AllBordersGreyBackGround"
+            isDefault="false"
+            style="AllBorders"
+            backcolor="#D6D6D6"
+            />
+
+    <!-- ALL STYLES FOR TopLeftBottomBorders-->
+    <style
+            name="TopLeftBottomBorders"
+            isDefault="false"
+            style="DefaultStyle"
+            >
+        <box>
+            <topPen lineWidth="1" lineStyle="Solid"/>
+            <leftPen lineWidth="1" lineStyle="Solid"/>
+            <bottomPen lineWidth="1" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <!-- Usage table column headings need color information-->
+    <style
+            name="TopLeftBottomCenterBrown"
+            isDefault="false"
+            style="TopLeftBottomBorders"
+            mode="Opaque"
+            hAlign="Center"
             backcolor="#DBD3B0"
             >
-        <box leftPadding="5">
+    </style>
+
+    <!-- Usage reports need their background colour in the textfields-->
+    <style
+            name="TopLeftBottomCenterGrey"
+            isDefault="false"
+            style="TopLeftBottomBorders"
+            hAlign="Center"
+            backcolor="#D6D6D6"
+            >
+    </style>
+
+    <!-- ALL STYLES FOR TopBottomBorders-->
+    <style
+            name="TopBottomBorders"
+            isDefault="false"
+            style="DefaultStyle"
+            >
+        <box>
             <topPen lineWidth="1" lineStyle="Solid"/>
             <bottomPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
-
-    <!--This style is used for column headings-->
     <style
-            name="TableHeading"
+            name="TopBottomBrownPadding"
             isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Center"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            markup="html"
+            style="TopBottomBorders"
+            mode="Opaque"
+            backcolor="#DBD3B0"
+            >
+        <box leftPadding="5"/>
+    </style>
+
+    <!-- Usage reports need their background colour in the textfields-->
+    <style
+            name="TopBottomGreyPadding"
+            isDefault="false"
+            style="TopBottomBorders"
+            backcolor="#D6D6D6"
+            >
+        <box leftPadding="5"/>
+    </style>
+
+    <!-- ALL STYLES FOR LeftBorder-->
+    <style
+            name="LeftBorder"
+            isDefault="false"
+            style="DefaultStyle"
             >
         <box>
+            <leftPen lineWidth="1" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <style
+            name="LeftCenterHtml"
+            isDefault="false"
+            style="LeftBorder"
+            hAlign="Center"
+            markup="html"
+            />
+
+    <style
+            name="LeftCenter"
+            isDefault="false"
+            style="LeftBorder"
+            hAlign="Center"
+            />
+
+    <!-- ALL STYLES FOR TopLeftBorders-->
+    <style
+            name="TopLeftBorders"
+            isDefault="false"
+            style="DefaultStyle"
+            >
+        <box>
+            <topPen lineWidth="1" lineStyle="Solid"/>
             <leftPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
@@ -266,640 +231,180 @@
     <!--This style is used for column headings which are multi lined, and this is the bottom element e.g. min
     max and average response times-->
     <style
-            name="TableHeadingWithTopBorder"
+            name="TopLeftBordersCenterHtml"
             isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
+            style="TopLeftBorders"
             hAlign="Center"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
             markup="html"
+            />
+
+    <!-- Usage reports need their background colour in the textfields-->
+    <style
+            name="TopLeftGreyCenter"
+            isDefault="false"
+            style="TopLeftBorders"
+            hAlign="Center"
+            backcolor="#D6D6D6"
+            />
+
+    <!-- ALL STYLES FOR TopBorder-->
+    <style
+            name="TopBorder"
+            isDefault="false"
+            style="DefaultStyle"
+            >
+        <box>
+            <topPen lineWidth="1" lineStyle="Solid"/>
+        </box>
+    </style>
+
+    <!-- Usage reports need their background colour in the textfields-->
+    <style
+            name="TopGreyPadding"
+            isDefault="false"
+            style="TopBorder"
+            backcolor="#D6D6D6"
+            >
+        <box leftPadding="5"/>
+    </style>
+
+    <!-- ALL STYLES FOR TopLeftRightBorders-->
+    <style
+            name="TopLeftRightBorders"
+            isDefault="false"
+            style="DefaultStyle"
             >
         <box>
             <topPen lineWidth="1" lineStyle="Solid"/>
             <leftPen lineWidth="1" lineStyle="Solid"/>
+            <rightPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
+    <!-- Usage reports need their background colour in the textfields-->
     <style
-            name="TableCellInterval"
+            name="TopLeftRightGreyCenter"
             isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Left"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
+            style="TopLeftRightBorders"
+            hAlign="Center"
+            backcolor="#D6D6D6"
+            />
+
+    <!--This style is used for the heading row of the start of a new group section-->
+    <style
+            name="TopLeftRightOrange"
+            isDefault="false"
+            style="TopLeftRightBorders"
+            backcolor="#FFDC5A"
             />
 
     <style
-            name="TableCell"
+            name="TopLeftRightBordersLightGreen"
             isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Center"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
+            style="TopLeftRightBorders"
+            backcolor="#E8EDB4"
             />
 
-    <!--This style is used for columns containing totals colums, where this column contains a row heading.
-    It's the same as RowTotal apart from it's left padding = 5 and has no left border, as this is provided by the
-    enclosing frame-->
+    <!--Style is used in interval reports for service totals, which are never followed by white space so they do
+    not have a bottom border-->
     <style
-            name="RowTotalHeading"
+            name="TopLeftRightGrey"
             isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Left"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            >
-        <box leftPadding="5">
-        </box>
-    </style>
-
-    <!-- Usage reports need their background colour in the textfields-->
-    <style
-            name="UsageRowTotalHeading"
-            isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Left"
-            fontName="SansSerif"
-            fontSize="10"
+            style="TopLeftRightBorders"
             backcolor="#D6D6D6"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            >
-        <box leftPadding="5">
-            <topPen lineWidth="1" lineStyle="Solid"/>
-            <bottomPen lineWidth="1" lineStyle="Solid"/>
-        </box>
-    </style>
+            />
 
-    <!-- Usage reports need their background colour in the textfields-->
+    <!-- ALL STYLES FOR LeftBottomRightBorders-->
     <style
-            name="UsageReportTotalHeading"
+            name="LeftBottomRightBorders"
             isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Left"
-            fontName="SansSerif"
-            fontSize="10"
-            backcolor="#D6D6D6"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            >
-        <box leftPadding="5">
-            <topPen lineWidth="1" lineStyle="Solid"/>
-        </box>
-    </style>
-
-    <!-- Usage reports need their background colour in the textfields-->
-    <style
-            name="UsageRowTotal"
-            isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Center"
-            fontName="SansSerif"
-            fontSize="10"
-            backcolor="#D6D6D6"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            >
-        <box>
-            <topPen lineWidth="1" lineStyle="Solid"/>
-            <leftPen lineWidth="1" lineStyle="Solid"/>
-            <bottomPen lineWidth="1" lineStyle="Solid"/>
-        </box>
-    </style>
-
-    <!-- Usage reports need their background colour in the textfields-->
-    <style
-            name="UsageReportRowTotal"
-            isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Center"
-            fontName="SansSerif"
-            fontSize="10"
-            backcolor="#D6D6D6"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            >
-        <box>
-            <topPen lineWidth="1" lineStyle="Solid"/>
-            <leftPen lineWidth="1" lineStyle="Solid"/>
-        </box>
-    </style>
-
-    <!-- Usage reports need their background colour in the textfields-->
-    <style
-            name="UsageRowGrandTotal"
-            isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Center"
-            fontName="SansSerif"
-            fontSize="10"
-            backcolor="#D6D6D6"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            >
-        <box>
-            <topPen lineWidth="1" lineStyle="Solid"/>
-            <leftPen lineWidth="1" lineStyle="Solid"/>
-            <bottomPen lineWidth="1" lineStyle="Solid"/>
-            <rightPen lineWidth="1" lineStyle="Solid"/>
-        </box>
-    </style>
-
-    <!-- Usage reports need their background colour in the textfields-->
-    <style
-            name="UsageReportRowGrandTotal"
-            isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Center"
-            fontName="SansSerif"
-            fontSize="10"
-            backcolor="#D6D6D6"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            >
-        <box>
-            <topPen lineWidth="1" lineStyle="Solid"/>
-            <leftPen lineWidth="1" lineStyle="Solid"/>
-            <rightPen lineWidth="1" lineStyle="Solid"/>
-        </box>
-    </style>
-
-    <!-- Usage reports need their background colour in the textfields. This is a minor total, on a row-->
-    <style
-            name="UsageRowTotalMinor"
-            isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Center"
-            fontName="SansSerif"
-            fontSize="10"
-            backcolor="#D6D6D6"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
-            >
-        <box>
-            <topPen lineWidth="1" lineStyle="Solid"/>
-            <leftPen lineWidth="1" lineStyle="Solid"/>
-            <bottomPen lineWidth="1" lineStyle="Solid"/>
-            <rightPen lineWidth="1" lineStyle="Solid"/>
-        </box>
-    </style>
-
-
-    <!--This style is used for column totals in a row.-->
-    <style
-            name="RowTotal"
-            isDefault="false"
-            mode="Transparent"
-            vAlign="Middle"
-            hAlign="Center"
-            fontName="SansSerif"
-            fontSize="10"
-            isBold="false"
-            isItalic="false"
-            isUnderline="false"
-            isStrikeThrough="false"
-            pdfFontName="Helvetica"
-            pdfEncoding="Cp1252"
-            isPdfEmbedded="false"
+            style="DefaultStyle"
             >
         <box>
             <leftPen lineWidth="1" lineStyle="Solid"/>
-        </box>
-    </style>
-
-
-    <style
-            name="FrameStyle"
-            isDefault="false"
-            vAlign="Middle"
-            >
-        <box>
-            <topPen lineWidth="1.0" lineStyle="Solid"/>
-            <leftPen lineWidth="1.0" lineStyle="Solid"/>
             <bottomPen lineWidth="1.0" lineStyle="Solid"/>
-            <rightPen lineWidth="1.0" lineStyle="Solid"/>
-        </box>
-    </style>
-            <!--backcolor="#0000ff" - blue-->
-    <style
-            name="FrameTableBottom"
-            isDefault="false"
-            backcolor="#D6D6D6"
-            vAlign="Middle"
-            >
-        <box>
-            <leftPen lineWidth="1.0"/>
-            <bottomPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
+            <rightPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
     <style
-            name="GroupFrameNoDetail"
+            name="LeftBottomRightGrey"
             isDefault="false"
+            style="LeftBottomRightBorders"
             backcolor="#D6D6D6"
-            vAlign="Middle"
-            >
-        <box>
-            <topPen lineWidth="1.0" />
-            <leftPen lineWidth="1.0"/>
-            <bottomPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
+            />
 
     <style
-            name="ReportTotalFrameTableWithTop"
+            name="LeftBottomRightVeryLightGrey"
             isDefault="false"
-            backcolor="#D6D6D6"
-            vAlign="Middle"
-            >
-        <box>
-            <topPen lineWidth="1.0" />
-            <leftPen lineWidth="1.0"/>
-            <bottomPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
-
-    <style
-            name="FrameTableBottomAllBorders"
-            isDefault="false"
-            backcolor="#D6D6D6"
-            vAlign="Middle"
-            >
-        <box>
-            <topPen lineWidth="1.0" />
-            <leftPen lineWidth="1.0"/>
-            <bottomPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
-
-    <!--#D6D6D6-->
-    <style
-            name="ReportInfoTableBottom"
-            isDefault="false"
+            style="LeftBottomRightBorders"
             backcolor="#F8F8F8"
-            vAlign="Middle"
-            >
-        <box>
-            <leftPen lineWidth="1.0"/>
-            <bottomPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
+            />
 
-    <!-- For usage reports, we want the all around border, but no colour, as thats controlled by the cell styles-->
     <style
-            name="UsageFrameTableBottom"
+            name="LeftBottomRightVeryLightGreyPadding"
             isDefault="false"
-            vAlign="Middle"
+            style="LeftBottomRightVeryLightGrey"
             backcolor="#F8F8F8"
             >
+        <box leftPadding="5"/>
+    </style>
+
+    <!-- ALL STYLES FOR TopBottomRightBorders-->
+    <style
+            name="TopBottomRightBorders"
+            isDefault="false"
+            style="DefaultStyle"
+            >
         <box>
-            <leftPen lineWidth="1.0"/>
-            <bottomPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
+            <topPen lineWidth="1" lineStyle="Solid"/>
+            <bottomPen lineWidth="1.0" lineStyle="Solid"/>
+            <rightPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
     <!--This style is used for rows containing totals. It has a border on the top, bottom and right hand sides-->
     <style
-            name="FrameReportTotals"
+            name="TopBottomRightGrey"
             isDefault="false"
+            style="TopBottomRightBorders"
             backcolor="#D6D6D6"
-            vAlign="Middle"
-            >
-        <box>
-            <topPen lineWidth="1.0" />
-            <!--<leftPen lineWidth="1.0"/>-->
-            <bottomPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
+            />
 
+    <!-- ALL STYLES FOR LeftRightBorders-->
     <style
-            name="FrameTableBottomReportInfo"
+            name="LeftRightBorders"
             isDefault="false"
-            backcolor="#F8F8F8"
-            vAlign="Middle"
+            style="DefaultStyle"
             >
         <box>
-            <topPen lineWidth="1.0"/>
-            <leftPen lineWidth="1.0"/>
-            <bottomPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
-
-    <style
-            name="ChartFrame"
-            isDefault="false"
-            backcolor="#F8F8F8"
-            vAlign="Middle"
-            >
-        <box>
-            <topPen lineWidth="1.0"/>
-            <leftPen lineWidth="1.0"/>
-            <bottomPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
-    
-
-    <!--This style is used for the heading row of the start of a new group section-->
-    <style
-            name="MappingTitleFrame"
-            isDefault="false"
-            backcolor="#FFDC5A"
-            vAlign="Middle"
-            >
-        <box>
-            <topPen lineWidth="1.0"/>
-            <leftPen lineWidth="1.0"/>
-            <!--<bottomPen lineWidth="1.0"/>            -->
-            <rightPen lineWidth="1.0"/>
+            <leftPen lineWidth="1.0" lineStyle="Solid"/>
+            <rightPen lineWidth="1" lineStyle="Solid"/>
         </box>
     </style>
 
     <!--Used as the style for a frame like 'Service'-->
     <style
-            name="TitleFrame"
+            name="LeftRightLightGreen"
             isDefault="false"
+            style="LeftRightBorders"
             backcolor="#E8EDB4"
-            vAlign="Middle"
-            >
-        <box>
-            <leftPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
-
-    <!-- E8EDB4 #0000ff-->    
-    <style
-            name="FrameTableTop"
-            isDefault="false"
-            backcolor="#E8EDB4"
-            vAlign="Middle"
-            >
-        <box>
-            <topPen lineWidth="1.0"/>
-            <leftPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
-
-    <!-- E8EDB4 #0000ff-->
-    <style
-            name="IntervalFrameTableTop"
-            isDefault="false"
-            backcolor="#E8EDB4"
-            vAlign="Middle"
-            >
-        <box>
-            <topPen lineWidth="1.0"/>
-            <leftPen lineWidth="1.0"/>
-            <bottomPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
-
-
-    <!-- E8EDB4 #0000ff-->
-    <style
-            name="ServiceIntervalFrameTableTop"
-            isDefault="false"
-            backcolor="#E8EDB4"
-            vAlign="Middle"
-            >
-        <box>
-            <topPen lineWidth="1.0"/>
-            <leftPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
-
-    <!--This style is used for column header frames-->
-    <style
-            name="FrameHeaderTableRow"
-            isDefault="false"
-            backcolor="#DBD3B0"
-            vAlign="Middle"
-            >
-        <box>
-            <topPen lineWidth="1.0"/>
-            <leftPen lineWidth="1.0"/>
-            <bottomPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
+            />
 
     <style
-            name="FrameDetailTableRow"
+            name="LeftRightLightGrey"
             isDefault="false"
+            style="LeftRightBorders"
             backcolor="#F8F8F8"
-            vAlign="Middle"
-            >
-        <box>
-            <leftPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
-
-    <style
-            name="UsageTotalFrame"
-            isDefault="false"
-            backcolor="#F8F8F8"
-            vAlign="Middle"
-            >
-        <box>
-            <leftPen lineWidth="1.0"/>
-            <bottomPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
-
-    <style
-            name="SubIntervalDetail"
-            isDefault="false"
-            backcolor="#F8F8F8"
-            vAlign="Middle"
-            >
-    </style>
-
-    <style
-            name="FrameDetailTableRowWithTopBorder"
-            isDefault="false"
-            backcolor="#F8F8F8"
-            vAlign="Middle"
-            >
-        <box>
-            <topPen lineWidth="1.0"/>
-            <leftPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
-
-    <style
-            name="FrameNoData"
-            isDefault="false"
-            backcolor="#F8F8F8"
-            vAlign="Middle"
-            >
-        <box leftPadding="5">
-            <leftPen lineWidth="1.0"/>
-            <bottomPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
-
-    <!--Used as the style for service totals-->
-    <style
-            name="FrameTotalTableRow"
-            isDefault="false"
-            backcolor="#D6D6D6"
-            vAlign="Middle"
-            >
-        <box>
-            <topPen lineWidth="1.0"/>
-            <leftPen lineWidth="1.0"/>
-            <bottomPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
-
-    <!--Used as the style for operation totals, there is no bottom border-->
-    <style
-            name="FrameDetailTotalTableRow"
-            isDefault="false"
-            backcolor="#D6D6D6"
-            vAlign="Middle"
-            >
-        <box>
-            <topPen lineWidth="1.0"/>
-            <leftPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
+            />
 
     <!--Style is used in interval reports for service totals, which are never followed by white space so they do
     not have a bottom border-->
     <style
-            name="FrameTotalTableRowBottom"
+            name="LeftRightGrey"
             isDefault="false"
+            style="LeftRightBorders"
             backcolor="#D6D6D6"
-            vAlign="Middle"
-            >
-        <box>
-            <leftPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
+            />
 
-    <!--Style is used in interval reports for service totals, which are never followed by white space so they do
-    not have a bottom border-->
-    <style
-            name="FrameTotalTableRowBottomNoDetail"
-            isDefault="false"
-            backcolor="#D6D6D6"
-            vAlign="Middle"
-            >
-        <box>
-            <topPen lineWidth="1.0"/>
-            <leftPen lineWidth="1.0"/>
-            <rightPen lineWidth="1.0"/>
-        </box>
-    </style>
-
-    <style
-		name="TotalCell"
-		backcolor="#D6D6D6"
-        vAlign="Middle"
-    >
-	</style>
-
-    <style
-        name="chartLegendTextField"
-        hAlign="Left"
-        vAlign="Middle"
-        isStyledText="false"
-        markup="html"
-    >
-        <box leftPadding="5" />
-    </style>
 </jasperTemplate>

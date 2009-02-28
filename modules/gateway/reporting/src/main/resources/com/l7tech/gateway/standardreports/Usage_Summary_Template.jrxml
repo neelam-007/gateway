@@ -159,7 +159,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue())
                 <printWhenExpression><![CDATA[$P{PRINT_CHART}]]></printWhenExpression>
                 <frame>
                     <reportElement
-                            style="FrameTableTop"
+                            style="TopLeftRightBordersLightGreen"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -169,7 +169,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue())
                     <box></box>
                     <staticText>
                         <reportElement
-                                style="FrameTitle"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="820"
@@ -184,7 +184,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue())
                 </frame>
                 <frame>
                     <reportElement
-                            style="ChartFrame"
+                            style="AllBordersLightGrey"
                             x="0"
                             y="18"
                             width="820"
@@ -257,7 +257,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
             <band height="54" isSplitAllowed="false">
                 <frame>
                     <reportElement
-                            style="MappingTitleFrame"
+                            style="TopLeftRightOrange"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -268,7 +268,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
                     <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="FrameTitle"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="820"
@@ -284,7 +284,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
                 </frame>
                 <frame>
                     <reportElement
-                            style="FrameDetailTableRow"
+                            style="LeftRightLightGrey"
                             mode="Opaque"
                             x="0"
                             y="18"
@@ -296,7 +296,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="UsageTableHeadingFirst"
+                                style="TopBottomBrownPadding"
                                 x="0"
                                 y="0"
                                 width="113"
@@ -316,7 +316,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
             <band height="18" isSplitAllowed="false">
                 <frame>
                     <reportElement
-                            style="UsageFrameTableBottom"
+                            style="LeftBottomRightVeryLightGrey"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -328,7 +328,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
                     <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="UsageReportTotalHeading"
+                                style="TopGreyPadding"
                                 mode="Opaque"
                                 x="0"
                                 y="0"
@@ -352,7 +352,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
                 <printWhenExpression><![CDATA[$P{IS_DETAIL}]]></printWhenExpression>
                 <frame>
                     <reportElement
-                            style="TitleFrame"
+                            style="LeftRightLightGreen"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -364,7 +364,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
                     <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="SummaryRowHeading"
+                                style="LeftPaddedHeading"
                                 x="0"
                                 y="0"
                                 width="820"
@@ -385,7 +385,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
                 <printWhenExpression><![CDATA[$P{IS_DETAIL}]]></printWhenExpression>
                 <frame>
                     <reportElement
-                            style="FrameDetailTableRow"
+                            style="LeftRightLightGrey"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -397,7 +397,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
                     <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="UsageRowTotalHeading"
+                                style="TopBottomGreyPadding"
                                 mode="Opaque"
                                 x="0"
                                 y="0"
@@ -424,7 +424,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
             <band height="18" isSplitAllowed="false">
                 <frame>
                     <reportElement
-                            style="FrameDetailTableRow"
+                            style="LeftRightLightGrey"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -436,7 +436,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
                     <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="SummaryRowHeadingHtml"
+                                style="LeftPaddedHeadingHtml"
                                 x="0"
                                 y="0"
                                 width="113"
@@ -473,7 +473,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
         <band height="166" isSplitAllowed="true">
             <frame>
                 <reportElement
-                        style="FrameTableTop"
+                        style="TopLeftRightBordersLightGreen"
                         mode="Opaque"
                         x="0"
                         y="0"
@@ -483,7 +483,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
                 <box></box>
                 <staticText>
                     <reportElement
-                            style="FrameTitle"
+                            style="LeftPaddedHeadingBold"
                             x="0"
                             y="0"
                             width="105"
@@ -498,7 +498,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
             </frame>
             <frame>
                 <reportElement
-                        style="ReportInfoTableBottom"
+                        style="LeftBottomRightVeryLightGrey"
                         mode="Opaque"
                         x="0"
                         y="18"
@@ -510,7 +510,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
                 <box></box>
                 <frame>
                     <reportElement
-                            style="TableCell"
+                            style="DefaultCenterAligned"
                             x="0"
                             y="4"
                             width="820"
@@ -520,7 +520,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
                     <box></box>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="120"
@@ -550,7 +550,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
                     </textField>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="419"
                                 y="0"
                                 width="120"
@@ -583,7 +583,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
                 </frame>
                 <frame>
                     <reportElement
-                            style="TableCell"
+                            style="DefaultCenterAligned"
                             x="0"
                             y="24"
                             width="820"
@@ -593,7 +593,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
                     <box></box>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="120"
@@ -623,7 +623,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
                     </textField>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="419"
                                 y="0"
                                 width="120"
@@ -656,7 +656,7 @@ Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFiel
                 </frame>
                 <frame>
                     <reportElement
-                            style="TableCell"
+                            style="DefaultCenterAligned"
                             x="0"
                             y="44"
                             width="820"
@@ -686,7 +686,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     </textField>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="120"
@@ -700,7 +700,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     </staticText>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="419"
                                 y="0"
                                 width="120"
@@ -731,7 +731,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                 </frame>
                 <frame>
                     <reportElement
-                            style="TableCell"
+                            style="DefaultCenterAligned"
                             x="0"
                             y="64"
                             width="820"
@@ -756,7 +756,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     </textField>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="120"
@@ -771,7 +771,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                 </frame>
                 <frame>
                     <reportElement
-                            style="TableCell"
+                            style="DefaultCenterAligned"
                             x="0"
                             y="84"
                             width="820"
@@ -799,7 +799,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="120"
@@ -815,7 +815,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                 </frame>
                 <frame>
                     <reportElement
-                            style="TableCell"
+                            style="DefaultCenterAligned"
                             x="0"
                             y="104"
                             width="820"
@@ -842,7 +842,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     </textField>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="120"
@@ -895,7 +895,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                 <box></box>
                 <frame>
                     <reportElement
-                            style="FrameTableTop"
+                            style="TopLeftRightBordersLightGreen"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -919,7 +919,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                 </frame>
                 <frame>
                     <reportElement
-                            style="ReportInfoTableBottom"
+                            style="LeftBottomRightVeryLightGrey"
                             mode="Opaque"
                             x="0"
                             y="18"
@@ -931,7 +931,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     <box></box>
                     <frame>
                         <reportElement
-                                style="TableCell"
+                                style="DefaultCenterAligned"
                                 x="0"
                                 y="4"
                                 width="820"
@@ -941,7 +941,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         <box></box>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="0"
                                     y="0"
                                     width="120"
@@ -971,7 +971,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         </textField>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="419"
                                     y="0"
                                     width="120"
@@ -1004,7 +1004,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     </frame>
                     <frame>
                         <reportElement
-                                style="TableCell"
+                                style="DefaultCenterAligned"
                                 x="0"
                                 y="24"
                                 width="820"
@@ -1014,7 +1014,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         <box></box>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="0"
                                     y="0"
                                     width="120"
@@ -1044,7 +1044,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         </textField>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="419"
                                     y="0"
                                     width="120"
@@ -1077,7 +1077,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     </frame>
                     <frame>
                         <reportElement
-                                style="TableCell"
+                                style="DefaultCenterAligned"
                                 x="0"
                                 y="44"
                                 width="820"
@@ -1107,7 +1107,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         </textField>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="0"
                                     y="0"
                                     width="120"
@@ -1121,7 +1121,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         </staticText>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="419"
                                     y="0"
                                     width="120"
@@ -1152,7 +1152,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     </frame>
                     <frame>
                         <reportElement
-                                style="TableCell"
+                                style="DefaultCenterAligned"
                                 x="0"
                                 y="64"
                                 width="820"
@@ -1177,7 +1177,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         </textField>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="0"
                                     y="0"
                                     width="120"
@@ -1192,7 +1192,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     </frame>
                     <frame>
                         <reportElement
-                                style="TableCell"
+                                style="DefaultCenterAligned"
                                 x="0"
                                 y="84"
                                 width="820"
@@ -1220,7 +1220,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                                    hyperlinkType="None" hyperlinkTarget="Self">
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="0"
                                     y="0"
                                     width="120"
@@ -1236,7 +1236,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     </frame>
                     <frame>
                         <reportElement
-                                style="TableCell"
+                                style="DefaultCenterAligned"
                                 x="0"
                                 y="104"
                                 width="820"
@@ -1263,7 +1263,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         </textField>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="0"
                                     y="0"
                                     width="120"
@@ -1280,7 +1280,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                 </frame>
                 <frame>
                     <reportElement
-                            style="FrameTableTop"
+                            style="TopLeftRightBordersLightGreen"
                             mode="Opaque"
                             x="0"
                             y="158"
@@ -1305,7 +1305,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                 </frame>
                 <frame>
                     <reportElement
-                            style="TableCell"
+                            style="DefaultCenterAligned"
                             x="0"
                             y="176"
                             width="820"
@@ -1316,7 +1316,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="FrameNoData"
+                                style="LeftBottomRightVeryLightGreyPadding"
                                 x="0"
                                 y="0"
                                 width="820"

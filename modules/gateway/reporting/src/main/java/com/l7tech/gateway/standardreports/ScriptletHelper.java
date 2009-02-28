@@ -15,7 +15,7 @@ import java.util.Map;
 //style names
 
 /**
- * Lifecycle class, called on report filling lifecycle events. Allows runtime modifications to be made to 
+ * Lifecycle class, called on report filling lifecycle events. Allows runtime modifications to be made to
  * report. Initial use is to modify styles at runtime.
  */
 public class ScriptletHelper extends JRDefaultScriptlet {
@@ -23,9 +23,9 @@ public class ScriptletHelper extends JRDefaultScriptlet {
     private final static String STYLES_FROM_TEMPLATE = "STYLES_FROM_TEMPLATE";
     private final static String SERVICE_ID_GROUP = "SERVICE_ID_GROUP";
     private final static String SERVICE_OPERATION_VALUE = "SERVICE_OPERATION_VALUE";
-    private final static String FRAME_DETAIL_TABLE_ROW = "FrameDetailTableRow";
-    private static final String SUMMARY_ROW_HEADING_HTML = "SummaryRowHeadingHtml";
-    private static final String TABLE_CELL = "TableCell";
+    private final static String LEFT_RIGHT_LIGHT_GREY = "LeftRightLightGrey";
+    private static final String LEFT_PADDED_HEADING_HTML = "LeftPaddedHeadingHtml";
+    private static final String DEFAULT_CENTER_ALIGNED = "DefaultCenterAligned";
 
     /**
      * The performance summary report handles both mapping and non mapping queries, just as the interval report does.
@@ -37,55 +37,56 @@ public class ScriptletHelper extends JRDefaultScriptlet {
      * grey colour to indicate that it has totals. When it's not a detail report we need to change the style so that
      * only the left and right hand sides have a border, and the background is white so that it's clear that the data
      * is not a total
+     *
      * @param s
      * @throws JRScriptletException
      */
     @Override
     public void beforeGroupInit(String s) throws JRScriptletException {
-        if(s.equals(SERVICE_ID_GROUP)){
+        if (s.equals(SERVICE_ID_GROUP)) {
             JRFillParameter fp = (JRFillParameter) this.parametersMap.get(STYLES_FROM_TEMPLATE);
             Map styleMap = (Map) fp.getValue();
-            if(!styleMap.containsKey(FRAME_DETAIL_TABLE_ROW)){
-                throw new IllegalStateException(FRAME_DETAIL_TABLE_ROW + " style not found");
+            if (!styleMap.containsKey(LEFT_RIGHT_LIGHT_GREY)) {
+                throw new IllegalStateException(LEFT_RIGHT_LIGHT_GREY + " style not found");
             }
 
-            if(!styleMap.containsKey(SUMMARY_ROW_HEADING_HTML)){
-                throw new IllegalStateException(SUMMARY_ROW_HEADING_HTML+ " style not found");
+            if (!styleMap.containsKey(LEFT_PADDED_HEADING_HTML)) {
+                throw new IllegalStateException(LEFT_PADDED_HEADING_HTML + " style not found");
             }
 
-            JRStyle nonDetailStyle = (JRStyle) styleMap.get(FRAME_DETAIL_TABLE_ROW);
-            JRStyle serviceTextFieldColumnStyle = (JRStyle) styleMap.get(SUMMARY_ROW_HEADING_HTML);
-            JRStyle tableColumnStyle = (JRStyle) styleMap.get(TABLE_CELL); 
+            JRStyle nonDetailStyle = (JRStyle) styleMap.get(LEFT_RIGHT_LIGHT_GREY);
+            JRStyle serviceTextFieldColumnStyle = (JRStyle) styleMap.get(LEFT_PADDED_HEADING_HTML);
+            JRStyle tableColumnStyle = (JRStyle) styleMap.get(DEFAULT_CENTER_ALIGNED);
 
-            if(nonDetailStyle == null) throw new IllegalStateException(FRAME_DETAIL_TABLE_ROW+" not found");
+            if (nonDetailStyle == null) throw new IllegalStateException(LEFT_RIGHT_LIGHT_GREY + " not found");
 
             JRFillField jrFillField = (JRFillField) this.fieldsMap.get(SERVICE_OPERATION_VALUE);
             String operation = (String) jrFillField.getValue();
-            if(operation == null) return;//no data in report
-            if(operation.equals(Utilities.SQL_PLACE_HOLDER)){
+            if (operation == null) return;//no data in report
+            if (operation.equals(Utilities.SQL_PLACE_HOLDER)) {
                 JRFillGroup jrFillGroup = null;
-                for(JRFillGroup fillGroup: this.groups){
-                    if(fillGroup.getName().equals(s)){
+                for (JRFillGroup fillGroup : this.groups) {
+                    if (fillGroup.getName().equals(s)) {
                         jrFillGroup = fillGroup;
                         break;
                     }
                 }
-                if(jrFillGroup == null) throw new IllegalStateException("Group " + s + " not found");
+                if (jrFillGroup == null) throw new IllegalStateException("Group " + s + " not found");
 
                 JRBand jrBand = jrFillGroup.getGroupFooter();
                 List children = jrBand.getChildren();
-                for(Object o: children){
+                for (Object o : children) {
                     //This band should only have 1 frame
-                    if(o instanceof JRFillFrame){
+                    if (o instanceof JRFillFrame) {
                         JRFillFrame jrFillFrame = (JRFillFrame) o;
                         jrFillFrame.setStyle(nonDetailStyle);
                         List frameChildren = jrFillFrame.getChildren();
-                        for(Object o1: frameChildren){
-                            if(o1 instanceof JRFillTextField){
+                        for (Object o1 : frameChildren) {
+                            if (o1 instanceof JRFillTextField) {
                                 JRFillTextField field = (JRFillTextField) o1;
-                                if(field.getKey().startsWith("serviceName")){
+                                if (field.getKey().startsWith("serviceName")) {
                                     field.setStyle(serviceTextFieldColumnStyle);
-                                }else{
+                                } else {
                                     field.setStyle(tableColumnStyle);
                                 }
                             }

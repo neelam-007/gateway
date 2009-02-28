@@ -306,7 +306,7 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 )]]></printWhenExpression>
                 <frame>
                     <reportElement
-                            style="FrameTableTop"
+                            style="TopLeftRightBordersLightGreen"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -316,7 +316,7 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
                     <box></box>
                     <staticText>
                         <reportElement
-                                style="FrameTitle"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="268"
@@ -331,7 +331,7 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
                 </frame>
                 <frame>
                     <reportElement
-                            style="ChartFrame"
+                            style="AllBordersLightGrey"
                             x="0"
                             y="18"
                             width="820"
@@ -438,7 +438,7 @@ $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
 && $P{IS_USING_KEYS}.booleanValue())]]></printWhenExpression>
                 <frame>
                     <reportElement
-                            style="FrameTableTop"
+                            style="TopLeftRightBordersLightGreen"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -448,7 +448,7 @@ $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
                     <box></box>
                     <staticText>
                         <reportElement
-                                style="FrameTitle"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="268"
@@ -463,7 +463,7 @@ $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
                 </frame>
                 <frame>
                     <reportElement
-                            style="ChartFrame"
+                            style="AllBordersLightGrey"
                             x="0"
                             y="18"
                             width="820"
@@ -563,7 +563,7 @@ $F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
                     <![CDATA[new Boolean($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())]]></printWhenExpression>
                 <frame>
                     <reportElement
-                            style="MappingTitleFrame"
+                            style="TopLeftRightOrange"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -574,7 +574,7 @@ $F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
                     <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="FrameTitle"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="820"
@@ -597,7 +597,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
                     <![CDATA[new Boolean($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())]]></printWhenExpression>
                 <frame>
                     <reportElement
-                            style="FrameTableBottomAllBorders"
+                            style="AllBordersGreyBackGround"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -608,7 +608,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="110"
                                 y="0"
                                 width="71"
@@ -624,7 +624,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="323"
                                 y="0"
                                 width="71"
@@ -639,7 +639,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
                     </textField>
                     <staticText>
                         <reportElement
-                                style="RowTotalHeading"
+                                style="LeftPaddedHeading"
                                 x="0"
                                 y="0"
                                 width="110"
@@ -654,7 +654,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="394"
                                 y="0"
                                 width="71"
@@ -670,7 +670,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
                     <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="465"
                                 y="0"
                                 width="71"
@@ -686,7 +686,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="536"
                                 y="0"
                                 width="71"
@@ -702,7 +702,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="607"
                                 y="0"
                                 width="71"
@@ -718,7 +718,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
                     <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="678"
                                 y="0"
                                 width="71"
@@ -734,7 +734,7 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")]]></textFieldExpression>
                     <textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="749"
                                 y="0"
                                 width="71"
@@ -751,7 +751,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="181"
                                 y="0"
                                 width="71"
@@ -767,7 +767,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="252"
                                 y="0"
                                 width="71"
@@ -790,7 +790,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
             <band height="54" isSplitAllowed="true">
                 <frame>
                     <reportElement
-                            style="ServiceIntervalFrameTableTop"
+                            style="TopLeftRightBordersLightGreen"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -801,7 +801,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="SummaryRowHeading"
+                                style="LeftPaddedHeading"
                                 x="0"
                                 y="0"
                                 width="820"
@@ -817,7 +817,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                 </frame>
                 <frame>
                     <reportElement
-                            style="FrameHeaderTableRow"
+                            style="AllBordersBrown"
                             mode="Opaque"
                             x="0"
                             y="18"
@@ -828,7 +828,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="TableHeadingInterval"
+                                style="LeftPaddedHeading"
                                 x="0"
                                 y="0"
                                 width="110"
@@ -843,7 +843,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     </textField>
                     <staticText>
                         <reportElement
-                                style="TableHeading"
+                                style="LeftCenterHtml"
                                 x="110"
                                 y="0"
                                 width="71"
@@ -857,7 +857,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     </staticText>
                     <staticText>
                         <reportElement
-                                style="TableHeading"
+                                style="LeftCenterHtml"
                                 x="181"
                                 y="0"
                                 width="71"
@@ -871,7 +871,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     </staticText>
                     <staticText>
                         <reportElement
-                                style="TableHeadingWithTopBorder"
+                                style="TopLeftBordersCenterHtml"
                                 x="678"
                                 y="18"
                                 width="71"
@@ -885,7 +885,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     </staticText>
                     <staticText>
                         <reportElement
-                                style="TableHeadingWithTopBorder"
+                                style="TopLeftBordersCenterHtml"
                                 x="323"
                                 y="18"
                                 width="71"
@@ -899,7 +899,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     </staticText>
                     <staticText>
                         <reportElement
-                                style="TableHeadingWithTopBorder"
+                                style="TopLeftBordersCenterHtml"
                                 x="394"
                                 y="18"
                                 width="71"
@@ -913,7 +913,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     </staticText>
                     <staticText>
                         <reportElement
-                                style="TableHeadingWithTopBorder"
+                                style="TopLeftBordersCenterHtml"
                                 x="465"
                                 y="18"
                                 width="71"
@@ -927,7 +927,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     </staticText>
                     <staticText>
                         <reportElement
-                                style="TableHeadingWithTopBorder"
+                                style="TopLeftBordersCenterHtml"
                                 x="536"
                                 y="18"
                                 width="71"
@@ -941,7 +941,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     </staticText>
                     <staticText>
                         <reportElement
-                                style="TableHeadingWithTopBorder"
+                                style="TopLeftBordersCenterHtml"
                                 x="607"
                                 y="18"
                                 width="71"
@@ -956,7 +956,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="TableHeading"
+                                style="LeftCenterHtml"
                                 x="323"
                                 y="0"
                                 width="213"
@@ -972,7 +972,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="TableHeading"
+                                style="LeftCenterHtml"
                                 x="536"
                                 y="0"
                                 width="213"
@@ -987,7 +987,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     </textField>
                     <staticText>
                         <reportElement
-                                style="TableHeading"
+                                style="LeftCenterHtml"
                                 x="252"
                                 y="0"
                                 width="71"
@@ -1001,7 +1001,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                     </staticText>
                     <staticText>
                         <reportElement
-                                style="TableHeading"
+                                style="LeftCenterHtml"
                                 x="749"
                                 y="0"
                                 width="71"
@@ -1023,7 +1023,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
 )]]></printWhenExpression>
                 <frame>
                     <reportElement
-                            style="FrameTotalTableRowBottom"
+                            style="LeftRightGrey"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -1034,7 +1034,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="110"
                                 y="0"
                                 width="71"
@@ -1049,7 +1049,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="323"
                                 y="0"
                                 width="71"
@@ -1064,7 +1064,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
                     </textField>
                     <staticText>
                         <reportElement
-                                style="RowTotalHeading"
+                                style="LeftPaddedHeading"
                                 x="0"
                                 y="0"
                                 width="110"
@@ -1079,7 +1079,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="394"
                                 y="0"
                                 width="71"
@@ -1095,7 +1095,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
                     <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="465"
                                 y="0"
                                 width="71"
@@ -1111,7 +1111,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="536"
                                 y="0"
                                 width="71"
@@ -1127,7 +1127,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="607"
                                 y="0"
                                 width="71"
@@ -1143,7 +1143,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
                     <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="678"
                                 y="0"
                                 width="71"
@@ -1159,7 +1159,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
                     <textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="749"
                                 y="0"
                                 width="71"
@@ -1176,7 +1176,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="181"
                                 y="0"
                                 width="71"
@@ -1192,7 +1192,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="252"
                                 y="0"
                                 width="71"
@@ -1224,7 +1224,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
 )]]></printWhenExpression>
                 <frame>
                     <reportElement
-                            style="FrameTotalTableRowBottomNoDetail"
+                            style="TopLeftRightGrey"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -1235,7 +1235,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="110"
                                 y="0"
                                 width="71"
@@ -1250,7 +1250,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="323"
                                 y="0"
                                 width="71"
@@ -1265,7 +1265,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     </textField>
                     <staticText>
                         <reportElement
-                                style="RowTotalHeading"
+                                style="LeftPaddedHeading"
                                 x="0"
                                 y="0"
                                 width="110"
@@ -1280,7 +1280,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="394"
                                 y="0"
                                 width="71"
@@ -1296,7 +1296,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="465"
                                 y="0"
                                 width="71"
@@ -1312,7 +1312,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="536"
                                 y="0"
                                 width="71"
@@ -1328,7 +1328,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="607"
                                 y="0"
                                 width="71"
@@ -1344,7 +1344,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="678"
                                 y="0"
                                 width="71"
@@ -1360,7 +1360,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="749"
                                 y="0"
                                 width="71"
@@ -1377,7 +1377,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="181"
                                 y="0"
                                 width="71"
@@ -1393,7 +1393,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="252"
                                 y="0"
                                 width="71"
@@ -1418,7 +1418,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <![CDATA[new Boolean(!Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE}))]]></printWhenExpression>
                 <frame>
                     <reportElement
-                            style="FrameDetailTableRow"
+                            style="LeftRightLightGrey"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -1429,7 +1429,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="SummaryRowHeading"
+                                style="LeftPaddedHeading"
                                 x="0"
                                 y="0"
                                 width="820"
@@ -1451,7 +1451,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <![CDATA[new Boolean(!Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE}))]]></printWhenExpression>
                 <frame>
                     <reportElement
-                            style="FrameTotalTableRow"
+                            style="AllBordersGrey"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -1462,7 +1462,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="110"
                                 y="0"
                                 width="71"
@@ -1478,7 +1478,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="323"
                                 y="0"
                                 width="71"
@@ -1493,7 +1493,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     </textField>
                     <staticText>
                         <reportElement
-                                style="RowTotalHeading"
+                                style="LeftPaddedHeading"
                                 x="0"
                                 y="0"
                                 width="110"
@@ -1508,7 +1508,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="394"
                                 y="0"
                                 width="71"
@@ -1524,7 +1524,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="465"
                                 y="0"
                                 width="71"
@@ -1540,7 +1540,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="536"
                                 y="0"
                                 width="71"
@@ -1556,7 +1556,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="607"
                                 y="0"
                                 width="71"
@@ -1572,7 +1572,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="678"
                                 y="0"
                                 width="71"
@@ -1588,7 +1588,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                     <textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="749"
                                 y="0"
                                 width="71"
@@ -1605,7 +1605,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_OPERATION}.doubleValue() - $V{COMPLETED_SUM_
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="181"
                                 y="0"
                                 width="71"
@@ -1621,7 +1621,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_OPERATION}.doubleValue() - $V{COMPLETED_SUM_
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="RowTotal"
+                                style="LeftCenter"
                                 x="252"
                                 y="0"
                                 width="71"
@@ -1646,7 +1646,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_OPERATION}.doubleValue() - $V{COMPLETED_SUM_
         <band height="166" isSplitAllowed="true">
             <frame>
                 <reportElement
-                        style="FrameTableTop"
+                        style="TopLeftRightBordersLightGreen"
                         mode="Opaque"
                         x="0"
                         y="0"
@@ -1656,7 +1656,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_OPERATION}.doubleValue() - $V{COMPLETED_SUM_
                 <box></box>
                 <staticText>
                     <reportElement
-                            style="FrameTitle"
+                            style="LeftPaddedHeadingBold"
                             x="3"
                             y="0"
                             width="105"
@@ -1671,7 +1671,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_OPERATION}.doubleValue() - $V{COMPLETED_SUM_
             </frame>
             <frame>
                 <reportElement
-                        style="ReportInfoTableBottom"
+                        style="LeftBottomRightVeryLightGrey"
                         mode="Opaque"
                         x="0"
                         y="18"
@@ -1683,7 +1683,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_OPERATION}.doubleValue() - $V{COMPLETED_SUM_
                 <box></box>
                 <frame>
                     <reportElement
-                            style="TableCell"
+                            style="DefaultCenterAligned"
                             x="0"
                             y="4"
                             width="820"
@@ -1693,7 +1693,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_OPERATION}.doubleValue() - $V{COMPLETED_SUM_
                     <box></box>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="120"
@@ -1723,7 +1723,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_OPERATION}.doubleValue() - $V{COMPLETED_SUM_
                     </textField>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="419"
                                 y="0"
                                 width="120"
@@ -1756,7 +1756,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_OPERATION}.doubleValue() - $V{COMPLETED_SUM_
                 </frame>
                 <frame>
                     <reportElement
-                            style="TableCell"
+                            style="DefaultCenterAligned"
                             x="0"
                             y="24"
                             width="820"
@@ -1766,7 +1766,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_OPERATION}.doubleValue() - $V{COMPLETED_SUM_
                     <box></box>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="120"
@@ -1813,7 +1813,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_OPERATION}.doubleValue() - $V{COMPLETED_SUM_
                     </textField>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="419"
                                 y="0"
                                 width="120"
@@ -1829,7 +1829,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_OPERATION}.doubleValue() - $V{COMPLETED_SUM_
                 </frame>
                 <frame>
                     <reportElement
-                            style="TableCell"
+                            style="DefaultCenterAligned"
                             x="0"
                             y="44"
                             width="820"
@@ -1859,7 +1859,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     </textField>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="120"
@@ -1889,7 +1889,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     </textField>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="419"
                                 y="0"
                                 width="120"
@@ -1904,7 +1904,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                 </frame>
                 <frame>
                     <reportElement
-                            style="TableCell"
+                            style="DefaultCenterAligned"
                             x="0"
                             y="64"
                             width="820"
@@ -1931,7 +1931,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     </textField>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="120"
@@ -1947,7 +1947,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                 </frame>
                 <frame>
                     <reportElement
-                            style="TableCell"
+                            style="DefaultCenterAligned"
                             x="0"
                             y="104"
                             width="820"
@@ -1976,7 +1976,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="120"
@@ -1992,7 +1992,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                 </frame>
                 <frame>
                     <reportElement
-                            style="TableCell"
+                            style="DefaultCenterAligned"
                             x="0"
                             y="84"
                             width="820"
@@ -2021,7 +2021,7 @@ Utilities.getMappingReportInfoDisplayString
                     </textField>
                     <staticText>
                         <reportElement
-                                style="ReportInfo"
+                                style="LeftPaddedHeadingBold"
                                 x="0"
                                 y="0"
                                 width="120"
@@ -2050,7 +2050,7 @@ Utilities.getMappingReportInfoDisplayString
         <band height="18" isSplitAllowed="true">
             <frame>
                 <reportElement
-                        style="FrameDetailTableRow"
+                        style="LeftRightLightGrey"
                         mode="Opaque"
                         x="0"
                         y="0"
@@ -2218,7 +2218,7 @@ Utilities.getMappingReportInfoDisplayString
         <band height="18" isSplitAllowed="true">
             <frame>
                 <reportElement
-                        style="FrameReportTotals"
+                        style="TopBottomRightGrey"
                         mode="Opaque"
                         x="0"
                         y="0"
@@ -2234,7 +2234,7 @@ Utilities.getMappingReportInfoDisplayString
                 <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                            hyperlinkType="None" hyperlinkTarget="Self">
                     <reportElement
-                            style="RowTotal"
+                            style="LeftCenter"
                             x="110"
                             y="0"
                             width="71"
@@ -2250,7 +2250,7 @@ Utilities.getMappingReportInfoDisplayString
                 <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                            hyperlinkType="None" hyperlinkTarget="Self">
                     <reportElement
-                            style="RowTotal"
+                            style="LeftCenter"
                             x="323"
                             y="0"
                             width="71"
@@ -2265,7 +2265,7 @@ Utilities.getMappingReportInfoDisplayString
                 </textField>
                 <staticText>
                     <reportElement
-                            style="RowTotalHeading"
+                            style="LeftPaddedHeading"
                             x="0"
                             y="0"
                             width="110"
@@ -2280,7 +2280,7 @@ Utilities.getMappingReportInfoDisplayString
                 <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                            hyperlinkType="None" hyperlinkTarget="Self">
                     <reportElement
-                            style="RowTotal"
+                            style="LeftCenter"
                             x="394"
                             y="0"
                             width="71"
@@ -2296,7 +2296,7 @@ Utilities.getMappingReportInfoDisplayString
                 <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
                            evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                     <reportElement
-                            style="RowTotal"
+                            style="LeftCenter"
                             x="465"
                             y="0"
                             width="71"
@@ -2312,7 +2312,7 @@ Utilities.getMappingReportInfoDisplayString
                 <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                            hyperlinkType="None" hyperlinkTarget="Self">
                     <reportElement
-                            style="RowTotal"
+                            style="LeftCenter"
                             x="536"
                             y="0"
                             width="71"
@@ -2328,7 +2328,7 @@ Utilities.getMappingReportInfoDisplayString
                 <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                            hyperlinkType="None" hyperlinkTarget="Self">
                     <reportElement
-                            style="RowTotal"
+                            style="LeftCenter"
                             x="607"
                             y="0"
                             width="71"
@@ -2344,7 +2344,7 @@ Utilities.getMappingReportInfoDisplayString
                 <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
                            evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                     <reportElement
-                            style="RowTotal"
+                            style="LeftCenter"
                             x="678"
                             y="0"
                             width="71"
@@ -2360,7 +2360,7 @@ Utilities.getMappingReportInfoDisplayString
                 <textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false"
                            evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                     <reportElement
-                            style="RowTotal"
+                            style="LeftCenter"
                             x="749"
                             y="0"
                             width="71"
@@ -2377,7 +2377,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                 <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                            hyperlinkType="None" hyperlinkTarget="Self">
                     <reportElement
-                            style="RowTotal"
+                            style="LeftCenter"
                             x="181"
                             y="0"
                             width="71"
@@ -2393,7 +2393,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                 <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                            hyperlinkType="None" hyperlinkTarget="Self">
                     <reportElement
-                            style="RowTotal"
+                            style="LeftCenter"
                             x="252"
                             y="0"
                             width="71"
@@ -2421,7 +2421,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                 <box></box>
                 <frame>
                     <reportElement
-                            style="FrameTableTop"
+                            style="TopLeftRightBordersLightGreen"
                             mode="Opaque"
                             x="0"
                             y="0"
@@ -2445,7 +2445,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                 </frame>
                 <frame>
                     <reportElement
-                            style="ReportInfoTableBottom"
+                            style="LeftBottomRightVeryLightGrey"
                             mode="Opaque"
                             x="0"
                             y="18"
@@ -2457,7 +2457,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                     <box></box>
                     <frame>
                         <reportElement
-                                style="TableCell"
+                                style="DefaultCenterAligned"
                                 x="0"
                                 y="4"
                                 width="820"
@@ -2467,7 +2467,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                         <box></box>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="0"
                                     y="0"
                                     width="120"
@@ -2497,7 +2497,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                         </textField>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="419"
                                     y="0"
                                     width="120"
@@ -2530,7 +2530,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                     </frame>
                     <frame>
                         <reportElement
-                                style="TableCell"
+                                style="DefaultCenterAligned"
                                 x="0"
                                 y="24"
                                 width="820"
@@ -2540,7 +2540,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                         <box></box>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="0"
                                     y="0"
                                     width="120"
@@ -2587,7 +2587,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                         </textField>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="419"
                                     y="0"
                                     width="120"
@@ -2603,7 +2603,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                     </frame>
                     <frame>
                         <reportElement
-                                style="TableCell"
+                                style="DefaultCenterAligned"
                                 x="0"
                                 y="44"
                                 width="820"
@@ -2633,7 +2633,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                         </textField>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="0"
                                     y="0"
                                     width="120"
@@ -2663,7 +2663,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                         </textField>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="419"
                                     y="0"
                                     width="120"
@@ -2678,7 +2678,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                     </frame>
                     <frame>
                         <reportElement
-                                style="TableCell"
+                                style="DefaultCenterAligned"
                                 x="0"
                                 y="64"
                                 width="820"
@@ -2705,7 +2705,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                         </textField>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="0"
                                     y="0"
                                     width="120"
@@ -2721,7 +2721,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                     </frame>
                     <frame>
                         <reportElement
-                                style="TableCell"
+                                style="DefaultCenterAligned"
                                 x="0"
                                 y="104"
                                 width="820"
@@ -2750,7 +2750,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                         <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                                    hyperlinkType="None" hyperlinkTarget="Self">
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="0"
                                     y="0"
                                     width="120"
@@ -2766,7 +2766,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                     </frame>
                     <frame>
                         <reportElement
-                                style="TableCell"
+                                style="DefaultCenterAligned"
                                 x="0"
                                 y="84"
                                 width="820"
@@ -2795,7 +2795,7 @@ Utilities.getMappingReportInfoDisplayString
                         </textField>
                         <staticText>
                             <reportElement
-                                    style="ReportInfo"
+                                    style="LeftPaddedHeadingBold"
                                     x="0"
                                     y="0"
                                     width="120"
@@ -2812,7 +2812,7 @@ Utilities.getMappingReportInfoDisplayString
                 </frame>
                 <frame>
                     <reportElement
-                            style="FrameTableTop"
+                            style="TopLeftRightBordersLightGreen"
                             mode="Opaque"
                             x="0"
                             y="158"
@@ -2837,7 +2837,7 @@ Utilities.getMappingReportInfoDisplayString
                 </frame>
                 <frame>
                     <reportElement
-                            style="TableCell"
+                            style="DefaultCenterAligned"
                             x="0"
                             y="176"
                             width="820"
@@ -2848,7 +2848,7 @@ Utilities.getMappingReportInfoDisplayString
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="FrameNoData"
+                                style="LeftBottomRightVeryLightGreyPadding"
                                 x="0"
                                 y="0"
                                 width="820"

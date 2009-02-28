@@ -1,58 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"  ?>
 <!-- Created with iReport - A designer for JasperReports -->
-<!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN" "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
+<!DOCTYPE jasperReport PUBLIC "//JasperReports//DTD Report Design//EN"
+        "http://jasperreports.sourceforge.net/dtds/jasperreport.dtd">
 <jasperReport
-		 name="PS_SubIntervalMasterReport_subreport0"
-		 columnCount="1"
-		 printOrder="Vertical"
-		 orientation="Landscape"
-		 pageWidth="710"
-		 pageHeight="535"
-		 columnWidth="710"
-		 columnSpacing="0"
-		 leftMargin="0"
-		 rightMargin="0"
-		 topMargin="0"
-		 bottomMargin="0"
-		 whenNoDataType="NoDataSection"
-		 isTitleNewPage="false"
-		 isSummaryNewPage="false">
-	<property name="ireport.scriptlethandling" value="0" />
-	<property name="ireport.encoding" value="UTF-8" />
-	<import value="java.util.*" />
-	<import value="net.sf.jasperreports.engine.*" />
-	<import value="net.sf.jasperreports.engine.data.*" />
-	<template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
+        name="PS_SubIntervalMasterReport_subreport0"
+        columnCount="1"
+        printOrder="Vertical"
+        orientation="Landscape"
+        pageWidth="710"
+        pageHeight="535"
+        columnWidth="710"
+        columnSpacing="0"
+        leftMargin="0"
+        rightMargin="0"
+        topMargin="0"
+        bottomMargin="0"
+        whenNoDataType="NoDataSection"
+        isTitleNewPage="false"
+        isSummaryNewPage="false">
+    <property name="ireport.scriptlethandling" value="0"/>
+    <property name="ireport.encoding" value="UTF-8"/>
+    <import value="java.util.*"/>
+    <import value="net.sf.jasperreports.engine.*"/>
+    <import value="net.sf.jasperreports.engine.data.*"/>
+    <template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
 
-	<parameter name="INTERVAL_START" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="INTERVAL_END" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
-	<parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false" class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME"/>
-	<parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
-	<parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="MAPPING_VALUE_1" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="MAPPING_VALUE_2" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="MAPPING_VALUE_3" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="MAPPING_VALUE_4" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="MAPPING_VALUE_5" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
-		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
-	</parameter>
-	<parameter name="AUTHENTICATED_USER" isForPrompting="false" class="java.lang.String"/>
-	<parameter name="RESOLUTION" isForPrompting="false" class="java.lang.Integer"/>
-	<parameter name="IS_CONTEXT_MAPPING" isForPrompting="false" class="java.lang.Boolean">
-		<defaultValueExpression ><![CDATA[new Boolean(false)]]></defaultValueExpression>
-	</parameter>
-	<parameter name="distinctKeyMapValues" isForPrompting="false" class="java.util.LinkedHashMap">
-		<defaultValueExpression ><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
+    <parameter name="INTERVAL_START" isForPrompting="false" class="java.lang.Long"/>
+    <parameter name="INTERVAL_END" isForPrompting="false" class="java.lang.Long"/>
+    <parameter name="SERVICE_ID" isForPrompting="false" class="java.lang.Long"/>
+    <parameter name="INTERVAL_UNIT_OF_TIME" isForPrompting="false"
+               class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME"/>
+    <parameter name="KEYS_TO_LIST_FILTER_PAIRS" isForPrompting="false" class="java.util.LinkedHashMap"/>
+    <parameter name="SERVICE_OPERATION_VALUE" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="MAPPING_VALUE_1" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="MAPPING_VALUE_2" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="MAPPING_VALUE_3" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="MAPPING_VALUE_4" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="MAPPING_VALUE_5" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="IS_DETAIL" isForPrompting="false" class="java.lang.Boolean">
+        <defaultValueExpression><![CDATA[new Boolean(false)]]></defaultValueExpression>
+    </parameter>
+    <parameter name="AUTHENTICATED_USER" isForPrompting="false" class="java.lang.String"/>
+    <parameter name="RESOLUTION" isForPrompting="false" class="java.lang.Integer"/>
+    <parameter name="IS_CONTEXT_MAPPING" isForPrompting="false" class="java.lang.Boolean">
+        <defaultValueExpression><![CDATA[new Boolean(false)]]></defaultValueExpression>
+    </parameter>
+    <parameter name="distinctKeyMapValues" isForPrompting="false" class="java.util.LinkedHashMap">
+        <defaultValueExpression><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
 com.l7tech.gateway.standardreports.Utilities.createDistinctKeyToFilterMap($P{KEYS_TO_LIST_FILTER_PAIRS},
 new String[]{$P{MAPPING_VALUE_1}, $P{MAPPING_VALUE_2}, $P{MAPPING_VALUE_3}, $P{MAPPING_VALUE_4},
 $P{MAPPING_VALUE_5}}, $P{AUTHENTICATED_USER}, $P{IS_DETAIL}.booleanValue())
 :null)]]></defaultValueExpression>
-	</parameter>
-	<parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
-		<defaultValueExpression ><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
+    </parameter>
+    <parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
+        <defaultValueExpression><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
 com.l7tech.gateway.standardreports.Utilities.getPerformanceStatisticsMappingQuery($P{INTERVAL_START},
 $P{INTERVAL_END},$P{SERVICE_ID}, $P{distinctKeyMapValues},
 $P{RESOLUTION}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VALUE}, false)
@@ -60,394 +62,413 @@ $P{RESOLUTION}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VA
 com.l7tech.gateway.standardreports.Utilities.getNoMappingQuery($P{INTERVAL_START},
 $P{INTERVAL_END},$P{SERVICE_ID},$P{RESOLUTION}.intValue())
 )]]></defaultValueExpression>
-	</parameter>
-	<parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
-	<queryString><![CDATA[$P!{sqlQuery}]]></queryString>
+    </parameter>
+    <parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
+    <queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
-	<field name="AUTHORIZED" class="java.lang.Long"/>
-	<field name="ATTEMPTED" class="java.lang.Long"/>
-	<field name="FRONT_SUM" class="java.lang.Long"/>
-	<field name="BACK_SUM" class="java.lang.Long"/>
-	<field name="COMPLETED" class="java.lang.Long"/>
-	<field name="THROUGHPUT" class="java.lang.Long"/>
-	<field name="POLICY_VIOLATIONS" class="java.lang.Long"/>
-	<field name="ROUTING_FAILURES" class="java.lang.Long"/>
-	<field name="FRTM" class="java.lang.Integer"/>
-	<field name="FRTMX" class="java.lang.Integer"/>
-	<field name="FRTA" class="java.lang.Double"/>
-	<field name="BRTM" class="java.lang.Integer"/>
-	<field name="BRTMX" class="java.lang.Integer"/>
-	<field name="BRTA" class="java.lang.Double"/>
-	<field name="AP" class="java.lang.Double"/>
+    <field name="AUTHORIZED" class="java.lang.Long"/>
+    <field name="ATTEMPTED" class="java.lang.Long"/>
+    <field name="FRONT_SUM" class="java.lang.Long"/>
+    <field name="BACK_SUM" class="java.lang.Long"/>
+    <field name="COMPLETED" class="java.lang.Long"/>
+    <field name="THROUGHPUT" class="java.lang.Long"/>
+    <field name="POLICY_VIOLATIONS" class="java.lang.Long"/>
+    <field name="ROUTING_FAILURES" class="java.lang.Long"/>
+    <field name="FRTM" class="java.lang.Integer"/>
+    <field name="FRTMX" class="java.lang.Integer"/>
+    <field name="FRTA" class="java.lang.Double"/>
+    <field name="BRTM" class="java.lang.Integer"/>
+    <field name="BRTMX" class="java.lang.Integer"/>
+    <field name="BRTA" class="java.lang.Double"/>
+    <field name="AP" class="java.lang.Double"/>
 
-	<variable name="RESOLUTION" class="java.lang.Integer" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[($P{INTERVAL_UNIT_OF_TIME}.equals( "HOUR" ))?new Integer(1):new Integer(2)]]></variableExpression>
-	</variable>
-	<variable name="THROUGHPUT" class="java.lang.Long" resetType="None" calculation="Nothing">
-		<variableExpression><![CDATA[$F{THROUGHPUT}]]></variableExpression>
-		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
-	</variable>
-	<variable name="AUTHORIZED" class="java.lang.Long" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[$F{AUTHORIZED}]]></variableExpression>
-		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
-	</variable>
-	<variable name="ATTEMPTED" class="java.lang.Long" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[$F{ATTEMPTED}]]></variableExpression>
-		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
-	</variable>
-	<variable name="FRONT_SUM" class="java.lang.Long" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[$F{FRONT_SUM}]]></variableExpression>
-		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
-	</variable>
-	<variable name="COMPLETED" class="java.lang.Long" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[$F{COMPLETED}]]></variableExpression>
-		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
-	</variable>
-	<variable name="BACK_SUM" class="java.lang.Long" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[$F{BACK_SUM}]]></variableExpression>
-		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
-	</variable>
-	<variable name="POLICY_VIOLATIONS" class="java.lang.Long" resetType="None" calculation="Nothing">
-		<variableExpression><![CDATA[$F{POLICY_VIOLATIONS}]]></variableExpression>
-		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
-	</variable>
-	<variable name="ROUTING_FAILURES" class="java.lang.Long" resetType="None" calculation="Nothing">
-		<variableExpression><![CDATA[$F{ROUTING_FAILURES}]]></variableExpression>
-		<initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
-	</variable>
-	<variable name="FRTM_MIN" class="java.lang.Integer" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[($F{FRTM} == null)? new Integer(Integer.MAX_VALUE): $F{FRTM}]]></variableExpression>
-		<initialValueExpression><![CDATA[new Integer(Integer.MAX_VALUE)]]></initialValueExpression>
-	</variable>
-	<variable name="FRTMX_MAX" class="java.lang.Integer" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[($F{FRTMX} == null)? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
-		<initialValueExpression><![CDATA[new Integer(Integer.MIN_VALUE)]]></initialValueExpression>
-	</variable>
-	<variable name="BRTM_MIN" class="java.lang.Integer" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[($F{BRTM} == null)? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
-		<initialValueExpression><![CDATA[new Integer(Integer.MAX_VALUE)]]></initialValueExpression>
-	</variable>
-	<variable name="BRTMX_MAX" class="java.lang.Integer" resetType="Report" calculation="Nothing">
-		<variableExpression><![CDATA[($F{BRTMX} == null)? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
-		<initialValueExpression><![CDATA[new Integer(Integer.MIN_VALUE)]]></initialValueExpression>
-	</variable>
-	<variable name="AP_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
-		<variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
-	</variable>
-		<background>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</background>
-		<title>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</title>
-		<pageHeader>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</pageHeader>
-		<columnHeader>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</columnHeader>
-		<detail>
-			<band height="18"  isSplitAllowed="true" >
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="TableCell"
-						x="0"
-						y="0"
-						width="71"
-						height="18"
-						key="textField-1"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.Long"><![CDATA[$F{THROUGHPUT}]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="TableCell"
-						x="213"
-						y="0"
-						width="71"
-						height="18"
-						key="textField-2"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($F{FRTM} == null)?"-":$F{FRTM}.toString()]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="TableCell"
-						x="284"
-						y="0"
-						width="71"
-						height="18"
-						key="textField-3"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($F{FRTMX} == null)?"-":$F{FRTMX}.toString()]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="TableCell"
-						x="355"
-						y="0"
-						width="71"
-						height="18"
-						key="textField-4"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[$F{FRTA}]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="TableCell"
-						x="426"
-						y="0"
-						width="71"
-						height="18"
-						key="textField-5"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($F{BRTM} == null)?"-":$F{BRTM}.toString()]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="TableCell"
-						x="497"
-						y="0"
-						width="71"
-						height="18"
-						key="textField-6"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.String"><![CDATA[($F{BRTMX} == null)?"-":$F{BRTMX}.toString()]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="TableCell"
-						x="568"
-						y="0"
-						width="71"
-						height="18"
-						key="textField-7"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[$F{BRTA}]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="TableCell"
-						x="639"
-						y="0"
-						width="71"
-						height="18"
-						key="textField-8"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.Double"><![CDATA[$F{AP}]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="TableCell"
-						x="71"
-						y="0"
-						width="71"
-						height="18"
-						key="textField-9"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.Long"><![CDATA[$F{POLICY_VIOLATIONS}]]></textFieldExpression>
-				</textField>
-				<textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"  hyperlinkTarget="Self" >
-					<reportElement
-						style="TableCell"
-						x="142"
-						y="0"
-						width="71"
-						height="18"
-						key="textField-10"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<textFieldExpression   class="java.lang.Long"><![CDATA[$F{ROUTING_FAILURES}]]></textFieldExpression>
-				</textField>
-			</band>
-		</detail>
-		<columnFooter>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</columnFooter>
-		<pageFooter>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</pageFooter>
-		<summary>
-			<band height="0"  isSplitAllowed="true" >
-			</band>
-		</summary>
-		<noData>
-			<band height="18"  isSplitAllowed="true" >
-				<staticText>
-					<reportElement
-						style="TableCell"
-						x="0"
-						y="0"
-						width="71"
-						height="18"
-						key="staticText-1"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[NA]]></text>
-				</staticText>
-				<staticText>
-					<reportElement
-						style="TableCell"
-						x="213"
-						y="0"
-						width="71"
-						height="18"
-						key="staticText-2"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[NA]]></text>
-				</staticText>
-				<staticText>
-					<reportElement
-						style="TableCell"
-						x="284"
-						y="0"
-						width="71"
-						height="18"
-						key="staticText-3"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[NA]]></text>
-				</staticText>
-				<staticText>
-					<reportElement
-						style="TableCell"
-						x="355"
-						y="0"
-						width="71"
-						height="18"
-						key="staticText-4"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[NA]]></text>
-				</staticText>
-				<staticText>
-					<reportElement
-						style="TableCell"
-						x="426"
-						y="0"
-						width="71"
-						height="18"
-						key="staticText-5"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[NA]]></text>
-				</staticText>
-				<staticText>
-					<reportElement
-						style="TableCell"
-						x="497"
-						y="0"
-						width="71"
-						height="18"
-						key="staticText-6"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[NA]]></text>
-				</staticText>
-				<staticText>
-					<reportElement
-						style="TableCell"
-						x="568"
-						y="0"
-						width="71"
-						height="18"
-						key="staticText-7"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[NA]]></text>
-				</staticText>
-				<staticText>
-					<reportElement
-						style="TableCell"
-						x="639"
-						y="0"
-						width="71"
-						height="18"
-						key="staticText-8"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[NA]]></text>
-				</staticText>
-				<staticText>
-					<reportElement
-						style="TableCell"
-						x="142"
-						y="0"
-						width="71"
-						height="18"
-						key="staticText-9"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[NA]]></text>
-				</staticText>
-				<staticText>
-					<reportElement
-						style="TableCell"
-						x="71"
-						y="0"
-						width="71"
-						height="18"
-						key="staticText-10"/>
-					<box></box>
-					<textElement>
-						<font/>
-					</textElement>
-				<text><![CDATA[NA]]></text>
-				</staticText>
-			</band>
-		</noData>
+    <variable name="RESOLUTION" class="java.lang.Integer" resetType="Report" calculation="Nothing">
+        <variableExpression>
+            <![CDATA[($P{INTERVAL_UNIT_OF_TIME}.equals( "HOUR" ))?new Integer(1):new Integer(2)]]></variableExpression>
+    </variable>
+    <variable name="THROUGHPUT" class="java.lang.Long" resetType="None" calculation="Nothing">
+        <variableExpression><![CDATA[$F{THROUGHPUT}]]></variableExpression>
+        <initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+    </variable>
+    <variable name="AUTHORIZED" class="java.lang.Long" resetType="Report" calculation="Nothing">
+        <variableExpression><![CDATA[$F{AUTHORIZED}]]></variableExpression>
+        <initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+    </variable>
+    <variable name="ATTEMPTED" class="java.lang.Long" resetType="Report" calculation="Nothing">
+        <variableExpression><![CDATA[$F{ATTEMPTED}]]></variableExpression>
+        <initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+    </variable>
+    <variable name="FRONT_SUM" class="java.lang.Long" resetType="Report" calculation="Nothing">
+        <variableExpression><![CDATA[$F{FRONT_SUM}]]></variableExpression>
+        <initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+    </variable>
+    <variable name="COMPLETED" class="java.lang.Long" resetType="Report" calculation="Nothing">
+        <variableExpression><![CDATA[$F{COMPLETED}]]></variableExpression>
+        <initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+    </variable>
+    <variable name="BACK_SUM" class="java.lang.Long" resetType="Report" calculation="Nothing">
+        <variableExpression><![CDATA[$F{BACK_SUM}]]></variableExpression>
+        <initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+    </variable>
+    <variable name="POLICY_VIOLATIONS" class="java.lang.Long" resetType="None" calculation="Nothing">
+        <variableExpression><![CDATA[$F{POLICY_VIOLATIONS}]]></variableExpression>
+        <initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+    </variable>
+    <variable name="ROUTING_FAILURES" class="java.lang.Long" resetType="None" calculation="Nothing">
+        <variableExpression><![CDATA[$F{ROUTING_FAILURES}]]></variableExpression>
+        <initialValueExpression><![CDATA[new Long(0)]]></initialValueExpression>
+    </variable>
+    <variable name="FRTM_MIN" class="java.lang.Integer" resetType="Report" calculation="Nothing">
+        <variableExpression>
+            <![CDATA[($F{FRTM} == null)? new Integer(Integer.MAX_VALUE): $F{FRTM}]]></variableExpression>
+        <initialValueExpression><![CDATA[new Integer(Integer.MAX_VALUE)]]></initialValueExpression>
+    </variable>
+    <variable name="FRTMX_MAX" class="java.lang.Integer" resetType="Report" calculation="Nothing">
+        <variableExpression>
+            <![CDATA[($F{FRTMX} == null)? new Integer(Integer.MIN_VALUE): $F{FRTMX}]]></variableExpression>
+        <initialValueExpression><![CDATA[new Integer(Integer.MIN_VALUE)]]></initialValueExpression>
+    </variable>
+    <variable name="BRTM_MIN" class="java.lang.Integer" resetType="Report" calculation="Nothing">
+        <variableExpression>
+            <![CDATA[($F{BRTM} == null)? new Integer(Integer.MAX_VALUE): $F{BRTM}]]></variableExpression>
+        <initialValueExpression><![CDATA[new Integer(Integer.MAX_VALUE)]]></initialValueExpression>
+    </variable>
+    <variable name="BRTMX_MAX" class="java.lang.Integer" resetType="Report" calculation="Nothing">
+        <variableExpression>
+            <![CDATA[($F{BRTMX} == null)? new Integer(Integer.MIN_VALUE): $F{BRTMX}]]></variableExpression>
+        <initialValueExpression><![CDATA[new Integer(Integer.MIN_VALUE)]]></initialValueExpression>
+    </variable>
+    <variable name="AP_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
+        <variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
+    </variable>
+    <background>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </background>
+    <title>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </title>
+    <pageHeader>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </pageHeader>
+    <columnHeader>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </columnHeader>
+    <detail>
+        <band height="18" isSplitAllowed="true">
+            <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"
+                       hyperlinkTarget="Self">
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="0"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="textField-1"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.Long"><![CDATA[$F{THROUGHPUT}]]></textFieldExpression>
+            </textField>
+            <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"
+                       hyperlinkTarget="Self">
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="213"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="textField-2"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String">
+                    <![CDATA[($F{FRTM} == null)?"-":$F{FRTM}.toString()]]></textFieldExpression>
+            </textField>
+            <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"
+                       hyperlinkTarget="Self">
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="284"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="textField-3"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String">
+                    <![CDATA[($F{FRTMX} == null)?"-":$F{FRTMX}.toString()]]></textFieldExpression>
+            </textField>
+            <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now"
+                       hyperlinkType="None" hyperlinkTarget="Self">
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="355"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="textField-4"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.Double"><![CDATA[$F{FRTA}]]></textFieldExpression>
+            </textField>
+            <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"
+                       hyperlinkTarget="Self">
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="426"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="textField-5"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String">
+                    <![CDATA[($F{BRTM} == null)?"-":$F{BRTM}.toString()]]></textFieldExpression>
+            </textField>
+            <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"
+                       hyperlinkTarget="Self">
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="497"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="textField-6"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.String">
+                    <![CDATA[($F{BRTMX} == null)?"-":$F{BRTMX}.toString()]]></textFieldExpression>
+            </textField>
+            <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now"
+                       hyperlinkType="None" hyperlinkTarget="Self">
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="568"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="textField-7"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.Double"><![CDATA[$F{BRTA}]]></textFieldExpression>
+            </textField>
+            <textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false" evaluationTime="Now"
+                       hyperlinkType="None" hyperlinkTarget="Self">
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="639"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="textField-8"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.Double"><![CDATA[$F{AP}]]></textFieldExpression>
+            </textField>
+            <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"
+                       hyperlinkTarget="Self">
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="71"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="textField-9"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.Long"><![CDATA[$F{POLICY_VIOLATIONS}]]></textFieldExpression>
+            </textField>
+            <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now" hyperlinkType="None"
+                       hyperlinkTarget="Self">
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="142"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="textField-10"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <textFieldExpression class="java.lang.Long"><![CDATA[$F{ROUTING_FAILURES}]]></textFieldExpression>
+            </textField>
+        </band>
+    </detail>
+    <columnFooter>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </columnFooter>
+    <pageFooter>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </pageFooter>
+    <summary>
+        <band height="0" isSplitAllowed="true">
+        </band>
+    </summary>
+    <noData>
+        <band height="18" isSplitAllowed="true">
+            <staticText>
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="0"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="staticText-1"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <text><![CDATA[NA]]></text>
+            </staticText>
+            <staticText>
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="213"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="staticText-2"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <text><![CDATA[NA]]></text>
+            </staticText>
+            <staticText>
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="284"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="staticText-3"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <text><![CDATA[NA]]></text>
+            </staticText>
+            <staticText>
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="355"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="staticText-4"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <text><![CDATA[NA]]></text>
+            </staticText>
+            <staticText>
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="426"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="staticText-5"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <text><![CDATA[NA]]></text>
+            </staticText>
+            <staticText>
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="497"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="staticText-6"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <text><![CDATA[NA]]></text>
+            </staticText>
+            <staticText>
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="568"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="staticText-7"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <text><![CDATA[NA]]></text>
+            </staticText>
+            <staticText>
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="639"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="staticText-8"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <text><![CDATA[NA]]></text>
+            </staticText>
+            <staticText>
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="142"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="staticText-9"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <text><![CDATA[NA]]></text>
+            </staticText>
+            <staticText>
+                <reportElement
+                        style="DefaultCenterAligned"
+                        x="71"
+                        y="0"
+                        width="71"
+                        height="18"
+                        key="staticText-10"/>
+                <box></box>
+                <textElement>
+                    <font/>
+                </textElement>
+                <text><![CDATA[NA]]></text>
+            </staticText>
+        </band>
+    </noData>
 </jasperReport>
