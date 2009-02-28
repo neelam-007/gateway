@@ -15,14 +15,9 @@ public class EventState extends MonitorState<MonitorableEvent> {
     // TODO is there some kind of payload for the event...?
     private final NavigableSet<Long> eventHistory;
 
-    protected EventState(MonitorableEvent monitorable, String componentId, final Set<Long> triggerOids) {
-        super(monitorable, componentId, triggerOids);
+    protected EventState(MonitorableEvent monitorable, String componentId) {
+        super(monitorable, componentId);
         this.eventHistory = new ConcurrentSkipListSet<Long>();
-    }
-
-    protected EventState(EventState oldState, final Set<Long> triggerOids) {
-        super(oldState.getMonitorable(), oldState.getComponentId(), triggerOids);
-        this.eventHistory = oldState.eventHistory;
     }
 
     public Set<Long> getEvents(Long from, Long to) {

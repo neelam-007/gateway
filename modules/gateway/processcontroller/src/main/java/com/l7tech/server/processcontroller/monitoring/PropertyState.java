@@ -36,12 +36,18 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
     /**
      * Create a new PropertyState with no history
      */
-    protected PropertyState(final MonitorableProperty property, String componentId, final Set<Long> triggerOids, long samplingInterval, final PropertySampler<V> sampler) {
-        super(property, componentId, triggerOids);
+    protected PropertyState(final MonitorableProperty property, String componentId, long samplingInterval, final PropertySampler<V> sampler) {
+        super(property, componentId);
         this.lastSamples = new ConcurrentSkipListMap<Long,Pair<V, PropertySamplingException>>();
         this.samplingInterval = samplingInterval;
         this.sampler = sampler;
         this.task = new TimerTask() {
+            @Override
+            public boolean cancel() {
+                logger.info("Cancelling sampler for " + property);
+                return super.cancel();
+            }
+
             @Override
             public void run() {
                 final long now = System.currentTimeMillis();
@@ -64,13 +70,6 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
             }
         };
     }
-
-    protected PropertyState(PropertyState<V> oldState, Set<Long> triggerOids, long newSamplingInterval) {
-        // TODO can the sampler itself ever change its configuration?
-        this(oldState.getMonitorable(), oldState.getComponentId(), triggerOids, Math.min(newSamplingInterval, oldState.getSamplingInterval()), oldState.getSampler());
-        lastSamples.putAll(oldState.lastSamples);
-    }
-
 
     protected void addSample(V value, Long when) {
         if (when == null) throw new IllegalArgumentException();

@@ -11,9 +11,7 @@ import com.l7tech.server.processcontroller.monitoring.notification.Notifier;
 import com.l7tech.server.processcontroller.monitoring.notification.NotifierFactory;
 import com.l7tech.server.processcontroller.monitoring.sampling.PropertySampler;
 import com.l7tech.server.processcontroller.monitoring.sampling.PropertySamplerFactory;
-import com.l7tech.util.ComparisonOperator;
-import com.l7tech.util.Pair;
-import com.l7tech.util.Sets;
+import com.l7tech.util.*;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -22,6 +20,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.text.MessageFormat;
@@ -119,8 +118,13 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         triggerCheckTask.cancel();
     }
 
-    public void setConfiguration(MonitoringConfiguration newConfiguration) {
-        final MonitoringConfiguration oldConfiguration;
+    public synchronized void setConfiguration(MonitoringConfiguration newConfiguration) {
+        logger.info("setConfiguration" + CollectionUtils.mkString(newConfiguration.getTriggers(), "(", ", ", ")", new Functions.Unary<String, Trigger>() {
+            @Override
+            public String call(Trigger trigger) {
+                return trigger.getMonitorable().toString();
+            }
+        }));
 
         // TODO simplfy
         if (newConfiguration != null) {
@@ -128,16 +132,15 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 if (currentConfig.equals(newConfiguration)) {
                     logger.info("Configuration is unchanged");
                     return;
+                } else {
+                    logger.info("Monitoring Configuration has been updated");
                 }
-
-                oldConfiguration = currentConfig;
-            } else {
-                oldConfiguration = null;
             }
         } else if (currentConfig != null) {
             logger.info("Monitoring configuration has been unset; all monitoring activities will now stop.");
             if (currentPropertyStates != null) {
                 for (PropertyState<?> state : currentPropertyStates.values()) {
+                    logger.info("Stopping monitoring of " + state.monitorable);
                     state.close();
                 }
                 kickTheSampler();
@@ -147,28 +150,25 @@ public class MonitoringKernelImpl implements MonitoringKernel {
             kickTheNotifier();
             return;
         } else {
-            logger.fine("No monitoring configuration is available yet; will check again later");
+            logger.info("No monitoring configuration is available yet; will check again later");
             return;
         }
 
         final Map<Long, Trigger> newTriggers = EntityUtil.buildEntityMap(newConfiguration.getTriggers());
-        if (oldConfiguration == null) {
-            logger.info("Accepted initial configuration");
-        } else {
-            logger.info("Monitoring Configuration has been updated");
-        }
-
         final Map<Long, TriggerState> priorTstates = currentTriggerStates;
         final Map<Long, TriggerState> buildingTstates = new HashMap<Long, TriggerState>();
 
         // Check for properties that are starting to be monitored or are no longer being monitored
         final Map<MonitorableProperty, PropertyState<?>> buildingPstates = new HashMap<MonitorableProperty, PropertyState<?>>();
+        final List<PropertyState> newPstates = new ArrayList<PropertyState>();
         final Map<MonitorableProperty, PropertyState<?>> priorPstates = currentPropertyStates; // getfield once to ensure consistency
         if (priorPstates != null) buildingPstates.putAll(priorPstates);
 
         final Map<MonitorableEvent, EventState> buildingEstates = new HashMap<MonitorableEvent, EventState>();
         final Map<MonitorableEvent, EventState> priorEstates = currentEventStates;
         if (priorEstates != null) buildingEstates.putAll(priorEstates);
+
+        final Map<Monitorable, Set<Long>> triggerOids = new HashMap<Monitorable, Set<Long>>();
 
         final Set<MonitorableEvent> liveEvents = new HashSet<MonitorableEvent>();
         final Set<MonitorableProperty> liveProperties = new HashSet<MonitorableProperty>();
@@ -178,6 +178,13 @@ public class MonitoringKernelImpl implements MonitoringKernel {
             final Long triggerOid = entry.getKey();
             final Trigger<?> trigger = entry.getValue();
             final TriggerState priorTs = priorTstates == null ? null : priorTstates.get(triggerOid);
+
+            Set<Long> oids = triggerOids.get(trigger.getMonitorable());
+            if (oids == null) {
+                oids = new HashSet<Long>();
+                triggerOids.put(trigger.getMonitorable(), oids);
+            }
+            oids.add(triggerOid);
 
             if (trigger instanceof PropertyTrigger) {
                 PropertyTrigger pt = (PropertyTrigger) trigger;
@@ -191,8 +198,9 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 } else if (interval < MIN_SAMPLING_INTERVAL) {
                     interval = (long) MIN_SAMPLING_INTERVAL;
                 }
+
                 if (ps == null) {
-                    logger.info("Starting to monitor property " + mp + " on " + pt.getComponentId());
+                    logger.info("Initializing monitoring state for " + mp);
                     final PropertySampler<Serializable> sampler;
                     try {
                         sampler = samplerFactory.makeSampler(mp, pt.getComponentId());
@@ -201,12 +209,12 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                         continue;
                     }
                     //noinspection unchecked
-                    ps = new PropertyState(mp, pt.getComponentId(), Collections.singleton(triggerOid), interval, sampler);
+                    ps = new PropertyState(mp, pt.getComponentId(), interval, sampler);
+                    newPstates.add(ps);
                 } else {
-                    // TODO check for compatibility!
-                    // TODO don't bother making a new state if the trigger is unchanged
-                    //noinspection unchecked
-                    ps = new PropertyState(ps, Sets.union(ps.triggerOids, triggerOid), interval);
+                    if (ps.getSamplingInterval() != interval) {
+                        // TODO reschedule?
+                    }
                 }
                 buildingPstates.put(mp, ps);
             } else if (trigger instanceof EventTrigger) {
@@ -217,12 +225,36 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 EventState es = buildingEstates.get(me);
                 if (es == null) {
                     logger.info("Starting to monitor event " + me + " on " + et.getComponentId());
-                    es = new EventState(me, et.getComponentId(), Collections.singleton(triggerOid));
+                    es = new EventState(me, et.getComponentId());
                 } else {
                     // TODO check for compatibility?
-                    es = new EventState(es, Sets.union(es.triggerOids, triggerOid));
                 }
                 buildingEstates.put(me, es);
+            }
+        }
+
+        for (Map.Entry<Monitorable, Set<Long>> entry : triggerOids.entrySet()) {
+            Monitorable mon = entry.getKey();
+            Set<Long> oids = entry.getValue();
+            if (mon instanceof MonitorableProperty) {
+                MonitorableProperty property = (MonitorableProperty) mon;
+                PropertyState<?> pstate = buildingPstates.get(property);
+                if (pstate == null) {
+                    logger.warning("Missing property state for " + mon);
+                    continue;
+                }
+
+                pstate.setTriggerOids(oids);
+            } else if (mon instanceof MonitorableEvent) {
+                MonitorableEvent event = (MonitorableEvent) mon;
+
+                EventState estate = buildingEstates.get(event);
+                if (estate == null) {
+                    logger.warning("Missing event state for " + mon);
+                    continue;
+                }
+
+                estate.setTriggerOids(oids);
             }
         }
 
@@ -230,7 +262,8 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         cancelDeadMonitors(buildingPstates, liveProperties, "properties");
         cancelDeadMonitors(buildingEstates, liveEvents, "events");
 
-        for (PropertyState<?> state : buildingPstates.values()) {
+        for (PropertyState<?> state : newPstates) {
+            logger.log(Level.INFO, "Starting property sampler for " + state.monitorable);
             state.schedule(samplerTimer);
         }
 
@@ -337,7 +370,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
             MT mp = entry.getKey();
             ST ps = entry.getValue();
             if (!liveOnes.contains(mp)) {
-                logger.fine("Forgetting about property: " + mp);
+                logger.info("Stopping property sampler for " + mp);
                 deletes.add(mp);
                 try {
                     ps.close();
@@ -348,15 +381,10 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         }
 
         if (!deletes.isEmpty() && logger.isLoggable(Level.INFO)) {
-            StringBuilder sb = new StringBuilder("The following " + what + " are no longer being monitored: ");
-            for (Iterator<MT> it = deletes.iterator(); it.hasNext();) {
-                MT byeProp = it.next();
-                sb.append(byeProp.toString());
-                if (it.hasNext()) sb.append(", ");
-            }
-            logger.log(Level.INFO, sb.toString());
+            logger.log(Level.INFO, "The following " + what + " are no longer being monitored: " + CollectionUtils.mkString(deletes, "[", ",", "]"));
         }
 
+        logger.info("The following " + what + " are still being monitored: " + CollectionUtils.mkString(liveOnes, "[", ",", "]"));
         states.keySet().retainAll(liveOnes);
     }
 

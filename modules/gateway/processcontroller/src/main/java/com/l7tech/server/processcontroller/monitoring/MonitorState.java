@@ -14,12 +14,11 @@ import java.util.Set;
 abstract class MonitorState<MT extends Monitorable> implements Closeable {
     protected final MT monitorable;
     protected final String componentId;
-    protected final Set<Long> triggerOids;
+    protected volatile Set<Long> triggerOids;
 
-    protected MonitorState(MT monitorable, String componentId, Set<Long> triggerOids) {
+    protected MonitorState(MT monitorable, String componentId) {
         this.monitorable = monitorable;
         this.componentId = componentId;
-        this.triggerOids = triggerOids;
     }
 
     public MT getMonitorable() {
@@ -32,6 +31,10 @@ abstract class MonitorState<MT extends Monitorable> implements Closeable {
 
     public Set<Long> getTriggerOids() {
         return triggerOids;
+    }
+
+    void setTriggerOids(Set<Long> triggerOids) {
+        this.triggerOids = triggerOids;
     }
 
     /**
