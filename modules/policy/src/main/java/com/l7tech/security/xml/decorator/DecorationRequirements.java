@@ -452,6 +452,16 @@ public class DecorationRequirements {
         this.securityHeaderActor = securityHeaderActor;
     }
 
+    /** @return true if Security header should be created asserting mustUnderstand; false if it should not assert mustUnderstand; and null if it should use the WssDecorator's default behavior. */
+    public Boolean getSecurityHeaderMustUnderstand() {
+        return securityHeaderMustUnderstand;
+    }
+
+    /** @param securityHeaderMustUnderstand true if Security header should be created asserting mustUnderstand; false if it should not assert mustUnderstand; and null if it should use WssDecorator's default behavior. */
+    public void setSecurityHeaderMustUnderstand(Boolean securityHeaderMustUnderstand) {
+        this.securityHeaderMustUnderstand = securityHeaderMustUnderstand;
+    }
+
     /**
      * If true the the decorator should attempt to reuse any existing security header for the same actor/role.
      *
@@ -625,6 +635,7 @@ public class DecorationRequirements {
     private int timestampTimeoutMillis = 0;
     private boolean securityHeaderReusable = false;
     private String securityHeaderActor = SecurityActor.L7ACTOR.getValue();
+    private Boolean securityHeaderMustUnderstand = null;
     private boolean includeSamlTokenInSignature = false;
     private KeyInfoInclusionType keyInfoInclusionType = KeyInfoInclusionType.CERT;
     private byte[] encryptedKey = null;

@@ -335,11 +335,19 @@ public class PolicyApplicationContext extends ProcessingContext {
      *
      * @return the decoration requirements for the immediate recipient (as opposed to further downstream recipients)
      */
-    private DecorationRequirements getDefaultWssRequirements() {
+    public DecorationRequirements getDefaultWssRequirements() {
         if (policySettings.defaultWSSRequirements == null) {
             policySettings.defaultWSSRequirements = new DecorationRequirements();
             if (ssg.isGeneric())
                 policySettings.defaultWSSRequirements.setSecurityHeaderActor(SecurityActor.NOACTOR.getValue());
+
+            final String overrideActor = ssg.getProperties().get(SsgRuntime.SSGPROP_DEFAULT_SECURITY_ACTOR);
+            if (overrideActor != null)
+                policySettings.defaultWSSRequirements.setSecurityHeaderActor(overrideActor);
+
+            final String overrideMustUnderstand = ssg.getProperties().get(SsgRuntime.SSGPROP_SECURITY_MUSTUNDERSTAND);
+            if (overrideMustUnderstand != null)
+                policySettings.defaultWSSRequirements.setSecurityHeaderMustUnderstand("1".equals(overrideMustUnderstand) || Boolean.valueOf(overrideMustUnderstand));
         }
         return policySettings.defaultWSSRequirements;
     }

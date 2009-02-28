@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
@@ -24,6 +25,7 @@ import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.Pair;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
@@ -988,22 +990,49 @@ public class WssDecoratorTest extends TestCase {
         return td;
     }
 
-    public void testSecHdrMustUnderstandFalse() throws Exception {
+    public void testConfigSecHdrAttributes() throws Exception {
+        runTest(getConfigSecHdrAttributesTestDocument());
+    }
+
+    public TestDocument getConfigSecHdrAttributesTestDocument() throws Exception {
+        Pair<X509Certificate, PrivateKey> client = new TestCertificateGenerator().subject("cn=testclient").generateWithKey();
+        Pair<X509Certificate, PrivateKey> server = new TestCertificateGenerator().subject("cn=testserver").generateWithKey();
+
+        Context c = new Context();
+        DecorationRequirements dreq = new DecorationRequirements();
+        dreq.setSecurityHeaderMustUnderstand(false);
+        dreq.setRecipientCertificate(server.left);
+        dreq.setSecurityHeaderActor("http://schemas.xmlsoap.org/soap/actor/next");
+        dreq.setSenderMessageSigningCertificate(client.left);
+        dreq.setSenderMessageSigningPrivateKey(client.right);
+        dreq.getElementsToSign().add(c.body);
+        return new TestDocument(c, dreq, server.right, null);
+    }
+
+    public void testSysPropSecHdrMustUnderstandFalse() throws Exception {
         doTestSecHdrMustUnderstand(false);
     }
 
-    public void testSecHdrMustUnderstandTrue() throws Exception {
+    public void testSysPropSecHdrMustUnderstandTrue() throws Exception {
         doTestSecHdrMustUnderstand(true);
     }
 
     private void doTestSecHdrMustUnderstand(boolean expect) throws IOException, SAXException, InvalidDocumentFormatException, GeneralSecurityException, DecoratorException {
-        System.setProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND, Boolean.toString(expect));
-        DecorationRequirements req = new DecorationRequirements();
-        req.setUsernameTokenCredentials(new UsernameTokenImpl("joe", "sekrit".toCharArray()));
-        Message msg = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
-        WssDecorator.DecorationResult dr = new WssDecoratorImpl().decorateMessage(msg, req);
-        Document doc = msg.getXmlKnob().getDocumentReadOnly();
-        Element sechdr = SoapUtil.getSecurityElement(doc, "secure_span");
-        assertEquals(expect ? "1" : "0", sechdr.getAttributeNS(doc.getDocumentElement().getNamespaceURI(), "mustUnderstand"));
+        String oldPropertyValue = System.getProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND);
+        try {
+            System.setProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND, Boolean.toString(expect));
+            DecorationRequirements req = new DecorationRequirements();
+            req.setUsernameTokenCredentials(new UsernameTokenImpl("joe", "sekrit".toCharArray()));
+            Message msg = new Message(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT));
+            new WssDecoratorImpl().decorateMessage(msg, req);
+            Document doc = msg.getXmlKnob().getDocumentReadOnly();
+            Element sechdr = SoapUtil.getSecurityElement(doc, "secure_span");
+            assertEquals(expect ? "1" : "0", sechdr.getAttributeNS(doc.getDocumentElement().getNamespaceURI(), "mustUnderstand"));
+        } finally {
+            if (oldPropertyValue == null)
+                System.clearProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND);
+            else
+                System.setProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND, oldPropertyValue);
+        }
     }
 }

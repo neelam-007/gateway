@@ -51,7 +51,9 @@ public class SsgRuntime {
     private final Ssg ssg;
 
     public static final String SSGPROP_STRIPHEADER = "response.security.stripHeader"; // "always", "when_processed", "secure_span", or "lazy"; default "always"
-
+    public static final String SSGPROP_DEFAULT_SECURITY_ACTOR = "wss.decorator.defaultSecurityActor";
+    public static final String SSGPROP_SECURITY_MUSTUNDERSTAND = "wss.decorator.mustUnderstand";
+    
     // Maximum simultaneous outbound connections.  Throttled wide-open.
     public static final int MAX_CONNECTIONS = 60000;
 

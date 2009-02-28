@@ -318,6 +318,9 @@ public class WssRoundTripTest extends TestCase {
                                                wssDecoratorTest.getOaepKeyEncryptionTestDocument()));
     }
 
+    public void testConfigSecHdrAttributesTestDocument() throws Exception {
+        runRoundTripTest(new NamedTestDocument("ConfigSecHdrAttributesTestDocument", wssDecoratorTest.getConfigSecHdrAttributesTestDocument()));
+    }
 
     public void testExplicitSignatureConfirmation() throws Exception {
         NamedTestDocument ntd = new NamedTestDocument("ExplicitSignatureConfirmation",
@@ -386,6 +389,8 @@ public class WssRoundTripTest extends TestCase {
                                                       td.req.getSenderMessageSigningCertificate(),
                                                       makeSecurityContextFinder(td.req.getSecureConversationSession()),
                                                       strr);
+
+        final Element processedSecurityHeader = SoapUtil.getSecurityElement(incomingSoapDocument, r.getProcessedActor().getValue());
 
         log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(incomingSoapDocument));
 
@@ -469,6 +474,17 @@ public class WssRoundTripTest extends TestCase {
                 final boolean signingTokenElWasSigned = signedDomElements.contains(signingTokenEl);
                 assertTrue("ProtectTokens implies that all signing tokens were signed", signingTokenElWasSigned);
             }
+        }
+
+        // Check Security header actor and mustUnderstand
+        if (reqs.getSecurityHeaderMustUnderstand() != null) {
+            final String mustUnderstandValue = SoapUtil.getMustUnderstandAttributeValue(processedSecurityHeader);
+            Boolean mustUnderstand = "1".equals(mustUnderstandValue) || Boolean.valueOf(mustUnderstandValue);
+            assertEquals(mustUnderstand, reqs.getSecurityHeaderMustUnderstand());
+        }
+
+        if (reqs.getSecurityHeaderActor() != null) {
+            assertEquals(reqs.getSecurityHeaderActor(), SoapUtil.getActorValue(processedSecurityHeader));
         }
 
         assertTrue("WS-I BSP check.", isValid);

@@ -106,7 +106,7 @@ public class WssDecoratorImpl implements WssDecorator {
         final Document soapMsg = message.getXmlKnob().getDocumentWritable();
 
         Element securityHeader = createSecurityHeader(soapMsg, c,
-                dreq.getSecurityHeaderActor(), dreq.isSecurityHeaderReusable());
+                dreq.getSecurityHeaderActor(), dreq.getSecurityHeaderMustUnderstand(), dreq.isSecurityHeaderReusable());
         Set<Element> signList = dreq.getElementsToSign();
         Set<Element> cryptList = dreq.getElementsToEncrypt();
         Set<String> signPartList = dreq.getPartsToSign();
@@ -1295,6 +1295,7 @@ public class WssDecoratorImpl implements WssDecorator {
     private Element createSecurityHeader(Document message,
                                          Context context,
                                          String actor,
+                                         Boolean mustUnderstand,
                                          boolean useExisting)
             throws InvalidDocumentFormatException
     {
@@ -1327,7 +1328,7 @@ public class WssDecoratorImpl implements WssDecorator {
         }
         else {
             Element securityHeader;
-            securityHeader = SoapUtil.makeSecurityElement(message, context.nsf.getWsseNs(), actor, SoapUtil.isSecHdrDefaultsToMustUnderstand());
+            securityHeader = SoapUtil.makeSecurityElement(message, context.nsf.getWsseNs(), actor, mustUnderstand != null ? mustUnderstand : SoapUtil.isSecHdrDefaultsToMustUnderstand());
             // Make sure wsu is declared to save duplication
             DomUtils.getOrCreatePrefixForNamespace(securityHeader, context.nsf.getWsuNs(), "wsu");
             resultSecurity = securityHeader;
