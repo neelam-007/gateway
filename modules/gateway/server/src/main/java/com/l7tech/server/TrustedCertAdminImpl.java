@@ -237,7 +237,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
 
             //check if key is in use
             if (HttpTransportModule.isKeyActive(RemoteUtils.getHttpServletRequest(), keyAlias))
-                throw new DeleteException("Key '" + keyAlias + "' is in use");
+                throw new DeleteException("Key '" + keyAlias + "' is in use by the connector for current admin connection");
 
             Future<Boolean> result = store.deletePrivateKeyEntry(keyAlias);
             // Force it to be synchronous (Bug #3852)
