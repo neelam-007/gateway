@@ -19,15 +19,15 @@ public final class BuiltinMonitorables {
     /** CPU Temperature, in °C */
     public static final MonitorableProperty CPU_TEMPERATURE = new MonitorableProperty(ComponentType.HOST, "cpuTemp", Integer.class, "degrees Celsius", 30000L, ComparisonOperator.GE, "50");
     /** Free Swap space, in KiB */
-    public static final MonitorableProperty SWAP_USAGE_KIB = new MonitorableProperty(ComponentType.HOST, "swapUsage", Long.class, "KiB", 30000L, ComparisonOperator.GT, "100000");
+    public static final MonitorableProperty SWAP_USAGE_KIB = new MonitorableProperty(ComponentType.HOST, "swapUsage", Long.class, "KB", 30000L, ComparisonOperator.GT, "100000");
     /** Free disk space, in KiB */
-    public static final MonitorableProperty DISK_FREE_KIB = new MonitorableProperty(ComponentType.HOST, "diskFree", Long.class, "KiB", 120000L, ComparisonOperator.LT, "100000");
+    public static final MonitorableProperty DISK_FREE_KIB = new MonitorableProperty(ComponentType.HOST, "diskFree", Long.class, "KB", 120000L, ComparisonOperator.LT, "100000");
     /** Percent free space */
     public static final MonitorableProperty DISK_USAGE_PERCENT = new MonitorableProperty(ComponentType.HOST, "diskUsage", Integer.class, "%", 120000L, ComparisonOperator.LT, "5");
     /** Current time, in milliseconds GMT since Unix epoch */
     public static final MonitorableProperty TIME = new MonitorableProperty(ComponentType.HOST, "time", Long.class, "ms since epoch", 1000L, ComparisonOperator.LT, "1");
     /** Size of log files, in KiB */
-    public static final MonitorableProperty LOG_SIZE = new MonitorableProperty(ComponentType.HOST, "logSize", Long.class, "KiB", 120000L, ComparisonOperator.GT, "500000");
+    public static final MonitorableProperty LOG_SIZE = new MonitorableProperty(ComponentType.HOST, "logSize", Long.class, "KB", 120000L, ComparisonOperator.GT, "500000");
     /** Current state of Gateway node */
     public static final MonitorableProperty NODE_STATE = new MonitorableProperty(ComponentType.NODE, "operatingStatus", NodeStateType.class, null, 120000L, ComparisonOperator.NE, NodeStateType.RUNNING.name());
     /** Current NTP synchronization status of SSG appliance */
