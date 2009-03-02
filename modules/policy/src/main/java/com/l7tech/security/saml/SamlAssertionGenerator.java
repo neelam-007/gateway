@@ -12,6 +12,7 @@ import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.util.*;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.saml.SamlAssertion;
@@ -19,15 +20,18 @@ import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import java.net.InetAddress;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.SignatureException;
+import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Set;
 import java.util.TimeZone;
+import java.io.IOException;
 
 /**
  * Class <code>SamlAssertionGenerator</code> is a central entry point
@@ -165,7 +169,7 @@ public class SamlAssertionGenerator {
             }
             WssDecorator wssDecorator = new WssDecoratorImpl();
             DecorationRequirements dr = new DecorationRequirements();
-            final Set elementsToSign = dr.getElementsToSign();
+            final Set<Element> elementsToSign = dr.getElementsToSign();
             if (options.isProofOfPosessionRequired()) {
                 final SignerInfo attestingEntity = options.getAttestingEntity();
                 if (attestingEntity == null) {
@@ -178,10 +182,22 @@ public class SamlAssertionGenerator {
             }
             dr.setSecurityHeaderActor(options.getSecurityHeaderActor());
             wssDecorator.decorateMessage(new Message(soapMessage), dr);
-        } catch (Throwable e) {
-            SignatureException ex = new SignatureException("error signing the saml ticket");
-            ex.initCause(e);
-            throw ex;
+        } catch (SignatureException e) {
+            throw e;
+        } catch (CertificateException e) {
+            throw e;
+        } catch (DecoratorException e) {
+            throw new SignatureException("Error signing the SAML ticket: " + ExceptionUtils.getMessage(e), e);
+        } catch (MessageNotSoapException e) {
+            throw new SignatureException("Error signing the SAML ticket: " + ExceptionUtils.getMessage(e), e);
+        } catch (InvalidDocumentFormatException e) {
+            throw new SignatureException("Error signing the SAML ticket: " + ExceptionUtils.getMessage(e), e);
+        } catch (IOException e) {
+            throw new SignatureException("Error signing the SAML ticket: " + ExceptionUtils.getMessage(e), e);
+        } catch (GeneralSecurityException e) {
+            throw new SignatureException("Error signing the SAML ticket: " + ExceptionUtils.getMessage(e), e);
+        } catch (SAXException e) {
+            throw new SignatureException("Error signing the SAML ticket: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
