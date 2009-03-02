@@ -70,7 +70,7 @@ class MessagePredicateMapping extends AssertionMapping {
             }
 
             String boolValue = source.getAttribute(WspConstants.WSP_ATTRIBUTE_ENABLED);
-            if (boolValue != null) {
+            if (boolValue != null && !"".equals(boolValue)) {
                 ass.setEnabled(Boolean.parseBoolean(boolValue));
             }
             return new TypedReference(this.getMappedClass(), ass);
