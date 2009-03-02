@@ -1,15 +1,15 @@
 package com.l7tech.server.ems.ui.pages;
 
-import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.markup.html.IHeaderResponse;
-import org.apache.wicket.markup.html.WicketEventReference;
-import org.apache.wicket.behavior.AbstractAjaxBehavior;
-import org.apache.wicket.ajax.WicketAjaxReference;
+import org.apache.wicket.IRequestTarget;
 import org.apache.wicket.Page;
 import org.apache.wicket.RequestCycle;
-import org.apache.wicket.IRequestTarget;
-import org.apache.wicket.protocol.http.WebResponse;
+import org.apache.wicket.ajax.WicketAjaxReference;
+import org.apache.wicket.behavior.AbstractAjaxBehavior;
+import org.apache.wicket.markup.html.IHeaderResponse;
+import org.apache.wicket.markup.html.WicketEventReference;
+import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.protocol.http.WebRequest;
+import org.apache.wicket.protocol.http.WebResponse;
 import org.mortbay.util.ajax.JSON;
 
 /**
@@ -47,7 +47,7 @@ public class JsonInteraction extends Panel {
                         public void respond(RequestCycle requestCycle) {
                             final WebRequest request = (WebRequest)requestCycle.getRequest();
                             final WebResponse response = (WebResponse)requestCycle.getResponse();
-                            response.setContentType("application/json");
+                            response.setContentType("application/json; charset=UTF-8");
                             response.setHeader("Expires", "Mon, 26 Jul 1997 05:00:00 GMT");
                             response.setHeader("Cache-Control", "no-cache, must-revalidate");
                             response.setHeader("Pragma", "no-cache");
