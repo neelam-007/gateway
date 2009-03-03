@@ -106,7 +106,7 @@ public class Monitor extends EsmStandardWebPage {
             protected Object getJsonResponseData() {
                 String guid = (String)deleteNotificationRuleDialog_id.getConvertedInput();
                 if (guid == null || guid.isEmpty()) {
-                    return new JSONException(new Exception("The selected notification rule is invalid."));
+                    return new JSONException("The selected notification rule has empty GUID.");
                 }
                 try {
                     // Check if the notification rule is used by any cluster or nodes in monitoring property setups.
@@ -115,7 +115,7 @@ public class Monitor extends EsmStandardWebPage {
                         for (SystemMonitoringNotificationRule rule: setup.getSystemNotificationRules()) {
                             if (guid.equals(rule.getGuid())) {
                                 String clusterName = ssgClusterManager.findByGuid(ssgClusterGuid).getName();
-                                return new JSONException(new Exception("Cannot delete '" + rule.getName() + "', since it is used by the cluster '" + clusterName + "' in monitoring properties setup."));
+                                return new JSONException("Notification rule '" + rule.getName() + "' is still in use by SSG cluster '" + clusterName + "'.");
                             }
                         }
                     }
