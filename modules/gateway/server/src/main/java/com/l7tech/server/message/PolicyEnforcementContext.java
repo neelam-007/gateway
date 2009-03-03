@@ -129,6 +129,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     }
 
     public void addAuthenticationResult(AuthenticationResult authResult) {
+        if (authResult == null) throw new NullPointerException("authResult");
         if (!authenticationResults.contains(authResult)) {
             authenticationResults.add(authResult);
         }
