@@ -154,6 +154,19 @@ public class ExpandVariablesTest {
         assertEquals("", ExpandVariables.process("${certificate.subject.nonexistent}", vars, audit));
     }
 
+    @Ignore("Not yet fixed")
+    @Test
+    @BugNumber(6813)
+    public void testBackslashEscaping() throws Exception {
+        Map<String, Object> vars = new HashMap<String, Object>() {{
+            put("dn", "cn=test\\+1");
+            put("dns", new String[] { "cn=test\\+1", "cn=test2", "cn=test\\+3" });
+        }};
+
+        assertEquals("cn=test\\+1", ExpandVariables.process("${dn}", vars, audit));
+        assertEquals("||cn=test\\+1||cn=test2||cn=test\\+3||", ExpandVariables.process("||${dns|||}||", vars, audit));
+    }
+
     @Test
     public void testMessageVariableHeader() throws Exception {
         Message foo = makeTinyRequest();
