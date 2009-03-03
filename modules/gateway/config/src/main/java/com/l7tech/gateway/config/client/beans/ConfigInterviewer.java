@@ -11,10 +11,8 @@ import com.l7tech.util.Pair;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Collections;
-import java.util.ResourceBundle;
+import java.io.PrintStream;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.text.MessageFormat;
@@ -33,8 +31,12 @@ public class ConfigInterviewer {
         this.bundle = bundle;
     }
 
-    @SuppressWarnings({"unchecked"})
     public List<ConfigurationBean> doInterview() throws IOException {
+        return doInterview( null );
+    }    
+
+    @SuppressWarnings({"unchecked"})
+    public List<ConfigurationBean> doInterview( final ConfigValidator validator ) throws IOException {
         BufferedReader inReader = new BufferedReader(new InputStreamReader(System.in));
 
         ConfigurationContext currentContext = new ConfigurationContext(null, beans);
@@ -49,7 +51,11 @@ public class ConfigInterviewer {
                         continue menuLoop;
 
                     case APPLY:
-                        return currentContext.getBeans();
+                        List<ConfigurationBean> beans =  currentContext.getBeans();
+                        if ( validator == null || validator.isConfigurationValid( this, beans, inReader, System.out ) )
+                            return beans;
+                        else
+                            continue menuLoop;
 
                     case QUIT:
                         return Collections.emptyList();
@@ -226,20 +232,22 @@ public class ConfigInterviewer {
         System.out.println();
         System.out.print("Select: ");
         String cmd = inReader.readLine();
-        if ("x".equalsIgnoreCase(cmd.trim().toLowerCase())) {
+        if ( cmd == null ) cmd = "";
+        else cmd = cmd.trim().toLowerCase();
+        if ("x".equals(cmd)) {
             currentContext = currentContext.getParent();
             if (currentContext == null) {
                 return MENU_QUIT;
             } else {
                 return MENU_REPEAT;
             }
-        } else if ("s".equalsIgnoreCase(cmd.trim().toLowerCase())) {
+        } else if ("s".equals(cmd)) {
             if (currentContext.getParent() == null) {
                 return new Pair<MenuResultType, DynamicConfigurationBean>(MenuResultType.APPLY, null);
             } else {
                 throw new IllegalStateException("Can't apply from non-root context!");
             }
-        } else if ("".equals(cmd.trim())) {
+        } else if ("".equals(cmd)) {
             System.out.println();
             return MENU_REPEAT;
         }
@@ -293,5 +301,25 @@ public class ConfigInterviewer {
         }
 
         return configurables;
+    }
+
+    /**
+     * A configuration validator can be used to validation configuration
+     * before completion of the interview.
+     */
+    public abstract static class ConfigValidator {
+        /**
+         * Validate the given configuration.
+         *
+         * @param interviewer The interviewer performing the configuration interview
+         * @param beans The beans to check for validity
+         * @param in The reader for user interaction
+         * @param out The print stream for user interaction
+         * @return true to accept the configuration and exit
+         */
+        public abstract boolean isConfigurationValid( ConfigInterviewer interviewer,
+                                                      Collection<ConfigurationBean> beans,
+                                                      BufferedReader in,
+                                                      PrintStream out );
     }
 }

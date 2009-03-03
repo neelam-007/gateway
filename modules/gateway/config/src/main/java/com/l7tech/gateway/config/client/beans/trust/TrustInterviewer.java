@@ -28,6 +28,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.ParseException;
 
 /** @author alex */
 public class TrustInterviewer {
@@ -253,8 +254,83 @@ public class TrustInterviewer {
         }
     }
 
-    List<ConfigurationBean> doInterview(List<ConfigurationBean> inBeans, ResourceBundle bundle) throws IOException {
-        return new ConfigInterviewer(bundle, inBeans.toArray(new ConfigurationBean[inBeans.size()])).doInterview();
+    List<ConfigurationBean> doInterview( final List<ConfigurationBean> inBeans,
+                                         final ResourceBundle bundle) throws IOException {
+        return new ConfigInterviewer(bundle, inBeans.toArray(new ConfigurationBean[inBeans.size()])).doInterview( new ConfigInterviewer.ConfigValidator(){
+            public boolean isConfigurationValid( final ConfigInterviewer interviewer,
+                                                 final Collection<ConfigurationBean> beans,
+                                                 final BufferedReader in,
+                                                 final PrintStream out ) {
+                boolean ok = false;
+
+                if ( !validConfiguration( beans ) ) {
+                    if ( confirmInvalid( in, out, bundle ) ) {
+                        ok = true;
+                    }
+                } else {
+                    ok = true;
+                }
+
+                return ok;
+            }
+        } );
+    }
+
+    /**
+     * Check if the given configuration beans represent a valid set of properties.
+     *
+     * <p>For configuration to be valid either remote management must be disabled
+     * or the listener ip address must be a remotely accessible IP and at least
+     * one trusted certificate must be present.</p>
+     *
+     * @param beans The beans for the configuration
+     * @return true If the configuration is valid
+     */
+    private boolean validConfiguration( Collection<ConfigurationBean> beans )  {
+        boolean remoteEnabled = false;
+        for (ConfigurationBean bean : beans) {
+            if ( bean instanceof RemoteNodeManagementEnabled ) {
+                remoteEnabled = ((RemoteNodeManagementEnabled)bean).getConfigValue();
+                break;
+            }
+        }
+
+        boolean hasCert = false;
+        for (ConfigurationBean bean : beans) {
+            if (bean instanceof ConfiguredTrustedCert) {
+                hasCert = true;
+                break;
+            }
+        }
+
+        boolean isLocalhost = false;
+        for (ConfigurationBean bean : beans) {
+            if (bean instanceof TypedConfigurableBean && "host.controller.sslIpAddress".equals(bean.getId())) {
+                isLocalhost = "127.0.0.1".equals(bean.getConfigValue());
+                break;
+            }
+        }
+
+        return !remoteEnabled || (hasCert && !isLocalhost);
+    }
+
+    private boolean confirmInvalid( final BufferedReader in,
+                                    final PrintStream out,
+                                    final ResourceBundle bundle ) {
+        System.out.print( bundle.getString("warning.remoteManagementEnable") );
+        boolean valid = false;
+        try {
+            String value = in.readLine();
+            if ( value!=null && !value.isEmpty() ) {
+                valid = (Boolean) OptionType.BOOLEAN.getFormat().parseObject(value);
+            }
+        } catch (ParseException e) {
+            logger.log( Level.WARNING, "Error confirming save.", e );
+        } catch (IOException e) {
+            logger.log( Level.WARNING, "Error confirming save.", e );
+        }
+
+        return valid;
     }
 
     private static Properties readHostProperties(File hostPropsFile) throws ConfigurationException {
