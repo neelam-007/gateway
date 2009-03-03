@@ -3,10 +3,11 @@
 -->
 <wicket:panel xmlns:wicket="http://wicket.apache.org/">
 
-    <div class="panel" style="height: 320px; overflow: hidden">
+    <div class="panel">
         <div class="panelTitle">
             Generated Reports
-            <img wicket:id="refresh" class="refresh clickableImg middle" src="../images/refresh.png" title="Refresh list of generated reports" alt="Refresh" />
+            <img wicket:id="refresh" class="refresh clickableImg middle" src="../images/refresh.png"
+                 title="Refresh list of generated reports" alt="Refresh"/>
         </div>
         <div id="outputDiv">
 
@@ -15,7 +16,7 @@
                     <input name="reportId" type="hidden" value="" wicket:id="reportId"/>
 
                     <button wicket:id="downloadReportButton" title="Download Report">Download</button>
-                    <span style="font-weight: bold;">Format:</span>                    
+                    <span style="font-weight: bold;">Format:</span>
                     <select wicket:id="reportFormat">
                         <option>HTML</option>
                         <option selected="selected">PDF</option>
