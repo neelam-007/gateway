@@ -557,9 +557,9 @@ public class FindIdentitiesDialog extends JDialog {
             } else {
                 tableModelHeaders = headers;
             }
-            setTableModel(Collections.enumeration(tableModelHeaders));
+            setTableModel(Collections.enumeration(tableModelHeaders), headers.size());
         } catch (Exception e) {
-            setTableModel(Collections.enumeration(Collections.emptyList()));
+            setTableModel(Collections.enumeration(Collections.emptyList()), 0);
             if (e instanceof FindException && e.getCause()==null) {
                 JOptionPane.showMessageDialog(this,
                   "There was an error while seaching the provider:\n" + e.getMessage(),
@@ -757,11 +757,10 @@ public class FindIdentitiesDialog extends JDialog {
      * set the <CODE>TableModel</CODE> that is used by this
      * object browser instance.
      */
-    private void setTableModel(Enumeration e) {
+    private void setTableModel(Enumeration e, final int numEntries) {
         stopLoadingTableModel();
 
-        DynamicTableModel.
-          ObjectRowAdapter oa =
+        DynamicTableModel.ObjectRowAdapter oa =
           new DynamicTableModel.ObjectRowAdapter() {
               public Object getValue(Object o, int col) {
                   String text;
@@ -779,14 +778,7 @@ public class FindIdentitiesDialog extends JDialog {
                           return ih;
                       }
                   }
-                  /*else if (o instanceof EntityHeader) {
-                      EntityHeader eh = (EntityHeader)o;
-                      if (col == 1) {
-                          text = eh.getDescription();
-                      } else {
-                          return eh;
-                      }
-                  } */else {
+                  else {
                       throw new
                         IllegalArgumentException("Invalid argument type: "
                         + "\nExpected: IdentityHeader"
@@ -814,7 +806,7 @@ public class FindIdentitiesDialog extends JDialog {
                */
               public void tableChanged(TableModelEvent e) {
                   if (e.getType() == TableModelEvent.INSERT) {
-                      counter += e.getLastRow() - e.getFirstRow();
+                      counter = numEntries;
                       resultCounter.setText("[ " + counter + " objects found]");
                       findButton.setEnabled(true);
                       stopSearchButton.setEnabled(false);
