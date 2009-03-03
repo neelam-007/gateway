@@ -478,7 +478,10 @@ public class Monitor extends EsmStandardWebPage {
                             entitiesList.add(monitoringService.getCurrentSsgNodePropertiesStatus(ssgNode));
                         }
                         // Then, get the current value (audit size) for the SSG cluster.
-                        entitiesList.add(monitoringService.getCurrentSsgClusterPropertyStatus(ssgCluster.getGuid()));
+                        final EntityMonitoringPropertyValues values = monitoringService.getCurrentSsgClusterPropertyStatus(ssgCluster.getGuid());
+                        if (values != null) {
+                            entitiesList.add(values);
+                        }
                     }
 
                     Map<String, Object> jsonDataMap = new HashMap<String, Object>();
@@ -491,6 +494,7 @@ public class Monitor extends EsmStandardWebPage {
                     return jsonDataMap;
                 }
             } catch (Exception e) {
+                logger.log(Level.WARNING, "Failed to get current values of monitored properties.", e);
                 return new JSONException(e);
             }
         }
