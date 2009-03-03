@@ -71,6 +71,8 @@
 
     <bean id="standardReportSettingsManager" class="com.l7tech.server.ems.standardreports.MockStandardReportSettingsManager"/>
 
+    <bean id="entityMonitoringPropertySetupManager" class="com.l7tech.server.ems.monitoring.MockEntityMonitoringPropertySetupManager"/>
+
     <bean id="migrationRecordManager" class="com.l7tech.server.ems.migration.MockMigrationRecordManager"/>
 
     <bean id="eventPublisher" class="com.l7tech.server.ems.util.ApplicationEventPublisherImpl"/>
