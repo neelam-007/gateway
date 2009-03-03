@@ -48,7 +48,7 @@ public class SsgClusterNotificationSetup extends PersistentEntityImp {
         this.ssgClusterGuid = ssgClusterGuid;
     }
 
-    @ManyToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER)
+    @ManyToMany(cascade={CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH}, fetch=FetchType.EAGER)
     public Set<SystemMonitoringNotificationRule> getSystemNotificationRules() {
         return systemNotificationRules;
     }

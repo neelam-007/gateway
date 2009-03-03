@@ -3,7 +3,10 @@ package com.l7tech.server.ems.monitoring;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.ems.enterprise.SsgClusterManager;
+import com.l7tech.server.ems.enterprise.SsgNode;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -23,6 +26,14 @@ import java.util.*;
  * @since Enterprise Manager 1.0
  */
 public class EntityMonitoringPropertySetupManagerImpl extends HibernateEntityManager<EntityMonitoringPropertySetup, EntityHeader> implements EntityMonitoringPropertySetupManager {
+    private SsgClusterNotificationSetupManager ssgClusterNotificationSetupManager;
+    private SsgClusterManager ssgClusterManager;
+
+    public EntityMonitoringPropertySetupManagerImpl(SsgClusterNotificationSetupManager ssgClusterNotificationSetupManager, SsgClusterManager ssgClusterManager) {
+        this.ssgClusterNotificationSetupManager = ssgClusterNotificationSetupManager;
+        this.ssgClusterManager = ssgClusterManager;
+    }
+
     @Override
     public Class<? extends Entity> getInterfaceClass() {
         return EntityMonitoringPropertySetup.class;
@@ -94,6 +105,29 @@ public class EntityMonitoringPropertySetupManagerImpl extends HibernateEntityMan
             });
         } catch (DataAccessException e) {
             throw new FindException("Cannot find the property setup for the entity (GUID = '" + entityGuid + "').", e);
+        }
+    }
+
+    @Override
+    public void deleteBySsgClusterGuid(String guid) throws FindException, DeleteException {
+        // Delete all SSG nodes' property setups
+        for (SsgNode node: ssgClusterManager.findByGuid(guid).getNodes()) {
+            deleteBySsgNodeGuid(node.getGuid());
+        }
+
+        // Delete the SSG cluster property setup
+        for (EntityMonitoringPropertySetup setup: findByEntityGuid(guid)) {
+            delete(setup);
+        }
+
+        // Delete the cluster-wide notification rule associated with the SSG cluster
+        ssgClusterNotificationSetupManager.deleteBySsgClusterGuid(guid);
+    }
+
+    // Delete the property setup of an individual SSG node.
+    private void deleteBySsgNodeGuid(String guid) throws FindException, DeleteException {
+        for (EntityMonitoringPropertySetup setup: findByEntityGuid(guid)) {
+            delete(setup);
         }
     }
 }

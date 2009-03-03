@@ -505,7 +505,10 @@
 
     <bean id="systemMonitoringNotificationRulesManager" class="com.l7tech.server.ems.monitoring.SystemMonitoringNotificationRulesManagerImpl" parent="hibernateBean"/>
 
-    <bean id="entityMonitoringPropertySetupManager" class="com.l7tech.server.ems.monitoring.EntityMonitoringPropertySetupManagerImpl" parent="hibernateBean"/>
+    <bean id="entityMonitoringPropertySetupManager" class="com.l7tech.server.ems.monitoring.EntityMonitoringPropertySetupManagerImpl" parent="hibernateBean">
+        <constructor-arg index="0" ref="ssgClusterNotificationSetupManager"/>
+        <constructor-arg index="1" ref="ssgClusterManager"/>
+    </bean>
 
     <bean id="ssgClusterNotificationSetupManager" class="com.l7tech.server.ems.monitoring.SsgClusterNotificationSetupManagerImpl" parent="hibernateBean"/>
 

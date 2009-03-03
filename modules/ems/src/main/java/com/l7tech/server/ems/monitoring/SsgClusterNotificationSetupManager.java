@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Propagation;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.DeleteException;
 
 /**
  * This class manages the notification rules setup for each SSG Cluster.
@@ -23,4 +24,12 @@ public interface SsgClusterNotificationSetupManager extends EntityManager<SsgClu
      * @throws FindException if there is a data access error.
      */
     SsgClusterNotificationSetup findByEntityGuid(String ssgClusterGuid) throws FindException;
+
+    /**
+     * Delete the notification setup assoicated with the SSG cluster.
+     * @param guid: the GUID of the SSG cluster.
+     * @throws FindException: thrown when an error in finding a notification setup.
+     * @throws DeleteException: thrown when an error in deleting a notification setup.
+     */
+    void deleteBySsgClusterGuid(String guid) throws FindException, DeleteException;
 }

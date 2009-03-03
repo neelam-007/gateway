@@ -2,6 +2,7 @@ package com.l7tech.server.ems.monitoring;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.EntityManagerStub;
 import com.l7tech.util.Functions;
 
@@ -34,5 +35,8 @@ public class MockEntityMonitoringPropertySetupManager extends EntityManagerStub<
             }
         });
         return found.size() < 1 ? null : found.get(0);
+    }
+
+    public void deleteBySsgClusterGuid(String guid) throws FindException, DeleteException {
     }
 }

@@ -3,6 +3,7 @@ package com.l7tech.server.ems.monitoring;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import org.hibernate.Session;
@@ -60,5 +61,10 @@ public class SsgClusterNotificationSetupManagerImpl extends HibernateEntityManag
         } catch (DataAccessException e) {
             throw new FindException("Cannot find Ssg Cluster Notification Setup by SSG Cluster GUID: " + ssgClusterGuid, e);
         }
+    }
+
+    @Override
+    public void deleteBySsgClusterGuid(String guid) throws FindException, DeleteException {
+        delete(findByEntityGuid(guid));
     }
 }

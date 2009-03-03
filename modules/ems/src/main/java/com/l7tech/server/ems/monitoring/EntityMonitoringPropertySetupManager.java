@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Propagation;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.DeleteException;
 
 import java.util.List;
 
@@ -32,4 +33,12 @@ public interface EntityMonitoringPropertySetupManager extends EntityManager<Enti
      * @throws FindException if there is a data access error.
      */
     EntityMonitoringPropertySetup findByEntityGuidAndPropertyType(String entityGuid, String propertyType) throws FindException;
+
+    /**
+     * Delete all property setups associated with a SSG cluster and its all SSG nodes.
+     * @param guid: the GUID of a SSG cluster.
+     * @throws FindException: thrown when an error in finding a SSG cluster, property setups of nodes, or a notification setup.
+     * @throws DeleteException: thrown when an error in deleting property setups of a cluster or its nodes.
+     */
+    void deleteBySsgClusterGuid(String guid) throws FindException, DeleteException;
 }

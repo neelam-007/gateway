@@ -13,6 +13,7 @@ import com.l7tech.server.ems.migration.MigrationRecordManager;
 import com.l7tech.server.ems.standardreports.StandardReportManager;
 import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.ui.NavigationPage;
+import com.l7tech.server.ems.monitoring.EntityMonitoringPropertySetupManager;
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
@@ -67,6 +68,9 @@ public class Configure extends EsmStandardWebPage {
 
     @SpringBean
     ApplicationEventPublisher publisher;
+
+    @SpringBean
+    EntityMonitoringPropertySetupManager entityMonitoringPropertySetupManager;
 
     public Configure() {
         Map<String,String> up = Collections.emptyMap();
@@ -352,6 +356,9 @@ public class Configure extends EsmStandardWebPage {
                 try {
                     String guid = (String)deleteSSGClusterDialogInputId.getConvertedInput();
                     logger.fine("Deleting SSG Cluster (GUID = "+ guid + ").");
+
+                    // Delete all monitoring property setups of the SSG cluster and all its SSG nodes.
+                    entityMonitoringPropertySetupManager.deleteBySsgClusterGuid(guid);
 
                     ssgClusterManager.deleteByGuid(guid);
                     return null;    // No response object expected if successful.
