@@ -66,7 +66,7 @@ public class JmsEndpointManagerImpl
             for (Object result1 : results) {
                 Object[] row = (Object[]) result1;
                 if (row[0]instanceof Long) {
-                    JmsEndpointHeader header = new JmsEndpointHeader(row[0].toString(), (String) row[1], (String) row[2], Integer.parseInt((String) row[3]), Boolean.valueOf((String) row[4]));
+                    JmsEndpointHeader header = new JmsEndpointHeader(String.valueOf(row[0]), String.valueOf(row[1]), String.valueOf(row[2]), Integer.parseInt(String.valueOf(row[3])), Boolean.valueOf(String.valueOf(row[4])));
                     result.add(header);
                 }
             }
