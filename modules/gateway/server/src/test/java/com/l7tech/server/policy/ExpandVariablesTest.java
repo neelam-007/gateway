@@ -154,7 +154,6 @@ public class ExpandVariablesTest {
         assertEquals("", ExpandVariables.process("${certificate.subject.nonexistent}", vars, audit));
     }
 
-    @Ignore("Not yet fixed")
     @Test
     @BugNumber(6813)
     public void testBackslashEscaping() throws Exception {

@@ -217,7 +217,7 @@ public final class ExpandVariables {
                 replacement = syntax.format(newVals, Syntax.DEFAULT_FORMATTER, handler, strict);
             }
 
-            replacement = makeDollarExplicit(replacement); // bugzilla 3022
+            replacement = Matcher.quoteReplacement(replacement); // bugzilla 3022 and 6813
 
             // 5.0 Audit Request Id enhancement imposes a limit to the length of each ctx variable replacement
             if (varLengthLimit != null && replacement.length() > varLengthLimit)
@@ -228,12 +228,6 @@ public final class ExpandVariables {
         matcher.appendTail(sb);
 
         return sb.toString();
-    }
-
-    private static String makeDollarExplicit(String in) {
-        if (in == null) return null;
-        if (in.indexOf('$') < 0) return in;
-        return in.replace("$", "\\$");
     }
 
     private ExpandVariables() {
