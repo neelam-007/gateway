@@ -32,6 +32,9 @@ public class BuiltinVariables {
     public static final String PREFIX_AUTHENTICATED_USER = "request.authenticateduser";
     public static final String PREFIX_AUTHENTICATED_USERS = "request.authenticatedusers";
 
+    public static final String PREFIX_AUTHENTICATED_USER_DN = "request.authenticateddn";
+    public static final String PREFIX_AUTHENTICATED_USER_DNS = "request.authenticateddns";
+
     private static final Map metadataByName = new HashMap();
     private static final Map metadataPresetByName = new HashMap();
 
@@ -87,6 +90,8 @@ public class BuiltinVariables {
         new VariableMetadata("request.tcp.remoteHost", false, false, null, false),
         new VariableMetadata(PREFIX_AUTHENTICATED_USER, true, false, null, false),
         new VariableMetadata(PREFIX_AUTHENTICATED_USERS, false, true, null, false),
+        new VariableMetadata(PREFIX_AUTHENTICATED_USER_DN, true, false, null, false),
+        new VariableMetadata(PREFIX_AUTHENTICATED_USER_DNS, false, true, null, false),
         new VariableMetadata("request.clientid", false, false, null, false),
         new VariableMetadata("request.tcp.localPort", false, false, null, false, DataType.INTEGER),
         new VariableMetadata("request.http.method", false, false, null, false),

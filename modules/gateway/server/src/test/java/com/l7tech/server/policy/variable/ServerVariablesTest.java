@@ -1,21 +1,35 @@
 package com.l7tech.server.policy.variable;
 
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.identity.User;
+import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.identity.ldap.LdapUser;
+import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.BuiltinVariables;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.audit.LogOnlyAuditor;
+import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion;
-import com.l7tech.server.ApplicationContexts;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.variable.BuiltinVariables;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.message.Message;
-import com.l7tech.common.io.XmlUtil;
+import com.l7tech.test.BugNumber;
+import org.junit.*;
+import static org.junit.Assert.*;
 import org.springframework.context.ApplicationContext;
-import org.junit.Test;
-import org.junit.Assert;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  *
  */
 public class ServerVariablesTest {
+    private static final Logger logger = Logger.getLogger(ServerVariablesTest.class.getName());
+    private static final LogOnlyAuditor auditor = new LogOnlyAuditor(logger);
 
     /*
     * testServiceNameContextVariable creates a PolicyEncofcementContext and gives it a
@@ -24,7 +38,7 @@ public class ServerVariablesTest {
     * */
     @Test
     public void testServiceNameContextVariable() throws Exception{
-        PolicyEnforcementContext pec = getPolicyEncorcementContext();
+        PolicyEnforcementContext pec = context();
         PublishedService ps = new PublishedService();
         String serviceName = "testServiceNameContextVariable";
         ps.setName(serviceName);
@@ -43,7 +57,7 @@ public class ServerVariablesTest {
     * */
     @Test
     public void testServiceOidContextVariable() throws Exception{
-        PolicyEnforcementContext pec = getPolicyEncorcementContext();
+        PolicyEnforcementContext pec = context();
         PublishedService ps = new PublishedService();
         Long l = 123456L;
         ps.setOid(l);
@@ -56,6 +70,124 @@ public class ServerVariablesTest {
         Assert.assertEquals("ServerVariable should equal service oid",l.toString(),variableValue);
 
     }    
+
+    @Test
+    public void testNoUser() throws Exception {
+        expandAndCheck(context(), "${request.authenticatedUser}", "");
+        expandAndCheck(context(), "${request.authenticatedUsers}", "");
+        expandAndCheck(context(), "${request.authenticatedDn}", "");
+        expandAndCheck(context(), "${request.authenticatedDns}", "");
+    }
+
+    @Test
+    public void testNoDn() throws Exception {
+        PolicyEnforcementContext context = context(new InternalUser("blah"));
+        expandAndCheck(context, "${request.authenticatedUser}", "blah");
+        expandAndCheck(context, "${request.authenticatedUsers}", "blah");
+        expandAndCheck(context, "${request.authenticatedDn}", "");
+        expandAndCheck(context, "${request.authenticatedDns}", "");
+    }
+
+    @Test
+    public void testNullDn() throws Exception {
+        PolicyEnforcementContext context = context(new LdapUser(-3823, null, null));
+        expandAndCheck(context, "${request.authenticatedUser}", "");
+        expandAndCheck(context, "${request.authenticatedUsers}", "");
+        expandAndCheck(context, "${request.authenticatedDn}", "");
+        expandAndCheck(context, "${request.authenticatedDns}", "");
+    }
+
+    @Test
+    public void testNonNumericSuffix() throws Exception {
+        PolicyEnforcementContext context = context(new LdapUser(-3823, "cn=blah", "blah"));
+        expandAndCheck(context, "${request.authenticatedUser.bogus}", "");
+        expandAndCheck(context, "${request.authenticatedUsers.bogus}", "");
+        expandAndCheck(context, "${request.authenticatedDn.bogus}", "");
+        expandAndCheck(context, "${request.authenticatedDns.bogus}", "");
+    }
+
+    @Test
+    public void testOutOfBoundsSuffix() throws Exception {
+        PolicyEnforcementContext context = context();
+        context.addAuthenticationResult(new AuthenticationResult(new LdapUser(-3823, "cn=test\\+1, ou=foobar, o=bling", "test+1")));
+        context.addAuthenticationResult(new AuthenticationResult(new LdapUser(-3824, "cn=test\\+2", "test+2")));
+        context.addAuthenticationResult(new AuthenticationResult(new LdapUser(-3825, "cn=test\\+3", "test+3")));
+        expandAndCheck(context, "${request.authenticatedUser}", "test+3");
+        expandAndCheck(context, "${request.authenticatedUser.0}", "test+1");
+        expandAndCheck(context, "${request.authenticatedUser.1}", "test+2");
+        expandAndCheck(context, "${request.authenticatedUser.2}", "test+3");
+        expandAndCheck(context, "${request.authenticatedUsers}", "test+1, test+2, test+3");
+        expandAndCheck(context, "${request.authenticatedUsers|, }", "test+1, test+2, test+3");
+        expandAndCheck(context, "||${request.authenticatedUsers|||}||", "||test+1||test+2||test+3||");
+    }
+
+    @Test
+    public void testEmptyDn() throws Exception {
+        PolicyEnforcementContext context = context(new LdapUser(-3823, "", null));
+        expandAndCheck(context, "${request.authenticatedUser}", "");
+        expandAndCheck(context, "${request.authenticatedUsers}", "");
+        expandAndCheck(context, "${request.authenticatedDn}", "");
+        expandAndCheck(context, "${request.authenticatedDns}", "");
+    }
+
+    @Test
+    public void testEscapedDnUserName() throws Exception {
+        PolicyEnforcementContext context = context(new LdapUser(-3823, "cn=test\\+1, ou=foobar, o=bling", "test+1"));
+        expandAndCheck(context, "${request.authenticatedUser}", "test+1");
+        expandAndCheck(context, "${request.authenticatedUsers}", "test+1");
+    }
+
+    @Test
+    public void testMultipleUserNames() throws Exception {
+        PolicyEnforcementContext context = context();
+        context.addAuthenticationResult(new AuthenticationResult(new LdapUser(-3823, "cn=test\\+1, ou=foobar, o=bling", "test+1")));
+        context.addAuthenticationResult(new AuthenticationResult(new LdapUser(-3824, "cn=test\\+2", "test+2")));
+        context.addAuthenticationResult(new AuthenticationResult(new LdapUser(-3825, "cn=test\\+3", "test+3")));
+        expandAndCheck(context, "${request.authenticatedUser}", "test+3");
+        expandAndCheck(context, "${request.authenticatedUser.0}", "test+1");
+        expandAndCheck(context, "${request.authenticatedUser.1}", "test+2");
+        expandAndCheck(context, "${request.authenticatedUser.2}", "test+3");
+        expandAndCheck(context, "${request.authenticatedUsers}", "test+1, test+2, test+3");
+        expandAndCheck(context, "${request.authenticatedUsers|, }", "test+1, test+2, test+3");
+        expandAndCheck(context, "||${request.authenticatedUsers|||}||", "||test+1||test+2||test+3||");
+    }
+
+    @Test
+    public void testMultipleUserDns() throws Exception {
+        PolicyEnforcementContext context = context();
+        context.addAuthenticationResult(new AuthenticationResult(new LdapUser(-3823, "cn=test1, ou=foobar, o=bling", "test1")));
+        context.addAuthenticationResult(new AuthenticationResult(new LdapUser(-3824, "cn=test2", "test2")));
+        context.addAuthenticationResult(new AuthenticationResult(new LdapUser(-3825, "cn=test3", "test3")));
+        expandAndCheck(context, "${request.authenticatedDn}", "cn=test3");
+        expandAndCheck(context, "${request.authenticatedDn.0}", "cn=test1, ou=foobar, o=bling");
+        expandAndCheck(context, "${request.authenticatedDn.1}", "cn=test2");
+        expandAndCheck(context, "${request.authenticatedDn.2}", "cn=test3");
+        expandAndCheck(context, "||${request.authenticatedDns|||}||", "||cn=test1, ou=foobar, o=bling||cn=test2||cn=test3||");
+        expandAndCheck(context, "${request.authenticatedDns}", "cn=test1, ou=foobar, o=bling, cn=test2, cn=test3");
+        expandAndCheck(context, "${request.authenticatedDns|, }", "cn=test1, ou=foobar, o=bling, cn=test2, cn=test3");
+    }
+
+    @Test
+    @BugNumber(6813)
+    public void testEscapedDnUserDn() throws Exception {
+        PolicyEnforcementContext context = context(new LdapUser(-3823, "cn=test\\+1, ou=foobar, o=bling", "test+1"));
+        expandAndCheck(context, "${request.authenticatedDn}", "cn=test\\+1, ou=foobar, o=bling");
+        expandAndCheck(context, "${request.authenticatedDns}", "cn=test\\+1, ou=foobar, o=bling");
+    }
+
+    @Test
+    @BugNumber(6813)
+    public void testMultipleUserDnsEscaped() throws Exception {
+        PolicyEnforcementContext context = context();
+        context.addAuthenticationResult(new AuthenticationResult(new LdapUser(-3823, "cn=test\\+1, ou=foobar, o=bling", "test+1")));
+        context.addAuthenticationResult(new AuthenticationResult(new LdapUser(-3824, "cn=test\\+2", "test+2")));
+        context.addAuthenticationResult(new AuthenticationResult(new LdapUser(-3825, "cn=test\\+3", "test+3")));
+        expandAndCheck(context, "||${request.authenticatedDns|||}||", "||cn=test\\+1, ou=foobar, o=bling||cn=test\\+2||cn=test\\+3||");
+        expandAndCheck(context, "${request.authenticatedDns}", "cn=test\\+1, ou=foobar, o=bling, cn=test\\+2, cn=test\\+3");
+        expandAndCheck(context, "${request.authenticatedDns|, }", "cn=test\\+1, ou=foobar, o=bling, cn=test\\+2, cn=test\\+3");
+        expandAndCheck(context, "${request.authenticatedDn}", "cn=test\\+3");
+        expandAndCheck(context, "${request.authenticatedDn.0}", "cn=test\\+1, ou=foobar, o=bling");
+    }
 
     /*
     * Test the service.url context variable and associated suffixes
@@ -141,7 +273,7 @@ public class ServerVariablesTest {
         Assert.assertEquals("ServerVariable should equal httpRouting url query", query, variableValue);
     }
 
-    private PolicyEnforcementContext getPolicyEncorcementContext(){
+    private PolicyEnforcementContext context(){
         Message request = new Message();
         request.initialize(XmlUtil.stringAsDocument("<myrequest/>"));
         Message response = new Message();
@@ -149,4 +281,16 @@ public class ServerVariablesTest {
         return new PolicyEnforcementContext(request, response);
     }
 
+    private void expandAndCheck(PolicyEnforcementContext context, String expression, String expectedValue) throws IOException, PolicyAssertionException {
+        String[] usedVars = Syntax.getReferencedNames(expression);
+        Map<String,Object> vars = context.getVariableMap(usedVars, auditor);
+        String expanded = ExpandVariables.process(expression, vars, auditor);
+        assertEquals(expectedValue, expanded);
+    }
+
+    private PolicyEnforcementContext context(User user) {
+        final PolicyEnforcementContext context = context();
+        context.addAuthenticationResult(new AuthenticationResult(user));
+        return context;
+    }
 }

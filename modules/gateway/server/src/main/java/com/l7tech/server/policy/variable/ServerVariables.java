@@ -3,20 +3,22 @@
  */
 package com.l7tech.server.policy.variable;
 
-import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.RequestId;
-import com.l7tech.message.*;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.identity.User;
+import com.l7tech.identity.ldap.LdapIdentity;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 
 import javax.wsdl.Operation;
@@ -24,13 +26,12 @@ import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.cert.CertificateEncodingException;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.cert.CertificateEncodingException;
 
 public class ServerVariables {
     private static final Logger logger = Logger.getLogger(ServerVariables.class.getName());
@@ -117,8 +118,10 @@ public class ServerVariables {
                 return tk == null ? null : tk.getRemoteHost();
             }
         }),
-        new Variable(BuiltinVariables.PREFIX_AUTHENTICATED_USER, new AuthenticatedUserGetter(BuiltinVariables.PREFIX_AUTHENTICATED_USER)),
-        new Variable(BuiltinVariables.PREFIX_AUTHENTICATED_USERS, new AuthenticatedUserGetter(BuiltinVariables.PREFIX_AUTHENTICATED_USERS)),
+            new Variable(BuiltinVariables.PREFIX_AUTHENTICATED_USER, new AuthenticatedUserGetter(BuiltinVariables.PREFIX_AUTHENTICATED_USER, false, AuthenticatedUserGetter.USER_TO_NAME)),
+            new Variable(BuiltinVariables.PREFIX_AUTHENTICATED_USERS, new AuthenticatedUserGetter(BuiltinVariables.PREFIX_AUTHENTICATED_USERS, true, AuthenticatedUserGetter.USER_TO_NAME)),
+            new Variable(BuiltinVariables.PREFIX_AUTHENTICATED_USER_DN, new AuthenticatedUserGetter(BuiltinVariables.PREFIX_AUTHENTICATED_USER_DN, false, AuthenticatedUserGetter.USER_TO_DN)),
+            new Variable(BuiltinVariables.PREFIX_AUTHENTICATED_USER_DNS, new AuthenticatedUserGetter(BuiltinVariables.PREFIX_AUTHENTICATED_USER_DNS, true, AuthenticatedUserGetter.USER_TO_DN)),
         new Variable("request.clientid", new Getter() {
             public Object get(String name, PolicyEnforcementContext context) {
                 User user = context.getLastAuthenticatedUser();
@@ -630,57 +633,71 @@ public class ServerVariables {
     }
 
     private static class AuthenticatedUserGetter implements Getter {
-        private String variableType;
-        public AuthenticatedUserGetter(String variableType) {
-            this.variableType = variableType;
+        private final String prefix;
+        private final boolean multivalued;
+        private final Functions.Unary<String, AuthenticationResult> userToValue;
+
+        private static final Functions.Unary<String,AuthenticationResult> USER_TO_NAME = new Functions.Unary<String, AuthenticationResult>() {
+            public String call(AuthenticationResult authResult) {
+                if (authResult == null) return null;
+                User authenticatedUser = authResult.getUser();
+                String user = null;
+                if (authenticatedUser != null) {
+                    user = authenticatedUser.getName();
+                    if (user == null) user = authenticatedUser.getId();
+                }
+                return user;
+            }
+        };
+
+        private static final Functions.Unary<String,AuthenticationResult> USER_TO_DN = new Functions.Unary<String, AuthenticationResult>() {
+            public String call(AuthenticationResult authResult) {
+                if (authResult == null) return null;
+                User user = authResult.getUser();
+                if (user instanceof LdapIdentity) {
+                    LdapIdentity ldapIdentity = (LdapIdentity) user;
+                    return ldapIdentity.getDn();
+                }
+                return user == null ? null : user.getSubjectDn();
+            }
+        };
+
+        public AuthenticatedUserGetter(String prefix, boolean multivalued, Functions.Unary<String,AuthenticationResult> property) {
+            this.prefix = prefix;
+            this.multivalued = multivalued;
+            this.userToValue = property;
         }
+
         public Object get(String name, PolicyEnforcementContext context) {
-            // The variable is request.authenticatedusers
-            if (BuiltinVariables.PREFIX_AUTHENTICATED_USERS.equals(variableType)) {
-                List<AuthenticationResult> authResultList = context.getAllAuthenticationResults();
-                List<String> authUsersList = new ArrayList<String>();
-                for (AuthenticationResult authResult : authResultList) {
-                    if (authResult != null) {
-                        authUsersList.add(authResult.getUser().getName());
-                    }
-                }
-                return authUsersList.toArray(new String[authUsersList.size()]);
+            final List<AuthenticationResult> authResults = context.getAllAuthenticationResults();
+            if (multivalued) {
+                final List<String> strings = Functions.map(authResults, userToValue);
+                return strings.toArray(new String[strings.size()]);
             }
-            // The variable is request.authenticateduser
-            else if (BuiltinVariables.PREFIX_AUTHENTICATED_USER.equals(variableType)) {
-                String suffix = name.substring(BuiltinVariables.PREFIX_AUTHENTICATED_USER.length());
-                if (suffix.length() == 0) { // Without suffix
-                    String user = null;
-                    User authenticatedUser = context.getLastAuthenticatedUser();
-                    if (authenticatedUser != null) {
-                        user = authenticatedUser.getName();
-                        if (user == null) user = authenticatedUser.getId();
-                    }
-                    return user;
-                } else { // With suffix
-                    if (!suffix.startsWith("."))
-                        throw new IllegalArgumentException("Variable '" + name + "' does not have a period before the parameter name.");
-                    String indexS = name.substring(BuiltinVariables.PREFIX_AUTHENTICATED_USER.length() + 1);
-                    try {
-                        int index = Integer.parseInt(indexS);
-                        AuthenticationResult ar = context.getAllAuthenticationResults().get(index);
-                        if (ar == null) {
-                            logger.info("Context variable " + name + " yielded null");
-                            return null;
-                        }
-                        return ar.getUser().getName();
-                    } catch (NumberFormatException e) {
-                        throw new IllegalArgumentException("Was expecting a number suffix with " + name + ". " + e.getMessage());
-                    } catch (IndexOutOfBoundsException e) {
-                        logger.info("not that many users authenticated: " + e.getMessage());
-                        // shouldn't throw here, we'll be nice
-                        return "";
-                    }
-                }
+
+            final int prefixLength = prefix.length();
+            String suffix = name.substring(prefixLength);
+            if (suffix.length() == 0) {
+                // Without suffix
+                return userToValue.call(context.getLastAuthenticationResult());
             }
-            // Otherwise, the variable is invalid.
-            logger.info("The context variable, '" + name + "' is invalid");
-            return null;
+
+            if (!suffix.startsWith("."))
+                throw new IllegalArgumentException("Variable '" + name + "' does not have a period before the parameter name.");
+
+            String indexS = name.substring(prefixLength + 1);
+            try {
+                int index = Integer.parseInt(indexS);
+                if (index < 0 || index >= authResults.size()) {
+                    logger.info((index < 0 ? "authentication result index out of range: " : "not enough authentication results: ") + index);
+                    return null;
+                }
+                AuthenticationResult ar = authResults.get(index);
+                return userToValue.call(ar);
+            } catch (NumberFormatException e) {
+                logger.info("Was expecting a number suffix with " + name + ". " + e.getMessage());
+                return null;
+            }
         }
     }
 
