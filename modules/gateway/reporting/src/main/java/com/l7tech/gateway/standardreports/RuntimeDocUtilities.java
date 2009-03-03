@@ -33,7 +33,6 @@ public class RuntimeDocUtilities {
     private static final int FRAME_MIN_WIDTH = 820;
     public static final String ALL_BORDERS_OPAQUE_CENTER_BROWN = "AllBordersOpaqueCenterBrown";
     private static final String ALL_BORDERS_GREY_CENTER = "AllBordersGreyCenter";
-    private static final int USAGE_HEADING_VALUE_MAX_SIZE = 35;
     private static final String LEFT_PADDED_HEADING_HTML = "LeftPaddedHeadingHtml";
 
     /**
@@ -79,13 +78,13 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-ServiceOperationFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_" + (i + 1) + "}",
-                    DEFAULT_CENTER_ALIGNED, false, false);
+                    DEFAULT_CENTER_ALIGNED, false, false, false, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                 "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{TOTAL}",
-                Utilities.ALL_BORDERS_GREY_CENTER, true, false);
+                Utilities.ALL_BORDERS_GREY_CENTER, true, false, false, false);
 
         Element noDataElement = doc.createElement(Utilities.NO_DATA);
         rootNode.appendChild(noDataElement);
@@ -205,47 +204,28 @@ public class RuntimeDocUtilities {
         return sb.toString();
     }
 
-    /**
-     * Get the runtime doc for performance statistics reports. Need to know what size to make the chart, create data
-     * for it's legend and remove unnecessary chart elements
-     *
-     * @param isContextMapping    are mapping keys being used or not
-     * @param groupToMappingValue a map of a shortened string to the string representing a set of mapping values
-     *                            to display as the category value in a chart:- <br>
-     *                            e.g. group 1 instead of IpAddress=...Customer=..., or service 1
-     *                            instead of Warehouse [routing uri].....
-     * @param isUsingKeys         are keys 1-5 or auth user being used? Used in conjunction with isContextMapping to tell
-     *                            the report if context mapping is being used ONLY to get at operation level data.
-     * @return a Document which can be used as parameter to transform a template jrxml file
-     */
-    public static Document getPerfStatAnyRuntimeDoc(boolean isContextMapping, boolean isUsingKeys,
-                                                    LinkedHashMap<String, String> groupToMappingValue) {
-        Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
-        Node rootNode = doc.getFirstChild();
-        //Create variables element
-        Element isCtxMapElement = doc.createElement(IS_CONTEXT_MAPPING);
-        rootNode.appendChild(isCtxMapElement);
-        //the style sheet uses just this element to know whether to show the normal chart or the group chart
-        //see the jrxml files which have two charts defined.
-        if (isContextMapping && isUsingKeys) {
-            isCtxMapElement.setTextContent("1");
-        } else {
-            isCtxMapElement.setTextContent("0");
-        }
 
+    private static Document getRuntimeEmptyDoc() {
+        Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
+        return doc;
+    }
+
+    private static void addPerfChartXml(Document doc, Map<String, String> displayMap) {
         //Create all the text fields for the chart legend
+        Node rootNode = doc.getFirstChild();
         Element chartLegend = doc.createElement(CHART_LEGEND);
         rootNode.appendChild(chartLegend);
+
         int x = 0;
         int y = 0;
         int vSpace = 2;
         int height = 18;
         int frameWidth = FRAME_MIN_WIDTH;
-
         int index = 0;
-        for (Map.Entry<String, String> me : groupToMappingValue.entrySet()) {
+
+        for (Map.Entry<String, String> me : displayMap.entrySet()) {
             addTextFieldToElement(doc, chartLegend, x, y, frameWidth, height, "chartLegendKey" + (index + 1), "java.lang.String",
-                    "<b>" + me.getKey() + ":</b> " + Utilities.escapeHtmlCharacters(me.getValue()), LEFT_PADDED_HEADING_HTML, false, true);
+                    "<b>" + me.getKey() + ":</b> " + Utilities.escapeHtmlCharacters(me.getValue()), LEFT_PADDED_HEADING_HTML, false, true, true, false);
 
             y += height + vSpace;
             index++;
@@ -253,7 +233,7 @@ public class RuntimeDocUtilities {
 
         //Chart height is minimum 130, if there are more than 2 mapping value sets then increase it
         int chartHeight = 130;
-        int numMappingSets = groupToMappingValue.size();
+        int numMappingSets = displayMap.size();
         if (numMappingSets > 2) {
             chartHeight += 30 * (numMappingSets - 2);
         }
@@ -295,8 +275,63 @@ public class RuntimeDocUtilities {
         rootNode.appendChild(pageHeightElement);
         pageHeightElement.setTextContent(String.valueOf(totalFirstPageHeight));
 
+    }
+
+    /**
+     * Get the runtime doc for performance statistics reports. Need to know what size to make the chart, create data
+     * for it's legend and remove unnecessary chart elements
+     *
+     * @param groupToMappingValue a map of a shortened string to the string representing a set of mapping values
+     *                            to display as the category value in a chart:- <br>
+     *                            e.g. group 1 instead of IpAddress=...Customer=..., or service 1
+     *                            instead of Warehouse [routing uri].....
+     * @return a Document which can be used as parameter to transform a template jrxml file
+     */
+    public static Document getPerfStatAnyRuntimeDoc(LinkedHashMap<String, String> groupToMappingValue) {
+        Document doc = getRuntimeEmptyDoc();
+        Node rootNode = doc.getFirstChild();
+
+        //Create variables element
+        Element isCtxMapElement = doc.createElement(IS_CONTEXT_MAPPING);
+        rootNode.appendChild(isCtxMapElement);
+        //the style sheet uses just this element to know whether to show the normal chart or the group chart
+        //see the jrxml files which have two charts defined.
+        isCtxMapElement.setTextContent("0");
+
+        addPerfChartXml(doc, groupToMappingValue);
+
         return doc;
     }
+
+    /**
+     * Get the runtime doc for performance statistics reports. Need to know what size to make the chart, create data
+     * for it's legend and remove unnecessary chart elements
+     * <p/>
+     * the report if context mapping is being used ONLY to get at operation level data.
+     *
+     * @return a Document which can be used as parameter to transform a template jrxml file
+     */
+    public static Document getPerfStatAnyRuntimeDoc(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
+                                                    LinkedHashSet<List<String>> distinctMappingSets) {
+        Document doc = getRuntimeEmptyDoc();
+        Node rootNode = doc.getFirstChild();
+        //Create variables element
+        Element isCtxMapElement = doc.createElement(IS_CONTEXT_MAPPING);
+        rootNode.appendChild(isCtxMapElement);
+        //the style sheet uses just this element to know whether to show the normal chart or the group chart
+        //see the jrxml files which have two charts defined.
+        isCtxMapElement.setTextContent("1");
+
+        Utilities.checkMappingQueryParams(keysToFilters, false, false);
+        LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
+                true, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
+        LinkedHashMap<String, String> groupToLegendDisplayStringMap = getGroupToLegendDisplayStringMap(mappingValuesLegend);
+
+        addPerfChartXml(doc, groupToLegendDisplayStringMap);
+
+        return doc;
+    }
+
 
     /**
      * Create a document, given the input properties, which will be used to transform the
@@ -318,7 +353,8 @@ public class RuntimeDocUtilities {
         //is detail is not considered a valid key for usage queries
         Utilities.checkMappingQueryParams(keysToFilters, false, true);
 
-        LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets);
+        LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
+                true, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
         /*
         * distinctMappingValues The set of distinct mapping values, which were determined earlier based on
         * the users selection of keys, key values, time and other constraints. Each string in the set is the
@@ -375,13 +411,13 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceHeader, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.MAPPING_VALUE_FIELD_HEIGHT,
                     "textField-serviceHeader-" + (i + 1), "java.lang.String", listMappingValues.get(i), Utilities.TOP_LEFT_BOTTOM_CENTER_BROWN,
-                    true, false);
+                    true, false, false, true);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceHeader, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.MAPPING_VALUE_FIELD_HEIGHT,
                 "textField-serviceHeader-ServiceTotals", "java.lang.String", "Service Totals", Utilities.ALL_BORDERS_OPAQUE_CENTER_BROWN,
-                true, false);
+                true, false, false, true);
 
         xPos += Utilities.TOTAL_COLUMN_WIDTH;
 
@@ -421,13 +457,13 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-ServiceOperationFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_OPERATION_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_OPERATION_" + (i + 1) + "}",
-                    Utilities.TOP_LEFT_BOTTOM_CENTER_GREY, true, false);
+                    Utilities.TOP_LEFT_BOTTOM_CENTER_GREY, true, false, false, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                 "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{ROW_OPERATION_TOTAL}",
-                Utilities.ALL_BORDERS_GREY_CENTER, true, false);
+                Utilities.ALL_BORDERS_GREY_CENTER, true, false, false, false);
 
         //serviceIdFooter
         Element serviceIdFooterElement = doc.createElement(Utilities.SERVICE_ID_FOOTER);
@@ -437,12 +473,12 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-ServiceIdFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_SERVICE_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_SERVICE_" + (i + 1) + "}",
-                    Utilities.TOP_LEFT_BOTTOM_CENTER_GREY, true, false);
+                    Utilities.TOP_LEFT_BOTTOM_CENTER_GREY, true, false, false, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{ROW_SERVICE_TOTAL}", Utilities.ALL_BORDERS_GREY_CENTER, true, false);
+                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{ROW_SERVICE_TOTAL}", Utilities.ALL_BORDERS_GREY_CENTER, true, false, false, false);
 
         //summary
         Element summaryElement = doc.createElement(Utilities.SUMMARY);
@@ -452,12 +488,12 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, summaryElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-constantFooter-" + (i + 1), "java.lang.Long", "$V{COLUMN_REPORT_" + (i + 1) + "}",
-                    Utilities.TOP_LEFT_GREY_CENTER, true, false);
+                    Utilities.TOP_LEFT_GREY_CENTER, true, false, false, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, summaryElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-constantFooterTotal", "java.lang.Long", "$V{ROW_REPORT_TOTAL}", Utilities.TOP_LEFT_RIGHT_GREY_CENTER, true, false);
+                "textField-constantFooterTotal", "java.lang.Long", "$V{ROW_REPORT_TOTAL}", Utilities.TOP_LEFT_RIGHT_GREY_CENTER, true, false, false, false);
 
         rootNode.appendChild(pageWidth);
         //columnWidth -is page width - left + right margin
@@ -565,7 +601,8 @@ public class RuntimeDocUtilities {
         //usage queires do not use isDetail to determine validity of parameters, it's not considered a key for usage reports
         Utilities.checkMappingQueryParams(keysToFilters, false, true);
 
-        LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets);
+        LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
+                true, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
 
         /*
         * distinctMappingValues The set of distinct mapping values, which were determined earlier based on
@@ -631,14 +668,14 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, constantHeader, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.MAPPING_VALUE_FIELD_HEIGHT,
                     "textField-constantHeader-" + (i + 1), "java.lang.String", listMappingValues.get(i), Utilities.TOP_LEFT_BOTTOM_CENTER_BROWN,
-                    false, false);
+                    false, false, false, true);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
         //move x pos along for width of a column
 
         addTextFieldToElement(doc, constantHeader, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.MAPPING_VALUE_FIELD_HEIGHT,
                 "textField-constantHeader-ServiceTotals", "java.lang.String", "Service Totals", ALL_BORDERS_OPAQUE_CENTER_BROWN,
-                false, false);
+                false, false, false, true);
 
         xPos += Utilities.TOTAL_COLUMN_WIDTH;
 
@@ -658,13 +695,13 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-ServiceOperationFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_" + (i + 1) + "}",
-                    DEFAULT_CENTER_ALIGNED, false, false);
+                    DEFAULT_CENTER_ALIGNED, false, false, false, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                 "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{SERVICE_AND_OR_OPERATION_TOTAL}",
-                ALL_BORDERS_GREY_CENTER, true, false);
+                ALL_BORDERS_GREY_CENTER, true, false, false, false);
 
         //serviceIdFooter
         Element serviceIdFooterElement = doc.createElement(Utilities.SERVICE_ID_FOOTER);
@@ -674,12 +711,12 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-ServiceIdFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_SERVICE_TOTAL_" + (i + 1) + "} == null || $V{COLUMN_SERVICE_TOTAL_" + (i + 1) + "}.intValue() == 0)?new Long(0):$V{COLUMN_SERVICE_TOTAL_" + (i + 1) + "}",
-                    Utilities.TOP_LEFT_BOTTOM_CENTER_GREY, true, false);
+                    Utilities.TOP_LEFT_BOTTOM_CENTER_GREY, true, false, false, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{SERVICE_ONLY_TOTAL}", Utilities.ALL_BORDERS_GREY_CENTER, true, false);
+                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{SERVICE_ONLY_TOTAL}", Utilities.ALL_BORDERS_GREY_CENTER, true, false, false, false);
 
         //constantFooter
         Element constantFooterElement = doc.createElement(Utilities.CONSTANT_FOOTER);
@@ -689,12 +726,12 @@ public class RuntimeDocUtilities {
         for (int i = 0; i < numMappingValues; i++) {
             addTextFieldToElement(doc, constantFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
                     "textField-constantFooter-" + (i + 1), "java.lang.Long", "$V{COLUMN_MAPPING_TOTAL_" + (i + 1) + "}",
-                    Utilities.TOP_LEFT_GREY_CENTER, true, false);
+                    Utilities.TOP_LEFT_GREY_CENTER, true, false, false, false);
             xPos += Utilities.DATA_COLUMN_WIDTH;
         }
 
         addTextFieldToElement(doc, constantFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-constantFooterTotal", "java.lang.Long", "$V{GRAND_TOTAL}", Utilities.TOP_LEFT_RIGHT_GREY_CENTER, true, false);
+                "textField-constantFooterTotal", "java.lang.Long", "$V{GRAND_TOTAL}", Utilities.TOP_LEFT_RIGHT_GREY_CENTER, true, false, false, false);
 
 
         rootNode.appendChild(pageWidth);
@@ -728,10 +765,11 @@ public class RuntimeDocUtilities {
      * @param distinctMappingSets represents the runtime report meta data, which are the distinct set of mapping values
      *                            that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
      *                            followed by 5 mapping values
-     * @return
+     * @param truncateValues
+     * @param truncateMaxSize     @return
      */
     public static LinkedHashSet<String> getMappingLegendValues(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
-                                                               LinkedHashSet<List<String>> distinctMappingSets) {
+                                                               LinkedHashSet<List<String>> distinctMappingSets, boolean truncateValues, Integer truncateMaxSize) {
         LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
 
         for (List<String> set : distinctMappingSets) {
@@ -752,7 +790,7 @@ public class RuntimeDocUtilities {
                 mappingStringsArray[i] = Utilities.SQL_PLACE_HOLDER;
             }
             String mappingValue = Utilities.getMappingValueDisplayString(keysToFilters,
-                    authUser, mappingStringsArray, false, null);
+                    authUser, mappingStringsArray, false, null, truncateValues, truncateMaxSize);
             mappingValues.add(mappingValue);
         }
 
@@ -789,7 +827,7 @@ public class RuntimeDocUtilities {
         for (Map.Entry<String, String> me : groupToMappingValue.entrySet()) {
 
             addTextFieldToElement(doc, chartLegend, x, y, frameWidth, height, "chartLegendKey" + (index + 1), "java.lang.String",
-                    "<b>" + me.getKey() + ":</b> " + Utilities.escapeHtmlCharacters(me.getValue()), LEFT_PADDED_HEADING_HTML, false, true);
+                    "<b>" + me.getKey() + ":</b> " + Utilities.escapeHtmlCharacters(me.getValue()), LEFT_PADDED_HEADING_HTML, false, true, true, false);
 
             y += height + vSpace;
             index++;
@@ -858,7 +896,7 @@ public class RuntimeDocUtilities {
 
         boolean first = true;
         if (!authUser.equals(Utilities.SQL_PLACE_HOLDER)) {
-            sb.append(TextUtils.truncStringMiddleExact(authUser, USAGE_HEADING_VALUE_MAX_SIZE));
+            sb.append(TextUtils.truncStringMiddleExact(authUser, Utilities.USAGE_HEADING_VALUE_MAX_SIZE));
             first = false;
         }
 
@@ -868,7 +906,7 @@ public class RuntimeDocUtilities {
             }
             first = false;
             if (!s.equals(Utilities.SQL_PLACE_HOLDER))
-                sb.append(TextUtils.truncStringMiddleExact(s, USAGE_HEADING_VALUE_MAX_SIZE));
+                sb.append(TextUtils.truncStringMiddleExact(s, Utilities.USAGE_HEADING_VALUE_MAX_SIZE));
         }
 
         return sb.toString();
@@ -905,10 +943,12 @@ public class RuntimeDocUtilities {
      * @param markedUpCData            if data is to be included, then it's put inside a CDATA section to avoid any illegal chars
      * @param style                    the style to apply to the text field
      * @param isHtmlFormatted
+     * @param floatElement
+     * @param stretchElement
      */
     private static void addTextFieldToElement(Document doc, Element frameElement, int x, int y, int width, int height,
                                               String key, String textFieldExpressionClass, String markedUpCData,
-                                              String style, boolean opaque, boolean isHtmlFormatted) {
+                                              String style, boolean opaque, boolean isHtmlFormatted, boolean floatElement, boolean stretchElement) {
         Element textField = doc.createElement("textField");
         textField.setAttribute("isStretchWithOverflow", "true");
         textField.setAttribute("isBlankWhenNull", "false");
@@ -923,6 +963,11 @@ public class RuntimeDocUtilities {
         reportElement.setAttribute("height", String.valueOf(height));
         reportElement.setAttribute("key", key);
         reportElement.setAttribute("style", style);
+
+        if (stretchElement) reportElement.setAttribute("stretchType", "RelativeToTallestObject");
+
+        if (floatElement) reportElement.setAttribute("positionType", "Float");
+
         if (opaque) reportElement.setAttribute("mode", "Opaque");
 
         textField.appendChild(reportElement);

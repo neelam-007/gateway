@@ -6,6 +6,7 @@
  * ReportApp is a CLI program to test jasper reports. Depends on report.properties being in the same directory
  */
 package com.l7tech.skunkworks.standardreports;
+
 import java.io.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -14,7 +15,6 @@ import java.sql.Statement;
 import java.util.*;
 
 import net.sf.jasperreports.engine.*;
-import net.sf.jasperreports.view.JasperViewer;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.standardreports.UsageSummaryAndSubReportHelper;
@@ -33,12 +33,11 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
 
 
-public class ReportApp
-{
-	private static final String TASK_RUN = "run";
+public class ReportApp {
+    private static final String TASK_RUN = "run";
 
     //The following params must be supplied when filling the report
-    private static final String REPORT_CONNECTION= "REPORT_CONNECTION";
+    private static final String REPORT_CONNECTION = "REPORT_CONNECTION";
     private static final String REPORT_TYPE = "REPORT_TYPE";
     private static final String INTERVAL_TIME_UNIT = "INTERVAL_TIME_UNIT";
     private static final String INTERVAL_NUM_OF_TIME_UNITS = "INTERVAL_NUM_OF_TIME_UNITS";
@@ -63,7 +62,7 @@ public class ReportApp
     private static final String ABSOLUTE_END_TIME = "ABSOLUTE_END_TIME";
 
     public static final String KEYS_TO_LIST_FILTER_PAIRS = "KEYS_TO_LIST_FILTER_PAIRS";
-    
+
     public static final String MAPPING_KEY_ = "MAPPING_KEY_";
     public static final String VALUE_ = "_VALUE_";
 
@@ -92,16 +91,16 @@ public class ReportApp
 
     private static final String SPECIFIC_TIME_ZONE = "SPECIFIC_TIME_ZONE";
     private static final String IS_USING_KEYS = "IS_USING_KEYS";
+    private static final String IS_IGNORE_PAGINATION = "IS_IGNORE_PAGINATION";
 
     public ReportApp() {
     }
 
     /**
-	 *
-	 */
-    public static void main(String[] args) throws Exception{
-        if(args.length == 0)
-        {
+     *
+     */
+    public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
             usage();
             return;
         }
@@ -111,43 +110,36 @@ public class ReportApp
 
     }
 
-    public void run(String taskName) throws Exception
-	{
+    public void run(String taskName) throws Exception {
 
         File f = new File(SKUNKWORK_RELATIVE_PATH);
-        if(!f.exists()){
-            if(!f.mkdir()){
+        if (!f.exists()) {
+            if (!f.mkdir()) {
                 throw new RuntimeException("Cannot create folder: " + SKUNKWORK_RELATIVE_PATH);
-            }else{
-                System.out.println("Creating outupt directory where transformed jrxml and xml documents will be outputted to");                
+            } else {
+                System.out.println("Creating outupt directory where transformed jrxml and xml documents will be outputted to");
             }
         }
 
-        FileInputStream fileInputStream = new FileInputStream("report.properties");
-        prop.load(fileInputStream);
-        try
-		{
-			long start = System.currentTimeMillis();
-            if (TASK_RUN.equals(taskName))
-			{
+        InputStream in = ReportApp.class.getResourceAsStream("/com/l7tech/skunkworks/standardreports/test/report.properties");
+        prop.load(in);
+        try {
+            long start = System.currentTimeMillis();
+            if (TASK_RUN.equals(taskName)) {
                 fill(start);
-			}
-            else
-			{
-				usage();
-			}
-		}
-		catch (JRException e)
-		{
-			e.printStackTrace();
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-	}
+            } else {
+                usage();
+            }
+        }
+        catch (JRException e) {
+            e.printStackTrace();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-    private void fill(long start) throws Exception{
+    private void fill(long start) throws Exception {
         Map<String, Object> parameters = getParameters();
         String type = parameters.get(REPORT_TYPE).toString();
 
@@ -173,25 +165,25 @@ public class ReportApp
 
         String sql;
         Boolean isUsage = Boolean.valueOf(prop.getProperty("IS_USAGE"));
-        if(isContextMapping && isUsingKeys){
+        if (isContextMapping && isUsingKeys) {
             sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
-        }else if(isContextMapping){
+        } else if (isContextMapping) {
             sql = Utilities.getPerformanceStatisticsMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
-        }else{
+        } else {
             sql = Utilities.getNoMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp.keySet(), resolution);
         }
         //System.out.println("Distinct sql: " + sql);
-        
-        if(!type.equals("Usage") && !type.equals("Usage_Interval")){
-            if(type.equals("Performance_Interval")){
+
+        if (!type.equals("Usage") && !type.equals("Usage_Interval")) {
+            if (type.equals("Performance_Interval")) {
                 runPerfStatIntervalReport(isContextMapping, isUsingKeys, prop, parameters, sql, keysToFilterPairs);
-            }else{
+            } else {
                 runPerfStatSummaryReport(isContextMapping, isUsingKeys, prop, parameters, sql, keysToFilterPairs);
             }
-        }else{
-            if(type.equals("Usage")){
+        } else {
+            if (type.equals("Usage")) {
                 runUsageReport(prop, parameters, scriplet, sql, keysToFilterPairs);
-            }else if(type.equals("Usage_Interval")){
+            } else if (type.equals("Usage_Interval")) {
                 runUsageIntervalReport(prop, parameters, scriplet, sql, keysToFilterPairs);
             }
         }
@@ -199,17 +191,17 @@ public class ReportApp
         System.err.println("Filling time : " + (System.currentTimeMillis() - start));
     }
 
-    public static LinkedHashMap<String, String> loadMapFromProperties(String key1, String key2, Properties prop){
+    public static LinkedHashMap<String, String> loadMapFromProperties(String key1, String key2, Properties prop) {
 
-        LinkedHashMap<String, String> returnMap = new LinkedHashMap<String,String>();
-        String key1Name = prop.getProperty(key1+"_1");
-        String key2Name = prop.getProperty(key2+"_1");
+        LinkedHashMap<String, String> returnMap = new LinkedHashMap<String, String>();
+        String key1Name = prop.getProperty(key1 + "_1");
+        String key2Name = prop.getProperty(key2 + "_1");
         int index = 2;
 
-        while(key1Name != null && key2Name != null){
+        while (key1Name != null && key2Name != null) {
             returnMap.put(key1Name, key2Name);
-            key1Name = prop.getProperty(key1+"_"+index);
-            key2Name = prop.getProperty(key2+"_"+index);
+            key1Name = prop.getProperty(key1 + "_" + index);
+            key2Name = prop.getProperty(key2 + "_" + index);
             index++;
         }
 
@@ -217,45 +209,45 @@ public class ReportApp
     }
 
 
-    public static LinkedHashMap<String, List<ReportApi.FilterPair>> getFilterPairMap(Properties prop){
+    public static LinkedHashMap<String, List<ReportApi.FilterPair>> getFilterPairMap(Properties prop) {
         LinkedHashMap<String, List<ReportApi.FilterPair>> returnMap = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
 
         int index = 1;
-        String keyName = prop.getProperty(MAPPING_KEY_+index);
-        while(keyName != null){
+        String keyName = prop.getProperty(MAPPING_KEY_ + index);
+        while (keyName != null) {
             int valueIndex = 1;
             ReportApi.FilterPair defaultFilter = new ReportApi.FilterPair();
             List<ReportApi.FilterPair> filterList = new ArrayList<ReportApi.FilterPair>();
 
             //any values for this key?
 
-            String keyValue = prop.getProperty(MAPPING_KEY_+index+VALUE_+valueIndex);
-            while(keyValue != null){
+            String keyValue = prop.getProperty(MAPPING_KEY_ + index + VALUE_ + valueIndex);
+            while (keyValue != null) {
                 //todo [Donal] replace wildcard with %
                 ReportApi.FilterPair filter = new ReportApi.FilterPair(keyValue);
                 filterList.add(filter);
                 valueIndex++;
-                keyValue = prop.getProperty(MAPPING_KEY_+index+VALUE_+valueIndex);
+                keyValue = prop.getProperty(MAPPING_KEY_ + index + VALUE_ + valueIndex);
             }
-            
-            if(filterList.isEmpty()) filterList.add(defaultFilter);
+
+            if (filterList.isEmpty()) filterList.add(defaultFilter);
             returnMap.put(keyName, filterList);
             index++;
-            keyName = prop.getProperty(MAPPING_KEY_+index);            
+            keyName = prop.getProperty(MAPPING_KEY_ + index);
         }
 
         return returnMap;
     }
 
-    public static List<String> loadListFromProperties(String key, Properties prop){
+    public static List<String> loadListFromProperties(String key, Properties prop) {
 
         List<String> returnList = new ArrayList<String>();
-        String key1Name = prop.getProperty(key+"_1");
+        String key1Name = prop.getProperty(key + "_1");
         int index = 2;
 
-        while(key1Name != null){
+        while (key1Name != null) {
             returnList.add(key1Name);
-            key1Name = prop.getProperty(key+"_"+index);
+            key1Name = prop.getProperty(key + "_" + index);
             index++;
         }
 
@@ -264,31 +256,32 @@ public class ReportApp
 
     /**
      * Get the ordered set of distinct mapping sets for the keys and values in the sql string from the db
+     *
      * @param connection
      * @param sql
      * @return
      * @throws Exception
      */
-    public static LinkedHashSet<List<String>> getDistinctMappingSets(Connection connection, String sql) throws Exception{
+    public static LinkedHashSet<List<String>> getDistinctMappingSets(Connection connection, String sql) throws Exception {
         LinkedHashSet<List<String>> returnSet = new LinkedHashSet<List<String>>();
 
-        try{
+        try {
             Statement stmt = connection.createStatement();
             LinkedHashSet<String> set = new LinkedHashSet<String>();
             ResultSet rs = stmt.executeQuery(sql);
 
-            while(rs.next()){
+            while (rs.next()) {
                 List<String> mappingStrings = new ArrayList<String>();
                 String authUser = rs.getString(Utilities.AUTHENTICATED_USER);
                 mappingStrings.add(authUser);
-                for(int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++){
-                    mappingStrings.add(rs.getString("MAPPING_VALUE_"+(i+1)));
+                for (int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++) {
+                    mappingStrings.add(rs.getString("MAPPING_VALUE_" + (i + 1)));
                 }
                 returnSet.add(mappingStrings);
             }
-        }catch(Exception ex){
-            if(connection != null) connection.close();
-            throw(ex);
+        } catch (Exception ex) {
+            if (connection != null) connection.close();
+            throw (ex);
         }
         return returnSet;
     }
@@ -316,29 +309,29 @@ public class ReportApp
 //        }
 //    }
 
-    private LinkedHashSet<String> getServiceDisplayStrings(Connection connection, String sql) throws Exception{
-        try{
+    private LinkedHashSet<String> getServiceDisplayStrings(Connection connection, String sql) throws Exception {
+        try {
             Statement stmt = connection.createStatement();
             LinkedHashSet<String> set = new LinkedHashSet<String>();
             ResultSet rs = stmt.executeQuery(sql);
 
-            while(rs.next()){
+            while (rs.next()) {
                 String serviceName = rs.getString(Utilities.SERVICE_NAME);
                 String routingUri = rs.getString(Utilities.ROUTING_URI);
-                String service = Utilities.getServiceDisplayStringNotTruncated(serviceName, routingUri);
+                String service = Utilities.getServiceDisplayStringNotTruncatedNoEscape(serviceName, routingUri);
                 set.add(service);
             }
             return set;
 
-        }catch(Exception ex){
-            if(connection != null) connection.close();
-            throw(ex);
+        } catch (Exception ex) {
+            if (connection != null) connection.close();
+            throw (ex);
         }
     }
 
     private void runUsageIntervalReport(Properties prop, Map parameters, Object scriplet, String sql,
-                                       LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs)
-                                                                    throws Exception{
+                                        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs)
+            throws Exception {
         UsageReportHelper helper = (UsageReportHelper) scriplet;
         Connection connection = getConnection(prop);
         LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
@@ -348,56 +341,55 @@ public class ReportApp
         summaryAndSubReportHelper.setKeyToColumnMap(keyToColumnName);
         parameters.put(SUB_REPORT_HELPER, summaryAndSubReportHelper);
 
-        LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
+        LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null);
         LinkedHashMap<Integer, String> groupIndexToGroup = Utilities.getGroupIndexToGroupString(mappingValuesLegend);
         helper.setIndexToGroupMap(groupIndexToGroup);
-        
+
         //Master report first
         Document transformDoc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
 
-        File f = new File(SKUNKWORK_RELATIVE_PATH +"/UsageMasterTransformDoc.xml");
+        File f = new File(SKUNKWORK_RELATIVE_PATH + "/UsageMasterTransformDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
-        String xslStr = getResAsString(REPORTING_RELATIVE_PATH +"/UsageReportIntervalTransform_Master.xsl");
-        String xmlFileName = getResAsString(REPORTING_RELATIVE_PATH +"/Usage_IntervalMasterReport_Template.jrxml");
+        String xslStr = getResAsString(REPORTING_RELATIVE_PATH + "/UsageReportIntervalTransform_Master.xsl");
+        String xmlFileName = getResAsString(REPORTING_RELATIVE_PATH + "/Usage_IntervalMasterReport_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("FrameMinWidth", 820);
         params.put("PageMinWidth", 850);
-        params.put("ReportInfoStaticTextSize", 128);
         params.put("TitleInnerFrameBuffer", 7);
 
         //Document doc = transform(xslStr, xmlStr, params);
         Document jasperMasterDoc = transform(xslStr, xmlFileName, params);
 
-        f = new File(SKUNKWORK_RELATIVE_PATH +"/UsageMasterJasperRuntimeDoc.xml");
+        f = new File(SKUNKWORK_RELATIVE_PATH + "/UsageMasterJasperRuntimeDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(jasperMasterDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
         //MasterSubInterval report
         transformDoc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
-        f = new File(SKUNKWORK_RELATIVE_PATH +"/UsageSubIntervalTransformDoc.xml");
+        f = new File(SKUNKWORK_RELATIVE_PATH + "/UsageSubIntervalTransformDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
-        xslStr = getResAsString(REPORTING_RELATIVE_PATH +"/UsageReportSubIntervalTransform_Master.xsl");
-        xmlFileName = getResAsString(REPORTING_RELATIVE_PATH +"/Usage_SubIntervalMasterReport_Template.jrxml");
+        xslStr = getResAsString(REPORTING_RELATIVE_PATH + "/UsageReportSubIntervalTransform_Master.xsl");
+        xmlFileName = getResAsString(REPORTING_RELATIVE_PATH + "/Usage_SubIntervalMasterReport_Template.jrxml");
         params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 820);
@@ -405,41 +397,41 @@ public class ReportApp
         //Document doc = transform(xslStr, xmlStr, params);
         Document jasperSubIntervalDoc = transform(xslStr, xmlFileName, params);
 
-        f = new File(SKUNKWORK_RELATIVE_PATH +"/SubIntervalJasperRuntimeDoc.xml");
+        f = new File(SKUNKWORK_RELATIVE_PATH + "/SubIntervalJasperRuntimeDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(jasperSubIntervalDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
         //subreport report
         transformDoc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
-        f = new File(SKUNKWORK_RELATIVE_PATH +"/UsageSubReportTransformDoc.xml");
+        f = new File(SKUNKWORK_RELATIVE_PATH + "/UsageSubReportTransformDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
-        xslStr = getResAsString(REPORTING_RELATIVE_PATH+"/Usage_SubReport.xsl");
-        xmlFileName = getResAsString(REPORTING_RELATIVE_PATH+"/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
+        xslStr = getResAsString(REPORTING_RELATIVE_PATH + "/Usage_SubReport.xsl");
+        xmlFileName = getResAsString(REPORTING_RELATIVE_PATH + "/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
         params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
-        params.put("PageMinWidth", 820);
+        params.put("PageMinWidth", 707);
 
         //Document doc = transform(xslStr, xmlStr, params);
         Document jasperSubReportDoc = transform(xslStr, xmlFileName, params);
 
-        f = new File(SKUNKWORK_RELATIVE_PATH+"UsageSubReportJasperRuntimeDoc.xml");
+        f = new File(SKUNKWORK_RELATIVE_PATH + "/UsageSubReportJasperRuntimeDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(jasperSubReportDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
@@ -461,75 +453,79 @@ public class ReportApp
 
         parameters.put(SUB_INTERVAL_SUB_REPORT, subIntervalReport);
         parameters.put(SUB_REPORT, subReport);
-        
+
         System.out.println("Reports compiled");
 
         JasperPrint jp = null;
-        try{
+        try {
             System.out.println("Filling report");
             jp = JasperFillManager.fillReport(masterReport, parameters, connection);
             System.out.println("Report filled");
-        }finally{
+        } finally {
             connection.close();
         }
 
-        System.out.println("Viewing...");
-        try{
-            JasperViewer.viewReport(jp, false);
-        }catch(Exception ex){
-            System.out.println("Exception: " + ex.getMessage());
-            ex.printStackTrace();
-        }
+//        System.out.println("Viewing...");
+//        try{
+//            JasperViewer.viewReport(jp, false);
+//        }catch(Exception ex){
+//            System.out.println("Exception: " + ex.getMessage());
+//            ex.printStackTrace();
+//        }
 
-        JasperExportManager.exportReportToPdfFile(jp,"UsageInterval.pdf");
+        JasperExportManager.exportReportToPdfFile(jp, "UsageInterval.pdf");
+        JasperExportManager.exportReportToHtmlFile(jp, "UsageInterval.html");
 
     }
 
     private void runPerfStatSummaryReport(boolean isContextMapping, boolean isUsingKeys, Properties prop, Map parameters,
-                                           String sql, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) throws Exception{
+                                          String sql, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) throws Exception {
         Connection connection = getConnection(prop);
 
         LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
         LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
 
-        if(isContextMapping && isUsingKeys){
+        Document transformDoc = null;
+        if (isContextMapping && isUsingKeys) {
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
-            LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
+            LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
-            for(String s: mappingValuesLegend){
-                String group = "Group "+index;
+            for (String s : mappingValuesLegend) {
+                String group = "Group " + index;
                 //System.out.println("Group: " + group+" s: " + s);
                 groupToDisplayString.put(group, s);
                 displayStringToGroup.put(s, group);
                 index++;
             }
 
-        }else{
+            transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        } else {
             LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sql);
             //We need to look up the mappingValues from both the group value and also the display string value
             int index = 1;
-            for(String s: serviceValues){
-                String service = "Service "+index;
+            for (String s : serviceValues) {
+                String service = "Service " + index;
                 //System.out.println("Service: " + service+" s: " + s);
                 groupToDisplayString.put(service, s);
                 displayStringToGroup.put(s, service);
                 index++;
             }
+            transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(groupToDisplayString);
         }
 
         //Set the parameter IS_USING_KEYS to let chart know if operation is being used alone, to make some display changes
 
-        parameters.put(IS_USING_KEYS, isUsingKeys );
+        parameters.put(IS_USING_KEYS, isUsingKeys);
 
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
 
+        parameters.put(IS_IGNORE_PAGINATION, new Boolean(true));
 
-        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(isContextMapping, isUsingKeys, groupToDisplayString);
 
-        String xslStr = getResAsString(REPORTING_RELATIVE_PATH+"/PS_SummaryTransform.xsl");
-        String xmlSrc = getResAsString(REPORTING_RELATIVE_PATH+"/PS_Summary_Template.jrxml");
+        String xslStr = getResAsString(REPORTING_RELATIVE_PATH + "/PS_SummaryTransform.xsl");
+        String xmlSrc = getResAsString(REPORTING_RELATIVE_PATH + "/PS_Summary_Template.jrxml");
         //String xmlSrc = getResAsString(SKUNKWORK_RELATIVE_PATH+"/PS_Summary_Template_New_Title.jrxml");
 
         Map<String, Object> params = new HashMap<String, Object>();
@@ -537,12 +533,12 @@ public class ReportApp
 
         Document jasperDoc = transform(xslStr, xmlSrc, params);
 
-        File f = new File(SKUNKWORK_RELATIVE_PATH+"/PS_SummaryRuntimeDoc.xml");
+        File f = new File(SKUNKWORK_RELATIVE_PATH + "/PS_SummaryRuntimeDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
@@ -554,36 +550,38 @@ public class ReportApp
         System.out.println("Report compiled");
 
         JasperPrint jp = null;
-        try{
+        try {
             System.out.println("Filling summaryReport");
             jp = JasperFillManager.fillReport(summaryReport, parameters, connection);
             System.out.println("Report filled");
-        }finally{
+        } finally {
             connection.close();
         }
 
-        System.out.println("Viewing...");
-        try{
-            JasperViewer.viewReport(jp, false);
-        }catch(Exception ex){
-            System.out.println("Exception: " + ex.getMessage());
-            ex.printStackTrace();
-        }
+//        System.out.println("Viewing...");
+//        try{
+//            JasperViewer.viewReport(jp, false);
+//        }catch(Exception ex){
+//            System.out.println("Exception: " + ex.getMessage());
+//            ex.printStackTrace();
+//        }
 
-        JasperExportManager.exportReportToPdfFile(jp,"PS_Summary.pdf");
+        JasperExportManager.exportReportToPdfFile(jp, "PS_Summary.pdf");
+
+        JasperExportManager.exportReportToHtmlFile(jp, "PS_Summary.html");
 
     }
 
 
     private void runPerfStatIntervalReport(boolean isContextMapping, boolean isUsingKeys, Properties prop, Map parameters,
-                                           String sql, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) throws Exception{
+                                           String sql, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) throws Exception {
 
         //Compile both subreports and add to parameters
-        String subIntervalReport = getResAsString(REPORTING_RELATIVE_PATH+"/PS_SubIntervalMasterReport.jrxml");
+        String subIntervalReport = getResAsString(REPORTING_RELATIVE_PATH + "/PS_SubIntervalMasterReport.jrxml");
         ByteArrayInputStream bais = new ByteArrayInputStream(subIntervalReport.getBytes("UTF-8"));
         JasperReport subIntervalCompiledReport = JasperCompileManager.compileReport(bais);
 
-        String subReport = getResAsString(REPORTING_RELATIVE_PATH+"/PS_SubIntervalMasterReport_subreport0.jrxml");
+        String subReport = getResAsString(REPORTING_RELATIVE_PATH + "/PS_SubIntervalMasterReport_subreport0.jrxml");
         bais = new ByteArrayInputStream(subReport.getBytes("UTF-8"));
         JasperReport subCompiledReport = JasperCompileManager.compileReport(bais);
 
@@ -594,63 +592,64 @@ public class ReportApp
         Document transformDoc = null;
         LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
         LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
-        
-        if(isContextMapping && isUsingKeys){
+
+        if (isContextMapping && isUsingKeys) {
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
-            LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
+            LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
-            for(String s: mappingValuesLegend){
-                String group = "Group "+index;
+            for (String s : mappingValuesLegend) {
+                String group = "Group " + index;
                 //System.out.println("Group: " + group+" s: " + s);
                 groupToDisplayString.put(group, s);
                 displayStringToGroup.put(s, group);
                 index++;
             }
 
-        }else{
+            transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        } else {
             LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sql);
             //We need to look up the mappingValues from both the group value and also the display string value
             int index = 1;
-            for(String s: serviceValues){
-                String service = "Service "+index;
+            for (String s : serviceValues) {
+                String service = "Service " + index;
                 //System.out.println("Service: " + service+" s: " + s);
                 groupToDisplayString.put(service, s);
                 displayStringToGroup.put(s, service);
                 index++;
             }
+            transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(groupToDisplayString);
         }
 
-        parameters.put(IS_USING_KEYS, isUsingKeys );
-        
-        parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
-        transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(isContextMapping, isUsingKeys, groupToDisplayString);
+        parameters.put(IS_USING_KEYS, isUsingKeys);
 
-        File f = new File(SKUNKWORK_RELATIVE_PATH+"/PS_IntervalTransformDoc.xml");
+        parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
+
+        File f = new File(SKUNKWORK_RELATIVE_PATH + "/PS_IntervalTransformDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
 
-        String xslStr = getResAsString(REPORTING_RELATIVE_PATH+"/PS_IntervalMasterTransform.xsl");
-        String xmlSrc = getResAsString(REPORTING_RELATIVE_PATH+"/PS_IntervalMasterReport_Template.jrxml");
+        String xslStr = getResAsString(REPORTING_RELATIVE_PATH + "/PS_IntervalMasterTransform.xsl");
+        String xmlSrc = getResAsString(REPORTING_RELATIVE_PATH + "/PS_IntervalMasterReport_Template.jrxml");
 
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
 
         Document jasperDoc = transform(xslStr, xmlSrc, params);
 
-        f = new File(SKUNKWORK_RELATIVE_PATH+"/PS_IntervalRuntimeDoc.xml");
+        f = new File(SKUNKWORK_RELATIVE_PATH + "/PS_IntervalRuntimeDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
@@ -663,67 +662,67 @@ public class ReportApp
         System.out.println("Report compiled");
 
         JasperPrint jp = null;
-        try{
+        try {
             System.out.println("Filling intervalMasterReport");
             jp = JasperFillManager.fillReport(intervalMasterReport, parameters, connection);
             System.out.println("Report filled");
-        }finally{
+        } finally {
             connection.close();
         }
 
-        System.out.println("Viewing...");
-        try{
-            JasperViewer.viewReport(jp, false);
-        }catch(Exception ex){
-            System.out.println("Exception: " + ex.getMessage());
-            ex.printStackTrace();
-        }
+//        System.out.println("Viewing...");
+//        try{
+//            JasperViewer.viewReport(jp, false);
+//        }catch(Exception ex){
+//            System.out.println("Exception: " + ex.getMessage());
+//            ex.printStackTrace();
+//        }
 
-        JasperExportManager.exportReportToPdfFile(jp,"PS_Interval.pdf");
+        JasperExportManager.exportReportToPdfFile(jp, "PS_Interval.pdf");
+
+        JasperExportManager.exportReportToHtmlFile(jp, "PS_Interval.html");
     }
 
     private void runUsageReport(Properties prop, Map parameters, Object scriplet, String sql,
-                                       LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs)
-                                                                    throws Exception{
+                                LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs)
+            throws Exception {
         UsageSummaryAndSubReportHelper helper = (UsageSummaryAndSubReportHelper) scriplet;
         Connection connection = getConnection(prop);
         LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
         LinkedHashMap<String, String> keyToColumnName = RuntimeDocUtilities.getKeyToColumnValues(distinctMappingSets);
         helper.setKeyToColumnMap(keyToColumnName);
-        LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
+        LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null);
         LinkedHashMap<String, String> displayStringToGroup = Utilities.getLegendDisplayStringToGroupMap(mappingValuesLegend);
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
 
         Document transformDoc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
-        File f = new File(SKUNKWORK_RELATIVE_PATH+"/UsageTransformDoc.xml");
+        File f = new File(SKUNKWORK_RELATIVE_PATH + "/UsageTransformDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
         //get xsl and xml
-        String xslStr = getResAsString(REPORTING_RELATIVE_PATH+"/UsageReportTransform.xsl");
-        String xmlFileName = getResAsString(REPORTING_RELATIVE_PATH+"/Usage_Summary_Template.jrxml");
+        String xslStr = getResAsString(REPORTING_RELATIVE_PATH + "/UsageReportTransform.xsl");
+        String xmlFileName = getResAsString(REPORTING_RELATIVE_PATH + "/Usage_Summary_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("FrameMinWidth", 820);
         params.put("PageMinWidth", 850);
-        params.put("ReportInfoStaticTextSize", 128);
         params.put("TitleInnerFrameBuffer", 7);
-
 
         //Document doc = transform(xslStr, xmlStr, params);
         Document jasperDoc = transform(xslStr, xmlFileName, params);
 
-        f = new File(SKUNKWORK_RELATIVE_PATH+"/UsageRuntimeDoc.xml");
+        f = new File(SKUNKWORK_RELATIVE_PATH + "/UsageRuntimeDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
@@ -734,55 +733,63 @@ public class ReportApp
         JasperReport report = JasperCompileManager.compileReport(bais);
 
         System.out.println("Report compiled");
-        
+
         JasperPrint jp = null;
-        try{
+        try {
             System.out.println("Filling report");
             jp = JasperFillManager.fillReport(report, parameters, connection);
             System.out.println("Report filled");
-        }finally{
+        } finally {
             connection.close();
         }
 
-        System.out.println("Viewing...");
-        try{
-            JasperViewer.viewReport(jp, false);
-        }catch(Exception ex){
-            System.out.println("Exception: " + ex.getMessage());
-            ex.printStackTrace();
-        }
+//        System.out.println("Viewing...");
+//        try{
+//            JasperViewer.viewReport(jp, false);
+//        }catch(Exception ex){
+//            System.out.println("Exception: " + ex.getMessage());
+//            ex.printStackTrace();
+//        }
 
-        JasperExportManager.exportReportToPdfFile(jp,"UsageSummary.pdf");
+        JasperExportManager.exportReportToPdfFile(jp, "UsageSummary.pdf");
+//        JRHtmlExporter exporter = new JRHtmlExporter();
+//        exporter.setParameter( JRHtmlExporterParameter.JASPER_PRINT, jp);
+//        exporter.setParameter(JRHtmlExporterParameter.IS_REMOVE_EMPTY_SPACE_BETWEEN_ROWS, Boolean.TRUE);
+//        exporter.setParameter( JRHtmlExporterParameter.IS_OUTPUT_IMAGES_TO_DIR, Boolean.FALSE );
+//        FileOutputStream fout = new FileOutputStream(new File("test.html"));
+//        exporter.setParameter( JRHtmlExporterParameter.OUTPUT_STREAM, fout );
+//
+//        exporter.exportReport();
 
 
+        JasperExportManager.exportReportToHtmlFile(jp, "UsageSummary.html");
     }
 
     private String getResAsString(String path) throws IOException {
         File f = new File(path);
         InputStream is = new FileInputStream(f);
-        try{
+        try {
             byte[] resbytes = IOUtils.slurpStream(is, 200000);
             return new String(resbytes);
-        }finally{
+        } finally {
             is.close();
         }
     }
 
     /**
-	 *
-	 */
-	private static void usage()
-	{
-		System.out.println( "ReportApp usage:" );
-		System.out.println( "\tjava SubreportApp task file" );
-		System.out.println( "\tTasks : fill | print | pdf | html | usage" );
-	}
+     *
+     */
+    private static void usage() {
+        System.out.println("ReportApp usage:");
+        System.out.println("\tjava SubreportApp task file");
+        System.out.println("\tTasks : fill | print | pdf | html | usage");
+    }
 
 
-	/**
-	 *
-	 */
-    public static Connection getConnection(Properties prop) throws Exception{
+    /**
+     *
+     */
+    public static Connection getConnection(Properties prop) throws Exception {
 
         String connectString = prop.getProperty(CONNECTION_STRING);
         String driver = "com.mysql.jdbc.Driver";
@@ -795,7 +802,7 @@ public class ReportApp
         return conn;
     }
 
-    private Document transform(String xslt, String xmlSrc, Map<String, Object> map ) throws Exception {
+    private Document transform(String xslt, String xmlSrc, Map<String, Object> map) throws Exception {
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         StreamSource xsltsource = new StreamSource(new StringReader(xslt));
         Transformer transformer = transformerFactory.newTemplates(xsltsource).newTransformer();
@@ -817,7 +824,7 @@ public class ReportApp
         return returnDoc;
     }
 
-    private Map<String, Object> getParameters() throws Exception{
+    private Map<String, Object> getParameters() throws Exception {
         //Preparing parameters
         Map<String, Object> parameters = new HashMap<String, Object>();
         //Required
@@ -833,7 +840,7 @@ public class ReportApp
         parameters.put(IS_CONTEXT_MAPPING, b);
 
         Boolean printChart = Boolean.parseBoolean(prop.getProperty(PRINT_CHART));
-        parameters.put(PRINT_CHART, printChart); 
+        parameters.put(PRINT_CHART, printChart);
 
 
         Boolean isDetail = Boolean.parseBoolean(prop.getProperty(IS_DETAIL).toString());
@@ -866,15 +873,15 @@ public class ReportApp
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         Map<String, String> serviceIdsToName = new HashMap<String, String>();
 
-        String serviceName = prop.getProperty(SERVICE_ID_TO_NAME+"_1");
-        String serviceOid = prop.getProperty(SERVICE_ID_TO_NAME_OID+"_1");
+        String serviceName = prop.getProperty(SERVICE_ID_TO_NAME + "_1");
+        String serviceOid = prop.getProperty(SERVICE_ID_TO_NAME_OID + "_1");
         int index = 2;
-        while(serviceName != null && serviceOid != null){
+        while (serviceName != null && serviceOid != null) {
             serviceIdsToOps.put(serviceOid, new HashSet<String>(operations));
             serviceIdsToName.put(serviceOid, serviceName);
 
-            serviceName = prop.getProperty(SERVICE_ID_TO_NAME+"_"+index);
-            serviceOid = prop.getProperty(SERVICE_ID_TO_NAME_OID+"_"+index);
+            serviceName = prop.getProperty(SERVICE_ID_TO_NAME + "_" + index);
+            serviceOid = prop.getProperty(SERVICE_ID_TO_NAME_OID + "_" + index);
             index++;
         }
 
@@ -887,7 +894,7 @@ public class ReportApp
 
         JasperPrint jp = JasperFillManager.fillReport("StyleGenerator.jasper", parameters);
         Map sMap = jp.getStylesMap();
-        if(sMap == null) throw new NullPointerException("sMap is null");
+        if (sMap == null) throw new NullPointerException("sMap is null");
 
         parameters.put(STYLES_FROM_TEMPLATE, sMap);
 

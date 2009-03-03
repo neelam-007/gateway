@@ -31,7 +31,6 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.ResourceMapEntityResolver;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.management.api.node.ReportApi;
@@ -363,7 +362,7 @@ public class ReportGenerator {
         if (isContextMapping && isUsingKeys) {
             LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
             reportParams.put(ReportApi.ReportParameters.DISTINCT_MAPPING_SETS, distinctMappingSets);
-            LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets);
+            LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null);
             //We need to look up the mappingValues from both the group value and also the display string value
 
             int index = 1;
@@ -391,7 +390,6 @@ public class ReportGenerator {
                 reportHelper.setKeyToColumnMap(keyToColumnName);
                 reportHelper.setIndexToGroupMap(groupIndexToGroup);
                 reportParams.put(ReportApi.ReportParameters.REPORT_SCRIPTLET, reportHelper);
-
             }
 
         } else {
@@ -419,21 +417,31 @@ public class ReportGenerator {
 
     }
 
-    /**
-     * For interval ReportTypes, the master report is identified by the template.getType() and subReportParamName
-     * being null
-     */
     @SuppressWarnings({"unchecked"})
     private Document getRuntimeDocument(final ReportTemplate template,
                                         final Map<String, Object> reportParameters) {
         Document runtimeDocument = null;
 
+        LinkedHashSet<List<String>> distinctMappingSets =
+                (LinkedHashSet<List<String>>) reportParameters.get(ReportApi.ReportParameters.DISTINCT_MAPPING_SETS);
+
+        LinkedHashMap<String, List<ReportApi.FilterPair>>
+                keysToFilterPairs = (LinkedHashMap<String, List<ReportApi.FilterPair>>)
+                reportParameters.get(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);
+
         if (template.getType() == ReportApi.ReportType.PERFORMANCE_SUMMARY ||
                 template.getType() == ReportApi.ReportType.PERFORMANCE_INTERVAL) {
-            runtimeDocument = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(
-                    Boolean.valueOf(reportParameters.get(ReportApi.ReportParameters.IS_CONTEXT_MAPPING).toString()),
-                    Boolean.valueOf(reportParameters.get(ReportApi.ReportParameters.IS_USING_KEYS).toString()),
-                    (LinkedHashMap<String, String>) reportParameters.get(ReportApi.ReportParameters.MAPPING_GROUP_TO_DISPLAY_STRING));
+
+            boolean isCtxMapping = Boolean.valueOf(reportParameters.get(ReportApi.ReportParameters.IS_CONTEXT_MAPPING).toString());
+            boolean isUsingKeys = Boolean.valueOf(reportParameters.get(ReportApi.ReportParameters.IS_USING_KEYS).toString());
+
+            if (isCtxMapping && isUsingKeys) {
+                runtimeDocument = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+            } else {
+                runtimeDocument =
+                        RuntimeDocUtilities.getPerfStatAnyRuntimeDoc((LinkedHashMap<String, String>)
+                                reportParameters.get(ReportApi.ReportParameters.MAPPING_GROUP_TO_DISPLAY_STRING));
+            }
             return runtimeDocument;
         }
 
@@ -442,13 +450,6 @@ public class ReportGenerator {
                 templateType != ReportApi.ReportType.USAGE_INTERVAL) {
             throw new IllegalArgumentException("Report type: " + templateType.toString() + " is not currently supported for runtime transformation");
         }
-
-        LinkedHashSet<List<String>> distinctMappingSets =
-                (LinkedHashSet<List<String>>) reportParameters.get(ReportApi.ReportParameters.DISTINCT_MAPPING_SETS);
-
-        LinkedHashMap<String, List<ReportApi.FilterPair>>
-                keysToFilterPairs = (LinkedHashMap<String, List<ReportApi.FilterPair>>)
-                reportParameters.get(ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS);
 
         if (template.getType() == ReportApi.ReportType.USAGE_SUMMARY) {
             runtimeDocument = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);

@@ -350,7 +350,8 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
                                 y="0"
                                 width="113"
                                 height="36"
-                                key="textField-194"/>
+                                key="textField-194"
+                                stretchType="RelativeToTallestObject"/>
                         <box></box>
                         <textElement>
                             <font/>

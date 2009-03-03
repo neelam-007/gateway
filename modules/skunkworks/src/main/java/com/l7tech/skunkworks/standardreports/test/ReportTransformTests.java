@@ -33,15 +33,15 @@ public class ReportTransformTests {
     private String getResAsString(String path) throws IOException {
         File f = new File(path);
         InputStream is = new FileInputStream(f);
-        try{
+        try {
             byte[] resbytes = IOUtils.slurpStream(is, 100000);
             return new String(resbytes);
-        }finally{
+        } finally {
             is.close();
         }
     }
 
-    private Document transform(String xslt, String xmlSrc, Map<String, Object> map ) throws Exception {
+    private Document transform(String xslt, String xmlSrc, Map<String, Object> map) throws Exception {
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         StreamSource xsltsource = new StreamSource(new StringReader(xslt));
         Transformer transformer = transformerFactory.newTemplates(xsltsource).newTransformer();
@@ -118,9 +118,9 @@ public class ReportTransformTests {
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageRuntimeTransform.jrxml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(doc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
@@ -130,8 +130,6 @@ public class ReportTransformTests {
         params.put("RuntimeDoc", doc);
         params.put("FrameMinWidth", 565);
         params.put("PageMinWidth", 595);
-        int reportInfoStaticTextSize = 128;
-        params.put("ReportInfoStaticTextSize", reportInfoStaticTextSize);
         int titleInnerFrameBuffer = 7;
         params.put("TitleInnerFrameBuffer", titleInnerFrameBuffer);
 
@@ -140,9 +138,9 @@ public class ReportTransformTests {
         f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeJasper.jrxml");
         f.createNewFile();
         fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
     }
@@ -171,7 +169,6 @@ public class ReportTransformTests {
         params.put("RuntimeDoc", transformDoc);
         params.put("FrameMinWidth", 535);
         params.put("PageMinWidth", 595);
-        params.put("ReportInfoStaticTextSize", 128);
 
         //Document transformDoc = transform(xslStr, xmlStr, params);
         Document jasperDoc = transform(xslStr, xmlFileName, params);
@@ -184,18 +181,18 @@ public class ReportTransformTests {
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTestCreatedJasperDoc.jrxml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
         XmlUtil.format(transformDoc, true);
         f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTestCreatedTransformDoc.jrxml");
         f.createNewFile();
         fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
@@ -235,16 +232,15 @@ public class ReportTransformTests {
         params.put("RuntimeDoc", transformDoc);
         params.put("FrameMinWidth", 535);
         params.put("PageMinWidth", 595);
-        params.put("ReportInfoStaticTextSize", 128);
 
         Document jasperDoc = transform(xslStr, xmlSrc, params);
 
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/MasterTransformJasper.jrxml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
@@ -252,9 +248,9 @@ public class ReportTransformTests {
         f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/MasterTransformDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
@@ -292,9 +288,9 @@ public class ReportTransformTests {
         File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTestMasterTransformDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
@@ -302,19 +298,18 @@ public class ReportTransformTests {
         params.put("RuntimeDoc", transformDoc);
         params.put("FrameMinWidth", 820);
         params.put("PageMinWidth", 850);
-        params.put("ReportInfoStaticTextSize", 128);
         int titleInnerFrameBuffer = 7;
         params.put("TitleInnerFrameBuffer", titleInnerFrameBuffer);
-        
+
 
         Document jasperDoc = transform(xslStr, xmlSrc, params);
 
         f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTestMasterRuntimeDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
@@ -352,9 +347,9 @@ public class ReportTransformTests {
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/SubMasterTransformJasper.jrxml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
@@ -362,9 +357,9 @@ public class ReportTransformTests {
         f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/SubMasterTransformDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
     }
@@ -421,9 +416,9 @@ public class ReportTransformTests {
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/SubReportTransformJasper.jrxml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
@@ -431,9 +426,9 @@ public class ReportTransformTests {
         f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/SubReportTransformDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
     }
@@ -468,26 +463,42 @@ public class ReportTransformTests {
     }
 
     @Test
-    public void testGetPerfStatRuntimeDoc_Mapping() throws Exception{
+    public void testGetPerfStatRuntimeDoc_Mapping() throws Exception {
 
-        LinkedHashMap linkedHashMap = new LinkedHashMap();
-        linkedHashMap.put("Group 1", "IP_ADDRESS: 127.0.0.1, CUSTOMER: GOLD");
-        linkedHashMap.put("Group 2", "IP_ADDRESS: 127.0.0.2, CUSTOMER: GOLD");
-        linkedHashMap.put("Group 3", "IP_ADDRESS: 127.0.0.3, CUSTOMER: GOLD");
-        linkedHashMap.put("Group 4", "IP_ADDRESS: 127.0.0.4, CUSTOMER: GOLD");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        keysToFilters.put("IP_ADDRESS", Collections.<ReportApi.FilterPair>emptyList());
+        keysToFilters.put("CUSTOMER", Collections.<ReportApi.FilterPair>emptyList());
 
-        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(true, true, linkedHashMap);
+        LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
+        List<String> l1 = new ArrayList<String>();
+        l1.add("127.0.0.1");
+        l1.add("GOLD");
+        distinctMappingSets.add(l1);
+        List<String> l2 = new ArrayList<String>();
+        l2.add("127.0.0.2");
+        l2.add("GOLD");
+        distinctMappingSets.add(l2);
+        List<String> l3 = new ArrayList<String>();
+        l3.add("127.0.0.3");
+        l3.add("GOLD");
+        distinctMappingSets.add(l3);
+        List<String> l4 = new ArrayList<String>();
+        l4.add("127.0.0.4");
+        l4.add("GOLD");
+        distinctMappingSets.add(l4);
+
+        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilters, distinctMappingSets);
         Assert.assertTrue(transformDoc != null);
 
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/PerfStatIntervalMastereRuntimeDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
-        
+
         String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/PS_IntervalMasterTransform.xsl");
         String xmlSrc = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/PS_IntervalMasterReport_Template.jrxml");
 
@@ -503,19 +514,19 @@ public class ReportTransformTests {
         f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_IntervalMasterReport.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
         JasperReport report = JasperCompileManager.compileReport(bais);
         Assert.assertTrue(report != null);
-        
+
     }
-    
+
     @Test
-    public void testGetPerfStatRuntimeDoc_NoMapping() throws Exception{
+    public void testGetPerfStatRuntimeDoc_NoMapping() throws Exception {
 
         LinkedHashMap linkedHashMap = new LinkedHashMap();
         linkedHashMap.put("Service 1", "Warehouse [w1]");
@@ -523,15 +534,15 @@ public class ReportTransformTests {
         linkedHashMap.put("Service 3", "Warehouse [w3]");
         linkedHashMap.put("Service 4", "Warehouse [w4]");
 
-        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(false, false, linkedHashMap);
+        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(linkedHashMap);
         Assert.assertTrue(transformDoc != null);
 
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/PerfStatIntervalRuntimeDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(transformDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 
@@ -550,9 +561,9 @@ public class ReportTransformTests {
         f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/PS_IntervalMasterReport.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(jasperDoc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
 

@@ -184,7 +184,7 @@
     <!-- Copy in the key info into the Usage Summary frame-->
     <xsl:template match="/jasperReport/group[@name='CONSTANT']/groupHeader/band/frame[1]/textField/textFieldExpression">
         <xsl:element name="textFieldExpression">
-            <xsl:text>"Usage data grouped by</xsl:text>
+            <xsl:text>"Usage data grouped by:</xsl:text>
             <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/keyInfo"/>
             <xsl:text>"</xsl:text>
         </xsl:element>

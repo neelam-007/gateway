@@ -612,7 +612,7 @@ $F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
                                 width="820"
                                 height="34"
                                 key="frame-34"
-                                stretchType="RelativeToTallestObject"/>
+                                stretchType="RelativeToBandHeight"/>
                         <box></box>
                     </frame>
                 </frame>
@@ -1264,17 +1264,19 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                             y="0"
                             width="820"
                             height="18"
-                            key="frame-7"/>
+                            key="frame-7"
+                            stretchType="RelativeToTallestObject"/>
                     <box></box>
-                    <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Group"
-                               evaluationGroup="MAPPINGS" hyperlinkType="None" hyperlinkTarget="Self">
+                    <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
+                               hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
-                                style="LeftPaddedHeadingBold"
+                                style="LeftPaddedHeadingHtml"
                                 x="0"
                                 y="0"
                                 width="820"
-                                height="17"
-                                key="textField-102"/>
+                                height="18"
+                                key="textField-102"
+                                stretchType="RelativeToTallestObject"/>
                         <box></box>
                         <textElement>
                             <font/>
@@ -1282,7 +1284,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                         <textFieldExpression class="java.lang.String"><![CDATA[($P{IS_USING_KEYS}.booleanValue())?
 Utilities.getMappingValueDisplayString(
 $P{KEYS_TO_LIST_FILTER_PAIRS}, $F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}}, true, "Group values: ")
+$F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ", true, Utilities.USAGE_HEADING_VALUE_MAX_SIZE)
 :
 "Service Operation Summary"]]></textFieldExpression>
                     </textField>
@@ -1295,7 +1297,8 @@ $F{MAPPING_VALUE_5}}, true, "Group values: ")
                             y="18"
                             width="820"
                             height="36"
-                            key="frame-2"/>
+                            key="frame-2"
+                            positionType="Float"/>
                     <box></box>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">

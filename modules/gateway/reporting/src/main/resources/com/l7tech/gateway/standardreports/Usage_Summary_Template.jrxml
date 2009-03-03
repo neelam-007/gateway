@@ -231,7 +231,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
                                 width="820"
                                 height="34"
                                 key="frame-42"
-                                stretchType="RelativeToTallestObject"/>
+                                stretchType="RelativeToBandHeight"/>
                         <box></box>
                     </frame>
                 </frame>
@@ -292,7 +292,8 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
                                 y="0"
                                 width="113"
                                 height="36"
-                                key="textField-155"/>
+                                key="textField-155"
+                                stretchType="RelativeToTallestObject"/>
                         <box></box>
                         <textElement markup="html">
                             <font/>

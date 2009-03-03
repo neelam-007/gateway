@@ -30,10 +30,10 @@ public class RuntimeDocTests {
 
     private String getResAsString(String path) throws IOException {
         InputStream is = RuntimeDocTests.class.getResourceAsStream(path);
-        try{
+        try {
             byte[] resbytes = IOUtils.slurpStream(is, 100000);
             return new String(resbytes);
-        }finally{
+        } finally {
             is.close();
         }
     }
@@ -50,18 +50,18 @@ public class RuntimeDocTests {
 
     @After
     public void tearDown() throws SQLException {
-        if(stmt != null) {
+        if (stmt != null) {
             stmt.close();
             stmt = null;
         }
-        if(conn != null){
+        if (conn != null) {
             conn.close();
             conn = null;
         }
     }
 
     @Test
-    public void testRuntimeDocCreation() throws Exception{
+    public void testRuntimeDocCreation() throws Exception {
 
         boolean isDetail = Boolean.parseBoolean(prop.getProperty(ReportApp.IS_DETAIL));
 
@@ -70,34 +70,34 @@ public class RuntimeDocTests {
         String sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keysToFilterPairs, 2, isDetail, true);
 
         LinkedHashSet<List<String>> distinctMappingSets = ReportApp.getDistinctMappingSets(conn, sql);
-        
+
         Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
         Assert.assertTrue(doc != null);
         XmlUtil.format(doc, true);
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(doc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
     }
 
-    private LinkedHashSet<List<String>> getTestDistinctMappingSets(){
+    private LinkedHashSet<List<String>> getTestDistinctMappingSets() {
         LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
-        for(int i = 0; i < 4; i++){
+        for (int i = 0; i < 4; i++) {
             List<String> valueList = new ArrayList<String>();
             valueList.add("Donal");
             valueList.add("127.0.0.1");
-            valueList.add("Bronze"+i);//make each list unique - turns out set is quite smart, not just object refs
+            valueList.add("Bronze" + i);//make each list unique - turns out set is quite smart, not just object refs
             distinctMappingSets.add(valueList);
         }
         return distinctMappingSets;
     }
 
     @Test
-    public void testGetUsageIntervalMasterRuntimeDoc() throws Exception{
+    public void testGetUsageIntervalMasterRuntimeDoc() throws Exception {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
         List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
         ipFilters.add(new ReportApi.FilterPair());
@@ -116,15 +116,15 @@ public class RuntimeDocTests {
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageIntervalMasterRuntimeDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(doc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
     }
 
     @Test
-    public void testGetUsageSubIntervalMasterRuntimeDoc() throws Exception{
+    public void testGetUsageSubIntervalMasterRuntimeDoc() throws Exception {
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
         Document doc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
         Assert.assertTrue(doc != null);
@@ -133,15 +133,15 @@ public class RuntimeDocTests {
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageSubIntervalMasterRuntimeDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(doc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
     }
 
     @Test
-    public void testGetUsageSubReportRuntimeDoc() throws Exception{
+    public void testGetUsageSubReportRuntimeDoc() throws Exception {
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
         Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
@@ -151,34 +151,54 @@ public class RuntimeDocTests {
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageSubReportRuntimeDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(doc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
     }
 
     @Test
-    public void testGetPerfStatRuntimeDoc() throws Exception{
+    public void testGetPerfStatRuntimeDoc() throws Exception {
 
-        LinkedHashMap linkedHashMap = new LinkedHashMap();
-        linkedHashMap.put("Group 1", "IP_ADDRESS: 127.0.0.1, CUSTOMER: GOLD");
-        linkedHashMap.put("Group 2", "IP_ADDRESS: 127.0.0.2, CUSTOMER: GOLD");
-        linkedHashMap.put("Group 3", "IP_ADDRESS: 127.0.0.3, CUSTOMER: GOLD");
-        linkedHashMap.put("Group 4", "IP_ADDRESS: 127.0.0.4, CUSTOMER: GOLD");
+        LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
+        keysToFilters.put("IP_ADDRESS", Collections.<ReportApi.FilterPair>emptyList());
+        keysToFilters.put("CUSTOMER", Collections.<ReportApi.FilterPair>emptyList());
 
-        Document doc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(true, true, linkedHashMap);
+        LinkedHashSet<List<String>> distinctMappingSets = new LinkedHashSet<List<String>>();
+        List<String> l1 = new ArrayList<String>();
+        l1.add(";");
+        l1.add("127.0.0.1");
+        l1.add("GOLD");
+        distinctMappingSets.add(l1);
+        List<String> l2 = new ArrayList<String>();
+        l2.add(";");
+        l2.add("127.0.0.2");
+        l2.add("GOLD");
+        distinctMappingSets.add(l2);
+        List<String> l3 = new ArrayList<String>();
+        l3.add(";");
+        l3.add("127.0.0.3");
+        l3.add("GOLD");
+        distinctMappingSets.add(l3);
+        List<String> l4 = new ArrayList<String>();
+        l4.add(";");
+        l4.add("127.0.0.4");
+        l4.add("GOLD");
+        distinctMappingSets.add(l4);
+
+        Document doc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilters, distinctMappingSets);
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);
-        File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/PerfStatIntervalMastereRuntimeDoc.xml");
+        File f = new File("modules/skunkworks/src/main/java/com/l7tech/skunkworks/standardreports/PerfStatIntervalMastereRuntimeDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
-        try{
+        try {
             XmlUtil.nodeToFormattedOutputStream(doc, fos);
-        }finally{
+        } finally {
             fos.close();
         }
     }
-    
+
 }
