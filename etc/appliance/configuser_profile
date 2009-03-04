@@ -253,6 +253,7 @@ doEmsConfiguration() {
         else
             echo " 2) Enable the Enterprise Service Manager"
         fi
+        echo " 3) Reset password for ESM user account"
         echo " X) Exit menu"
 
         echo ""
@@ -280,6 +281,16 @@ doEmsConfiguration() {
                         sudo /sbin/chkconfig ssem on
                         confirmedMessage "Enterprise Service Manager enabled."
                     fi
+                fi
+                clear;;
+            3)
+                clear;
+                (${EMCONFWIZARD} wizard reset);
+                STATUS=$?
+                if [ $STATUS -eq 3 ] ; then
+                    confirmedMessage "Enterprise Service Manager configuration cannot be performed. \nPlease ensure that the ESM is configured and is not running."
+                else
+                    confirmedMessage ""
                 fi
                 clear;;
             x|X)

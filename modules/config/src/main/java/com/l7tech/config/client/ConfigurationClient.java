@@ -51,11 +51,12 @@ public class ConfigurationClient extends Interaction {
     @Override
     public boolean doInteraction() throws IOException {
         boolean success = false;
-        boolean reconfigure = false;
+        boolean reconfigure;
         Map<String,ConfigurationBean> configBeans = new TreeMap<String,ConfigurationBean>();
         initConfig(optionSet, configBeans, configBeanList);
         try {
             do {
+                reconfigure = false;
                 boolean store = false;
                 if (COMMAND_WIZARD.equals(command)) {
                     store = doWizard(optionSet, configBeans);

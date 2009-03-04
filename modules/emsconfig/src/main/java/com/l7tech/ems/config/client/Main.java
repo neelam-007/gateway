@@ -28,7 +28,7 @@ public class Main {
      * Arguments are:
      *
      *   0 - command (auto, wizard, edit, show), default is auto
-     *   1 - type (appliance, status), default is appliance
+     *   1 - type (ems, reset), default is ems
      *
      * @param args The program arguments
      */
@@ -118,6 +118,12 @@ public class Main {
             @Override
             public ConfigurationBeanProvider getProvider() {
                 return new EsmConfigurationBeanProvider();
+            }
+        },
+        new ConfigurationType( "reset", "configTemplates/EsmAccountReset.xml", true ){
+            @Override
+            public ConfigurationBeanProvider getProvider() {
+                return new EsmAccountResetBeanProvider();
             }
         }
     };
