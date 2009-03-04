@@ -15,9 +15,12 @@ import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.Created;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.event.system.Started;
+import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 import com.l7tech.server.management.api.monitoring.MonitoringApi;
 import com.l7tech.server.management.api.monitoring.MonitoringApiStub;
 import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
+import com.l7tech.server.management.config.monitoring.NotificationRule;
+import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.MockTimer;
 import com.l7tech.util.Pair;
@@ -125,6 +128,17 @@ public class MonitoringConfigurationSynchronizerTest {
         clusterB.node(2).up = true;
         assertDoesClusterPushdownAfterEvent(mcs, null, clusterB); // Should retry cluster B and only cluster B
         assertDoesClusterPushdownAfterEvent(mcs, null); // Should not do any pushdown now that clean config is everywhere
+    }
+
+    @Test
+    @BugNumber(6680)
+    public void testSetsComponentIdToClusterSslHostname() {
+        MonitoringConfigurationSynchronizer mcs = makeAndStartMcs();
+        EntityMonitoringPropertySetup setup = new EntityMonitoringPropertySetup(clusterA, BuiltinMonitorables.CPU_TEMPERATURE.getName());
+        setup.setMonitoringEnabled(true);
+        Trigger trigger = mcs.convertTrigger(false, Collections.<Long, NotificationRule>emptyMap(), setup, clusterA.getSslHostName());
+        assertNotNull(trigger);
+        assertEquals(clusterA.getSslHostName(), trigger.getComponentId());
     }
 
     /* Asserts tha the specified mcs does a pushdown to all known cluster nodes after the specified event. */

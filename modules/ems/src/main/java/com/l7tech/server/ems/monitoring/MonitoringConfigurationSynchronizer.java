@@ -206,22 +206,24 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         config.setResponsibleForClusterMonitoring(responsibleForClusterMonitoring);
 
         SsgClusterNotificationSetup clusterSetup = ssgClusterNotificationSetupManager.findByEntityGuid(cluster.getGuid());
-        Map<Long, NotificationRule> notRules = clusterSetup==null ? 
+        Map<Long, NotificationRule> notRules = clusterSetup==null ?
                 Collections.<Long, NotificationRule>emptyMap() :
                 convertNotificationRules(notificationsDisabled, clusterSetup.getSystemNotificationRules());
         config.setNotificationRules(new HashSet<NotificationRule>(notRules.values()));
 
+        String componentId = cluster.getSslHostName();
+
         Collection<Trigger> clusterTriggers =
                 convertTriggers(notificationsDisabled,
                         notRules,
-                        entityMonitoringPropertySetupManager.findByEntityGuid(cluster.getGuid())
-                );
+                        entityMonitoringPropertySetupManager.findByEntityGuid(cluster.getGuid()),
+                        componentId);
 
         Collection<Trigger> hostTrigger =
                 convertTriggers(notificationsDisabled,
                         notRules,
-                        entityMonitoringPropertySetupManager.findByEntityGuid(node.getGuid())
-                );
+                        entityMonitoringPropertySetupManager.findByEntityGuid(node.getGuid()),
+                        componentId);
 
         Set<Trigger> triggers = new HashSet<Trigger>();
         triggers.addAll(clusterTriggers);
@@ -234,40 +236,52 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
     // notificationRules is map of SystemMonitoringNotificationRule OID => NotificationRule instance
     private Collection<Trigger> convertTriggers(boolean notificationsDisabled,
                                                 Map<Long, NotificationRule> notificationRules,
-                                                List<EntityMonitoringPropertySetup> setups)
+                                                List<EntityMonitoringPropertySetup> setups,
+                                                String componentId)
     {
         Collection<Trigger> ret = new ArrayList<Trigger>();
 
         for (EntityMonitoringPropertySetup setup : setups) {
-            if (!setup.isMonitoringEnabled())
-                continue;
-
-            String propertyName = setup.getPropertyType();
-            MonitorableProperty property = BuiltinMonitorables.getAtMostOneBuiltinPropertyByName(propertyName);
-            if (property == null) {
-                logger.warning("Ignoring PC trigger for unrecognized property name: " + propertyName);
-                continue;
-            }
-            final Long value = setup.getTriggerValue();
-            final ComparisonOperator operator;
-            final String triggerValue;
-            if (value == null) {
-                operator = property.getSuggestedComparisonOperator();
-                triggerValue = property.getSuggestedComparisonValue();
-            } else {
-                operator = ComparisonOperator.GE;
-                triggerValue = Long.toString(value);
-            }
-            long maxSamplingInterval = 5000L; // TODO is this the same value from monitoring.samplingInterval.lowerLimit in emconfig.properties that default to 2 sec?
-            PropertyTrigger trigger = new PropertyTrigger(property, null, operator, triggerValue, maxSamplingInterval);
-            trigger.setOid(setup.getOid());
-            trigger.setVersion(setup.getVersion());
-            trigger.setNotificationRules(lookupNotificationRules(notificationsDisabled, setup, notificationRules, propertyName));
-
-            ret.add(trigger);
+            Trigger trigger = convertTrigger(notificationsDisabled, notificationRules, setup, componentId);
+            if (trigger != null)
+                ret.add(trigger);
         }
 
         return ret;
+    }
+
+    Trigger convertTrigger(boolean notificationsDisabled,
+                           Map<Long, NotificationRule> notificationRules,
+                           EntityMonitoringPropertySetup setup,
+                           String componentId)
+    {
+        if (!setup.isMonitoringEnabled())
+            return null;
+
+        String propertyName = setup.getPropertyType();
+        MonitorableProperty property = BuiltinMonitorables.getAtMostOneBuiltinPropertyByName(propertyName);
+        if (property == null) {
+            logger.warning("Ignoring PC trigger for unrecognized property name: " + propertyName);
+            return null;
+        }
+        final Long value = setup.getTriggerValue();
+        final ComparisonOperator operator;
+        final String triggerValue;
+        if (value == null) {
+            operator = property.getSuggestedComparisonOperator();
+            triggerValue = property.getSuggestedComparisonValue();
+        } else {
+            operator = ComparisonOperator.GE;
+            triggerValue = Long.toString(value);
+        }
+
+        long maxSamplingInterval = 5000L; // TODO is this the same value from monitoring.samplingInterval.lowerLimit in emconfig.properties that default to 2 sec?
+
+        PropertyTrigger trigger = new PropertyTrigger(property, componentId, operator, triggerValue, maxSamplingInterval);
+        trigger.setOid(setup.getOid());
+        trigger.setVersion(setup.getVersion());
+        trigger.setNotificationRules(lookupNotificationRules(notificationsDisabled, setup, notificationRules, propertyName));
+        return trigger;
     }
 
     // notificationRules is map of SystemMonitoringNotificationRule OID => NotificationRule instance
