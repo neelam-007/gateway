@@ -3,25 +3,20 @@ package com.l7tech.server.security.keystore;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.security.keystore.sca.ScaSsgKeyStore;
 import com.l7tech.server.security.keystore.software.DatabasePkcs12SsgKeyStore;
 import com.l7tech.server.security.sharedkey.SharedKeyManager;
 import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.DefaultMasterPasswordFinder;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.ExceptionUtils;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.transaction.support.TransactionSynchronizationAdapter;
-import org.springframework.transaction.support.TransactionSynchronization;
 
 import java.security.KeyStoreException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
-import java.io.*;
 
 /**
  * Manages all SsgKeyFinder (and SsgKeyStore) instances that will be available on this Gateway node.
@@ -128,7 +123,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
         return keystores;
     }
 
-    public SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException, ObjectNotFoundException {
+    public SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException {
         init();
         for (SsgKeyFinder keystore : keystores) {
             if (keystore.getOid() == id)
@@ -138,7 +133,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
     }
 
     @Transactional(readOnly = true)
-    public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws ObjectNotFoundException, FindException, KeyStoreException {
+    public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException {
         boolean mustSearchAll = preferredKeystoreId == -1;
 
         // First look in the preferred keystore

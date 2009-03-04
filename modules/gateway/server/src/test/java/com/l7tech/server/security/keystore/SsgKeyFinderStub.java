@@ -27,6 +27,10 @@ public class SsgKeyFinderStub implements SsgKeyFinder {
         return false;
     }
 
+    public boolean isKeyExportSupported() {
+        return false;
+    }
+
     public SsgKeyStore getKeyStore() {
         return null;
     }

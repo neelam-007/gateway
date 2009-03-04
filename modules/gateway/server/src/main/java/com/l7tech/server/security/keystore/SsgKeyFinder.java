@@ -1,16 +1,15 @@
 package com.l7tech.server.security.keystore;
 
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
-
-import java.security.KeyStoreException;
-import java.security.InvalidKeyException;
-import java.security.SignatureException;
-import java.util.List;
-
-import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.security.prov.CertificateRequest;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.security.InvalidKeyException;
+import java.security.KeyStoreException;
+import java.security.SignatureException;
+import java.util.List;
 
 
 /**
@@ -30,6 +29,9 @@ public interface SsgKeyFinder extends NamedEntity {
 
     /** @return true iff. getKeyStore would return a non-null value. */
     boolean isMutable();
+
+    /** @return false if attempts to export private keys from this keystore are certain to fail. */
+    boolean isKeyExportSupported();
 
     /** @return a mutable SsgKeyStore interface to this KeyFinder, or null if this KeyFinder is read-only. */
     SsgKeyStore getKeyStore();

@@ -161,6 +161,10 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         return true;
     }
 
+    public boolean isKeyExportSupported() {
+        return true;
+    }
+
     public SsgKeyStore getKeyStore() {
         return this;
     }

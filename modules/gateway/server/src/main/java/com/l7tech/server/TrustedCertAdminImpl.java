@@ -437,8 +437,12 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         }
     }
 
-    public byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws ObjectNotFoundException, FindException, KeyStoreException, UnrecoverableKeyException {
+    public byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws FindException, KeyStoreException, UnrecoverableKeyException {
         checkLicenseKeyStore();
+
+        SsgKeyFinder ks = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
+        if (!ks.isKeyExportSupported())
+            throw new UnrecoverableKeyException("Key export not available");
 
         SsgKeyEntry entry = ssgKeyStoreManager.lookupKeyByKeyAlias(alias, keystoreId);
         if (!entry.isPrivateKeyAvailable())

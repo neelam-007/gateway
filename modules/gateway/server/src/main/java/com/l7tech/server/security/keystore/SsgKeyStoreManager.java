@@ -31,11 +31,12 @@ public interface SsgKeyStoreManager {
      *
      * @param id  the ID to find.
      * @return the requested SsgKeyFinder.  Never null.
-     * @throws FindException if the requested ID could not be found or is not available on this system
+     * @throws ObjectNotFoundException if the requested ID could not be found or is not available on this system
+     * @throws FindException if there was some other problem finding the requested key finder
      * @throws java.security.KeyStoreException if there is a problem with the format of some keystore data
      */
     @Transactional(readOnly=true)
-    SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException, ObjectNotFoundException;
+    SsgKeyFinder findByPrimaryKey(long id) throws FindException, KeyStoreException;
 
     /**
      * Find a single private key, along with its cert chain, by searching for a key with the specified alias.
@@ -51,5 +52,5 @@ public interface SsgKeyStoreManager {
      * @throws java.security.KeyStoreException if there is a problem with the format of some keystore data
      */
     @Transactional(readOnly=true)
-    SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException, ObjectNotFoundException;
+    SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException;
 }

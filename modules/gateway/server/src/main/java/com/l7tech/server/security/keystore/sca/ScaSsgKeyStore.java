@@ -86,6 +86,10 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
         return PKCS11_HARDWARE;
     }
 
+    public boolean isKeyExportSupported() {
+        return false;
+    }
+
     @Override
     protected synchronized KeyStore keyStore() throws KeyStoreException {
         if (keystore == null || System.currentTimeMillis() - lastLoaded > refreshTime) {
