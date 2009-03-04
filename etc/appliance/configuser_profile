@@ -35,7 +35,7 @@ doLogout() {
 }
 
 confirmedMessage() {
-    echo "${1}"
+    echo -e "${1}"
     echo "Press [Enter] to continue";
     read;
 }

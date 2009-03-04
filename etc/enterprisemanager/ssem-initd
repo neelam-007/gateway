@@ -20,6 +20,8 @@ fi
 PID_FILE="ssemd"
 EM_USER="ssem"
 EM_SCRIPT="/opt/SecureSpan/EnterpriseManager/bin/enterprisemanager.sh"
+EMDB_PATH="/opt/SecureSpan/EnterpriseManager/var/db/emsdb"
+EMDB_GROUP="layer7"
 
 start() {
         if [ ! -x "${EM_SCRIPT}" ] ; then
@@ -41,6 +43,12 @@ stop() {
         RETVAL=$?
         echo
         [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/ssemd
+
+        if [ ! -z "${EMDB_GROUP}" ] && [ -d "${EMDB_PATH}" ] ; then
+            chown -R "${EM_USER}.${EMDB_GROUP}" "${EMDB_PATH}"
+            chmod g+w -R "${EMDB_PATH}"
+        fi
+
         return $RETVAL
 }
 

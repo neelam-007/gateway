@@ -98,7 +98,7 @@ public class EsmDbConfigurationBeanProvider implements ConfigurationBeanProvider
     }
 
     protected String getDatabaseName() {
-        return SyspropUtil.getString(SYSPROP_DATABASE_NAME,"var/db/emsdb");
+        return SyspropUtil.getString(SYSPROP_DATABASE_NAME,"../var/db/emsdb");
     }
 
     //- PRIVATE
