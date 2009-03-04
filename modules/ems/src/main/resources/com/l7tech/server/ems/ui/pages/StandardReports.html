@@ -1195,7 +1195,7 @@
                     l7.Dialog.hideWaitDialog();
                     var result = l7.Connection.parseJsonResponse(o,
                                                                  true,
-                                                                 l7.Util.formatMessage(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS, settingsName),
+                                                                 l7.Util.escapeHtmlText(l7.Util.formatMessage(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS, settingsName)),
                                                                  localizedStrings.CANNOT_PARSE_RESPONSE_JSON,
                                                                  localizedStrings.SESSION_TIMEOUT,
                                                                  localizedStrings.ERROR,
@@ -1222,11 +1222,11 @@
                 },
                 failure : function(o) {
                     l7.Dialog.hideWaitDialog();
-                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, l7.Util.formatMessage(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS, settingsName) + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
+                    l7.Dialog.showErrorDialog(localizedStrings.ERROR, l7.Util.escapeHtmlText(l7.Util.formatMessage(localizedStrings.CANNOT_DOWNLOAD_SAVED_SETTINGS, settingsName)) + '<br/><br/>' + o.status + ' ' + o.statusText, localizedStrings.OK);
                 }
             };
             var postData = settingsId;
-            l7.Dialog.showWaitDialog(l7.Util.formatMessage(localizedStrings.LOADING_SAVED_SETTINGS, settingsName));
+            l7.Dialog.showWaitDialog(l7.Util.escapeHtmlText(l7.Util.formatMessage(localizedStrings.LOADING_SAVED_SETTINGS, settingsName)));
             YAHOO.util.Connect.setDefaultPostHeader(false);
             YAHOO.util.Connect.initHeader('Content-Type', 'application/json; charset=utf-8');
             YAHOO.util.Connect.asyncRequest('POST', getSettingsUrl, callback, postData);
