@@ -23,6 +23,8 @@ import java.io.ByteArrayInputStream;
  * when canonicalizing the "productid" element in our placeorder_cleartext sample message.
  * Some canonicalizer (ExclusiveC11r and ExclusiveC11rWC) throw an exception when canonicalize
  * certain elements.
+ *
+ * Update: Jan 2009: mlyons: The bug was eventually fixed in a subsequent version of XSS4J.
  */
 public class CanonicalizerBugRepro {
     private static final String SOAP_NS = "http://schemas.xmlsoap.org/soap/envelope/";
