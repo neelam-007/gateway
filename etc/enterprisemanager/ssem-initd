@@ -30,6 +30,11 @@ start() {
         fi
 
         echo -n $"Starting Enterprise Manager: "
+
+        if [ ! -z "${EMDB_GROUP}" ] && [ -d "${EMDB_PATH}" ] ; then
+            chown -R "${EM_USER}.${EMDB_GROUP}" "${EMDB_PATH}"
+        fi
+
         daemon --check "${PID_FILE}" "${EM_SCRIPT}" "${EM_USER}" "/var/run/${PID_FILE}.pid"
         RETVAL=$?
         echo
