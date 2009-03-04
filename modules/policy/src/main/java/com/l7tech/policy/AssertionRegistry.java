@@ -183,8 +183,11 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
         for (Assertion assertion : getAssertions()) {
             //noinspection unchecked
             Map<String, TypeMapping> compatMappings = (Map<String, TypeMapping>)assertion.meta().get(AssertionMetadata.WSP_COMPATIBILITY_MAPPINGS);
-            if (compatMappings != null)
-                return compatMappings.get(externalName);
+            if (compatMappings != null) {
+                final TypeMapping mapping = compatMappings.get(externalName);
+                if (mapping != null)
+                    return mapping;
+            }
         }
 
         return null;
