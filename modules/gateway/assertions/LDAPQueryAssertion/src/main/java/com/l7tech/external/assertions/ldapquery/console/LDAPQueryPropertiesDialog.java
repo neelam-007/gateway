@@ -152,7 +152,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     private void modelToView() {
         // update gui from assertion
         localMappings.clear();
-        localMappings.addAll(Arrays.asList(assertion.currentQueryMappings()));
+        localMappings.addAll(Arrays.asList(assertion.getQueryMappings()));
         long id = assertion.getLdapProviderOid();
         for (ComboItem i : comboStuff) {
             if (i.oid == id) {
@@ -171,7 +171,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
             ComboItem ci = (ComboItem)selected;
             assertion.setLdapProviderOid(ci.oid);
         }
-        assertion.reassignQueryMappings(localMappings.toArray(new QueryAttributeMapping[localMappings.size()]));
+        assertion.setQueryMappings(localMappings.toArray(new QueryAttributeMapping[localMappings.size()]));
         assertion.setSearchFilter(searchField.getText());
         assertion.setEnableCache(cacheLDAPAttributeValuesCheckBox.isSelected());
         assertion.setCachePeriod(Long.parseLong(cachePeriodSpinner.getValue().toString()));
@@ -278,7 +278,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
             ComboItem ci = (ComboItem)selected;
             assertion.setLdapProviderOid(ci.oid);
         }
-        assertion.reassignQueryMappings(localMappings.toArray(new QueryAttributeMapping[localMappings.size()]));
+        assertion.setQueryMappings(localMappings.toArray(new QueryAttributeMapping[localMappings.size()]));
         assertion.setSearchFilter(searchField.getText());
         assertion.setEnableCache(cacheLDAPAttributeValuesCheckBox.isSelected());
         assertion.setCachePeriod(Long.parseLong(cachePeriodSpinner.getValue().toString()));

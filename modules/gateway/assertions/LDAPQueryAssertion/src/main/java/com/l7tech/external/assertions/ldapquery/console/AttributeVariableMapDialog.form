@@ -47,7 +47,8 @@
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="LDAP Attribute Name:"/>
+              <labelFor value="eb197"/>
+              <text value="LDAP &amp;Attribute Name:"/>
             </properties>
           </component>
           <component id="67aa7" class="javax.swing.JLabel">
@@ -55,7 +56,8 @@
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="Context Variable Name:"/>
+              <labelFor value="d30ad"/>
+              <text value="Context &amp;Variable Name:"/>
             </properties>
           </component>
           <component id="eb197" class="javax.swing.JTextField" binding="attributeName">
@@ -74,12 +76,25 @@
             </constraints>
             <properties/>
           </component>
-          <component id="82c95" class="javax.swing.JCheckBox" binding="multivaluedCheckBox" default-binding="true">
+          <component id="11874" class="javax.swing.JComboBox" binding="multivaluedComboBox" default-binding="true">
             <constraints>
-              <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="&amp;Multivalued"/>
+              <model>
+                <item value="Use first value"/>
+                <item value="Join values using commas"/>
+                <item value="Set multi-valued context variable"/>
+              </model>
+            </properties>
+          </component>
+          <component id="bc821" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <labelFor value="11874"/>
+              <text value="If &amp;multivalued:"/>
             </properties>
           </component>
         </children>

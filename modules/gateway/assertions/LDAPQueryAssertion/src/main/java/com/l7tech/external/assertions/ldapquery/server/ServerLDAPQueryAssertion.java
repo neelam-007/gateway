@@ -1,7 +1,5 @@
 package com.l7tech.external.assertions.ldapquery.server;
 
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.external.assertions.ldapquery.LDAPQueryAssertion;
 import com.l7tech.external.assertions.ldapquery.QueryAttributeMapping;
 import com.l7tech.identity.IdentityProvider;
@@ -15,6 +13,8 @@ import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 import org.springframework.context.ApplicationContext;
 
 import javax.naming.NamingEnumeration;
@@ -24,8 +24,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -57,15 +56,68 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
         varsUsed = assertion.getVariablesUsed();
     }
 
+    /** Holds either a String or a List of Strings. */
+    private class Stringses {
+        private final String string;
+        private final String[] strings;
+
+        private Stringses(String string) {
+            if (string == null) throw new NullPointerException("String may not be null");
+            this.string = string;
+            this.strings = null;
+        }
+
+        private Stringses(List<String> strings) {
+            if (strings == null) throw new NullPointerException("Strings collection may not be null");
+            this.string = null;
+            this.strings = strings.toArray(new String[strings.size()]);
+        }
+
+        public String getString() {
+            return string != null ? string : (strings == null || strings.length < 1 ? null : strings[0]);
+        }
+
+        public String[] getStrings() {
+            return string != null ? new String[] { string } : strings;
+        }
+
+        /** @return true if {@link #getStringOrStrings} would return an array. */
+        public boolean isMultivalued() {
+            return strings != null;
+        }
+
+        /** @return either a String, a String[], or null.  */
+        public Object getStringOrStrings() {
+            return string != null ? string : strings;
+        }
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Stringses stringses = (Stringses) o;
+
+            return !(string != null ? !string.equals(stringses.string) : stringses.string != null) &&
+                   Arrays.equals(strings, stringses.strings);
+        }
+
+        public int hashCode() {
+            int result;
+            result = (string != null ? string.hashCode() : 0);
+            result = 31 * result + (strings != null ? Arrays.hashCode(strings) : 0);
+            return result;
+        }
+    }
+
     public class CacheEntry {
         public CacheEntry() {
             entryBirthdate = System.currentTimeMillis();
-            cachedAttributes = new HashMap<String, String>();
+            cachedAttributes = new HashMap<String, Stringses>();
         }
 
         public long entryBirthdate;
         // key: attribute name, value: attribute value
-        public HashMap<String, String> cachedAttributes;
+        public HashMap<String, Stringses> cachedAttributes;
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext pec) throws IOException, PolicyAssertionException {
@@ -106,7 +158,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
             return AssertionStatus.NONE;
         } else {
             // no caching
-            CacheEntry values = null;
+            final CacheEntry values;
             try {
                 values = createNewCacheEntry(filterExpression);
             } catch (FindException e) {
@@ -134,8 +186,8 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
 
     private void pushToPec(PolicyEnforcementContext pec, CacheEntry cachedvalues) {
         for (String key : cachedvalues.cachedAttributes.keySet()) {
-            String value = cachedvalues.cachedAttributes.get(key);
-            pec.setVariable(key, value);
+            Stringses value = cachedvalues.cachedAttributes.get(key);
+            pec.setVariable(key, value.getStringOrStrings());
         }
     }
 
@@ -160,23 +212,30 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                         logger.warning("Search filter returned more than one ldap entry: " + filter);
                     }
                     logger.info("Reading LDAP attributes for " + sr.getNameInNamespace());
-                    for (QueryAttributeMapping attrMapping : assertion.currentQueryMappings()) {
+                    for (QueryAttributeMapping attrMapping : assertion.getQueryMappings()) {
                         Attribute valuesWereLookingFor = sr.getAttributes().get(attrMapping.getAttributeName());
                         if (valuesWereLookingFor != null && valuesWereLookingFor.size() > 0) {
                             if (attrMapping.isMultivalued()) {
-                                StringBuffer sbuf = new StringBuffer();
-                                for (int i = 0; i < valuesWereLookingFor.size(); i++) {
-                                    if (i > 0) {
-                                        sbuf.append(", ");
+                                if (attrMapping.isJoinMultivalued()) {
+                                    StringBuffer sbuf = new StringBuffer();
+                                    for (int i = 0; i < valuesWereLookingFor.size(); i++) {
+                                        if (i > 0) {
+                                            sbuf.append(", ");
+                                        }
+                                        sbuf.append(valuesWereLookingFor.get(i).toString());
                                     }
-                                    sbuf.append(valuesWereLookingFor.get(i).toString());
+                                    logger.fine("Set " + attrMapping.getMatchingContextVariableName() + " to " + sbuf.toString());
+                                    cachedvalues.cachedAttributes.put(attrMapping.getMatchingContextVariableName(), new Stringses(sbuf.toString()));
+                                } else {
+                                    List<String> valueStrings = new ArrayList<String>();
+                                    for (int i = 0; i < valuesWereLookingFor.size(); i++)
+                                        valueStrings.add(valuesWereLookingFor.get(i).toString());
+                                    logger.fine("Set " + attrMapping.getMatchingContextVariableName() + " to " + valueStrings.size() + " values");
+                                    cachedvalues.cachedAttributes.put(attrMapping.getMatchingContextVariableName(), new Stringses(valueStrings));
                                 }
-                                logger.fine("Set " + attrMapping.getMatchingContextVariableName() + " to " + sbuf.toString());
-                                cachedvalues.cachedAttributes.put(attrMapping.getMatchingContextVariableName(), sbuf.toString());
-
                             } else {
                                 logger.fine("Set " + attrMapping.getMatchingContextVariableName() + " to " + valuesWereLookingFor.get(0));
-                                cachedvalues.cachedAttributes.put(attrMapping.getMatchingContextVariableName(), valuesWereLookingFor.get(0).toString());
+                                cachedvalues.cachedAttributes.put(attrMapping.getMatchingContextVariableName(), new Stringses(valuesWereLookingFor.get(0).toString()));
                             }
                         } else {
                             logger.info("Attribute named " + attrMapping.getAttributeName() + " was not present for ldap entry " + sr.getNameInNamespace());
@@ -193,12 +252,8 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                     throw new FindException("Error searching for LDAP entry", e);
                 }
             } finally {
-                if (ldapcontext != null) {
-                    if (answer != null) {
-                        ResourceUtils.closeQuietly(answer);
-                    }
-                    ResourceUtils.closeQuietly(ldapcontext);
-                }
+                ResourceUtils.closeQuietly(answer);
+                ResourceUtils.closeQuietly(ldapcontext);
             }
         } else {
             throw new FindException("Id provider is not ldap");

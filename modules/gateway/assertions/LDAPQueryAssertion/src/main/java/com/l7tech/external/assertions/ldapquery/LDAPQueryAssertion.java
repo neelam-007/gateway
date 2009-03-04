@@ -1,16 +1,17 @@
 package com.l7tech.external.assertions.ldapquery;
 
-import com.l7tech.policy.assertion.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.*;
-import com.l7tech.policy.variable.VariableMetadata;
-import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
-import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.policy.wsp.ArrayTypeMapping;
-import com.l7tech.util.Functions;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.policy.assertion.*;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.wsp.ArrayTypeMapping;
+import com.l7tech.policy.wsp.BeanTypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.util.Functions;
 
 import java.io.Serializable;
 import java.util.*;
@@ -29,7 +30,7 @@ import java.util.*;
  */
 public class LDAPQueryAssertion extends Assertion implements UsesVariables, SetsVariables, Serializable {
     private String searchFilter;
-    private QueryAttributeMapping[] queryMappings;
+    private QueryAttributeMapping[] queryMappings = new QueryAttributeMapping[0];
     private long ldapProviderOid;
     private long cachePeriod = 10;
     private boolean enableCache = true;
@@ -39,8 +40,6 @@ public class LDAPQueryAssertion extends Assertion implements UsesVariables, Sets
     }
 
     public AssertionMetadata meta() {
-        clearCachedMetadata(getClass().getName());
-        
         DefaultAssertionMetadata meta = defaultMeta();
 
         meta.put(SHORT_NAME, "LDAP Query Assertion");
@@ -62,17 +61,16 @@ public class LDAPQueryAssertion extends Assertion implements UsesVariables, Sets
         meta.put(SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.ldapquery.server.ServerLDAPQueryAssertion");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.ldapquery.console.LDAPQueryPropertiesDialog");
 
-        meta.put(WSP_EXTERNAL_NAME, "LDAPQuery");
-
-        // request default feature set name for our class name, since we are a known optional module
-        // that is, we want our required feature set to be "assertion:Comparison" rather than "set:modularAssertions"
-        // meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(WSP_EXTERNAL_NAME, "LdapQueryAssertion");
 
         Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
-        //othermappings.add(new ArrayTypeMapping(new QueryAttributeMapping[0], "qwe79qw87"));
-        //othermappings.add(new BeanTypeMapping(QueryAttributeMapping.class, "df654dsf65"));
-        othermappings.add(new ArrayTypeMapping(new Boolean[0], "bools"));
+        othermappings.add(new ArrayTypeMapping(new QueryAttributeMapping[0], "queryAttributeMappings"));
+        othermappings.add(new BeanTypeMapping(QueryAttributeMapping.class, "mapping"));
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
+
+        meta.put(AssertionMetadata.WSP_COMPATIBILITY_MAPPINGS, new HashMap<String, TypeMapping>() {{
+            put("LDAPQuery", new LDAPQueryCompatibilityAssertionMapping(new LDAPQueryAssertion(), "LDAPQuery"));
+        }});
 
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
@@ -87,12 +85,12 @@ public class LDAPQueryAssertion extends Assertion implements UsesVariables, Sets
         this.searchFilter = searchFilter;
     }
 
-    public QueryAttributeMapping[] currentQueryMappings() {
-        if (queryMappings == null) return new QueryAttributeMapping[0];
+    public QueryAttributeMapping[] getQueryMappings() {
         return queryMappings;
     }
 
-    public void reassignQueryMappings(QueryAttributeMapping[] queryMappings) {
+    public void setQueryMappings(QueryAttributeMapping[] queryMappings) {
+        if (queryMappings == null) queryMappings = new QueryAttributeMapping[0];
         this.queryMappings = queryMappings;
     }
 
@@ -112,87 +110,19 @@ public class LDAPQueryAssertion extends Assertion implements UsesVariables, Sets
 
     public VariableMetadata[] getVariablesSet() {
         ArrayList<VariableMetadata> output =  new ArrayList<VariableMetadata>();
-        for (QueryAttributeMapping am : currentQueryMappings()) {
+        for (QueryAttributeMapping am : queryMappings) {
             output.add(new VariableMetadata(am.getMatchingContextVariableName(), false, true, am.getMatchingContextVariableName(), true));
         }
         return output.toArray(new VariableMetadata[output.size()]);
     }
 
-    // wsp annoyance work around below
-    private void resetMappingsSize(int newSize) {
-        queryMappings = new QueryAttributeMapping[newSize];
-        for (int i = 0; i < queryMappings.length; i++) queryMappings[i] = new QueryAttributeMapping("foo", "bar");
-    }
-
     public String[] getAttrNames() {
-        QueryAttributeMapping[] tmp = currentQueryMappings();
-        String[] output = new String[tmp.length];
-        for (int i = 0; i < tmp.length; i++) {
-            output[i] = tmp[i].getAttributeName();
-        }
-        return output;
+        ArrayList<String> ret = new ArrayList<String>();
+        for (QueryAttributeMapping mapping : queryMappings)
+            ret.add(mapping.getAttributeName());
+        return ret.toArray(new String[ret.size()]);
     }
 
-    public void setAttrNames(String[] attrNames) {
-        if (attrNames == null) {
-            queryMappings = null;
-        } else {
-            QueryAttributeMapping[] current = currentQueryMappings();
-            if (current.length != attrNames.length) {
-                resetMappingsSize(attrNames.length);
-            }
-            for (int i = 0; i < queryMappings.length; i++) {
-                queryMappings[i].setAttributeName(attrNames[i]);
-            }
-        }
-    }
-
-    public String[] getVarNames() {
-        QueryAttributeMapping[] tmp = currentQueryMappings();
-        String[] output = new String[tmp.length];
-        for (int i = 0; i < tmp.length; i++) {
-            output[i] = tmp[i].getMatchingContextVariableName();
-        }
-        return output;
-    }
-
-    public void setVarNames(String[] varNames) {
-        if (varNames == null) {
-            queryMappings = null;
-        } else {
-            QueryAttributeMapping[] current = currentQueryMappings();
-            if (current.length != varNames.length) {
-                resetMappingsSize(varNames.length);
-            }
-            for (int i = 0; i < queryMappings.length; i++) {
-                queryMappings[i].setMatchingContextVariableName(varNames[i]);
-            }
-        }
-    }
-
-    public Boolean[] getMultivalued() {
-        QueryAttributeMapping[] tmp = currentQueryMappings();
-        Boolean[] output = new Boolean[tmp.length];
-        for (int i = 0; i < tmp.length; i++) {
-            output[i] = tmp[i].isMultivalued();
-        }
-        return output;
-    }
-
-    public void setMultivalued(Boolean[] multivalued) {
-        if (multivalued == null) {
-            queryMappings = null;
-        } else {
-            QueryAttributeMapping[] current = currentQueryMappings();
-            if (current.length != multivalued.length) {
-                resetMappingsSize(multivalued.length);
-            }
-            for (int i = 0; i < queryMappings.length; i++) {
-                queryMappings[i].setMultivalued(multivalued[i]);
-            }
-        }
-    }
-    // end of wsp annoyance work around
     public long getCachePeriod() {
         return cachePeriod;
     }

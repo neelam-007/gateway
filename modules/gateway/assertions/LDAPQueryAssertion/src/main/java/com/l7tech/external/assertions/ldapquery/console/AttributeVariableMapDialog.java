@@ -3,12 +3,11 @@ package com.l7tech.external.assertions.ldapquery.console;
 import com.l7tech.external.assertions.ldapquery.QueryAttributeMapping;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.util.ValidationUtils;
-import com.l7tech.gui.util.InputValidator;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * Something to edit a mapping between an LDAP attribute name and a context variable.
@@ -25,11 +24,16 @@ public class AttributeVariableMapDialog extends JDialog {
     private JButton OKButton;
     private JTextField attributeName;
     private JTextField variableName;
-    private JCheckBox multivaluedCheckBox;
+    private JComboBox multivaluedComboBox;
 
     private QueryAttributeMapping data;
     private boolean wasOKed = false;
     InputValidator validator;
+
+    private static final String MV_USE_FIRST = "Use first value";
+    private static final String MV_JOIN_COMMAS = "Join with commas";
+    private static final String MV_MULTIVALUED = "Set multi-valued context variable";
+    private static final String[] MV_MODEL = { MV_USE_FIRST, MV_JOIN_COMMAS, MV_MULTIVALUED };
 
     public AttributeVariableMapDialog(Dialog owner, QueryAttributeMapping data) throws HeadlessException {
         super(owner, "Attribute Variable Mapping", true);
@@ -109,7 +113,7 @@ public class AttributeVariableMapDialog extends JDialog {
 
         data.setAttributeName(maybeattrval);
         data.setMatchingContextVariableName(maybevarval);
-        data.setMultivalued(multivaluedCheckBox.isSelected());
+        viewToModelMultivaluedFlags();
 
         wasOKed = true;
         dispose();
@@ -119,13 +123,31 @@ public class AttributeVariableMapDialog extends JDialog {
         // update gui from assertion
         attributeName.setText(data.getAttributeName());
         variableName.setText(data.getMatchingContextVariableName());
-        multivaluedCheckBox.setSelected(data.isMultivalued());
+        multivaluedComboBox.setModel(new DefaultComboBoxModel(MV_MODEL));
+        String mv = MV_USE_FIRST;
+        if (data.isMultivalued())
+            mv = data.isJoinMultivalued() ? MV_JOIN_COMMAS : MV_MULTIVALUED;
+        multivaluedComboBox.setSelectedItem(mv);
     }
 
     public void viewToModel() {
         data.setAttributeName(attributeName.getText().trim());
         data.setMatchingContextVariableName(variableName.getText().trim());
-        data.setMultivalued(multivaluedCheckBox.isSelected());
+        viewToModelMultivaluedFlags();
+    }
+
+    private void viewToModelMultivaluedFlags() {
+        Object mv = multivaluedComboBox.getSelectedItem();
+        if (MV_MULTIVALUED.equals(mv)) {
+            data.setMultivalued(true);
+            data.setJoinMultivalued(false);
+        } else if (MV_JOIN_COMMAS.equals(mv)) {
+            data.setMultivalued(true);
+            data.setJoinMultivalued(true);
+        } else { // MV_USE_FIRST
+            data.setMultivalued(false);
+            data.setJoinMultivalued(false);
+        }
     }
 
     public boolean isWasOKed() {
