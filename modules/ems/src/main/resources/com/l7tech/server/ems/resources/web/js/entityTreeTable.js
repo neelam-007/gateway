@@ -1328,7 +1328,7 @@ if (!l7.EntityTreeTable) {
                     if (property.value != undefined && property.value != null) {
                         span.innerHTML = l7.Util.escapeHtmlText(property.value);
                         if (propertyType != l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY.AUDIT_SIZE) { // Unit label for audit size is too long.
-                            if (property.unit != undefined && property.unit != null) {
+                            if (property.value != l7.Constants.NA && property.unit != undefined && property.unit != null) {
                                 span.innerHTML += ' ' + l7.Util.escapeHtmlText(property.unit);
                             }
                         }

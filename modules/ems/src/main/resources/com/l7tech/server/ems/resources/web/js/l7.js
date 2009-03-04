@@ -33,6 +33,12 @@ if (!l7.Constants) {
         l7.Constants = {};
 
         /**
+         * Special value for Not Applicable or Not Available.
+         * Used for example as the monitored property JSON response value when CPU Temperature is not available on a virtual appliance.
+         */
+        l7.Constants.NA = 'N/A';
+
+        /**
          * Enum of entity types.
          * @final
          */

@@ -23,7 +23,14 @@ public final class JSONConstants {
     }
 
     /**
-     * Enum of system monitoring setup settings.
+     * Special value for Not Applicable or Not Available.
+     * Used for example as the monitored property value when CPU Temperature is not available on a virtual appliance.
+     * Defined as l7.Constants.NA in l7.js.
+     */
+    public static final String NA = "N/A";
+
+    /**
+     * Properties of monitoring setup object literal.
      */
     public static final class SystemMonitoringSetup {
         public static final String PROPERTY_SETUP                = "propertySetup";
@@ -59,7 +66,7 @@ public final class JSONConstants {
     }
 
     /**
-     * Enum of settings of each propertySetup.
+     * Properties of monitoring property setup object literal.
      */
     public static final class MonitoringPropertySettings {
         public static final String SAMPLING_INTERVAL         = "samplingInterval";
@@ -70,7 +77,7 @@ public final class JSONConstants {
     }
 
     /**
-     * Enum of notifiation types.
+     * Properties of notifiation rules query response object.
      */
     public static final class NotifiationRule {
         public static final String RECORDS = "records";
@@ -88,14 +95,14 @@ public final class JSONConstants {
     }
 
     /**
-     * Enum of parameters for e-mail notification.
+     * Properties of e-mail notification parameter object literal.
      */
     public static final class NotificationEmailParams {
         public static final String PROTOCOL      = "protocol";
         public static final String HOST          = "host";
         public static final String PORT          = "port";
         public static final String REQUIRES_AUTH = "requiresAuthentication";
-        public static final String USERNAME      ="userName";
+        public static final String USERNAME      = "userName";
         public static final String PASSWORD      = "password";
         public static final String FROM          = "from";
         public static final String TO            = "to";
@@ -116,7 +123,7 @@ public final class JSONConstants {
     }
 
     /**
-     * Enum of parameters for snmp-trap notification.
+     * Properties of SNMP Trap notification parameter object literal.
      */
     public static final class NotificationSnmpTrapParams {
         public static final String HOST         = "host";
@@ -128,7 +135,7 @@ public final class JSONConstants {
     }
 
     /**
-     * Enum of parameters for http-request notification.
+     * Properties of HTTP Request notification parameter object literal.
      */
     public static final class NotificationHttpRequestParams {
         public static final String URL                   = "url";
@@ -139,7 +146,7 @@ public final class JSONConstants {
     }
 
     /**
-     * Enum of notification http method types.
+     * Enum of HTTP Request notification method types.
      */
     public static final class NotificationHttpMethodType {
         public static final String GET    = "GET";
@@ -203,7 +210,7 @@ public final class JSONConstants {
         }
     }
 
-    // Properties for all entities.
+    // Properties for all enterprise tree entities.
     public static final String ID         = "id";
     public static final String RELATED_ID = "relatedId";
     public static final String PARENT_ID  = "parentId";
@@ -248,7 +255,7 @@ public final class JSONConstants {
     public static final String VERSION = "version";
 
     /**
-     * Enum of Entity Prop Setup.
+     * Properties of monitoring property settings object literal.
      */
     public static final class ENTITY_PROPS_SETUP {
         public static final String ENTITY               = "entity";
