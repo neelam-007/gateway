@@ -2,7 +2,20 @@ package com.l7tech.server.migration;
 
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.DEFAULT;
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SERVICE_DOCUMENT;
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SERVICE;
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SERVICE_ALIAS;
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.POLICY;
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.POLICY_ALIAS;
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.ASSERTION;
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.ID_PROVIDER_CONFIG;
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.USERGROUP;
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.VALUE_REFERENCE;
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SSGKEY;
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SERVER_VARIABLE;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.service.ServiceDocumentManager;
 
@@ -17,36 +30,44 @@ public class PropertyResolverFactory {
     private EntityFinder entityFinder;
     private SsgKeyStoreManager keyManager;
     private ServiceDocumentManager serviceDocumentManager;
+    private ClusterPropertyManager cpManager;
 
     private Map<PropertyResolver.Type, PropertyResolver> registry = new HashMap<PropertyResolver.Type, PropertyResolver>();
 
-    public PropertyResolverFactory(EntityFinder entityFinder, ServiceDocumentManager serviceDocumentManager, SsgKeyStoreManager keyManager) {
+    public PropertyResolverFactory(EntityFinder entityFinder, ServiceDocumentManager serviceDocumentManager, SsgKeyStoreManager keyManager, ClusterPropertyManager cpManager) {
         this.entityFinder = entityFinder;
         this.keyManager = keyManager;
         this.serviceDocumentManager = serviceDocumentManager;
+        this.cpManager = cpManager;
         initRegistry();
     }
 
     private void initRegistry() {
         // todo: better registry initialization
-        registry.put(PropertyResolver.Type.DEFAULT, new DefaultEntityPropertyResolver(this));
-        registry.put(PropertyResolver.Type.SERVICE_DOCUMENT, new ServiceDocumentResolver(this, serviceDocumentManager));
-        registry.put(PropertyResolver.Type.SERVICE, new AbstractOidPropertyResolver(this, entityFinder) {
+        addToRegistry(new DefaultEntityPropertyResolver(this, DEFAULT));
+        addToRegistry(new ServiceDocumentResolver(this, SERVICE_DOCUMENT, serviceDocumentManager));
+        addToRegistry(new AbstractOidPropertyResolver(this, SERVICE, entityFinder) {
             public EntityType getTargetType() { return EntityType.SERVICE; }
         });
-        registry.put(PropertyResolver.Type.SERVICE_ALIAS, new AbstractOidPropertyResolver(this, entityFinder) {
+        addToRegistry(new AbstractOidPropertyResolver(this, SERVICE_ALIAS, entityFinder) {
             public EntityType getTargetType() { return EntityType.SERVICE; }
-        });        registry.put(PropertyResolver.Type.POLICY, new PolicyPropertyResolver(this));
-        registry.put(PropertyResolver.Type.POLICY_ALIAS, new AbstractOidPropertyResolver(this, entityFinder) {
+        });
+        addToRegistry(new PolicyPropertyResolver(this, POLICY));
+        addToRegistry(new AbstractOidPropertyResolver(this, POLICY_ALIAS, entityFinder) {
             public EntityType getTargetType() { return EntityType.POLICY; }
-        });        registry.put(PropertyResolver.Type.ASSERTION, new AssertionPropertyResolver(this));
-        registry.put(PropertyResolver.Type.ID_PROVIDER_CONFIG, new AbstractOidPropertyResolver(this, entityFinder) {
+        });
+        addToRegistry(new AssertionPropertyResolver(this, ASSERTION));
+        addToRegistry(new AbstractOidPropertyResolver(this, ID_PROVIDER_CONFIG, entityFinder) {
             public EntityType getTargetType() { return EntityType.ID_PROVIDER_CONFIG; }
         });
-        registry.put(PropertyResolver.Type.USERGROUP, new UserGroupResolver(this));
-        registry.put(PropertyResolver.Type.VALUE_REFERENCE, new ValueReferencePropertyResolver(this));
-        registry.put(PropertyResolver.Type.SSGKEY, new SsgKeyResolver(this, keyManager));
-        registry.put(PropertyResolver.Type.SERVER_VARIABLE, new ServerVariablePropertyResolver(this));
+        addToRegistry(new UserGroupResolver(this, USERGROUP));
+        addToRegistry(new ValueReferencePropertyResolver(this, VALUE_REFERENCE));
+        addToRegistry(new SsgKeyResolver(this, SSGKEY, keyManager));
+        addToRegistry(new ServerVariablePropertyResolver(this, SERVER_VARIABLE, cpManager));
+    }
+
+    private void addToRegistry(PropertyResolver resolver) {
+        registry.put(resolver.getType(), resolver);
     }
 
     /**

@@ -13,6 +13,7 @@ import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +27,7 @@ public class EsmMetricsAssertion extends Assertion implements UsesVariables {
     private static final String QOSMW	= "http://metadata.dod.mil/mdr/ns/netops/esm/qosmw";
 
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return new String[0]; //Syntax.getReferencedNames(...);
     }

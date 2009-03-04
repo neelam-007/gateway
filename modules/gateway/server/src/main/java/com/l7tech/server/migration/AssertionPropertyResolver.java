@@ -18,8 +18,8 @@ public class AssertionPropertyResolver extends DefaultEntityPropertyResolver {
 
     private static final Logger logger = Logger.getLogger(AssertionPropertyResolver.class.getName());
 
-    public AssertionPropertyResolver(PropertyResolverFactory factory) {
-        super(factory);
+    public AssertionPropertyResolver(PropertyResolverFactory factory, Type type) {
+        super(factory, type);
     }
 
     @Override

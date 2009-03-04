@@ -9,6 +9,7 @@ import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 import java.util.logging.Logger;
 
@@ -62,7 +63,7 @@ public class JoinAssertion extends Assertion implements UsesVariables, SetsVaria
         this.outputVariable = outputVariable;
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return inputVariable == null ? EMPTY_STRING : new String[] { inputVariable };
     }

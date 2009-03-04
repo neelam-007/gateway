@@ -26,7 +26,8 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
     @Override
     public MigrationMappingRecord findByMapping( final String sourceClusterGuid,
                                                  final ExternalEntityHeader sourceEntityHeader,
-                                                 final String targetClusterGuid ) throws FindException {
+                                                 final String targetClusterGuid,
+                                                 final boolean valueMapping) throws FindException {
         SsgCluster sourceCluster;
         SsgCluster targetCluster;
         try {
@@ -43,7 +44,10 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
             throw new FindException( "Could not find cluster for GUID '"+targetClusterGuid+"'." );
         }
 
-        return findByMapping( sourceCluster, sourceEntityHeader, targetCluster, (ExternalEntityHeader)null );
+        if (valueMapping)
+            return findByMapping(sourceCluster, sourceEntityHeader, targetCluster, (String) null);
+        else
+            return findByMapping(sourceCluster, sourceEntityHeader, targetCluster, (ExternalEntityHeader) null);
     }
 
     @Override
@@ -52,7 +56,7 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
                                                     final String targetClusterId ) throws FindException {
         ExternalEntityHeader entityHeader = null;
 
-        MigrationMappingRecord record = findByMapping( sourceClusterId, sourceEntityHeader, targetClusterId );
+        MigrationMappingRecord record = findByMapping( sourceClusterId, sourceEntityHeader, targetClusterId, false );
         if ( record != null && record.getTarget().getEntityType() != null ) {
             entityHeader = MigrationMappedEntity.asEntityHeader(record.getTarget());
         }
@@ -77,6 +81,7 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
         if ( mapping.getSourceCluster() != null &&
              mapping.getTargetCluster() != null ) {
             try {
+                // todo: use ExternalEntityHeader.getMappingKey() for better lookup / matching
                 MigrationMappingRecord existingMapping =
                         findByMapping( mapping.getSourceCluster(), sourceEntityHeader,
                                        mapping.getTargetCluster(), targetValue );
@@ -215,6 +220,7 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
 
         MigrationMappingRecord mostRecentMatch = null;
         for ( MigrationMappingRecord record : result ) {
+            if (isValueMapping(record)) continue;
             if ( mostRecentMatch==null ) {
                 mostRecentMatch = record;
             } else if ( mostRecentMatch.getTimestamp() < record.getTimestamp() ) {
@@ -247,6 +253,7 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
 
         MigrationMappingRecord mostRecentMatch = null;
         for ( MigrationMappingRecord record : result ) {
+            if (!isValueMapping(record)) continue;
             if ( mostRecentMatch==null ) {
                 mostRecentMatch = record;
             } else if ( mostRecentMatch.getTimestamp() < record.getTimestamp() ) {
@@ -255,6 +262,10 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
         }
 
         return mostRecentMatch;
+    }
+
+    private static boolean isValueMapping(MigrationMappingRecord record) {
+        return record.getTarget().getEntityValue() != null;
     }
 
 }

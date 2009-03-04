@@ -1,13 +1,9 @@
 package com.l7tech.server.management.migration.bundle;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.migration.MigrationDependency;
-import com.l7tech.objectmodel.migration.MigrationMappingType;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
-import com.l7tech.server.management.api.node.MigrationApi;
 import com.l7tech.policy.PolicyAlias;
 
 import javax.xml.bind.annotation.*;
@@ -84,77 +80,6 @@ public class MigrationBundle implements Serializable {
 
     public void addExportedItem(ExportedItem item) {
         exportedItems.put(item.getHeader(), item);
-    }
-
-    // --- mapping operations ---
-
-    public void mapValue(ExternalEntityHeader dependency, Entity newValue) throws MigrationApi.MigrationException {
-
-        Set<MigrationDependency> dependants = metadata.getDependants(dependency);
-
-        if (dependency == null || newValue == null || dependants == null)
-            return;
-
-        // check for conflicting mapping types for this value-mapped dependency
-        for (MigrationDependency dep : dependants) {
-            if (dep.getMappingType() == MigrationMappingType.BOTH_NONE)
-                throw new MigrationApi.MigrationException("Cannot map value for dependency; mapping set to NONE for: " + dep);
-        }
-
-        // update mapping
-        ExportedItem item = getExportedItem(dependency);
-        if (item == null) {
-            item = new ExportedItem(dependency, null);
-            addExportedItem(item);
-        }
-        item.setMappedValue(newValue);
-    }
-
-    public Set<MigrationDependency> getUnresolvedMappings() throws MigrationApi.MigrationException {
-        Set<MigrationDependency> result = new HashSet<MigrationDependency>();
-        for(MigrationDependency m : metadata.getDependencies()) {
-            MigrationMappingType type = m.getMappingType();
-            ExternalEntityHeader targetHeaderRef = m.getDependency();
-            ExportedItem targetItem = getExportedItem(targetHeaderRef);
-            boolean hasSourceValue = targetItem != null && targetItem.getSourceValue() != null;
-            boolean hasMappedValue = targetItem != null && targetItem.getMappedValue() != null;
-
-            switch (type.getNameMapping()) {
-                case NONE:
-                    if ( ! hasSourceValue )
-                        throw new MigrationApi.MigrationException("Source value required but not present in the bundle for: " + targetHeaderRef);
-                    break;
-                case OPTIONAL:
-                    if ( ! hasSourceValue && ! metadata.isMapped(m.getDependant()))
-                        result.add(m);
-                    break;
-                case REQUIRED:
-                    if (! metadata.isMapped(m.getDependant()))
-                        result.add(m);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknow mapping type: " + type); // should not happen
-            }
-
-            switch (type.getValueMapping()) {
-                case NONE: // requirement only if there's no name-mapping
-                    if ( ! hasSourceValue && type.getNameMapping() != MigrationMappingSelection.NONE && ! metadata.isMapped(m.getDependant()))
-                        throw new MigrationApi.MigrationException("Source value required but not present in the bundle for: " + targetHeaderRef);
-                    break;
-                case OPTIONAL:
-                    if ( ! hasSourceValue && ! hasMappedValue)
-                        result.add(m);
-                    break;
-                case REQUIRED:
-                    if ( ! hasMappedValue )
-                        result.add(m);
-                    break;
-                default:
-                    throw new IllegalStateException("Unknow mapping type: " + type); // should not happen
-            }
-        }
-
-        return result;
     }
 
     public Map<ExternalEntityHeader, Entity> getExportedEntities() {

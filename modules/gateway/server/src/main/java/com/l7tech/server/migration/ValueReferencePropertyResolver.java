@@ -3,8 +3,8 @@ package com.l7tech.server.migration;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.migration.MigrationDependency;
 import com.l7tech.objectmodel.migration.PropertyResolverException;
-import com.l7tech.objectmodel.migration.MigrationMappingType;
 import com.l7tech.objectmodel.migration.MigrationUtils;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Include;
@@ -21,22 +21,23 @@ import java.lang.reflect.Method;
 public class ValueReferencePropertyResolver extends AbstractPropertyResolver {
     private static final Logger logger = Logger.getLogger(ValueReferencePropertyResolver.class.getName());
 
-    public ValueReferencePropertyResolver(PropertyResolverFactory factory) {
-        super(factory);
+    public ValueReferencePropertyResolver(PropertyResolverFactory factory, Type type) {
+        super(factory, type);
     }
 
-    public Map<ExternalEntityHeader, Set<MigrationDependency>> getDependencies(final ExternalEntityHeader source, Object entity, Method property, final String propertyName) throws PropertyResolverException {
+    public Map<ExternalEntityHeader, Set<MigrationDependency>> getDependencies(final ExternalEntityHeader source, final Object entity, final Method property, final String propertyName) throws PropertyResolverException {
 
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
-        final MigrationMappingType mappingType = MigrationUtils.getMappingType(property);
-        final ValueReferenceEntityHeader.Type valueType = MigrationUtils.getValueType(property);
+        final MigrationMappingSelection mappingType = MigrationUtils.getMappingType(property);
+        final MigrationMappingSelection valueMappingType = MigrationUtils.getValueMappingType(property);
+        final ExternalEntityHeader.ValueType valueType = MigrationUtils.getValueType(property);
         final boolean exported = MigrationUtils.isExported(property);
-        final String displayValue = valueType.serialize(getPropertyValue(entity, property));
 
         return new HashMap<ExternalEntityHeader, Set<MigrationDependency>>() {{
-            ValueReferenceEntityHeader dependencyHeader = new ValueReferenceEntityHeader(EntityHeaderUtils.toExternal(source), propertyName, valueType, displayValue);
-            put(dependencyHeader, Collections.singleton(new MigrationDependency(source, dependencyHeader, propertyName, mappingType, exported)));
+            ValueReferenceEntityHeader dependencyHeader = new ValueReferenceEntityHeader(EntityHeaderUtils.toExternal(source), propertyName);
+            dependencyHeader.setValueMapping(valueMappingType, valueType, getPropertyValue(entity, property));
+            put(dependencyHeader, Collections.singleton(new MigrationDependency(source, dependencyHeader, propertyName, getType(), mappingType, exported)));
         }};
     }
 

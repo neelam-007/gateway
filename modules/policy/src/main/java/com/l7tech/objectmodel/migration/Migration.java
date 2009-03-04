@@ -1,6 +1,6 @@
 package com.l7tech.objectmodel.migration;
 
-import com.l7tech.objectmodel.ValueReferenceEntityHeader;
+import com.l7tech.objectmodel.ExternalEntityHeader;
 
 import java.lang.annotation.*;
 
@@ -27,12 +27,12 @@ public @interface Migration {
      *
      * @see MigrationMappingSelection for the available mapping selection modes.
      */
-    MigrationMappingSelection mapValue() default MigrationMappingSelection.OPTIONAL;
+    MigrationMappingSelection mapValue() default MigrationMappingSelection.NONE;
 
     /**
      * For value mappings, specifies the type of the value.
      */
-    ValueReferenceEntityHeader.Type valueType() default ValueReferenceEntityHeader.Type.TEXT;
+    ExternalEntityHeader.ValueType valueType() default ExternalEntityHeader.ValueType.TEXT;
 
     /**
      * Specifies the property resolver type that must be used to extract and apply

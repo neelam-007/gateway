@@ -16,6 +16,7 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -195,7 +196,7 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
         this.authPassword = authPassword;
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return Syntax.getReferencedNames(this.messageString());
     }

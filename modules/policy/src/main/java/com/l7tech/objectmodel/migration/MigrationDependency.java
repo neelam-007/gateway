@@ -22,22 +22,25 @@ import java.io.Serializable;
  * @author jbufu
  */
 @XmlRootElement
-@XmlType(propOrder = {"dependant", "propName", "mappingType", "dependency"})
+@XmlType(propOrder = {"dependant", "propName", "resolverType", "mappingType", "dependency"})
 public class MigrationDependency implements Serializable {
 
     private ExternalEntityHeader dependant;
     private ExternalEntityHeader dependency;
 
     private String propName;
-    private MigrationMappingType mappingType;
+    private PropertyResolver.Type resolverType;
+    private MigrationMappingSelection mappingType;
     private boolean export;
 
     protected MigrationDependency() {}
 
-    public MigrationDependency(ExternalEntityHeader dependant, ExternalEntityHeader dependency, String propName, MigrationMappingType mappingType, boolean export) {
+    public MigrationDependency(ExternalEntityHeader dependant, ExternalEntityHeader dependency,
+                               String propName, PropertyResolver.Type resolverType, MigrationMappingSelection mappingType, boolean export) {
         this.dependant = dependant;
         this.dependency = dependency;
         this.propName = propName;
+        this.resolverType = resolverType;
         this.mappingType = mappingType;
         this.export = export;
     }
@@ -68,11 +71,19 @@ public class MigrationDependency implements Serializable {
         this.propName = propName;
     }
 
-    public MigrationMappingType getMappingType() {
+    public PropertyResolver.Type getResolverType() {
+        return resolverType;
+    }
+
+    public void setResolverType(PropertyResolver.Type resolverType) {
+        this.resolverType = resolverType;
+    }
+
+    public MigrationMappingSelection getMappingType() {
         return mappingType;
     }
 
-    public void setMappingType(MigrationMappingType mappingType) {
+    public void setMappingType(MigrationMappingSelection mappingType) {
         this.mappingType = mappingType;
     }
 

@@ -29,8 +29,8 @@ public class SsgKeyResolver extends AbstractPropertyResolver {
 
     SsgKeyStoreManager keyManager;
 
-    public SsgKeyResolver(PropertyResolverFactory factory, SsgKeyStoreManager keyManager) {
-        super(factory);
+    public SsgKeyResolver(PropertyResolverFactory factory, Type  type, SsgKeyStoreManager keyManager) {
+        super(factory, type);
         this.keyManager = keyManager;
     }
 
@@ -44,15 +44,19 @@ public class SsgKeyResolver extends AbstractPropertyResolver {
 
         Map<ExternalEntityHeader, Set<MigrationDependency>> result = new HashMap<ExternalEntityHeader, Set<MigrationDependency>>();
 
-        final MigrationMappingType type = MigrationUtils.getMappingType(property);
+        final MigrationMappingSelection mappingType = MigrationUtils.getMappingType(property);
+        final MigrationMappingSelection valueMappingType = MigrationUtils.getValueMappingType(property);
+        final ExternalEntityHeader.ValueType valueType = MigrationUtils.getValueType(property);
         final boolean exported = MigrationUtils.isExported(property);
+
         PrivateKeyable keyable = (PrivateKeyable) entity;
         if (! keyable.isUsesDefaultKeyStore()) {
             SsgKeyEntry key = null;
             try {
                 key = keyManager.lookupKeyByKeyAlias(keyable.getKeyAlias(), keyable.getNonDefaultKeystoreId());
                 ExternalEntityHeader dependency = EntityHeaderUtils.toExternal(new SsgKeyHeader(key));
-                result.put(dependency, Collections.singleton(new MigrationDependency(source, dependency, propertyName, type, exported)));
+                dependency.setValueMapping(valueMappingType, valueType, getPropertyValue(entity, property));
+                result.put(dependency, Collections.singleton(new MigrationDependency(source, dependency, propertyName, getType(), mappingType, exported)));
             } catch (Exception e) {
                 throw new PropertyResolverException("Error retrieving SSG key: " + (key == null ? null : key.getId()) );
             }

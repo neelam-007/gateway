@@ -18,7 +18,6 @@ public class ExportedItem implements Serializable {
 
     private ExternalEntityHeader header;
     private Entity value;
-    private Entity mappedValue;
 
     protected ExportedItem() {}
 
@@ -37,30 +36,10 @@ public class ExportedItem implements Serializable {
 
     @XmlAnyElement(lax=true)
     public Entity getValue() {
-        return mappedValue != null ? mappedValue : value;
-    }
-
-    public void setValue(Entity value) {
-        this.mappedValue = null;
-        this.value = value;
-    }
-
-    public void setMappedValue(Entity mappedValue) {
-        this.mappedValue = mappedValue;
-    }
-
-    @XmlTransient()
-    public Entity getMappedValue() {
-        return mappedValue;
-    }
-
-    @XmlTransient()
-    public Entity getSourceValue() {
         return value;
     }
 
-    @XmlAttribute
-    public boolean isMappedValue() {
-        return mappedValue != null;
+    public void setValue(Entity value) {
+        this.value = value;
     }
 }

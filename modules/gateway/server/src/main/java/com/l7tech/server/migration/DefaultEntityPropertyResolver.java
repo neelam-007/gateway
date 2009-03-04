@@ -25,8 +25,8 @@ public class DefaultEntityPropertyResolver extends AbstractPropertyResolver {
 
     private static final Logger logger = Logger.getLogger(DefaultEntityPropertyResolver.class.getName());
 
-    public DefaultEntityPropertyResolver(PropertyResolverFactory factory) {
-        super(factory);
+    public DefaultEntityPropertyResolver(PropertyResolverFactory factory, Type type) {
+        super(factory, type);
     }
 
     public Map<ExternalEntityHeader, Set<MigrationDependency>> getDependencies(ExternalEntityHeader source, Object entity, Method property, String propertyName) throws PropertyResolverException {
@@ -34,7 +34,9 @@ public class DefaultEntityPropertyResolver extends AbstractPropertyResolver {
         if (!MigrationUtils.isDefaultDependency(property))
             throw new IllegalArgumentException("Cannot handle property: " + property);
 
-        final MigrationMappingType type = MigrationUtils.getMappingType(property);
+        final MigrationMappingSelection mappingType = MigrationUtils.getMappingType(property);
+        final MigrationMappingSelection valueMappingType = MigrationUtils.getValueMappingType(property);
+        final ExternalEntityHeader.ValueType valueType = MigrationUtils.getValueType(property);
         final boolean exported = MigrationUtils.isExported(property);
 
         final Object propertyValue = getPropertyValue(entity, property);
@@ -46,11 +48,13 @@ public class DefaultEntityPropertyResolver extends AbstractPropertyResolver {
 
         else if (propertyValue instanceof EntityHeader) {
             ExternalEntityHeader externalHeader = EntityHeaderUtils.toExternal((EntityHeader) propertyValue);
-            addToResult(externalHeader, new MigrationDependency(source, externalHeader, propertyName, type, exported), result);
+            externalHeader.setValueMapping(valueMappingType, valueType, propertyValue);
+            addToResult(externalHeader, new MigrationDependency(source, externalHeader, propertyName, getType(), mappingType, exported), result);
 
         } else if (propertyValue instanceof Entity) {
             ExternalEntityHeader externalHeader = EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity((Entity) propertyValue));
-            addToResult(externalHeader, new MigrationDependency(source, externalHeader, propertyName, type, exported), result);
+            externalHeader.setValueMapping(valueMappingType, valueType, propertyValue);
+            addToResult(externalHeader, new MigrationDependency(source, externalHeader, propertyName, getType(), mappingType, exported), result);
 
         } else { // array or set
             Collection input = null;
@@ -63,11 +67,13 @@ public class DefaultEntityPropertyResolver extends AbstractPropertyResolver {
                 for(Object item : input) {
                     if (item instanceof EntityHeader) {
                         ExternalEntityHeader externalHeader = EntityHeaderUtils.toExternal((EntityHeader) item);
-                        addToResult(externalHeader, new MigrationDependency(source, externalHeader, propertyName, type, exported), result);
+                        externalHeader.setValueMapping(valueMappingType, valueType, item);
+                        addToResult(externalHeader, new MigrationDependency(source, externalHeader, propertyName, getType(), mappingType, exported), result);
                     }
                     else if (item instanceof Entity) {
                         ExternalEntityHeader externalHeader = EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity( (Entity) item ));
-                        addToResult(externalHeader, new MigrationDependency(source, externalHeader, propertyName, type, exported), result);
+                        externalHeader.setValueMapping(valueMappingType, valueType, item);
+                        addToResult(externalHeader, new MigrationDependency(source, externalHeader, propertyName, getType(), mappingType, exported), result);
                     }
                 }
             } else {

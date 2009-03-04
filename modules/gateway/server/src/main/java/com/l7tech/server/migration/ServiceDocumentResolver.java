@@ -22,8 +22,8 @@ public class ServiceDocumentResolver extends AbstractPropertyResolver {
 
     private ServiceDocumentManager documentManager;
 
-    public ServiceDocumentResolver(PropertyResolverFactory factory, ServiceDocumentManager documentManager) {
-        super(factory);
+    public ServiceDocumentResolver(PropertyResolverFactory factory, Type type, ServiceDocumentManager documentManager) {
+        super(factory, type);
         this.documentManager = documentManager;
     }
 

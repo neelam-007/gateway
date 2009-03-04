@@ -26,8 +26,8 @@ public abstract class AbstractOidPropertyResolver extends AbstractPropertyResolv
 
     private EntityFinder entityFinder;
 
-    protected AbstractOidPropertyResolver(PropertyResolverFactory factory, EntityFinder finder) {
-        super(factory);
+    protected AbstractOidPropertyResolver(PropertyResolverFactory factory, Type type, EntityFinder finder) {
+        super(factory, type);
         this.entityFinder = finder;
     }
 
@@ -37,8 +37,11 @@ public abstract class AbstractOidPropertyResolver extends AbstractPropertyResolv
     public Map<ExternalEntityHeader, Set<MigrationDependency>> getDependencies(ExternalEntityHeader source, Object entity, Method property, String propertyName) throws PropertyResolverException {
         logger.log(Level.FINEST, "Getting dependencies for property {0} of entity with header {1}.", new Object[]{property.getName(),source});
 
-        final MigrationMappingType type = MigrationUtils.getMappingType(property);
+        final MigrationMappingSelection mappingType = MigrationUtils.getMappingType(property);
+        final MigrationMappingSelection valueMappingType = MigrationUtils.getValueMappingType(property);
+        final ExternalEntityHeader.ValueType valueType = MigrationUtils.getValueType(property);
         final boolean exported = MigrationUtils.isExported(property);
+
         EntityType targetType = getTargetType();
 
         final Long oid;
@@ -52,7 +55,8 @@ public abstract class AbstractOidPropertyResolver extends AbstractPropertyResolv
         try {
             ExternalEntityHeader externalHeader = EntityHeaderUtils.toExternal(
                 EntityHeaderUtils.fromEntity(entityFinder.find(EntityTypeRegistry.getEntityClass(targetType), oid)) );
-            result.put(externalHeader, Collections.singleton(new MigrationDependency(source, externalHeader, propertyName, type, exported)));
+            externalHeader.setValueMapping(valueMappingType, valueType, oid);
+            result.put(externalHeader, Collections.singleton(new MigrationDependency(source, externalHeader, propertyName, getType(), mappingType, exported)));
         } catch (FindException e) {
             logger.log(Level.FINE, "No entity found for type: {0} oid: {1}.", new Object[]{targetType, oid});
         }

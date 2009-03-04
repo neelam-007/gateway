@@ -19,6 +19,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_TYPE_MAPPING_CLA
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 import java.io.IOException;
 
@@ -71,7 +72,7 @@ public class HardcodedResponseAssertion extends RoutingAssertion implements Uses
         setBase64ResponseBody(HexUtils.encodeBase64(HexUtils.encodeUtf8(responseBody), true));
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         return Syntax.getReferencedNames(responseBodyString() + responseContentType);
     }

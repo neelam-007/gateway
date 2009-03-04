@@ -193,6 +193,7 @@ public final class EntityHeaderUtils {
             case JMS_ENDPOINT:
                 header = new JmsEndpointHeader(eh.getStrId(), eh.getName(), eh.getDescription(), eh.getVersion(), Boolean.parseBoolean(eh.getProperty("messageSource")));
                 break;
+
             case VALUE_REFERENCE:
                 header = new ValueReferenceEntityHeader(eh);
                 break;

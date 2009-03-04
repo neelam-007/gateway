@@ -1371,6 +1371,7 @@
       <constructor-arg ref="entityFinder"/>
       <constructor-arg ref="ssgKeyStoreManager"/>
       <constructor-arg ref="serviceDocumentManager"/>
+      <constructor-arg ref="clusterPropertyManager"/>
   </bean>
 
   <bean id="migrationManager" class="com.l7tech.server.migration.MigrationManagerImpl">

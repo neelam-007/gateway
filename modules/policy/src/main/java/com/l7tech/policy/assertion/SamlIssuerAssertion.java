@@ -22,6 +22,7 @@ import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 import java.util.*;
 
@@ -149,7 +150,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
         this.decorationTypes = decorationTypes;
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         Set<String> varNames = new HashSet<String>();
         collectVars(varNames, nameIdentifierFormat);

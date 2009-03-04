@@ -4,7 +4,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.objectmodel.migration.MigrationDependency;
 import com.l7tech.objectmodel.migration.PropertyResolverException;
-import com.l7tech.objectmodel.migration.MigrationMappingType;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 
 import java.util.Set;
@@ -23,8 +22,8 @@ import java.lang.reflect.Method;
  */
 public class UserGroupResolver extends AssertionPropertyResolver {
 
-    public UserGroupResolver(PropertyResolverFactory factory) {
-        super(factory);
+    public UserGroupResolver(PropertyResolverFactory factory, Type type) {
+        super(factory, type);
     }
 
     @Override
@@ -34,7 +33,7 @@ public class UserGroupResolver extends AssertionPropertyResolver {
         for(ExternalEntityHeader header : dependencies.keySet()) {
             if (header.getType() == EntityType.USER || header.getType() == EntityType.GROUP) {
                 for (MigrationDependency dep : dependencies.get(header)) {
-                    dep.setMappingType(new MigrationMappingType(MigrationMappingSelection.REQUIRED, MigrationMappingSelection.REQUIRED));
+                    dep.setMappingType(MigrationMappingSelection.REQUIRED);
                 }
                 result.put(header, dependencies.get(header));
             }

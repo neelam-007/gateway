@@ -32,8 +32,8 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
 
     private static final Logger logger = Logger.getLogger(PolicyPropertyResolver.class.getName());
 
-    public PolicyPropertyResolver(PropertyResolverFactory factory) {
-        super(factory);
+    public PolicyPropertyResolver(PropertyResolverFactory factory, Type type) {
+        super(factory, type);
     }
 
     @Override

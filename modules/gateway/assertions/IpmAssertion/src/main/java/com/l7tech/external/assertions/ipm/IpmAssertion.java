@@ -8,6 +8,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -113,7 +114,7 @@ public class IpmAssertion extends Assertion implements UsesVariables, SetsVariab
         this.useResponse = useResponse;
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         List<String> ret = new ArrayList<String>();
         ret.add(sourceVariableName);

@@ -12,9 +12,10 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
-import static com.l7tech.objectmodel.ValueReferenceEntityHeader.Type.HTTP_URL;
-import static com.l7tech.objectmodel.ValueReferenceEntityHeader.Type.HTTP_URL_ARRAY;
-import static com.l7tech.objectmodel.ValueReferenceEntityHeader.Type.IP_ADDRESS_ARRAY;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.HTTP_URL;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.HTTP_URL_ARRAY;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.IP_ADDRESS_ARRAY;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -335,7 +336,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.setCustomURLs(source.getCustomURLs());
     }
 
-    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         StringBuffer tmp = new StringBuffer();
         if (!StringUtils.isEmpty(login)) tmp.append(login);

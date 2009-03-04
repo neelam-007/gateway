@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel.migration;
 
 import com.l7tech.objectmodel.ExternalEntityHeader;
+import com.l7tech.objectmodel.Entity;
 
 import java.util.Set;
 import java.util.Map;
@@ -25,6 +26,11 @@ public interface PropertyResolver {
         SSGKEY,
         SERVER_VARIABLE
     }
+
+    /**
+     * @return The resolver's implementation type.
+     */
+    public Type getType();
 
     /**
      * Extracts dependency headers and mappings from the supplied entity object's property.
@@ -53,7 +59,15 @@ public interface PropertyResolver {
         throws PropertyResolverException;
 
     /**
-     * Retrieves the resolver for a given property. Needed if a resolver need to process dependencies itself,
+     * Converts a mapped value from a header to the corresponding Entity.
+     *
+     * @param header The header for which the value-mapping is performed.
+     * @return  The Entity corresponding to the mapped value.
+     */
+    public Entity valueMapping(ExternalEntityHeader header) throws PropertyResolverException;
+
+    /**
+     * Retrieves the resolver for a given property. Needed if a resolver needs to process dependencies itself,
      * rather than returning new dependencies (to the migration manager) directly.
      *
      * @param property  The property method for which a resolver is retrieved

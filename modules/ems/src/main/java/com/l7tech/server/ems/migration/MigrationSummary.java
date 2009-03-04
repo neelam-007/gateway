@@ -201,12 +201,16 @@ public class MigrationSummary implements Serializable {
                 }
 
                 ExternalEntityHeader sourceHeader = item.getSourceHeader();
-                if (sourceHeader instanceof ValueReferenceEntityHeader && ((ValueReferenceEntityHeader)sourceHeader).getMappedValue() != null) {
-                    mappingBuilder.append(sourceHeader.getDisplayNameWithScope()).append(" value mapped to ").append(((ValueReferenceEntityHeader)sourceHeader).getMappedValue());
-                } else {
+                if (sourceHeader.getMappedValue() != null) {
+                    mappingBuilder.append(sourceHeader.getDisplayNameWithScope()).append(" value mapped to ")
+                        .append(sourceHeader.getMappedValue()).append("\n");
+
+                }
+
+                if ( ! (sourceHeader instanceof ValueReferenceEntityHeader) ) {
                     ExternalEntityHeader ih = dryRun ? item.getSourceHeader() : item.getTargetHeader();
-                    builder.append(ih.getType().getName().toLowerCase()).append(", ").append(ih.getName()==null?"":ih.getName())
-                        .append("(#").append(ih.getExternalId()).append(")").append( dryRun ? " will be " : " was " )
+                    builder.append(ih.getType().getName().toLowerCase()).append(", ").append(ih.getName() == null ? "" : ih.getName())
+                        .append("(#").append(ih.getExternalId()).append(")").append(dryRun ? " will be " : " was ")
                         .append(operation.pastParticiple().toLowerCase()).append("\n");
                 }
             }

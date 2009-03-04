@@ -59,6 +59,15 @@ public class MigrationMetadata implements Serializable {
         this.headers = headers;
     }
 
+    public Set<ExternalEntityHeader> getAllHeaders() {
+        Set<ExternalEntityHeader> allHeaders = new HashSet<ExternalEntityHeader>();
+        allHeaders.addAll(headers);
+        for(MigrationDependency dep : dependencies) {
+            allHeaders.add(dep.getDependency());
+        }
+        return allHeaders;
+    }
+
     public void addHeader(ExternalEntityHeader header) {
         headers.add(header);
     }
@@ -222,9 +231,10 @@ public class MigrationMetadata implements Serializable {
     }
 
     public boolean isMappingRequired(ExternalEntityHeader header) throws MigrationApi.MigrationException {
+        if (MigrationMappingSelection.REQUIRED == header.getValueMapping())
+            return true;
         for (MigrationDependency dependency : getDependants(header)) {
-            if ( dependency.getMappingType().getNameMapping() == MigrationMappingSelection.REQUIRED ||
-                 dependency.getMappingType().getValueMapping() == MigrationMappingSelection.REQUIRED)
+            if ( MigrationMappingSelection.REQUIRED == dependency.getMappingType() )
                 return true;
         }
         return false;
@@ -251,7 +261,7 @@ public class MigrationMetadata implements Serializable {
     public Set<ExternalEntityHeader> getMappableDependencies() {
         Set<ExternalEntityHeader> result = new HashSet<ExternalEntityHeader>();
         for(MigrationDependency dep : dependencies) {
-            if (dep.getMappingType().getNameMapping() != NONE || dep.getMappingType().getValueMapping() != NONE)
+            if (dep.getMappingType() != NONE || dep.getDependency().isValueMappable())
                 result.add(dep.getDependency());
         }
         return result;
@@ -259,7 +269,7 @@ public class MigrationMetadata implements Serializable {
 
     public ExternalEntityHeader getRootFolder() {
         ExternalEntityHeader rootFolder = null;
-        for (ExternalEntityHeader header : headers) {
+        for (ExternalEntityHeader header : getAllHeaders()) {
             if (header.getType() == EntityType.FOLDER &&  ROOT_FOLDER_OID.equals(header.getExternalId())) {
                 if (rootFolder != null)
                     throw new IllegalStateException("More than one root folders found in the bundle.");

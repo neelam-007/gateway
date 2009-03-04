@@ -2,7 +2,7 @@ package com.l7tech.objectmodel.migration;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.ValueReferenceEntityHeader;
+import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.Policy;
 
@@ -144,21 +144,23 @@ public class MigrationUtils {
     }
 
     /**
-     * Extracts the MappingType from the given property method.
-     *
-     * If not mapping types are specified through the {@link com.l7tech.objectmodel.migration.Migration} annotation,
-     * {@link MigrationMappingType.defaultMappning()} is returned.
+     * Extracts the (name) mapping type from the given property method.
      */
-    public static MigrationMappingType getMappingType(Method property) {
-
-        if (! property.isAnnotationPresent(Migration.class)) return MigrationMappingType.defaultMappning();
-
-        Migration annotation = property.getAnnotation(Migration.class);
-        return new MigrationMappingType(annotation.mapName(), annotation.mapValue());
+    public static MigrationMappingSelection getMappingType(Method property) {
+        if (! property.isAnnotationPresent(Migration.class)) return MigrationMappingSelection.OPTIONAL;
+        return property.getAnnotation(Migration.class).mapName();
     }
 
-    public static ValueReferenceEntityHeader.Type getValueType(Method property) {
-        if (! property.isAnnotationPresent(Migration.class)) return ValueReferenceEntityHeader.Type.TEXT;
+    /**
+     * Extracts the (name) mapping type from the given property method.
+     */
+    public static MigrationMappingSelection getValueMappingType(Method property) {
+        if (! property.isAnnotationPresent(Migration.class)) return MigrationMappingSelection.NONE;
+        return property.getAnnotation(Migration.class).mapValue();
+    }
+
+    public static ExternalEntityHeader.ValueType getValueType(Method property) {
+        if (! property.isAnnotationPresent(Migration.class)) return ExternalEntityHeader.ValueType.TEXT;
         return property.getAnnotation(Migration.class).valueType();
     }
 

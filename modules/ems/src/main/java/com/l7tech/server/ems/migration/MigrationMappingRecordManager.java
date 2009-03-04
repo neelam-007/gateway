@@ -13,10 +13,11 @@ public interface MigrationMappingRecordManager extends EntityManager<MigrationMa
      * @param sourceClusterId The identifier for the source cluster.
      * @param sourceEntityHeader The source entity.
      * @param targetClusterId  The identifier for the target cluster.
+     * @param valueMapping True for searching value mappings, false for searching entity mappings.
      * @return The mapping or null
      * @throws FindException If an error occurs during find
      */
-    MigrationMappingRecord findByMapping( String sourceClusterId, ExternalEntityHeader sourceEntityHeader, String targetClusterId ) throws FindException;
+    MigrationMappingRecord findByMapping( String sourceClusterId, ExternalEntityHeader sourceEntityHeader, String targetClusterId, boolean valueMapping ) throws FindException;
 
     /**
      * Lookup an EntityHeader by source cluster/entity and destination cluster.

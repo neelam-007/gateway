@@ -1,6 +1,8 @@
 package com.l7tech.server.migration;
 
 import com.l7tech.objectmodel.migration.*;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.policy.assertion.Assertion;
 
 import java.lang.reflect.Method;
@@ -14,9 +16,15 @@ import java.lang.reflect.Method;
 public abstract class AbstractPropertyResolver implements PropertyResolver {
 
     private PropertyResolverFactory factory;
+    private Type type;
 
-    public AbstractPropertyResolver(PropertyResolverFactory factory) {
+    public AbstractPropertyResolver(PropertyResolverFactory factory, Type type) {
         this.factory = factory;
+        this.type = type;
+    }
+
+    public Type getType() {
+        return type;
     }
 
     public PropertyResolver getResolver(Method property) throws PropertyResolverException {
@@ -28,6 +36,10 @@ public abstract class AbstractPropertyResolver implements PropertyResolver {
             return factory.getPropertyResolver(PropertyResolver.Type.ASSERTION);
 
         return resolver;
+    }
+
+    public Entity valueMapping(ExternalEntityHeader header) throws PropertyResolverException {
+        throw new PropertyResolverException("Value mapping not supported for header: " + header);
     }
 
     protected static Object getPropertyValue(Object object, Method property) throws PropertyResolverException {

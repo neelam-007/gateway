@@ -14,7 +14,6 @@ import com.l7tech.server.management.migration.bundle.MigrationMetadata;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TextUtils;
-import com.l7tech.util.HexUtils;
 import com.l7tech.util.ValidationUtils;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Component;
@@ -46,7 +45,6 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.nio.charset.Charset;
 
 /**
  *
@@ -110,16 +108,12 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                             ExternalEntityHeader source = item.getSourceHeader();
                             ExternalEntityHeader target = item.getTargetHeader();
-                            MigratedItem.ImportOperation operation = item.getOperation();
-                            if (operation == MigratedItem.ImportOperation.MAP) {
-                                mappings.add( new Pair<ExternalEntityHeader,ExternalEntityHeader>( source, target ) );
-                            } else if ( (operation == MigratedItem.ImportOperation.CREATE ||
-                                         operation == MigratedItem.ImportOperation.UPDATE) &&
-                                        source instanceof ValueReferenceEntityHeader ) {                                
-                                ValueReferenceEntityHeader sourceValueHeader = (ValueReferenceEntityHeader) source;
-                                if ( sourceValueHeader.getMappedValue() != null ) {
-                                    mappingModel.valueMap.put( new Pair<ValueKey,String>(new ValueKey( record.getSourceClusterGuid(), sourceValueHeader ), record.getTargetClusterGuid()), sourceValueHeader.getMappedValue() );
+                            if (item.getOperation().modifiesTarget()) {
+                                if ( source.getMappedValue() != null ) {
+                                    mappingModel.valueMap.put( new Pair<ValueKey,String>(new ValueKey( record.getSourceClusterGuid(), source ), record.getTargetClusterGuid()), source.getMappedValue() );
                                 }
+                            } else {
+                                mappings.add( new Pair<ExternalEntityHeader,ExternalEntityHeader>( source, target ) );
                             }
                         }
                         validateAndRestoreMappings( mappingModel, record.getSourceClusterGuid(), record.getTargetClusterGuid(), mappings );
@@ -230,7 +224,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
                 final Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(lastSourceKey, lastTargetClusterId);
-                final Pair<ValueKey,String> valueKey = lastSourceKey.asEntityHeader() instanceof ValueReferenceEntityHeader ?
+                final Pair<ValueKey,String> valueKey = lastSourceKey.asEntityHeader().isValueMappable() ?
                     new Pair<ValueKey,String>(new ValueKey(lastSourceKey), lastTargetClusterId):
                     null;
 
@@ -247,15 +241,14 @@ public class PolicyMigration extends EsmStandardWebPage {
         final YuiAjaxButton editDependencyButton = new YuiAjaxButton("dependencyEditButton") {
             @Override
             protected void onSubmit( final AjaxRequestTarget ajaxRequestTarget, final Form form ) {
-                if ( lastSourceKey != null && lastSourceKey.header instanceof ValueReferenceEntityHeader ) {
-                    final ValueReferenceEntityHeader editHeader = (ValueReferenceEntityHeader) lastSourceKey.header;
-                    ValueReferenceEntityHeader.Type valueType = editHeader.getValueType();
-                    String displayValue = editHeader.getDisplayValue();
-                    String mappedValue = editHeader.getMappedValue();
+                if ( lastSourceKey != null && lastSourceKey.header.isValueMappable()) {
+                    ExternalEntityHeader.ValueType valueType = lastSourceKey.header.getValueType();
+                    String displayValue = lastSourceKey.header.getDisplayValue();
+                    String mappedValue = lastSourceKey.header.getMappedValue();
                     if ( displayValue == null ) displayValue = "";
 
                     String prompt = "Enter new value.";
-                    String regex = "^(?:[.]{1,1024})$";
+                    String regex = "^(?:.{1,1024})$";
                     switch ( valueType ) {
                         case HTTP_URL:
                             prompt = "Enter HTTP(S) URL.";
@@ -272,12 +265,12 @@ public class PolicyMigration extends EsmStandardWebPage {
                         @Override
                         public void onAction( final YuiDialog dialog, final AjaxRequestTarget ajaxRequestTarget, final YuiDialog.Button button ) {
                             if ( button == YuiDialog.Button.OK ) {
-                                editHeader.setMappedValue(mapping.getValue());
+                                lastSourceKey.header.setMappedValue(mapping.getValue());
                                 final Collection<DependencyItem> items = lastDependencyItems;
                                 DependencyItem updatedItem = null;
                                 if ( items != null ) {
                                     for ( DependencyItem item : items ) {
-                                        if ( item.type.equals(editHeader.getType().toString()) && item.id.equals(editHeader.getExternalId()) ) {
+                                        if ( item.type.equals(lastSourceKey.header.getType().toString()) && item.id.equals(lastSourceKey.header.getExternalId()) ) {
                                             mappingModel.valueMap.put( new Pair<ValueKey,String>(new ValueKey(lastSourceKey), lastTargetClusterId), mapping.getValue() );
                                             updatedItem = item;
                                             break;
@@ -287,10 +280,9 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                                 if ( updatedItem != null ) {
                                     for ( DependencyItem item : items ) {
-                                        if ( item != updatedItem &&
-                                             isValueMappingSameOwnerAndTypeAndValue(item, updatedItem) ||
+                                        if ( item != updatedItem && isValueMappingSameOwnerAndTypeAndValue(item, updatedItem) ||
                                              (isValueMappingSameTypeAndValue(item, updatedItem) && mapping.isApplyToAll())) {
-                                            mappingModel.valueMap.put( new Pair<ValueKey,String>( new ValueKey(lastSourceKey.clusterId,(ValueReferenceEntityHeader)item.asEntityHeader()), lastTargetClusterId), mapping.getValue() );
+                                            mappingModel.valueMap.put( new Pair<ValueKey,String>( new ValueKey(lastSourceKey.clusterId, item.asEntityHeader()), lastTargetClusterId), mapping.getValue() );
                                         }
                                     }
                                 }
@@ -616,31 +608,21 @@ public class PolicyMigration extends EsmStandardWebPage {
         return TextUtils.truncStringMiddleExact( text, 128 );
     }
 
-    private static boolean isArrayType( final ValueReferenceEntityHeader.Type valueType ) {
-        return valueType == ValueReferenceEntityHeader.Type.HTTP_URL_ARRAY ||
-               valueType == ValueReferenceEntityHeader.Type.IP_ADDRESS_ARRAY;
-    }
-
     private static boolean isValueMappingSameTypeAndValue( final DependencyItem item1,
                                                            final DependencyItem item2 ) {
         boolean same = false;
 
         ExternalEntityHeader eeh1 = item1.asEntityHeader();
         ExternalEntityHeader eeh2 = item2.asEntityHeader();
-        if ( eeh1 instanceof ValueReferenceEntityHeader &&
-             eeh2 instanceof ValueReferenceEntityHeader ) {
-            ValueReferenceEntityHeader vreh1 = (ValueReferenceEntityHeader) eeh1;
-            ValueReferenceEntityHeader vreh2 = (ValueReferenceEntityHeader) eeh2;
 
-            ValueReferenceEntityHeader.Type valueType1 = vreh1.getValueType();
-            String sourceValue1 = vreh1.getDisplayValue();
+        ExternalEntityHeader.ValueType valueType1 = eeh1.getValueType();
+        String sourceValue1 = eeh1.getDisplayValue();
 
-            ValueReferenceEntityHeader.Type valueType2 = vreh2.getValueType();
-            String sourceValue2 = vreh2.getDisplayValue();
+        ExternalEntityHeader.ValueType valueType2 = eeh2.getValueType();
+        String sourceValue2 = eeh2.getDisplayValue();
 
-            if ( valueType1 == valueType2 && sourceValue1 != null && sourceValue1.equals(sourceValue2) ) {
-                same = true;
-            }
+        if (valueType1 == valueType2 && sourceValue1 != null && sourceValue1.equals(sourceValue2)) {
+            same = true;
         }
 
         return same;
@@ -659,12 +641,12 @@ public class PolicyMigration extends EsmStandardWebPage {
 
             EntityType type1 = vreh1.getOwnerType();
             String id1 = vreh1.getOwnerId();
-            ValueReferenceEntityHeader.Type valueType1 = vreh1.getValueType();
+            ExternalEntityHeader.ValueType valueType1 = vreh1.getValueType();
             String sourceValue1 = vreh1.getDisplayValue();
 
             EntityType type2 = vreh2.getOwnerType();
             String id2 = vreh2.getOwnerId();
-            ValueReferenceEntityHeader.Type valueType2 = vreh2.getValueType();
+            ExternalEntityHeader.ValueType valueType2 = vreh2.getValueType();
             String sourceValue2 = vreh2.getDisplayValue();
 
             if ( type1 == type2 && id1 != null && id1.equals(id2) && valueType1 == valueType2 && sourceValue1 != null && sourceValue1.equals(sourceValue2) ) {
@@ -906,24 +888,22 @@ public class PolicyMigration extends EsmStandardWebPage {
         for ( DependencyItem item : items ) {
             DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
             Pair<DependencyKey,String> mappingKey = new Pair<DependencyKey,String>(sourceKey, targetClusterId);
-            Pair<ValueKey,String> valueKey = item.asEntityHeader() instanceof ValueReferenceEntityHeader ?
-                    new Pair<ValueKey,String>(new ValueKey( sourceClusterId, (ValueReferenceEntityHeader) item.asEntityHeader() ), targetClusterId) :
+            Pair<ValueKey,String> valueKey = item.asEntityHeader().isValueMappable() ?
+                    new Pair<ValueKey,String>(new ValueKey( sourceClusterId, item.asEntityHeader() ), targetClusterId) :
                     null;
             DependencyItem mappedItem = mappingModel.dependencyMap.get( mappingKey );
             boolean resolved = false;
-            if ( mappedItem != null ) {
+
+            String mappedValue = valueKey != null ? mappingModel.valueMap.get( valueKey ) : null;
+            if ( mappedValue != null ) {
+                item.destName = truncateDisplayValue( mappedValue );
+                item.entityHeader.setMappedValue(mappedValue);
+                resolved = true;
+            } else if (mappedItem != null ) {
                 item.destName = mappedItem.getDisplayNameWithScope();
                 resolved = true;
             } else {
-                String mappedValue = valueKey != null ? mappingModel.valueMap.get( valueKey ) : null;
-                if ( mappedValue != null ) {
-                    item.destName = truncateDisplayValue( mappedValue );
-                    if (item.entityHeader instanceof ValueReferenceEntityHeader)
-                        ((ValueReferenceEntityHeader)item.entityHeader).setMappedValue(mappedValue);
-                    resolved = true;
-                } else {
-                    item.destName = "-";
-                }
+                item.destName = "-";
             }
 
             if ( item.isOptional() ) {
@@ -978,12 +958,12 @@ public class PolicyMigration extends EsmStandardWebPage {
                             candidateModel.reset();
                         }
                         Pair<DependencyKey,String> key = new Pair<DependencyKey,String>(lastSourceKey,lastTargetClusterId);
-                        final Pair<ValueKey,String> valueKey = lastSourceKey.asEntityHeader() instanceof ValueReferenceEntityHeader ?
+                        final Pair<ValueKey,String> valueKey = lastSourceKey.asEntityHeader().isValueMappable() ?
                             new Pair<ValueKey,String>(new ValueKey(lastSourceKey), lastTargetClusterId):
                             null;
 
                         selectionComponent.setEnabled( mappingModel.dependencyMap.containsKey(key) || mappingModel.valueMap.containsKey(valueKey) );
-                        selectionComponent2.setEnabled( com.l7tech.objectmodel.EntityType.valueOf(selectedItem.type) == EntityType.VALUE_REFERENCE );
+                        selectionComponent2.setEnabled( selectedItem.asEntityHeader().isValueMappable() );
                     } else {
                         lastSourceKey = null;
                         candidateModel.reset();
@@ -1111,7 +1091,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     deps.add( new DependencyItem( header, metadata.isMappingRequired(header) ? isResolved( mappingModel, header, request.clusterId, targetClusterId ) : null ) );
                 }
 
-                for (ExternalEntityHeader header : metadata.getHeaders() ) {
+                for (ExternalEntityHeader header : metadata.getAllHeaders() ) {
                     boolean alreadyPresent = false;
 
                     for ( DependencyItem item : deps ) {
@@ -1124,16 +1104,12 @@ public class PolicyMigration extends EsmStandardWebPage {
                     if ( !alreadyPresent ) deps.add( new DependencyItem( header, null, true ) );
                 }
 
-                // expand value references if necessary
+                // expand value-mappables of array types
                 Collection<DependencyItem> exploded = new ArrayList<DependencyItem>();
-                for ( Iterator<DependencyItem> depIter = deps.iterator() ; depIter.hasNext(); ) {
-                    DependencyItem item = depIter.next();
-                    if ( item.asEntityHeader() instanceof ValueReferenceEntityHeader ) {
-                        depIter.remove();
-                        exploded.addAll( explode( item ) );
-                    }
+                for (DependencyItem item : deps) {
+                    exploded.addAll( explode( item ) );
                 }
-                deps.addAll( exploded );
+                deps = exploded;
 
                 // populate entity owner info
                 for ( DependencyItem item : deps ) {
@@ -1174,47 +1150,35 @@ public class PolicyMigration extends EsmStandardWebPage {
     /**
      * If the given item represents a value mapping with an array type it is expanded to
      * a collection of non-array value mappings.
+     *
+     * @return  Collection containing either the exploded items, or the item parameter
+     *          if it is not value-mappable, or it does not hold an array-type value, or the source mappable value is null.
      */
     private static Collection<DependencyItem> explode( final DependencyItem item ) {
         Collection<DependencyItem> exploded = new ArrayList<DependencyItem>();
 
-        if ( item != null ) {
-            if ( item.asEntityHeader() instanceof ValueReferenceEntityHeader ) {
-                ValueReferenceEntityHeader vreh = (ValueReferenceEntityHeader) item.asEntityHeader();
-                ValueReferenceEntityHeader.Type type = null;
-                String[] values = null;
-                String sourceValue = vreh.getDisplayValue();
-                if ( sourceValue != null ) {
-                    switch( vreh.getValueType() ) {
-                        case HTTP_URL_ARRAY:
-                            type = ValueReferenceEntityHeader.Type.HTTP_URL;
-                            values = (String[]) ValueReferenceEntityHeader.Type.HTTP_URL_ARRAY.deserialize( sourceValue );
-                            break;
-                        case IP_ADDRESS_ARRAY:
-                            type = ValueReferenceEntityHeader.Type.IP_ADDRESS;
-                            values = (String[]) ValueReferenceEntityHeader.Type.IP_ADDRESS_ARRAY.deserialize( sourceValue );
-                            break;
-                        default:
-                            // keep as-is if there is a value
-                            exploded.add( item );
-                            break;
-                    }
+        ExternalEntityHeader eeh = item == null ? null : item.asEntityHeader();
 
-                    if ( values != null && type != null ) {
-                        int index = 0;
-                        for ( String value : values ) {
-                            ValueReferenceEntityHeader vrehEx = new ValueReferenceEntityHeader( vreh );                            
-                            // create a unique id using an array subscript for the property name
-                            vrehEx.setExternalId( HexUtils.encodeBase64((vrehEx.getPropertyName()+"["+index+"]").getBytes(Charset.forName("UTF-8"))) + ":" + vrehEx.getOwnerId() );
-                            vrehEx.setDisplayValue( value );
-                            vrehEx.setValueType( type );
-                            exploded.add( new DependencyItem( vrehEx ) );
-                            index++;
-                        }
-                    }
+        if ( item != null && (!eeh.isValueMappable() || !eeh.getValueType().isArray() || ! eeh.hasDisplayValue()) ) {
+            exploded.add(item);
+        } else if (item != null) { // value mappable, array-type and source value is not null
+            String sourceValue = eeh.getDisplayValue();
+            ExternalEntityHeader.ValueType valueType = eeh.getValueType();
+            ExternalEntityHeader.ValueType baseType = valueType.getArrayBaseType();
+            Object[] values = (Object[]) valueType.deserialize(sourceValue);
+
+            if (values != null) {
+                int index = 0;
+                for (Object value : values) {
+                    ExternalEntityHeader explodedHeader = new ExternalEntityHeader(eeh);
+                    // create a unique id using an array subscript for the property name
+                    //vrehEx.setExternalId(HexUtils.encodeBase64((vrehEx.getPropertyName() + "[" + index + "]").getBytes(Charset.forName("UTF-8"))) + ":" + vrehEx.getOwnerId());
+                    explodedHeader.setExternalId(eeh.getExternalId() + "[" + index + "]");
+                    explodedHeader.setValueType(baseType);
+                    explodedHeader.setDisplayValue(baseType.serialize(value));
+                    exploded.add(new DependencyItem(explodedHeader));
+                    index++;
                 }
-            } else {
-                exploded.add( item );
             }
         }
 
@@ -1320,31 +1284,6 @@ public class PolicyMigration extends EsmStandardWebPage {
     }
 
     /**
-     * Convert the given value reference entity header to a form suitable for DB persistence.
-     *
-     * <p>The actual value headers are assertion specific, we translate the external ID into something
-     * that identifies a particular service/value type/value before lookup in the DB.</p>
-     *
-     * @param valueReferenceEntityHeader The header to convert to DB identifier format.
-     * @return The new ValueReferenceEntityHeader
-     */
-    private static ValueReferenceEntityHeader toPersistedValueHeader( final ValueReferenceEntityHeader valueReferenceEntityHeader ) {
-        ValueReferenceEntityHeader persistentHeader = new ValueReferenceEntityHeader( valueReferenceEntityHeader );
-
-        StringBuilder idBuilder = new StringBuilder();
-        idBuilder.append( valueReferenceEntityHeader.getOwnerType() );
-        idBuilder.append( ':' );
-        idBuilder.append( valueReferenceEntityHeader.getOwnerId() );
-        idBuilder.append( ':' );
-        idBuilder.append( valueReferenceEntityHeader.getValueType() );
-        idBuilder.append( ':' );
-        idBuilder.append( HexUtils.encodeBase64( HexUtils.getMd5Digest( HexUtils.encodeUtf8(valueReferenceEntityHeader.getDisplayValue()) ) ) );
-        persistentHeader.setExternalId( idBuilder.toString() );
-
-        return persistentHeader;
-    }
-
-    /**
      * Populates the mapping model with the mappings persisted in the database.
      *
      * @param onlyIsSame If true only the mappings having the flag isSame == true are loaded
@@ -1359,25 +1298,25 @@ public class PolicyMigration extends EsmStandardWebPage {
         if ( !dependencyItems.isEmpty() ) {
             // load mappings saved in EM db
             for ( DependencyItem item : dependencyItems ) {
-                if ( item.asEntityHeader() instanceof ValueReferenceEntityHeader ) {
+                if ( item.asEntityHeader().isValueMappable() ) {
                     if ( !onlyIsSame ) {
-                        Pair<ValueKey,String> valueKey = new Pair<ValueKey,String>(new ValueKey( sourceClusterId, (ValueReferenceEntityHeader) item.asEntityHeader() ), targetClusterId);
+                        Pair<ValueKey,String> valueKey = new Pair<ValueKey,String>(new ValueKey( sourceClusterId, item.asEntityHeader() ), targetClusterId);
                         if ( !mappingModel.valueMap.containsKey(valueKey) ) {
-                            MigrationMappingRecord mapping = migrationMappingRecordManager.findByMapping( sourceClusterId, toPersistedValueHeader((ValueReferenceEntityHeader) item.asEntityHeader()), targetClusterId );
+                            MigrationMappingRecord mapping = migrationMappingRecordManager.findByMapping( sourceClusterId, item.asEntityHeader(), targetClusterId, true );
                             if ( mapping != null && mapping.getTarget() != null ) {
                                 mappingModel.valueMap.put( valueKey, mapping.getTarget().getEntityValue() );
                             }
                         }
                     }
-                } else {
-                    DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
-                    Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
-                    if ( !mappingModel.dependencyMap.containsKey(mapKey) ) {
-                        MigrationMappingRecord mapping = migrationMappingRecordManager.findByMapping( sourceClusterId, item.asEntityHeader(), targetClusterId );
-                        if ( mapping != null && mapping.getTarget() != null &&
-                             ( mapping.isSameEntity() || ! onlyIsSame) ) {
-                            mappingModel.dependencyMap.put( mapKey, new DependencyItem(MigrationMappedEntity.asEntityHeader(mapping.getTarget()), null, false, mapping.isSameEntity() ));
-                        }
+                }
+
+                DependencyKey sourceKey = new DependencyKey(sourceClusterId, item.asEntityHeader());
+                Pair<DependencyKey, String> mapKey = new Pair<DependencyKey, String>(sourceKey, targetClusterId);
+                if (!mappingModel.dependencyMap.containsKey(mapKey)) {
+                    MigrationMappingRecord mapping = migrationMappingRecordManager.findByMapping(sourceClusterId, item.asEntityHeader(), targetClusterId, false);
+                    if (mapping != null && mapping.getTarget() != null &&
+                        (mapping.isSameEntity() || !onlyIsSame)) {
+                        mappingModel.dependencyMap.put(mapKey, new DependencyItem(MigrationMappedEntity.asEntityHeader(mapping.getTarget()), null, false, mapping.isSameEntity()));
                     }
                 }
             }
@@ -1496,8 +1435,8 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                 final DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
                 final Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
-                final Pair<ValueKey,String> valueKey = item.asEntityHeader() instanceof ValueReferenceEntityHeader ?
-                    new Pair<ValueKey,String>(new ValueKey(sourceClusterId, (ValueReferenceEntityHeader)item.asEntityHeader()), targetClusterId):
+                final Pair<ValueKey,String> valueKey = item.asEntityHeader().isValueMappable() ?
+                    new Pair<ValueKey,String>(new ValueKey(sourceClusterId, item.asEntityHeader()), targetClusterId):
                     null;
 
                 if ( !mappingModel.dependencyMap.containsKey(mapKey) && (valueKey==null || !mappingModel.valueMap.containsKey(valueKey)) ) {
@@ -1524,8 +1463,8 @@ public class PolicyMigration extends EsmStandardWebPage {
                     for ( DependencyItem item : items ) {
                         final DependencyKey sourceKey = new DependencyKey( sourceClusterId, item.asEntityHeader() );
                         final Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
-                        final Pair<ValueKey,String> valueKey = item.asEntityHeader() instanceof ValueReferenceEntityHeader ?
-                            new Pair<ValueKey,String>(new ValueKey(sourceClusterId, (ValueReferenceEntityHeader)item.asEntityHeader()), targetClusterId):
+                        final Pair<ValueKey,String> valueKey = item.asEntityHeader().isValueMappable() ?
+                            new Pair<ValueKey,String>(new ValueKey(sourceClusterId, item.asEntityHeader()), targetClusterId):
                             null;
 
                         if ( !item.isOptional() && mappingModel.dependencyMap.get(mapKey) == null && (valueKey==null || mappingModel.valueMap.get(valueKey) == null) ) {
@@ -1600,9 +1539,9 @@ public class PolicyMigration extends EsmStandardWebPage {
                         }
                     }
                     for ( ExternalEntityHeader eeh : metadata.getMappableDependencies() ) {
-                        Collection<ValueReferenceEntityHeader> persistenceHeaders = mappingModel.updateMappedValues( sourceClusterId, targetClusterId, eeh );
-                        for ( ValueReferenceEntityHeader vreh : persistenceHeaders ) {
-                            migrationMappingRecordManager.persistMapping( sourceCluster.getGuid(), vreh, targetCluster.getGuid(), vreh.getMappedValue() );
+                        Collection<ExternalEntityHeader> persistenceHeaders = mappingModel.updateMappedValues( sourceClusterId, targetClusterId, eeh );
+                        for ( ExternalEntityHeader pHeader : persistenceHeaders ) {
+                            migrationMappingRecordManager.persistMapping( sourceCluster.getGuid(), pHeader, targetCluster.getGuid(), pHeader.getMappedValue() );
                         }
                     }
 
@@ -1834,15 +1773,17 @@ public class PolicyMigration extends EsmStandardWebPage {
 
     private static final class DependencyItem implements Comparable, JSON.Convertible, Serializable {
         private ExternalEntityHeader entityHeader;
+
         private String uid; // id and type
         private String id;
         private String type;
         private String name;
+        private Integer version;
+
         private Boolean resolved;
         private boolean hidden; // flag for hidden in the UI
-        private Integer version;
         @SuppressWarnings({"UnusedDeclaration"})
-        private String ownerName;
+        private String ownerName; // todo: is this used?
         private String destName;
         private boolean same; // flag for this entity is the same identity on source/target
 
@@ -2017,7 +1958,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             new HashMap<Pair<DependencyKey, String>, DependencyItem>();
 
         /**
-         * Map for value mappings keyed by source item 
+         * Map for value mappings keyed by source item / target cluster, values are the (string) mapped values
          */
         private final Map<Pair<ValueKey,String>,String> valueMap =
             new HashMap<Pair<ValueKey,String>,String>();
@@ -2027,116 +1968,91 @@ public class PolicyMigration extends EsmStandardWebPage {
          *
          * @param sourceClusterId The source cluster id for the mapping
          * @param targetClusterId The destination cluster id for the mapping
-         * @param eeh The ValueReferenceEntityHeader to update.
+         * @param eeh The ExternalEntityHeader to update.
          * @return The collection of values for persistence
          */
-        public Collection<ValueReferenceEntityHeader> updateMappedValues( final String sourceClusterId,
+        public Collection<ExternalEntityHeader> updateMappedValues( final String sourceClusterId,
                                                                           final String targetClusterId,
                                                                           final ExternalEntityHeader eeh ) {
-            Collection<ValueReferenceEntityHeader> vrehs = new LinkedHashSet<ValueReferenceEntityHeader>();
+            Collection<ExternalEntityHeader> pHeaders = new LinkedHashSet<ExternalEntityHeader>();
 
-            if ( eeh instanceof ValueReferenceEntityHeader ) {
-                ValueReferenceEntityHeader vreh = (ValueReferenceEntityHeader) eeh;
+            if ( eeh.isValueMappable() ) {
 
-                if ( isArrayType( vreh.getValueType() ) ) {
+                ExternalEntityHeader.ValueType valueType = eeh.getValueType();
+
+                if (valueType.isArray() && eeh.hasDisplayValue()) {
                     // Each entry in the array is a separately mapped value
-                    ValueReferenceEntityHeader.Type type = null;
-                    String[] values = null;
-                    String sourceValue = vreh.getDisplayValue();
-                    if ( sourceValue != null ) {
-                        switch( vreh.getValueType() ) {
-                            case HTTP_URL_ARRAY:
-                                type = ValueReferenceEntityHeader.Type.HTTP_URL;
-                                values = (String[]) ValueReferenceEntityHeader.Type.HTTP_URL_ARRAY.deserialize( sourceValue );
-                                break;
-                            case IP_ADDRESS_ARRAY:
-                                type = ValueReferenceEntityHeader.Type.IP_ADDRESS;
-                                values = (String[]) ValueReferenceEntityHeader.Type.IP_ADDRESS_ARRAY.deserialize( sourceValue );
-                                break;
-                            default:
-                                logger.severe("Unknown array type in value mapping : " + vreh.getValueType());
-                        }
+                    ExternalEntityHeader.ValueType baseType = valueType.getArrayBaseType();
+                    Object[] values = (Object[]) valueType.deserialize(eeh.getDisplayValue());
 
-                        if ( values != null && type != null ) {
-                            Collection<String> mappedValues = new ArrayList<String>();
-                            for ( String value : values ) {
-                                ValueReferenceEntityHeader vrehEx = new ValueReferenceEntityHeader( vreh );
-                                vrehEx.setDisplayValue( value );
-                                vrehEx.setValueType( type );
-                                final Pair<ValueKey,String> valueKey = new Pair<ValueKey,String>( new ValueKey( sourceClusterId, vrehEx ), targetClusterId );
-                                final String mappedValue = valueMap.get( valueKey );
-                                mappedValues.add( mappedValue == null ? value : mappedValue );
-                                if ( mappedValue != null ) {
-                                    // Set persistence external id which is unique per owner/type/value
-                                    vrehEx.setMappedValue( mappedValue );
-                                    vrehs.add( toPersistedValueHeader(vrehEx) );
-                                }
+                    if (values != null) {
+                        Collection<String> mappedValues = new ArrayList<String>();
+                        for (Object value : values) {
+                            ExternalEntityHeader pHeader = new ExternalEntityHeader(eeh);
+                            pHeader.setValueType(baseType);
+                            String serializedValue = baseType.serialize(value);
+                            pHeader.setDisplayValue(serializedValue);
+                            final Pair<ValueKey, String> valueKey = new Pair<ValueKey, String>(new ValueKey(sourceClusterId, pHeader), targetClusterId);
+                            final String mappedValue = valueMap.get(valueKey);
+                            mappedValues.add(mappedValue == null ? serializedValue : mappedValue);
+                            if (mappedValue != null) {
+                                pHeader.setMappedValue(mappedValue);
+                                pHeaders.add(pHeader);
                             }
-                            vreh.setMappedValue(vreh.getValueType().serialize(mappedValues.toArray(new String[mappedValues.size()])));
                         }
+                        if ( ! pHeaders.isEmpty() ) // there actually are mapped values
+                            eeh.setMappedValue(valueType.serialize(mappedValues.toArray(new String[mappedValues.size()])));
                     }
+                }
 
-                } else {
-                    final Pair<ValueKey,String> valueKey = new Pair<ValueKey,String>( new ValueKey( sourceClusterId, vreh ), targetClusterId );
-                    final String mappedValue = valueMap.get( valueKey );
-                    if ( mappedValue != null ) {
-                        vreh.setMappedValue( mappedValue );
-                        vrehs.add( toPersistedValueHeader(vreh) );                                    
+                if (pHeaders.isEmpty()) {
+                    final Pair<ValueKey, String> valueKey = new Pair<ValueKey, String>(new ValueKey(sourceClusterId, eeh), targetClusterId);
+                    final String mappedValue = valueMap.get(valueKey);
+                    if (mappedValue != null) {
+                        eeh.setMappedValue(mappedValue);
+                        pHeaders.add(eeh);
                     }
                 }
             }
 
-            return vrehs;
+            return pHeaders;
         }
     }
 
     private final static class ValueKey implements Serializable {
         private final String sourceClusterId;
-        private final EntityType ownerType;
-        private final String ownerId;
-        private final ValueReferenceEntityHeader.Type type;
-        private final String sourceValue;
+        private final String mappingKey;
 
         public ValueKey( final DependencyKey dependencyKey ) {
-            this( dependencyKey.clusterId, (ValueReferenceEntityHeader)dependencyKey.asEntityHeader() );
+            this( dependencyKey.clusterId, dependencyKey.asEntityHeader() );
         }
 
-        public ValueKey( final String sourceClusterId, final ValueReferenceEntityHeader valueReferenceEntityHeader ) {
-            if ( isArrayType( valueReferenceEntityHeader.getValueType() ) ) throw new IllegalArgumentException("Value key must not be array type.");
+        public ValueKey( final String sourceClusterId, final ExternalEntityHeader valueMappableHeader ) {
+            if (  valueMappableHeader.getValueType().isArray() )
+                logger.log(Level.WARNING, "Value key must not be array type.");
+                //throw new IllegalArgumentException("Value key must not be array type.");
             this.sourceClusterId = sourceClusterId;
-            this.ownerType = valueReferenceEntityHeader.getOwnerType();
-            this.ownerId = valueReferenceEntityHeader.getOwnerId();
-            this.type = valueReferenceEntityHeader.getValueType();
-            this.sourceValue = valueReferenceEntityHeader.getDisplayValue();
+            this.mappingKey = valueMappableHeader.getMappingKey();
         }
 
-        @SuppressWarnings({"RedundantIfStatement"})
-        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
             ValueKey valueKey = (ValueKey) o;
 
-            if (ownerId != null ? !ownerId.equals(valueKey.ownerId) : valueKey.ownerId != null) return false;
-            if (ownerType != valueKey.ownerType) return false;
+            if (mappingKey != null ? !mappingKey.equals(valueKey.mappingKey) : valueKey.mappingKey != null)
+                return false;
             if (sourceClusterId != null ? !sourceClusterId.equals(valueKey.sourceClusterId) : valueKey.sourceClusterId != null)
                 return false;
-            if (sourceValue != null ? !sourceValue.equals(valueKey.sourceValue) : valueKey.sourceValue != null)
-                return false;
-            if (type != valueKey.type) return false;
 
             return true;
         }
 
-        @Override
         public int hashCode() {
             int result;
             result = (sourceClusterId != null ? sourceClusterId.hashCode() : 0);
-            result = 31 * result + (ownerType != null ? ownerType.hashCode() : 0);
-            result = 31 * result + (ownerId != null ? ownerId.hashCode() : 0);
-            result = 31 * result + (type != null ? type.hashCode() : 0);
-            result = 31 * result + (sourceValue != null ? sourceValue.hashCode() : 0);
+            result = 31 * result + (mappingKey != null ? mappingKey.hashCode() : 0);
             return result;
         }
     }
