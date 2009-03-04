@@ -113,4 +113,16 @@ public class MigrationMappingRecord extends PersistentEntityImp {
     private SsgCluster targetCluster;
     private MigrationMappedEntity target;
     private boolean sameEntity;
+
+    public static MigrationMappingRecord reverse(MigrationMappingRecord other) {
+        if (other == null) return null;
+        MigrationMappingRecord reversed = new MigrationMappingRecord();
+        reversed.setSourceCluster(other.getTargetCluster());
+        reversed.setSource(other.getTarget());
+        reversed.setTargetCluster(other.getSourceCluster());
+        reversed.setTarget(other.getSource());
+        reversed.setSameEntity(other.isSameEntity());
+        // don't set timestamp, since the reversed record doesn't actually exist in DB
+        return reversed;
+    }
 }

@@ -44,10 +44,17 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
             throw new FindException( "Could not find cluster for GUID '"+targetClusterGuid+"'." );
         }
 
-        if (valueMapping)
-            return findByMapping(sourceCluster, sourceEntityHeader, targetCluster, (String) null);
-        else
-            return findByMapping(sourceCluster, sourceEntityHeader, targetCluster, (ExternalEntityHeader) null);
+        MigrationMappingRecord result;
+        if (valueMapping) {
+            result = findByMapping(sourceCluster, sourceEntityHeader, targetCluster, null);
+        }
+        else {
+            result = findByMapping(sourceCluster, sourceEntityHeader, targetCluster, null, false);
+            if (result == null) { // try reverse lookup
+                result = MigrationMappingRecord.reverse(findByMapping( targetCluster, null, sourceCluster, sourceEntityHeader, true));
+            }
+        }
+        return result;
     }
 
     @Override
@@ -134,7 +141,7 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
             try {
                 MigrationMappingRecord existingMapping =
                         findByMapping( mapping.getSourceCluster(), sourceEntityHeader,
-                                       mapping.getTargetCluster(), targetEntityHeader );
+                                       mapping.getTargetCluster(), targetEntityHeader, false );
                 if ( existingMapping == null ) {
                     mapping.setTimestamp( System.currentTimeMillis() );
 
@@ -199,7 +206,8 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
     private MigrationMappingRecord findByMapping( final SsgCluster sourceCluster,
                                                   final ExternalEntityHeader sourceEntityHeader,
                                                   final SsgCluster targetCluster,
-                                                  final ExternalEntityHeader targetEntityHeader ) throws FindException {
+                                                  final ExternalEntityHeader targetEntityHeader, 
+                                                  boolean reverse) throws FindException {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put( "sourceCluster", sourceCluster );
         map.put( "targetCluster", targetCluster );
@@ -207,13 +215,15 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
         if ( sourceEntityHeader != null  ) {
             map.put("source.entityType", sourceEntityHeader.getType());
             map.put("source.externalId", sourceEntityHeader.getExternalId());
-            // source version not included in mapping lookup
+            if (reverse) // source version not included direct mapping lookups
+                map.put("source.entityVersion", sourceEntityHeader.getVersion());
         }
 
         if ( targetEntityHeader != null  ) {
             map.put("target.entityType", targetEntityHeader.getType());
             map.put("target.externalId", targetEntityHeader.getExternalId());
-            map.put("target.entityVersion", targetEntityHeader.getVersion());
+            if (! reverse) // source version not included reverse mapping lookups
+                map.put("target.entityVersion", targetEntityHeader.getVersion());
         }
 
         List<MigrationMappingRecord> result = findMatching(Arrays.asList(map));
