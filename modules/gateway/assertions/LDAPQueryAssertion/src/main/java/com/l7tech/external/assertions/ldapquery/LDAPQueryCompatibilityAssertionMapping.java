@@ -82,4 +82,42 @@ public class LDAPQueryCompatibilityAssertionMapping extends CompatibilityAsserti
             throw new InvalidPolicyStreamException(e);
         }
     }
+
+    private static QueryAttributeMapping[] resize(QueryAttributeMapping[] in, int desiredSize) {
+        if (in == null)
+            return new QueryAttributeMapping[desiredSize];
+        if (in.length >= desiredSize)
+            return in;
+        QueryAttributeMapping[] out = new QueryAttributeMapping[desiredSize];
+        System.arraycopy(in, 0, out, 0, in.length);
+        for (int i = 0; i < out.length; i++) {
+            if (out[i] == null)
+                out[i] = new QueryAttributeMapping();
+        }
+        return out;
+    }
+
+    public static QueryAttributeMapping[] populateAttrNames(QueryAttributeMapping[] qm, String[] attrNames) {
+        if (attrNames == null) return qm;
+        qm = resize(qm, attrNames.length);
+        for (int i = 0; i < attrNames.length; i++)
+            qm[i].setAttributeName(attrNames[i]);
+        return qm;
+    }
+
+    public static QueryAttributeMapping[] populateMultivalued(QueryAttributeMapping[] qm, Boolean[] multi) {
+        if (multi == null) return qm;
+        qm = resize(qm, multi.length);
+        for (int i = 0; i < multi.length; i++)
+            qm[i].setMultivalued(multi[i]);
+        return qm;
+    }
+
+    public static QueryAttributeMapping[] populateVarNames(QueryAttributeMapping[] qm, String[] varNames) {
+        if (varNames == null) return qm;
+        qm = resize(qm, varNames.length);
+        for (int i = 0; i < varNames.length; i++)
+            qm[i].setMatchingContextVariableName(varNames[i]);
+        return qm;
+    }
 }

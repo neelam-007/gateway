@@ -21,10 +21,10 @@ public class LDAPQueryAssertionWspTest {
         assreg.registerAssertion(LDAPQueryAssertion.class);
         WspConstants.setTypeMappingFinder(assreg);
     }
-    
+
     @Test
     public void testWspExternalName() throws Exception {
-        assertEquals("LdapQueryAssertion", new LDAPQueryAssertion().meta().get(AssertionMetadata.WSP_EXTERNAL_NAME));
+        assertEquals("LDAPQuery", new LDAPQueryAssertion().meta().get(AssertionMetadata.WSP_EXTERNAL_NAME));
     }
 
     @Test

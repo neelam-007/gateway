@@ -62,16 +62,13 @@ public class LDAPQueryAssertion extends Assertion implements UsesVariables, Sets
         meta.put(SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.ldapquery.server.ServerLDAPQueryAssertion");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.ldapquery.console.LDAPQueryPropertiesDialog");
 
-        meta.put(WSP_EXTERNAL_NAME, "LdapQueryAssertion");
+        meta.put(WSP_EXTERNAL_NAME, "LDAPQuery");
 
         Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
         othermappings.add(new ArrayTypeMapping(new QueryAttributeMapping[0], "queryAttributeMappings"));
         othermappings.add(new BeanTypeMapping(QueryAttributeMapping.class, "mapping"));
+        othermappings.add(new ArrayTypeMapping(new Boolean[0], "bools")); /* only here for compat with pre-5.0 versions of the policy XML */
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
-
-        meta.put(AssertionMetadata.WSP_COMPATIBILITY_MAPPINGS, new HashMap<String, TypeMapping>() {{
-            put("LDAPQuery", new LDAPQueryCompatibilityAssertionMapping(new LDAPQueryAssertion(), "LDAPQuery"));
-        }});
 
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
@@ -146,5 +143,20 @@ public class LDAPQueryAssertion extends Assertion implements UsesVariables, Sets
 
     public void setFailIfNoResults(boolean failIfNoResults) {
         this.failIfNoResults = failIfNoResults;
+    }
+
+    /** @deprecated only for parsing pre-5.0 versions of the policy XML */
+    public void setAttrNames(String[] attrNames) {
+        queryMappings = LDAPQueryCompatibilityAssertionMapping.populateAttrNames(queryMappings, attrNames);
+    }
+
+    /** @deprecated only for parsing pre-5.0 versions of the policy XML */
+    public void setMultivalued(Boolean[] multi) {
+        queryMappings = LDAPQueryCompatibilityAssertionMapping.populateMultivalued(queryMappings, multi);
+    }
+
+    /** @deprecated only for parsing pre-5.0 versions of the policy XML */
+    public void setVarNames(String[] varNames) {
+        queryMappings = LDAPQueryCompatibilityAssertionMapping.populateVarNames(queryMappings, varNames);
     }
 }
