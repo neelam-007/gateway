@@ -37,7 +37,7 @@ public class NodeManagementApiTest {
         final DatabaseConfig dbc = new DatabaseConfig("localhost", 3306, "ssgtemp", "gatewaytemp", "7layertemp");
         dbc.setDatabaseAdminUsername("root");
         dbc.setDatabaseAdminPassword("thisIsNotMyMysqlPassword");
-        api.createDatabase("default", dbc, Collections.<String>emptySet(), "myadmin", "mypass");
+        api.createDatabase("default", dbc, Collections.<String>emptySet(), "myadmin", "mypass", "hostname");
     }
 
     private static NodeManagementApi makeSslStub() {

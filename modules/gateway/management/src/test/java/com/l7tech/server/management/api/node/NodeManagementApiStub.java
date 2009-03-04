@@ -16,38 +16,48 @@ import java.util.Collection;
  *
  */
 public class NodeManagementApiStub implements NodeManagementApi {
+    @Override
     public NodeConfig createNode(NodeConfig nodeConfig) throws SaveException {
         return null;
     }
 
+    @Override
     public NodeConfig getNode(String nodeName) throws FindException {
         return null;
     }
 
+    @Override
     public Collection<NodeHeader> listNodes() throws FindException {
         return null;
     }
 
+    @Override
     public void updateNode(NodeConfig node) throws UpdateException, RestartRequiredException {
     }
 
+    @Override
     public void deleteNode(String nodeName, int shutdownTimeout) throws DeleteException {
     }
 
+    @Override
     public String uploadNodeSoftware(DataHandler softwareData) throws IOException, UpdateException {
         return null;
     }
 
+    @Override
     public void upgradeNode(String nodeName, String targetVersion) throws UpdateException, RestartRequiredException {
     }
 
+    @Override
     public NodeStateType startNode(String nodeName) throws FindException, StartupException {
         return null;
     }
 
+    @Override
     public void stopNode(String nodeName, int timeout) throws FindException {
     }
 
-    public void createDatabase(String nodeName, DatabaseConfig dbconfig, Collection<String> dbHosts, String adminLogin, String adminPassword) throws DatabaseCreationException {
+    @Override
+    public void createDatabase(String nodeName, DatabaseConfig dbconfig, Collection<String> dbHosts, String adminLogin, String adminPassword, String clusterHostname) throws DatabaseCreationException {
     }
 }

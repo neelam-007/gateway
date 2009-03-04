@@ -131,7 +131,12 @@ public class NodeManagementApiFactory {
             }
 
             @Override
-            public void createDatabase( final String nodeName, final DatabaseConfig dbconfig, final Collection<String> dbHosts, final String adminLogin, final String adminPassword ) throws DatabaseCreationException {
+            public void createDatabase( final String nodeName,
+                                        final DatabaseConfig dbconfig,
+                                        final Collection<String> dbHosts,
+                                        final String adminLogin,
+                                        final String adminPassword,
+                                        final String clusterHostname ) throws DatabaseCreationException {
                 DBActions dbActions = new DBActions();
                 String dbVersion = dbActions.checkDbVersion( dbconfig );
                 if ( dbVersion == null ) {
@@ -141,7 +146,7 @@ public class NodeManagementApiFactory {
                 } else if ( "Unknown".equals(dbVersion) ) {
                     // create new db
                     try {
-                        NodeConfigurationManager.createDatabase(nodeName, dbconfig, dbHosts, adminLogin, adminPassword);
+                        NodeConfigurationManager.createDatabase(nodeName, dbconfig, dbHosts, adminLogin, adminPassword, clusterHostname);
                     } catch (IOException e) {
                         throw new DatabaseCreationException("Unable to create database", e);
                     }

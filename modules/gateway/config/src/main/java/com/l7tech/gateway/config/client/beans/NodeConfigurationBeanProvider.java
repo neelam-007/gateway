@@ -74,7 +74,7 @@ public class NodeConfigurationBeanProvider extends NodeConfigurationBeanProvider
                     for ( DatabaseConfig dbConfig : config.getDatabases() ) {
                         hosts.add( dbConfig.getHost() );
                     }
-                    managementService.createDatabase( config.getName(), databaseConfig, hosts,  adminLogin, adminPassphrase );
+                    managementService.createDatabase( config.getName(), databaseConfig, hosts,  adminLogin, adminPassphrase, config.getClusterHostname() );
                 }
 
                 managementService.createNode( config );

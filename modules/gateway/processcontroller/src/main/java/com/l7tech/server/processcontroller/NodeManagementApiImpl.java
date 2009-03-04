@@ -234,9 +234,9 @@ public class NodeManagementApiImpl implements NodeManagementApi {
     }
 
     @Override
-    public void createDatabase(String nodeName, DatabaseConfig dbconfig, Collection<String> dbHosts, String adminLogin, String adminPassword) throws DatabaseCreationException {
+    public void createDatabase(String nodeName, DatabaseConfig dbconfig, Collection<String> dbHosts, String adminLogin, String adminPassword, String clusterHostname) throws DatabaseCreationException {
         try {
-            NodeConfigurationManager.createDatabase(nodeName, dbconfig, dbHosts, adminLogin, adminPassword);
+            NodeConfigurationManager.createDatabase(nodeName, dbconfig, dbHosts, adminLogin, adminPassword, clusterHostname);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Error creating database for '"+nodeName+"'.", e );
             throw new DatabaseCreationException("Unable to create database '"+ExceptionUtils.getMessage(e)+"'" );

@@ -244,8 +244,9 @@ public interface NodeManagementApi {
      * @param dbHosts the list of database hosts
      * @param adminLogin the login for the initial administrator account
      * @param adminPassword the password for the initial administrator account
+     * @param clusterHostname the cluster hostname to set as a cluster property
      */
-    void createDatabase(String nodeName, DatabaseConfig dbconfig, Collection<String> dbHosts, String adminLogin, String adminPassword) throws DatabaseCreationException;
+    void createDatabase(String nodeName, DatabaseConfig dbconfig, Collection<String> dbHosts, String adminLogin, String adminPassword, String clusterHostname) throws DatabaseCreationException;
 
     public class DatabaseCreationException extends Exception {
         public DatabaseCreationException(String message, Throwable cause) {

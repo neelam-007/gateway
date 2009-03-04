@@ -1,6 +1,7 @@
 package com.l7tech.gateway.config.manager;
 
 import com.l7tech.gateway.config.manager.db.DBActions;
+import com.l7tech.gateway.config.manager.db.ClusterPropertyUtil;
 import com.l7tech.server.management.SoftwareVersion;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
@@ -45,6 +46,8 @@ public class NodeConfigurationManager {
     private static final String NODEPROPERTIES_DB_USER_FORMAT = "node.db.config.{0}.user";
     private static final String NODEPROPERTIES_DB_PASS_FORMAT = "node.db.config.{0}.pass";
     private static final String NODEPROPERTIES_DB_TYPE_FORMAT = "node.db.config.{0}.type";
+
+    private static final String CLUSTER_PROP_CLUSTERHOSTNAME = "cluster.hostname";
 
     private static final DBActions dbActions = new DBActions();
 
@@ -187,8 +190,14 @@ public class NodeConfigurationManager {
      * @param extraGrantHosts Additional hostnames from which access to the database should be granted
      * @param adminLogin The SSM admin account username
      * @param adminPassword The SSM admin account password
+     * @param clusterHostname the external hostname for the cluster
      */
-    public static void createDatabase(String nodeName, final DatabaseConfig databaseConfig, final Collection<String> extraGrantHosts, String adminLogin, String adminPassword)
+    public static void createDatabase( final String nodeName,
+                                       final DatabaseConfig databaseConfig,
+                                       final Collection<String> extraGrantHosts,
+                                       final String adminLogin,
+                                       final String adminPassword,
+                                       final String clusterHostname )
         throws IOException {
         final DatabaseConfig localConfig;
         try {
@@ -210,11 +219,14 @@ public class NodeConfigurationManager {
         String pathToSqlScript = MessageFormat.format( sqlPath, nodeName );
 
         DBActions.DBActionsResult res = dbActions.createDb(localConfig, hosts, new File(nodesDir,pathToSqlScript).getAbsolutePath(), false);
-        if ( res.getStatus() != DBActions.StatusType.SUCCESS) {
-            throw new CausedIOException(MessageFormat.format("Cannot create database ''{0}''", res.getErrorMessage()), res.getThrown());
+        if ( res.getStatus() != DBActions.StatusType.SUCCESS ) {
+            throw new CausedIOException(MessageFormat.format("Cannot create database ''{1}'' [code:{0}]", res.getStatus().getCode(), res.getErrorMessage()), res.getThrown());
         }
 
         AccountReset.resetAccount(databaseConfig, adminLogin, adminPassword);
+        if ( clusterHostname != null ) {
+            ClusterPropertyUtil.addClusterProperty( dbActions, databaseConfig, CLUSTER_PROP_CLUSTERHOSTNAME, clusterHostname );
+        }
     }
 
     public static NodeConfig loadNodeConfig( final String name, final boolean loadSecrets ) throws IOException {
@@ -361,31 +373,4 @@ public class NodeConfigurationManager {
             props.setProperty( propName, propValue.toString() );
         }
     }
-
-//    private static void updateJavaSecurity(File destinationPartition) throws IOException {
-//        OSSpecificFunctions osf = OSDetector.getOSSpecificFunctions(destinationPartition.getName());
-//        String keystoreFile = osf.getKeyStorePropertiesFile();
-//        Properties props = new Properties();
-//
-//        InputStream is = null;
-//        String[] providerList = null;
-//        try {
-//            is = new FileInputStream(keystoreFile);
-//            props.load(is);
-//            String keystoreType = props.getProperty(KeyStoreConstants.PROP_KS_TYPE);
-//            if (keystoreType.equalsIgnoreCase(KeystoreType.SCA6000_KEYSTORE_NAME.getShortTypeName())) {
-//                providerList = KeyStoreConstants.HSM_SECURITY_PROVIDERS;
-//            } else if (keystoreType.equalsIgnoreCase(KeystoreType.DEFAULT_KEYSTORE_NAME.getShortTypeName())) {
-//                providerList = KeyStoreConstants.DEFAULT_SECURITY_PROVIDERS;
-//            } else if (keystoreType.equalsIgnoreCase(KeystoreType.LUNA_KEYSTORE_NAME.getShortTypeName())) {
-//                providerList = KeyStoreConstants.LUNA_SECURITY_PROVIDERS;
-//            }
-//        } finally {
-//            ResourceUtils.closeQuietly(is);
-//        }
-//
-//        String javaSecurity = osf.getPathToJavaSecurityFile();
-//        if (providerList != null)
-//            KeystoreActions.updateJavaSecurity(new File(javaSecurity), new File(javaSecurity + ".backup"), providerList);
-//    }
 }
