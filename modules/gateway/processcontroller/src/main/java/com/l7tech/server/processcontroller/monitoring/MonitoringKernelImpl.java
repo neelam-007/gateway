@@ -329,7 +329,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 transientStatus.timestamp = transientStatus.timestamp == null || transientStatus.timestamp == 0 ? lastSample.left : Math.min(lastSample.left, transientStatus.timestamp);
                 transientStatus.value = lastSample.right;
 
-                if (nstates != null) {
+                if (tstate.tolerance != null && tstate.tolerance.inOut == InOut.OUT && nstates != null) {
                     for (NotificationRule rule : ptrig.getNotificationRules()) {
                         NotificationState nstate = nstates.get(rule.getOid());
                         if (nstate == null) continue;

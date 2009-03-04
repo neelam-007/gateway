@@ -324,7 +324,7 @@ public class ProcessController {
                 case WONT_START:
                     if (System.currentTimeMillis() - state.sinceWhen > UNSTARTABLE_NODE_RETRY_INTERVAL) {
                         logger.info(node.getName() + " wouldn't start; restarting...");
-                        startItUp(node);
+                        handleUnknownState(node);
                         break;
                     } else {
                         logger.fine(node.getName() + " wouldn't start; waiting " + UNSTARTABLE_NODE_RETRY_INTERVAL + "ms before attempting to restart");
@@ -335,7 +335,7 @@ public class ProcessController {
                     break;
                 case CRASHED:
                     logger.info(node.getName() + " crashed; restarting...");
-                    startItUp(node);
+                    handleUnknownState(node);
                     break;
                 case STOPPING:
                     // TODO wait for shutdown of the process... Kill the process if it hasn't died after the timeout
@@ -347,14 +347,6 @@ public class ProcessController {
             }
 
 
-        }
-    }
-
-    private void startItUp(PCNodeConfig node) {
-        try {
-            nodeStates.put(node.getName(), new StartingNodeState(this, node));
-        } catch (IOException e) {
-            logger.log(Level.WARNING, node.getName() + " could not be started; will retry on next loop", e);
         }
     }
 
