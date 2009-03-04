@@ -468,34 +468,43 @@ public class Monitor extends EsmStandardWebPage {
 
         @Override
         public Object getData() {
-            try {
-                // Use MonitoringService to call MonitoringApi to get current property statuses
-                synchronized (monitoringServiceLocker) {
-                    List<EntityMonitoringPropertyValues> entitiesList = new ArrayList<EntityMonitoringPropertyValues>();
+            // Use MonitoringService to call MonitoringApi to get current property statuses
+            synchronized (monitoringServiceLocker) {
+                List<EntityMonitoringPropertyValues> entitiesList = new ArrayList<EntityMonitoringPropertyValues>();
+                try {
                     for (SsgCluster ssgCluster: ssgClusterManager.findAll()) {
                         // First get the current values for each SSG node.
-                        for (SsgNode ssgNode: ssgCluster.getNodes()) {
-                            entitiesList.add(monitoringService.getCurrentSsgNodePropertiesStatus(ssgNode));
+                        try {
+                            for (SsgNode ssgNode: ssgCluster.getNodes()) {
+                                entitiesList.add(monitoringService.getCurrentSsgNodePropertiesStatus(ssgNode));
+                            }
+                        } catch (Throwable t) {
+                            logger.log(Level.WARNING, "Failed to retrieve SSG node property values.", t);
+                            continue;
                         }
                         // Then, get the current value (audit size) for the SSG cluster.
-                        final EntityMonitoringPropertyValues values = monitoringService.getCurrentSsgClusterPropertyStatus(ssgCluster.getGuid());
-                        if (values != null) {
-                            entitiesList.add(values);
+                        try {
+                            final EntityMonitoringPropertyValues values = monitoringService.getCurrentSsgClusterPropertyStatus(ssgCluster.getGuid());
+                            if (values != null) {
+                                entitiesList.add(values);
+                            }
+                        } catch (Throwable t) {
+                            logger.log(Level.WARNING, "Failed to retrieve SSG cluster property value.", t);
                         }
                     }
-
-                    Map<String, Object> jsonDataMap = new HashMap<String, Object>();
-                    jsonDataMap.put("nextRefreshInterval", Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_NEXTREFRESH_INTERVAL)));
-                    jsonDataMap.put("entities", entitiesList);
-
-                    auditEntityPropertyAlertStateChange(previousPropValuesList, entitiesList);
-                    previousPropValuesList = entitiesList;
-
-                    return jsonDataMap;
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "Failed to find SSG clusters.", e);
+                    return new JSONException("Failed to find SSG clusters.");
                 }
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Failed to get current values of monitored properties.", e);
-                return new JSONException(e);
+
+                Map<String, Object> jsonDataMap = new HashMap<String, Object>();
+                jsonDataMap.put("nextRefreshInterval", Long.valueOf(serverConfig.getProperty(ServerConfig.PARAM_MONITORING_NEXTREFRESH_INTERVAL)));
+                jsonDataMap.put("entities", entitiesList);
+
+                auditEntityPropertyAlertStateChange(previousPropValuesList, entitiesList);
+                previousPropValuesList = entitiesList;
+
+                return jsonDataMap;
             }
         }
 
