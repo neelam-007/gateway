@@ -65,6 +65,9 @@ public class SsgClusterNotificationSetupManagerImpl extends HibernateEntityManag
 
     @Override
     public void deleteBySsgClusterGuid(String guid) throws FindException, DeleteException {
-        delete(findByEntityGuid(guid));
+        SsgClusterNotificationSetup setup = findByEntityGuid(guid);
+        if (setup != null) {
+            delete(findByEntityGuid(guid));
+        }
     }
 }
