@@ -608,23 +608,24 @@ public class PolicyMigration extends EsmStandardWebPage {
         return TextUtils.truncStringMiddleExact( text, 128 );
     }
 
-    private static boolean isValueMappingSameTypeAndValue( final DependencyItem item1,
-                                                           final DependencyItem item2 ) {
+    private static boolean isValueMappingSameTypeAndValue(final DependencyItem item1,
+                                                          final DependencyItem item2) {
         boolean same = false;
 
         ExternalEntityHeader eeh1 = item1.asEntityHeader();
         ExternalEntityHeader eeh2 = item2.asEntityHeader();
 
-        ExternalEntityHeader.ValueType valueType1 = eeh1.getValueType();
-        String sourceValue1 = eeh1.getDisplayValue();
+        if (eeh1.isValueMappable() && eeh2.isValueMappable()) {
+            ExternalEntityHeader.ValueType valueType1 = eeh1.getValueType();
+            String sourceValue1 = eeh1.getDisplayValue();
 
-        ExternalEntityHeader.ValueType valueType2 = eeh2.getValueType();
-        String sourceValue2 = eeh2.getDisplayValue();
+            ExternalEntityHeader.ValueType valueType2 = eeh2.getValueType();
+            String sourceValue2 = eeh2.getDisplayValue();
 
-        if (valueType1 == valueType2 && sourceValue1 != null && sourceValue1.equals(sourceValue2)) {
-            same = true;
+            if (valueType1 == valueType2 && sourceValue1 != null && sourceValue1.equals(sourceValue2)) {
+                same = true;
+            }
         }
-
         return same;
     }
 
@@ -634,8 +635,8 @@ public class PolicyMigration extends EsmStandardWebPage {
 
         ExternalEntityHeader eeh1 = item1.asEntityHeader();
         ExternalEntityHeader eeh2 = item2.asEntityHeader();
-        if ( eeh1 instanceof ValueReferenceEntityHeader &&
-             eeh2 instanceof ValueReferenceEntityHeader ) {
+        if ( eeh1 instanceof ValueReferenceEntityHeader && eeh2 instanceof ValueReferenceEntityHeader &&
+             eeh1.isValueMappable() && eeh2.isValueMappable()) {
             ValueReferenceEntityHeader vreh1 = (ValueReferenceEntityHeader) eeh1;
             ValueReferenceEntityHeader vreh2 = (ValueReferenceEntityHeader) eeh2;
 
