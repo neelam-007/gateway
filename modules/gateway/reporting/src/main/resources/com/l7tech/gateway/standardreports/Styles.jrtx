@@ -124,6 +124,13 @@
             backcolor="#D6D6D6"
             />
 
+    <style
+            name="AllBordersOrange"
+            isDefault="false"
+            style="AllBorders"
+            backcolor="#FFDC5A"
+            />
+
     <!-- ALL STYLES FOR TopLeftBottomBorders-->
     <style
             name="TopLeftBottomBorders"

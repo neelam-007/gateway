@@ -1054,7 +1054,7 @@ public class UtilitiesTest {
     public void testGetMappingValueDisplayString() {
         boolean exception = false;
         try {
-            Utilities.getMappingValueDisplayString(null, null, null, false, null, false, null);
+            Utilities.getMappingValueDisplayString(null, null, null, false, null, false, null, null);
         } catch (NullPointerException e) {
             exception = true;
         }
@@ -1062,7 +1062,7 @@ public class UtilitiesTest {
 
         exception = false;
         try {
-            Utilities.getMappingValueDisplayString(null, Utilities.SQL_PLACE_HOLDER, null, false, null, false, null);
+            Utilities.getMappingValueDisplayString(null, Utilities.SQL_PLACE_HOLDER, null, false, null, false, null, null);
         } catch (NullPointerException e) {
             exception = true;
         }
@@ -1074,7 +1074,7 @@ public class UtilitiesTest {
         String pH = Utilities.SQL_PLACE_HOLDER;
         String[] emptyStringArray = new String[]{pH, pH, pH, pH, pH};
 
-        String val = Utilities.getMappingValueDisplayString(emptyMap, "Donal", emptyStringArray, true, preFix, false, null);
+        String val = Utilities.getMappingValueDisplayString(emptyMap, "Donal", emptyStringArray, true, preFix, false, null, null);
         Assert.assertTrue(val.equals(preFix + Utilities.AUTHENTICATED_USER_DISPLAY + ": Donal"));
 
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
@@ -1084,17 +1084,17 @@ public class UtilitiesTest {
         List<ReportApi.FilterPair> custFilters = new ArrayList<ReportApi.FilterPair>();
         keysToFilterPairs.put("CUSTOMER", custFilters);
 
-        val = Utilities.getMappingValueDisplayString(keysToFilterPairs, Utilities.SQL_PLACE_HOLDER, new String[]{"127.0.0.1", "GOLD", pH, pH, pH}, true, preFix, false, null);
+        val = Utilities.getMappingValueDisplayString(keysToFilterPairs, Utilities.SQL_PLACE_HOLDER, new String[]{"127.0.0.1", "GOLD", pH, pH, pH}, true, preFix, false, null, null);
         String expected = preFix + "IP_ADDRESS: 127.0.0.1, CUSTOMER: GOLD";
         Assert.assertTrue("Expected: " + expected + " actual: " + val, val.equals(expected));
 
-        val = Utilities.getMappingValueDisplayString(keysToFilterPairs, "Donal", new String[]{"127.0.0.1", "GOLD", pH, pH, pH}, true, preFix, false, null);
+        val = Utilities.getMappingValueDisplayString(keysToFilterPairs, "Donal", new String[]{"127.0.0.1", "GOLD", pH, pH, pH}, true, preFix, false, null, null);
         expected = preFix + Utilities.AUTHENTICATED_USER_DISPLAY + ": Donal, IP_ADDRESS: 127.0.0.1, CUSTOMER: GOLD";
         Assert.assertTrue("Expected: " + expected + " actual: " + val, val.equals(expected));
 
         exception = false;
         try {
-            Utilities.getMappingValueDisplayString(keysToFilterPairs, Utilities.SQL_PLACE_HOLDER, new String[]{"127.0.0.1", pH, pH, pH, pH}, true, preFix, false, null);
+            Utilities.getMappingValueDisplayString(keysToFilterPairs, Utilities.SQL_PLACE_HOLDER, new String[]{"127.0.0.1", pH, pH, pH, pH}, true, preFix, false, null, null);
         } catch (IllegalStateException e) {
             exception = true;
         }

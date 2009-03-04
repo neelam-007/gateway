@@ -180,26 +180,27 @@ public class RuntimeDocUtilities {
      * a distinct mapping value set. The title of the table is the set of mapping keys, including AUTH_USER, which
      * was selected and what the columns of data represent the distinct sets of values for
      *
-     * @param keysToFilters a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
-     *                      represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
-     *                      key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
-     *                      and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
-     *                      hash map.
+     * @param keysToFilters       a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     *                            represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     *                            key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     *                            and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     *                            hash map.
+     * @param truncateKeyMaxValue max value for the key value to be displayed
      * @return a string which can be used to display as the heading for the table of data shown in usage reports
      */
-    private static String getContextKeysDiaplayString(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters) {
+    private static String getContextKeysDiaplayString(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, int truncateKeyMaxValue) {
         StringBuilder sb = new StringBuilder();
 
         List<String> keys = new ArrayList<String>();
         keys.addAll(keysToFilters.keySet());
 
         for (int i = 0; i < keys.size(); i++) {
-            String s = keys.get(i);
+            String mappingKey = keys.get(i);
             if (i != 0) {
                 if (i != keys.size() - 1) sb.append(", ");
                 else sb.append(" and ");
             }
-            sb.append(s);
+            sb.append(TextUtils.truncStringMiddleExact(mappingKey, truncateKeyMaxValue));
         }
         return sb.toString();
     }
@@ -324,7 +325,7 @@ public class RuntimeDocUtilities {
 
         Utilities.checkMappingQueryParams(keysToFilters, false, false);
         LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
-                true, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
+                true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
         LinkedHashMap<String, String> groupToLegendDisplayStringMap = getGroupToLegendDisplayStringMap(mappingValuesLegend);
 
         addPerfChartXml(doc, groupToLegendDisplayStringMap);
@@ -353,8 +354,6 @@ public class RuntimeDocUtilities {
         //is detail is not considered a valid key for usage queries
         Utilities.checkMappingQueryParams(keysToFilters, false, true);
 
-        LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
-                true, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
         /*
         * distinctMappingValues The set of distinct mapping values, which were determined earlier based on
         * the users selection of keys, key values, time and other constraints. Each string in the set is the
@@ -398,7 +397,7 @@ public class RuntimeDocUtilities {
         int xPos = Utilities.CONSTANT_HEADER_START_X;
         int yPos = 0;
 
-        String keyDisplayValue = getContextKeysDiaplayString(keysToFilters);
+        String keyDisplayValue = getContextKeysDiaplayString(keysToFilters, Utilities.MAPPING_KEY_MAX_SIZE);
         Element keyInfoElement = doc.createElement("keyInfo");
         rootNode.appendChild(keyInfoElement);
         CDATASection cData = doc.createCDATASection(keyDisplayValue);
@@ -507,6 +506,9 @@ public class RuntimeDocUtilities {
         rightMarginElement.setTextContent(String.valueOf(Utilities.LEFT_MARGIN_WIDTH));
         rootNode.appendChild(rightMarginElement);
 
+        LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
+                true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
+
         LinkedHashMap<String, String> groupToLegendDisplayStringMap = getGroupToLegendDisplayStringMap(mappingValuesLegend);
         addChartXMLToDocument(doc, groupToLegendDisplayStringMap, frameWidth, 595);
 
@@ -602,7 +604,7 @@ public class RuntimeDocUtilities {
         Utilities.checkMappingQueryParams(keysToFilters, false, true);
 
         LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
-                true, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
+                true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
 
         /*
         * distinctMappingValues The set of distinct mapping values, which were determined earlier based on
@@ -655,7 +657,7 @@ public class RuntimeDocUtilities {
         int xPos = Utilities.CONSTANT_HEADER_START_X;
         int yPos = 0;
 
-        String keyDisplayValue = getContextKeysDiaplayString(keysToFilters);
+        String keyDisplayValue = getContextKeysDiaplayString(keysToFilters, Utilities.MAPPING_KEY_MAX_SIZE);
         Element keyInfoElement = doc.createElement("keyInfo");
         rootNode.appendChild(keyInfoElement);
         CDATASection cData = doc.createCDATASection(keyDisplayValue);
@@ -757,19 +759,23 @@ public class RuntimeDocUtilities {
      * values into some method will which give it the required LinkedHashSet<List<java.lang.String>>
      * Auth User is always the first element of each list in distinctMappingSets
      *
-     * @param keysToFilters       a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
-     *                            represent it's constraints. All keys should have at least one FilterPair supplied. If no constraint was added for a
-     *                            key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
-     *                            and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
-     *                            hash map.
-     * @param distinctMappingSets represents the runtime report meta data, which are the distinct set of mapping values
-     *                            that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
-     *                            followed by 5 mapping values
+     * @param keysToFilters        a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     *                             represent it's constraints. All keys should have at least one FilterPair supplied. If no constraint was added for a
+     *                             key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     *                             and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     *                             hash map.
+     * @param distinctMappingSets  represents the runtime report meta data, which are the distinct set of mapping values
+     *                             that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
+     *                             followed by 5 mapping values
      * @param truncateValues
-     * @param truncateMaxSize     @return
+     * @param truncateKeyMaxSize
+     * @param truncateValueMaxSize @return
      */
     public static LinkedHashSet<String> getMappingLegendValues(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
-                                                               LinkedHashSet<List<String>> distinctMappingSets, boolean truncateValues, Integer truncateMaxSize) {
+                                                               LinkedHashSet<List<String>> distinctMappingSets,
+                                                               boolean truncateValues,
+                                                               Integer truncateKeyMaxSize,
+                                                               Integer truncateValueMaxSize) {
         LinkedHashSet<String> mappingValues = new LinkedHashSet<String>();
 
         for (List<String> set : distinctMappingSets) {
@@ -790,7 +796,7 @@ public class RuntimeDocUtilities {
                 mappingStringsArray[i] = Utilities.SQL_PLACE_HOLDER;
             }
             String mappingValue = Utilities.getMappingValueDisplayString(keysToFilters,
-                    authUser, mappingStringsArray, false, null, truncateValues, truncateMaxSize);
+                    authUser, mappingStringsArray, false, null, truncateValues, truncateKeyMaxSize, truncateValueMaxSize);
             mappingValues.add(mappingValue);
         }
 

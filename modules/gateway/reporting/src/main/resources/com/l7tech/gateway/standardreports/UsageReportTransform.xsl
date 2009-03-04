@@ -93,6 +93,38 @@
         </xsl:copy>
     </xsl:template>
 
+    <xsl:template match="/jasperReport/group[@name='TITLE_GROUPINGS']/groupHeader/band/frame/reportElement">
+        <xsl:element name="reportElement">
+            <xsl:choose>
+                <xsl:when test="$useDynamicWidths = 1">
+                    <xsl:attribute name="width">
+                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth"/>
+                    </xsl:attribute>
+                    <xsl:apply-templates select="node()|@*[local-name()!='width']"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:apply-templates select="node()|@*"/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="/jasperReport/group[@name='TITLE_SERVICES_OPS']/groupHeader/band/frame/reportElement">
+        <xsl:element name="reportElement">
+            <xsl:choose>
+                <xsl:when test="$useDynamicWidths = 1">
+                    <xsl:attribute name="width">
+                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth"/>
+                    </xsl:attribute>
+                    <xsl:apply-templates select="node()|@*[local-name()!='width']"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:apply-templates select="node()|@*"/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:element>
+    </xsl:template>
+
     <xsl:template match="/jasperReport/title/band/frame[2]/frame">
         <xsl:copy>
             <xsl:for-each select="reportElement">
@@ -132,7 +164,7 @@
 
     </xsl:template>
 
-    <xsl:template match="/jasperReport/group[@name='CONSTANT']/groupHeader/band/frame[2]">
+    <xsl:template match="/jasperReport/group[@name='CONSTANT']/groupHeader/band/frame[1]">
         <xsl:copy>
             <xsl:apply-templates select="node()|@*"/>
             <xsl:text>
@@ -148,7 +180,8 @@
     </xsl:template>
 
     <!-- Copy in the key info into the Usage Summary frame-->
-    <xsl:template match="/jasperReport/group[@name='CONSTANT']/groupHeader/band/frame[1]/textField/textFieldExpression">
+    <xsl:template
+            match="/jasperReport/group[@name='CONSTANT_GROUP_DESC']/groupHeader/band/frame[1]/textField/textFieldExpression">
         <xsl:element name="textFieldExpression">
             <xsl:text>"Usage Summary data grouped by:</xsl:text>
             <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/keyInfo"/>
@@ -156,7 +189,8 @@
         </xsl:element>
     </xsl:template>
 
-    <xsl:template match="/jasperReport/group[@name='CONSTANT']/groupHeader/band/frame[1]/textField/reportElement">
+    <xsl:template
+            match="/jasperReport/group[@name='CONSTANT_GROUP_DESC']/groupHeader/band/frame[1]/textField/reportElement">
         <xsl:element name="reportElement">
             <xsl:choose>
                 <xsl:when test="$useDynamicWidths = 1">
@@ -174,6 +208,22 @@
 
     <!-- //todo [Donal] turn this template into a function, as it's repeated several times in this file-->
     <xsl:template match="/jasperReport/group[@name='CONSTANT']/groupHeader/band/frame[*]/reportElement">
+        <xsl:element name="reportElement">
+            <xsl:choose>
+                <xsl:when test="$useDynamicWidths = 1">
+                    <xsl:attribute name="width">
+                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth"/>
+                    </xsl:attribute>
+                    <xsl:apply-templates select="node()|@*[local-name()!='width']"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:apply-templates select="node()|@*"/>
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:element>
+    </xsl:template>
+
+    <xsl:template match="/jasperReport/group[@name='CONSTANT_GROUP_DESC']/groupHeader/band/frame[*]/reportElement">
         <xsl:element name="reportElement">
             <xsl:choose>
                 <xsl:when test="$useDynamicWidths = 1">

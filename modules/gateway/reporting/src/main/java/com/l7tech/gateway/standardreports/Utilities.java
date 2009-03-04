@@ -54,6 +54,7 @@ public class Utilities {
     private static final long WEEK_IN_MILLISECONDS = 604800000L;
     private static final long MONTH_32DAYS_IN_MILLISECONDS = 2764800000L;
     public static final Integer USAGE_HEADING_VALUE_MAX_SIZE = 30;
+    public static final Integer MAPPING_KEY_MAX_SIZE = 100;
 
     public static enum UNIT_OF_TIME {
         HOUR, DAY, WEEK, MONTH
@@ -713,8 +714,8 @@ public class Utilities {
      * @param isUsage                 needed in order to validate the input parameters
      * @return sql string, ready to be ran against a database. This sql query will ALWAYS produce the following columns
      *         of data: <pre>
-     *                                                         AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                         </pre>
+     *                                                                                 AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                                                                                 </pre>
      *         Note operation is not included. It is a mapping key under the covers but it has special meaning. Notice how
      *         authenticated_user is returned. To the user and to business logic, authenticated user is a normal mapping key
      */
@@ -799,8 +800,8 @@ public class Utilities {
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
      * @return a valid sql string ready to be ran against a database. The sql will always produce the following fields:-
      *         <pre>
-     *                                                         SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
-     *                                                         </pre>
+     *                                                                                 SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
+     *                                                                                 </pre>
      */
     public static String getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                      Map<String, Set<String>> serviceIdToOperations,
@@ -883,9 +884,9 @@ public class Utilities {
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
      * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
      *         <pre>
-     *                                                          SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                                                         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                         </pre>
+     *                                                                                  SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                                                                                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                                                                                 </pre>
      */
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                        Map<String, Set<String>> serviceIdToOperations,
@@ -987,9 +988,9 @@ public class Utilities {
      * @param operation               the operation, if isDetail is true, that we want usage data for
      * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
      *         <pre>
-     *                                                          SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                                                         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                         </pre>
+     *                                                                                  SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                                                                                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                                                                                 </pre>
      */
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                        Long serviceId,
@@ -2188,7 +2189,7 @@ public class Utilities {
                                                          LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
                                                          String[] keyValues) {
 
-        String displayString = getMappingValueDisplayString(keysToFilters, authUser, keyValues, false, null, false, null);
+        String displayString = getMappingValueDisplayString(keysToFilters, authUser, keyValues, false, null, false, null, null);
         if (!displayStringToMappingGroup.containsKey(displayString)) throw new IllegalArgumentException("Group for " +
                 "display string not found: " + displayString);
 
@@ -2344,19 +2345,20 @@ public class Utilities {
      * This function is used to create a unique key string by which to identify a set of mapping values and also to
      * display the mapping values to the user in report output. As a result a prefix can be added for display purposes.
      *
-     * @param keysToFilters   a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
-     *                        represent it's constraints. All keys should have at least one FilterPair supplied. If no constraint was added for a
-     *                        key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
-     *                        and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
-     *                        hash map.
-     * @param authUser        value for the authenticated user, can be the place holder value
-     * @param keyValues       array of Strings. Array is used as it's easier from with Jasper reports than using a
-     *                        Collection.
-     * @param includePreFix   true if the supplied prefix should be at the start of the returned string
-     * @param prefix          stirng to include at the start of the returned string. If includePreFix is true, it cannot be
-     *                        null or the empty string
-     * @param truncateValues  should the return string be truncated? If trur truncateMaxSize cannot be null or < -1
-     * @param truncateMaxSize what is the max size the returned string can be?
+     * @param keysToFilters        a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     *                             represent it's constraints. All keys should have at least one FilterPair supplied. If no constraint was added for a
+     *                             key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     *                             and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     *                             hash map.
+     * @param authUser             value for the authenticated user, can be the place holder value
+     * @param keyValues            array of Strings. Array is used as it's easier from with Jasper reports than using a
+     *                             Collection.
+     * @param includePreFix        true if the supplied prefix should be at the start of the returned string
+     * @param prefix               stirng to include at the start of the returned string. If includePreFix is true, it cannot be
+     *                             null or the empty string
+     * @param truncateValues       should the return string be truncated? If trur truncateMaxSize cannot be null or < -1
+     * @param truncateKeyMaxSize
+     * @param truncateValueMaxSize what is the max size the returned string can be?
      * @return a string representing all the supplied parameters
      * @throws IllegalArgumentException if the length of keyValues is less than the size of keys, or if truncateValues is
      *                                  true and truncateMaxSize is null or < -1
@@ -2365,7 +2367,7 @@ public class Utilities {
      */
     public static String getMappingValueDisplayString(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
                                                       String authUser, String[] keyValues, boolean includePreFix,
-                                                      String prefix, boolean truncateValues, Integer truncateMaxSize) {
+                                                      String prefix, boolean truncateValues, Integer truncateKeyMaxSize, Integer truncateValueMaxSize) {
         if (keysToFilters == null) throw new NullPointerException("keysToFilters cannot be null");
 
         if (authUser == null || authUser.equals(""))
@@ -2393,8 +2395,8 @@ public class Utilities {
         }
 
         if (truncateValues) {
-            if (truncateMaxSize == null || truncateMaxSize < 1) {
-                throw new IllegalArgumentException("If truncateValues is true, truncateMaxSize must be non null and > 1");
+            if (truncateValueMaxSize == null || truncateValueMaxSize < 1) {
+                throw new IllegalArgumentException("If truncateValues is true, truncateValueMaxSize must be non null and > 1");
             }
         }
 
@@ -2402,7 +2404,7 @@ public class Utilities {
         boolean firstComma = false;
         if (!authUser.equals(SQL_PLACE_HOLDER)) {
             sb.append("Authenticated User: ");
-            if (truncateValues) sb.append(TextUtils.truncStringMiddleExact(authUser, truncateMaxSize));
+            if (truncateValues) sb.append(TextUtils.truncStringMiddleExact(authUser, truncateValueMaxSize));
             else sb.append(authUser);
             firstComma = true;
         }
@@ -2422,9 +2424,13 @@ public class Utilities {
             if (index != 0) {
                 sb.append(", ");
             }
-            sb.append(me.getKey()).append(": ");
 
-            if (truncateValues) sb.append(TextUtils.truncStringMiddleExact(keyValues[index], truncateMaxSize));
+            if (truncateValues) sb.append(TextUtils.truncStringMiddleExact(me.getKey(), truncateKeyMaxSize));
+            else sb.append(me.getKey());
+
+            sb.append(": ");
+
+            if (truncateValues) sb.append(TextUtils.truncStringMiddleExact(keyValues[index], truncateValueMaxSize));
             else sb.append(keyValues[index]);
 
             index++;
@@ -2493,7 +2499,7 @@ public class Utilities {
         for (Map.Entry<String, List<ReportApi.FilterPair>> me : keysToFilters.entrySet()) {
             if (me.getKey().equals(MessageContextMapping.MappingType.AUTH_USER.toString())) continue;
 
-            String s = me.getKey();
+            String mappingKey = me.getKey();
             //valueConstraintAndOrLike
             if (firstComma) {
                 sb.append(", ");
@@ -2503,7 +2509,7 @@ public class Utilities {
             if (index != 0) {
                 sb.append(", ");
             }
-            sb.append(s);
+            sb.append(TextUtils.truncStringMiddleExact(mappingKey, MAPPING_KEY_MAX_SIZE));
             StringBuilder tempBuilder = new StringBuilder();
             tempBuilder.append(" (");
             int tempIndex = 0;
