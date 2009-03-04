@@ -56,8 +56,11 @@ class Importer extends ImportExportUtility {
             false, true);
     public static final CommandLineOption CONFIG_ONLY = new CommandLineOption("-config", "only restore configuration files, no database restore", false, true);
     public static final CommandLineOption CLUSTER_PASSPHRASE = new CommandLineOption("-cp", "the cluster passphrase for the (resulting) database");
+    public static final CommandLineOption GATEWAY_DB_USERNAME = new CommandLineOption("-gdbu", "gateway database username");
+    public static final CommandLineOption GATEWAY_DB_PASSWORD = new CommandLineOption("-gdbp", "gateway database password");
 
-    public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, MAPPING_PATH, DB_HOST_NAME, DB_NAME, DB_PASSWD, DB_USER, OS_OVERWRITE, Exporter.AUDIT, CONFIG_ONLY, CLUSTER_PASSPHRASE};
+    public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, MAPPING_PATH, DB_HOST_NAME, DB_NAME, DB_PASSWD, DB_USER,
+            OS_OVERWRITE, Exporter.AUDIT, CONFIG_ONLY, CLUSTER_PASSPHRASE, GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD};
 
     public static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
             new CommandLineOption("-p", "Ignored parameter for partition", true, false),
@@ -75,6 +78,8 @@ class Importer extends ImportExportUtility {
     private String licenseValueBeforeImport = null;
     private String rootDBUsername;
     private String rootDBPasswd;
+    private String gatewayDbUsername;
+    private String gatewayDbPassword;
     private String dbHost;
     private String dbPort;
     private String dbName;
@@ -149,6 +154,10 @@ class Importer extends ImportExportUtility {
             }
             if (rootDBPasswd == null) rootDBPasswd = ""; // totally legit
 
+            gatewayDbUsername = arguments.get(GATEWAY_DB_USERNAME.name);
+            gatewayDbPassword = arguments.get(GATEWAY_DB_PASSWORD.name);
+            if (gatewayDbPassword == null) gatewayDbPassword = ""; // totally legit
+
             // Replace database host name and database name in URL by those from command line options.
             dbHost = arguments.get(DB_HOST_NAME.name);
             if (dbHost == null) {
@@ -167,8 +176,8 @@ class Importer extends ImportExportUtility {
 
             boolean cleanRestore = false;
             MasterPasswordManager mpm = new MasterPasswordManager(new DefaultMasterPasswordFinder(new File(new File(CONFIG_PATH), "omp.dat")));
-            String databaseUser = "gateway";
-            String databasePass = rootDBPasswd;
+            String databaseUser = gatewayDbUsername;
+            String databasePass = gatewayDbPassword;
             File nodePropsFile = new File(new File(CONFIG_PATH), "node.properties");
 
             final PropertiesConfiguration nodeConfig = new PropertiesConfiguration();
@@ -180,12 +189,19 @@ class Importer extends ImportExportUtility {
                     databaseUser = nodeConfig.getString("node.db.config.main.user") == null ? databaseUser : nodeConfig.getString("node.db.config.main.user");
                     databasePass = nodeConfig.getString("node.db.config.main.pass") == null ? databasePass : nodeConfig.getString("node.db.config.main.pass");
                     databasePass = new String(mpm.decryptPasswordIfEncrypted(databasePass));
-
+                    logger.info("Using database gateway username/password defined from node.properties");
                 } else {
                     nodeConfig.setProperty("node.id", UUID.randomUUID().toString().replace("-", ""));
                     nodeConfig.setProperty("node.db.config.main.user", databaseUser);
                     nodeConfig.setProperty("node.db.config.main.pass", mpm.encryptPassword(databasePass.toCharArray()));
                     cleanRestore = true;
+                }
+
+                //no database gateway user defined
+                if (databaseUser == null) {
+                    logger.info("No database gateway username defined.  Was not found in node.properties and not found in options");
+                    throw new FlashUtilityLauncher.InvalidArgumentException("Please provide options: " + GATEWAY_DB_USERNAME.name +
+                            " and " + GATEWAY_DB_PASSWORD.name);
                 }
 
                 //write the nodeConfig properties but do not save yet
