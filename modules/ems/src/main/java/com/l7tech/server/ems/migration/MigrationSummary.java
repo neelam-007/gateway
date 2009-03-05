@@ -167,7 +167,7 @@ public class MigrationSummary implements Serializable {
         builder.append( "Services migrated: " );
         builder.append( count(com.l7tech.objectmodel.EntityType.SERVICE) );
         builder.append( "\n" );
-        builder.append( "Policies migrated: " );
+        builder.append( "Policy fragments migrated: " );
         builder.append( count(com.l7tech.objectmodel.EntityType.POLICY) );
         builder.append( "\n" );
 
