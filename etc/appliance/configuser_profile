@@ -498,7 +498,6 @@ do
                     else
                         isValid="n";
                         confirmedMessage "That is not a valid selection";
-                        read;
                     fi;;
         esac
 done
