@@ -1,10 +1,6 @@
 package com.l7tech.gateway.config.flasher;
 
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.DefaultMasterPasswordFinder;
-import com.l7tech.util.BuildInfo;
-import com.l7tech.util.FileUtils;
-import com.l7tech.util.CausedIOException;
+import com.l7tech.util.*;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
@@ -154,8 +150,9 @@ public class Exporter extends ImportExportUtility {
                 try {
                     DBDumpUtil.dump(config, includeAudit, mappingEnabled, tmpDirectory, stdout);
                 } catch (SQLException e) {
-                    logger.log(Level.INFO, "exception dumping database", e);
-                    throw new IOException("cannot dump the database " + e.getMessage());
+                    logger.log(Level.INFO, "exception dumping database, possible that the database is not running or credentials " +
+                            "are not correct", ExceptionUtils.getDebugException(e));
+                    throw new IOException("cannot dump the database, please ensure the database is running and the credentials are correct");
                 }
 
                 // produce template mapping if necessary
