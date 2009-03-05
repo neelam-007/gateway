@@ -5,6 +5,7 @@ import com.l7tech.util.TooManyChildElementsException;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.gateway.config.manager.db.DBActions;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -122,7 +123,11 @@ class MappingUtil {
                     logger.info("Error, an element " + VARMAPELNAME + " does not contain expected attributes");
                     throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " has invalid values for varmap element");
                 }
-                output.varMapping.put(name, target);
+
+                //only map non-hidden hidden cluster properties
+                if (!isHiddenClusterProperty(name, target)) {
+                    output.varMapping.put(name, target);
+                }
             }
         } catch (TooManyChildElementsException e) {
             logger.log(Level.INFO, "error loading mapping file", e);
@@ -142,7 +147,11 @@ class MappingUtil {
             while (rs.next()) {
                 String value = rs.getString(2);
                 String key = rs.getString(1);
-                if (!key.equals("license")) mapOfClusterProperties.put(key, value);
+
+                //only map non-hidden cluster property
+                if (!isHiddenClusterProperty(key, value)) {
+                    mapOfClusterProperties.put(key, value);
+                }
             }
             rs.close();
             s.close();
@@ -156,7 +165,9 @@ class MappingUtil {
         Document outputdoc = XmlUtil.createEmptyDocument(IMPORTMAPPINGELNAME, NS_PREFIX,
                                                          STAGINGMAPPINGNS);
         Comment comment = outputdoc.createComment("Please review backend ip addresses and global variables" +
-                                                 "\n\tand provide corresponding values for the target system");
+                                                 "\n\tand provide corresponding values for the target system." +
+                                                 "\n\tWhen in doubt, duplicate the sourcevalue in the targetvalue. " +
+                                                 "\n\tDo not leave properties with targetvalue=\"__add_your_value__\"");
         outputdoc.getDocumentElement().appendChild(comment);
         Element backendipmappingEl = DomUtils.createAndAppendElementNS(outputdoc.getDocumentElement(),
                                                                       BACKENDIPMAPPINGELNAME,
@@ -190,6 +201,18 @@ class MappingUtil {
         fos.write(XmlUtil.nodeToFormattedString(outputdoc).getBytes());
         System.out.println(". Done");
         fos.close();
+    }
+
+    /**
+     * Determines if the cluster property is considered to be hidden or not hidden.
+     *
+     * @param key   Key of the cluster property (ie name)
+     * @param value Value of the cluster property
+     * @return  TRUE if the key is a hidden cluster property, otherwise FALSE.
+     */
+    private static boolean isHiddenClusterProperty(String key, String value) {
+        ClusterProperty cp = new ClusterProperty(key, value);
+        return cp.isHiddenProperty();
     }
 
     /**
