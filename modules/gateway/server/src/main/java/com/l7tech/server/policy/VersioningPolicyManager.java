@@ -140,13 +140,21 @@ public class VersioningPolicyManager implements PolicyManager {
     @Override
     public void update(Policy policy) throws UpdateException {
         policyManager.update(policy);
-        checkpointPolicy(policy);
+        try {
+            policyVersionManager.checkpointPolicy(policy, true, false);
+        } catch ( ObjectModelException ome ) {
+            throw new UpdateException("Unable to save policy version when updating policy.", ome);
+        }
     }
 
     @Override
     public void updateWithFolder(Policy policy) throws UpdateException {
         policyManager.updateWithFolder(policy);
-        checkpointPolicy(policy);
+        try {
+            policyVersionManager.checkpointPolicy(policy, true, false);
+        } catch ( ObjectModelException ome ) {
+            throw new UpdateException("Unable to save policy version when updating policy.", ome);
+        }
     }
 
     @Override
@@ -178,12 +186,4 @@ public class VersioningPolicyManager implements PolicyManager {
 
     private final PolicyManager policyManager;
     private final PolicyVersionManager policyVersionManager;
-
-    private void checkpointPolicy(Policy policy) throws UpdateException {
-        try {
-            policyVersionManager.checkpointPolicy(policy, true, true);
-        } catch ( ObjectModelException ome ) {
-            throw new UpdateException("Unable to save policy version.", ome);
-        }
-    }
 }
