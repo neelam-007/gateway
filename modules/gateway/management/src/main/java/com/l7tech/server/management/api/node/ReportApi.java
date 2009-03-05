@@ -18,21 +18,21 @@ import java.util.*;
  * EMS / Gateway reporting API
  */
 @MTOM
-@WebService(name="Report", targetNamespace="http://www.layer7tech.com/management/report")
+@WebService(name = "Report", targetNamespace = "http://www.layer7tech.com/management/report")
 public interface ReportApi {
 
     /**
      * Submit a report for generation of the given result types.
      *
      * @param submission The report submission details.
-     * @param types The desired output formats.
+     * @param types      The desired output formats.
      * @return The ID for this report submission.
      * @throws ReportException on error
      */
-    @WebMethod(operationName="SubmitReport")
-    @WebResult(name="SubmissionIdentifier", targetNamespace="http://www.layer7tech.com/management/report")
-    String submitReport( @WebParam(name="ReportSubmission") ReportSubmission submission,
-                         @WebParam(name="ReportOutputTypes") Collection<ReportOutputType> types ) throws ReportException;
+    @WebMethod(operationName = "SubmitReport")
+    @WebResult(name = "SubmissionIdentifier", targetNamespace = "http://www.layer7tech.com/management/report")
+    String submitReport(@WebParam(name = "ReportSubmission")ReportSubmission submission,
+                        @WebParam(name = "ReportOutputTypes")Collection<ReportOutputType> types) throws ReportException;
 
     /**
      * Get the status for a set of reports.
@@ -41,9 +41,9 @@ public interface ReportApi {
      * @return the set of report status (one per id)
      * @throws ReportException on error
      */
-    @WebMethod(operationName="GetReportStatus")
-    @WebResult(name="ReportStatus", targetNamespace="http://www.layer7tech.com/management/report")
-    Collection<ReportStatus> getReportStatus( @WebParam(name="SubmissionIdentifiers") Collection<String> ids ) throws ReportException;
+    @WebMethod(operationName = "GetReportStatus")
+    @WebResult(name = "ReportStatus", targetNamespace = "http://www.layer7tech.com/management/report")
+    Collection<ReportStatus> getReportStatus(@WebParam(name = "SubmissionIdentifiers")Collection<String> ids) throws ReportException;
 
     /**
      * Get report result.
@@ -52,23 +52,25 @@ public interface ReportApi {
      * @return The report result
      * @throws ReportException on error
      */
-    @WebMethod(operationName="GetReportResult")
-    @WebResult(name="ReportResult", targetNamespace="http://www.layer7tech.com/management/report")
-    ReportResult getReportResult( @WebParam(name="SubmissionIdentifier") String id,
-                                  @WebParam(name="ReportOutputType") ReportOutputType type ) throws ReportException;
+    @WebMethod(operationName = "GetReportResult")
+    @WebResult(name = "ReportResult", targetNamespace = "http://www.layer7tech.com/management/report")
+    ReportResult getReportResult(@WebParam(name = "SubmissionIdentifier")String id,
+                                 @WebParam(name = "ReportOutputType")ReportOutputType type) throws ReportException;
 
     /**
      * Get grouping keys.
      *
      * @throws ReportException on error
      */
-    @WebMethod(operationName="GetGroupingKeys")
-    @WebResult(name="GroupingKeys", targetNamespace="http://www.layer7tech.com/management/report")
+    @WebMethod(operationName = "GetGroupingKeys")
+    @WebResult(name = "GroupingKeys", targetNamespace = "http://www.layer7tech.com/management/report")
     Collection<GroupingKey> getGroupingKeys() throws ReportException;
 
-    @XmlRootElement(name="GroupingKey", namespace="http://www.layer7tech.com/management/report")
+    @XmlRootElement(name = "GroupingKey", namespace = "http://www.layer7tech.com/management/report")
     class GroupingKey {
-        public enum GroupingKeyType { STANDARD, CUSTOM }
+        public enum GroupingKeyType {
+            STANDARD, CUSTOM
+        }
 
         private GroupingKeyType type;
         private String name;
@@ -76,7 +78,7 @@ public interface ReportApi {
         public GroupingKey() {
         }
 
-        public GroupingKey( final GroupingKeyType type, final String name ) {
+        public GroupingKey(final GroupingKeyType type, final String name) {
             this.type = type;
             this.name = name;
         }
@@ -123,13 +125,14 @@ public interface ReportApi {
     /**
      * Supported report types.
      */
-    @XmlRootElement(name="ReportType", namespace="http://www.layer7tech.com/management/report")
-    enum ReportType { PERFORMANCE_SUMMARY, PERFORMANCE_INTERVAL, USAGE_SUMMARY, USAGE_INTERVAL;
+    @XmlRootElement(name = "ReportType", namespace = "http://www.layer7tech.com/management/report")
+    enum ReportType {
+        PERFORMANCE_SUMMARY, PERFORMANCE_INTERVAL, USAGE_SUMMARY, USAGE_INTERVAL;
 
-        public static String [] getApplicableParameters(ReportType reportType){
-            if(reportType == PERFORMANCE_SUMMARY || reportType == USAGE_SUMMARY){
+        public static String[] getApplicableParameters(ReportType reportType) {
+            if (reportType == PERFORMANCE_SUMMARY || reportType == USAGE_SUMMARY) {
                 return ReportParameters.COMMON_PARAMS;
-            }else{
+            } else {
                 List<String> returnList = new ArrayList<String>(Arrays.asList(ReportParameters.COMMON_PARAMS));
                 returnList.addAll(Arrays.asList(ReportParameters.INTERVAL_PARAMS));
                 return returnList.toArray(new String[]{});
@@ -140,15 +143,19 @@ public interface ReportApi {
     /**
      * Supported report output types.
      */
-    @XmlRootElement(name="ReportOutputType", namespace="http://www.layer7tech.com/management/report")
-    enum ReportOutputType { PDF, HTML }
+    @XmlRootElement(name = "ReportOutputType", namespace = "http://www.layer7tech.com/management/report")
+    enum ReportOutputType {
+        PDF, HTML
+    }
 
     /**
      * Report status data.
      */
-    @XmlRootElement(name="ReportStatus", namespace="http://www.layer7tech.com/management/report")
+    @XmlRootElement(name = "ReportStatus", namespace = "http://www.layer7tech.com/management/report")
     class ReportStatus {
-        public enum Status { PENDING, RUNNING, COMPLETED, FAILED }
+        public enum Status {
+            PENDING, RUNNING, COMPLETED, FAILED
+        }
 
         private String id;
         private String message;
@@ -193,7 +200,7 @@ public interface ReportApi {
 
         @Override
         public String toString() {
-            return "ReportStatus[id='"+id+"'; status='"+status+"']";
+            return "ReportStatus[id='" + id + "'; status='" + status + "']";
         }
 
         @Override
@@ -224,7 +231,7 @@ public interface ReportApi {
     /**
      * Report result data.
      */
-    @XmlRootElement(name="ReportResult", namespace="http://www.layer7tech.com/management/report")
+    @XmlRootElement(name = "ReportResult", namespace = "http://www.layer7tech.com/management/report")
     class ReportResult {
         private String id;
         private ReportOutputType type;
@@ -242,7 +249,7 @@ public interface ReportApi {
         @XmlAttribute
         public ReportOutputType getType() {
             return type;
-        }                                                                                                                                     
+        }
 
         public void setType(ReportOutputType type) {
             this.type = type;
@@ -283,7 +290,7 @@ public interface ReportApi {
     /**
      * Report submission data.
      */
-    @XmlRootElement(name="ReportSubmission", namespace="http://www.layer7tech.com/management/report")
+    @XmlRootElement(name = "ReportSubmission", namespace = "http://www.layer7tech.com/management/report")
     class ReportSubmission {
         private String name;
         private ReportType type;
@@ -340,7 +347,7 @@ public interface ReportApi {
             return result;
         }
 
-        @XmlRootElement(name="ReportParameter", namespace="http://www.layer7tech.com/management/report")
+        @XmlRootElement(name = "ReportParameter", namespace = "http://www.layer7tech.com/management/report")
         public static class ReportParam {
             private String name;
             private Object value;
@@ -349,9 +356,9 @@ public interface ReportApi {
             public ReportParam() {
             }
 
-            public ReportParam( final String name, final Object value ) {
-                setName( name );
-                setValue( value );
+            public ReportParam(final String name, final Object value) {
+                setName(name);
+                setValue(value);
             }
 
             @XmlAttribute
@@ -365,15 +372,15 @@ public interface ReportApi {
 
             @XmlTransient
             public Object getValue() {
-                if ( value == null && typedValue !=null ) {
-                    value = typedValue.value();                    
+                if (value == null && typedValue != null) {
+                    value = typedValue.value();
                 }
                 return value;
             }
 
-            public void setValue( final Object value ) {
+            public void setValue(final Object value) {
                 this.value = value;
-                this.typedValue = new TypedValue( value );
+                this.typedValue = new TypedValue(value);
             }
 
             @XmlElement
@@ -381,7 +388,7 @@ public interface ReportApi {
                 return this.typedValue;
             }
 
-            public void setTypedValue( final TypedValue typedValue ) {
+            public void setTypedValue(final TypedValue typedValue) {
                 this.typedValue = typedValue;
             }
 
@@ -410,12 +417,12 @@ public interface ReportApi {
     }
 
     class ReportException extends Exception {
-        public ReportException( final String message ) {
+        public ReportException(final String message) {
             super(message);
         }
     }
 
-    class ReportParameters{
+    class ReportParameters {
 
         //common
         public static final String SPECIFIC_TIME_ZONE = "SPECIFIC_TIME_ZONE";
@@ -467,22 +474,22 @@ public interface ReportApi {
 
         //usage interva only ssg param
         public static final String SUB_REPORT_HELPER = "SUB_REPORT_HELPER";
-        
+
         //used for passing data around in ReportGenerator - //todo find another way of doing this
         public static final String MAPPING_GROUP_TO_DISPLAY_STRING = "MAPPING_GROUP_TO_DISPLAY_STRING";
         public static final String DISTINCT_MAPPING_SETS = "DISTINCT_MAPPING_SETS";
 
 
-        public static final String [] RELATIVE_TIME_PARAMS = new String[]{RELATIVE_NUM_OF_TIME_UNITS,
-        RELATIVE_TIME_UNIT};
+        public static final String[] RELATIVE_TIME_PARAMS = new String[]{RELATIVE_NUM_OF_TIME_UNITS,
+                RELATIVE_TIME_UNIT};
 
-        public static final String [] ABSOLUTE_TIME_PARAMS = new String[]{ABSOLUTE_START_TIME, ABSOLUTE_END_TIME};
+        public static final String[] ABSOLUTE_TIME_PARAMS = new String[]{ABSOLUTE_START_TIME, ABSOLUTE_END_TIME};
 
-        public static final String [] COMMON_PARAMS = new String[]{SPECIFIC_TIME_ZONE, IS_RELATIVE, IS_ABSOLUTE,
+        public static final String[] COMMON_PARAMS = new String[]{SPECIFIC_TIME_ZONE, IS_RELATIVE, IS_ABSOLUTE,
                 REPORT_RAN_BY, SERVICE_ID_TO_NAME_MAP, SERVICE_ID_TO_OPERATIONS_MAP, KEYS_TO_LIST_FILTER_PAIRS,
                 IS_CONTEXT_MAPPING, IS_DETAIL, PRINT_CHART};
 
-        public static final String [] INTERVAL_PARAMS = new String []{INTERVAL_TIME_UNIT, INTERVAL_NUM_OF_TIME_UNITS};
+        public static final String[] INTERVAL_PARAMS = new String[]{INTERVAL_TIME_UNIT, INTERVAL_NUM_OF_TIME_UNITS};
     }
 
 
@@ -496,28 +503,34 @@ public interface ReportApi {
          */
         private final String displayValue;
         private final boolean checkForWildCard;
+        private final boolean escapeValues;
 
         public FilterPair(final String filterValue) {
-            if(filterValue == null) throw new NullPointerException("filterValue cannot be null");
+            if (filterValue == null) throw new NullPointerException("filterValue cannot be null");
             checkForWildCard = true;
+            escapeValues = true;
             displayValue = filterValue.trim();
         }
 
         /**
          * Has a very specific use in Utilities.createDistinctKeyToFilterMap, where the filter pair holds a value,
-         * found at runtime from the database, and we don't want to modify the string found in case it contains
-         * the wild card character
+         * found at runtime from the database, and we don't want to modify the string found as we are querying
+         * a specific value from the database, no need to escape or translate any part of it
+         *
          * @param filterValue
          * @param checkForWildCard true if the wild card should be left alone, no translation into '%'
+         * @param escapeValues
          */
-        public FilterPair(final String filterValue, boolean checkForWildCard) {
+        public FilterPair(final String filterValue, boolean checkForWildCard, boolean escapeValues) {
             displayValue = filterValue;
             this.checkForWildCard = checkForWildCard;
+            this.escapeValues = escapeValues;
         }
 
         public FilterPair() {
             displayValue = "";
             checkForWildCard = false;
+            escapeValues = false;
         }
 
         public String getDisplayValue() {
@@ -525,27 +538,39 @@ public interface ReportApi {
         }
 
         public String getFilterValue() {
-            if(isEmpty()) return "";
+            if (isEmpty()) return "";
+
+            boolean isUseEquals = isUseEquals();
 
             StringBuilder sb = new StringBuilder();
-            for(int i = 0; i < displayValue.length(); i++){
+            for (int i = 0; i < displayValue.length(); i++) {
                 char c = displayValue.charAt(i);
-                if(c == '*' && checkForWildCard) sb.append('%');//translate
-                else if(c == '%') sb.append("\\%");//escape
-                else if(c == '_') sb.append("\\_");//escape
-                else if(c == '\'') sb.append("\\'");//escape
-                else sb.append(c);
+                if (isUseEquals) {
+                    if (c == '\'') sb.append("\\'");//escape
+                    else sb.append(c);
+                } else {
+                    if (c == '*' && checkForWildCard) sb.append('%');//translate
+                    else if (c == '%' && escapeValues) sb.append("\\%");//escape
+                    else if (c == '_' && escapeValues) sb.append("\\_");//escape
+                    else if (c == '\'' && escapeValues) sb.append("\\'");//escape
+                    else sb.append(c);
+                }
             }
 
             return sb.toString();
         }
 
-        public boolean isUseAnd() {
+        /**
+         * Should the = or like value be used for string constraints in sql queries
+         *
+         * @return
+         */
+        public boolean isUseEquals() {
             return displayValue.indexOf('*') == -1;
         }
 
         public boolean isEmpty() {
-            if(displayValue.equals("") || displayValue.equals("*")) return true;
+            if (displayValue.equals("") || displayValue.equals("*")) return true;
             return false;
         }
     }

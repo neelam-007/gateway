@@ -174,7 +174,7 @@ public class UtilitiesTest {
             for (ReportApi.FilterPair fp : me.getValue()) {
                 if (!fp.isEmpty()) {
                     for (int z = 1; z <= Utilities.NUM_MAPPING_KEYS; z++) {
-                        boolean useAnd = fp.isUseAnd();
+                        boolean useAnd = fp.isUseEquals();
                         String fValue = (useAnd) ? "=" : "LIKE";
                         int index = sql.indexOf("mcmk.mapping" + z + "_key = '" + s + "'");
                         Assert.assertTrue(index != -1);

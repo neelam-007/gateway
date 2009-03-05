@@ -21,11 +21,11 @@ public class JsonConversionTest {
 
     private static final String cluster1 = "c32bb1a9-1538-4792-baa1-566bfd418020";
     private static final String cluster2 = "a14df4d4-0c62-4d8e-ac3a-82cd8a442a26";
-    
-    String [] psSummaryRelativeExpectedParams = new String[]{ReportApi.ReportParameters.IS_RELATIVE, ReportApi.ReportParameters.RELATIVE_TIME_UNIT,
+
+    String[] psSummaryRelativeExpectedParams = new String[]{ReportApi.ReportParameters.IS_RELATIVE, ReportApi.ReportParameters.RELATIVE_TIME_UNIT,
             ReportApi.ReportParameters.RELATIVE_NUM_OF_TIME_UNITS, ReportApi.ReportParameters.REPORT_RAN_BY,
             ReportApi.ReportParameters.SERVICE_ID_TO_NAME_MAP, ReportApi.ReportParameters.SERVICE_ID_TO_OPERATIONS_MAP,
-            ReportApi.ReportParameters.IS_DETAIL, ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS,ReportApi.ReportParameters.PRINT_CHART};
+            ReportApi.ReportParameters.IS_DETAIL, ReportApi.ReportParameters.KEYS_TO_LIST_FILTER_PAIRS, ReportApi.ReportParameters.PRINT_CHART};
 
     @Test
     public void testNumClustersFound() throws ReportException {
@@ -43,7 +43,7 @@ public class JsonConversionTest {
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
-        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
             ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
             Assert.assertTrue("Report should be performance summary",
                     reportSubmission.getType() == ReportApi.ReportType.PERFORMANCE_SUMMARY);
@@ -53,7 +53,7 @@ public class JsonConversionTest {
         jsonMap = (Map) o;
         convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
-        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
             ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
             Assert.assertTrue("Report should be performance interval",
                     reportSubmission.getType() == ReportApi.ReportType.PERFORMANCE_INTERVAL);
@@ -63,7 +63,7 @@ public class JsonConversionTest {
         jsonMap = (Map) o;
         convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
-        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
             ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
             Assert.assertTrue("Report should be usage summary",
                     reportSubmission.getType() == ReportApi.ReportType.USAGE_SUMMARY);
@@ -73,7 +73,7 @@ public class JsonConversionTest {
         jsonMap = (Map) o;
         convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
-        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
             ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
             Assert.assertTrue("Report should be usage interval",
                     reportSubmission.getType() == ReportApi.ReportType.USAGE_INTERVAL);
@@ -89,7 +89,7 @@ public class JsonConversionTest {
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
         Assert.assertNotNull(reportClusterBeans);
 
-        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
 
             ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
 
@@ -98,7 +98,7 @@ public class JsonConversionTest {
 
             Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
                     new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
-            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+            for (ReportApi.ReportSubmission.ReportParam rP : reportParams) {
                 paramMap.put(rP.getName(), rP);
             }
 
@@ -116,7 +116,7 @@ public class JsonConversionTest {
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
         Assert.assertNotNull(reportClusterBeans);
 
-        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
 
             ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
 
@@ -125,7 +125,7 @@ public class JsonConversionTest {
 
             Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
                     new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
-            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+            for (ReportApi.ReportSubmission.ReportParam rP : reportParams) {
                 paramMap.put(rP.getName(), rP);
             }
 
@@ -137,7 +137,7 @@ public class JsonConversionTest {
     }
 
     @Test
-    public void testConvertorFactory() throws Exception{
+    public void testConvertorFactory() throws Exception {
         Object o = JSON.parse(psRelativeJsonSummary);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
@@ -157,7 +157,7 @@ public class JsonConversionTest {
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
         Assert.assertNotNull(reportClusterBeans);
 
-        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
 
             ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
 
@@ -166,7 +166,7 @@ public class JsonConversionTest {
 
             Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
                     new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
-            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+            for (ReportApi.ReportSubmission.ReportParam rP : reportParams) {
                 paramMap.put(rP.getName(), rP);
             }
 
@@ -183,9 +183,9 @@ public class JsonConversionTest {
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         boolean exception = false;
-        try{
+        try {
             convertor.getReportSubmissions(jsonMap, "Donal");
-        }catch(ReportException e){
+        } catch (ReportException e) {
             exception = true;
         }
 
@@ -193,14 +193,14 @@ public class JsonConversionTest {
     }
 
     @Test
-    public void testKeysAndValuesSize() throws ReportException{
+    public void testKeysAndValuesSize() throws ReportException {
         Object o = JSON.parse(psRelativeJsonSummaryTest);
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
         Assert.assertNotNull(reportClusterBeans);
 
-        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
 
             ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
 
@@ -209,7 +209,7 @@ public class JsonConversionTest {
 
             Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
                     new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
-            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+            for (ReportApi.ReportSubmission.ReportParam rP : reportParams) {
                 paramMap.put(rP.getName(), rP);
             }
 
@@ -233,7 +233,7 @@ public class JsonConversionTest {
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
         Assert.assertNotNull(reportClusterBeans);
 
-        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
             ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
 
             Collection<ReportApi.ReportSubmission.ReportParam> reportParams = reportSubmission.getParameters();
@@ -241,7 +241,7 @@ public class JsonConversionTest {
 
             Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
                     new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
-            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+            for (ReportApi.ReportSubmission.ReportParam rP : reportParams) {
                 paramMap.put(rP.getName(), rP);
             }
 
@@ -253,7 +253,7 @@ public class JsonConversionTest {
             Assert.assertNotNull(keysToListParam.getValue());
 
             String clusterId = clusterBean.getClusterId();
-            if(clusterId.equals(cluster2)){
+            if (clusterId.equals(cluster2)) {
                 LinkedHashMap<String, List<ReportApi.FilterPair>>
                         keysToFilters = (LinkedHashMap<String, List<ReportApi.FilterPair>>) keysToListParam.getValue();
 
@@ -272,7 +272,7 @@ public class JsonConversionTest {
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
         Assert.assertNotNull(reportClusterBeans);
 
-        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
 
             ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
 
@@ -281,7 +281,7 @@ public class JsonConversionTest {
 
             Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
                     new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
-            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+            for (ReportApi.ReportSubmission.ReportParam rP : reportParams) {
                 paramMap.put(rP.getName(), rP);
             }
 
@@ -294,23 +294,23 @@ public class JsonConversionTest {
             Assert.assertTrue("Size of keys should be 2, it was: " + keysToFilterPairs.size(),
                     keysToFilterPairs.size() == 2);
 
-            for(String s: keysToFilterPairs.keySet()){
-                Assert.assertTrue("Should be 1 values per key, there was: " + keysToFilterPairs.get(s).size(),keysToFilterPairs.get(s).size() ==1);
+            for (String s : keysToFilterPairs.keySet()) {
+                Assert.assertTrue("Should be 1 values per key, there was: " + keysToFilterPairs.get(s).size(), keysToFilterPairs.get(s).size() == 1);
             }
 
             String clusterId = clusterBean.getClusterId();
-            if(clusterId.equals(cluster1)){
+            if (clusterId.equals(cluster1)) {
                 Assert.assertTrue("cluster 1 should have 2 mapping keys", keysToFilterPairs.size() == 2);
-                String [] expectedKeys = new String[]{"IP_ADDRESS", "CUSTOMER"};
-                for(String s: expectedKeys){
-                    Assert.assertTrue("Key " + s+" should be in the mapping keys", keysToFilterPairs.containsKey(s));                    
+                String[] expectedKeys = new String[]{"IP_ADDRESS", "CUSTOMER"};
+                for (String s : expectedKeys) {
+                    Assert.assertTrue("Key " + s + " should be in the mapping keys", keysToFilterPairs.containsKey(s));
                 }
-            }else if(clusterId.equals(cluster2)){
+            } else if (clusterId.equals(cluster2)) {
 
                 Assert.assertTrue("cluster 2 should have 2 mapping keys", keysToFilterPairs.size() == 2);
-                String [] expectedKeys = new String[]{"IP_ADDRESS", "CUSTOMER"};
-                for(String s: expectedKeys){
-                    Assert.assertTrue("Key " + s+" should be in the mapping keys", keysToFilterPairs.containsKey(s));
+                String[] expectedKeys = new String[]{"IP_ADDRESS", "CUSTOMER"};
+                for (String s : expectedKeys) {
+                    Assert.assertTrue("Key " + s + " should be in the mapping keys", keysToFilterPairs.containsKey(s));
                 }
 
                 List<ReportApi.FilterPair> fps = keysToFilterPairs.get("IP_ADDRESS");
@@ -319,7 +319,7 @@ public class JsonConversionTest {
                 Assert.assertTrue("IP_ADDRESS constraint should equal 127.%.%.1, it was: " + fps.get(0).getFilterValue(),
                         fps.get(0).getFilterValue().equals("127.%.%.1"));
 
-                Assert.assertTrue("IP_ADDRESS constraint should be a like constraint", !fps.get(0).isUseAnd());
+                Assert.assertTrue("IP_ADDRESS constraint should be a like constraint", !fps.get(0).isUseEquals());
 
 
                 fps = keysToFilterPairs.get("CUSTOMER");
@@ -328,13 +328,14 @@ public class JsonConversionTest {
                 Assert.assertTrue("CUSTOMER constraint should equal GOLD, it was: " + fps.get(0).getFilterValue(),
                         fps.get(0).getFilterValue().equals("GOLD"));
 
-                Assert.assertTrue("CUSTOMER  constraint should be a and constraint", fps.get(0).isUseAnd());
+                Assert.assertTrue("CUSTOMER  constraint should be a and constraint", fps.get(0).isUseEquals());
             }
         }
     }
 
     /**
      * Check that multiple mapping values per key are parsed correctly
+     *
      * @throws ReportException
      */
     @Test
@@ -345,7 +346,7 @@ public class JsonConversionTest {
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
         Assert.assertNotNull(reportClusterBeans);
 
-        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
 
             ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
 
@@ -354,7 +355,7 @@ public class JsonConversionTest {
 
             Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
                     new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
-            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+            for (ReportApi.ReportSubmission.ReportParam rP : reportParams) {
                 paramMap.put(rP.getName(), rP);
             }
 
@@ -368,11 +369,11 @@ public class JsonConversionTest {
                     keysToFilterPairs.size() == 2);
 
             String clusterId = clusterBean.getClusterId();
-            if(clusterId.equals(cluster1)){
+            if (clusterId.equals(cluster1)) {
                 Assert.assertTrue("cluster 1 should have 2 mapping keys", keysToFilterPairs.size() == 2);
-                String [] expectedKeys = new String[]{"IP_ADDRESS", "CUSTOMER"};
-                for(String s: expectedKeys){
-                    Assert.assertTrue("Key " + s+" should be in the mapping keys", keysToFilterPairs.containsKey(s));
+                String[] expectedKeys = new String[]{"IP_ADDRESS", "CUSTOMER"};
+                for (String s : expectedKeys) {
+                    Assert.assertTrue("Key " + s + " should be in the mapping keys", keysToFilterPairs.containsKey(s));
                 }
 
                 List<ReportApi.FilterPair> fps = keysToFilterPairs.get("IP_ADDRESS");
@@ -384,12 +385,12 @@ public class JsonConversionTest {
                 Assert.assertTrue("Second customer value should equal SILVER, it was: " + fps.get(1).getFilterValue(),
                         fps.get(1).getFilterValue().equals("SILVER"));
 
-            }else if(clusterId.equals(cluster2)){
+            } else if (clusterId.equals(cluster2)) {
 
                 Assert.assertTrue("cluster 2 should have 2 mapping keys", keysToFilterPairs.size() == 2);
-                String [] expectedKeys = new String[]{"IP_ADDRESS", "CUSTOMER"};
-                for(String s: expectedKeys){
-                    Assert.assertTrue("Key " + s+" should be in the mapping keys", keysToFilterPairs.containsKey(s));
+                String[] expectedKeys = new String[]{"IP_ADDRESS", "CUSTOMER"};
+                for (String s : expectedKeys) {
+                    Assert.assertTrue("Key " + s + " should be in the mapping keys", keysToFilterPairs.containsKey(s));
                 }
 
                 List<ReportApi.FilterPair> fps = keysToFilterPairs.get("IP_ADDRESS");
@@ -399,9 +400,9 @@ public class JsonConversionTest {
                 Assert.assertTrue("IP_ADDRESS constraint should equal 127.%.%.1, it was: " + fps.get(0).getFilterValue(),
                         fps.get(0).getFilterValue().equals("127.%.%.1"));
 
-                Assert.assertTrue("IP_ADDRESS second FilterPair should be empty",fps.get(1).isEmpty());
+                Assert.assertTrue("IP_ADDRESS second FilterPair should be empty", fps.get(1).isEmpty());
 
-                Assert.assertTrue("IP_ADDRESS constraint should be a like constraint", !fps.get(0).isUseAnd());
+                Assert.assertTrue("IP_ADDRESS constraint should be a like constraint", !fps.get(0).isUseEquals());
 
 
                 fps = keysToFilterPairs.get("CUSTOMER");
@@ -410,7 +411,7 @@ public class JsonConversionTest {
                 Assert.assertTrue("CUSTOMER constraint should equal GOLD, it was: " + fps.get(0).getFilterValue(),
                         fps.get(0).getFilterValue().equals("GOLD"));
 
-                Assert.assertTrue("CUSTOMER  constraint should be a and constraint", fps.get(0).isUseAnd());
+                Assert.assertTrue("CUSTOMER  constraint should be a and constraint", fps.get(0).isUseEquals());
             }
         }
     }
@@ -423,7 +424,7 @@ public class JsonConversionTest {
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
         Assert.assertNotNull(reportClusterBeans);
 
-        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
 
             ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
 
@@ -432,11 +433,11 @@ public class JsonConversionTest {
 
             Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
                     new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
-            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+            for (ReportApi.ReportSubmission.ReportParam rP : reportParams) {
                 paramMap.put(rP.getName(), rP);
             }
 
-            for(String s: psSummaryRelativeExpectedParams){
+            for (String s : psSummaryRelativeExpectedParams) {
                 Assert.assertTrue("ParamMap should contain key: " + s, paramMap.containsKey(s));
             }
         }
@@ -451,7 +452,7 @@ public class JsonConversionTest {
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
         Assert.assertNotNull(reportClusterBeans);
 
-        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
 
             String clusterId = clusterBean.getClusterId();
             ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
@@ -461,7 +462,7 @@ public class JsonConversionTest {
 
             Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
                     new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
-            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+            for (ReportApi.ReportSubmission.ReportParam rP : reportParams) {
                 paramMap.put(rP.getName(), rP);
             }
 
@@ -471,15 +472,15 @@ public class JsonConversionTest {
                     keysToFilterPairs = (LinkedHashMap<String, List<ReportApi.FilterPair>>) reportParam.getValue();
 
 
-            if(clusterId.equals(cluster1)){
+            if (clusterId.equals(cluster1)) {
                 List<ReportApi.FilterPair> authFilters = keysToFilterPairs.get(MessageContextMapping.MappingType.AUTH_USER.toString());
                 Assert.assertNull("authUsers should be null", authFilters);
-            }else if(clusterId.equals(cluster2)){
+            } else if (clusterId.equals(cluster2)) {
                 List<ReportApi.FilterPair> authFilters = keysToFilterPairs.get(MessageContextMapping.MappingType.AUTH_USER.toString());
                 Assert.assertNotNull("authUsers should not be null", authFilters);
                 Assert.assertFalse("authUsers should not be empty", authFilters.isEmpty());
                 Assert.assertTrue("Authusers should be 2, actual size was " + authFilters.size(), authFilters.size() == 2);
-                for(ReportApi.FilterPair fp: authFilters){
+                for (ReportApi.FilterPair fp : authFilters) {
                     Assert.assertTrue("FilterPair for auth user should be empty", fp.isEmpty());
                 }
             }
@@ -495,17 +496,17 @@ public class JsonConversionTest {
         Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
         Assert.assertNotNull(reportClusterBeans);
 
-        for(ReportSubmissionClusterBean clusterBean: reportClusterBeans){
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
 
             String clusterId = clusterBean.getClusterId();
             ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
-            
+
             Collection<ReportApi.ReportSubmission.ReportParam> reportParams = reportSubmission.getParameters();
             Assert.assertNotNull(reportParams);
 
             Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
                     new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
-            for(ReportApi.ReportSubmission.ReportParam rP: reportParams){
+            for (ReportApi.ReportSubmission.ReportParam rP : reportParams) {
                 paramMap.put(rP.getName(), rP);
             }
 
@@ -513,30 +514,30 @@ public class JsonConversionTest {
             Map<String, String> serviceIdToNameMap = (Map<String, String>) reportParam.getValue();
             Assert.assertNotNull(serviceIdToNameMap);
 
-            if(clusterId.equals(cluster1)){
+            if (clusterId.equals(cluster1)) {
                 Assert.assertTrue("ServiceNames should be of size 2, it was " + serviceIdToNameMap.values().size(), serviceIdToNameMap.values().size() == 2);
-            }else if(clusterId.equals(cluster2)){
+            } else if (clusterId.equals(cluster2)) {
                 Assert.assertTrue("ServiceNames should be of size 1, it was " + serviceIdToNameMap.values().size(), serviceIdToNameMap.values().size() == 1);
-            }else{
+            } else {
                 throw new IllegalStateException("Unexpected cluster id found :" + clusterId);
             }
 
             ReportApi.ReportSubmission.ReportParam serviceIdtoOp = paramMap.get(ReportApi.ReportParameters.SERVICE_ID_TO_OPERATIONS_MAP);
             Map<String, Set<String>> serviceIdToOps = (Map<String, Set<String>>) serviceIdtoOp.getValue();
-            for(Map.Entry<String, Set<String>> me: serviceIdToOps.entrySet()){
+            for (Map.Entry<String, Set<String>> me : serviceIdToOps.entrySet()) {
 
-                if(clusterId.equals(cluster1)){
-                    if(me.getKey().equals("229376")){
+                if (clusterId.equals(cluster1)) {
+                    if (me.getKey().equals("229376")) {
                         Assert.assertTrue("229376 should have 2 operations", me.getValue().size() == 2);
-                    }else if(me.getKey().equals("229377")){
+                    } else if (me.getKey().equals("229377")) {
                         Assert.assertTrue("229377 should have 1 operation", me.getValue().size() == 1);
-                    }else{
+                    } else {
                         throw new IllegalStateException("Unexpected key found in map: " + me.getKey());
                     }
-                }else if(clusterId.equals(cluster2)){
-                    if(me.getKey().equals("229378")){
+                } else if (clusterId.equals(cluster2)) {
+                    if (me.getKey().equals("229378")) {
                         Assert.assertTrue("229378 should have 1 operation", me.getValue().size() == 1);
-                    }else{
+                    } else {
                         throw new IllegalStateException("Unexpected key found in map: " + me.getKey());
                     }
                 }
@@ -546,15 +547,16 @@ public class JsonConversionTest {
 
     /**
      * Probably redundant, just checks that parse always throws an exception when it gets garbage data
+     *
      * @throws Exception
      */
     @Test
-    public void testJSonDataParse() throws Exception{
+    public void testJSonDataParse() throws Exception {
         Exception ex = null;
-        try{
+        try {
             String badData = "asdjhfasd;fsda";
             JSON.parse(badData);
-        }catch(Exception e){
+        } catch (Exception e) {
             ex = e;
         }
 
@@ -567,9 +569,9 @@ public class JsonConversionTest {
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         boolean exception = false;
-        try{
+        try {
             convertor.getReportSubmissions(jsonMap, "Donal");
-        }catch(ReportException e){
+        } catch (ReportException e) {
             exception = true;
         }
 
@@ -583,9 +585,9 @@ public class JsonConversionTest {
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         boolean exception = false;
-        try{
+        try {
             convertor.getReportSubmissions(jsonMap, "Donal");
-        }catch(ReportException e){
+        } catch (ReportException e) {
             exception = true;
         }
 
@@ -606,9 +608,9 @@ public class JsonConversionTest {
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         boolean exception = false;
-        try{
+        try {
             convertor.getReportSubmissions(jsonMap, "Donal");
-        }catch(ReportException e){
+        } catch (ReportException e) {
             exception = true;
         }
 
@@ -621,9 +623,9 @@ public class JsonConversionTest {
         Map jsonMap = (Map) o;
         JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
         boolean exception = false;
-        try{
+        try {
             convertor.getReportSubmissions(jsonMap, "Donal");
-        }catch(ReportException e){
+        } catch (ReportException e) {
             exception = true;
         }
 
@@ -634,21 +636,21 @@ public class JsonConversionTest {
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
             "            \"operation\"          : \"\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
             "            \"operation\"          : \"\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
             "            \"operation\"          : \"\"," +
@@ -667,12 +669,12 @@ public class JsonConversionTest {
             "    }," +
             "    \"groupings\" : [" +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
@@ -686,28 +688,28 @@ public class JsonConversionTest {
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listProducts\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229377\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"clusterId\"          : \"" + cluster2 + "\"," +
             "            \"publishedServiceId\" : \"229378\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
@@ -726,22 +728,22 @@ public class JsonConversionTest {
             "    }," +
             "    \"groupings\" : [" +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"127.*.*.1\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"GOLD\"" +
             "        }," +
@@ -755,28 +757,28 @@ public class JsonConversionTest {
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listProducts\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229377\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"clusterId\"          : \"" + cluster2 + "\"," +
             "            \"publishedServiceId\" : \"229378\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
@@ -795,32 +797,32 @@ public class JsonConversionTest {
             "    }," +
             "    \"groupings\" : [" +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"GOLD\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"SILVER\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"127.*.*.1\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"GOLD\"" +
             "        }," +
@@ -834,14 +836,14 @@ public class JsonConversionTest {
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listProducts\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"clusterId\"          : \"" + cluster2 + "\"," +
             "            \"publishedServiceId\" : \"229378\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
@@ -860,12 +862,12 @@ public class JsonConversionTest {
             "    }," +
             "    \"groupings\" : [" +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"GOLD\"" +
             "        }," +
@@ -879,14 +881,14 @@ public class JsonConversionTest {
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listProducts\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"clusterId\"          : \"" + cluster2 + "\"," +
             "            \"publishedServiceId\" : \"229378\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
@@ -905,12 +907,12 @@ public class JsonConversionTest {
             "    }," +
             "    \"groupings\" : [" +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"GOLD\"" +
             "        }," +
@@ -924,28 +926,28 @@ public class JsonConversionTest {
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listProducts\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229377\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"clusterId\"          : \"" + cluster2 + "\"," +
             "            \"publishedServiceId\" : \"229378\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
@@ -964,22 +966,22 @@ public class JsonConversionTest {
             "    }," +
             "    \"groupings\" : [" +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"AUTH_USER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"AUTH_USER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
@@ -993,28 +995,28 @@ public class JsonConversionTest {
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listProducts\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229377\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"clusterId\"          : \"" + cluster2 + "\"," +
             "            \"publishedServiceId\" : \"229378\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
@@ -1033,22 +1035,22 @@ public class JsonConversionTest {
             "    }," +
             "    \"groupings\" : [" +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"127.*.*.1\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"GOLD\"" +
             "        }," +
@@ -1062,28 +1064,28 @@ public class JsonConversionTest {
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
             "            \"operation\"          : \"\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
             "            \"operation\"          : \"\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
             "            \"operation\"          : \"\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"clusterId\"          : \"" + cluster2 + "\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
             "            \"operation\"          : \"\"," +
@@ -1102,17 +1104,17 @@ public class JsonConversionTest {
             "    }," +
             "    \"groupings\" : [" +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"127.0.0.1\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"GOLD\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
@@ -1126,28 +1128,28 @@ public class JsonConversionTest {
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"360448\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 1 [w1]\"," +
             "            \"operation\"          : \"\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"360449\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 2 [w2]\"," +
             "            \"operation\"          : \"\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
             "            \"operation\"          : \"\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"clusterId\"          : \"" + cluster2 + "\"," +
             "            \"publishedServiceId\" : \"360450\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
             "            \"operation\"          : \"\"," +
@@ -1166,12 +1168,12 @@ public class JsonConversionTest {
             "    }," +
             "    \"groupings\" : [" +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"127.0.0.1\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"GOLD\"" +
             "        }," +
@@ -1185,28 +1187,28 @@ public class JsonConversionTest {
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listProducts\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229377\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"clusterId\"          : \"" + cluster2 + "\"," +
             "            \"publishedServiceId\" : \"229378\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
@@ -1225,22 +1227,22 @@ public class JsonConversionTest {
             "    }," +
             "    \"groupings\" : [" +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"127.*.*.1\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"GOLD\"" +
             "        }," +
@@ -1254,28 +1256,28 @@ public class JsonConversionTest {
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listProducts\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229377\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"clusterId\"          : \"" + cluster2 + "\"," +
             "            \"publishedServiceId\" : \"229378\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
@@ -1294,12 +1296,12 @@ public class JsonConversionTest {
             "    }," +
             "    \"groupings\" : [" +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"AUTH_USER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"AUTH_USER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
@@ -1313,28 +1315,28 @@ public class JsonConversionTest {
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listProducts\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229377\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"clusterId\"          : \"" + cluster2 + "\"," +
             "            \"publishedServiceId\" : \"229378\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
@@ -1344,7 +1346,7 @@ public class JsonConversionTest {
             "    \"timePeriod\" : {" +
             "        \"type\"     : \"absolute\"," +
             "        \"start\"    : \"2008-07-31 13:00:00\"," +
-            "        \"end\"    : \"2008-07-31 15:00:00\"," +            
+            "        \"end\"    : \"2008-07-31 15:00:00\"," +
             "        \"timeZone\" : \"Europe/Paris\"" +
             "    }," +
             "    \"timeInterval\" : {" +
@@ -1353,12 +1355,12 @@ public class JsonConversionTest {
             "    }," +
             "    \"groupings\" : [" +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"AUTH_USER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"AUTH_USER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
@@ -1372,28 +1374,28 @@ public class JsonConversionTest {
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listProducts\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229377\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"clusterId\"          : \"" + cluster2 + "\"," +
             "            \"publishedServiceId\" : \"229378\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
@@ -1403,7 +1405,7 @@ public class JsonConversionTest {
             "    \"timePeriod\" : {" +
             "        \"type\"     : \"absolute\"," +
             "        \"start\"    : \"2008/07/31 13:00:00\"," +
-            "        \"end\"    : \"2008/07/30 15:00:00\"," +            
+            "        \"end\"    : \"2008/07/30 15:00:00\"," +
             "        \"timeZone\" : \"Europe/Paris\"" +
             "    }," +
             "    \"timeInterval\" : {" +
@@ -1412,12 +1414,12 @@ public class JsonConversionTest {
             "    }," +
             "    \"groupings\" : [" +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"AUTH_USER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster2+"\"," +
+            "            \"clusterId\"         : \"" + cluster2 + "\"," +
             "            \"messageContextKey\" : \"AUTH_USER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
@@ -1431,28 +1433,28 @@ public class JsonConversionTest {
             "    \"entityType\" : \"publishedService\"," +
             "    \"entities\" : [" +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listProducts\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229376\"," +
             "            \"publishedServiceName\" : \"Warehouse [w1]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster1+"\"," +
+            "            \"clusterId\"          : \"" + cluster1 + "\"," +
             "            \"publishedServiceId\" : \"229377\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
             "            \"relatedId\"          : null" +
             "        }," +
             "        {" +
-            "            \"clusterId\"          : \""+cluster2+"\"," +
+            "            \"clusterId\"          : \"" + cluster2 + "\"," +
             "            \"publishedServiceId\" : \"229378\"," +
             "            \"publishedServiceName\" : \"Warehouse [w2]\"," +
             "            \"operation\"          : \"listOrders\"," +
@@ -1471,12 +1473,12 @@ public class JsonConversionTest {
             "    }," +
             "    \"groupings\" : [" +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"IP_ADDRESS\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +
             "        {" +
-            "            \"clusterId\"         : \""+cluster1+"\"," +
+            "            \"clusterId\"         : \"" + cluster1 + "\"," +
             "            \"messageContextKey\" : \"CUSTOMER\"," +
             "            \"constraint\"        : \"\"" +
             "        }," +

@@ -159,6 +159,7 @@ public class TransformAndCompileTest {
         nodeList = (NodeList) xPath.evaluate("/jasperReport/variable[contains(@name, 'COLUMN_SERVICE_TOTAL_')]", transformedRuntimeDoc, XPathConstants.NODESET);
         Assert.assertTrue("There should be " + numColumns + " @COLUMN_SERVICE_TOTAL_ variables, there were " + nodeList.getLength(), nodeList.getLength() == numColumns);
 
+        //todo [Donal] fix this test case
         //constantHeader - 12 column headers, plus 2 totals
 //        nodeList = (NodeList) xPath.evaluate("/jasperReport/group[@name='CONSTANT']/groupHeader/band/frame[2]/textField", transformedRuntimeDoc, XPathConstants.NODESET);
 //        Assert.assertTrue("There should be " + (numColumns + 2) + " contant group header text fields, there were " + nodeList.getLength(), nodeList.getLength() == (numColumns + 2));

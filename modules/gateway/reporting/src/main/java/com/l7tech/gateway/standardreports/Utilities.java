@@ -714,8 +714,8 @@ public class Utilities {
      * @param isUsage                 needed in order to validate the input parameters
      * @return sql string, ready to be ran against a database. This sql query will ALWAYS produce the following columns
      *         of data: <pre>
-     *                                                                                 AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                                                 </pre>
+     *                                                                                         AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                                                                                         </pre>
      *         Note operation is not included. It is a mapping key under the covers but it has special meaning. Notice how
      *         authenticated_user is returned. To the user and to business logic, authenticated user is a normal mapping key
      */
@@ -800,8 +800,8 @@ public class Utilities {
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
      * @return a valid sql string ready to be ran against a database. The sql will always produce the following fields:-
      *         <pre>
-     *                                                                                 SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
-     *                                                                                 </pre>
+     *                                                                                         SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
+     *                                                                                         </pre>
      */
     public static String getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                      Map<String, Set<String>> serviceIdToOperations,
@@ -884,9 +884,9 @@ public class Utilities {
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
      * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
      *         <pre>
-     *                                                                                  SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                                                                                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                                                 </pre>
+     *                                                                                          SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                                                                                         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                                                                                         </pre>
      */
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                        Map<String, Set<String>> serviceIdToOperations,
@@ -988,9 +988,9 @@ public class Utilities {
      * @param operation               the operation, if isDetail is true, that we want usage data for
      * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
      *         <pre>
-     *                                                                                  SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                                                                                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                                                 </pre>
+     *                                                                                          SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                                                                                         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                                                                                         </pre>
      */
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                        Long serviceId,
@@ -1704,7 +1704,7 @@ public class Utilities {
             }
             List<ReportApi.FilterPair> authList = new ArrayList<ReportApi.FilterPair>();
             //in case values have the * symbol, tell FilterPair not to be smart
-            authList.add(new ReportApi.FilterPair(authUser, false));
+            authList.add(new ReportApi.FilterPair(authUser, false, false));
             returnMap.put(MessageContextMapping.MappingType.AUTH_USER.toString(), authList);
         }
 
@@ -1720,7 +1720,7 @@ public class Utilities {
 
             List<ReportApi.FilterPair> fpList = new ArrayList<ReportApi.FilterPair>();
             //in case values have the * symbol, tell FilterPair not to be smart
-            fpList.add(new ReportApi.FilterPair(runTimeMappingValue, false));
+            fpList.add(new ReportApi.FilterPair(runTimeMappingValue, false, false));
             returnMap.put(s, fpList);
             index++;
         }
@@ -1963,7 +1963,7 @@ public class Utilities {
                         if (index != 0) tempBuffer.append(" OR ");
 
                         tempBuffer.append(" mcmv.mapping").append(i).append("_value");
-                        if (fp.isUseAnd()) {
+                        if (fp.isUseEquals()) {
                             tempBuffer.append(" = '").append(fp.getFilterValue()).append("' ");
                         } else {
                             tempBuffer.append(" LIKE '").append(fp.getFilterValue()).append("' ");
@@ -2009,7 +2009,7 @@ public class Utilities {
             if (fp.isEmpty()) continue;
 
             if (index != 0) sb.append(" OR ");
-            if (fp.isUseAnd()) {
+            if (fp.isUseEquals()) {
                 sb.append("mcmv.auth_user_id = '" + fp.getFilterValue() + "' ");
             } else {
                 sb.append("mcmv.auth_user_id LIKE '" + fp.getFilterValue() + "' ");
