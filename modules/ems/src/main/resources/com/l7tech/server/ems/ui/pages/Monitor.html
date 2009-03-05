@@ -729,10 +729,10 @@
                 }
             }
             settings.notificationRules = [];
-            for (var i in monDlg_notificationRulesListBox.options) {
+            for (var i = 0; i < monDlg_notificationRulesListBox.options.length; ++i) {
                 if (monDlg_notificationRulesListBox.options[i].selected) {
                     var o = {};
-                    o.id = monDlg_notificationRulesListBox.options[i].value
+                    o.id = monDlg_notificationRulesListBox.options[i].value;
                     settings.notificationRules.push(o);
                 }
             }
