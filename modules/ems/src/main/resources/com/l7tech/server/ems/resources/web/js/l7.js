@@ -604,8 +604,9 @@ if (!l7.Util) {
 
         /**
          * Tests loosely if a string is a legal host name.
-         * Requires that it contains only ASCII letter, digit, hypen, underscore, or dot.
-         * Does not require it starts with letter and ends with leter or digit.
+         * This requires that it contains only ASCII letter, digit, hypen, underscore, or dot.
+         * This does not require it starts with letter and ends with leter or digit.
+         * This does not handle internationalized domain name.
          * @param {string} s    the string to test
          * @return {boolean} true if the given string is a legal host name
          */
