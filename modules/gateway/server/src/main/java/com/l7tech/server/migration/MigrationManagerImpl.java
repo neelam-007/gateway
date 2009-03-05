@@ -376,11 +376,11 @@ public class MigrationManagerImpl implements MigrationManager {
         checkServiceResolution(header, entity, bundle);
 
         if (!dryRun) {
+            if (entity instanceof PersistentEntity)
+                ((PersistentEntity) entity).setVersion(0);
             Long oid = (Long) entityCrud.save(entity);
-            if (entity instanceof PersistentEntity) {
+            if (entity instanceof PersistentEntity)
                 ((PersistentEntity) entity).setOid(oid);
-                ((PersistentEntity) entity).setVersion(((PersistentEntity) entity).getVersion()+1);
-            }
         }
         return entity;
     }
