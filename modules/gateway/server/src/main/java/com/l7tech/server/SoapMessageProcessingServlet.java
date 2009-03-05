@@ -171,8 +171,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 } catch (Exception e) {
                     String exceptionMessage = ExceptionUtils.getMessage(e);
                     logger.log(Level.WARNING, "Cannot decompress the incoming request. " + exceptionMessage);
-                    byte[] bytes = IOUtils.slurpStream(hrequest.getInputStream());
-                    logger.fine("Read this instead: " + new String(bytes));
+                    if (logger.isLoggable(Level.FINE)) {
+                        byte[] bytes = IOUtils.slurpStream(hrequest.getInputStream());
+                        logger.fine("Read this instead: " + new String(bytes));
+                    }
                     if(e instanceof IOException && exceptionMessage.contains("Not in GZIP format")){
                         gzipEncodedTransaction = false; //do this for all exceptions here?
                     }
