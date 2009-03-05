@@ -11,6 +11,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.FilterDocument;
 
 import javax.swing.*;
 import java.awt.*;
@@ -59,6 +60,7 @@ public class SoapServiceRoutingURIEditor extends JDialog {
 
         subjectAffected = false;
         ButtonGroup bg = new ButtonGroup();
+        uriField.setDocument(new FilterDocument(128, null));
         bg.add(customURIRadio);
         bg.add(noURIRadio);
         setActionListeners();
@@ -137,7 +139,13 @@ public class SoapServiceRoutingURIEditor extends JDialog {
         });
 
         uriField.addKeyListener(new KeyListener() {
-            public void keyPressed(KeyEvent e) {}
+            public void keyPressed(KeyEvent e) {
+                //always start with "/" for URI
+                if (!uriField.getText().startsWith("/")) {
+                    String uri = uriField.getText();
+                    uriField.setText("/" + uri);
+                }
+            }
             public void keyReleased(KeyEvent e) {
                 updateURL();
             }
