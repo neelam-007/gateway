@@ -15,6 +15,7 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.util.Functions;
 import com.l7tech.objectmodel.OrganizationHeader;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -115,17 +116,23 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
                         }
 
                         //Update the workspace if this service was being displayed
+                        final WorkSpacePanel cws = creg.getCurrentWorkspace();
+                        JComponent jc = cws.getComponent();
+                        if (jc == null || !(jc instanceof PolicyEditorPanel)) {
+                            return;
+                        }
                         try {
-                            final WorkSpacePanel cws = creg.getCurrentWorkspace();
-                            JComponent jc = cws.getComponent();
-                            if (jc == null || !(jc instanceof PolicyEditorPanel)) {
-                                return;
-                            }
                             PolicyEditorPanel pe = (PolicyEditorPanel)jc;
                             EntityWithPolicyNode pn = pe.getPolicyNode();
                             // if currently edited entity was deleted
                             if (Long.valueOf(entityNode.getEntity().getId()).equals(Long.valueOf(pn.getEntity().getId()))) {
                                 cws.setComponent(new HomePagePanel());
+                            }
+                        } catch (FindException fe) {
+                            try {
+                                cws.setComponent(new HomePagePanel());
+                            } catch (ActionVetoException ave) {
+                                return;
                             }
                         } catch (Exception e) {
                             throw new RuntimeException(e);
