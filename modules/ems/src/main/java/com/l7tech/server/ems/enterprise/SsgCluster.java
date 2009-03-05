@@ -139,6 +139,30 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         this.dbHosts = dbHosts;
     }
 
+    // Get a list of database host names.
+    public Collection<String> obtainDbHosts() {
+        Set<String> set = new HashSet<String>();
+
+        if (dbHosts != null && !dbHosts.isEmpty()) {
+            String[] hosts = dbHosts.split("\\,");
+            set.addAll(Arrays.asList(hosts));
+        }
+
+        return set;
+    }
+
+    // Get db host names and store them a single string delimited by ','.
+    public void storeDbHosts(Collection<String> dbHosts) {
+        if (dbHosts != null && !dbHosts.isEmpty()) {
+            StringBuilder builder = new StringBuilder();
+            for (String host: dbHosts) {
+                builder.append(host).append(",");
+            }
+            builder.deleteCharAt(builder.length()-1);
+            setDbHosts(builder.toString());
+        }
+    }
+
     @Column(name="online_status", length=36)
     public String getOnlineStatus() {
         return onlineStatus;
@@ -241,7 +265,10 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         output.add(JSONConstants.ADMIN_APPLET_PORT, Integer.toString(adminAppletPort));
         output.add(JSONConstants.ONLINE_STATUS, onlineStatus);
         output.add(JSONConstants.CLUSTER_ANCESTORS, findAllAncestors());
-// TODO       output.add(JSONConstants.DB_HOSTS, ...);
+        Collection<String> dbHosts = obtainDbHosts();
+        if (dbHosts != null && !dbHosts.isEmpty()) {
+            output.add(JSONConstants.DB_HOSTS, dbHosts);
+        }
 // TODO       output.add(JSONConstants.IP_ADDRESS, ...);
     }
 

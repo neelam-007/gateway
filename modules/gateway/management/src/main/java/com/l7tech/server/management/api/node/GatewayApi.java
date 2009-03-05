@@ -55,6 +55,7 @@ public interface GatewayApi {
         private int clusterHttpPort;
         private int clusterHttpsPort;
         private int adminAppletPort;
+        private Collection<String> dbHosts;
 
         @XmlAttribute(name="clusterHostname")
         public String getClusterHostname() {
@@ -90,6 +91,15 @@ public interface GatewayApi {
 
         public void setAdminAppletPort(int adminAppletPort) {
             this.adminAppletPort = adminAppletPort;
+        }
+
+        @XmlAttribute(name="dbHosts")
+        public Collection<String> getDbHosts() {
+            return dbHosts;
+        }
+
+        public void setDbHosts(Collection<String> dbHosts) {
+            this.dbHosts = dbHosts;
         }
 
         @SuppressWarnings({"RedundantIfStatement"})

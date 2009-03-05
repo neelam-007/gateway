@@ -13,6 +13,7 @@ import com.l7tech.server.ems.enterprise.SsgNode;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.management.api.node.NodeManagementApi;
+import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
@@ -234,6 +235,16 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                                         ssgClusterManager.update(cluster);
                                     }
                                 }
+
+                                // Update db hosts
+                                Set<String> newDbHosts = new HashSet<String>();
+                                for (SsgNode node: cluster.getNodes()) {
+                                    newDbHosts.addAll(getDbHosts(node));
+                                }
+                                if (! newDbHosts.equals(cluster.obtainDbHosts())) {
+                                    cluster.storeDbHosts(newDbHosts);
+                                    ssgClusterManager.update(cluster);
+                                }
                             } catch ( GatewayException ge ) {
                                 logger.log( Level.WARNING, "Gateway error when polling gateways", ge );
                             } catch ( SOAPFaultException sfe ) {
@@ -378,5 +389,29 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
         }
 
         return updated;
+    }
+
+    /**
+     * Retrieve databse hosts of the SSG node via NodeManagementApi.
+     * @param node: the SSG node.
+     * @return a list of db host names.
+     */
+    private Collection<String> getDbHosts(SsgNode node) {
+        Set<String> hosts = new HashSet<String>();
+        try {
+            NodeManagementApi nodeApi = gatewayContextFactory.createProcessControllerContext(node).getManagementApi();
+            Collection<NodeManagementApi.NodeHeader> nodeHeaders = nodeApi.listNodes();
+
+            if ( nodeHeaders != null ) {
+                for ( NodeManagementApi.NodeHeader header : nodeHeaders ) {
+                    for (DatabaseConfig dbConfig: nodeApi.getNode(header.getName()).getDatabases()) {
+                        hosts.add(dbConfig.getHost());
+                    }
+                }
+            }
+        } catch (Exception e) {
+        }
+
+        return hosts;
     }
 }
