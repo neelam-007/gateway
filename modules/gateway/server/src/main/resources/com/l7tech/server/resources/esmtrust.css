@@ -31,6 +31,18 @@ body {
     text-align: center;
 }
 
+.fullwidth {
+    width: 100%;
+}
+
+.errorbox {
+    color: black;
+    text-align: center;
+    border: thick solid darkred;
+    vertical-align: middle;
+    padding: 1cm;
+}
+
 .tableheading {
     font-weight: bold;
 }

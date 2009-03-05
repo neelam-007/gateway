@@ -67,6 +67,7 @@ import java.util.logging.Logger;
  */
 public class EsmTrustServlet extends AuthenticatableHttpServlet {
     private static final Logger logger = Logger.getLogger(EsmTrustServlet.class.getName());
+    private static final String ERROR_HTML = "/com/l7tech/server/resources/esmtrusterror.html";
     private static final String FORM_HTML = "/com/l7tech/server/resources/esmtrustform.html";
     private static final String FORM_CSS = "/com/l7tech/server/resources/esmtrust.css";
     private static final String FORM_JS = "/com/l7tech/server/resources/esmtrust.js";
@@ -140,14 +141,15 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    private void sendError(HttpServletResponse hresp, String message) throws IOException {
+    private void sendErrorWithoutEscapingMarkup(HttpServletResponse hresp, CharSequence htmlMessage) throws IOException {
         hresp.setStatus(400);
         hresp.setContentType("text/html; charset=UTF-8");
         final ServletOutputStream os = hresp.getOutputStream();
-        os.write(message.getBytes("utf8"));
-        for (int i = 0; i < 7; ++i)
-            os.write("\n<!-- Extra text to encourage IE to display our error message instead of one of its useless built-in error pages -->\n".getBytes());
+        os.write(MessageFormat.format(loadStringResource(ERROR_HTML), htmlMessage).getBytes("utf8"));
+    }
 
+    private void sendError(HttpServletResponse hresp, CharSequence textMessage) throws IOException {
+        sendErrorWithoutEscapingMarkup(hresp, escapeMarkup(textMessage));
     }
 
     private void sendHtml(HttpServletResponse hresp, String html) throws IOException {
@@ -176,7 +178,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
             URL url;
             if (returnurl != null && ((url = parseUrl(returnurl)) != null))
                 returnString = "\n\n<p><a href=\"" + url.toExternalForm() + "\">Return to the ESM</a>\n";
-            sendError( hresp, "Not licensed. Please install a Gateway license that enables this feature." + returnString );
+            sendErrorWithoutEscapingMarkup( hresp, "Not licensed. Please install a Gateway license that enables this feature." + returnString );
             return;
         }
 
@@ -238,7 +240,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
                                     }
                                 } else {
                                     logger.warning("Ignoring SAML assertion that is expired or not yet valid ('"+notBefore+"'/'"+notOnOrAfter+"')");
-                                    sendError(hresp, "Unable to establish trust relationship: A security token has expired or is not yet valid.<p>\n\n" +
+                                    sendErrorWithoutEscapingMarkup(hresp, "Unable to establish trust relationship: A security token has expired or is not yet valid.<p>\n\n" +
                                                      "The ESM system clock may be too far off from this Gateway's system clock.<p>\n\n" +
                                                      "Please press your Back button to return.");
                                     return;
@@ -646,7 +648,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
     /**
      * Escape any special chars for use in HTML 
      */
-    public static CharSequence escapeMarkup( final String s )
+    public static CharSequence escapeMarkup( final CharSequence s )
 	{
 		if ( s == null ) {
 			return null;
