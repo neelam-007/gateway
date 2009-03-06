@@ -8,9 +8,10 @@ package com.l7tech.server.util;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
+import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * Non-transactional bean that gathers and re-dispatches application events.
@@ -52,7 +53,7 @@ public class ApplicationEventProxy implements ApplicationListener {
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         final Set<ApplicationListener> listeners;
         synchronized (subscribers) {
-            listeners = subscribers.keySet();
+            listeners = new LinkedHashSet<ApplicationListener>(subscribers.keySet());
         }
         for (ApplicationListener applicationListener : listeners) {
             if (applicationListener != null)
