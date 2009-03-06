@@ -1039,7 +1039,7 @@
             var result;
             try {
                 xhr = l7.Connection.syncRequest('GET', getCurrentEntitiesPropertyValuesUrl, null, false);
-                result = l7.Connection.parseJsonResponse(xhr, false);
+                result = l7.Connection.parseJsonResponse(xhr, false, null, null, localizedStrings.SESSION_TIMEOUT);
             } catch (e) {
                 xhrException = e;
             }
