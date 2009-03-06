@@ -1,8 +1,9 @@
 package com.l7tech.common;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.ResourceUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -14,9 +15,9 @@ import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.cert.Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Properties;
 
@@ -125,9 +126,13 @@ public final class TestDocuments {
         return XmlUtil.parse(i);
     }
 
-    public static String getTestDocumentAsXml(String resourcetoread)
-      throws IOException, SAXException {
-       return XmlUtil.nodeToString(getTestDocument(resourcetoread));
+    public static String getTestDocumentAsXml(String resourcetoread) throws IOException, SAXException {
+        InputStream i = getInputStream(resourcetoread);
+        try {
+            return new String(IOUtils.slurpStream(i));
+        } finally {
+            ResourceUtils.closeQuietly(i);
+        }
     }
 
     public static URL getTestDocumentURL(String resource)
