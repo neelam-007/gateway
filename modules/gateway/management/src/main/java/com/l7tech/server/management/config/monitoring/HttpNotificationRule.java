@@ -102,4 +102,11 @@ public class HttpNotificationRule extends NotificationRule {
         result = 31 * result + (headers != null ? headers.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "HttpNotificationRule{" +
+                "url='" + url + '\'' +
+                "} " + super.toString();
+    }
 }

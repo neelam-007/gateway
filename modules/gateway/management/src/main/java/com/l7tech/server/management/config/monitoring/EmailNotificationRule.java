@@ -163,4 +163,13 @@ public class EmailNotificationRule extends NotificationRule {
         result = 31 * result + (text != null ? text.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "EmailNotificationRule{" +
+                "subject='" + subject + '\'' +
+                ", to=" + to +
+                ", smtpHost='" + smtpHost + '\'' +
+                "} " + super.toString();
+    }
 }

@@ -576,6 +576,9 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                                         try {
                                             final NotificationAttempt.StatusType status = notifier.doNotification(got.getTimestamp(), inOut, pc.getValue(), trigger);
                                             nstate1.notified(new NotificationAttempt(status, null, System.currentTimeMillis()));
+                                        } catch (IOException e) {
+                                            logger.log(Level.INFO, "Couldn't notify for " + rule + ": " + ExceptionUtils.getMessage(e));
+                                            nstate1.failed(new NotificationAttempt(e, System.currentTimeMillis()));
                                         } catch (Exception e) {
                                             logger.log(Level.WARNING, "Couldn't notify for " + rule, e);
                                             nstate1.failed(new NotificationAttempt(e, System.currentTimeMillis()));

@@ -84,4 +84,13 @@ public class SnmpTrapNotificationRule extends NotificationRule {
         result = 31 * result + oidSuffix;
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "SnmpTrapNotificationRule{" +
+                "snmpHost='" + snmpHost + '\'' +
+                ", text='" + text + '\'' +
+                ", oidSuffix=" + oidSuffix +
+                "} " + super.toString();
+    }
 }
