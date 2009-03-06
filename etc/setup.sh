@@ -78,7 +78,7 @@ do
     echo " 1) Upgrade the SecureSpan Gateway database"
     echo " 2) Configure the SecureSpan Gateway"
     echo " 3) Display the current SecureSpan Gateway configuration"
-    echo " 4) Change the SecureSpan Gateway Cluster Password"
+    echo " 4) Change the SecureSpan Gateway Cluster Passphrase"
     echo " 5) Change the Master Passphrase"
     echo " X) Exit"
     echo ""

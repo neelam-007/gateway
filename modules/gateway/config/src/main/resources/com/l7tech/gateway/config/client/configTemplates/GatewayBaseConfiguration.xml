@@ -114,10 +114,10 @@ This step lets you set up the SSG cluster.</prompt>
         <description>Cluster Hostname</description>
         <prompt>Enter the cluster hostname.</prompt>
     </option>
-    <option id="cluster-pass" group="cluster" type="PASSWORD" order="301" confirmed="true" name="Cluster Password" minlength="6" maxlength="32">
+    <option id="cluster-pass" group="cluster" type="PASSWORD" order="301" confirmed="true" name="Cluster Passphrase" minlength="6" maxlength="32">
         <configName>cluster.pass</configName>
-        <description>Cluster Password</description>
-        <prompt>Enter the cluster password (6-32 characters).</prompt>
+        <description>Cluster Passphrase</description>
+        <prompt>Enter the cluster password (6-128 characters).</prompt>
     </option>
 
 </optionSet>

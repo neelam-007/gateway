@@ -134,7 +134,7 @@ doConfiguration() {
             echo " 1) Upgrade the SecureSpan Gateway database"
             echo " 2) Create a new SecureSpan Gateway database"
             echo " 3) Configure the SecureSpan Gateway"
-            echo " 4) Change the SecureSpan Gateway cluster password"
+            echo " 4) Change the SecureSpan Gateway cluster passphrase"
             echo " 5) Delete the SecureSpan Gateway"
             echo " 6) Display the current SecureSpan Gateway configuration"
             echo " 7) Manage SecureSpan Gateway status"
