@@ -226,7 +226,7 @@ public class RuntimeDocUtilities {
 
         for (Map.Entry<String, String> me : displayMap.entrySet()) {
             addTextFieldToElement(doc, chartLegend, x, y, frameWidth, height, "chartLegendKey" + (index + 1), "java.lang.String",
-                    "<b>" + me.getKey() + ":</b> " + Utilities.escapeHtmlCharacters(me.getValue()), LEFT_PADDED_HEADING_HTML, false, true, true, false);
+                    "<b>" + me.getKey() + ":</b> " + Utilities.escapeHtmlCharacters(me.getValue()) + "<br>", LEFT_PADDED_HEADING_HTML, false, true, true, false);
 
             y += height + vSpace;
             index++;

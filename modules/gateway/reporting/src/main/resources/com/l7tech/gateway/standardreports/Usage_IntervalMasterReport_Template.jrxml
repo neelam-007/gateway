@@ -196,7 +196,7 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
                             <font/>
                         </textElement>
                         <textFieldExpression class="java.lang.String"><![CDATA[Utilities.getMappingReportInfoDisplayString
-($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(), true)]]></textFieldExpression>
+($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(), true, false)]]></textFieldExpression>
                     </textField>
                     <staticText>
                         <reportElement
@@ -1375,8 +1375,8 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         <textFieldExpression class="java.lang.String"><![CDATA["<b>There were no service metrics for the criteria chosen:</b><br><br>"
 +"<b>"+(($P{IS_DETAIL}.booleanValue())?"Selected Services & Operations":"Selected Services")+"</b>"
 +":<br> " +$P{serviceIdValueToDisplay}+"<br>"
-+"<br><b>Groupings:</b> "+Utilities.getMappingReportInfoDisplayString
-($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),true)]]></textFieldExpression>
++"<br><b>Groupings:</b><br> "+Utilities.getMappingReportInfoDisplayString
+($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),true, true)]]></textFieldExpression>
                     </textField>
                 </frame>
             </frame>

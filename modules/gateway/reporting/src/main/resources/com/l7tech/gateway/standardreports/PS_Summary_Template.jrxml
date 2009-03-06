@@ -17,8 +17,7 @@
         bottomMargin="20"
         whenNoDataType="NoDataSection"
         isTitleNewPage="false"
-        isSummaryNewPage="false"
-        isIgnorePagination="true">
+        isSummaryNewPage="false">
     <property name="ireport.scriptlethandling" value="0"/>
     <property name="ireport.encoding" value="UTF-8"/>
     <import value="java.util.*"/>
@@ -366,7 +365,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
     <group name="TITLE_GROUPINGS">
         <groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
         <groupHeader>
-            <band height="21" isSplitAllowed="true">
+            <band height="21" isSplitAllowed="false">
                 <frame>
                     <reportElement
                             style="LeftRightLightGrey"
@@ -376,18 +375,16 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
                             width="820"
                             height="21"
                             key="frame-48"
-                            stretchType="RelativeToTallestObject"
-                            positionType="Float"/>
+                            stretchType="RelativeToTallestObject"/>
                     <box></box>
                     <staticText>
                         <reportElement
                                 style="LeftPaddedHeadingBold"
                                 x="0"
-                                y="3"
+                                y="0"
                                 width="120"
                                 height="18"
-                                key="staticText-157"
-                                positionType="Float"/>
+                                key="staticText-157"/>
                         <box></box>
                         <textElement>
                             <font/>
@@ -399,18 +396,17 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
                         <reportElement
                                 style="DefaultStyle"
                                 x="121"
-                                y="3"
+                                y="0"
                                 width="699"
                                 height="18"
-                                key="textField-220"
-                                positionType="Float"/>
+                                key="textField-220"/>
                         <box></box>
                         <textElement>
                             <font/>
                         </textElement>
                         <textFieldExpression class="java.lang.String"><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())?
 Utilities.getMappingReportInfoDisplayString
-($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),false)
+($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),false, false)
 :"None")]]></textFieldExpression>
                     </textField>
                 </frame>
@@ -424,7 +420,7 @@ Utilities.getMappingReportInfoDisplayString
     <group name="TITLE_SERVICES_OPS">
         <groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
         <groupHeader>
-            <band height="42" isSplitAllowed="true">
+            <band height="42" isSplitAllowed="false">
                 <frame>
                     <reportElement
                             style="LeftBottomRightVeryLightGrey"
@@ -441,7 +437,7 @@ Utilities.getMappingReportInfoDisplayString
                         <reportElement
                                 style="DefaultStyle"
                                 x="121"
-                                y="3"
+                                y="0"
                                 width="699"
                                 height="18"
                                 key="textField-221"
@@ -458,7 +454,7 @@ Utilities.getMappingReportInfoDisplayString
                         <reportElement
                                 style="LeftPaddedHeadingBold"
                                 x="0"
-                                y="3"
+                                y="0"
                                 width="120"
                                 height="18"
                                 key="textField-222"/>
@@ -1398,7 +1394,7 @@ new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MA
                         <textFieldExpression class="java.lang.String"><![CDATA[($P{IS_USING_KEYS}.booleanValue())?
 Utilities.getMappingValueDisplayString(
 $P{KEYS_TO_LIST_FILTER_PAIRS}, $F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ", true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE)
+$F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ", true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE)+"<br>"
 :
 "Service Operation Summary"]]></textFieldExpression>
                     </textField>
@@ -3492,10 +3488,10 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         <textFieldExpression class="java.lang.String"><![CDATA["<b>There were no service metrics for the criteria chosen:</b><br><br>"
 +"<b>"+(($P{IS_DETAIL}.booleanValue())?"Selected Services & Operations":"Selected Services")+"</b>"
 +":<br> " +$P{serviceIdValueToDisplay}+"<br>"
-+"<br><b>Groupings:</b> "
++"<br><b>Groupings:</b><br> "
 +(($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())?
 Utilities.getMappingReportInfoDisplayString
-($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),false)
+($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),false, true)
 :"None")]]></textFieldExpression>
                     </textField>
                 </frame>

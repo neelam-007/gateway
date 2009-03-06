@@ -341,7 +341,7 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
                         </textElement>
                         <textFieldExpression class="java.lang.String"><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())?
 Utilities.getMappingReportInfoDisplayString
-($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),false)
+($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),false, false)
 :"None")]]></textFieldExpression>
                     </textField>
                 </frame>
@@ -701,7 +701,7 @@ $F{MAPPING_VALUE_5}})):"1"]]></categoryExpression>
                         </textElement>
                         <textFieldExpression class="java.lang.String"><![CDATA[Utilities.getMappingValueDisplayString(
 $P{KEYS_TO_LIST_FILTER_PAIRS}, $F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},
-$F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ", true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE)]]></textFieldExpression>
+$F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ", true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE)+"<br>"]]></textFieldExpression>
                     </textField>
                 </frame>
             </band>
@@ -2800,10 +2800,10 @@ new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REP
                         <textFieldExpression class="java.lang.String"><![CDATA["<b>There were no service metrics for the criteria chosen:</b><br><br>"
 +"<b>"+(($P{IS_DETAIL}.booleanValue())?"Selected Services & Operations":"Selected Services")+"</b>"
 +":<br> " +$P{serviceIdValueToDisplay}+"<br>"
-+"<br><b>Groupings:</b> "
++"<br><b>Groupings:</b><br> "
 +(($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_USING_KEYS}.booleanValue())?
 Utilities.getMappingReportInfoDisplayString
-($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),false)
+($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),false, true)
 :"None")]]></textFieldExpression>
                     </textField>
                 </frame>

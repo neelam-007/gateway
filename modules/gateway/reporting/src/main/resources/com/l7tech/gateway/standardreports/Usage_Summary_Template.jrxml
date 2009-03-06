@@ -157,8 +157,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue())
                             width="820"
                             height="21"
                             key="frame-47"
-                            stretchType="RelativeToTallestObject"
-                            positionType="Float"/>
+                            stretchType="RelativeToTallestObject"/>
                     <box></box>
                     <textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
@@ -169,14 +168,13 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue())
                                 width="699"
                                 height="18"
                                 key="textField-201"
-                                stretchType="RelativeToTallestObject"
-                                positionType="Float"/>
+                                stretchType="RelativeToTallestObject"/>
                         <box></box>
                         <textElement>
                             <font/>
                         </textElement>
                         <textFieldExpression class="java.lang.String"><![CDATA[Utilities.getMappingReportInfoDisplayString
-($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(), true)]]></textFieldExpression>
+($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(), true, false)]]></textFieldExpression>
                     </textField>
                     <staticText>
                         <reportElement
@@ -186,8 +184,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue())
                                 width="120"
                                 height="18"
                                 key="staticText-155"
-                                stretchType="RelativeToTallestObject"
-                                positionType="Float"/>
+                                stretchType="RelativeToTallestObject"/>
                         <box></box>
                         <textElement>
                             <font/>
@@ -1277,8 +1274,8 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         <textFieldExpression class="java.lang.String"><![CDATA["<b>There were no service metrics for the criteria chosen:</b><br><br>"
 +"<b>"+(($P{IS_DETAIL}.booleanValue())?"Selected Services & Operations":"Selected Services")+"</b>"
 +":<br> " +$P{serviceIdValueToDisplay}+"<br>"
-+"<br><b>Groupings:</b> "+Utilities.getMappingReportInfoDisplayString
-($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),true)]]></textFieldExpression>
++"<br><b>Groupings:</b><br> "+Utilities.getMappingReportInfoDisplayString
+($P{KEYS_TO_LIST_FILTER_PAIRS},$P{IS_DETAIL}.booleanValue(),true, true)]]></textFieldExpression>
                     </textField>
                 </frame>
             </frame>

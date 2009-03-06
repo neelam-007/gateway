@@ -992,7 +992,7 @@ public class UtilitiesTest {
      */
     @Test
     public void testGetMappingReportInfoDisplayString() {
-        String val = Utilities.getMappingReportInfoDisplayString(null, true, false);
+        String val = Utilities.getMappingReportInfoDisplayString(null, true, false, false);
         Assert.assertTrue(val.equals(Utilities.onlyIsDetailDisplayText));
 
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
@@ -1001,19 +1001,28 @@ public class UtilitiesTest {
         filters.add(authFilterPair1);
         keysToFilterPairs.put("AUTH_USER", filters);
 
-        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, true);
-        String expected = Utilities.AUTHENTICATED_USER_DISPLAY + ": (" + authFilterPair1.getFilterValue() + ")";
+        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, true, false);
+        String expected = Utilities.AUTHENTICATED_USER_DISPLAY + ": (" + authFilterPair1.getFilterValue() + ")\n";
+        Assert.assertTrue("Expected: " + expected + " actual: " + val, val.equals(expected));
+
+        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, true, true);
+        expected = Utilities.AUTHENTICATED_USER_DISPLAY + ": (" + authFilterPair1.getFilterValue() + ")<br>";
         Assert.assertTrue("Expected: " + expected + " actual: " + val, val.equals(expected));
 
         ReportApi.FilterPair authFilterPair2 = new ReportApi.FilterPair("Ldap User 1");
         filters.add(authFilterPair2);
-        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, true);
-        Assert.assertTrue(val.equals(Utilities.AUTHENTICATED_USER_DISPLAY + ": (" + authFilterPair1.getFilterValue() + ", " + authFilterPair2.getFilterValue() + ")"));
+        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, true, false);
+        expected = Utilities.AUTHENTICATED_USER_DISPLAY + ": (" + authFilterPair1.getFilterValue() + ", " + authFilterPair2.getFilterValue() + ")\n";
+        Assert.assertTrue(val.equals(expected));
+
+        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, true, true);
+        expected = Utilities.AUTHENTICATED_USER_DISPLAY + ": (" + authFilterPair1.getFilterValue() + ", " + authFilterPair2.getFilterValue() + ")<br>";
+        Assert.assertTrue(val.equals(expected));
 
         //exception, when all params are null or false
         boolean exception = false;
         try {
-            Utilities.getMappingReportInfoDisplayString(null, false, false);
+            Utilities.getMappingReportInfoDisplayString(null, false, false, false);
         } catch (IllegalArgumentException e) {
             exception = true;
         }
@@ -1028,8 +1037,13 @@ public class UtilitiesTest {
         custFilters.add(new ReportApi.FilterPair());
         keysToFilterPairs.put("CUSTOMER", custFilters);
 
-        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, false);
-        Assert.assertTrue(val.equals("IP_ADDRESS, CUSTOMER"));
+        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, false, false);
+        expected = "IP_ADDRESS\nCUSTOMER\n";
+        Assert.assertTrue("Expected: " + expected + " actual: " + val, val.equals(expected));
+
+        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, false, true);
+        expected = "IP_ADDRESS<br>CUSTOMER<br>";
+        Assert.assertTrue("Expected: " + expected + " actual: " + val, val.equals(expected));
 
         keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
         ipFilters = new ArrayList<ReportApi.FilterPair>();
@@ -1040,10 +1054,17 @@ public class UtilitiesTest {
         custFilters.add(new ReportApi.FilterPair("GOLD"));
         keysToFilterPairs.put("CUSTOMER", custFilters);
 
-        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, false);
-        expected = "IP_ADDRESS (127.0.0.1), CUSTOMER (GOLD)";
+        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, false, false);
+        expected = "IP_ADDRESS (127.0.0.1)\nCUSTOMER (GOLD)\n";
         Assert.assertTrue("Expected: " + expected + " actual: " + val, val.equals(expected));
 
+        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, false, true);
+        expected = "IP_ADDRESS (127.0.0.1)<br>CUSTOMER (GOLD)<br>";
+        Assert.assertTrue("Expected: " + expected + " actual: " + val, val.equals(expected));
+
+        val = Utilities.getMappingReportInfoDisplayString(keysToFilterPairs, false, false, true);
+        expected = "IP_ADDRESS (127.0.0.1)<br>CUSTOMER (GOLD)<br>";
+        Assert.assertTrue("Expected: " + expected + " actual: " + val, val.equals(expected));
     }
 
     /**

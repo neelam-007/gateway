@@ -521,7 +521,7 @@ public class ReportApp {
 
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
 
-        parameters.put(IS_IGNORE_PAGINATION, new Boolean(true));
+        //parameters.put(IS_IGNORE_PAGINATION, new Boolean(true));
 
 
         String xslStr = getResAsString(REPORTING_RELATIVE_PATH + "/PS_SummaryTransform.xsl");
