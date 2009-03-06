@@ -288,7 +288,8 @@ doEmsConfiguration() {
                 (${EMCONFWIZARD} wizard reset);
                 STATUS=$?
                 if [ $STATUS -eq 3 ] ; then
-                    confirmedMessage "Enterprise Service Manager configuration cannot be performed. \nPlease ensure that the ESM is configured and is not running."
+                    echo "Enterprise Service Manager configuration cannot be performed."
+                    confirmedMessage "Please ensure that the ESM is configured and is not running."
                 else
                     confirmedMessage ""
                 fi
