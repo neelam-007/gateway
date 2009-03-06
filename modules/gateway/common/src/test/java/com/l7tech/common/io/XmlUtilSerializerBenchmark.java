@@ -4,11 +4,16 @@ import com.l7tech.common.TestDocuments;
 import com.l7tech.test.BenchmarkRunner;
 import org.junit.*;
 import org.w3c.dom.Document;
+import org.w3c.dom.bootstrap.DOMImplementationRegistry;
+import org.w3c.dom.ls.DOMImplementationLS;
+import org.w3c.dom.ls.LSOutput;
+import org.w3c.dom.ls.LSSerializer;
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Writer;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -29,6 +34,42 @@ public class XmlUtilSerializerBenchmark {
         testSerializer(new Ser() {
             public void serialize(Document doc, OutputStream os) throws IOException {
                 XmlUtil.nodeToOutputStreamWithXMLSerializer(doc, os);
+            }
+        });
+    }
+
+    @Test
+    public void testLSSerializerPerformance() throws Exception {
+        final ThreadLocal<LSSerializer> ls = new ThreadLocal<LSSerializer>() {
+            protected LSSerializer initialValue() {
+                try {
+                    DOMImplementationRegistry registry = DOMImplementationRegistry.newInstance();
+                    DOMImplementationLS impl = (DOMImplementationLS)registry.getDOMImplementation("LS");
+                    return impl.createLSSerializer();
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                } catch (InstantiationException e) {
+                    throw new RuntimeException(e);
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+        testSerializer(new Ser() {
+            public void serialize(Document doc, final OutputStream os) throws Exception {
+                ls.get().write(doc, new LSOutput() {
+                    public OutputStream getByteStream() {
+                        return os;
+                    }
+
+                    public Writer getCharacterStream() { return null; }
+                    public void setCharacterStream(Writer characterStream) { }
+                    public void setByteStream(OutputStream byteStream) { }
+                    public String getSystemId() { return null; }
+                    public void setSystemId(String systemId) { }
+                    public String getEncoding() { return null; }
+                    public void setEncoding(String encoding) { }
+                });
             }
         });
     }
