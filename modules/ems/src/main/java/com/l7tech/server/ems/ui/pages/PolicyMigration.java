@@ -1316,8 +1316,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                 Pair<DependencyKey, String> mapKey = new Pair<DependencyKey, String>(sourceKey, targetClusterId);
                 if (!mappingModel.dependencyMap.containsKey(mapKey)) {
                     MigrationMappingRecord mapping = migrationMappingRecordManager.findByMapping(sourceClusterId, item.asEntityHeader(), targetClusterId, false);
-                    if (mapping != null && mapping.getTarget() != null &&
-                        (mapping.isSameEntity() || !onlyIsSame)) {
+                    if (mapping != null && mapping.getTarget() != null && (mapping.isSameEntity() || !onlyIsSame) ) {
                         mappingModel.dependencyMap.put(mapKey, new DependencyItem(MigrationMappedEntity.asEntityHeader(mapping.getTarget()), null, false, mapping.isSameEntity()));
                     }
                 }
@@ -1346,8 +1345,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                 if ( !containsHeader( entry.getValue().asEntityHeader(), validatedHeaders ) ) {
                     keysToNull.add( entry.getKey() );
-                } else {
-                    // todo: this breaks OVERWRITEs
+                } else if (! entry.getValue().same) {
                     keysToUpdate.put( entry.getKey(), new DependencyItem(getHeader( validatedHeaders, entry.getValue().asEntityHeader().getType(), entry.getValue().id ), entry.getValue()) );
                 }
             }
