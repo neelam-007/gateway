@@ -411,7 +411,7 @@ Utilities.getMappingReportInfoDisplayString
     <group name="CONSTANT_CHART">
         <groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
         <groupHeader>
-            <band height="228" isSplitAllowed="true">
+            <band height="228" isSplitAllowed="false">
                 <printWhenExpression><![CDATA[new Boolean(
 (!$P{IS_CONTEXT_MAPPING}.booleanValue() && $P{PRINT_CHART}.booleanValue())
 ||
@@ -547,7 +547,7 @@ $F{SERVICE_NAME},$F{ROUTING_URI}):"1"]]></categoryExpression>
     <group name="CONSTANT_MAPPING">
         <groupExpression><![CDATA[$F{CONSTANT_GROUP}]]></groupExpression>
         <groupHeader>
-            <band height="218" isSplitAllowed="true">
+            <band height="218" isSplitAllowed="false">
                 <printWhenExpression><![CDATA[new Boolean($P{IS_CONTEXT_MAPPING}.booleanValue() && $P{PRINT_CHART}.booleanValue()
 && $P{IS_USING_KEYS}.booleanValue())]]></printWhenExpression>
                 <frame>
