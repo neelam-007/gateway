@@ -36,67 +36,14 @@ public interface MigrationApi {
     MigrationBundle exportBundle( @WebParam(name="ExternalEntityHeaders") Collection<ExternalEntityHeader> headers ) throws MigrationException;
 
     @WebMethod(operationName="RetrieveMappingCandidates")
-    Collection<MappingCandidate> retrieveMappingCandidates( @WebParam(name="ExternalEntityHeaders") Collection<ExternalEntityHeader> mappables,
-                                                            @WebParam(name="Scope") ExternalEntityHeader scope,
-                                                            @WebParam(name="Filter") @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class) Map<String,String> filters ) throws MigrationException;
+    @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class)Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> 
+    retrieveMappingCandidates( @WebParam(name="ExternalEntityHeaders") Collection<ExternalEntityHeader> mappables,
+                               @WebParam(name="Scope") ExternalEntityHeader scope,
+                               @WebParam(name="Filter") @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class) Map<String,String> filters ) throws MigrationException;
 
     @WebMethod(operationName="ImportBundle")
     Collection<MigratedItem> importBundle( @WebParam(name="Bundle") MigrationBundle bundle,
                                            @WebParam(name="DryRun") boolean dryRun) throws MigrationException;
-
-    @XmlRootElement(name="MappingCandidate", namespace="http://www.layer7tech.com/management/migration")
-    final class MappingCandidate {
-        private ExternalEntityHeader header;
-        private EntityHeaderSet<ExternalEntityHeader> candidates;
-
-        public MappingCandidate() {
-        }
-
-        public MappingCandidate( final ExternalEntityHeader header, final EntityHeaderSet<ExternalEntityHeader> candidates ) {
-            this.header = header;
-            this.candidates = candidates;
-        }
-
-        public ExternalEntityHeader getHeader() {
-            return header;
-        }
-
-        public void setHeader(ExternalEntityHeader header) {
-            this.header = header;
-        }
-
-        public EntityHeaderSet<ExternalEntityHeader> getCandidates() {
-            return candidates;
-        }
-
-        public void setCandidates(EntityHeaderSet<ExternalEntityHeader> candidates) {
-            this.candidates = candidates;
-        }
-
-        public static Collection<MappingCandidate> asCandidates( final Map<ExternalEntityHeader,EntityHeaderSet<ExternalEntityHeader>> map ) {
-            Collection<MappingCandidate> candidates = new ArrayList<MappingCandidate>();
-
-            if ( map != null ) {
-                for ( Map.Entry<ExternalEntityHeader,EntityHeaderSet<ExternalEntityHeader>> entry : map.entrySet() ) {
-                    candidates.add( new MappingCandidate( entry.getKey(), entry.getValue() ) );
-                }
-            }
-
-            return candidates;
-        }
-
-        public static Map<ExternalEntityHeader,EntityHeaderSet<ExternalEntityHeader>> fromCandidates( final Collection<MappingCandidate> candidates ) {
-            final Map<ExternalEntityHeader,EntityHeaderSet<ExternalEntityHeader>> map = new LinkedHashMap<ExternalEntityHeader,EntityHeaderSet<ExternalEntityHeader>>();
-
-            if ( candidates != null ) {
-                for ( MappingCandidate candidate : candidates ) {
-                    map.put( candidate.getHeader(), candidate.getCandidates() );
-                }
-            }
-
-            return map;
-        }
-    }
 
     @XmlRootElement
     public static class MigrationException extends Exception {
