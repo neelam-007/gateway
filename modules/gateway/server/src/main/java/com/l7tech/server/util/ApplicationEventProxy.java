@@ -32,8 +32,10 @@ public class ApplicationEventProxy implements ApplicationListener {
      *
      * @param listener The ApplicationListener to subscribe to events.
      */
-    public synchronized void addApplicationListener(ApplicationListener listener) {
-        subscribers.put(listener, null);
+    public void addApplicationListener(ApplicationListener listener) {
+        synchronized (subscribers) {
+            subscribers.put(listener, null);
+        }
     }
 
     /**
@@ -41,13 +43,15 @@ public class ApplicationEventProxy implements ApplicationListener {
      *
      * @param listener The ApplicationListener to unsubscribe from events.
      */
-    public synchronized void removeApplicationListener(ApplicationListener listener) {
-        subscribers.remove(listener);
+    public void removeApplicationListener(ApplicationListener listener) {
+        synchronized (subscribers) {
+            subscribers.remove(listener);
+        }
     }
 
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         final Set<ApplicationListener> listeners;
-        synchronized (this) {
+        synchronized (subscribers) {
             listeners = subscribers.keySet();
         }
         for (ApplicationListener applicationListener : listeners) {
