@@ -837,6 +837,7 @@ if (!l7.Connection) {
          *                      {boolean} success - true if response body is JSON and is not an exception,
          *                      {boolean} isJson - true if response body is JSON,
          *                      {boolean} isException - true if response body is a l7-style JSON exception,
+         *                      {boolean} isSessionExpired - true if session has timed out
          *                      {object} json - the parsed JSON object
          */
         l7.Connection.parseJsonResponse = function(response,
@@ -857,14 +858,19 @@ if (!l7.Connection) {
             result.success = true;
             result.isJson = true;
             result.isException = false;
+            result.isSessionExpired = false;
 
             function getResponseHeader(header) {
-                if (typeof response.getResponseHeader == 'function') {
-                    // Response is XmlHttpRequest object.
-                    return response.getResponseHeader(header);
-                } else {
+                // For XmlHttpRequest object, getResponseHeader is a function.
+                // For YAHOO.util.Connect.asyncRequest callback object, getResponseHeader is a map.
+                // Because there is no sure fire way to tell a function from a map on all browsers,
+                // we test the existence of readyState, which should be unique to XmlHttpRequest.
+                if (response.readyState == undefined) {
                     // Response is YAHOO.util.Connect.asyncRequest callback object.
                     return response.getResponseHeader[header];
+                } else {
+                    // Response is XmlHttpRequest object.
+                    return response.getResponseHeader(header);
                 }
             }
 
@@ -895,6 +901,7 @@ if (!l7.Connection) {
                 dialog.render(document.body);
                 dialog.show();
                 result.success = false;
+                result.isSessionExpired = true;
                 result.isJson = false;
             } else if (response.status == 200) {
                 try {

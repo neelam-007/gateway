@@ -124,7 +124,7 @@
             CLOSE : 'Close',
             ERROR : 'Error',
             SAVE : 'Save',
-            SESSION_TIMEOUT : 'Your session has timed out.',
+            SESSION_TIMEOUT : 'Your session has expired.',
             CANNOT_PARSE_RESPONSE_JSON : 'Malformed response from server.',
             CANNOT_DOWNLOAD_ENTITY_DATA : 'Unable to retrieve array of enterprise entities from the server.',
             CANNOT_PARSE_ENTITY_DATA : 'Unable to parse array of enterprise entities retrieved from the server.',
@@ -158,12 +158,14 @@
          * Applies when previous refresh failed.
          * @final
          */
-        var DEFAULT_MONITORING_PROPERTIES_REFRESH_INTERVAL = 10;
+        var DEFAULT_MONITORING_PROPERTIES_REFRESH_INTERVAL = 5;
 
         var ALL_PROPERTY_TYPES = l7.Util.getPropertyValues(l7.Constants.SSG_CLUSTER_MONITORING_PROPERTY, l7.Constants.SSG_NODE_MONITORING_PROPERTY);
 
-        var collapsedHeaders_trafficImg;
-        var steppedHeaders_trafficImg;
+        var refreshMonitoringProperties_collapsedHeaders_trafficImg;
+        var refreshMonitoringProperties_steppedHeaders_trafficImg;
+        var refreshMonitoringProperties_collapsedHeaders_errorImg;
+        var refreshMonitoringProperties_steppedHeaders_errorImg;
 
         var monitoringSetup;
 
@@ -1023,16 +1025,30 @@
             validateMonitoringPropertyDialog();
         }
 
-        function refreshMonitoringProperties() {
-            // Flashes the traffic icon for 200ms when refreshing.
-            collapsedHeaders_trafficImg.style.visibility = "visible";
-            steppedHeaders_trafficImg.style.visibility = "visible";
-            setTimeout('collapsedHeaders_trafficImg.style.visibility = "hidden"; steppedHeaders_trafficImg.style.visibility = "hidden";', 200);
+        function hideTrafficImages() {
+            refreshMonitoringProperties_collapsedHeaders_trafficImg.style.visibility = "hidden";
+            refreshMonitoringProperties_steppedHeaders_trafficImg.style.visibility = "hidden";
+            refreshMonitoringProperties_collapsedHeaders_errorImg.style.visibility = "hidden";
+            refreshMonitoringProperties_steppedHeaders_errorImg.style.visibility = "hidden";
+        }
 
+        function refreshMonitoringProperties() {
             var nextRefreshInterval = DEFAULT_MONITORING_PROPERTIES_REFRESH_INTERVAL;
-            var xhr = l7.Connection.syncRequest('GET', getCurrentEntitiesPropertyValuesUrl, null, false);
-            var result = l7.Connection.parseJsonResponse(xhr, false);
-            if (result.success) {
+            var xhr;
+            var xhrException;
+            var result;
+            try {
+                xhr = l7.Connection.syncRequest('GET', getCurrentEntitiesPropertyValuesUrl, null, false);
+                result = l7.Connection.parseJsonResponse(xhr, false);
+            } catch (e) {
+                xhrException = e;
+            }
+            if (result && result.success) {
+                // Flashes the traffic icon for 400ms.
+                refreshMonitoringProperties_collapsedHeaders_trafficImg.style.visibility = "visible";
+                refreshMonitoringProperties_steppedHeaders_trafficImg.style.visibility = "visible";
+                setTimeout('hideTrafficImages();', 400);
+
                 if (result.json.entities) {
                     for (var i = 0; i < result.json.entities.length; ++i) {
                         var entity = result.json.entities[i];
@@ -1048,8 +1064,34 @@
                 if (result.json.nextRefreshInterval) {
                     nextRefreshInterval = result.json.nextRefreshInterval;
                 }
+            } else {
+                // Flashes the error icon for 400ms.
+                var toolTip = 'Unable to refresh monitored property values';
+                if (xhrException) {
+                    // Because the exception name and message is mysteriously worded,
+                    // we won't display that.
+                    toolTip += ': cannot communicate with server';
+                } else if (result.isException) {
+                    if (result.json) {
+                        if (result.json.localizedMessage) {
+                            toolTip += ': ' + result.json.localizedMessage;
+                        } else if (result.json.message) {
+                            toolTip += ': ' + result.json.message;
+                        }
+                    }
+                } else {
+                    toolTip += ': ' + xhr.status + ' ' + xhr.statusText;
+                } // No need to display session timeout because l7.Connection.parseJsonResponse would have popped up a dialog.
+                refreshMonitoringProperties_collapsedHeaders_errorImg.title = toolTip;
+                refreshMonitoringProperties_steppedHeaders_errorImg.title = toolTip;
+                refreshMonitoringProperties_collapsedHeaders_errorImg.style.visibility = "visible";
+                refreshMonitoringProperties_steppedHeaders_errorImg.style.visibility = "visible";
             }
-            setTimeout('refreshMonitoringProperties()', 1000 * nextRefreshInterval);
+            if (result && result.isSessionExpired) {
+                // Don't refresh any more.
+            } else {
+                setTimeout('refreshMonitoringProperties()', 1000 * nextRefreshInterval);
+            }
         }
 
         function loadMonitoringSetup() {
@@ -1409,8 +1451,10 @@
 
         function init() {
             // Precomputes UI element references for efficiency.
-            collapsedHeaders_trafficImg = document.getElementById('collapsedHeaders_trafficImg');
-            steppedHeaders_trafficImg = document.getElementById('steppedHeaders_trafficImg');
+            refreshMonitoringProperties_collapsedHeaders_trafficImg = document.getElementById('refreshMonitoringProperties_collapsedHeaders_trafficImg');
+            refreshMonitoringProperties_steppedHeaders_trafficImg = document.getElementById('refreshMonitoringProperties_steppedHeaders_trafficImg');
+            refreshMonitoringProperties_collapsedHeaders_errorImg = document.getElementById('refreshMonitoringProperties_collapsedHeaders_errorImg');
+            refreshMonitoringProperties_steppedHeaders_errorImg = document.getElementById('refreshMonitoringProperties_steppedHeaders_errorImg');
             monitoringSetup = document.getElementById('monitoringSetup');
 
             disableAllNotificationCheckBox = document.getElementById('disableAllNotificationCheckBox');
@@ -1720,7 +1764,7 @@
                                         <th class="bottom" rowspan="2">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
                                         <th class="bottom" rowspan="2"><img src="../images/status.png" title="Online Status" alt="" /></th>
                                         <th class="bottom" rowspan="2">Type</th>
-                                        <th colspan="10"><div class="trafficImgParent"><img class="tippy" src="../images/tippyCollapsed.png" title="Click to expand headers" alt="" onclick="expandSteppedHeaders();" /><span class="clickable" title="Click to expand headers" onclick="expandSteppedHeaders();">Monitored Properties</span><img id="collapsedHeaders_trafficImg" class="trafficImg" src="../images/traffic.png"/></div></th>
+                                        <th colspan="10"><div class="trafficImgParent"><img class="tippy" src="../images/tippyCollapsed.png" title="Click to expand headers" alt="" onclick="expandSteppedHeaders();" /><span class="clickable" title="Click to expand headers" onclick="expandSteppedHeaders();">Monitored Properties</span><img id="refreshMonitoringProperties_collapsedHeaders_trafficImg" class="trafficImg" src="../images/traffic.png"/><img id="refreshMonitoringProperties_collapsedHeaders_errorImg" class="trafficImg" src="../images/trafficError.png"/></div></th>
                                     </tr>
                                     <tr>
                                         <th class="group0"><div class="collapsedHeader" style="display: none;">audit size (no. of audit events)</div></th>
@@ -1741,7 +1785,7 @@
                                         <th class="bottom" rowspan="11">Name<br /><img src="../images/spacer.png" alt="" height="0" width="140" /><!-- minimum width --></th>
                                         <th class="bottom" rowspan="11"><img src="../images/status.png" title="Online Status" alt="" /></th>
                                         <th class="bottom" rowspan="11">Type</th>
-                                        <th colspan="10"><div class="trafficImgParent"><img class="tippy" src="../images/tippyExpanded.png" title="Click to collapse headers" alt="" onclick="collapseSteppedHeaders();" /><span class="clickable" title="Click to collapse headers" onclick="collapseSteppedHeaders();">Monitored Properties</span><img id="steppedHeaders_trafficImg" class="trafficImg" src="../images/traffic.png"/></div></th>
+                                        <th colspan="10"><div class="trafficImgParent"><img class="tippy" src="../images/tippyExpanded.png" title="Click to collapse headers" alt="" onclick="collapseSteppedHeaders();" /><span class="clickable" title="Click to collapse headers" onclick="collapseSteppedHeaders();">Monitored Properties</span><img id="refreshMonitoringProperties_steppedHeaders_trafficImg" class="trafficImg" src="../images/traffic.png"/><img id="refreshMonitoringProperties_steppedHeaders_errorImg" class="trafficImg" src="../images/trafficError.png"/></div></th>
                                         <th class="parentId" rowspan="11"><!-- hidden column --></th>
                                     </tr>
                                     <tr>
