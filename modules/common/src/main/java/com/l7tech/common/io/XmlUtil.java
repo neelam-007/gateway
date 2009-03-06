@@ -3,10 +3,7 @@ package com.l7tech.common.io;
 import com.ibm.xml.dsig.Canonicalizer;
 import com.ibm.xml.dsig.transform.ExclusiveC11r;
 import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.LSInputImpl;
-import com.l7tech.util.PaddingCharSequence;
+import com.l7tech.util.*;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.*;
@@ -35,6 +32,8 @@ import java.util.logging.Logger;
  */
 public class XmlUtil extends DomUtils {
     private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());
+
+    private static final boolean DEFAULT_SERIALIZE_WITH_XSS4J = SyspropUtil.getBoolean("com.l7tech.common.serializeWithXss4j", true);
 
     public static final String XML_VERSION = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
     public static final String TEXT_XML = "text/xml";
@@ -110,8 +109,10 @@ public class XmlUtil extends DomUtils {
             }
         }
     };
-    private static ThreadLocal formattedXMLSerializer = new ThreadLocal() {
-        protected synchronized Object initialValue() {
+    @SuppressWarnings({"deprecation"})
+    private static ThreadLocal<XMLSerializer> formattedXMLSerializer = new ThreadLocal<XMLSerializer>() {
+        @SuppressWarnings({"deprecation"})
+        protected synchronized XMLSerializer initialValue() {
             XMLSerializer xmlSerializer = new XMLSerializer();
             OutputFormat of = new OutputFormat();
             of.setIndent(4);
@@ -119,18 +120,35 @@ public class XmlUtil extends DomUtils {
             return xmlSerializer;
         }
     };
-    private static ThreadLocal encodingXMLSerializer = new ThreadLocal() {
-        protected synchronized Object initialValue() {
+    @SuppressWarnings({"deprecation"})
+    private static ThreadLocal<XMLSerializer> encodingXMLSerializer = new ThreadLocal<XMLSerializer>() {
+        @SuppressWarnings({"deprecation"})
+        protected synchronized XMLSerializer initialValue() {
             return new XMLSerializer();
         }
     };
-    private static ThreadLocal transparentXMLSerializer = new ThreadLocal() {
-        protected synchronized Object initialValue() {
+    @SuppressWarnings({"deprecation"})
+    private static ThreadLocal<XMLSerializer> transparentXMLSerializer = new ThreadLocal<XMLSerializer>() {
+        @SuppressWarnings({"deprecation"})
+        protected XMLSerializer initialValue() {
+            OutputFormat format = new OutputFormat();
+            format.setLineWidth(0);
+            format.setIndenting(false);
+            format.setPreserveSpace(true);
+            format.setOmitXMLDeclaration(true);
+            format.setOmitComments(false);
+            format.setOmitDocumentType(true);
+            format.setPreserveEmptyAttributes(true);
+            return new XMLSerializer(format);
+        }
+    };
+    private static ThreadLocal<Canonicalizer> transparentXMLSerializer_XSS4J_W3C = new ThreadLocal<Canonicalizer>() {
+        protected synchronized Canonicalizer initialValue() {
             return new W3CCanonicalizer2WC();
         }
     };
-    private static ThreadLocal exclusiveCanonicalizer = new ThreadLocal() {
-        protected synchronized Object initialValue() {
+    private static ThreadLocal<Canonicalizer> exclusiveCanonicalizer = new ThreadLocal<Canonicalizer>() {
+        protected synchronized Canonicalizer initialValue() {
             return new ExclusiveC11r();
         }
     };
@@ -146,6 +164,7 @@ public class XmlUtil extends DomUtils {
         dbfAllowingDoctype.setNamespaceAware(true);
     }
 
+    private static boolean serializeWithXss4j = DEFAULT_SERIALIZE_WITH_XSS4J;
 
     /**
      * Returns a stateless, thread-safe {@link org.xml.sax.EntityResolver} that throws a SAXException upon encountering
@@ -330,25 +349,61 @@ public class XmlUtil extends DomUtils {
         return parser.parse(source);
     }
 
+    @SuppressWarnings({"deprecation"})
     private static XMLSerializer getFormattedXmlSerializer() {
-        return (XMLSerializer) formattedXMLSerializer.get();
+        return formattedXMLSerializer.get();
     }
 
+    @SuppressWarnings({"deprecation"})
     private static XMLSerializer getEncodingXmlSerializer() {
-        return (XMLSerializer) encodingXMLSerializer.get();
+        return encodingXMLSerializer.get();
     }
 
-    private static Canonicalizer getTransparentXMLSerializer() {
-        return (Canonicalizer)transparentXMLSerializer.get();
+    private static Canonicalizer getTransparentXMLSerializer_XSS4J_W3C() {
+        return transparentXMLSerializer_XSS4J_W3C.get();
+    }
+
+    @SuppressWarnings({"deprecation"})
+    private static XMLSerializer getTransparentXMLSerializer() {
+        return transparentXMLSerializer.get();
     }
 
     private static Canonicalizer getExclusiveCanonicalizer() {
-        return (Canonicalizer)exclusiveCanonicalizer.get();
+        return exclusiveCanonicalizer.get();
     }
 
-    public static void nodeToOutputStream( Node node, OutputStream os) throws IOException {
-        Canonicalizer canon = getTransparentXMLSerializer();
+    public static void nodeToOutputStream(Node node, OutputStream os) throws IOException {
+        if (serializeWithXss4j)
+            nodeToOutputStreamWithXss4j(node, os);
+        else
+            nodeToOutputStreamWithXMLSerializer(node, os);
+    }
+
+    static void nodeToOutputStreamWithXss4j(Node node, final OutputStream os) throws IOException {
+        Canonicalizer canon = getTransparentXMLSerializer_XSS4J_W3C();
         canon.canonicalize(node, os);
+    }
+
+    @SuppressWarnings({"deprecation"})
+    static void nodeToOutputStreamWithXMLSerializer(Node node, final OutputStream os) throws IOException {
+        XMLSerializer serializer = getTransparentXMLSerializer();
+        serializer.setOutputByteStream(os);
+        switch (node.getNodeType()) {
+            case Node.ELEMENT_NODE:
+                Element element = (Element) node;
+                serializer.serialize(element);
+                break;
+            case Node.DOCUMENT_NODE:
+                Document doc = (Document) node;
+                serializer.serialize(doc);
+                break;
+            case Node.DOCUMENT_FRAGMENT_NODE:
+                DocumentFragment fragment = (DocumentFragment) serializer;
+                serializer.serialize(fragment);
+                break;
+            default:
+                throw new IOException("Unsupported DOM Node type: " + node.getNodeType());
+        }
     }
 
     /**
@@ -414,6 +469,7 @@ public class XmlUtil extends DomUtils {
         }
     }
 
+    @SuppressWarnings({"deprecation"})
     public static void nodeToOutputStream(Node node, OutputStream os, String encoding) throws IOException {
         OutputFormat of = new OutputFormat();
         of.setEncoding(encoding);
@@ -429,6 +485,7 @@ public class XmlUtil extends DomUtils {
             throw new IllegalArgumentException("Node must be either a Document or an Element");
     }
 
+    @SuppressWarnings({"deprecation"})
     public static void nodeToFormattedOutputStream(Node node, OutputStream os) throws IOException {
         XMLSerializer ser = getFormattedXmlSerializer();
         ser.setOutputByteStream(os);
@@ -487,6 +544,7 @@ public class XmlUtil extends DomUtils {
      * @return the new XML as a String.  Never null.
      * @throws IOException if the serializer has a problem reading the source DOM.
      */
+    @SuppressWarnings({"deprecation"})
     public static String elementToXml(Element schema) throws IOException {
         DocumentBuilder builder = getDocumentBuilder();
         Document schemadoc = builder.newDocument();
@@ -632,6 +690,11 @@ public class XmlUtil extends DomUtils {
             }
         }
         transformer.transform(new DOMSource(source), result);
+    }
+
+    /** @deprecated For unit tests only */
+    public static void setSerializeWithXss4j(Boolean b) {
+        serializeWithXss4j = b == null ? DEFAULT_SERIALIZE_WITH_XSS4J : b;
     }
 
     /**

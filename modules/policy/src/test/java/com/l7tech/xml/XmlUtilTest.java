@@ -1,81 +1,51 @@
 package com.l7tech.xml;
 
-import com.l7tech.message.Message;
+import com.l7tech.common.TestDocuments;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.message.Message;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.TooManyChildElementsException;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.DomCompiledXpath;
+import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathResultNodeSet;
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.IOUtils;
-import com.l7tech.common.TestDocuments;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.TooManyChildElementsException;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import com.l7tech.test.BugNumber;
+import org.junit.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+import static org.junit.Assert.*;
 
 import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
-import java.io.StringReader;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.net.URL;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public class XmlUtilTest extends TestCase {
+public class XmlUtilTest {
     private static final Logger logger = Logger.getLogger(XmlUtilTest.class.getName());
     private static final String PI_XML = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<?xml-stylesheet href=\"foo\" type=\"text/xsl\"?>\n<foo/>";
-
-    /**
-     * test <code>XmlUtilTest</code> constructor
-     */
-    public XmlUtilTest( String name ) {
-        super( name );
-    }
-
-    /**
-     * create the <code>TestSuite</code> for the XmlUtilTest <code>TestCase</code>
-     */
-    public static Test suite() {
-        TestSuite suite = new TestSuite( XmlUtilTest.class );
-        return suite;
-    }
-
-    public void setUp() throws Exception {
-        // put set up code here
-    }
-
-    public void tearDown() throws Exception {
-        // put tear down code here
-    }
-
-    /**
-     * Test <code>XmlUtilTest</code> main.
-     */
-    public static void main( String[] args ) throws
-                                             Throwable {
-        junit.textui.TestRunner.run( suite() );
-    }
 
     private static Document getTestDocument() throws Exception {
         return TestDocuments.getTestDocument( TestDocuments.PLACEORDER_WITH_MAJESTY );
 
     }
 
+    @Test
     public void testFindAllNamespaces() throws Exception {
         Element el = getTestDocument().getDocumentElement();
         Map foo = DomUtils.findAllNamespaces(el);
@@ -88,6 +58,7 @@ public class XmlUtilTest extends TestCase {
         assertTrue(name.equals(element.getLocalName()));
     }
 
+    @Test
     public void testFindFirstChildElement() throws Exception {
         Document d = getTestDocument();
         Element header = DomUtils.findFirstChildElement( d.getDocumentElement() );
@@ -99,6 +70,7 @@ public class XmlUtilTest extends TestCase {
         assertNull( none );
     }
 
+    @Test
     public void testFindOnlyOne() throws Exception {
         Document d = getTestDocument();
         Element header = DomUtils.findOnlyOneChildElementByName( d.getDocumentElement(),
@@ -126,6 +98,7 @@ public class XmlUtilTest extends TestCase {
     }
 
 
+    @Test
     public void testFindFirstChildElementByName() throws Exception {
         Document d = getTestDocument();
         Element header = DomUtils.findFirstChildElementByName( d.getDocumentElement(),
@@ -146,6 +119,7 @@ public class XmlUtilTest extends TestCase {
         assertNull(none);
     }
 
+    @Test
     public void testFindChildElementsByName() throws Exception {
         Document d = getTestDocument();
         List children = DomUtils.findChildElementsByName( d.getDocumentElement(),
@@ -170,6 +144,7 @@ public class XmlUtilTest extends TestCase {
         assertTrue(none.isEmpty());
     }
 
+    @Test
     public void testFindChildElementsByNameWithNSArray() throws Exception {
         Document d = XmlUtil.stringToDocument(DOC_WITH_SEC_HEADERS);
         Element env = d.getDocumentElement();
@@ -184,6 +159,7 @@ public class XmlUtilTest extends TestCase {
         assertTrue(SoapUtil.SECURITY_NAMESPACE.equals(sec3.getNamespaceURI()));
     }
 
+    @Test
     public void testGetPayloadNamespaceUri() throws Exception {
         Document d = XmlUtil.stringToDocument(DOC_WITH_SEC_HEADERS);
         assertNull(SoapUtil.getPayloadNames(d));
@@ -192,6 +168,7 @@ public class XmlUtilTest extends TestCase {
         assertEquals("http://warehouse.acme.com/ws", SoapUtil.getPayloadNames(d)[0].getNamespaceURI());
     }
 
+    @Test
     public void testFindActivePrefixForNamespace() throws Exception {
         Document d = XmlUtil.stringToDocument(DOC_WITH_SEC_HEADERS);
 
@@ -213,6 +190,7 @@ public class XmlUtilTest extends TestCase {
 
     }
 
+    @Test
     public void testParseEmptyString() {
         try {
             Document d = XmlUtil.stringToDocument("");
@@ -223,6 +201,7 @@ public class XmlUtilTest extends TestCase {
         }
     }
 
+    @Test
     public void testParseNull() {
         try {
             Document d = XmlUtil.stringToDocument(null);
@@ -233,6 +212,7 @@ public class XmlUtilTest extends TestCase {
         }
     }
 
+    @Test
     public void testGetNamespaceMap() throws Exception {
         Document d = XmlUtil.stringToDocument(DOC_WITH_SEC_HEADERS);
         Element header = DomUtils.findFirstChildElement(d.getDocumentElement());
@@ -248,6 +228,7 @@ public class XmlUtilTest extends TestCase {
         assertEquals(nsmap.get("sec2"), "http://schemas.xmlsoap.org/ws/2002/12/secext");
     }
 
+    @Test
     public void testStripWhitespace() throws Exception {
         Document d = XmlUtil.stringToDocument(DOC_WITH_SEC_HEADERS);
         DomUtils.stripWhitespace(d.getDocumentElement());
@@ -256,6 +237,7 @@ public class XmlUtilTest extends TestCase {
         assertEquals(wantstripped, stripped);
     }
 
+    @Test
     public void testProcessingInstructionDom() throws Exception {
         Document doc = XmlUtil.parse(new StringReader(PI_XML), false);
         DomElementCursor cursor = new DomElementCursor(doc);
@@ -276,6 +258,7 @@ public class XmlUtilTest extends TestCase {
         System.err.println("Found " + n + " strings in " + (now - before) + "ms");
     }
 
+    @Test
     public void testProcessingInstructionMaybeTarari() throws Exception {
         TarariLoader.compile();
         Message msg = new Message(new ByteArrayStashManager(),
@@ -291,6 +274,7 @@ public class XmlUtilTest extends TestCase {
         assertEquals(nodes.getNodeValue(0), "href=\"foo\" type=\"text/xsl\"");
     }
 
+    @Test
     public void testWhitespaceInProlog() throws Exception {
         XmlUtil.stringToDocument(" \t \r  \n   " + XmlUtil.nodeToString(XmlUtil.stringToDocument("<foo/>")));
     }
@@ -306,8 +290,9 @@ public class XmlUtilTest extends TestCase {
 
     private final String REUTERS_SCHEMA_URL = "http://locutus/reuters/schemas1/ReutersResearchAPI.xsd";
 
-    // Test disabled because it depends on a resource on Alex's workstation
-    public void DISABLED_testTranslateReutersSchemaNamespaces() throws Exception {
+    @Ignore("Test disabled because it depends on a resource on Alex's workstation")
+    @Test
+    public void testTranslateReutersSchemaNamespaces() throws Exception {
         InputStream is = new URL(REUTERS_SCHEMA_URL).openStream();
         String schemaXml = new String( IOUtils.slurpStream(is));
 
@@ -319,6 +304,7 @@ public class XmlUtilTest extends TestCase {
         System.out.println("Normalized:\n" + XmlUtil.nodeToFormattedString(normalizedDoc));
     }
 
+    @Test
     public void testLeadingWhitespace() {
         InputStream pis = new ByteArrayInputStream(XML_WITH_LEADING_WHITESPACE.getBytes());
         try {
@@ -330,6 +316,49 @@ public class XmlUtilTest extends TestCase {
         } catch (SAXException e) {
             // Ok
         }
+    }
+
+    @Test
+    @BugNumber(6851)
+    @Ignore("Disabled because this serialization is not transparent when using XSS4J's W3CCanonicalizer2WC")
+    @SuppressWarnings({"deprecation"})
+    public void testSerializerTransparencyOfXmlElements_with_XSS4J() throws Exception {
+        try {
+            XmlUtil.setSerializeWithXss4j(true);
+            assertTransparency("<a xml:a=\"a\"><a xml:a=\"a\"/></a>");
+        } finally {
+            XmlUtil.setSerializeWithXss4j(null);
+        }
+    }
+
+    @Test
+    @BugNumber(6851)
+    @SuppressWarnings({"deprecation"})
+    public void testSerializerTransparencyOfXmlElements_with_XMLSerializer() throws Exception {
+        try {
+            XmlUtil.setSerializeWithXss4j(false);
+            assertTransparency("<a xml:a=\"a\"><a xml:a=\"a\"/></a>");
+        } finally {
+            XmlUtil.setSerializeWithXss4j(null);
+        }
+    }
+
+    @Test
+    @Ignore("Currently our serializer always omits the XML declaration")
+    public void testSerializerTransparencyOfXmlDecl() throws Exception {
+        assertTransparency("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<a xml:a=\"a\"><a xml:a=\"a\"/></a>");
+    }
+
+    private void assertTransparency(String in) throws SAXException, IOException {
+        Document doc1 = XmlUtil.stringToDocument(in);
+        String str1 = XmlUtil.nodeToString(doc1);
+        assertEquals(in, str1);
+        Document doc2 = XmlUtil.stringToDocument(str1);
+        String str2 = XmlUtil.nodeToString(doc2);
+        assertEquals(str1, str2);
+        Document doc3 = XmlUtil.stringToDocument(str2);
+        String str3 = XmlUtil.nodeToString(doc3);
+        assertEquals(str2, str3);
     }
 
     public static final String XML_WITH_LEADING_WHITESPACE =

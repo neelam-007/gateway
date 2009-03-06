@@ -6,26 +6,25 @@ package com.l7tech.security.xml;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
 import com.l7tech.security.WsiBSPValidator;
+import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.*;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.*;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.test.BugNumber;
+import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.*;
+import static org.junit.Assert.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Logger;
@@ -33,24 +32,12 @@ import java.util.logging.Logger;
 /**
  * Decorate messages with WssDecorator and then send them through WssProcessor
  */
-public class WssRoundTripTest extends TestCase {
+public class WssRoundTripTest {
     private static Logger log = Logger.getLogger(WssRoundTripTest.class.getName());
     private static final WsiBSPValidator validator = new WsiBSPValidator();
 
     static {
         System.setProperty(WssDecoratorImpl.PROPERTY_SUPPRESS_NANOSECONDS, "true");
-    }
-
-    public WssRoundTripTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(WssRoundTripTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
     }
 
     private static class NamedTestDocument {
@@ -65,19 +52,23 @@ public class WssRoundTripTest extends TestCase {
 
     WssDecoratorTest wssDecoratorTest = new WssDecoratorTest("WssDecoratorTest");
 
+    @Test
     public void testSimple() throws Exception {
         runRoundTripTest(new NamedTestDocument("Simple",
                                                wssDecoratorTest.getSimpleTestDocument()));
     }
 
+    @Test
     public void testSignedAndEncryptedUsernameToken() throws Exception {
         doTestSignedAndEncryptedUsernameToken(null);
     }
 
+    @Test
     public void testSignedAndEncryptedUsernameToken_withKeyCache() throws Exception {
         doTestSignedAndEncryptedUsernameToken(new SimpleSecurityTokenResolver());
     }
 
+    @Test
     public void testSignedUsernameToken() throws Exception {
         runRoundTripTest(new NamedTestDocument("signedUsernameToken", wssDecoratorTest.getSignedUsernameTokenTestDocument()));
     }
@@ -144,80 +135,95 @@ public class WssRoundTripTest extends TestCase {
         }
     }
 
+    @Test
     public void testEncryptedBodySignedEnvelope() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptedBodySignedEnvelope",
                                                wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument()));
     }
 
+    @Test
     public void testSignedEnvelope() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedEnvelope",
                                                wssDecoratorTest.getSignedEnvelopeTestDocument()));
     }
 
+    @Test
     public void testEncryptionOnlyAES128() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptionOnlyAES128",
                                                wssDecoratorTest.getEncryptionOnlyTestDocument( XencAlgorithm.AES_128_CBC.getXEncName())));
     }
 
+    @Test
     public void testEncryptionOnlyAES192() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptionOnlyAES192",
                                                wssDecoratorTest.getEncryptionOnlyTestDocument(XencAlgorithm.AES_192_CBC.getXEncName())),
                          false);
     }
 
+    @Test
     public void testEncryptionOnlyAES256() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptionOnlyAES256",
                                                wssDecoratorTest.getEncryptionOnlyTestDocument(XencAlgorithm.AES_256_CBC.getXEncName())));
     }
 
+    @Test
     public void testEncryptionOnlyTripleDES() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptionOnlyTripleDES",
                                                wssDecoratorTest.getEncryptionOnlyTestDocument(XencAlgorithm.TRIPLE_DES_CBC.getXEncName())));
     }
 
+    @Test
     public void testSigningOnly() throws Exception {
         runRoundTripTest(new NamedTestDocument("SigningOnly",
                                                wssDecoratorTest.getSigningOnlyTestDocument()));
     }
 
+    @Test
     public void testSigningOnlyWithProtectTokens() throws Exception {
         runRoundTripTest(new NamedTestDocument("SigningOnlyWithProtectTokens",
                                                wssDecoratorTest.getSigningOnlyWithProtectTokensTestDocument()));
     }
 
+    @Test
     public void testSigningProtectTokenNoBst() throws Exception {
         runRoundTripTest(new NamedTestDocument("SigningProtectTokenNoBst",
                 wssDecoratorTest.getSigningProtectTokenNoBstTestDocument()));
     }
 
+    @Test
     public void testSingleSignatureMultipleEncryption() throws Exception {
         runRoundTripTest(new NamedTestDocument("SingleSignatureMultipleEncryption",
                                                wssDecoratorTest.getSingleSignatureMultipleEncryptionTestDocument()));
     }
 
-    /* we no longer support this
+    @Test
+    @Ignore("we no longer support this")
     public void testWrappedSecurityHeader() throws Exception {
         runRoundTripTest(new NamedTestDocument("WrappedSecurityHeader",
                                                wssDecoratorTest.getWrappedSecurityHeaderTestDocument()));
-    }*/
+    }
 
+    @Test
     public void testSkilessRecipientCert() throws Exception {
         runRoundTripTest(new NamedTestDocument("SkilessRecipientCert",
                                                wssDecoratorTest.getSkilessRecipientCertTestDocument()));
     }
 
+    @Test
     public void testSigningOnlyWithSecureConversation() throws Exception {
         runRoundTripTest(new NamedTestDocument("SigningOnlyWithSecureConversation",
                                                wssDecoratorTest.getSigningOnlyWithSecureConversationTestDocument()),
                          false);
     }
 
+    @Test
     public void testSigningAndEncryptionWithSecureConversation() throws Exception {
         runRoundTripTest(new NamedTestDocument("SigningAndEncryptionWithSecureConversation",
                                                wssDecoratorTest.getSigningAndEncryptionWithSecureConversationTestDocument()),
                          false);
     }
 
+    @Test
     public void testSigningAndEncryptionWithSecureConversationWss11() throws Exception {
         NamedTestDocument ntd = new NamedTestDocument("SigningAndEncryptionWithSecureConversation",
                                                wssDecoratorTest.getSigningAndEncryptionWithSecureConversationTestDocument());
@@ -226,45 +232,53 @@ public class WssRoundTripTest extends TestCase {
                          false);
     }
 
+    @Test
     public void testSignedSamlHolderOfKeyRequest() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedSamlHolderOfKeyRequest",
                                                wssDecoratorTest.getSignedSamlHolderOfKeyRequestTestDocument(1)),
                          false);
     }
 
+    @Test
     public void testSignedSamlSenderVouchesRequest() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedSamlSenderVouchesRequest",
                                                wssDecoratorTest.getSignedSamlSenderVouchesRequestTestDocument(1)),
                          false);
     }
 
+    @Test
     public void testSignedSaml2HolderOfKeyRequest() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedSaml2HolderOfKeyRequest",
                                                wssDecoratorTest.getSignedSamlHolderOfKeyRequestTestDocument(2)),
                          false);
     }
 
+    @Test
     public void testSignedSaml2SenderVouchesRequest() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedSaml2SenderVouchesRequest",
                                                wssDecoratorTest.getSignedSamlSenderVouchesRequestTestDocument(2)),
                          false);
     }
 
+    @Test
     public void testSignedEmptyElement() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedEmptyElement",
                                                wssDecoratorTest.getSignedEmptyElementTestDocument()));
     }
 
+    @Test
     public void testEncryptedEmptyElement() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptedEmptyElement",
                                                wssDecoratorTest.getEncryptedEmptyElementTestDocument()));
     }
 
+    @Test
     public void testSoapWithUnsignedAttachment() throws Exception {
         runRoundTripTest(new NamedTestDocument("SoapWithUnsignedAttachment",
                                                wssDecoratorTest.getSoapWithUnsignedAttachmentTestDocument()));
     }
 
+    @Test
     public void testSoapWithSignedAttachmentContent() throws Exception {
         NamedTestDocument ntd = new NamedTestDocument("SoapWithSignedAttachmentContent",
                                                wssDecoratorTest.getSoapWithSignedAttachmentTestDocument());
@@ -279,6 +293,7 @@ public class WssRoundTripTest extends TestCase {
         assertTrue("Use of correct transform", result.contains(SoapUtil.TRANSFORM_ATTACHMENT_CONTENT));
     }
 
+    @Test
     public void testSoapWithSignedAttachmentComplete() throws Exception {
         NamedTestDocument ntd = new NamedTestDocument("SoapWithSignedAttachmentContentAndMIMEHeaders",
                                                wssDecoratorTest.getSoapWithSignedAttachmentTestDocument());
@@ -291,37 +306,44 @@ public class WssRoundTripTest extends TestCase {
         assertTrue("Use of correct transform", result.contains(SoapUtil.TRANSFORM_ATTACHMENT_COMPLETE));
     }
 
+    @Test
     public void testSoapWithSignedEncryptedAttachment() throws Exception {
         runRoundTripTest(new NamedTestDocument("SoapWithSignedEncryptedAttachment",
                                                wssDecoratorTest.getSoapWithSignedEncryptedAttachmentTestDocument()));
     }
 
+    @Test
     public void testSignedAndEncryptedBodyWithSki() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedAndEncryptedBodyWithNoBst",
                                                wssDecoratorTest.getSignedAndEncryptedBodySkiTestDocument()));
     }
 
+    @Test
     public void testEncryptedUsernameToken() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptedUsernameToken",
                                                wssDecoratorTest.getEncryptedUsernameTokenTestDocument()),
                                                false);
     }
 
+    @Test
     public void testEncryptedUsernameTokenWithDerivedKeys() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptedUsernameTokenWithDerivedKeys",
                                                wssDecoratorTest.getEncryptedUsernameTokenWithDerivedKeysTestDocument()),
                                                false);
     }
 
+    @Test
     public void testOaepEncryptedKey() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptedKeyAlgorithm",
                                                wssDecoratorTest.getOaepKeyEncryptionTestDocument()));
     }
 
+    @Test
     public void testConfigSecHdrAttributesTestDocument() throws Exception {
         runRoundTripTest(new NamedTestDocument("ConfigSecHdrAttributesTestDocument", wssDecoratorTest.getConfigSecHdrAttributesTestDocument()));
     }
 
+    @Test
     public void testExplicitSignatureConfirmation() throws Exception {
         NamedTestDocument ntd = new NamedTestDocument("ExplicitSignatureConfirmation",
                                                       wssDecoratorTest.getExplicitSignatureConfirmationsTestDocument());
@@ -648,5 +670,64 @@ public class WssRoundTripTest extends TestCase {
             b = (Element) b.getParentNode();
         }
         return true;
+    }
+
+    private static final String OSD_XML =
+            "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body>\n" +
+            "<a xml:a=\"a\"><a xml:a=\"a\"/></a>\n" +
+            "</s:Body></s:Envelope>";
+
+    @Test
+    @BugNumber(6851)
+    @Ignore("Disabled because it fails with XSS4J")
+    public void testOsdSignatureError_withXSS4J() throws Exception {
+        doTestOsdSignatureError(true);
+    }
+
+    @Test
+    @BugNumber(6851)
+    public void testOsdSignatureError_withXMLSerializer() throws Exception {
+        doTestOsdSignatureError(false);
+    }
+
+    @SuppressWarnings({"deprecation"})
+    private void doTestOsdSignatureError(boolean useXss4j) throws Exception {
+        try {
+            XmlUtil.setSerializeWithXss4j(useXss4j);
+            reallyDoTestOsdSignatureError();
+        } finally {
+            XmlUtil.setSerializeWithXss4j(null);
+        }
+    }
+
+    private void reallyDoTestOsdSignatureError() throws Exception {
+        Document doc = XmlUtil.stringToDocument(OSD_XML);
+
+        DecorationRequirements dreq = new DecorationRequirements();
+        Pair<X509Certificate,PrivateKey> key = new TestCertificateGenerator().generateWithKey();
+        dreq.setSenderMessageSigningCertificate(key.left);
+        dreq.setSenderMessageSigningPrivateKey(key.right);
+        dreq.getElementsToSign().add(SoapUtil.getBodyElement(doc));
+        final Message before = new Message(doc);
+        new WssDecoratorImpl().decorateMessage(before, dreq);
+
+        final Document beforeDoc = before.getXmlKnob().getDocumentReadOnly();
+        assertNotNull(beforeDoc);
+        final String beforeDocXml = XmlUtil.nodeToString(beforeDoc);
+        Message req = new Message(XmlUtil.stringToDocument(beforeDocXml));
+
+        ProcessorResult pr = new WssProcessorImpl(req).processMessage();
+
+        Element reqBody = SoapUtil.getBodyElement(req.getXmlKnob().getDocumentReadOnly());
+        SignedElement[] signed = pr.getElementsThatWereSigned();
+        assertTrue(isSigned(signed, reqBody));
+    }
+
+    private static boolean isSigned(SignedElement[] signed, Element wut) {
+        for (SignedElement se : signed) {
+            if (se.asElement() == wut)
+                return true;
+        }
+        return false;
     }
 }
