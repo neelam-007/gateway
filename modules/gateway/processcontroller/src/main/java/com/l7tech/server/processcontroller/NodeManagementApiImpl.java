@@ -239,7 +239,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
             NodeConfigurationManager.createDatabase(nodeName, dbconfig, dbHosts, adminLogin, adminPassword, clusterHostname);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Error creating database for '"+nodeName+"'.", e );
-            throw new DatabaseCreationException("Unable to create database '"+ExceptionUtils.getMessage(e)+"'" );
+            throw new DatabaseCreationException(ExceptionUtils.getMessage(e));
         }
     }
 

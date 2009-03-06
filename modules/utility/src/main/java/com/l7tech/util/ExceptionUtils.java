@@ -26,6 +26,7 @@ import java.util.logging.Logger;
  * Time: 12:03:26 PM
  */
 public class ExceptionUtils {
+    private static final String MYSQL_COMMUNICATIONS_EXCEPTION_CLASSNAME = "com.mysql.jdbc.CommunicationsException";
 
     //- PUBLIC
 
@@ -134,6 +135,12 @@ public class ExceptionUtils {
             if (t instanceof UnknownHostException) {
                 UnknownHostException o = (UnknownHostException)t;
                 msg = "Unknown host: " + o.getMessage();
+            }
+
+            //this is a special case where the exception came from the MySQL driver and the message contains a
+            //a stack trace. In this case, we don't display the stack trace part of the message.
+            if (MYSQL_COMMUNICATIONS_EXCEPTION_CLASSNAME.equals(t.getClass().getName())) {
+                msg = "Error communicating with the database. Ensure the database is running and the correct credentials are supplied";
             }
 
             if (msg != null && (n < 1 || msg.length() >= n))

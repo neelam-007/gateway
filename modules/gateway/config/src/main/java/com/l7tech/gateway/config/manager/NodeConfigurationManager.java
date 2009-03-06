@@ -220,7 +220,7 @@ public class NodeConfigurationManager {
 
         DBActions.DBActionsResult res = dbActions.createDb(localConfig, hosts, new File(nodesDir,pathToSqlScript).getAbsolutePath(), false);
         if ( res.getStatus() != DBActions.StatusType.SUCCESS ) {
-            throw new CausedIOException(MessageFormat.format("Cannot create database ''{1}'' [code:{0}]", res.getStatus().getCode(), res.getErrorMessage()), res.getThrown());
+            throw new CausedIOException(MessageFormat.format("Cannot create database: ''{1}'' [code:{0}]", res.getStatus().getCode(), res.getErrorMessage()), res.getThrown());
         }
 
         AccountReset.resetAccount(databaseConfig, adminLogin, adminPassword);
