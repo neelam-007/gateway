@@ -28,6 +28,7 @@ import java.io.Serializable;
  *   <ul>
  *   <li>Set of all the headers</li>
  *   <li>Migration Mappings</li>
+ *   <li>Migration options configured in the EM</li>
  *   </ul>
  * <li>Exported Items (entity values)</li>
  * </ul>
