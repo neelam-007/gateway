@@ -1049,10 +1049,7 @@
         <constructor-arg ref="applicationEventProxy"/>
     </bean>
 
-    <bean id="emailListenerManager" class="com.l7tech.server.transport.email.EmailListenerManagerImpl" parent="hibernateBean">
-        <constructor-arg ref="serverConfig"/>
-        <constructor-arg ref="applicationEventProxy"/>
-    </bean>
+    <bean id="emailListenerManager" class="com.l7tech.server.transport.email.EmailListenerManagerImpl" parent="hibernateBean"/>
 
     <bean id="ssgKeyStoreManager" class="com.l7tech.server.security.keystore.SsgKeyStoreManagerImpl" depends-on="gatewaySanityChecker">
         <constructor-arg ref="sharedKeyManager"/>

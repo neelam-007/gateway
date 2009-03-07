@@ -1,30 +1,26 @@
 package com.l7tech.server.transport.email;
 
-import com.l7tech.objectmodel.*;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.HibernateEntityManager;
-import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailListenerState;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.objectmodel.*;
+import com.l7tech.server.HibernateEntityManager;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.ApplicationEvent;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
-import org.hibernate.Session;
-import org.hibernate.HibernateException;
-import org.hibernate.Criteria;
-import org.hibernate.criterion.Restrictions;
 
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.sql.SQLException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Manages EmailListener objects. Can persist them and look them up.
@@ -35,29 +31,12 @@ public class EmailListenerManagerImpl
 {
     protected static final Logger logger = Logger.getLogger(EmailListenerManagerImpl.class.getName());
 
-    private final ServerConfig serverConfig;
-    @SuppressWarnings( { "FieldCanBeLocal" } )
-    private final ApplicationListener applicationListener; // need reference to prevent listener gc
-    private final Map<Long, EmailListener> knownEmailListeners = new LinkedHashMap<Long, EmailListener>();
-
     private static final String COLUMN_NODEID = "ownerNodeId";
-    private static final String COLUMN_OID = "oid";
     private static final String COLUMN_LAST_POLL_TIME = "lastPollTime";
     private static final String COLUMN_EMAIL_LISTENER_ID = "email_listener_id";
 
     private static final String HQL_UPDATE_TIME_BY_ID = "UPDATE VERSIONED " + EmailListenerState.class.getName() +
                     " set " + COLUMN_LAST_POLL_TIME + " = :"+COLUMN_LAST_POLL_TIME+" where " + COLUMN_EMAIL_LISTENER_ID + " = :"+ COLUMN_EMAIL_LISTENER_ID;
-
-    public EmailListenerManagerImpl(ServerConfig serverConfig, ApplicationEventProxy eventProxy) {
-        this.serverConfig = serverConfig;
-        this.applicationListener = new ApplicationListener() {
-            public void onApplicationEvent( ApplicationEvent event ) {
-                handleEvent(event);
-            }
-        };
-
-        eventProxy.addApplicationListener( applicationListener );
-    }
 
     public Class<? extends Entity> getImpClass() {
         return EmailListener.class;
@@ -74,50 +53,6 @@ public class EmailListenerManagerImpl
     @Override
     public EntityType getEntityType() {
         return EntityType.EMAIL_LISTENER;
-    }
-
-    @Override
-    protected void initDao() throws Exception {
-        super.initDao();
-
-        // Initialize known connections
-        for (EmailListener emailListener : findAll()) {
-            if (emailListener.isActive()) knownEmailListeners.put(emailListener.getOid(), emailListener);
-        }
-    }
-
-    private void handleEvent(ApplicationEvent event) {
-        if (!(event instanceof EntityInvalidationEvent))
-            return;
-        EntityInvalidationEvent evt = (EntityInvalidationEvent)event;
-        if (!EmailListener.class.isAssignableFrom(evt.getEntityClass()))
-            return;
-        long[] ids = evt.getEntityIds();
-        char[] ops = evt.getEntityOperations();
-        for (int i = 0; i < ops.length; i++) {
-            char op = ops[i];
-            long id = ids[i];
-
-            switch (op) {
-                case EntityInvalidationEvent.DELETE:
-                    knownEmailListeners.remove(id);
-                    break;
-                default:
-                    onEmailListenerChanged(id);
-            }
-        }
-    }
-
-    private void onEmailListenerChanged(long id) {
-        try {
-            EmailListener emailListener = findByPrimaryKey(id);
-            if (emailListener != null && emailListener.isActive())
-                knownEmailListeners.put(id, emailListener);
-            else
-                knownEmailListeners.remove(id);
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to find just-added or -updated connector with oid " + id + ": " + ExceptionUtils.getMessage(e), e);
-        }
     }
 
     public void updateState(final EmailListenerState state) throws UpdateException {
@@ -138,6 +73,7 @@ public class EmailListenerManagerImpl
     public List<EmailListener> getEmailListenersForNode(final String clusterNodeId) throws FindException {
         final List<EmailListener> emailListeners;
         try {
+            //noinspection unchecked
             emailListeners = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
                 protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria crit = session.createCriteria(EmailListener.class, "el");
@@ -166,6 +102,7 @@ public class EmailListenerManagerImpl
                     crit.add(Restrictions.ne("state." + COLUMN_NODEID, clusterNodeId));       // It's someone else's subscription
 
                     long now = System.currentTimeMillis();
+                    //noinspection unchecked
                     List<EmailListener> results = crit.list();
                     if (results != null && results.size() > 0) {
                         List<EmailListener> newResults = new ArrayList<EmailListener>();
