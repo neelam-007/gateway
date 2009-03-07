@@ -5,13 +5,13 @@ import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.AbstractPhaseInterceptor;
 import org.apache.cxf.phase.Phase;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 /**
  * CXF Interceptor that enforces ESM or localhost access controls.
@@ -56,7 +56,7 @@ public class SecurityInterceptor extends AbstractPhaseInterceptor<Message> {
         }
 
         if (!configService.getTrustedRemoteNodeManagementCerts().contains(certificate)) {
-            logger.info( "Client certificate was not trusted for remote management '" + certificate.getSubjectDN().toString() + "' from '"+req.getRemoteAddr()+"'." );
+            logger.fine( "Client certificate was not trusted for remote management '" + certificate.getSubjectDN().toString() + "' from '"+req.getRemoteAddr()+"'." );
             throw new IllegalArgumentException(AUTH_FAILURE);
         }
 

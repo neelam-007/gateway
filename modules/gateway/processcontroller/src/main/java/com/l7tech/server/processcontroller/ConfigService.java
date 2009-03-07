@@ -24,9 +24,10 @@ public interface ConfigService {
     String HOSTPROPERTIES_SSL_KEYSTORETYPE = "host.controller.keystore.type";
     String HOSTPROPERTIES_SSL_KEYSTOREALIAS = "host.controller.keystore.alias";
     String HOSTPROPERTIES_JRE = "host.jre";
-    String HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_FILE = "host.controller.remoteNodeManagement.truststore.file";
-    String HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_TYPE = "host.controller.remoteNodeManagement.truststore.type";
-    String HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_PASSWORD = "host.controller.remoteNodeManagement.truststore.password";
+    String HOSTPROPERTIES_NODEMANAGEMENT_ENABLED = "host.controller.remoteNodeManagement.enabled";
+    String HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_FILE = "host.controller.remoteNodeManagement.truststore.file";
+    String HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_TYPE = "host.controller.remoteNodeManagement.truststore.type";
+    String HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_PASSWORD = "host.controller.remoteNodeManagement.truststore.password";
     String HOSTPROPERTIES_TYPE = "host.type";
     String HOSTPROPERTIES_ID = "host.id";
 

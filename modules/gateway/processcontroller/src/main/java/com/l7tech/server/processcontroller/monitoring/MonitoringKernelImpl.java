@@ -11,6 +11,7 @@ import com.l7tech.server.processcontroller.monitoring.notification.Notifier;
 import com.l7tech.server.processcontroller.monitoring.notification.NotifierFactory;
 import com.l7tech.server.processcontroller.monitoring.sampling.PropertySampler;
 import com.l7tech.server.processcontroller.monitoring.sampling.PropertySamplerFactory;
+import com.l7tech.server.processcontroller.monitoring.sampling.PropertySamplingException;
 import com.l7tech.util.*;
 
 import javax.annotation.PostConstruct;
@@ -279,6 +280,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
     private static class TransientStatus {
         private final Set<Long> badTriggerOids = new HashSet<Long>();
         private MonitoredStatus.StatusType status = MonitoredStatus.StatusType.OK;
+        private MonitoredPropertyStatus.ValueType valueType;
         private Serializable value;
         private Long timestamp;
         public String componentId;
@@ -323,8 +325,16 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                 final Pair<Long, ? extends Serializable> lastSample = pstate.getLastSample();
                 if (lastSample == null) {
                     logger.fine("No sample values available for " + prop);
+                    transientStatus.valueType = MonitoredPropertyStatus.ValueType.NO_DATA_YET;
                     transientStatus.timestamp = now;
                     continue;
+                } else {
+                    Pair<Long, PropertySamplingException> lastFailure = pstate.getLastFailure();
+                    if (lastFailure != null && lastFailure.left > lastSample.left) {
+                        transientStatus.valueType = MonitoredPropertyStatus.ValueType.FAILED;
+                    } else {
+                        transientStatus.valueType = MonitoredPropertyStatus.ValueType.OK;
+                    }
                 }
                 transientStatus.timestamp = transientStatus.timestamp == null || transientStatus.timestamp == 0 ? lastSample.left : Math.min(lastSample.left, transientStatus.timestamp);
                 transientStatus.value = lastSample.right;
@@ -346,7 +356,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
             final MonitorableProperty prop = entry.getKey();
             final TransientStatus transientStatus = entry.getValue();
             final Serializable value = transientStatus.value;
-            result.add(new MonitoredPropertyStatus(prop, transientStatus.componentId, transientStatus.timestamp, transientStatus.status, transientStatus.badTriggerOids, value == null ? null : value.toString()));
+            result.add(new MonitoredPropertyStatus(prop.getComponentType(), prop.getName(), transientStatus.componentId, transientStatus.timestamp, transientStatus.status, transientStatus.badTriggerOids, value == null ? null : value.toString(), transientStatus.valueType));
         }
 
         return result;

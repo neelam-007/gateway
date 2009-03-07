@@ -3,7 +3,11 @@
  */
 package com.l7tech.server.management.api.monitoring;
 
+import com.l7tech.server.management.config.monitoring.ComponentType;
+
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlEnum;
 import java.util.Set;
 
 /**
@@ -11,15 +15,29 @@ import java.util.Set;
  */
 @XmlRootElement
 public class MonitoredPropertyStatus extends MonitoredStatus {
+    @XmlEnum
+    public enum ValueType {
+        /** The value was sampled correctly */
+        OK,
+
+        /** The PC has no record of a value for this property */
+        NO_DATA_YET,
+
+        /** The property could not be sampled correctly, the value might be stale */
+        FAILED
+    }
+
     private String value;
+    private ValueType valueType;
 
     @Deprecated // XML only
     protected MonitoredPropertyStatus() {
     }
 
-    public MonitoredPropertyStatus(MonitorableProperty property, final String componentId, long timestamp, StatusType status, Set<Long> triggerOids, String value) {
-        super(property.getComponentType(), property.getName(), componentId, timestamp, status, triggerOids);
+    public MonitoredPropertyStatus(ComponentType type, String monitorableId, String componentId, long timestamp, StatusType status, Set<Long> triggerOids, String value, ValueType valueType) {
+        super(type, monitorableId, componentId, timestamp, status, triggerOids);
         this.value = value;
+        this.valueType = valueType;
     }
 
     public String getValue() {
@@ -31,10 +49,20 @@ public class MonitoredPropertyStatus extends MonitoredStatus {
         this.value = value;
     }
 
+    @XmlAttribute
+    public ValueType getValueType() {
+        return valueType;
+    }
+
+    public void setValueType(ValueType valueType) {
+        this.valueType = valueType;
+    }
+
     @Override
     public String toString() {
         return "MonitoredPropertyStatus{" +
                 "value='" + value + '\'' +
+                ", valueType=" + valueType +
                 "} " + super.toString();
     }
 }

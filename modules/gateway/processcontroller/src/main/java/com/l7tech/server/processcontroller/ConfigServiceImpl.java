@@ -283,7 +283,13 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     private Set<X509Certificate> readTrustedNodeManagementCerts(Properties hostProps) throws GeneralSecurityException, IOException {
-        final String trustStoreFilename = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_FILE);
+        final String trustStoreEnabled = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_ENABLED);
+        if (!"true".equalsIgnoreCase(trustStoreEnabled)) {
+            logger.info("Remote node management disabled");
+            return Collections.emptySet();
+        }
+
+        final String trustStoreFilename = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_FILE);
         String trustStoreType;
         File trustStoreFile;
         if (trustStoreFilename == null) {
@@ -297,10 +303,10 @@ public class ConfigServiceImpl implements ConfigService {
             trustStoreFile = new File(trustStoreFilename);
             if (!trustStoreFile.exists()) throw new IllegalArgumentException("Can't find remote node management truststore at " + trustStoreFile.getAbsolutePath());
 
-            trustStoreType = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_TYPE, "PKCS12");
+            trustStoreType = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_TYPE, "PKCS12");
         }
 
-        final String encryptedPassword = getRequiredProperty(hostProps, HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_PASSWORD);
+        final String encryptedPassword = getRequiredProperty(hostProps, HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_PASSWORD);
         char[] keystorePass = masterPasswordManager.decryptPasswordIfEncrypted(encryptedPassword);
 
         final KeyStore ks = KeyStore.getInstance(trustStoreType);
@@ -453,21 +459,31 @@ public class ConfigServiceImpl implements ConfigService {
 
     @Override
     public void pushMonitoringConfiguration(final MonitoringConfiguration config) {
-        this.responsibleForClusterMonitoring = config.isResponsibleForClusterMonitoring();
+        this.responsibleForClusterMonitoring = config != null && config.isResponsibleForClusterMonitoring();
         this.currentMonitoringConfiguration = config;
 
         monitoringKernel.setConfiguration(config);
 
         if (monitoringConfigFile == null) return;
-        
-        try {
-            FileUtils.saveFileSafely(monitoringConfigFile.getPath(), new FileUtils.Saver() {
-                public void doSave(FileOutputStream fos) throws IOException {
-                    JAXB.marshal(config, fos);
+
+        if (config == null) {
+            try {
+                if (!FileUtils.deleteFileSafely(monitoringConfigFile.getPath())) {
+                    logger.log(Level.WARNING, "Unable to delete unset monitoring configuration");
                 }
-            });
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Couldn't save current monitoring configuration; it will need to be reconfigured on startup", e);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to delete unset monitoring configuration", e);
+            }
+        } else {
+            try {
+                FileUtils.saveFileSafely(monitoringConfigFile.getPath(), new FileUtils.Saver() {
+                    public void doSave(FileOutputStream fos) throws IOException {
+                        JAXB.marshal(config, fos);
+                    }
+                });
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Couldn't save current monitoring configuration; it will need to be reconfigured on startup", e);
+            }
         }
     }
 }
