@@ -120,14 +120,17 @@ public class MonitoringKernelImpl implements MonitoringKernel {
     }
 
     public synchronized void setConfiguration(MonitoringConfiguration newConfiguration) {
-        logger.info("setConfiguration" + CollectionUtils.mkString(newConfiguration.getTriggers(), "(", ", ", ")", new Functions.Unary<String, Trigger>() {
-            @Override
-            public String call(Trigger trigger) {
-                return trigger.getMonitorable().toString();
-            }
-        }));
+        if (newConfiguration == null) {
+            logger.info("setConfiguration(null)");
+        } else {
+            logger.info("setConfiguration" + CollectionUtils.mkString(newConfiguration.getTriggers(), "(", ", ", ")", new Functions.Unary<String, Trigger>() {
+                @Override
+                public String call(Trigger trigger) {
+                    return trigger.getMonitorable().toString();
+                }
+            }));
+        }
 
-        // TODO simplfy
         if (newConfiguration != null) {
             if (currentConfig != null) {
                 if (currentConfig.equals(newConfiguration)) {
@@ -139,16 +142,28 @@ public class MonitoringKernelImpl implements MonitoringKernel {
             }
         } else if (currentConfig != null) {
             logger.info("Monitoring configuration has been unset; all monitoring activities will now stop.");
+
+            notificationQueue.clear();
+
+            if (currentTriggerStates != null) currentTriggerStates.clear();
+            if (currentNotificationStates != null) currentNotificationStates.clear();
+
             if (currentPropertyStates != null) {
                 for (PropertyState<?> state : currentPropertyStates.values()) {
                     logger.info("Stopping monitoring of " + state.monitorable);
                     state.close();
                 }
-                kickTheSampler();
+                currentPropertyStates.clear();
             }
 
-            // TODO kill the notification tasks
-            kickTheNotifier();
+            if (currentEventStates != null) {
+                for (EventState state : currentEventStates.values()) {
+                    logger.info("Stopping monitoring of " + state.monitorable);
+                    state.close();
+                }
+                currentEventStates.clear();
+            }
+
             return;
         } else {
             logger.info("No monitoring configuration is available yet; will check again later");
@@ -293,9 +308,14 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
         final Map<MonitorableProperty, TransientStatus> stati = new HashMap<MonitorableProperty, TransientStatus>();
 
-        final Map<MonitorableProperty, PropertyState<?>> pstates = currentPropertyStates;
-        final Map<Long, TriggerState> tstates = currentTriggerStates;
-        final Map<Long, NotificationState> nstates = currentNotificationStates;
+        final Map<MonitorableProperty, PropertyState<?>> pstates;
+        final Map<Long, TriggerState> tstates;
+        final Map<Long, NotificationState> nstates;
+        synchronized (MonitoringKernelImpl.this) {
+            pstates = currentPropertyStates;
+            tstates = currentTriggerStates;
+            nstates = currentNotificationStates;
+        }
 
         final long now = System.currentTimeMillis();
 
@@ -429,8 +449,14 @@ public class MonitoringKernelImpl implements MonitoringKernel {
             try {
                 final long now = System.currentTimeMillis();
 
-                final Map<MonitorableProperty, PropertyState<?>> pstates = currentPropertyStates;
-                final Map<Long, TriggerState> tstates = currentTriggerStates;
+                final Map<MonitorableProperty, PropertyState<?>> pstates;
+                final Map<Long, TriggerState> tstates;
+
+                synchronized (MonitoringKernelImpl.this) {
+                    pstates = currentPropertyStates;
+                    tstates = currentTriggerStates;
+                }
+
                 if (tstates == null || pstates == null) {
                     logger.fine("No configuration; skipping trigger condition check");
                     return;
@@ -541,8 +567,12 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
                     final InOut inOut = got.getInOut();
 
-                    final Map<Long, TriggerState> tstates = currentTriggerStates;
-                    final Map<Long, NotificationState> nstates = currentNotificationStates;
+                    final Map<Long, TriggerState> tstates;
+                    final Map<Long, NotificationState> nstates;
+                    synchronized (MonitoringKernelImpl.this) {
+                        tstates = currentTriggerStates;
+                        nstates = currentNotificationStates;
+                    }
                     if (tstates == null) continue;
 
                     for (Long triggerOid : triggerOids) {
@@ -598,7 +628,9 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                             }
                         }
                     }
-                    MonitoringKernelImpl.this.currentNotificationStates = nstates;
+                    synchronized (MonitoringKernelImpl.this) {
+                        MonitoringKernelImpl.this.currentNotificationStates = nstates;
+                    }
                 } catch (InterruptedException e) {
                     logger.info("Interrupted waiting for notification queue");
                     Thread.currentThread().interrupt();

@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.NavigableSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.io.IOException;
 
 public class EventState extends MonitorState<MonitorableEvent> {
     // TODO is there some kind of payload for the event...?
@@ -34,5 +33,5 @@ public class EventState extends MonitorState<MonitorableEvent> {
     }
 
     @Override
-    public void close() throws IOException { }
+    public void close() { }
 }

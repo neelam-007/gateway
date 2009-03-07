@@ -98,6 +98,12 @@ public class MonitoringKernelTest {
 
     @Test
     @Ignore("doesn't work unless a PC is running at localhost")
+    public void testUnsetConfiguration() throws Exception {
+        getApi().pushMonitoringConfiguration(null);
+    }
+
+    @Test
+    @Ignore("doesn't work unless a PC is running at localhost")
     public void testGetCurrentProperties() throws Exception {
         MonitoringApi api = getApi();
         List<MonitoredPropertyStatus> stats = api.getCurrentPropertyStatuses();
