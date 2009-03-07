@@ -111,7 +111,11 @@ public class Exporter extends ImportExportUtility {
         if (outputpathval == null) {
             logger.info("no target image path specified");
             throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ", required for exporting image");
+        } else {
+            //fail if file exists
+            verifyFileExistence(outputpathval, true);
         }
+
         if (!testCanWriteSilently(outputpathval)) {            
             throw new IOException("cannot write image to " + outputpathval);
         }
@@ -123,7 +127,12 @@ public class Exporter extends ImportExportUtility {
         }
 
         //check whether mapping option was used
-        if(arguments.get(MAPPING_PATH.name) != null) mappingEnabled = true;
+        if(arguments.get(MAPPING_PATH.name) != null) {
+            mappingEnabled = true;
+
+            //fail if file exists
+            verifyFileExistence(arguments.get(MAPPING_PATH.name), true);
+        }
 
         File confDir = new File(flasherHome, FLASHER_CHILD_DIR);
         tmpDirectory = createTmpDirectory();
