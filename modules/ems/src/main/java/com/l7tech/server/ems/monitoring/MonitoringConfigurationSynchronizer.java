@@ -14,10 +14,11 @@ import com.l7tech.server.ems.enterprise.SsgNode;
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayException;
 import com.l7tech.server.ems.gateway.ProcessControllerContext;
+import com.l7tech.server.event.EntityChangeSet;
+import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.PersistenceEvent;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.event.system.Started;
-import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 import com.l7tech.server.management.api.monitoring.MonitorableProperty;
 import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
@@ -112,11 +113,16 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
                 suspendBackoffForNextRun.set(true);
             } else if (entity instanceof SsgCluster) {
                 final SsgCluster cluster = (SsgCluster) entity;
+                if (event instanceof Deleted)
+                    for (SsgNode node : cluster.getNodes())
+                        onNodeDeleted(node);
                 setClusterDirty(cluster.getGuid(), cluster.getName());
                 suspendBackoffForNextRun.set(true);
             } else if (entity instanceof SsgNode) {
                 if (event instanceof Updated && isIgnoreableUpdateForSsgNode((Updated) event))
                     return;
+                if (event instanceof Deleted)
+                    onNodeDeleted((SsgNode)entity); // Turn off monitoring config before we forget all about node
                 final SsgCluster cluster = ((SsgNode) entity).getSsgCluster();
                 setClusterDirty(cluster.getGuid(), cluster.getName());
                 suspendBackoffForNextRun.set(true);
@@ -138,6 +144,36 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
             if (Component.ENTERPRISE_MANAGER.equals(started.getComponent()))
                 start();
         }
+    }
+
+    private static final String NODEINFO = "{0} for node {1} ({2}) of cluster {3} ({4})";
+    private static final String NOFINALPUSH = "Unable to push down monitoring configuration to " + NODEINFO;
+    private static final String NOFINALPUSHNET = NOFINALPUSH + " due to network error";
+
+    // Schedule a one-shot task to tell the specified node to forget its monitoring configuration.
+    private void onNodeDeleted(final SsgNode node) {
+        timer.schedule(new TimerTask() {
+            public void run() {
+                final SsgCluster cluster = node.getSsgCluster();
+                final String[] nodeInfo = { node.getIpAddress(), node.getName(), node.getGuid(), cluster.getName(), cluster.getGuid() };
+                try {
+                    logger.log(Level.INFO, "Ordering final purge of monitoring configuration on " + NODEINFO, nodeInfo);
+                    gatewayContextFactory.createProcessControllerContext(node).getMonitoringApi().pushMonitoringConfiguration(null);
+                } catch (IOException e) {
+                    logPush(Level.INFO, NOFINALPUSH, nodeInfo, e, false);
+                } catch (GatewayException e) {
+                    logPush(Level.WARNING, NOFINALPUSH, nodeInfo, e, false);
+                } catch (javax.xml.ws.ProtocolException e) {
+                    if ( ProcessControllerContext.isNetworkException(e) ) {
+                        logPush(Level.WARNING, NOFINALPUSHNET, nodeInfo, ExceptionUtils.unnestToRoot(e), false);
+                    } else {
+                        logPush(Level.WARNING, NOFINALPUSH, nodeInfo, e, false);
+                    }
+                } catch (Throwable t) {
+                    logPush(Level.WARNING, NOFINALPUSH, nodeInfo, t, true);
+                }
+            }
+        }, DELAY_BETWEEN_CONFIG_PUSHES + DELAY_UNTIL_FIRST_CONFIG_PUSH);
     }
 
     private boolean isIgnoreableUpdateForSsgNode(Updated updated) {
@@ -207,7 +243,6 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         return hugeSuccess;
     }
 
-    private static final String NODEINFO = "{0} for node {1} ({2}) of cluster {3} ({4})";
     private static final String NOPUSH = "Unable to push down monitoring configuration to " + NODEINFO;
     private static final String NOPUSHNET = NOPUSH + " due to network error";
 
