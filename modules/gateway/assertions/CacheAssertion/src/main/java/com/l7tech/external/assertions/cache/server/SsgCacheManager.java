@@ -24,13 +24,11 @@ public class SsgCacheManager {
 
     private final StashManagerFactory stashManagerFactory;
     private final ConcurrentHashMap<String, SsgCache> cachesByName = new ConcurrentHashMap<String, SsgCache>();
-    private final ApplicationListener closeListener;
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     private SsgCacheManager(StashManagerFactory stashManagerFactory, ApplicationEventProxy appEventProxy) {
         this.stashManagerFactory = stashManagerFactory;
-        this.closeListener = makeCloseListener();
-        appEventProxy.addApplicationListener(closeListener);
+        appEventProxy.addApplicationListener(makeCloseListener());
     }
 
     private ApplicationListener makeCloseListener() {

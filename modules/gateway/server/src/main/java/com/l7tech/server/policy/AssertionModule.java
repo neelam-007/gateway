@@ -105,7 +105,7 @@ public class AssertionModule implements Closeable {
     /**
      * @return the ClassLoader providing classes for this jarfile
      */
-    AssertionModuleClassLoader getModuleClassLoader() {
+    public AssertionModuleClassLoader getModuleClassLoader() {
         return classLoader;
     }
 

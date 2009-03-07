@@ -51,14 +51,13 @@ public class SinkManagerImpl
         this.serverConfig = serverConfig;
         this.syslogManager = syslogManager;
         this.trafficLogger = trafficLogger;
-        this.applicationListener = new ApplicationListener() {
+
+        eventProxy.addApplicationListener(new ApplicationListener() {
             @Override
-            public void onApplicationEvent( ApplicationEvent event ) {
+            public void onApplicationEvent(ApplicationEvent event) {
                 handleEvent(event);
             }
-        };
-
-        eventProxy.addApplicationListener( applicationListener );
+        });
     }
 
     /**
@@ -233,8 +232,6 @@ public class SinkManagerImpl
 
     private final DispatchingMessageSink dispatchingSink = new DispatchingMessageSink();
     private final MessageSink publishingSink = new DelegatingMessageSink(dispatchingSink);
-    @SuppressWarnings( { "FieldCanBeLocal" } )
-    private final ApplicationListener applicationListener; // need reference to prevent listener gc
     private final ServerConfig serverConfig;
         private final SyslogManager syslogManager;
     private final TrafficLogger trafficLogger;

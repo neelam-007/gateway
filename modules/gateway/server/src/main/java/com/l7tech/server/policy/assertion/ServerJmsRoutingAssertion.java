@@ -65,8 +65,6 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     private final JmsConnectionManager jmsConnectionManager;
     private final StashManagerFactory stashManagerFactory;
     private final JmsPropertyMapper jmsPropertyMapper;
-    @SuppressWarnings({"FieldCanBeLocal"}) // To prevent the only JmsInvalidator instance from being GC'd 
-    private final JmsInvalidator jmsInvalidator;
     private final SignerInfo senderVouchesSignerInfo;
 
     private final Object needsUpdateSync = new Object();
@@ -85,9 +83,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         this.jmsConnectionManager = (JmsConnectionManager)spring.getBean("jmsConnectionManager");
         this.stashManagerFactory = (StashManagerFactory)spring.getBean("stashManagerFactory", StashManagerFactory.class);
         this.jmsPropertyMapper = (JmsPropertyMapper)spring.getBean("jmsPropertyMapper", JmsPropertyMapper.class);
-        this.jmsInvalidator = new JmsInvalidator(this);
         ApplicationEventProxy aep = (ApplicationEventProxy) spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
-        aep.addApplicationListener(jmsInvalidator);
+        aep.addApplicationListener(new JmsInvalidator(this));
         SignerInfo signerInfo = null;
         try {
             DefaultKey ku = (DefaultKey)spring.getBean("defaultKey", DefaultKey.class);

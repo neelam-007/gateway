@@ -29,21 +29,18 @@ public class SsgConnectorManagerImpl
     protected static final Logger logger = Logger.getLogger(SsgConnectorManagerImpl.class.getName());
 
     private final ServerConfig serverConfig;
-    @SuppressWarnings( { "FieldCanBeLocal" } )
-    private final ApplicationListener applicationListener; // need reference to prevent listener gc
     private final Map<Long, SsgConnector> knownConnectors = new LinkedHashMap<Long, SsgConnector>();
     private final Map<Endpoint, SsgConnector> httpConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
     private final Map<Endpoint, SsgConnector> httpsConnectorsByService = Collections.synchronizedMap(new HashMap<Endpoint, SsgConnector>());
 
     public SsgConnectorManagerImpl(ServerConfig serverConfig, ApplicationEventProxy eventProxy) {
         this.serverConfig = serverConfig;
-        this.applicationListener = new ApplicationListener() {
-            public void onApplicationEvent( ApplicationEvent event ) {
+
+        eventProxy.addApplicationListener(new ApplicationListener() {
+            public void onApplicationEvent(ApplicationEvent event) {
                 handleEvent(event);
             }
-        };
-
-        eventProxy.addApplicationListener( applicationListener );
+        });
     }
 
     public Class<? extends Entity> getImpClass() {
