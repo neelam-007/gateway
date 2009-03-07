@@ -1,13 +1,12 @@
 package com.l7tech.external.assertions.ipm.server;
 
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.external.assertions.ipm.server.resources.CompiledTemplate;
+import com.l7tech.util.Codegen;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.ResourceUtils;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.IOUtils;
-import com.l7tech.external.assertions.ipm.server.resources.CompiledTemplate;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -16,7 +15,6 @@ import javax.tools.Diagnostic;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
@@ -30,8 +28,6 @@ public class TemplateCompiler {
     private static final AtomicLong counter = new AtomicLong(100000);
     private static final String PACKAGE_NAME = CompiledTemplate.class.getPackage().getName();
     private static final String COMPILED_TEMPLATE_CLASSNAME = CompiledTemplate.class.getName();
-    private static final String COMPILED_TEMPLATE_EX_INPUT_CLASSNAME = CompiledTemplate.InputBufferEmptyException.class.getName();
-    private static final String COMPILED_TEMPLATE_EX_OUTPUT_CLASSNAME = CompiledTemplate.OutputBufferFullException.class.getName();
     private static final Pattern PICTURE_PATTERN = Pattern.compile("(.+?)\\((\\d+)\\)");
 
     private final String templateStr;
@@ -79,10 +75,10 @@ public class TemplateCompiler {
 
     private static CompiledTemplate compileSource(String templateClassName, String javaSource) throws TemplateCompilerException {
         Codegen codegen = new Codegen(templateClassName, javaSource);
-        codegen.addClassFile(COMPILED_TEMPLATE_CLASSNAME, getClassSource(COMPILED_TEMPLATE_CLASSNAME));
-        codegen.addClassFile(COMPILED_TEMPLATE_EX_INPUT_CLASSNAME, getClassSource(COMPILED_TEMPLATE_EX_INPUT_CLASSNAME));
-        codegen.addClassFile(COMPILED_TEMPLATE_EX_OUTPUT_CLASSNAME, getClassSource(COMPILED_TEMPLATE_EX_OUTPUT_CLASSNAME));
         try {
+            codegen.addLoadableClass(CompiledTemplate.class);
+            codegen.addLoadableClass(CompiledTemplate.InputBufferEmptyException.class);
+            codegen.addLoadableClass(CompiledTemplate.OutputBufferFullException.class);
             Class templateClass = codegen.compile(CompiledTemplate.class.getClassLoader());
             Object obj = templateClass.newInstance();
             if (!(obj instanceof CompiledTemplate))
@@ -96,6 +92,8 @@ public class TemplateCompiler {
             throw new TemplateCompilerException("Compilation failed to produce a usable class: " + ExceptionUtils.getMessage(e), e);
         } catch (InstantiationException e) {
             throw new TemplateCompilerException("Compilation failed to produce a usable class: " + ExceptionUtils.getMessage(e), e);
+        } catch (IOException e) {
+            throw new TemplateCompilerException("Compilation failed because a needed resource could not be read: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
@@ -303,21 +301,6 @@ public class TemplateCompiler {
             return XmlUtil.stringToDocument(template);
         } catch (SAXException e) {
             throw new TemplateCompilerException("Template is not well formed XML: " + ExceptionUtils.getMessage(e), e);
-        }
-    }
-
-    private static byte[] getClassSource(final String name) throws TemplateCompilerException {
-        final String resourcePath = name.replace( '.', '/' ) + ".class";
-        InputStream is = null;
-        try {
-            is = CompiledTemplate.class.getClassLoader().getResourceAsStream(resourcePath);
-            if (is == null)
-                throw new TemplateCompilerException("Unable to find CompiledTemplate resource: " + resourcePath);
-            return IOUtils.slurpStream(is);
-        } catch (IOException e) {
-            throw new TemplateCompilerException("Unable to read resource: " + resourcePath + ": " + ExceptionUtils.getMessage(e), e);
-        } finally {
-            ResourceUtils.closeQuietly(is);
         }
     }
 

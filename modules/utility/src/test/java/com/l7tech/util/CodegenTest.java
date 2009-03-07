@@ -1,16 +1,10 @@
-package com.l7tech.external.assertions.ipm.server;
+package com.l7tech.util;
 
-import com.l7tech.common.io.NullOutputStream;
-import org.junit.After;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
+import static org.junit.Assert.*;
 
 import javax.tools.Diagnostic;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.util.logging.Logger;
 
 /**
@@ -28,7 +22,7 @@ public class CodegenTest {
     }
 
     private static final String INTERFACE_SOURCE =
-            "package com.l7tech.external.assertions.ipm.server;\n" +
+            "package com.l7tech.util;\n" +
             "import java.io.PrintStream;\n" +
             "public interface CodegenTestThingPrinter {\n" +
             "    /**\n" +
@@ -47,8 +41,8 @@ public class CodegenTest {
         PrintWriter out = null;
         try {
             out = new PrintWriter(writer);
-            out.println("package com.l7tech.external.assertions.ipm.server;");
-            out.println("public class DynamicThingPrinter implements com.l7tech.external.assertions.ipm.server.CodegenTestThingPrinter {");
+            out.println("package com.l7tech.util;");
+            out.println("public class DynamicThingPrinter implements com.l7tech.util.CodegenTestThingPrinter {");
             out.println("  public String printThing(java.io.PrintStream out, String suffix) {");
             out.println("    String ret = \"Hello from generated code!  Suffix=\" + suffix;");
             out.println("    out.println(ret);");
@@ -59,14 +53,16 @@ public class CodegenTest {
             if (out != null) out.close();
         }
 
-        final Codegen codegen = new Codegen("com.l7tech.external.assertions.ipm.server.DynamicThingPrinter", writer.toString());
+        final Codegen codegen = new Codegen("com.l7tech.util.DynamicThingPrinter", writer.toString());
         codegen.addJavaFile(CodegenTestThingPrinter.class.getName(), INTERFACE_SOURCE);
 
         try {
             Class thingClass = codegen.compile(getClass().getClassLoader());
             CodegenTestThingPrinter thingPrinter = ((CodegenTestThingPrinter)thingClass.newInstance());
             //noinspection IOResourceOpenedButNotSafelyClosed
-            final PrintStream nullps = new PrintStream(new NullOutputStream());
+            final PrintStream nullps = new PrintStream(new OutputStream() {
+                public void write(int b) throws IOException { }
+            });
             String result = thingPrinter.printThing(nullps, "Walla Walla");
             assertEquals("Hello from generated code!  Suffix=Walla Walla", result);
         } catch (Exception e) {

@@ -1,4 +1,4 @@
-package com.l7tech.external.assertions.ipm.server;
+package com.l7tech.util;
 
 import javax.tools.*;
 import java.io.*;
@@ -42,12 +42,52 @@ public class Codegen {
         return ret;
     }
 
+    /**
+     * Make a Java source file available to the compilation.
+     *
+     * @param classname  the classname of the class.  Required.
+     * @param javaSource the corresponding Java source code.  Must be a complete .java source file.
+     */
     public void addJavaFile(String classname, String javaSource) {
         extraCompilationUnits.add(new MemoryJavaFile(classname, javaSource));
     }
 
+    /**
+     * Make a .class file available to the compilation.
+     * <p/>
+     * Inner classes are not currently supported.
+     *
+     * @param classname  the classname of the class.  Required.
+     * @param classSource the bytecode of the corresponding .class file.  Required.
+     */
     public void addClassFile(String classname, byte[] classSource) {
         extraClasses.add(new MemoryJavaClass(classname, classSource));
+    }
+
+    /**
+     * Make a .class file available to the compilation by attempting to (re)load the bytecode for
+     * the specified class.  This assumes that the specified class's .class bytes are available from its classloader as
+     * a resource.
+     * <p/>
+     * Inner classes are not currently supported.
+     *
+     * @param clazz a class whose bytecode is available as a resource from its own classloader at the usual location.  Required.
+     * @throws ClassNotFoundException if the class bytecode is not available from its classloader as a resource
+     * @throws IOException if there is an IOException while reading the class bytecode
+     */
+    public void addLoadableClass(final Class clazz) throws ClassNotFoundException, IOException {
+        final String resourcePath = clazz.getName().replace('.', '/') + ".class";
+        InputStream is = null;
+        try {
+            is = clazz.getClassLoader().getResourceAsStream(resourcePath);
+            if (is == null)
+                throw new ClassNotFoundException("Unable to make class available for compilation: Class " + clazz.getName() +
+                                                 " bytecode is not available as a resource from its classloader");
+            byte[] classBytes = IOUtils.slurpStream(is);
+            addClassFile(this.className, classBytes);
+        } finally {
+            ResourceUtils.closeQuietly(is);
+        }
     }
 
     /** Exception thrown if there is a problem compiling some dynamic code. */
