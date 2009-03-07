@@ -4,8 +4,20 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
+import java.io.IOException;
+import java.io.FileOutputStream;
+import java.io.File;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.ResultSet;
 
 import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.InvalidArgumentException;
+import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.FatalException;
+import com.l7tech.gateway.config.manager.db.DBActions;
+import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.util.BuildInfo;
+import com.l7tech.util.ResourceUtils;
 
 /**
  * Base class for the import / export utility.
@@ -32,6 +44,18 @@ public abstract class ImportExportUtility {
      * @return  Returns the type of utility to be performed (eg. export / import)
      */
     public abstract String getUtilityType();
+
+    /**
+     * Does pre process before actually carrying out the execution.
+     * 1) Check if all required options are met and specified
+     * 2) Check any additional options are valid
+     *
+     * @param args      The list of arguments
+     * @throws InvalidArgumentException
+     * @throws IOException
+     * @throws FatalException
+     */
+    public abstract void preProcess(Map<String, String> args) throws InvalidArgumentException, IOException, FatalException;
 
     /**
      * Determines if the provided option has path as an option
@@ -208,5 +232,116 @@ public abstract class ImportExportUtility {
         }
 
         return arguments;
+    }
+
+    /**
+     * Verify that the given database configuration, the connection is good.
+     *
+     * @param config    Database configuration informaiton
+     * @param isRootAccount Flag to use as root account or gateway account
+     * @throws IOException
+     */
+    public void verifyDatabaseConnection(DatabaseConfig config, boolean isRootAccount) throws IOException {
+        if (config == null) throw new IOException("no database configuration defined");
+
+        try {
+            Connection connection = (new DBActions()).getConnection(config, isRootAccount);
+            if (connection == null) {
+                throw new SQLException();
+            }
+        } catch (SQLException sqle) {
+            throw new IOException("cannot connect to database host '" + config.getHost()
+                    + "' in database '" + config.getName() + "' with user '"
+                    + (isRootAccount ? config.getDatabaseAdminUsername() : config.getNodeUsername()) + "'");
+        }
+    }
+
+    /**
+     * Verify file existence.  If the flag 'failIfExists' is true, then basically it'll fail if the file does exists.
+     * If the flag 'failIfExists' is false, then it'll fail if the file does not exists.
+     *
+     * @param fileName  The file name to verify for existence
+     * @param failIfExists  TRUE = throw if file exists, FALSE = throw if file doesnt not exists
+     * @throws IOException
+     */
+    public void verifyFileExistence(String fileName, boolean failIfExists) throws IOException {
+        if (fileName == null) {
+            throw new IOException("file is null");
+        }
+
+        File file = new File(fileName);
+        if (failIfExists && file.exists()) {
+            throw new IOException("file '" + fileName + "' already exists");
+        }
+
+        if (!failIfExists && !file.exists()) {
+            throw new IOException("file '" + fileName + "' does not exists");
+        }
+    }
+
+    /**
+     * Test if can write and create the file.
+     *
+     * @param fileName  The file to be created
+     * @throws IOException
+     */
+    public void verifyCanWriteFile(String fileName) throws IOException {
+        boolean isCreated = false;
+        try {
+            FileOutputStream fos = new FileOutputStream(fileName);
+            fos.close();
+            isCreated = true;
+        } catch (IOException ioe) {
+            throw new IOException("cannot write to '" + fileName + "'");
+        } finally {
+            //should only delete the file if it was actually created
+            if (isCreated) {
+                (new File(fileName)).delete();
+            }
+        }
+    }
+
+    /**
+     * Verifies that the product version from build info matches to the given version.
+     *
+     * @param version   The version to be compared
+     * @throws InvalidArgumentException
+     */
+    public void verifyDatabaseVersion(String version) throws InvalidArgumentException {
+        if (!BuildInfo.getProductVersion().equals(version)) {
+             throw new InvalidArgumentException("Invalid database version");
+        }
+    }
+
+    /**
+     * Verify if the database exists.
+     *
+     * @param host  The database host
+     * @param dbName    The database name
+     * @param port  The port
+     * @param username  The username to be used for login
+     * @param password  The password for the specified username
+     * @return
+     */
+    public boolean verifyDatabaseExists(String host, String dbName, int port, String username, String password) {
+        Connection c = null;
+        Statement s = null;
+        ResultSet rs = null;
+        try {
+            DatabaseConfig config = new DatabaseConfig(host, port, dbName, username, password);
+            c = new DBActions().getConnection(config, false);
+            s = c.createStatement();
+            rs = s.executeQuery("select * from hibernate_unique_key");
+            if (rs.next()) {
+                return true;
+            }
+        } catch (SQLException e) {
+            return false;
+        } finally {
+            ResourceUtils.closeQuietly(rs);
+            ResourceUtils.closeQuietly(s);
+            ResourceUtils.closeQuietly(c);
+        }
+        return false;
     }
 }

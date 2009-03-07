@@ -46,11 +46,13 @@ public class FlashUtilityLauncher {
             if (args[0].toLowerCase().equals("import")) {
                 Importer importer = new Importer();
                 passedArgs = importer.getParameters(args);
+                importer.preProcess(passedArgs);
                 importer.doIt(passedArgs);
                 System.out.println("\nImport completed with no errors.");
             } else if (args[0].toLowerCase().equals("export")) {
                 Exporter exporter = new Exporter(null, System.out, System.err);
                 passedArgs = exporter.getParameters(args);
+                exporter.preProcess(passedArgs);
                 exporter.doIt(passedArgs);
                 System.out.println("\nExport of SecureSpan Gateway image completed with no errors.");
             } else if (args[0].toLowerCase().equals("cfgdeamon")) {

@@ -16,6 +16,9 @@ import java.sql.SQLException;
 
 import org.xml.sax.SAXException;
 
+import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.InvalidArgumentException;
+import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.FatalException;
+
 /**
  * The utility that exports an SSG image file.
  * <p/>
@@ -48,6 +51,9 @@ public class Exporter extends ImportExportUtility {
 
     public static final String VERSIONFILENAME = "version";
     public static final String SRCPARTNMFILENAME = "sourcepartitionname";
+    public static final String OMP_DAT_FILE = "omp.dat";
+    public static final String NODE_PROPERTIES_FILE = "node.properties";
+    public static final String FLASHER_CHILD_DIR = "../../node/default/etc/conf/";
 
     private static final String[] CONFIG_FILES = new String[]{
         "ssglog.properties",
@@ -119,19 +125,19 @@ public class Exporter extends ImportExportUtility {
         //check whether mapping option was used
         if(arguments.get(MAPPING_PATH.name) != null) mappingEnabled = true;
 
-        File confDir = new File(flasherHome, "../../node/default/etc/conf");
+        File confDir = new File(flasherHome, FLASHER_CHILD_DIR);
         tmpDirectory = createTmpDirectory();
 
         try {
             logger.info("created temporary directory at " + tmpDirectory);
 
             // Read database connection settings for the partition at hand
-            File ompFile = new File(confDir, "omp.dat");
+            File ompFile = new File(confDir, OMP_DAT_FILE);
             final MasterPasswordManager decryptor = ompFile.exists() ?
                     new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword()) :
                     null;
 
-            File nodePropsFile = new File(confDir, "node.properties");
+            File nodePropsFile = new File(confDir, NODE_PROPERTIES_FILE);
             if ( nodePropsFile.exists() ) {
                 NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodePropsFile, true);
                 DatabaseConfig config = nodeConfig.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );
@@ -303,5 +309,39 @@ public class Exporter extends ImportExportUtility {
     @Override
     public String getUtilityType() {
         return "export";
+    }
+
+    @Override
+    public void preProcess(Map<String, String> args) throws InvalidArgumentException, IOException, FatalException {
+        //image option must be specified
+        if (!args.containsKey(IMAGE_PATH.name)) {
+            throw new InvalidArgumentException("missing option " + IMAGE_PATH.name + ", required for exporting image");
+        } else {
+            verifyFileExistence(args.get(IMAGE_PATH.name), true);   //test that the file is a new file
+            verifyCanWriteFile(args.get(IMAGE_PATH.name));  //test if we can create the file
+        }
+
+        //check condition for mapping file
+        if (args.containsKey(MAPPING_PATH.name)) {
+            verifyFileExistence(args.get(MAPPING_PATH.name), true); //test that the file is a new file
+            verifyCanWriteFile(args.get(MAPPING_PATH.name));    //test if we can create the file
+        }
+
+        //check if node.properties file exists
+        File configDir = new File(flasherHome, FLASHER_CHILD_DIR);
+        File nodePropsFile = new File(configDir, NODE_PROPERTIES_FILE);
+        NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodePropsFile, true);
+        DatabaseConfig config = nodeConfig.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );
+        if ( config == null ) {
+            throw new IOException("database configuration not found.");
+        }
+
+        File ompFile = new File(configDir, OMP_DAT_FILE);
+        final MasterPasswordManager decryptor =
+                ompFile.exists() ? new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword()) : null;
+        config.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())) );
+
+        //check if we can connect to the database
+        verifyDatabaseConnection(config, false);
     }
 }

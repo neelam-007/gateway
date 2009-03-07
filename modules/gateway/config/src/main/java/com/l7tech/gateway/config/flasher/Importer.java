@@ -1,12 +1,6 @@
 package com.l7tech.gateway.config.flasher;
 
-import com.l7tech.util.BuildInfo;
-import com.l7tech.util.FileUtils;
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.DefaultMasterPasswordFinder;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.gateway.config.manager.ClusterPassphraseManager;
 import com.l7tech.server.management.config.node.DatabaseConfig;
@@ -27,6 +21,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+
+import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.InvalidArgumentException;
+import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.FatalException;
 
 /**
  * The utility that imports an SSG image
@@ -67,7 +64,7 @@ class Importer extends ImportExportUtility {
             new CommandLineOption("-mode", "Ignored parameter for mode type", true, false) };
 
 
-    private static final String CONFIG_PATH = "../../node/default/etc/conf/";
+    private static final String CONFIG_PATH = Exporter.FLASHER_CHILD_DIR;
     private static final String[] CONFIG_FILES = new String[]{
             "ssglog.properties",
             "system.properties",
@@ -106,7 +103,7 @@ class Importer extends ImportExportUtility {
         logger.info("Uncompressing image to temporary directory " + tempDirectory);
         try {
             System.out.println("Reading SecureSpan image file " + inputpathval);
-            unzipToDir(inputpathval, tempDirectory);
+            unzipToDir(inputpathval, tempDirectory, true);
             if (!(new File(tempDirectory + File.separator + DBDumpUtil.MAIN_BACKUP_FILENAME)).exists()) {
                 logger.info("Error, the image provided does not contain an expected file and is therefore suspicious");
                 throw new IOException("the file " + inputpathval + " does not appear to be a valid SSG flash image");
@@ -175,10 +172,10 @@ class Importer extends ImportExportUtility {
             }
 
             boolean cleanRestore = false;
-            MasterPasswordManager mpm = new MasterPasswordManager(new DefaultMasterPasswordFinder(new File(new File(CONFIG_PATH), "omp.dat")));
+            MasterPasswordManager mpm = new MasterPasswordManager(new DefaultMasterPasswordFinder(new File(new File(CONFIG_PATH), Exporter.OMP_DAT_FILE)));
             String databaseUser = gatewayDbUsername;
             String databasePass = gatewayDbPassword;
-            File nodePropsFile = new File(new File(CONFIG_PATH), "node.properties");
+            File nodePropsFile = new File(new File(CONFIG_PATH), Exporter.NODE_PROPERTIES_FILE);
 
             final PropertiesConfiguration nodeConfig = new PropertiesConfiguration();
             nodeConfig.setAutoSave(false);
@@ -272,7 +269,7 @@ class Importer extends ImportExportUtility {
                 // check that target db is not currently used by an SSG
                 if (!newDatabaseCreated) {
                     try {
-                        String connectedNode = checkSSGConnectedToDatabase();
+                        String connectedNode = checkSSGConnectedToDatabase(true, null);
                         if (StringUtils.isNotEmpty(connectedNode)) {
                             logger.info("cannot import on this database because it is being used by a SSG");
                             throw new FlashUtilityLauncher.FatalException("A SecureSpan Gateway is currently running " +
@@ -582,9 +579,17 @@ class Importer extends ImportExportUtility {
         }
     }
 
-    private String checkSSGConnectedToDatabase() throws SQLException, InterruptedException {
-        System.out.print("Making sure target is offline .");
-        Connection c = getConnection();
+    private String checkSSGConnectedToDatabase(boolean outputMessages, DatabaseConfig config) throws SQLException, InterruptedException {
+        if (outputMessages) {
+            System.out.print("Making sure target is offline .");
+        }
+
+        Connection c;
+        if (config == null) {
+            c = getConnection();
+        } else {
+            c = new DBActions().getConnection(config, false);
+        }
         try {
             Statement checkStatusStatement = c.createStatement();
             try {
@@ -609,16 +614,22 @@ class Importer extends ImportExportUtility {
                         while (statusTimeStampList.next()) {
                             long tmp = statusTimeStampList.getLong(1);
                             if (tmp > longest) {
-                                System.out.print(" ");
+                                if (outputMessages) {
+                                    System.out.print(" ");
+                                }
                                 return statusTimeStampList.getString(2);
                             }
                         }
                     } finally {
                         statusTimeStampList.close();
                     }
-                    System.out.print(".");
+                    if (outputMessages) {
+                        System.out.print(".");
+                    }
                 }
-                System.out.println(" DONE");
+                if (outputMessages) {
+                    System.out.println(" DONE");
+                }
             } finally {
                 checkStatusStatement.close();
             }
@@ -628,7 +639,7 @@ class Importer extends ImportExportUtility {
         return null;
     }
 
-    public void unzipToDir( final String filename, final String destinationpath ) throws IOException {
+    public void unzipToDir(final String filename, final String destinationpath, boolean outputMessages) throws IOException {
         ZipInputStream zipinputstream = null;
         try {
             zipinputstream = new ZipInputStream( new FileInputStream(filename) );
@@ -641,7 +652,9 @@ class Importer extends ImportExportUtility {
                 if ( zipentry.isDirectory() ) {
                     outputFile.mkdirs();
                 } else {
-                    System.out.println("\t- " + entryName);
+                    if (outputMessages) {
+                        System.out.println("\t- " + entryName);
+                    }
                     FileUtils.ensurePath( outputFile.getParentFile() );
                     FileOutputStream fileoutputstream = null;
                     try {
@@ -672,5 +685,139 @@ class Importer extends ImportExportUtility {
     @Override
     public String getUtilityType() {
         return "import";
+    }
+
+    @Override
+    public void preProcess(Map<String, String> args) throws InvalidArgumentException, IOException, FatalException {
+        //image file to import
+        if (!args.containsKey(IMAGE_PATH.name)) {
+            throw new InvalidArgumentException("missing option " + IMAGE_PATH.name + ", required for importing image");
+        } else {
+            verifyFileExistence(args.get(IMAGE_PATH.name), false);  //check if file exists
+
+            //unzip the file to check for version and mandatory files, we should always remove the files afterwards
+            try {
+                tempDirectory = Exporter.createTmpDirectory();
+                unzipToDir(args.get(IMAGE_PATH.name), tempDirectory, false);
+
+                //check for version
+                try {
+                    FileInputStream fis = new FileInputStream(tempDirectory + File.separator + Exporter.VERSIONFILENAME);
+                    byte[] buf = new byte[512];
+                    int read = fis.read(buf);
+                    String imageVersion = new String(buf, 0, read);
+                    verifyDatabaseVersion(imageVersion);    //check database version is correct
+                } catch (FileNotFoundException fnfe) {
+                    throw new InvalidArgumentException("version file not found in image file");
+                }
+
+                //check for mandatory back up file exists in the zip file
+                if (!(new File(tempDirectory + File.separator + DBDumpUtil.MAIN_BACKUP_FILENAME)).exists()) {
+                    throw new IOException("the file " + args.get(IMAGE_PATH.name) + " does not appear to be a valid SSG flash image");
+                }
+            } finally {
+                //always delete tmp directory
+                FileUtils.deleteDir(new File(tempDirectory));
+            }
+        }
+
+        //cluster password required
+        if (!args.containsKey(CLUSTER_PASSPHRASE.name)) {
+            throw new InvalidArgumentException("missing option " + CLUSTER_PASSPHRASE.name);
+        }
+
+        //root admin username/password, host, database name required
+        if (!args.containsKey(DB_HOST_NAME.name)) {
+            throw new InvalidArgumentException("missing option " + DB_HOST_NAME.name);
+        }
+
+        if (!args.containsKey(DB_NAME.name)) {
+            throw new InvalidArgumentException("missing option " + DB_NAME.name);
+        }
+
+        if (!args.containsKey(DB_USER.name)) {
+            throw new InvalidArgumentException("missing option " + DB_USER.name);
+        }
+
+        //check permission and file existence for mapping option
+        if (args.containsKey(MAPPING_PATH.name)) {
+            verifyFileExistence(args.get(MAPPING_PATH.name), false);    //check file exists
+            try {
+                //try to parse through the mapping to see if formatted to what we are expecting
+                mapping = MappingUtil.loadMapping(args.get(MAPPING_PATH.name));
+            } catch (SAXException saxe) {
+                throw new FatalException("problem loading " + MAPPING_PATH.name + ": " + ExceptionUtils.getMessage(saxe));
+            }
+        }
+
+        //check database connection
+        try {
+            String rootUsername = args.get(DB_USER.name);   //mandatory
+            String rootPassword = args.get(DB_PASSWD.name); //mandatory
+
+            //optional, we'll determine if these info can be retrieved from node.properties, if not then we'll need to
+            //ask them to enter those options
+            String gatewayUsername = args.get(GATEWAY_DB_USERNAME.name);
+            String gatewayPassword = args.get(GATEWAY_DB_PASSWORD.name);
+
+            if (rootPassword == null) {
+                rootPassword = "";
+            }
+
+            if (gatewayPassword == null) {
+                gatewayPassword = "";
+            }
+
+            int port = 3306;
+            String host = args.get(DB_HOST_NAME.name);
+            if (host.indexOf(':') > 0) {
+                host = host.split(":", 2)[0];
+                port = Integer.parseInt(host.split(":", 2)[1]);
+            }
+
+            MasterPasswordManager mpm = new MasterPasswordManager(new DefaultMasterPasswordFinder(new File(new File(CONFIG_PATH), Exporter.OMP_DAT_FILE)));
+            File nodePropsFile = new File(new File(CONFIG_PATH), Exporter.NODE_PROPERTIES_FILE);
+            final PropertiesConfiguration nodeConfig = new PropertiesConfiguration();
+            nodeConfig.setAutoSave(false);
+            nodeConfig.setListDelimiter((char) 0);
+
+            if (nodePropsFile.exists()) {
+                nodeConfig.load(nodePropsFile);
+                gatewayUsername = nodeConfig.getString("node.db.config.main.user") == null ? gatewayUsername : nodeConfig.getString("node.db.config.main.user");
+                gatewayPassword = nodeConfig.getString("node.db.config.main.pass") == null ? gatewayPassword : nodeConfig.getString("node.db.config.main.pass");
+                gatewayPassword = new String(mpm.decryptPasswordIfEncrypted(gatewayPassword));
+            } else {
+                //node.properties file does not exists, and no gateway username defined, we need to ask for this
+                if (gatewayUsername == null) {
+                    throw new InvalidArgumentException("Please provide options: " + GATEWAY_DB_USERNAME.name +
+                            " and " + GATEWAY_DB_PASSWORD.name);
+                }
+            }
+
+            //test root user conneciton
+            DatabaseConfig config = new DatabaseConfig(host, port, args.get(DB_NAME.name), rootUsername, rootPassword);
+            config.setDatabaseAdminUsername(rootUsername);
+            config.setDatabaseAdminPassword(rootPassword);
+            verifyDatabaseConnection(config, true);
+
+            //test gateway user connection
+            verifyDatabaseConnection(new DatabaseConfig(host, port, args.get(DB_NAME.name), gatewayUsername, gatewayPassword), false);
+
+            //if the database alerady exists, check if all gateway have been shut down
+            if (verifyDatabaseExists(host, args.get(DB_NAME.name), port, rootUsername, rootPassword)) {
+                //database doesnt exists check if gateway are shut down
+                String connectedNode = checkSSGConnectedToDatabase(false, new DatabaseConfig(host, port, args.get(DB_NAME.name), rootUsername, rootPassword));
+                if (StringUtils.isNotEmpty(connectedNode)) {
+                    throw new FatalException("A SecureSpan Gateway is currently running " +
+                            "and connected to the database. Please shutdown " + connectedNode);
+                }
+            }
+        } catch (ConfigurationException ce) {
+            throw new IOException("failed to load information from " + Exporter.NODE_PROPERTIES_FILE);
+        } catch (SQLException sqle) {
+            throw new IOException("database error: " + ExceptionUtils.getMessage(sqle));
+        } catch (InterruptedException ie) {
+            throw new FatalException("database error: " + ExceptionUtils.getMessage(ie));
+        }
     }
 }
