@@ -31,7 +31,7 @@ public class MasterPassphraseChanger {
     public static void main(String[] args) {
         JdkLoggerConfigurator.configure("com.l7tech.logging", "com/l7tech/gateway/config/client/logging.properties", "configlogging.properties", false, true);
         try {
-            new MasterPassphraseChanger().run(CONFIG_PATH, new String[]{ "node.cluster.pass", "node.db.pass" });
+            new MasterPassphraseChanger().run(CONFIG_PATH, new String[]{ "node.cluster.pass", "node.db.config.main.pass" });
         } catch (Throwable e) {
             String msg = "Unable to change master passphrase: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, e);
