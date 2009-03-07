@@ -714,8 +714,8 @@ public class Utilities {
      * @param isUsage                 needed in order to validate the input parameters
      * @return sql string, ready to be ran against a database. This sql query will ALWAYS produce the following columns
      *         of data: <pre>
-     *                                                                                                 AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                                                                 </pre>
+     *                                                                                                         AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                                                                                                         </pre>
      *         Note operation is not included. It is a mapping key under the covers but it has special meaning. Notice how
      *         authenticated_user is returned. To the user and to business logic, authenticated user is a normal mapping key
      */
@@ -800,8 +800,8 @@ public class Utilities {
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
      * @return a valid sql string ready to be ran against a database. The sql will always produce the following fields:-
      *         <pre>
-     *                                                                                                 SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
-     *                                                                                                 </pre>
+     *                                                                                                         SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
+     *                                                                                                         </pre>
      */
     public static String getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                      Map<String, Set<String>> serviceIdToOperations,
@@ -884,9 +884,9 @@ public class Utilities {
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
      * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
      *         <pre>
-     *                                                                                                  SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                                                                                                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                                                                 </pre>
+     *                                                                                                          SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                                                                                                         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                                                                                                         </pre>
      */
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                        Map<String, Set<String>> serviceIdToOperations,
@@ -988,9 +988,9 @@ public class Utilities {
      * @param operation               the operation, if isDetail is true, that we want usage data for
      * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
      *         <pre>
-     *                                                                                                  SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                                                                                                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                                                                 </pre>
+     *                                                                                                          SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                                                                                                         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                                                                                                         </pre>
      */
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                        Long serviceId,
@@ -2457,6 +2457,7 @@ public class Utilities {
      *                      In addition, isDetail determins whether we just constrain by service id or service id and operation
      * @param isUsage       needed in order to validate the input parameters
      * @param isHtml        Returned string is new line formatted. If isHtml is true <br> is used, otherwise \n is used
+     *                      also, if isHtml is true, then the output strings are HTML escaped
      * @return String for displaying in report info section of report
      */
     public static String getMappingReportInfoDisplayString(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters
@@ -2467,10 +2468,8 @@ public class Utilities {
         boolean useUser = (keysSupplied) && isUserSupplied(keysToFilters);
 
         StringBuilder sb = new StringBuilder();
-        boolean firstComma = false;
         if (useUser) {
             sb.append(AUTHENTICATED_USER_DISPLAY);
-            firstComma = true;
         }
         if (useUser) {
             List<ReportApi.FilterPair> authUsers = keysToFilters.get(MessageContextMapping.MappingType.AUTH_USER.toString());
@@ -2481,7 +2480,7 @@ public class Utilities {
             for (ReportApi.FilterPair fp : authUsers) {
                 if (fp.isEmpty()) continue;
                 if (index != 0) tempBuffer.append(", ");
-                tempBuffer.append(fp.getDisplayValue());
+                tempBuffer.append((isHtml) ? escapeHtmlCharacters(fp.getDisplayValue()) : fp.getDisplayValue());
                 index++;
                 valueFound = true;
             }
@@ -2503,28 +2502,21 @@ public class Utilities {
             }
         }
 
-        int index = 0;
         for (Map.Entry<String, List<ReportApi.FilterPair>> me : keysToFilters.entrySet()) {
             if (me.getKey().equals(MessageContextMapping.MappingType.AUTH_USER.toString())) continue;
 
             String mappingKey = me.getKey();
             //valueConstraintAndOrLike
-            if (firstComma) {
-//                sb.append(", ");
-                firstComma = false;
-            }
 
-            if (index != 0) {
-//                sb.append(", ");
-            }
-            sb.append(TextUtils.truncStringMiddleExact(mappingKey, MAPPING_KEY_MAX_SIZE));
+            String keyString = TextUtils.truncStringMiddleExact(mappingKey, MAPPING_KEY_MAX_SIZE);
+            sb.append((isHtml) ? escapeHtmlCharacters(keyString) : keyString);
             StringBuilder tempBuilder = new StringBuilder();
             tempBuilder.append(" (");
             int tempIndex = 0;
             for (ReportApi.FilterPair fp : me.getValue()) {
                 if (!fp.isEmpty()) {
                     if (tempIndex != 0) tempBuilder.append(", ");
-                    tempBuilder.append(fp.getDisplayValue());
+                    tempBuilder.append((isHtml) ? escapeHtmlCharacters(fp.getDisplayValue()) : fp.getDisplayValue());
                     tempIndex++;
                 }
             }
@@ -2532,7 +2524,6 @@ public class Utilities {
             if (tempIndex > 0) sb.append(tempBuilder);
             if (!isHtml) sb.append("\n");
             else sb.append("<br>");
-            index++;
         }
         //todo [Donal] confirm the use case this supports. If an error case, catch it when validating the parameters
         if (sb.toString().equals("")) return "None";
