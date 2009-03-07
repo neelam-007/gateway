@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.monitoring;
 
+import com.l7tech.common.util.TestTimeSource;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.ServerConfig;
@@ -11,10 +12,13 @@ import com.l7tech.server.ems.gateway.GatewayException;
 import com.l7tech.server.ems.gateway.MockGatewayContextFactory;
 import com.l7tech.server.ems.gateway.MockProcessControllerContext;
 import com.l7tech.server.ems.gateway.ProcessControllerContext;
+import static com.l7tech.server.ems.monitoring.MonitoringConfigurationSynchronizer.INITIAL_RETRY_DELAY;
+import static com.l7tech.server.ems.monitoring.MonitoringConfigurationSynchronizer.MAX_RETRY_DELAY;
 import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.Created;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.event.system.Started;
+import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 import com.l7tech.server.management.api.monitoring.MonitoringApi;
 import com.l7tech.server.management.api.monitoring.MonitoringApiStub;
@@ -42,10 +46,12 @@ public class MonitoringConfigurationSynchronizerTest {
     private TestCluster clusterB;
     private TestCluster[] testClusters;
     private MockSsgClusterManager ssgClusterManager;
+    private TestTimeSource timeSource = new TestTimeSource();
 
     @Before
     public void setUp() throws Exception {
         timer = new MockTimer();
+        timeSource.sync();
         clusterA = new TestCluster("A", 'A', 2);
         clusterB = new TestCluster("B", 'B', 3);
         testClusters = new TestCluster[] { clusterA, clusterB };
@@ -87,7 +93,25 @@ public class MonitoringConfigurationSynchronizerTest {
     @Test
     @BugNumber(6750)
     public void testClusterPushdownAfterUpdatedSsgNode() {
-        assertDoesClusterPushdownAfterEvent(makeAndStartMcs(), new Updated<SsgNode>(clusterA.node(1), null), clusterA);
+        assertDoesClusterPushdownAfterEvent(makeAndStartMcs(), makeUpdatedNodeEvent(clusterA.node(1), "ipAddress", "processControllerPort"), clusterA);
+    }
+    
+    @Test
+    @BugNumber(6798)
+    public void testIgnoreNodeUpdateThatOnlyChangesAuditTime() {
+        assertDoesClusterPushdownAfterEvent(makeAndStartMcs(), makeUpdatedNodeEvent(clusterA.node(1), "notificationAuditTime"));
+    }
+
+    @Test
+    @BugNumber(6798)
+    public void testDontIgnoreNodeUpdateThatChangesOtherPropertiesToo() {
+        assertDoesClusterPushdownAfterEvent(makeAndStartMcs(), makeUpdatedNodeEvent(clusterA.node(1), "ipAddress", "notificationAuditTime", "processControllerPort"), clusterA);
+    }
+
+    @Test
+    @BugNumber(6798)
+    public void testDontIgnoreNodeUpdateThatMentionsNoProperties() {
+        assertDoesClusterPushdownAfterEvent(makeAndStartMcs(), makeUpdatedNodeEvent(clusterA.node(1)), clusterA);
     }
 
     @Test
@@ -115,7 +139,7 @@ public class MonitoringConfigurationSynchronizerTest {
     public void testNewNodesTriggerPushdown() {
         MonitoringConfigurationSynchronizer mcs = makeAndStartMcs();
         SsgNode newNode = clusterA.addNode();
-        assertDoesClusterPushdownAfterEvent(mcs, new Updated<SsgNode>(newNode, null), clusterA);
+        assertDoesClusterPushdownAfterEvent(mcs, new Created<SsgNode>(newNode, null), clusterA);
     }
 
     @Test
@@ -124,8 +148,10 @@ public class MonitoringConfigurationSynchronizerTest {
         MonitoringConfigurationSynchronizer mcs = makeAndStartMcs();
         clusterB.node(2).up = false;
         assertDoesCompletePushdownAfterEvent(mcs, makeClusterPropertyEvent());
+        timeSource.advanceByMillis(MAX_RETRY_DELAY);
         assertDoesClusterPushdownAfterEvent(mcs, null, clusterB); // Should retry cluster B and only cluster B since it has a downed node
         clusterB.node(2).up = true;
+        timeSource.advanceByMillis(MAX_RETRY_DELAY);
         assertDoesClusterPushdownAfterEvent(mcs, null, clusterB); // Should retry cluster B and only cluster B
         assertDoesClusterPushdownAfterEvent(mcs, null); // Should not do any pushdown now that clean config is everywhere
     }
@@ -139,6 +165,52 @@ public class MonitoringConfigurationSynchronizerTest {
         Trigger trigger = mcs.convertTrigger(false, Collections.<Long, NotificationRule>emptyMap(), setup, clusterA.getSslHostName());
         assertNotNull(trigger);
         assertEquals(clusterA.getSslHostName(), trigger.getComponentId());
+    }
+    
+    @Test
+    @BugNumber(6809)
+    public void testPerClusterQuadraticBackoff() {
+        long needDelay = INITIAL_RETRY_DELAY;
+
+        MonitoringConfigurationSynchronizer mcs = makeAndStartMcs();
+        clusterB.node(2).up = false;
+        assertDoesCompletePushdownAfterEvent(mcs, makeClusterPropertyEvent());
+        assertDoesClusterPushdownAfterEvent(mcs, null); // Should not retry cluster B yet, until initial delay has elapsed
+        timeSource.advanceByMillis(1);
+        assertDoesClusterPushdownAfterEvent(mcs, null); // Should not retry cluster B yet, until initial delay has elapsed
+        timeSource.advanceByMillis(needDelay);
+        assertDoesClusterPushdownAfterEvent(mcs, null, clusterB); // Should retry cluster B now that delay has elapsed
+        needDelay *= 2;
+        timeSource.advanceByMillis(needDelay);
+        assertDoesClusterPushdownAfterEvent(mcs, null, clusterB); // Should retry cluster B now that the backoff timer has expired
+        needDelay *= 2;
+        timeSource.advanceByMillis(needDelay/2);
+        assertDoesClusterPushdownAfterEvent(mcs, null); // Should NOT retry cluster yet
+        timeSource.advanceByMillis(needDelay/2);
+        assertDoesClusterPushdownAfterEvent(mcs, null, clusterB); // Now it should retry cluster B
+        needDelay *= 2;
+        clusterB.node(2).up = true;
+        timeSource.advanceByMillis(needDelay);
+        assertDoesClusterPushdownAfterEvent(mcs, null, clusterB); // Should retry cluster B and only cluster B
+        needDelay *= 2;
+        assertDoesClusterPushdownAfterEvent(mcs, null); // Should not do any pushdown now that clean config is everywhere
+    }
+    
+    @Test
+    @BugNumber(6809)
+    public void testSuspendBackoffDelayForAdminAction() {
+        MonitoringConfigurationSynchronizer mcs = makeAndStartMcs();
+        clusterB.node(2).up = false;
+        assertDoesCompletePushdownAfterEvent(mcs, makeClusterPropertyEvent());
+        assertDoesClusterPushdownAfterEvent(mcs, null); // Should not retry cluster B yet, until initial delay has elapsed
+        timeSource.advanceByMillis(1);
+        assertDoesClusterPushdownAfterEvent(mcs, null); // Should not retry cluster B yet, until initial delay has elapsed
+        timeSource.advanceByMillis(1);
+        assertDoesClusterPushdownAfterEvent(mcs, makeUpdatedNodeEvent(clusterA.node(1)), clusterA, clusterB); // Should suspend retry timers for next attempt, due to user changing a node
+        timeSource.advanceByMillis(1);
+        assertDoesClusterPushdownAfterEvent(mcs, null); // Should continue to not retry cluster B yet -- backoff timer should be reinstated
+        timeSource.advanceByMillis(INITIAL_RETRY_DELAY*2); // (2 attempts made)
+        assertDoesClusterPushdownAfterEvent(mcs, null, clusterB); // Now should retry clusterB
     }
 
     /* Asserts tha the specified mcs does a pushdown to all known cluster nodes after the specified event. */
@@ -190,6 +262,7 @@ public class MonitoringConfigurationSynchronizerTest {
     /** @return a synchronizer configured with our test data, but not yet started. */
     private MonitoringConfigurationSynchronizer makeMcs() {
         return new MonitoringConfigurationSynchronizer(timer,
+                timeSource,
                 ssgClusterManager,
                 new MockGatewayContextFactory() {
                     @Override
@@ -213,6 +286,13 @@ public class MonitoringConfigurationSynchronizerTest {
 
     private Updated<ClusterProperty> makeClusterPropertyEvent() {
         return new Updated<ClusterProperty>(new ClusterProperty(ServerConfig.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS, "foo"), null);
+    }
+
+    private Updated<SsgNode> makeUpdatedNodeEvent(TestNode node, String... props) {
+        Object[] oldvals = new Object[props.length];
+        Object[] newvals = new Object[props.length];
+        EntityChangeSet changes = new EntityChangeSet(props, oldvals, newvals);
+        return new Updated<SsgNode>(node, changes);
     }
 
     /** Represents a mock cluster that creates zero or more mock cluster nodes for testing monitoring config pushdown. */

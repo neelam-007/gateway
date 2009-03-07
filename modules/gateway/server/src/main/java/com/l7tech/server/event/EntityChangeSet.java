@@ -19,28 +19,32 @@ import java.util.Map;
  * @version $Revision$
  */
 public class EntityChangeSet {
-    public static final EntityChangeSet NONE = new EntityChangeSet(new Object[0], new Object[0], new Object[0]);
+    public static final EntityChangeSet NONE = new EntityChangeSet(new String[0], new Object[0], new Object[0]);
 
-    public EntityChangeSet(Object[] propertyNames, Object[] oldValues, Object[] newValues) {
-        map = new HashMap();
+    public EntityChangeSet(String[] propertyNames, Object[] oldValues, Object[] newValues) {
+        map = new HashMap<String, PropertyChange>();
         for ( int i = 0; i < propertyNames.length; i++ ) {
-            String propertyName = (String)propertyNames[i];
+            String propertyName = propertyNames[i];
             map.put(propertyName, new PropertyChange(oldValues == null ? null : oldValues[i], newValues[i]));
         }
     }
 
-    public Iterator getProperties() {
+    public Iterator<String> getProperties() {
         return Collections.unmodifiableSet(map.keySet()).iterator();
     }
 
+    public int getNumProperties() {
+        return map.size();
+    }
+
     public Object getOldValue(String property) {
-        PropertyChange pc = (PropertyChange)map.get(property);
+        PropertyChange pc = map.get(property);
         if (pc == null) return null;
         return pc.ovalue;
     }
 
     public Object getNewValue(String property) {
-        PropertyChange pc = (PropertyChange)map.get(property);
+        PropertyChange pc = map.get(property);
         if (pc == null) return null;
         return pc.nvalue;
     }
@@ -54,5 +58,5 @@ public class EntityChangeSet {
         private final Object nvalue;
     }
 
-    private final Map map;
+    private final Map<String, PropertyChange> map;
 }

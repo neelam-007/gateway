@@ -175,7 +175,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
                 Entity entity = (Entity) owner;
                 if (!ignored(entity)) {
                     logger.log(Level.FINE, "Updated collection in " + entity.getClass().getName() + " " + entity.getId());
-                    final Object[] propertyNames = new String[] { pc.getRole() };
+                    final String[] propertyNames = new String[] { pc.getRole() };
                     final Object[] oldValues = new String[] { "[collection]" };
                     final Object[] newValues = new String[] { "[collection]" };
                     EntityChangeSet changes = new EntityChangeSet(propertyNames, oldValues, newValues);

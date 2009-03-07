@@ -15,7 +15,9 @@ import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayException;
 import com.l7tech.server.ems.gateway.ProcessControllerContext;
 import com.l7tech.server.event.admin.PersistenceEvent;
+import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.event.system.Started;
+import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 import com.l7tech.server.management.api.monitoring.MonitorableProperty;
 import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
@@ -25,6 +27,7 @@ import com.l7tech.server.management.config.monitoring.Trigger;
 import com.l7tech.util.ComparisonOperator;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.TimeSource;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -32,6 +35,7 @@ import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,8 +46,11 @@ import java.util.logging.Logger;
 public class MonitoringConfigurationSynchronizer implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(MonitoringConfigurationSynchronizer.class.getName());
 
-    private static final long DELAY_UNTIL_FIRST_CONFIG_PUSH = SyspropUtil.getLong("com.l7tech.server.ems.monitoring.configPush.delayUntilFirst", 1637L);
-    private static final long DELAY_BETWEEN_CONFIG_PUSHES = SyspropUtil.getLong("com.l7tech.server.ems.monitoring.configPush.delayBetween", 7457L);
+    private static final String PROP_PREFIX = "com.l7tech.server.ems.monitoring.configPush.";
+    static final long DELAY_UNTIL_FIRST_CONFIG_PUSH = SyspropUtil.getLong(PROP_PREFIX + "delayUntilFirst", 1637L);
+    static final long DELAY_BETWEEN_CONFIG_PUSHES = SyspropUtil.getLong(PROP_PREFIX + "delayBetween", 7457L);
+    static final long INITIAL_RETRY_DELAY = SyspropUtil.getLong(PROP_PREFIX + "failRetry.initialDelay", DELAY_BETWEEN_CONFIG_PUSHES + 1);
+    static final long MAX_RETRY_DELAY = SyspropUtil.getLong(PROP_PREFIX + "failRetry.maxDelay", 86028157L);
 
     /** We should mark all monitoring configurations as dirty any time one of these entities changes. */
     private static final Set<Class<? extends Entity>> ENTITIES_TRIGGERING_COMPLETE_PUSHDOWN = Collections.unmodifiableSet(new HashSet<Class<? extends Entity>>() {{
@@ -56,6 +63,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
     )));
 
     private final Timer timer;
+    private final TimeSource timeSource;
     private final SsgClusterManager ssgClusterManager;
     private final GatewayContextFactory gatewayContextFactory;
     private final SsgClusterNotificationSetupManager ssgClusterNotificationSetupManager;
@@ -66,7 +74,14 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
     // Contains an entry for each cluster GUID that has the latest monitoring configuration.
     private final ConcurrentHashMap<String, Object> cleanClusters = new ConcurrentHashMap<String, Object>();
 
+    // Contains an entry for each cluster GUID that has failed to have its config pushed down to at least one node.
+    private final ConcurrentHashMap<String, ClusterPushdownFailure> failedClusters = new ConcurrentHashMap<String, ClusterPushdownFailure>();
+
+    // If true, all retry backoff delays will be ignored for the very next pushdown pass.
+    private final AtomicBoolean suspendBackoffForNextRun = new AtomicBoolean(true);
+
     public MonitoringConfigurationSynchronizer(Timer timer,
+                                               TimeSource timeSource,
                                                SsgClusterManager ssgClusterManager,
                                                GatewayContextFactory gatewayContextFactory,
                                                SsgClusterNotificationSetupManager ssgClusterNotificationSetupManager,
@@ -74,6 +89,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
                                                SystemMonitoringSetupSettingsManager systemMonitoringSetupSettingsManager)
     {
         this.timer = timer;
+        this.timeSource = timeSource != null ? timeSource : new TimeSource();
         this.ssgClusterManager = ssgClusterManager;
         this.gatewayContextFactory = gatewayContextFactory;
         this.ssgClusterNotificationSetupManager = ssgClusterNotificationSetupManager;
@@ -88,18 +104,27 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
             if (entity instanceof EntityMonitoringPropertySetup) {
                 EntityMonitoringPropertySetup setup = (EntityMonitoringPropertySetup) entity;
                 String clusterGuid = setup.getSsgClusterNotificationSetup().getSsgClusterGuid();
-                setClusterDirty(clusterGuid);
+                setClusterDirty(clusterGuid, null);
+                suspendBackoffForNextRun.set(true);
             } else if (entity instanceof SsgClusterNotificationSetup) {
                 SsgClusterNotificationSetup sgns = (SsgClusterNotificationSetup) entity;
-                setClusterDirty(sgns.getSsgClusterGuid());
+                setClusterDirty(sgns.getSsgClusterGuid(), null);
+                suspendBackoffForNextRun.set(true);
             } else if (entity instanceof SsgCluster) {
-                setClusterDirty(((SsgCluster)entity).getGuid());
+                final SsgCluster cluster = (SsgCluster) entity;
+                setClusterDirty(cluster.getGuid(), cluster.getName());
+                suspendBackoffForNextRun.set(true);
             } else if (entity instanceof SsgNode) {
-                setClusterDirty(((SsgNode)entity).getSsgCluster().getGuid());
+                if (event instanceof Updated && isIgnoreableUpdateForSsgNode((Updated) event))
+                    return;
+                final SsgCluster cluster = ((SsgNode) entity).getSsgCluster();
+                setClusterDirty(cluster.getGuid(), cluster.getName());
+                suspendBackoffForNextRun.set(true);
             } else if (entity instanceof ClusterProperty) {
                 String name = ((ClusterProperty)entity).getName();
                 if (CLUSTER_PROPS_TRIGGERING_COMPLETE_PUSHDOWN.contains(name))
                     setAllDirty();
+                suspendBackoffForNextRun.set(true);
             } else if (entity != null) {
                 for (Class<? extends Entity> entClass : ENTITIES_TRIGGERING_COMPLETE_PUSHDOWN) {
                     if (entClass.isAssignableFrom(entity.getClass())) {
@@ -113,6 +138,11 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
             if (Component.ENTERPRISE_MANAGER.equals(started.getComponent()))
                 start();
         }
+    }
+
+    private boolean isIgnoreableUpdateForSsgNode(Updated updated) {
+        EntityChangeSet cs = updated.getChangeSet();
+        return cs.getNumProperties() == 1 && "notificationAuditTime".equals(cs.getProperties().next());
     }
 
     private void start() {
@@ -132,8 +162,9 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
     }
 
     private void pushAllConfig() {
+        boolean wasImmediate = suspendBackoffForNextRun.get();
         try {
-            doPushAllConfig();
+            doPushAllConfig(wasImmediate);
         } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Exception while pushing down monitoring configuration: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         } catch (Exception e) {
@@ -141,19 +172,24 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         } catch (Throwable t) {
             // Try to log and continue to keep periodic task from dying completely
             logger.log(Level.SEVERE, "Unexpected error while pushing down monitoring configuration: " + ExceptionUtils.getMessage(t), t);
+        } finally {
+            if (wasImmediate) suspendBackoffForNextRun.set(false);
         }
     }
 
-    private void doPushAllConfig() throws FindException {
+    private void doPushAllConfig(boolean suspendBackoffTimers) throws FindException {
         boolean notificationsDisabled = areNotificationsGloballyDisabled();
 
         Collection<SsgCluster> clusters = ssgClusterManager.findAll();
         for (SsgCluster cluster : clusters) {
             final String clusterGuid = cluster.getGuid();
-            if (isClusterDirty(clusterGuid)) {
-                setClusterClean(clusterGuid);
-                if (!configureCluster(cluster, notificationsDisabled))
-                    setClusterDirty(clusterGuid);
+            if (clusterNeedsPushdown(clusterGuid, suspendBackoffTimers)) {
+                boolean success = false;
+                try {
+                    success = configureCluster(cluster, notificationsDisabled);
+                } finally {
+                    onClusterPushdownAttempt(clusterGuid, cluster.getName(), success);
+                }
             }
         }
     }
@@ -171,25 +207,34 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         return hugeSuccess;
     }
 
+    private static final String NODEINFO = "{0} for node {1} ({2}) of cluster {3} ({4})";
+    private static final String NOPUSH = "Unable to push down monitoring configuration to " + NODEINFO;
+    private static final String NOPUSHNET = NOPUSH + " due to network error";
+
     private boolean configureNode(SsgCluster cluster, SsgNode node, boolean notificationsDisabled, boolean needClusterMaster) {
+        final String[] nodeInfo = { node.getIpAddress(), node.getName(), node.getGuid(), cluster.getName(), cluster.getGuid() };
         try {
-            logger.log(Level.INFO, "Pushing down monitoring configuration to " + node.getIpAddress());
+            logger.log(Level.INFO, "Pushing down monitoring configuration to " + NODEINFO, nodeInfo);
             doConfigureNode(cluster, node, notificationsDisabled, needClusterMaster);
             return true;
         } catch (IOException e) {
-            logger.log(Level.INFO, "Unable to push down monitoring configuration to node " + node.getIpAddress() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            logPush(Level.INFO, NOPUSH, nodeInfo, e, false);
         } catch (GatewayException e) {
-            logger.log(Level.WARNING, "Unable to push down monitoring configuration to node " + node.getIpAddress() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            logPush(Level.WARNING, NOPUSH, nodeInfo, e, false);
         } catch (javax.xml.ws.ProtocolException e) {
             if ( ProcessControllerContext.isNetworkException(e) ) {
-                logger.log(Level.WARNING, "Unable to push down monitoring configuration to node " + node.getIpAddress() + " due to network error: " + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e)), ExceptionUtils.getDebugException(e));
+                logPush(Level.WARNING, NOPUSHNET, nodeInfo, ExceptionUtils.unnestToRoot(e), false);
             } else {
-                logger.log(Level.WARNING, "Unable to push down monitoring configuration to node " + node.getIpAddress() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                logPush(Level.WARNING, NOPUSH, nodeInfo, e, false);
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Unable to push down monitoring configuration to node " + node.getIpAddress() + ": " + ExceptionUtils.getMessage(e), e);
+            logPush(Level.WARNING, NOPUSH, nodeInfo, e, true);
         }
         return false;
+    }
+
+    private void logPush(Level level, String baseTemplate, String[] subst, Throwable t, boolean includeStack) {
+        logger.log(level, MessageFormat.format(baseTemplate, subst) + ": " + ExceptionUtils.getMessage(t), includeStack ? t : ExceptionUtils.getDebugException(t));
     }
 
     private void doConfigureNode(SsgCluster cluster, SsgNode node, boolean notificationsDisabled, boolean needClusterMaster) throws GatewayException, IOException, FindException {
@@ -345,9 +390,11 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
      * The synchronizer will push down new configuration to all PCs in this cluster next time it runs.
      *
      * @param clusterGuid GUID of a cluster whose PCs are in need of new monitoring configuration.
+     * @param clusterName name of cluster, if known
      */
-    void setClusterDirty(String clusterGuid) {
-        logger.log(Level.INFO, "Marking cluster GUID " + clusterGuid + " as in need of a monitoring configuration pushdown");
+    void setClusterDirty(String clusterGuid, String clusterName) {
+        String name = clusterName == null ? "" : " (" + clusterName + ")";
+        logger.log(Level.INFO, "Marking cluster GUID " + clusterGuid + name + " as in need of a monitoring configuration pushdown");
         cleanClusters.remove(clusterGuid);
     }
 
@@ -368,5 +415,37 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
     void setAllDirty() {
         logger.log(Level.INFO, "Marking all known clusters as in need of a monitoring configuration pushdown");
         cleanClusters.clear();
+    }
+
+    private void onClusterPushdownAttempt(String clusterGuid, String clusterName, boolean success) {
+        if (success) {
+            setClusterClean(clusterGuid);
+            failedClusters.remove(clusterGuid);
+        } else {
+            setClusterDirty(clusterGuid, clusterName);
+            failedClusters.put(clusterGuid, new ClusterPushdownFailure(failedClusters.get(clusterGuid), clusterGuid, timeSource.currentTimeMillis()));
+        }
+    }
+
+    private boolean clusterNeedsPushdown(String clusterGuid, boolean suspendBackoffTimers) {
+        if (!isClusterDirty(clusterGuid))
+            return false;
+        if (suspendBackoffTimers)
+            return true;
+        ClusterPushdownFailure lastFailure = failedClusters.get(clusterGuid);
+        return lastFailure == null || lastFailure.failureTime + lastFailure.delayMillis <= timeSource.currentTimeMillis();
+    }
+
+    private static class ClusterPushdownFailure {
+        final String clusterGuid;
+        final long failureTime;
+        final long delayMillis;
+
+        private ClusterPushdownFailure(ClusterPushdownFailure lastFailure, String clusterGuid, long failureTime) {
+            if (clusterGuid == null) throw new NullPointerException("clusterGuid");
+            this.clusterGuid = clusterGuid;
+            this.failureTime = failureTime;
+            this.delayMillis = lastFailure == null ? INITIAL_RETRY_DELAY : Math.min(lastFailure.delayMillis * 2, MAX_RETRY_DELAY);
+        }
     }
 }

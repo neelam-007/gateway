@@ -75,7 +75,7 @@ public class GatewayClusterClientManagerTest {
         assertNotNull("client created", bobClient);
         assertTrue("each user gets their own client", aliceClient != bobClient);
         
-        ccm.onApplicationEvent(new Updated<SsgCluster>(fooCluster, new EntityChangeSet(new Object[0], new Object[0], new Object[0])));
+        ccm.onApplicationEvent(new Updated<SsgCluster>(fooCluster, new EntityChangeSet(new String[0], new Object[0], new Object[0])));
 
         GatewayClusterClient client3 = ccm.getGatewayClusterClient("fooCluster", userBob);
         assertTrue("new client instance created after cache flush due to Updated cluster", client3 != client2);

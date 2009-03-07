@@ -151,6 +151,8 @@
 
     <bean id="exceptionLogger" class="com.l7tech.util.UncaughtExceptionLogger" factory-method="createAndInstall"/>
 
+    <bean id="timeSource" class="com.l7tech.util.TimeSource"/>
+
     <!--
     * singleton using the factory method. This is transitional, as it is referencef from
     * too many places.
