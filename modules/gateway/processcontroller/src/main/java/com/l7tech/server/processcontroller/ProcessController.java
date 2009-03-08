@@ -48,7 +48,7 @@ public class ProcessController {
     private ConfigService configService;
 
     /** The maximum amount of time the PC should wait for a node to start */
-    private static final int NODE_START_TIME_MAX = 30000;
+    private static final int NODE_START_TIME_MAX = 60000;
     /** The amount of time the PC should wait for a node to start before beginning to test whether it's started yet */
     static final int NODE_START_TIME_MIN = 5000;
     /** The amount of time the PC should wait after a node has died before beginning to attempt to restart it */
@@ -442,11 +442,7 @@ public class ProcessController {
             final long howLong = now - state.sinceWhen;
             if (howLong > NODE_CRASH_DETECTION_TIME) {
                 logger.log(Level.WARNING, MessageFormat.format("{0} is supposedly running but has not responded to a ping in {1}ms.  Killing and restarting.", node.getName(), howLong), filterException(e));
-                if (state.process != null) {
-                    state.process.destroy();
-                } else {
-                    osKill(node);
-                }
+                osKill(node);
 
                 nodeStates.put(node.getName(), new SimpleNodeState(node, CRASHED));
             } else {
@@ -475,8 +471,7 @@ public class ProcessController {
 
             // Timed out!
             logger.log(Level.WARNING, LOG_TIMEOUT, new Object[] { node.getName(), NODE_START_TIME_MAX });
-
-            if (state.getProcess() != null) state.getProcess().destroy();
+            osKill(node);
 
             final Pair<byte[], byte[]> byteses = state.finishOutput();
 
