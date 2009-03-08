@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
@@ -38,9 +39,11 @@ public class ConfigurationClient extends Interaction {
                                 final String command ) throws ConfigurationException {
         this.provider = provider;
         this.optionInit = provider instanceof OptionInitializer ? (OptionInitializer) provider : null;
+        this.optionFilter = provider instanceof OptionFilter ? (OptionFilter) provider : null;
         this.optionSet = optionSet;
         this.configBeanList = provider.loadConfiguration();
-        this.command = validateCommand(command);        
+        this.command = validateCommand(command);
+        filterOptions(); // do filtering after the provider has loaded the configuration
     }
 
     /**
@@ -129,6 +132,7 @@ public class ConfigurationClient extends Interaction {
     
     private final ConfigurationBeanProvider provider;
     private final OptionInitializer optionInit;
+    private final OptionFilter optionFilter;
     private final OptionSet optionSet;
     private final String command;
     private final Collection<ConfigurationBean> configBeanList;
@@ -159,17 +163,17 @@ public class ConfigurationClient extends Interaction {
         return effectiveCommand;
     }
     
-    private void doShow( OptionSet os,
-                         Map<String,ConfigurationBean> configBeans,
-                         boolean brief,
-                         boolean updatable ) throws IOException {
+    private void doShow( final OptionSet os,
+                         final Map<String,ConfigurationBean> configBeans,
+                         final boolean brief,
+                         final boolean updatable ) throws IOException {
         Interaction summary = new SummaryInteraction(os, configBeans, brief, updatable);
         summary.doInteraction();
         summary.close();
     }
 
-    private boolean doEdit( OptionSet optionSet,
-                                   Map<String,ConfigurationBean> configBeans  ) throws IOException {
+    private boolean doEdit( final OptionSet optionSet,
+                            final Map<String,ConfigurationBean> configBeans  ) throws IOException {
         boolean done = false;
         while ( !done ) {
             try {
@@ -195,8 +199,8 @@ public class ConfigurationClient extends Interaction {
         return done;
     }    
     
-    private boolean doWizard( OptionSet optionSet,
-                                     Map<String,ConfigurationBean> configBeans  ) throws IOException {
+    private boolean doWizard( final OptionSet optionSet,
+                              final Map<String,ConfigurationBean> configBeans  ) throws IOException {
         boolean done = false;
         while ( !done ) {
             try {
@@ -216,6 +220,17 @@ public class ConfigurationClient extends Interaction {
         }
         
         return done;
+    }
+
+    private void filterOptions() {
+        if ( optionFilter != null ) {
+            for ( Iterator<Option> optionIterator = optionSet.getOptions().iterator(); optionIterator.hasNext();  ) {
+                Option option = optionIterator.next();
+                if ( !optionFilter.isOptionActive( optionSet, option ) ) {
+                    optionIterator.remove();
+                }
+            }
+        }
     }
 
     @SuppressWarnings({"unchecked"})

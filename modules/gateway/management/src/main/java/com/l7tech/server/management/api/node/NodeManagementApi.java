@@ -30,6 +30,7 @@ import java.util.Date;
  */
 @WebService
 public interface NodeManagementApi {
+    
     /**
      * Creates a new {@link com.l7tech.server.management.config.node.NodeConfig} with reasonable default parameters for the current host.
      *
@@ -178,16 +179,13 @@ public interface NodeManagementApi {
      * after the timeout has elapsed, the node has still not stopped, the PC will forcibly kill the node's process and
      * continue with the deletion.
      * <p/>
-     * TODO figure out just how much it's appropriate to delete--currently we just stop the node and rename node.properties to prevent it from starting next time.
      *
      * @param nodeName the name of the Node to delete.
      * @param shutdownTimeout the period, in milliseconds, to wait for a clean shutdown to complete before killing the node process. Values <= 0 indicate that the PC should wait indefinitely.
      * @throws DeleteException if the node cannot be deleted
      */
-    void deleteNode(@WebParam(name="nodeName")
-                    String nodeName,
-                    @WebParam(name="shutdownTimeout")
-                    int shutdownTimeout)
+    void deleteNode(@WebParam(name="nodeName") String nodeName,
+                    @WebParam(name="shutdownTimeout") int shutdownTimeout)
         throws DeleteException;
 
     /**
@@ -248,12 +246,44 @@ public interface NodeManagementApi {
      */
     void createDatabase(String nodeName, DatabaseConfig dbconfig, Collection<String> dbHosts, String adminLogin, String adminPassword, String clusterHostname) throws DatabaseCreationException;
 
+    /**
+     * Test the given database confguration.
+     *
+     * <p>For security reasons this method cannot be used from a remote host.</p>
+     *
+     * @param dbconfig The db configuration, administration username/password is required.
+     * @throws DatabaseDeletionException if the database cannot be deleted
+     */
+    boolean testDatabaseConfig(@WebParam(name="databaseConfiguration") DatabaseConfig dbconfig );
+
+    /**
+     * Deletes the specified database.
+     *
+     * <p>For security reasons this method cannot be used from a remote host.</p>
+     *
+     * @param dbconfig The db configuration, administration username/password is required.
+     * @param dbHosts The extra hosts for which database grants should be revoked.
+     * @throws DatabaseDeletionException if the database cannot be deleted
+     */
+    void deleteDatabase(@WebParam(name="databaseConfiguration") DatabaseConfig dbconfig,
+                        @WebParam(name="databaseHosts") Collection<String> dbHosts ) throws DatabaseDeletionException;
+    
     public class DatabaseCreationException extends Exception {
         public DatabaseCreationException(String message, Throwable cause) {
             super(message, cause);
         }
 
         public DatabaseCreationException(String message) {
+            super(message);
+        }
+    }
+
+    public class DatabaseDeletionException extends Exception {
+        public DatabaseDeletionException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public DatabaseDeletionException(String message) {
             super(message);
         }
     }

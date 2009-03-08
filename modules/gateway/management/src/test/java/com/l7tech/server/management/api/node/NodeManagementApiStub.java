@@ -60,4 +60,14 @@ public class NodeManagementApiStub implements NodeManagementApi {
     @Override
     public void createDatabase(String nodeName, DatabaseConfig dbconfig, Collection<String> dbHosts, String adminLogin, String adminPassword, String clusterHostname) throws DatabaseCreationException {
     }
+
+    @Override
+    public boolean testDatabaseConfig(DatabaseConfig dbconfig) {
+        return false;
+    }
+
+    @Override
+    public void deleteDatabase( final DatabaseConfig dbconfig,
+                                final Collection<String> dbHosts ) throws DatabaseDeletionException {                
+    }
 }

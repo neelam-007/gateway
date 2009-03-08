@@ -7,7 +7,13 @@ import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.server.management.config.node.PCNodeConfig;
-import com.l7tech.util.*;
+import com.l7tech.util.BuildInfo;
+import com.l7tech.util.CausedIOException;
+import com.l7tech.util.DefaultMasterPasswordFinder;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.MasterPasswordManager;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.SyspropUtil;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
@@ -51,13 +57,31 @@ public class NodeConfigurationManager {
 
     private static final DBActions dbActions = new DBActions();
 
-    public static final class NodeConfigurationException extends Exception {
+    public static class NodeConfigurationException extends Exception {
         public NodeConfigurationException( final String message ) {
             super(message);
         }
 
         public NodeConfigurationException( final String message, final Throwable cause ) {
             super(message, cause);
+        }
+    }
+
+    public static final class DeleteNodeConfigurationException extends NodeConfigurationException {
+        private final File file;
+
+        public DeleteNodeConfigurationException( final String message, final File file ) {
+            super(message);
+            this.file = file;
+        }
+
+        public DeleteNodeConfigurationException( final String message, final File file, final Throwable cause ) {
+            super(message, cause);
+            this.file = file;
+        }
+
+        public String getNodeConfigFilePath() {
+            return file==null ? "" : file.getAbsolutePath();
         }
     }
 
@@ -182,6 +206,19 @@ public class NodeConfigurationManager {
         }
     }
 
+    public static void deleteNodeConfig( final String nodeName ) throws DeleteNodeConfigurationException {
+        try {
+            File configFile = new File(getConfigurationDirectory(nodeName), NODE_PROPS_FILE);
+            if ( configFile.isFile() ) {
+                if ( !configFile.delete() ) {
+                    throw new DeleteNodeConfigurationException( "Delete failed", configFile );
+                }
+            }
+        } catch (IOException ioe) {
+            throw new DeleteNodeConfigurationException( "Delete failed", null );
+        }
+    }
+
     /**
      * Create a new database.
      *
@@ -220,7 +257,8 @@ public class NodeConfigurationManager {
 
         DBActions.DBActionsResult res = dbActions.createDb(localConfig, hosts, new File(nodesDir,pathToSqlScript).getAbsolutePath(), false);
         if ( res.getStatus() != DBActions.StatusType.SUCCESS ) {
-            throw new CausedIOException(MessageFormat.format("Cannot create database: ''{1}'' [code:{0}]", res.getStatus().getCode(), res.getErrorMessage()), res.getThrown());
+            throw new CausedIOException(MessageFormat.format("Cannot create database: ''{2}'' [code:{0}, {1}]",
+                    res.getStatus().getCode(), res.getStatus(), res.getErrorMessage() == null ? "" : res.getErrorMessage() ), res.getThrown());
         }
 
         AccountReset.resetAccount(databaseConfig, adminLogin, adminPassword);
@@ -229,12 +267,74 @@ public class NodeConfigurationManager {
         }
     }
 
+    /**
+     * Test a database configuration.
+     *
+     * @param dbconfig The configuration for the database to be tested.
+     * @return true if the test is successful
+     */
+    public static boolean testDatabase( final DatabaseConfig dbconfig ) {
+        boolean ok = true;
+
+        if ( dbconfig.getNodeUsername() != null && dbconfig.getNodePassword() != null) {
+            try {
+                ResourceUtils.closeQuietly( dbActions.getConnection( dbconfig, false ) );
+            } catch ( Exception e ) {
+                ok = false;
+            }
+
+        }
+
+        if ( dbconfig.getDatabaseAdminUsername() != null && dbconfig.getDatabaseAdminPassword() != null) {
+            try {
+                ResourceUtils.closeQuietly( dbActions.getConnection( dbconfig, true ) );
+            } catch ( Exception e ) {
+                ok = false;
+            }
+        }
+
+        return ok;
+    }
+
+    /**
+     * Delete a Gateway database.
+     *
+     * @param databaseConfig The configuration for the database to be deleted.
+     * @param extraGrantHosts Additional hostnames from which access to the database should be granted
+     * @param revokeGrants True to revoke grants
+     */
+    public static void deleteDatabase( final DatabaseConfig databaseConfig,
+                                       final Collection<String> extraGrantHosts,
+                                       final boolean revokeGrants )
+        throws IOException {
+        final DatabaseConfig localConfig;
+        try {
+            // If the host is localhost then use that when connecting
+            if ( NetworkInterface.getByInetAddress(InetAddress.getByName(databaseConfig.getHost())) != null ) {
+                localConfig = new DatabaseConfig(databaseConfig);
+                localConfig.setHost("localhost");
+            } else {
+                throw new CausedIOException("Cannot delete database on remote host '"+databaseConfig.getHost()+"'.");
+            }
+        } catch ( UnknownHostException uhe ) {
+            throw new CausedIOException("Could not resolve host '"+databaseConfig.getHost()+"' when deleting database.");
+        }
+
+        Set<String> hosts = new HashSet<String>();
+        hosts.add( databaseConfig.getHost() );
+        if (extraGrantHosts != null) hosts.addAll(extraGrantHosts);
+
+        if ( !dbActions.dropDatabase( localConfig, hosts, true, revokeGrants, null) ) {
+            throw new CausedIOException(MessageFormat.format("Cannot delete database ''{0}'' on ''{1}''.", databaseConfig.getName(), databaseConfig.getHost()));
+        }
+    }
+
     public static NodeConfig loadNodeConfig( final String name, final boolean loadSecrets ) throws IOException {
         return loadNodeConfig( name, new File(getConfigurationDirectory(name), NODE_PROPS_FILE), loadSecrets );
     }
 
-    public static Collection<Pair<NodeConfig, File>> loadNodeConfigs( final boolean throwOnError ) throws IOException {
-        Collection<Pair<NodeConfig, File>> nodeConfigs = new ArrayList<Pair<NodeConfig, File>>();
+    public static Collection<NodeConfig> loadNodeConfigs( final boolean throwOnError ) throws IOException {
+        Collection<NodeConfig> nodeConfigs = new ArrayList<NodeConfig>();
 
         File nodeBaseDirectory = nodesDir;
         String[] nodeNames = nodeBaseDirectory.list();
@@ -242,8 +342,7 @@ public class NodeConfigurationManager {
         
         for ( String nodeConfigName : nodeNames) {
             try {
-                final File nodePropsFile = new File(getConfigurationDirectory(nodeConfigName), NODE_PROPS_FILE);
-                nodeConfigs.add(new Pair<NodeConfig, File>(loadNodeConfig( nodeConfigName, nodePropsFile, false), nodePropsFile));
+                nodeConfigs.add( loadNodeConfig( nodeConfigName, false ) );
             } catch ( IOException ioe ) {
                 if ( throwOnError ) {
                     throw ioe;

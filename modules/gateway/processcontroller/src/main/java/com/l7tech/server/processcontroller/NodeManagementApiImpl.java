@@ -23,10 +23,16 @@ import org.apache.cxf.interceptor.OutFaultInterceptors;
 import javax.activation.DataHandler;
 import javax.annotation.Resource;
 import javax.jws.WebService;
+import javax.xml.ws.WebServiceContext;
+import javax.xml.ws.handler.MessageContext;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 @WebService(name="NodeManagementAPI",
             targetNamespace="http://ns.l7tech.com/secureSpan/5.0/component/processController/nodeManagementApi",
             endpointInterface="com.l7tech.server.management.api.node.NodeManagementApi")
@@ -35,11 +41,33 @@ import java.util.logging.Logger;
 public class NodeManagementApiImpl implements NodeManagementApi {
     private static final Logger logger = Logger.getLogger(NodeManagementApiImpl.class.getName());
 
+    private static final String AUTH_FAILURE = "Authentication Required";
+
     @Resource
     private ConfigService configService;
 
     @Resource
     private ProcessController processController;
+
+    @Resource
+    private WebServiceContext webServiceContext;
+
+    private void checkLocalRequest() {
+        final HttpServletRequest req = (HttpServletRequest)webServiceContext.getMessageContext().get(MessageContext.SERVLET_REQUEST);
+        if (req == null) throw new IllegalStateException("Couldn't get HttpServletRequest");
+
+        try {
+            final InetAddress addr = InetAddress.getByName(req.getRemoteAddr());
+            if (addr.isLoopbackAddress()) {
+                logger.fine("Allowing connection from localhost with no client certificate");
+            } else {
+                throw new IllegalArgumentException(AUTH_FAILURE);
+            }
+        } catch (UnknownHostException e) {
+            throw new IllegalStateException("Couldn't get client address", e);
+        }
+    }
+
 
     @Override
     public NodeConfig createNode(NodeConfig nodeConfig)
@@ -84,8 +112,14 @@ public class NodeManagementApiImpl implements NodeManagementApi {
             throw new SaveException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");
         }
 
-        configService.addServiceNode(node);
-        return node;
+        try {
+            configService.addServiceNode(node);
+        } catch ( IOException ioe ) {
+            logger.log(Level.WARNING, "Error during node configuration.", ioe );
+            throw new SaveException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");
+        }
+
+        return configService.getHost().getNodes().get(newNodeName);
     }
 
     @Override
@@ -123,8 +157,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         // validate and persist configuration
         final String nodeName = node.getName();
         final Map<String,NodeConfig> nodes = configService.getHost().getNodes();
-        PCNodeConfig currentNodeConfig = (PCNodeConfig)nodes.get(nodeName);
-        if (currentNodeConfig == null) throw new UpdateException("Node '" + nodeName + "' not found.");
+        if (nodes.get(nodeName) == null) throw new UpdateException("Node '" + nodeName + "' not found.");
 
         String clusterPassphrase = node.getClusterPassphrase();
         DatabaseConfig[] configs;
@@ -147,24 +180,18 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         }
 
         // update internal configuration
-        currentNodeConfig.setEnabled( node.isEnabled() );
-        if ( clusterPassphrase != null )  {
-            currentNodeConfig.setClusterPassphrase( clusterPassphrase );
-        }
-        if ( databaseConfig != null ) {
-            currentNodeConfig.getDatabases().clear();
-            currentNodeConfig.getDatabases().add(databaseConfig);
-            if ( failoverDatabaseConfig != null ) {
-                failoverDatabaseConfig.setParent(databaseConfig);
-                currentNodeConfig.getDatabases().add(failoverDatabaseConfig);
-            }
+        try {
+            configService.updateServiceNode(node);
+        } catch ( IOException ioe ) {
+            logger.log(Level.WARNING, "Error during node configuration.", ioe );
+            throw new UpdateException( "Error during node configuration '"+ExceptionUtils.getMessage(ioe)+"'");
         }
 
         // apply state change if required
         NodeStateType currentState = processController.getNodeStatus(nodeName).getType();
         if ( node.isEnabled() && NodeStateType.RUNNING != currentState ) {
             try {
-                processController.startNode( currentNodeConfig, false );
+                processController.startNode( (PCNodeConfig)nodes.get(nodeName), false );
             } catch (IOException ioe) {
                 logger.log( Level.WARNING, "Error starting node.", ioe );
                 throw new UpdateException("Error starting node '"+ExceptionUtils.getMessage(ioe)+"'.");
@@ -240,6 +267,24 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         } catch (IOException e) {
             logger.log(Level.WARNING, "Error creating database for '"+nodeName+"'.", e );
             throw new DatabaseCreationException(ExceptionUtils.getMessage(e));
+        }
+    }
+
+    @Override
+    public boolean testDatabaseConfig( final DatabaseConfig dbconfig ) {
+        checkLocalRequest();
+        return NodeConfigurationManager.testDatabase( dbconfig );
+    }
+
+    @Override
+    public void deleteDatabase( final DatabaseConfig dbconfig,
+                                final Collection<String> dbHosts ) throws DatabaseDeletionException {
+        checkLocalRequest();
+        try {
+            NodeConfigurationManager.deleteDatabase( dbconfig, dbHosts, true );
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Error deleting database '"+dbconfig.getHost()+"' due to '"+ExceptionUtils.getMessage(e)+"'.", e.getCause()!=null ? e : ExceptionUtils.getDebugException(e) );
+            throw new DatabaseDeletionException("Unable to delete database '"+ExceptionUtils.getMessage(e)+"'" );
         }
     }
 

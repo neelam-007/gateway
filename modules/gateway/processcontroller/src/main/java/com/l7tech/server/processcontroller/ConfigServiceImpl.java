@@ -11,7 +11,6 @@ import com.l7tech.server.management.config.host.IpAddressConfig;
 import com.l7tech.server.management.config.host.PCHostConfig;
 import com.l7tech.server.management.config.monitoring.MonitoringConfiguration;
 import com.l7tech.server.management.config.node.NodeConfig;
-import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.server.processcontroller.monitoring.MonitoringKernel;
 import com.l7tech.util.*;
 
@@ -30,7 +29,6 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,10 +49,8 @@ public class ConfigServiceImpl implements ConfigService {
     private final int sslPort;
     private final String sslIPAddress;
     private final File configDirectory;
-    private final File varDirectory; // TODO do we want to notice if the directory gets created during runtime?
     private final File applianceLibexecDirectory;
     private final File javaBinary;
-    private final Map<String, NodeInfo> nodeInfos;
 
     private volatile boolean responsibleForClusterMonitoring;
     private volatile MonitoringConfiguration currentMonitoringConfiguration;
@@ -82,8 +78,7 @@ public class ConfigServiceImpl implements ConfigService {
         File varDirectory = new File(processControllerHomeDirectory, SLASH + "var");
         if (!varDirectory.exists() || !varDirectory.isDirectory())
             logger.log(Level.WARNING, varDirectory.getAbsolutePath() + " does not exist; monitoring configurations will not be saved");
-        this.varDirectory = varDirectory;
-        this.monitoringConfigFile = varDirectory == null ? null : new File(this.varDirectory, "currentMonitoringConfig.xml");
+        this.monitoringConfigFile = varDirectory == null ? null : new File(varDirectory, "currentMonitoringConfig.xml");
         this.applianceLibexecDirectory = new File(processControllerHomeDirectory, ".." + SLASH + "libexec");
         this.masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( new File(configDirectory, "omp.dat") ) );
 
@@ -129,13 +124,10 @@ public class ConfigServiceImpl implements ConfigService {
 
         reverseEngineerIps(hostConfig);
 
-        Map<String, NodeInfo> infos = new HashMap<String, NodeInfo>();
         try {
-            for (Pair<NodeConfig, File> pair : NodeConfigurationManager.loadNodeConfigs(false)) {
-                NodeConfig config = pair.left;
+            for (NodeConfig config : NodeConfigurationManager.loadNodeConfigs(false)) {
                 logger.log(Level.INFO, "Detected node ''{0}''.", config.getName());
                 config.setHost(hostConfig);
-                infos.put(config.getName(), new NodeInfo((PCNodeConfig)config, pair.right));
                 hostConfig.getNodes().put(config.getName(), config);
             }
         } catch (IOException ioe) {
@@ -144,7 +136,6 @@ public class ConfigServiceImpl implements ConfigService {
             logger.log(Level.WARNING, "Error when detecting nodes.", nfe);
         }
 
-        this.nodeInfos = new ConcurrentHashMap<String, NodeInfo>(infos);
         this.host = hostConfig;
     }
 
@@ -353,17 +344,6 @@ public class ConfigServiceImpl implements ConfigService {
         return hostname;
     }
 
-
-    private static class NodeInfo {
-        private final PCNodeConfig config;
-        private final File nodeConfigFile;
-
-        private NodeInfo(PCNodeConfig config, File nodeConfigFile) {
-            this.config = config;
-            this.nodeConfigFile = nodeConfigFile;
-        }
-    }
-
     private void reverseEngineerIps(PCHostConfig g) {
         final Set<IpAddressConfig> ips = g.getIpAddresses();
 
@@ -389,14 +369,14 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     @Override
-    public void addServiceNode(NodeConfig node) {
-        host.getNodes().put(node.getName(), node);
+    public void addServiceNode( final NodeConfig node ) throws IOException {
+        refreshNodeConfiguration( node.getName() );
     }
 
     @Override
-    public void updateServiceNode(NodeConfig node) {
+    public void updateServiceNode( final NodeConfig node ) throws IOException {
         // TODO what kinds of NodeConfig changes might necessitate a restart?
-        host.getNodes().put(node.getName(), node);
+        refreshNodeConfiguration( node.getName() );
     }
 
     @Override
@@ -404,6 +384,7 @@ public class ConfigServiceImpl implements ConfigService {
         return nodeBaseDirectory;
     }
 
+    @Override
     public File getApplianceLibexecDirectory() {
         return applianceLibexecDirectory;
     }
@@ -439,11 +420,13 @@ public class ConfigServiceImpl implements ConfigService {
 
     @Override
     public synchronized void deleteNode(final String nodeName) throws DeleteException, IOException {
-        NodeInfo info = nodeInfos.get(nodeName);
-        if (info == null) return;
-        final String propfile = info.nodeConfigFile.getAbsolutePath();
-        if (!info.nodeConfigFile.renameTo(new File(propfile + "-deleted"))) throw new DeleteException("Unable to rename " + propfile);
-        nodeInfos.remove(nodeName);
+        try {
+            NodeConfigurationManager.deleteNodeConfig( nodeName );
+        } catch ( NodeConfigurationManager.DeleteNodeConfigurationException dnce ) {
+            logger.warning("Unable to delete configuration for node '"+nodeName+"' file '"+dnce.getNodeConfigFilePath()+"'.");
+            throw new DeleteException("Unable to delete configuration for node '"+nodeName+"'.");
+        }
+        logger.log(Level.INFO, "Removing node configuration ''{0}''.", nodeName);
         host.getNodes().remove(nodeName);
     }
 
@@ -454,7 +437,7 @@ public class ConfigServiceImpl implements ConfigService {
 
     @Override
     public boolean isResponsibleForClusterMonitoring() {
-        return false;
+        return responsibleForClusterMonitoring;
     }
 
     @Override
@@ -477,6 +460,7 @@ public class ConfigServiceImpl implements ConfigService {
         } else {
             try {
                 FileUtils.saveFileSafely(monitoringConfigFile.getPath(), new FileUtils.Saver() {
+                    @Override
                     public void doSave(FileOutputStream fos) throws IOException {
                         JAXB.marshal(config, fos);
                     }
@@ -486,4 +470,12 @@ public class ConfigServiceImpl implements ConfigService {
             }
         }
     }
+
+    private void refreshNodeConfiguration( final String nodeName ) throws IOException  {
+        NodeConfig config = NodeConfigurationManager.loadNodeConfig( nodeName, false );
+        logger.log(Level.INFO, "Reloaded node configuration ''{0}''.", config.getName());
+        config.setHost(host);
+        host.getNodes().put( nodeName, config );
+    }
+
 }

@@ -13,7 +13,6 @@ import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.server.management.config.node.NodeConfig;
 import com.l7tech.util.BuildInfo;
-import com.l7tech.util.Pair;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
@@ -23,7 +22,6 @@ import org.apache.cxf.transport.http.HTTPConduit;
 import javax.activation.DataHandler;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -77,6 +75,15 @@ public class NodeManagementApiFactory {
         return managementService;
     }
 
+    /**
+     * Get the host that this management API is running against.
+     *
+     * @return The hostname or ip address.
+     */
+    public String getHost() {
+        return nodeManagementUrl==null ? "127.0.0.1" : nodeManagementUrl.getHost();
+    }
+
     //- PRIVATE
 
     private final URL nodeManagementUrl;
@@ -111,14 +118,13 @@ public class NodeManagementApiFactory {
     }
 
     private NodeManagementApi buildDirectManagementService() throws IOException {
-        final Collection<Pair<NodeConfig, File>> nodes = NodeConfigurationManager.loadNodeConfigs(false);
+        final Collection<NodeConfig> nodes = NodeConfigurationManager.loadNodeConfigs(false);
         return new NodeManagementApi(){
             @Override
             public Collection<NodeHeader> listNodes() throws FindException {
                 Collection<NodeHeader> headers = new ArrayList<NodeHeader>();
 
-                for ( Pair<NodeConfig, File> nodePair : nodes ) {
-                    NodeConfig nc = nodePair.left;
+                for ( NodeConfig nc : nodes ) {
                     headers.add( new NodeHeader( nc.getGuid(), nc.getName(), SoftwareVersion.fromString(BuildInfo.getProductVersion()), true, NodeStateType.UNKNOWN, new Date(), new Date()) );
                 }
 
@@ -191,8 +197,7 @@ public class NodeManagementApiFactory {
             private NodeConfig doGetNode(final String nodeName) {
                 NodeConfig config = null;
 
-                for ( Pair<NodeConfig, File> nodePair : nodes ) {
-                    NodeConfig nc = nodePair.left;
+                for ( NodeConfig nc : nodes ) {
                     if ( nc.getName().equals(nodeName) ) {
                         config = nc;
                         break;
@@ -213,6 +218,10 @@ public class NodeManagementApiFactory {
             public NodeStateType startNode(String nodeName) throws FindException, StartupException { throw new UnsupportedOperationException(); }
             @Override
             public void stopNode(String nodeName, int timeout) throws FindException { throw new UnsupportedOperationException(); }
+            @Override
+            public boolean testDatabaseConfig(DatabaseConfig dbconfig) { throw new UnsupportedOperationException(); }
+            @Override
+            public void deleteDatabase(DatabaseConfig dbconfig, Collection<String> dbHosts) throws DatabaseDeletionException { throw new UnsupportedOperationException(); }
         };
     }
 }

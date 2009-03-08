@@ -83,7 +83,7 @@ public class ProcessController {
             api.shutdown();
             nodeStates.put(nodeName, new StoppingNodeState(state.node, process, api, timeout));
         } catch (Exception e) {
-            nodeStates.put(nodeName, new SimpleNodeState(state.node, CRASHED));
+            nodeStates.put(nodeName, new StoppedNodeState(state.node, api, DEFAULT_STOPPED_TIMEOUT));
             boolean dead = false;
             if ( process != null ) {
                 try {
@@ -171,7 +171,7 @@ public class ProcessController {
         NodeState state;
         synchronized (this) {
             state = nodeStates.get(nodeName);
-            if (!EnumSet.of(STOPPED, STOPPING, CRASHED, UNKNOWN).contains(state.type)) {
+            if (!EnumSet.of(STOPPED, STOPPING, CRASHED).contains(state.type)) {
                 stopNode(nodeName, shutdownTimeout);
             }
             notifyAll();
@@ -196,8 +196,10 @@ public class ProcessController {
                     logger.info("Node is shutdown");
                     break waiting;
                 case CRASHED:
-                case UNKNOWN:
                 case WONT_START:
+                    logger.info("Node is not running.");
+                    break waiting;
+                case UNKNOWN:
                 case STARTING:
                     throw new IllegalStateException("Unexpected state for " + nodeName + " after shutdown: " + state.type);
             }

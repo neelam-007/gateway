@@ -2,23 +2,49 @@
 <optionSet id="appliance-delete">
     <description>
 ----------------------------------------------------------------------
-Delete SecureSpan Gateway Configuration
+Delete SecureSpan Gateway
 ----------------------------------------------------------------------</description>
     <prompt>
 ----------------------------------------------------------------------
-Delete SecureSpan Gateway Configuration
+Delete SecureSpan Gateway
 ----------------------------------------------------------------------
 At any time type "quit" to quit.</prompt>
+
+    <optionGroup id="delete">
+        <description>Delete Node Configuration</description>
+        <prompt>Delete the configuration for the node. If running the node will be
+stopped and the configuration for node will be removed.</prompt>
+    </optionGroup>
+
+    <optionGroup id="dbdelete" required="false">
+        <description>Delete Database</description>
+        <prompt>Delete the database for the node. The database for the node will be
+deleted and can only be restored if a backup is available.</prompt>
+    </optionGroup>
 
     <!--
       Options for node
     -->
-    <option id="node-delete" type="BOOLEAN" order="400" name="Delete node">
+    <option id="node-delete" group="delete" type="BOOLEAN" order="100" name="Delete node">
         <configName>node.delete</configName>
         <configValue>false</configValue>
-        <description>Delete node</description>
-        <prompt>Delete the configuration for the node. If the node hosts a database
-then this will also be deleted.</prompt>
+        <description>Delete Node</description>
+        <prompt>Delete the configuration for the node.</prompt>
+    </option>
+
+    <!--
+      Options for database
+    -->
+    <option id="db-admin-user" group="dbdelete" type="USERNAME" updatable="false" order="200" name="Administrative Database Username">
+        <configName>database.admin.user</configName>
+        <configValue>root</configValue>
+        <description>Administrative Database Username</description>
+        <prompt>Enter the administrative database user.</prompt>
+    </option>
+    <option id="db-admin-pass" group="dbdelete" type="PASSWORD" updatable="false" order="201" name="Administrative Database Password">
+        <configName>database.admin.pass</configName>
+        <description>Administrative Database Password</description>
+        <prompt>Enter the administrative database password.</prompt>
     </option>
 
 </optionSet>

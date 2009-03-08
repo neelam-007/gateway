@@ -35,9 +35,9 @@ public interface ConfigService {
 
     HostConfig getHost();
 
-    void addServiceNode(NodeConfig node);
+    void addServiceNode(NodeConfig node) throws IOException;
 
-    void updateServiceNode(NodeConfig node);
+    void updateServiceNode(NodeConfig node) throws IOException;
 
     /** The parent directory of the node directories. */
     File getNodeBaseDirectory();

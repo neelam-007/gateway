@@ -11,7 +11,7 @@ Configure SecureSpan Gateway
 At any time type "quit" to quit.</prompt>
 
     <optionGroup id="db-fail" required="false">
-        <description>Database Failover Connection</description>
+        <description>Configure Database Failover Connection</description>
         <prompt>
 --------------------------------
 Set Up the SSG Failover Database
