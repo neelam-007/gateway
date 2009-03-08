@@ -565,11 +565,12 @@
                 <constructor-arg value="monitoringConfigurationSynchronizerTimer"/>
             </bean>
         </constructor-arg>
-        <constructor-arg index="1" ref="ssgClusterManager"/>
-        <constructor-arg index="2" ref="gatewayContextFactory"/>
-        <constructor-arg index="3" ref="ssgClusterNotificationSetupManager"/>
-        <constructor-arg index="4" ref="entityMonitoringPropertySetupManager"/>
-        <constructor-arg index="5" ref="systemMonitoringSetupSettingsManager"/>
+        <constructor-arg index="1" ref="timeSource"/>
+        <constructor-arg index="2" ref="ssgClusterManager"/>
+        <constructor-arg index="3" ref="gatewayContextFactory"/>
+        <constructor-arg index="4" ref="ssgClusterNotificationSetupManager"/>
+        <constructor-arg index="5" ref="entityMonitoringPropertySetupManager"/>
+        <constructor-arg index="6" ref="systemMonitoringSetupSettingsManager"/>
     </bean>
 
     <bean id="notificationAttemptAuditor" class="com.l7tech.server.ems.monitoring.NotificationAttemptAuditor">
