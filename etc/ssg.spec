@@ -23,7 +23,7 @@ rm -fr %{buildroot}
 %prep
 rm -fr %{buildroot}
 
-%setup -qc %{buildroot}
+%setup -qcn %{buildroot}
 
 %build
 

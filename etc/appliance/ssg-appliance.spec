@@ -25,8 +25,8 @@ rm -fr %{buildroot}
 %prep
 rm -fr %{buildroot}
 
-%setup -qc %{buildroot}
-%setup -qDTa 1 %{buildroot}
+%setup -qcn %{buildroot}
+%setup -qDTa 1 -n %{buildroot}
 
 [ ! -e %{buildroot}/jdk/db ] || rm -rf %{buildroot}/jdk/db
 [ ! -e %{buildroot}/jdk/demo ] || rm -rf %{buildroot}/jdk/demo
