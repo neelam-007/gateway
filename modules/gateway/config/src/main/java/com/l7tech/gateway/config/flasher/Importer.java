@@ -51,13 +51,16 @@ class Importer extends ImportExportUtility {
     public static final CommandLineOption OS_OVERWRITE = new CommandLineOption("-os",
             "overwrite os level config files",
             false, true);
+    public static final CommandLineOption CREATE_NEW_DB = new CommandLineOption("-newdb" ,"create new database");
+
     public static final CommandLineOption CONFIG_ONLY = new CommandLineOption("-config", "only restore configuration files, no database restore", false, true);
     public static final CommandLineOption CLUSTER_PASSPHRASE = new CommandLineOption("-cp", "the cluster passphrase for the (resulting) database");
     public static final CommandLineOption GATEWAY_DB_USERNAME = new CommandLineOption("-gdbu", "gateway database username");
     public static final CommandLineOption GATEWAY_DB_PASSWORD = new CommandLineOption("-gdbp", "gateway database password");
 
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, MAPPING_PATH, DB_HOST_NAME, DB_NAME, DB_PASSWD, DB_USER,
-            OS_OVERWRITE, Exporter.AUDIT, CONFIG_ONLY, CLUSTER_PASSPHRASE, GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD};
+            OS_OVERWRITE, Exporter.AUDIT, CONFIG_ONLY, CLUSTER_PASSPHRASE, GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD,
+            CREATE_NEW_DB};
 
     public static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
             new CommandLineOption("-p", "Ignored parameter for partition", true, false),
@@ -166,9 +169,17 @@ class Importer extends ImportExportUtility {
                 dbPort = "3306";
             }
 
+            boolean isCreateNewDatabase = false;
             dbName = arguments.get(DB_NAME.name);
-            if (dbName == null) {
-                throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_NAME.name);
+            if (!arguments.containsKey(DB_NAME.name) && !arguments.containsKey(CREATE_NEW_DB.name)) {
+                throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option either: " + DB_NAME.name + " or " + CREATE_NEW_DB.name);
+            } else if (arguments.containsKey(DB_NAME.name) && arguments.containsKey(CREATE_NEW_DB.name)) {
+                throw new InvalidArgumentException("either specify " + DB_NAME.name + " or " + CREATE_NEW_DB.name);
+            } else {
+                if (arguments.containsKey(CREATE_NEW_DB.name)) {
+                    isCreateNewDatabase = true;
+                    dbName = arguments.get(CREATE_NEW_DB.name);
+                }
             }
 
             boolean cleanRestore = false;
@@ -187,6 +198,11 @@ class Importer extends ImportExportUtility {
                     databasePass = nodeConfig.getString("node.db.config.main.pass") == null ? databasePass : nodeConfig.getString("node.db.config.main.pass");
                     databasePass = new String(mpm.decryptPasswordIfEncrypted(databasePass));
                     logger.info("Using database gateway username/password defined from node.properties");
+
+                    if (!isCreateNewDatabase && !dbName.equals(nodeConfig.getString("node.db.config.main.name"))) {
+                        throw new InvalidArgumentException("provided database name does not match with database name in node.properties file.  If you " +
+                                "wish to create a new database, use the " + CREATE_NEW_DB.name + " option");
+                    }
                 } else {
                     nodeConfig.setProperty("node.id", UUID.randomUUID().toString().replace("-", ""));
                     nodeConfig.setProperty("node.db.config.main.user", databaseUser);
@@ -226,34 +242,17 @@ class Importer extends ImportExportUtility {
                 logger.info("Checking if we can already connect to target database using image db properties");
                 // if clone mode, check if we can already get connection from the target database
 
-                boolean databasepresentandkosher = false;
-                try {
-                    Connection c = getConnection();
-                    try {
-                        Statement s = c.createStatement();
-                        ResultSet rs = s.executeQuery("select * from hibernate_unique_key");
-                        if (rs.next()) {
-                            databasepresentandkosher = true;
-                        }
-                        rs.close();
-                        s.close();
-                    } finally {
-                        c.close();
-                    }
-                } catch (SQLException e) {
-                    databasepresentandkosher = false;
-                }
                 System.out.println("Using database host " + dbHost);
                 System.out.println("Using database port " + dbPort);
                 System.out.println("Using database name " + dbName);
 
                 // if the database needs to be created, do it
-                if (databasepresentandkosher) {
-                    logger.info("The database already exists on this system");
+                if (!isCreateNewDatabase) {
+                    logger.info("Using database specified from node.properties file.");
                     System.out.println("Existing target database detected");
                 } else {
-                    logger.info("Database need to be created");
-                    System.out.print("The target database does not exist. Creating it now ...");
+                    logger.info("Requested to create new database");
+                    System.out.print("Requested to create new database. Creating it now ...");
                     DBActions dba = new DBActions();
                     DatabaseConfig config = new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, databaseUser, databasePass);
                     config.setDatabaseAdminUsername(rootDBUsername);
@@ -736,8 +735,10 @@ class Importer extends ImportExportUtility {
             throw new InvalidArgumentException("missing option " + DB_HOST_NAME.name);
         }
 
-        if (!args.containsKey(DB_NAME.name)) {
-            throw new InvalidArgumentException("missing option " + DB_NAME.name);
+        if (!args.containsKey(DB_NAME.name) && !args.containsKey(CREATE_NEW_DB.name)) {
+            throw new InvalidArgumentException("missing option " + DB_NAME.name + " or " + CREATE_NEW_DB.name);
+        } else if (args.containsKey(DB_NAME.name) && args.containsKey(CREATE_NEW_DB.name)) {
+            throw new InvalidArgumentException("either specify " + DB_NAME.name + " or " + CREATE_NEW_DB.name);
         }
 
         if (!args.containsKey(DB_USER.name)) {
@@ -800,23 +801,31 @@ class Importer extends ImportExportUtility {
             }
 
             //test root user conneciton
-            DatabaseConfig config = new DatabaseConfig(host, port, args.get(DB_NAME.name), rootUsername, rootPassword);
-            config.setDatabaseAdminUsername(rootUsername);
-            config.setDatabaseAdminPassword(rootPassword);
-            verifyDatabaseConnection(config, true);
+            if (args.containsKey(DB_NAME.name)) {
+                DatabaseConfig config = new DatabaseConfig(host, port, args.get(DB_NAME.name), rootUsername, rootPassword);
+                config.setDatabaseAdminUsername(rootUsername);
+                config.setDatabaseAdminPassword(rootPassword);
+                verifyDatabaseConnection(config, true);
 
-            //test gateway user connection
-            verifyDatabaseConnection(new DatabaseConfig(host, port, args.get(DB_NAME.name), gatewayUsername, gatewayPassword), false);
+                //test gateway user connection
+                verifyDatabaseConnection(new DatabaseConfig(host, port, args.get(DB_NAME.name), gatewayUsername, gatewayPassword), false);
 
-            //if the database alerady exists, check if all gateway have been shut down
-            if (verifyDatabaseExists(host, args.get(DB_NAME.name), port, rootUsername, rootPassword)) {
-                //database doesnt exists check if gateway are shut down
-                String connectedNode = checkSSGConnectedToDatabase(false, new DatabaseConfig(host, port, args.get(DB_NAME.name), rootUsername, rootPassword));
-                if (StringUtils.isNotEmpty(connectedNode)) {
-                    throw new FatalException("A SecureSpan Gateway is currently running " +
-                            "and connected to the database. Please shutdown " + connectedNode);
+                //if the database alerady exists, check if all gateway have been shut down
+                if (verifyDatabaseExists(host, args.get(DB_NAME.name), port, rootUsername, rootPassword)) {
+                    //database doesnt exists check if gateway are shut down
+                    String connectedNode = checkSSGConnectedToDatabase(false, new DatabaseConfig(host, port, args.get(DB_NAME.name), rootUsername, rootPassword));
+                    if (StringUtils.isNotEmpty(connectedNode)) {
+                        throw new FatalException("A SecureSpan Gateway is currently running " +
+                                "and connected to the database. Please shutdown " + connectedNode);
+                    }
+                }
+            } else if (args.containsKey(CREATE_NEW_DB.name)) {
+                //check if the database exists already
+                if (verifyDatabaseExists(host, args.get(CREATE_NEW_DB.name), port, gatewayUsername, gatewayPassword)) {
+                    throw new FatalException("The database " + args.get(CREATE_NEW_DB.name) + " already exists");
                 }
             }
+
         } catch (ConfigurationException ce) {
             throw new IOException("failed to load information from " + Exporter.NODE_PROPERTIES_FILE);
         } catch (SQLException sqle) {
