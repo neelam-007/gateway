@@ -40,6 +40,16 @@ confirmedMessage() {
     read;
 }
 
+confirmAction() {
+    confirmed=1
+    echo -n "${1} [y/n]: "
+    read choice
+    if [ "${choice}" == "y" ] || [ "${choice}" == "yes" ] ; then
+        confirmed=0
+    fi
+    return ${confirmed}
+}
+
 doNetworkConfiguration() {
     isMenuValid="n"
     while [ "$isMenuValid" != "y" ]
@@ -276,10 +286,28 @@ doEmsConfiguration() {
                         echo "Disabing the Enterprise Service Manager."
                         sudo /sbin/chkconfig ssem off
                         confirmedMessage "Enterprise Service Manager disabled."
+
+                        sudo /sbin/service ssem status &>/dev/null && true
+                        if [ ${?} -eq 0 ] ; then
+                            if confirmAction "Do you want to stop the Enterprise Service Manager?" ; then
+                                echo "Stopping Enterprise Service Manager."
+                                sudo /sbin/service ssem stop
+                                confirmedMessage "Enterprise Service Manager stopped."
+                            fi
+                        fi
                     else
                         echo "Enabling the Enterprise Service Manager."
                         sudo /sbin/chkconfig ssem on
                         confirmedMessage "Enterprise Service Manager enabled."
+
+                        sudo /sbin/service ssem status &>/dev/null && true
+                        if [ ${?} -ne 0 ] ; then
+                            if confirmAction "Do you want to start the Enterprise Service Manager?" ; then
+                                echo "Starting Enterprise Service Manager."
+                                sudo /sbin/service ssem start
+                                confirmedMessage "Enterprise Service Manager started."
+                            fi
+                        fi
                     fi
                 fi
                 clear;;

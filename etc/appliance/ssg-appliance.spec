@@ -193,6 +193,7 @@ echo "ssgconfig ALL = (layer7,root) NOPASSWD: /opt/SecureSpan/Appliance/libexec/
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Gateway/config/ssgconfig.sh" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/EnterpriseManager/config/emconfig.sh" >> /etc/sudoers
 echo "ssgconfig ALL = NOPASSWD: /sbin/chkconfig ssem on, /sbin/chkconfig ssem off" >> /etc/sudoers
+echo "ssgconfig ALL = NOPASSWD: /sbin/service ssem start, /sbin/service ssem stop, /sbin/service ssem status" >> /etc/sudoers
 
 # The layer7 user is allowed to run the sca stuff without having to enter a password
 echo "layer7 ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/masterkey-manage.pl" >> /etc/sudoers
