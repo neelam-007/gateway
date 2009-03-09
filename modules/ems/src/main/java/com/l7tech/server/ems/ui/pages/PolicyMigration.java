@@ -1,6 +1,7 @@
 package com.l7tech.server.ems.ui.pages;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.*;
 import com.l7tech.server.ems.migration.*;
@@ -953,7 +954,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     Component selectionComponent2 = ((Form)dependenciesContainer.get("dependencyControlsForm")).get("dependencyEditButton");
                     if ( selectedItem != null ) {
                         lastSourceKey = new DependencyKey( sourceClusterId, selectedItem.asEntityHeader() );
-                        if ( isSearchable( selectedItem.asEntityHeader().getType() ) ) {
+                        if ( isSearchable( selectedItem.asEntityHeader() ) ) {
                             candidateModel.setName( selectedItem.getDisplayNameWithScope() );
                             candidateModel.setType( selectedItem.getType() );
                         } else {
@@ -1012,7 +1013,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             searchModel.setSearchManner("contains");
             searchModel.setSearchValue("");
 
-            if ( sourceKey != null && isSearchable( sourceKey.asEntityHeader().getType() ) ) {
+            if ( sourceKey != null && isSearchable( sourceKey.asEntityHeader() ) ) {
                 for ( String id : SEARCH_REFRESH_COMPONENTS ) {
                     Component component = optionRefreshComponents[1].get(id);
                     component.setEnabled( true );
@@ -1045,7 +1046,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                 }
             }
         } else {
-            if ( sourceKey != null && isSearchable( sourceKey.asEntityHeader().getType() ) ) {
+            if ( sourceKey != null && isSearchable( sourceKey.asEntityHeader() ) ) {
                 options = retrieveDependencyOptions( lastTargetClusterId, lastSourceKey, searchModel.getSearchTarget().item, searchModel.getSearchFilter() );
             }
         }
@@ -1649,8 +1650,11 @@ public class PolicyMigration extends EsmStandardWebPage {
     /**
      * Searchable items will have the search controls enabled.
      */
-    private static boolean isSearchable( final com.l7tech.objectmodel.EntityType type ) {
-        return  !(type == com.l7tech.objectmodel.EntityType.VALUE_REFERENCE);
+    private static boolean isSearchable( final ExternalEntityHeader header ) {
+        return header != null &&
+               com.l7tech.objectmodel.EntityType.VALUE_REFERENCE != header.getType() &&
+               MigrationMappingSelection.REQUIRED != header.getValueMapping();
+
     }
 
     /**
