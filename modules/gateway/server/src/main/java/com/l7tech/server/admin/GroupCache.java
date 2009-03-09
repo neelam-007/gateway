@@ -36,14 +36,15 @@ class GroupCache {
     }
 
     /*
-    * validate will look up the user in the cache and return it's Set<Principal> representing its
+    * Look up the user in the cache and return it's Set<Principal> representing its
     * entire group membership
     * @param u the User we want the set of Set<Principal> for
     * @param ip the IdentityProvider the user belongs to. This can be used to validate the user if required
+    * @param skipAccountValidation <code>true</code> to skip checking for whether the user account has expired or been disabled
     * @return Set<Group> null if the user has no group membership, otherwise a Group for
     * each group the user is a member of
     * */
-    public Set<IdentityHeader> getCachedValidatedGroups(User u, IdentityProvider ip) throws ValidationException {
+    public Set<IdentityHeader> getCachedValidatedGroups(User u, IdentityProvider ip, boolean skipAccountValidation) throws ValidationException {
 
         final long providerOid = ip.getConfig().getOid();
         final CacheKey ckey = new CacheKey(providerOid, u.getId());
@@ -53,7 +54,7 @@ class GroupCache {
             return cached;
         }
 
-        return getAndCacheNewResult(u, ckey, ip);
+        return getAndCacheNewResult(u, ckey, ip, skipAccountValidation);
     }
 
     void setCacheMaxTime( final int cacheMaxTime ) {
@@ -96,9 +97,9 @@ class GroupCache {
     // If caller wants only one thread at a time to authenticate any given username,
     // caller is responsible for ensuring that only one thread at a time calls this per username,
     @SuppressWarnings({"unchecked"})
-    private Set<IdentityHeader> getAndCacheNewResult(User u, CacheKey ckey, IdentityProvider idp) throws ValidationException {
+    private Set<IdentityHeader> getAndCacheNewResult(User u, CacheKey ckey, IdentityProvider idp, boolean skipAccountValidation) throws ValidationException {
         int cacheMaxGroups = this.cacheMaxGroups.get();
-        idp.validate(u);
+        if (!skipAccountValidation) idp.validate(u);
         //download group info and any other info to be added as a gP as and when required here..
 
         GroupManager gM = idp.getGroupManager();

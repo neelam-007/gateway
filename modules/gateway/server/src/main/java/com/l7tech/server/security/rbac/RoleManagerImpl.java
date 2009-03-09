@@ -41,7 +41,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
         @Override
         public void validateRoleAssignments() throws UpdateException {}
         @Override
-        public Set<IdentityHeader> getGroups(User user) throws FindException {
+        public Set<IdentityHeader> getGroups(User user, boolean skipAccountValidation) throws FindException {
             return Collections.emptySet();
         }
     };
@@ -68,7 +68,16 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     @Override
     @Transactional(readOnly=true)
     public Collection<Role> getAssignedRoles(final User user) throws FindException {
-        final Set<IdentityHeader> groupHeaders = groupProvider.getGroups(user);
+        return getAssignedRoles0(user, false);
+    }
+
+    @Override
+    public Collection<Role> getAssignedRolesSkippingUserAccountValidation(User user) throws FindException {
+        return getAssignedRoles0(user, true);
+    }
+
+    private Collection<Role> getAssignedRoles0(final User user, final boolean skipAccountValidation) throws FindException {
+        final Set<IdentityHeader> groupHeaders = groupProvider.getGroups(user, skipAccountValidation);
 
         //noinspection unchecked
         return (Collection<Role>) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
@@ -96,7 +105,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
                     }
                 }
                 if(groupNames.size() == 0) return roles;
-                
+
                 Criteria groupQuery = session.createCriteria(RoleAssignment.class);
                 groupQuery.add(Restrictions.in("identityId", groupNames));
                 groupQuery.add(Restrictions.eq("providerId", user.getProviderId()));

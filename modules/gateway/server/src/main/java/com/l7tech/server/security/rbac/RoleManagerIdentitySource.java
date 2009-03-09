@@ -19,10 +19,11 @@ public interface RoleManagerIdentitySource {
      * user, so should be validated.</p>
      *
      * @param user The user whose groups are required.
+     * @param skipAccountValidation <code>true</code> to skip user account validation (i.e. don't fail if user is expired or disabled)
      * @return The set of group identity headers
      * @throws FindException if an error occurs finding the users groups
      */
-    Set<IdentityHeader> getGroups( User user ) throws FindException;
+    Set<IdentityHeader> getGroups(User user, boolean skipAccountValidation) throws FindException;
 
     /**
      * Validate assignments of users to roles.

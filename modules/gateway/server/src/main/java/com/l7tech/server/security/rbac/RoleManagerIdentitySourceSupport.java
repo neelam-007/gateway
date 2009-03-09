@@ -102,7 +102,7 @@ public abstract class RoleManagerIdentitySourceSupport implements RoleManagerIde
         }
     }
 
-    public Set<IdentityHeader> getGroups( final User user ) throws FindException {
+    public Set<IdentityHeader> getGroups(final User user, boolean skipAccountValidation) throws FindException {
         return Collections.emptySet();
     }
 

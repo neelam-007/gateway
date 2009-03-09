@@ -24,6 +24,14 @@ public interface RoleManager extends EntityManager<Role, EntityHeader>, RbacServ
     Collection<Role> getAssignedRoles(User user) throws FindException;
 
     /**
+     * Finds the roles assigned to this user, but doesn't validate the account for expiry, disablement etc.
+     *
+     * Only for display purposes--don't use for authorization!
+     */
+    @Transactional(readOnly=true)
+    Collection<Role> getAssignedRolesSkippingUserAccountValidation(User user) throws FindException;
+
+    /**
      * Find a role by tag.
      *
      * @return The role or null if non was found.

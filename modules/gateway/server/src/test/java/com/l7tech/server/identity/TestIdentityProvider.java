@@ -60,15 +60,18 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
     private static class MyUser {
         private char[] password;
         private UserBean user;
+        private long passwordExpiryTime;
 
-        private MyUser(UserBean user, char[] password) {
+        private MyUser(UserBean user, char[] password, long passwordExpiryTime) {
             this.user = user;
             this.password = password;
+            this.passwordExpiryTime = passwordExpiryTime;
         }
     }
 
     public static void addUser(UserBean user, String username, char[] password) {
-        usernameMap.put(username, new MyUser(user, password));
+        MyUser myUser = new MyUser(user, password, user.getPasswordExpiry());
+        usernameMap.put(username, myUser);
     }
 
     public static void reset(){
@@ -148,9 +151,11 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
 
     @Override
     public void validate(User u) throws ValidationException {
-        if(!usernameMap.containsKey(u.getLogin())){
+        MyUser myUser = usernameMap.get(u.getLogin());
+        if (myUser == null) {
             throw new ValidationException("User " + u.getLogin()+ " does not exist in the TestIdentityProvider");
         }
+        if (myUser.passwordExpiryTime > 0 && myUser.passwordExpiryTime <= System.currentTimeMillis()) throw new ValidationException("Account is expired");
     }
 
     private class TestGroupManager implements GroupManager<User, Group> {

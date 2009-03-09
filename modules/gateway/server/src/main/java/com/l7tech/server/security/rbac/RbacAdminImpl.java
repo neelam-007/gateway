@@ -58,9 +58,13 @@ public class RbacAdminImpl implements RbacAdmin {
         return perms;
     }
 
+    /**
+     * Note: this method <em>intentionally</em> avoids validating user accounts (e.g. whether they're expired or disabled). 
+     * Don't ever use it for authorization!
+     */
     public Collection<Role> findRolesForUser(User user) throws FindException {
         if (user == null) throw new IllegalArgumentException("User cannot be null.");
-        return roleManager.getAssignedRoles(user);
+        return roleManager.getAssignedRolesSkippingUserAccountValidation(user);
     }
 
     private Role attachEntities(Role theRole) {

@@ -28,13 +28,13 @@ public class GroupCacheTest extends TestCase {
     private GroupCache cache = null;
 
     @Before
-    protected void setUp() throws Exception{
+    public void setUp() throws Exception{
         cache = getGroupCache();
         assertNotNull(cache);
     }
 
     @After
-    protected void tearDown() throws Exception{
+    public void tearDown() throws Exception{
         //stop the cache so other tests get a fresh cache
         cache.dispose();
         TestIdentityProvider.reset();
@@ -50,7 +50,38 @@ public class GroupCacheTest extends TestCase {
         UserBean ub = new UserBean(tIP.getConfig().getOid(), USER_NAME);
         TestIdentityProvider.addUser(ub, USER_NAME, PASSWORD.toCharArray());
 
-        Set<IdentityHeader> sP = cache.getCachedValidatedGroups(ub, tIP);
+        Set<IdentityHeader> sP = cache.getCachedValidatedGroups(ub, tIP, false);
+        assertNull(sP);
+    }
+
+    /*
+    * Add an expired user with no group membership to the test identity provider
+    * Retrieve this users Set<Principal> from the group cache
+    * Outcome- no exceptions thrown. The returned Set is null.
+    * */
+    @Test
+    public void testExpiredUserNoGroupMembership() throws Exception{
+        doExpiredUserTest(true);
+    }
+    
+    @Test
+    public void testFailingExpiredUserNoGroupMembership() throws Exception{
+        try {
+            doExpiredUserTest(false);
+            fail("Expected ValidationException");
+        } catch (ValidationException e) {
+            // expected
+        }
+    }
+
+
+    private void doExpiredUserTest(boolean skipAccountValidation) throws ValidationException {
+        TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
+        UserBean ub = new UserBean(tIP.getConfig().getOid(), USER_NAME);
+        ub.setPasswordExpiry(System.currentTimeMillis()-1);
+        TestIdentityProvider.addUser(ub, USER_NAME, PASSWORD.toCharArray());
+
+        Set<IdentityHeader> sP = cache.getCachedValidatedGroups(ub, tIP, skipAccountValidation);
         assertNull(sP);
     }
 
@@ -71,7 +102,7 @@ public class GroupCacheTest extends TestCase {
         groupSet.add(iG);
         gM.addUser(ub, groupSet);
 
-        Set<IdentityHeader> sP = cache.getCachedValidatedGroups(ub, tIP);
+        Set<IdentityHeader> sP = cache.getCachedValidatedGroups(ub, tIP, false);
         assertNotNull(sP);
         assertTrue(sP.size() == 1);
 
@@ -92,7 +123,7 @@ public class GroupCacheTest extends TestCase {
 
         boolean exceptionThrown = false;
         try{
-            cache.getCachedValidatedGroups(ub, tIP);
+            cache.getCachedValidatedGroups(ub, tIP, false);
         }catch(ValidationException ve){
             exceptionThrown = true;            
         }
@@ -119,7 +150,7 @@ public class GroupCacheTest extends TestCase {
         gM.addUser(ub, groupSet);
 
         //Populate group membership in cache for user
-        Set<IdentityHeader> sP = cache.getCachedValidatedGroups(ub, tIP);
+        Set<IdentityHeader> sP = cache.getCachedValidatedGroups(ub, tIP, false);
         assertNotNull(sP);
         
         Class c = cache.getClass();
@@ -154,7 +185,7 @@ public class GroupCacheTest extends TestCase {
         gM.addUser(ub, groupSet);
 
         //Populate group membership in cache for user
-        Set<IdentityHeader> sP = cache.getCachedValidatedGroups(ub, tIP);
+        Set<IdentityHeader> sP = cache.getCachedValidatedGroups(ub, tIP, false);
         assertNotNull(sP);
 
         //Call the private getCacheEntry method of GroupPrincipalCache to ensure that the expire

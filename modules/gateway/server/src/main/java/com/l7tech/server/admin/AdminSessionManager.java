@@ -374,7 +374,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * group headers.</p>
      */
     @Override
-    public Set<IdentityHeader> getGroups( final User u ) throws FindException {
+    public Set<IdentityHeader> getGroups(final User u, boolean skipAccountValidation) throws FindException {
         Long pId = u.getProviderId();
 
         // Try internal first (internal accounts with the same credentials should hide externals)
@@ -386,7 +386,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             if(iP.getConfig().getOid() == pId){
                 //Get the group memberhsip from the group cache.
                 try {
-                    Set<IdentityHeader> groupPrincipals = this.groupCache.getCachedValidatedGroups(u,iP);
+                    Set<IdentityHeader> groupPrincipals = this.groupCache.getCachedValidatedGroups(u,iP, skipAccountValidation);
                     if(groupPrincipals != null){
                         pSet.addAll(groupPrincipals);
                     }

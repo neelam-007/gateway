@@ -23,6 +23,11 @@ public class MockRoleManager extends EntityManagerStub<Role,EntityHeader> implem
     private final RbacServices rbacServices;
 
     @Override
+    public Collection<Role> getAssignedRolesSkippingUserAccountValidation(User user) throws FindException {
+        return getAssignedRoles(user);
+    }
+
+    @Override
     public Collection<Role> getAssignedRoles(User thisGuy) throws FindException {
         final Set<Role> assignedRoles = new HashSet<Role>();
         Map<Long, IdentityHeader> thisGuysGroupMap = null;
