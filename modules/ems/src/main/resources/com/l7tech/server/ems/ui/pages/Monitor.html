@@ -1049,6 +1049,7 @@
                 refreshMonitoringProperties_steppedHeaders_trafficImg.style.visibility = "visible";
                 setTimeout('hideTrafficImages();', 400);
 
+                entityTreeTable.setAllMonitoredPropertyValuesToStale();
                 if (result.json.entities) {
                     for (var i = 0; i < result.json.entities.length; ++i) {
                         var entity = result.json.entities[i];

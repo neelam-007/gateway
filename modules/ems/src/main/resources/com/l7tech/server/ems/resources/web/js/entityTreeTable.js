@@ -1302,6 +1302,45 @@ if (!l7.EntityTreeTable) {
             };
 
             /**
+             * Changes the display of a monitored property value to indicate stale or not stale state.
+             * @param {boolean} stale
+             */
+            this.setMonitoredPropertyValueStale = function(entity, propertyType, stale) {
+                if (entity._monitoredPropertyTds) {
+                    var td = entity._monitoredPropertyTds[propertyType];
+                    if (td) {
+                        if (stale) {
+                            if (!l7.Util.hasClass(td, 'notMonitored')) {
+                                l7.Util.addClass(td, 'stale');
+                            }
+                        } else {
+                            l7.Util.removeClass(td, 'stale');
+                        }
+                    }
+                }
+            }
+
+            this.setAllMonitoredPropertyValuesToStale = function() {
+                // Determines the property types displayed.
+                var propertyTypes = [];
+                for (var j = 0; j < this._config.columns.length; ++j) {
+                    var columnId = this._config.columns[j];
+                    var propertyType = getMonitoringPropertyTypeInColumn(columnId);
+                    if (propertyType != null) {
+                        propertyTypes.push(propertyType);
+                    }
+                }
+                if (propertyTypes.length == 0) return;
+
+                for (var i = 0; i < this._entities.length; ++i) {
+                    var entity = this._entities[i];
+                    for (j = 0; j < propertyTypes.length; ++j) {
+                        this.setMonitoredPropertyValueStale(entity, propertyTypes[j], true);
+                    }
+                }
+            };
+
+            /**
              * Changes the value of a monitored property of an entity.
              * @public
              * @param {string} entityId         ID of an entity
@@ -1324,6 +1363,7 @@ if (!l7.EntityTreeTable) {
                     YAHOO.log('Unable to set value of monitored property \"' + propertyType + '\" for entity \"' + entity.name + '\": ' + (td ? 'span' : 'td') + ' element not found', 'warning', 'l7.EntityTreeTable.setMonitoredProperty');
                     return false;
                 }
+                this.setMonitoredPropertyValueStale(entity, propertyType, false);
                 if (property && property.monitored) {
                     if (property.value != undefined && property.value != null) {
                         span.innerHTML = l7.Util.escapeHtmlText(property.value);

@@ -84,6 +84,7 @@ public class MonitoringServiceImpl implements MonitoringService {
             for (MonitoredPropertyStatus propertyStatus: statuses) {
                 // Get "value"
                 Object value = propertyStatus.getValue();
+                MonitoredPropertyStatus.ValueType valueType = propertyStatus.getValueType();
 
                 // Get "alert"
                 MonitoredStatus.StatusType status = propertyStatus.getStatus();
@@ -121,7 +122,15 @@ public class MonitoringServiceImpl implements MonitoringService {
 
                 EntityMonitoringPropertyValues.PropertyValues propertyValues =
                     (EntityMonitoringPropertyValues.PropertyValues) ssgNodePropertyValuesMap.get(propertyName);
-                propertyValues.setValue(value == null ? JSONConstants.NA : String.valueOf(value));
+                if (value == null) {
+                    if (valueType == MonitoredPropertyStatus.ValueType.FAILED) {
+                        propertyValues.setValue(JSONConstants.NA);
+                    } else {
+                        propertyValues.setValue(null);
+                    }
+                } else {
+                    propertyValues.setValue(String.valueOf(value));
+                }
                 propertyValues.setAlert(alert);
             }
         }

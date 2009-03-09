@@ -621,6 +621,10 @@ table.dataTable td.alert {
     color: #ff0000;
 }
 
+table.dataTable td.stale {
+    background-color: #b3c7e0 !important;
+}
+
 .dashboardsPanelContent {
     background-color: #ffffff;
     padding: 4px;
