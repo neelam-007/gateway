@@ -314,7 +314,7 @@ public class StandardReports extends EsmStandardWebPage {
                     returnValue = null;
                 } catch (ReportException ex) {
                     logger.log(Level.FINER, "Problem running report: " + ex.getMessage(), ex.getCause());
-                    returnValue = new JSONException(new Exception("Problem running report: " + ex.getMessage(), ex.getCause()));
+                    returnValue = new JSONException(ex);
                 }
             } else {
                 returnValue = new JSONException("Server error: jsonData must be either a JSONException or a JSON formatted String");

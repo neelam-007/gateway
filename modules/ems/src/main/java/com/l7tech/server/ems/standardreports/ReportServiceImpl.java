@@ -85,6 +85,8 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
             GatewayContext context = contextFactory.createGatewayContext( user, cluster.getGuid(), host, port );
             ReportApi reportApi = context.getReportApi();
             submissionId = reportApi.submitReport( reportSubmission, Arrays.asList( ReportApi.ReportOutputType.PDF, ReportApi.ReportOutputType.HTML ) );
+        } catch ( SOAPFaultException sfe ) {
+            throw new ReportException( "Error submtting report to gateway '"+(host+":"+port)+"'.", sfe );
         } catch ( GatewayException ge ) {
             throw new ReportException( "Error submtting report to gateway '"+(host+":"+port)+"'.", ge );
         } catch ( ReportApi.ReportException re ) {
