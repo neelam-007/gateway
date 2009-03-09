@@ -802,11 +802,6 @@ class Importer extends ImportExportUtility {
 
             //test root user conneciton
             if (args.containsKey(DB_NAME.name)) {
-                DatabaseConfig config = new DatabaseConfig(host, port, args.get(DB_NAME.name), rootUsername, rootPassword);
-                config.setDatabaseAdminUsername(rootUsername);
-                config.setDatabaseAdminPassword(rootPassword);
-                verifyDatabaseConnection(config, true);
-
                 //test gateway user connection
                 verifyDatabaseConnection(new DatabaseConfig(host, port, args.get(DB_NAME.name), gatewayUsername, gatewayPassword), false);
 
