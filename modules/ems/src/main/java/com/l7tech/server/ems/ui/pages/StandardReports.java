@@ -42,7 +42,7 @@ import java.util.logging.Logger;
 public class StandardReports extends EsmStandardWebPage {
     private static final Logger logger = Logger.getLogger(StandardReports.class.getName());
     private static final SimpleDateFormat format = new SimpleDateFormat( JsonReportParameterConvertor.DATE_FORMAT );
-    private static final String WARNING_LOADING_SETTINGS = "{0} in the SSG Cluster with GUID {1} cannot be added because the SSG Cluster no longer exists in the enterprise tree.";
+    private static final MessageFormat warningMsgFormat = new MessageFormat("{0} in the SSG Cluster with GUID {1} cannot be added because of {2}.");
 
     @SpringBean
     private ReportService reportService;
@@ -58,6 +58,9 @@ public class StandardReports extends EsmStandardWebPage {
 
     @SpringBean
     private StandardReportSettingsManager standardReportSettingsManager;
+
+    @SpringBean
+    GatewayClusterClientManager gatewayClusterClientManager;
 
     private DropDownChoice timeZoneChoice;
     private YuiDateSelector fromDateField;
@@ -337,7 +340,7 @@ public class StandardReports extends EsmStandardWebPage {
                     @SuppressWarnings({"unchecked"})
                     @Override
                     public void toJSON(JSON.Output output) {
-                        for ( Map.Entry<String,Object> entry : ((Map<String,Object>)returnValue).entrySet() ) {
+                        for ( Map.Entry<String, Object> entry : ((Map<String, Object>)returnValue).entrySet() ) {
                             output.add( entry.getKey(), entry.getValue() );
                         }
                     }
@@ -375,7 +378,7 @@ public class StandardReports extends EsmStandardWebPage {
 
                 Map jsonDataMap = (Map) jsonDataObj;
                 String name = (String) jsonDataMap.get("name");
-                StandardReportSettings settings = null;
+                StandardReportSettings settings;
 
                 try {
                     settings = standardReportSettingsManager.findByNameAndUser( StandardReports.this.getUser(), name );
@@ -474,7 +477,7 @@ public class StandardReports extends EsmStandardWebPage {
                     if ( reportSettings == null ) {
                         returnValue = new JSONException("Settings OID ('" + oid + "') is invalid.");
                     } else {
-                        Map<String, Object> settingsPropsMap = new HashMap<String,Object>(reportSettings.getProperties());
+                        Map<String, Object> settingsPropsMap = new HashMap<String, Object>(reportSettings.getProperties());
                         updateReportSettings(settingsPropsMap);
 
                         // null for success
@@ -548,31 +551,32 @@ public class StandardReports extends EsmStandardWebPage {
     @SuppressWarnings({"unchecked"})
     private void updateReportSettings(Map<String, Object> settingsPropsMap) {
         List<String> warnings = new ArrayList<String>();
-        MessageFormat warningMsgFormat = new MessageFormat(WARNING_LOADING_SETTINGS);
-
+        
         // Step 1: update and validate "entities"
-        List<String> removedGuidsForEntities = new ArrayList<String>();
-        List<Map<String,Object>> entitiesPropsMapList = new ArrayList<Map<String,Object>>();
-        for ( Object item : (Object[])settingsPropsMap.get(JSONConstants.REPORT_ENTITIES) ) {
-            entitiesPropsMapList.add( (Map<String,Object>) item );    
-        }
-        for ( Iterator<Map<String,Object>> entityPropsMapIter = entitiesPropsMapList.iterator(); entityPropsMapIter.hasNext(); ) {
-            Map<String,Object> entityPropsMap = entityPropsMapIter.next();
-            String clusterGuid = (String) entityPropsMap.get(JSONConstants.ReportEntities.CLUSTER_ID);
-            try {
-                SsgCluster ssgCluster = ssgClusterManager.findByGuid(clusterGuid);
-                if (ssgCluster == null) {
-                    throw new FindException("Cannot find the SSG cluster (GUID = '" + clusterGuid + "').");
-                }
+        List<String> listOfSsgClustersWithProblem = new ArrayList<String>();
+        List<Object> entitiesPropsMapList = new ArrayList<Object>(Arrays.asList((Object[]) settingsPropsMap.get(JSONConstants.REPORT_ENTITIES)));
 
+        for (Iterator<Object> entityPropsMapIter = entitiesPropsMapList.iterator(); entityPropsMapIter.hasNext();) {
+            Map<String, Object> entityPropsMap = (Map<String, Object>) entityPropsMapIter.next();
+            String ssgClusterGuid = (String) entityPropsMap.get(JSONConstants.ReportEntities.CLUSTER_ID);
+
+            if (listOfSsgClustersWithProblem.contains(ssgClusterGuid)) {
+                entityPropsMapIter.remove();
+                continue;
+            }
+
+            Object returnObj = validateSsgCluster(ssgClusterGuid);
+            if (returnObj instanceof SsgCluster) {    // Approved as a valid SSG cluster
+                SsgCluster ssgCluster = (SsgCluster) returnObj;
                 entityPropsMap.put(JSONConstants.CLUSTER_NAME, ssgCluster.getName());
                 entityPropsMap.put(JSONConstants.CLUSTER_ANCESTORS, getClusterAncestors(ssgCluster));
-            } catch (FindException e) {
-                if (! removedGuidsForEntities.contains(clusterGuid)) {
-                    removedGuidsForEntities.add(clusterGuid);
-                    warnings.add(warningMsgFormat.format(new Object[]{"Entities", clusterGuid}));
-                }
+            } else if (returnObj instanceof String) { // Approved as an invalid SSG cluster
+                String warningMessage = (String) returnObj;
+                listOfSsgClustersWithProblem.add(ssgClusterGuid);
+                warnings.add(warningMsgFormat.format(new Object[]{"Entities", ssgClusterGuid, warningMessage}));
                 entityPropsMapIter.remove();
+            } else {
+                throw new IllegalArgumentException("Invalid return type: " + returnObj.getClass().getSimpleName());
             }
         }
 
@@ -580,25 +584,30 @@ public class StandardReports extends EsmStandardWebPage {
         settingsPropsMap.put(JSONConstants.REPORT_ENTITIES, entitiesPropsMapList.toArray());
 
         // Step 2: update and validate "groupings"
-        List<Object> groupingsPropsMapList = new ArrayList<Object>(Arrays.asList((Object[])settingsPropsMap.get(JSONConstants.GROUPINGS)));
-        List<String> removedGuidsForGroupings = new ArrayList<String>();
-        for (Iterator<Object> itr = groupingsPropsMapList.iterator(); itr.hasNext(); ) {
-            Map groupingPropsMap = (Map) itr.next();
-            String clusterGuid = (String) groupingPropsMap.get(JSONConstants.ReportEntities.CLUSTER_ID);
-            try {
-                SsgCluster ssgCluster = ssgClusterManager.findByGuid(clusterGuid);
-                if (ssgCluster == null) {
-                    throw new FindException("Cannot find the SSG cluster (GUID = '" + clusterGuid + "').");
-                }
-                
+        listOfSsgClustersWithProblem = new ArrayList<String>();
+        List<Object> groupingsPropsMapList = new ArrayList<Object>(Arrays.asList((Object[]) settingsPropsMap.get(JSONConstants.GROUPINGS)));
+
+        for (Iterator<Object> groupingPropsMapIter = groupingsPropsMapList.iterator(); groupingPropsMapIter.hasNext(); ) {
+            Map<String, Object> groupingPropsMap = (Map<String, Object>) groupingPropsMapIter.next();
+            String ssgClusterGuid = (String) groupingPropsMap.get(JSONConstants.ReportEntities.CLUSTER_ID);
+
+            if (listOfSsgClustersWithProblem.contains(ssgClusterGuid)) {
+                groupingPropsMapIter.remove();
+                continue;
+            }
+
+            Object returnObj = validateSsgCluster(ssgClusterGuid);
+            if (returnObj instanceof SsgCluster) {
+                SsgCluster ssgCluster = (SsgCluster) returnObj;
                 groupingPropsMap.put(JSONConstants.CLUSTER_NAME, ssgCluster.getName());
                 groupingPropsMap.put(JSONConstants.CLUSTER_ANCESTORS, getClusterAncestors(ssgCluster));
-            } catch (FindException e) {
-                if (! removedGuidsForGroupings.contains(clusterGuid)) {
-                    removedGuidsForGroupings.add(clusterGuid);
-                    warnings.add(warningMsgFormat.format(new Object[]{"Groupings", clusterGuid}));
-                }
-                itr.remove();
+            } else if (returnObj instanceof String) {
+                String warningMessage = (String) returnObj;
+                listOfSsgClustersWithProblem.add(ssgClusterGuid);
+                warnings.add(warningMsgFormat.format(new Object[]{"Groupings", ssgClusterGuid, warningMessage}));
+                groupingPropsMapIter.remove();
+            } else {
+                throw new IllegalArgumentException("Invalid return type: " + returnObj.getClass().getSimpleName());
             }
         }
         // Update the "groupings" property
@@ -607,6 +616,51 @@ public class StandardReports extends EsmStandardWebPage {
         // Step 3: Check if there are warnings.
         if (! warnings.isEmpty()) {
             settingsPropsMap.put(JSONConstants.REPORT_SETTINGS_WARNING_ITEMS, warnings.toArray());
+        }
+    }
+
+    /**
+     * Validate the SSG cluster such as existence, availability, trusted, account-mapped, and etc.
+     * @param ssgClusterGuid: the GUID of the SSG cluster.
+     * @return a string of warning message, which means that the SSG cluster is invalid.
+     * Othereise, returning a SSG cluster object, which means that the SSG cluster is valid.
+     */
+    private Object validateSsgCluster(String ssgClusterGuid) {
+        String warningMessage = null;
+        SsgCluster ssgCluster = null;
+        try {
+            ssgCluster = ssgClusterManager.findByGuid(ssgClusterGuid);
+
+            if (ssgCluster == null) {
+                warningMessage = "the SSG cluster no longer existing in the enterprise tree";
+            } else {
+                try {
+                    // Creating cluster client and getting entity info are only for the validation purpose.
+                    GatewayClusterClient clusterClient = gatewayClusterClientManager.getGatewayClusterClient(ssgClusterGuid, getUser());
+                    clusterClient.getEntityInfo(Arrays.asList(EntityType.FOLDER));
+                } catch (GatewayNetworkException e) {
+                    warningMessage = "SSG Cluster Not Available";
+                } catch (GatewayNotMappedException e) {
+                    warningMessage = "No Access Account";
+                } catch (GatewayNoTrustException e) {
+                    warningMessage = "Trust Not Established";
+                } catch (GatewayException e) {
+                    if ( GatewayContext.isConfigurationException(e) ) {
+                        warningMessage = e.getMessage();
+                    } else {
+                        logger.warning(e.toString());
+                        warningMessage = "Internal Gateway Error";
+                    }
+                }
+            }
+        } catch (FindException e) {
+            warningMessage = "Database Access Error";
+        }
+
+        if (warningMessage != null) {
+            return warningMessage;
+        } else {
+            return ssgCluster;
         }
     }
 
@@ -654,7 +708,9 @@ public class StandardReports extends EsmStandardWebPage {
 
                 Date from, to;
                 try {
+                    //noinspection deprecation
                     from = new Date(absoluteFrom);
+                    //noinspection deprecation
                     to = new Date(absoluteTo);
                 } catch (Exception e) {
                     to = now;
