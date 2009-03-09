@@ -86,11 +86,11 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
             ReportApi reportApi = context.getReportApi();
             submissionId = reportApi.submitReport( reportSubmission, Arrays.asList( ReportApi.ReportOutputType.PDF, ReportApi.ReportOutputType.HTML ) );
         } catch ( SOAPFaultException sfe ) {
-            throw new ReportException( "Error submtting report to gateway '"+(host+":"+port)+"'.", sfe );
+            throw new ReportException( "Error submitting report to gateway '"+(host+":"+port)+"'.", sfe );
         } catch ( GatewayException ge ) {
-            throw new ReportException( "Error submtting report to gateway '"+(host+":"+port)+"'.", ge );
+            throw new ReportException( "Error submitting report to gateway '"+(host+":"+port)+"'.", ge );
         } catch ( ReportApi.ReportException re ) {
-            throw new ReportException( "Error submtting report to gateway '"+(host+":"+port)+"'.", re );
+            throw new ReportException( "Error submitting report to gateway '"+(host+":"+port)+"'.", re );
         }
 
         report.setSubmissionHost( host );
