@@ -3,6 +3,7 @@ package com.l7tech.gateway.config.flasher;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Arrays;
 import java.util.logging.Logger;
 import java.io.IOException;
 import java.io.FileOutputStream;
@@ -27,8 +28,11 @@ import com.l7tech.util.ResourceUtils;
  */
 public abstract class ImportExportUtility {
 
-    private static enum ARGUMENT_TYPE {VALID_OPTION, IGNORED_OPTION, INVALID_OPTION, VALUE}
+    private static enum ARGUMENT_TYPE {VALID_OPTION, IGNORED_OPTION, INVALID_OPTION, SKIP_OPTION, VALUE}
     private static final Logger logger = Logger.getLogger(ImportExportUtility.class.getName());
+
+    public static final CommandLineOption SKIP_PRE_PROCESS = new CommandLineOption("-skipPreProcess", "skips pre-processing", false, true);
+    public static final CommandLineOption[] SKIP_OPTIONS = {SKIP_PRE_PROCESS};
 
     /**
      * @return  The list of all possible options for the provided utility.
@@ -119,6 +123,8 @@ public abstract class ImportExportUtility {
                 return ARGUMENT_TYPE.VALID_OPTION;
             else if (isOption(argument, getIgnoredOptions()))
                 return ARGUMENT_TYPE.IGNORED_OPTION;
+            else if (isOption(argument, Arrays.asList(SKIP_OPTIONS)))
+                return ARGUMENT_TYPE.SKIP_OPTION;
             else
                 return ARGUMENT_TYPE.INVALID_OPTION;
         } else {
@@ -178,6 +184,10 @@ public abstract class ImportExportUtility {
             final String argument = args[index];
 
             switch (determineArgumentType(argument)) {
+                case SKIP_OPTION:
+                    arguments.put(argument, "");    //skip options does not have values!
+                    index++;
+                    break;
                 case VALID_OPTION:
                     if (optionHasNoValue(argument, getValidOptions())) {
                         arguments.put(argument, "");

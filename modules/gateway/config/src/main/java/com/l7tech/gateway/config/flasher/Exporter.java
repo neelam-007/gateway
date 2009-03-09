@@ -322,6 +322,11 @@ public class Exporter extends ImportExportUtility {
 
     @Override
     public void preProcess(Map<String, String> args) throws InvalidArgumentException, IOException, FatalException {
+        //skip the whole pre-processing
+        if (args.containsKey(SKIP_PRE_PROCESS.name)) {
+            return;
+        }
+
         //image option must be specified
         if (!args.containsKey(IMAGE_PATH.name)) {
             throw new InvalidArgumentException("missing option " + IMAGE_PATH.name + ", required for exporting image");

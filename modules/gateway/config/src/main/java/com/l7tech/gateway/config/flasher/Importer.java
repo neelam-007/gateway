@@ -689,6 +689,11 @@ class Importer extends ImportExportUtility {
 
     @Override
     public void preProcess(Map<String, String> args) throws InvalidArgumentException, IOException, FatalException {
+        //skip the whole pre-processing
+        if (args.containsKey(SKIP_PRE_PROCESS.name)) {
+            return;
+        }
+
         //image file to import
         if (!args.containsKey(IMAGE_PATH.name)) {
             throw new InvalidArgumentException("missing option " + IMAGE_PATH.name + ", required for importing image");
