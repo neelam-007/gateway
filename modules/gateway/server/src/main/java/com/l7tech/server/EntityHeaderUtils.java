@@ -123,11 +123,12 @@ public final class EntityHeaderUtils {
         } else if (header instanceof PolicyHeader) {
             PolicyHeader policyHeader = (PolicyHeader) header;
             externalEntityHeader = new ExternalEntityHeader(policyHeader.getGuid(), header);
+            externalEntityHeader.setProperty("Policy Revision", Long.toString(policyHeader.getPolicyRevision()));
             externalEntityHeader.setProperty("SOAP", Boolean.toString(policyHeader.isSoap()));
         } else if (header instanceof ServiceHeader) {
             ServiceHeader serviceHeader = (ServiceHeader) header;
             externalEntityHeader = new ExternalEntityHeader(serviceHeader.getStrId(), header);
-            externalEntityHeader.setProperty("Policy Version", Integer.toString(serviceHeader.getPolicyVersion()));
+            externalEntityHeader.setProperty("Policy Revision", Long.toString(serviceHeader.getPolicyRevision()));
             externalEntityHeader.setProperty("Display Name", serviceHeader.getDisplayName());
             externalEntityHeader.setProperty("SOAP", Boolean.toString(serviceHeader.isSoap()));
             externalEntityHeader.setProperty("Enabled", Boolean.toString(!serviceHeader.isDisabled()));

@@ -3,6 +3,7 @@ package com.l7tech.server.policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyVersion;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 
@@ -43,7 +44,7 @@ public class VersioningPolicyManager implements PolicyManager {
 
     @Override
     public Policy findByGuid(String guid) throws FindException {
-        return policyManager.findByGuid(guid);
+        return processRevision(policyManager.findByGuid(guid));
     }
 
     @Override
@@ -58,12 +59,12 @@ public class VersioningPolicyManager implements PolicyManager {
 
     @Override
     public Policy findByPrimaryKey(long oid) throws FindException {
-        return policyManager.findByPrimaryKey(oid);
+        return processRevision( policyManager.findByPrimaryKey(oid) );
     }
 
     @Override
     public Policy findByHeader(EntityHeader header) throws FindException {
-        return policyManager.findByHeader(header);
+        return processRevision( policyManager.findByHeader(header) );
     }
 
     @Override
@@ -78,7 +79,7 @@ public class VersioningPolicyManager implements PolicyManager {
 
     @Override
     public Collection<Policy> findAll() throws FindException {
-        return policyManager.findAll();
+        return processRevisions( policyManager.findAll() );
     }
 
     @Override
@@ -186,4 +187,26 @@ public class VersioningPolicyManager implements PolicyManager {
 
     private final PolicyManager policyManager;
     private final PolicyVersionManager policyVersionManager;
+
+    private Collection<Policy> processRevisions( final Collection<Policy> policies ) throws FindException {
+        if ( policies != null ) {
+            for ( Policy policy : policies ) {
+                processRevision( policy );    
+            }
+        }
+
+        return policies;
+    }
+
+    private Policy processRevision( final Policy policy ) throws FindException {
+        if (policy == null) return null;
+
+        PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy( policy.getOid() );
+        if (activeVersion != null) {
+            policy.setVersionOrdinal(activeVersion.getOrdinal());
+            policy.setVersionActive(true);
+        }
+
+        return policy;
+    }
 }

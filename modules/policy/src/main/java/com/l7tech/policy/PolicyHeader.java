@@ -22,6 +22,7 @@ public class PolicyHeader extends OrganizationHeader {
              policy.getGuid(),
              policy.getFolder() == null ? null : policy.getFolder().getOid(),
              null,
+             policy.getVersionOrdinal(),
              policy.getVersion());
     }
 
@@ -39,6 +40,7 @@ public class PolicyHeader extends OrganizationHeader {
              policyHeader.getGuid(),
              policyHeader.getFolderOid(),
              policyHeader.getAliasOid(),
+             policyHeader.getPolicyRevision(),
              policyHeader.getVersion());
     }
 
@@ -49,6 +51,7 @@ public class PolicyHeader extends OrganizationHeader {
                         final String policyGuid,
                         final Long folderOid,
                         final Long aliasOid,
+                        final long policyRevision,
                         final int version )
     {
         super(oid, EntityType.POLICY, name, description, version);
@@ -57,10 +60,20 @@ public class PolicyHeader extends OrganizationHeader {
         this.isSoap = isSoap;
         this.folderOid = folderOid;
         this.aliasOid = aliasOid;
+        this.policyRevision = policyRevision;
     }
 
     public boolean isSoap() {
         return isSoap;
+    }
+
+    /**
+     * Get the policy revision ordinal if available.
+     *
+     * @return The policy revision or 0 if not available.
+     */
+    public long getPolicyRevision() {
+        return policyRevision;
     }
 
     @Override
@@ -71,4 +84,5 @@ public class PolicyHeader extends OrganizationHeader {
     //- PRIVATE
 
     private final boolean isSoap;
+    private final long policyRevision;
 }

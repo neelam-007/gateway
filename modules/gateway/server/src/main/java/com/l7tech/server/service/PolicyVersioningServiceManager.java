@@ -12,6 +12,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyVersion;
 
 import java.util.Collection;
 import java.util.Map;
@@ -71,7 +73,7 @@ public class PolicyVersioningServiceManager implements ServiceManager {
 
     @Override
     public Collection<PublishedService> findAll() throws FindException {
-        return serviceManager.findAll();
+        return processRevisions( serviceManager.findAll() );
     }
 
     @Override
@@ -86,12 +88,12 @@ public class PolicyVersioningServiceManager implements ServiceManager {
 
     @Override
     public PublishedService findByPrimaryKey(long oid) throws FindException {
-        return serviceManager.findByPrimaryKey(oid);
+        return processRevision( serviceManager.findByPrimaryKey(oid) );
     }
 
     @Override
     public PublishedService findByUniqueName(String name) throws FindException {
-        return serviceManager.findByUniqueName(name);
+        return processRevision( serviceManager.findByUniqueName(name) );
     }
 
     @Override
@@ -101,7 +103,7 @@ public class PolicyVersioningServiceManager implements ServiceManager {
 
     @Override
     public PublishedService getCachedEntity(long o, int maxAge) throws FindException {
-        return serviceManager.getCachedEntity(o, maxAge);
+        return processRevision( serviceManager.getCachedEntity(o, maxAge) );
     }
 
     @Override
@@ -121,7 +123,7 @@ public class PolicyVersioningServiceManager implements ServiceManager {
 
     @Override
     public PublishedService findByHeader(EntityHeader header) throws FindException {
-        return serviceManager.findByHeader(header);
+        return processRevision( serviceManager.findByHeader(header) );
     }
 
     @Override
@@ -185,4 +187,30 @@ public class PolicyVersioningServiceManager implements ServiceManager {
 
     private final ServiceManager serviceManager;
     private final PolicyVersionManager policyVersionManager;
+    
+    private Collection<PublishedService> processRevisions( final Collection<PublishedService> services ) throws FindException {
+        if ( services != null ) {
+            for ( PublishedService service : services ) {
+                processRevision( service );
+            }
+        }
+
+        return services;
+    }
+
+    private PublishedService processRevision( final PublishedService service ) throws FindException {
+        if ( service != null ) {
+            Policy policy = service.getPolicy();
+    
+            if ( policy != null ) {
+                PolicyVersion activeVersion = policyVersionManager.findActiveVersionForPolicy( policy.getOid() );
+                if (activeVersion != null) {
+                    policy.setVersionOrdinal(activeVersion.getOrdinal());
+                    policy.setVersionActive(true);
+                }
+            }
+        }
+
+        return service;
+    }
 }

@@ -582,7 +582,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
     private static final Logger logger = Logger.getLogger( PolicyMigration.class.getName() );
 
-    private static final String[] EXTRA_PROPERTIES = new String[]{ "Policy Version", "SOAP", "Enabled" };
+    private static final String[] EXTRA_PROPERTIES = new String[]{ "Policy Revision", "SOAP", "Enabled" };
     private static final String[] DEPENDENCY_REFRESH_COMPONENTS = { "dependenciesTable", "dependenciesTotalLabel", "dependenciesUnmappedLabel", "dependenciesRequiredUnmappedLabel", "dependencyControlsForm" };
     private static final String[] SEARCH_REFRESH_COMPONENTS = { "dependencySearchTarget", "dependencySearchManner", "dependencySearchText", "dependencySearchButton" };
 
@@ -2040,6 +2040,8 @@ public class PolicyMigration extends EsmStandardWebPage {
             this.mappingKey = valueMappableHeader.getMappingKey();
         }
 
+        @SuppressWarnings({"RedundantIfStatement"})
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -2054,6 +2056,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             return true;
         }
 
+        @Override
         public int hashCode() {
             int result;
             result = (sourceClusterId != null ? sourceClusterId.hashCode() : 0);

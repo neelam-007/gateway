@@ -21,7 +21,7 @@ public class ServiceHeader extends OrganizationHeader {
               svc.getName(),
               svc.getFolder() == null ? null : svc.getFolder().getOid(),
               null,
-              svc.getPolicy() == null ? 0 : svc.getPolicy().getVersion(),
+              svc.getPolicy() == null ? 0L : svc.getPolicy().getVersionOrdinal(),
               svc.getVersion() );
     }
 
@@ -34,7 +34,7 @@ public class ServiceHeader extends OrganizationHeader {
              serviceHeader.getDescription(),
              serviceHeader.getFolderOid(),
              serviceHeader.getAliasOid(),
-             serviceHeader.getPolicyVersion(),
+             serviceHeader.getPolicyRevision(),
              serviceHeader.getVersion());
     }
     
@@ -46,7 +46,7 @@ public class ServiceHeader extends OrganizationHeader {
                          final String description,
                          final Long folderOid,
                          final Long aliasOid,
-                         final int policyVersion,
+                         final long policyRevision,
                          final int version) {
         super(serviceOid == null ? -1 : serviceOid, EntityType.SERVICE, name, description, version);
         this.isSoap = isSoap;
@@ -54,7 +54,7 @@ public class ServiceHeader extends OrganizationHeader {
         this.displayName = displayName;
         this.folderOid = folderOid;
         this.aliasOid = aliasOid;
-        this.policyVersion = policyVersion;
+        this.policyRevision = policyRevision;
     }
 
     public boolean isSoap() {
@@ -69,8 +69,13 @@ public class ServiceHeader extends OrganizationHeader {
         return displayName;
     }
 
-    public int getPolicyVersion() {
-        return policyVersion;
+    /**
+     * Get the policy revision ordinal if available.
+     *
+     * @return The policy revision or 0 if not available.
+     */
+    public long getPolicyRevision() {
+        return policyRevision;
     }
 
     @Override
@@ -83,5 +88,5 @@ public class ServiceHeader extends OrganizationHeader {
     private final boolean isSoap;
     private final boolean isDisabled;
     private final String displayName;
-    private final int policyVersion;
+    private final long policyRevision;
 }
