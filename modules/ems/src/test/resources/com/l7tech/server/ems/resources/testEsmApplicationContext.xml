@@ -47,6 +47,8 @@
             <list/>
         </constructor-arg>
     </bean>
+
+    <bean id="gatewayClusterClientManager" class="com.l7tech.server.ems.gateway.MockGatewayClusterClientManager"/>
     
     <bean id="gatewayTrustTokenFactory" class="com.l7tech.server.ems.gateway.MockGatewayTrustTokenFactory"/>
 
