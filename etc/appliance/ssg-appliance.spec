@@ -219,7 +219,7 @@ fi
 LIMITS=`egrep -e \^\*\.\*soft\.\*nofile\.\*4096\$ /etc/security/limits.conf`
 if [ -z "${LIMITS}" ]; then
 	echo "# Layer 7 Limits"  >> /etc/security/limits.conf
-	echo "*               soft    nproc   2047"  >> /etc/security/limits.conf
+	echo "*               soft    nproc   5120"  >> /etc/security/limits.conf
 	echo "*               hard    nproc   16384"  >> /etc/security/limits.conf
 	echo "*               soft    nofile  4096"  >> /etc/security/limits.conf
 	echo "*               hard    nofile  63536"  >> /etc/security/limits.conf
