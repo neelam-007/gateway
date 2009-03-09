@@ -329,7 +329,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         if (session == null) throw new NullPointerException();
         SessionHolder holder = (SessionHolder)sessionMap.get(session);
         if (holder == null) {
-            logger.log(Level.WARNING, "Admin session/cookie not found: {0}.", session);
+            logger.log(Level.WARNING, "Admin session/cookie not found: {0}.", logger.isLoggable(Level.FINER) ? session : "<not shown>");
             return null;
         }
         holder.onUsed();
