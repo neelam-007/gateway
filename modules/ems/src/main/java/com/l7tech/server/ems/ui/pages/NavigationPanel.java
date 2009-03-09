@@ -1,8 +1,8 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.server.ems.ui.NavigationModel;
-import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.gateway.common.admin.Administrative;
+import com.l7tech.server.ems.ui.EsmSecurityManager;
+import com.l7tech.server.ems.ui.NavigationModel;
 import com.l7tech.util.Functions;
 import org.apache.wicket.AttributeModifier;
 import org.apache.wicket.Page;
@@ -105,7 +105,7 @@ public class NavigationPanel extends Panel {
         RepeatingView view = new RepeatingView("navigationScript");
         add( view );
         for ( String scriptSection : navigationModel.getNavigationSections() ) {
-            if ( currentSection.equals(currentSection) ) continue;
+            if ( scriptSection.equals(currentSection) ) continue;
 
             Label label = new Label("tabName", scriptSection);
             Fragment fragment = new Fragment(Integer.toString(viewCount++), "navigationScriptFragment", this);
