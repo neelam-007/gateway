@@ -25,6 +25,7 @@ umask 0002
 SSGUSER="gateway"
 SSGNODE="default"
 SSGJDK_VERSION="1.6"
+RUNASUSER="bash"
 export SSGNODE SSGUSER
 
 # Source profile for standard environment
@@ -86,8 +87,12 @@ if [ ! -x "${SSG_JAVA_HOME}/bin/java" ] ; then
     exit 13
 fi
 if [ "$(id -u)" != "$(id -u ${SSGUSER})" ] ; then
-    echo "Please run as the user: ${SSGUSER}"
-    exit 13
+    if [ "$1" = "run" ] || [ "$(id -u)" != "0" ] ; then
+        echo "Please run as the user: ${SSGUSER}"
+        exit 13
+    else 
+        RUNASUSER="su "${SSGUSER}""
+    fi
 fi
 
 # Helper functions
@@ -159,12 +164,14 @@ if [ "$1" = "start" ] ; then
     ensureNotRunning
 
     #enable logging of stdout/stderr using JDK logging as well as the standard SSG logging facilities
-    "${SSG_JAVA_HOME}/bin/java" -Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "${SSGARGS[@]}" &
-
-    if [ ! -z "${GATEWAY_PID}" ]; then
-        rm -f "${GATEWAY_PID}"
-        echo $! > "${GATEWAY_PID}"
-    fi
+    ${RUNASUSER} <<-SUEND
+	"${SSG_JAVA_HOME}/bin/java" -Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig ${JAVA_OPTS} -jar "${SSG_HOME}/runtime/Gateway.jar" "${SSGARGS[@]}" &
+	
+	if [ ! -z "${GATEWAY_PID}" ]; then
+	    rm -f "${GATEWAY_PID}"
+	    echo \$! > "${GATEWAY_PID}"
+	fi
+	SUEND
 
 elif [ "$1" = "run" ] ; then
     shift
