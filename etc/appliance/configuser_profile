@@ -313,12 +313,17 @@ doEmsConfiguration() {
                 clear;;
             3)
                 clear;
-                (${EMCONFWIZARD} wizard reset);
-                STATUS=$?
-                if [ $STATUS -eq 3 ] ; then
-                    confirmedMessage "Enterprise Service Manager configuration cannot be performed.\n Please ensure that the ESM is configured and is not running."
+                sudo /sbin/service ssem status &>/dev/null && true # && true due to set -e
+                if [ ${?} -eq 0 ] ; then
+                    confirmedMessage "Enterprise Service Manager configuration cannot be performed.\nPlease ensure that the ESM is not running."
                 else
-                    confirmedMessage ""
+                    (${EMCONFWIZARD} wizard reset);
+                    STATUS=$?
+                    if [ $STATUS -eq 3 ] ; then
+                        confirmedMessage "Enterprise Service Manager configuration cannot be performed.\nPlease ensure that the ESM is configured and is not running."
+                    else
+                        confirmedMessage ""
+                    fi
                 fi
                 clear;;
             x|X)
