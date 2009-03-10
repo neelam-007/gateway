@@ -97,6 +97,7 @@ This step lets you set up the SSG cluster.</prompt>
     -->
     <option id="admin-user" group="admin" type="USERNAME" order="200" updatable="false" name="SSM Username" minlength="3" maxlength="128">
         <configName>admin.user</configName>
+        <regex>^[^#,+"\\&lt;&gt;;]*$</regex>
         <description>SSM Username</description>
         <prompt>Enter the SSM administrative user (3-128 characters).</prompt>
     </option>

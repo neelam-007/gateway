@@ -46,6 +46,7 @@ used:
     -->
     <option id="admin-user" group="admin" type="USERNAME" order="100" updatable="false" name="ESM Username" minlength="3" maxlength="128">
         <configName>admin.user</configName>
+        <regex>^[^#,+"\\&lt;&gt;;]*$</regex>
         <description>ESM Username</description>
         <prompt>Enter the ESM administrative user (3-128 characters).</prompt>
     </option>
