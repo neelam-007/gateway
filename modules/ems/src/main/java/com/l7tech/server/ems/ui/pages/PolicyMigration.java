@@ -423,8 +423,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                             // load mappings for top-level items that have been previously migrated
                             loadMappings( mappingModel, dir.clusterId, targetClusterId, retrieveDependencies(dir, null, null), true);
-                            final PolicyMigrationConfirmationPanel confirmationPanel = new PolicyMigrationConfirmationPanel(
-                                YuiDialog.getContentId(), new Model(performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, dir, mappingModel, "", true )));
+                            final PolicyMigrationConfirmationPanel confirmationPanel = new PolicyMigrationConfirmationPanel(YuiDialog.getContentId(), new Model(performMigration( dir.clusterId, targetClusterId, targetFolderId, folders, enableServices, overwrite, dir, mappingModel, "", true )));
                             YuiDialog dialog = new YuiDialog("dialog", "Confirm Migration", YuiDialog.Style.OK_CANCEL, confirmationPanel, new YuiDialog.OkCancelCallback(){
                                 @Override
                                 public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
@@ -1250,10 +1249,10 @@ public class PolicyMigration extends EsmStandardWebPage {
                     GatewayClusterClient context = gatewayClusterClientManager.getGatewayClusterClient(cluster, getUser());
                     MigrationApi api = context.getUncachedMigrationApi();
                     ExternalEntityHeader entityHeader = sourceKey.asEntityHeader();
-                    Map candidates = api.retrieveMappingCandidates(
+                    Map candidates = MigrationApi.MappingCandidate.fromCandidates(api.retrieveMappingCandidates(
                                 Collections.singletonList( entityHeader ),
                                 scope == null ? null : scope.asEntityHeader(),
-                                new HashMap<String,String>() {{put(SearchableEntityManager.DEFAULT_SEARCH_NAME, filter);}} );
+                                new HashMap<String,String>() {{put(SearchableEntityManager.DEFAULT_SEARCH_NAME, filter);}} ));
                     if ( candidates != null && candidates.containsKey(entityHeader) ) {
                         EntityHeaderSet<ExternalEntityHeader> entitySet = (EntityHeaderSet<ExternalEntityHeader>) candidates.get(entityHeader);
                         if ( entitySet != null ) {

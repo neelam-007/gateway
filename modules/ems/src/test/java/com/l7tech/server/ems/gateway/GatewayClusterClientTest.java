@@ -1,6 +1,9 @@
 package com.l7tech.server.ems.gateway;
 
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ExternalEntityHeader;
 import com.l7tech.server.ems.enterprise.SsgCluster;
 import com.l7tech.server.ems.enterprise.SsgNode;
 import com.l7tech.server.management.api.node.GatewayApi;
@@ -90,7 +93,7 @@ public class GatewayClusterClientTest {
                         return null;
                     }
 
-                    public Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, Map<String,String> filters) throws MigrationException {
+                    public Collection<MappingCandidate> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, Map<String,String> filters) throws MigrationException {
                         return null;
                     }
 
