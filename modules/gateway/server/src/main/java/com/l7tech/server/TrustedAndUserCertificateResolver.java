@@ -7,6 +7,7 @@ import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.cert.X509Entity;
 import com.l7tech.security.token.KerberosSecurityToken;
@@ -182,6 +183,8 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
 
                         infos.add(new SignerInfo(entry.getPrivateKey(), entry.getCertificateChain()));
                     }
+                } catch (ObjectNotFoundException e) {
+                    logger.log(Level.WARNING, "Unable to access private key alias " + alias + " in key store " + keyFinder.getName() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 } catch (KeyStoreException e) {
                     logger.log(Level.WARNING, "Unable to access private key alias " + alias + " in key store " + keyFinder.getName() + ": " + ExceptionUtils.getMessage(e), e);
                 } catch (UnrecoverableKeyException e) {

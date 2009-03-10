@@ -8,6 +8,7 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.security.keystore.sca.ScaSsgKeyStore;
 import com.l7tech.server.security.keystore.software.DatabasePkcs12SsgKeyStore;
 import com.l7tech.server.security.sharedkey.SharedKeyManager;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MasterPasswordManager;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,7 +17,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.text.MessageFormat;
 
 /**
  * Manages all SsgKeyFinder (and SsgKeyStore) instances that will be available on this Gateway node.
@@ -146,10 +149,16 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
                     return alreadySearched.getCertificateChain(keyAlias);
                 /* FALLTHROUGH and scan all keystores */
             } catch (ObjectNotFoundException e) {
+                if (logger.isLoggable(Level.FINER))
+                    logger.log(Level.FINER, "Private key alias {0} not found in preferred keystore OID {1}", new Object[] { keyAlias, preferredKeystoreId });
                 /* FALLTHROUGH and scan all keystores */
             } catch (FindException e) {
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, MessageFormat.format("Error checking keystore OID {0} for alias {1}: {2}", preferredKeystoreId, keyAlias, ExceptionUtils.getMessage(e)), e);
                 /* FALLTHROUGH and scan all keystores */
             } catch (KeyStoreException e) {
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, MessageFormat.format("Error checking keystore OID {0} for alias {1}: {2}", preferredKeystoreId, keyAlias, ExceptionUtils.getMessage(e)), e);
                 /* FALLTHROUGH and scan the other keystores */
             }
         }

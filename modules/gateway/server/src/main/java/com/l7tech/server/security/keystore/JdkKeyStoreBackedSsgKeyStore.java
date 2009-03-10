@@ -4,6 +4,7 @@ import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.DuplicateAliasException;
 import com.l7tech.gateway.common.security.BouncyCastleCertUtils;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.event.system.Started;
@@ -79,12 +80,12 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         return ret;
     }
 
-    public SsgKeyEntry getCertificateChain(String alias) throws KeyStoreException {
+    public SsgKeyEntry getCertificateChain(String alias) throws ObjectNotFoundException, KeyStoreException {
         KeyStore keystore = keyStore();
 
         Certificate[] chain = keystore.getCertificateChain(alias);
         if (chain == null)
-            throw new KeyStoreException("Keystore " + getName() + " does not contain any certificate chain entry with alias " + alias);
+            throw new ObjectNotFoundException("Keystore " + getName() + " does not contain any certificate chain entry with alias " + alias);
         if (chain.length < 1)
             throw new KeyStoreException("Keystore " + getName() + " contains an empty certificate chain entry for alias " + alias);
 

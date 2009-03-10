@@ -1,6 +1,7 @@
 package com.l7tech.server.security.keystore;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.prov.CertificateRequest;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,8 +41,8 @@ public class SsgKeyFinderStub implements SsgKeyFinder {
     }
 
     @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
-    public SsgKeyEntry getCertificateChain(String alias) throws KeyStoreException {
-        throw new KeyStoreException("alias not found");
+    public SsgKeyEntry getCertificateChain(String alias) throws KeyStoreException, ObjectNotFoundException {
+        throw new ObjectNotFoundException("alias not found");
     }
 
     @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)

@@ -3,17 +3,17 @@
  */
 package com.l7tech.server;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
@@ -26,6 +26,7 @@ import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SslCertificateSniffer;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -33,14 +34,13 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 
 import javax.security.auth.x500.X500Principal;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -227,16 +227,86 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         }
     }
 
+    /**
+     * Find a key entry using the rules assertions and connectors would follow.
+     *
+     * @param keyAlias  key alias to find, or null to find default SSL key.
+     * @param preferredKeystoreOid preferred keystore OID to look in, or -1 to search all keystores (if permitted).
+     * @return the requested private key, or null if it wasn't found.
+     * @throws FindException if there is a database problem (other than ObjectNotFoundException)
+     * @throws KeyStoreException if there is a problem reading a keystore
+     */
+    SsgKeyEntry findKeyEntry(String keyAlias, long preferredKeystoreOid) throws FindException, KeyStoreException {
+        try {
+            return keyAlias == null ? defaultKey.getSslInfo() : ssgKeyStoreManager.lookupKeyByKeyAlias(keyAlias, preferredKeystoreOid);
+        } catch (IOException e) {
+            // No default SSL key
+            return null;
+        } catch (ObjectNotFoundException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Check if this thread is processing an admin request that arrived over an SSL connector that appears
+     * to be using the specified private key as its SSL server cert.
+     * <p/>
+     * This method will return false if one of the following is true:
+     * <ul>
+     * <li> this thread has no active servlet request
+     * <li> no active connector can be found for this thread's active servlet request
+     * <li> the active connector explicitly specifies a key alias that does not match the specified keyAlias
+     * <li> the active connector explicitly specifies a keystore OID that does not match the specified store's OID
+     * <li> the specified store does not contain the specified keyAlias
+     * <li> the specified key entry's certificate does not exactly match the active connector's SSL server cert
+     * <li> there is a database problem checking any of the above information
+     * </ul>
+     * <p/>
+     * Otherwise, this method returns true.
+     *
+     * @param store  the keystore in which to find the alias.  Required.
+     * @param keyAlias  the alias to find.  Required.
+     * @return true if the specified key appears to be in use by the current admin connection.
+     * @throws KeyStoreException
+     */
+    boolean isKeyActive(SsgKeyFinder store, String keyAlias) throws KeyStoreException {
+        HttpServletRequest req = RemoteUtils.getHttpServletRequest();
+        if (null == req)
+            return false;
+        SsgConnector connector = HttpTransportModule.getConnector(req);
+        if (null == connector)
+            return false;
+        if (connector.getKeyAlias() != null && !keyAlias.equalsIgnoreCase(connector.getKeyAlias()))
+            return false;
+        Long portStoreOid = connector.getKeystoreOid();
+        if (portStoreOid != null && portStoreOid != store.getOid())
+            return false;
+
+        final SsgKeyEntry entry;
+        try {
+            entry = store.getCertificateChain(keyAlias);
+        } catch (ObjectNotFoundException e) {
+            return false;
+        }
+
+        try {
+            SsgKeyEntry portEntry = findKeyEntry(connector.getKeyAlias(), portStoreOid != null ? portStoreOid : -1);
+            return CertUtils.certsAreEqual(portEntry.getCertificate(), entry.getCertificate());
+        } catch (FindException e) {
+            return false;
+        }
+    }
+
     public void deleteKey(long keystoreId, String keyAlias) throws IOException, CertificateException, DeleteException {
         checkLicenseKeyStore();
+        if (keyAlias == null) throw new NullPointerException("keyAlias");
         try {
             SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
             SsgKeyStore store = keyFinder.getKeyStore();
             if (store == null)
                 throw new DeleteException("Unable to delete key: keystore id " + keystoreId + " is read-only");
 
-            //check if key is in use
-            if (HttpTransportModule.isKeyActive(RemoteUtils.getHttpServletRequest(), keyAlias))
+            if (isKeyActive(store, keyAlias))
                 throw new DeleteException("Key '" + keyAlias + "' is in use by the connector for current admin connection");
 
             Future<Boolean> result = store.deletePrivateKeyEntry(keyAlias);
@@ -251,7 +321,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
         } catch (InterruptedException e) {
             throw new DeleteException("Unable to find keystore: " + ExceptionUtils.getMessage(e), e);
-        } 
+        }
     }
 
     public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays, boolean makeCaCert) throws FindException, GeneralSecurityException {

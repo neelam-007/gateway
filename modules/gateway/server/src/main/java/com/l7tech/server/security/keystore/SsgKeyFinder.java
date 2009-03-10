@@ -2,6 +2,7 @@ package com.l7tech.server.security.keystore;
 
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.prov.CertificateRequest;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,11 +50,11 @@ public interface SsgKeyFinder extends NamedEntity {
      *
      * @param alias  the alias. Required.
      * @return the SsgKeyEntry for this alias.   Never null.
-     * @throws KeyStoreException if this alias doesn't exist or doesn't have a cert chain or private key,
-     *                           or if there is a problem reading the underlying key store.
+     * @throws ObjectNotFoundException if this alias doesn't exist or doesn't have a cert chain or private key
+     * @throws KeyStoreException if there is a problem reading the underlying key store.
      */
     @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
-    SsgKeyEntry getCertificateChain(String alias) throws KeyStoreException;
+    SsgKeyEntry getCertificateChain(String alias) throws ObjectNotFoundException, KeyStoreException;
 
     /**
      * Generate a new PKCS#10 certificate request for the key pair specified by its alias, using a certificate with a DN

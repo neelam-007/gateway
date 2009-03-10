@@ -6,13 +6,17 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.net.ssl.KeyManager;
 import javax.security.auth.x500.X500Principal;
@@ -31,11 +35,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.transaction.support.TransactionCallback;
 
 /**
  * Knows about the location and passwords for the SSL and CA keystores, server certificates, etc.
@@ -125,6 +124,8 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
             clusterPropertyManager.putProperty(name, value);
             invalidateCachedCerts();
             return entry;
+        } catch (ObjectNotFoundException e) {
+            throw new IOException("Unable to find default SSL key: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         } catch (KeyStoreException e) {
             throw new IOException("Unable to find default SSL key: " + ExceptionUtils.getMessage(e), e);
         } catch (FindException e) {

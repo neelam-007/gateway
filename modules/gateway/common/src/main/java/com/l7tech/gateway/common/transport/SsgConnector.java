@@ -166,7 +166,8 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     private int clientAuth;
     private Long keystoreOid;
     private String keyAlias;
-    
+
+    // TODO this field should probably not be XmlTransient any more, but need to double check serialization first
     @XmlTransient
     private Map<String,String> properties = new HashMap<String,String>();
 
@@ -295,6 +296,9 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * This can occur (for example) if a configuration is moved from a Gateway with an HSM to a Gateway without one.
      * If this happens, the system should honor the "keyStoreSearchForAlias" ServerConfig setting (possibly searching
      * other keystores for a matching alias).
+     * <p/>
+     * <b>Note:</b> A connector with a null key alias or keystore OID can still be configured as an HTTPS
+     * listener -- such listeners will just use the current default SSL key as their server cert.
      *
      * @return the OID of the KeystoreFile instance that provides this connector's SSL server cert and private key,
      *         or null if one isn't set.
@@ -320,6 +324,9 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
 
     /**
      * Get the alias of the private key to use for the SSL server socket, if this connector will be using SSL.
+     * <p/>
+     * <b>Note:</b> A connector with a null key alias or keystore OID can still be configured as an HTTPS
+     * listener -- such listeners will just use the current default SSL key as their server cert.
      *
      * @return the private key alias, or null if one is not configured.
      */
@@ -330,6 +337,8 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
 
     /**
      * Set the alias of the priate key to use for the SSL server socket, if this connector will be using SSL.
+     * <p/>
+     * See {@link #getKeyAlias()} for more information.
      *
      * @param keyAlias the private key alias, or null if one is not to be used.
      */

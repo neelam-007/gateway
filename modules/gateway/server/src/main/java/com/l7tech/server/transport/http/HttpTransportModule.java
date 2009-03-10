@@ -1,6 +1,5 @@
 package com.l7tech.server.transport.http;
 
-import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -19,10 +18,7 @@ import com.l7tech.server.tomcat.*;
 import com.l7tech.server.transport.SsgConnectorActivationListener;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.MasterPasswordManager;
-import com.l7tech.util.Pair;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
 import org.apache.catalina.Engine;
 import org.apache.catalina.Host;
 import org.apache.catalina.connector.Connector;
@@ -885,19 +881,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             throw new ListenerException("No connector was found for the specified request.");
         if (!connector.offersEndpoint(endpoint))
             throw new ListenerException("This request cannot be accepted on this port.");
-    }
-
-    /**
-     * Asserts that the specified servlet request arrived over a connector is using the specified key alias.
-     *
-     * @param req   The http servlet request to be examined.  Required.
-     * @param keyAlias  The key alias to be compared with.  Required.
-     * @return  TRUE if the specified servlet request is using the specified key.  Otherwise FALSE.
-     */
-    public static boolean isKeyActive(HttpServletRequest req, String keyAlias) {
-        if (keyAlias == null) return false;
-        SsgConnector connector = getConnector(req);
-        return connector != null && keyAlias.equalsIgnoreCase(connector.getKeyAlias());
     }
 
     /**
