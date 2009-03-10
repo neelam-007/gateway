@@ -1120,6 +1120,7 @@
                 <bean class="com.l7tech.server.util.ClusterNodeSsgConnectorActivationListener">
                     <constructor-arg ref="serverConfig"/>
                 </bean>
+                <bean class="com.l7tech.server.PcApiConnectorActivationListener"/>
             </set>
         </constructor-arg>
     </bean>

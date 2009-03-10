@@ -18,6 +18,7 @@ import com.l7tech.server.management.config.node.PCNodeConfig;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.ProcUtils;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
@@ -410,17 +411,22 @@ public class ProcessController {
 
     private void osKill( final PCNodeConfig node ) {
         logger.warning("Killing " + node.getName());
-        final File nodesDir = configService.getNodeBaseDirectory();
-        if (!(nodesDir.exists() && nodesDir.isDirectory())) throw new IllegalStateException("Couldn't find node directory " + nodesDir.getAbsolutePath());
-
-        File ssgPwd = new File(nodesDir, node.getName());
-        if (!(ssgPwd.exists() && ssgPwd.isDirectory())) throw new IllegalStateException("Node directory " + ssgPwd.getAbsolutePath() + " does not exist or is not a directory");
+        File ssgPwd = getNodeDirectory(node.getName());
 
         try {
             ProcUtils.exec(ssgPwd, new File("/opt/SecureSpan/Appliance/libexec/gateway_control"), new String[]{"stop", "-force"}, null, false );
         } catch ( IOException ioe ) {
             logger.log(Level.WARNING, "Failed to kill node '"+node.getName()+"':\n" + ioe.getMessage() );
         }
+    }
+
+    File getNodeDirectory(String name) {
+        final File nodesDir = configService.getNodeBaseDirectory();
+        if (!(nodesDir.exists() && nodesDir.isDirectory())) throw new IllegalStateException("Couldn't find node directory " + nodesDir.getAbsolutePath());
+
+        File ssgPwd = new File(nodesDir, name);
+        if (!(ssgPwd.exists() && ssgPwd.isDirectory())) throw new IllegalStateException("Node directory " + ssgPwd.getAbsolutePath() + " does not exist or is not a directory");
+        return ssgPwd;
     }
 
     private void handleRunningState(PCNodeConfig node, RunningNodeState state) {
@@ -643,10 +649,27 @@ public class ProcessController {
     }
 
     NodeApi getNodeApi(PCNodeConfig node) {
+        String autoUrl = null;
+        final File portfile = new File(new File(getNodeDirectory(node.getName()), "var"), "processControllerPort");
+        if (portfile.exists()) {
+            logger.info("Getting API port from " + portfile.getAbsolutePath());
+            try {
+                int port = Integer.valueOf(new String(IOUtils.slurpFile(portfile), "UTF-8"));
+                autoUrl = String.format("https://localhost:%d/ssg/services/processControllerNodeApi", port);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Couldn't read API port file; will try default port", e);
+            }
+        } else {
+            logger.log(Level.INFO, "{0} does not exist yet, will try default port", portfile.getAbsolutePath());
+        }
+
         final JaxWsProxyFactoryBean pfb = new JaxWsProxyFactoryBean();
         pfb.setServiceClass(NodeApi.class);
-        final String url = node.getProcessControllerApiUrl();
-        pfb.setAddress(url == null ? "https://localhost:2124/ssg/services/processControllerNodeApi" : url);
+
+        String url = node.getProcessControllerApiUrl();
+        if (url == null) url = autoUrl;
+        if (url == null) url = "https://localhost:2124/ssg/services/processControllerNodeApi";
+        pfb.setAddress(url);
         Client c = pfb.getClientFactoryBean().create();
         HTTPConduit httpConduit = (HTTPConduit)c.getConduit();
         httpConduit.setTlsClientParameters(new TLSClientParameters() {
