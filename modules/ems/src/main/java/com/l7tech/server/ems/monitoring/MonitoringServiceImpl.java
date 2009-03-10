@@ -123,7 +123,7 @@ public class MonitoringServiceImpl implements MonitoringService {
                 EntityMonitoringPropertyValues.PropertyValues propertyValues =
                     (EntityMonitoringPropertyValues.PropertyValues) ssgNodePropertyValuesMap.get(propertyName);
                 if (value == null) {
-                    if (valueType == MonitoredPropertyStatus.ValueType.FAILED) {
+                    if (valueType == MonitoredPropertyStatus.ValueType.NO_DATA_YET) {
                         propertyValues.setValue(JSONConstants.NA);
                     } else {
                         propertyValues.setValue(null);
