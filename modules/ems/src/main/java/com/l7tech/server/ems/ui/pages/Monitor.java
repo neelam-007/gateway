@@ -479,7 +479,7 @@ public class Monitor extends EsmStandardWebPage {
                                 entitiesList.add(monitoringService.getCurrentSsgNodePropertiesStatus(ssgNode));
                             }
                         } catch (Throwable t) {
-                            logger.log(Level.WARNING, "Failed to retrieve SSG node property values.", t);
+                            logger.log(Level.WARNING, "Failed to retrieve SSG node property values: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
                             continue;
                         }
                         // Then, get the current value (audit size) for the SSG cluster.
@@ -489,7 +489,7 @@ public class Monitor extends EsmStandardWebPage {
                                 entitiesList.add(values);
                             }
                         } catch (Throwable t) {
-                            logger.log(Level.WARNING, "Failed to retrieve SSG cluster property value.", t);
+                            logger.log(Level.WARNING, "Failed to retrieve SSG cluster property value: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
                         }
                     }
                 } catch (FindException e) {
