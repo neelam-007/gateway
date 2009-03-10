@@ -212,7 +212,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                         failureMessage = "Could not connect to cluster.";
                     } else {
                         failureMessage = "Unexpected error from cluster.";
-                        logger.log( Level.WARNING, "Error processing selection.", e);
+                        logger.log( Level.WARNING, "Error loading previous mappings '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
                     }
                     YuiDialog resultDialog = new YuiDialog("dialog", "Error Loading Previous Mappings", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
                     dialogContainer.replace( resultDialog );
@@ -377,7 +377,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                         failureMessage = "Could not connect to cluster.";
                     } else {
                         failureMessage = "Unexpected error from cluster.";
-                        logger.log( Level.WARNING, "Error processing selection.", e);
+                        logger.log( Level.WARNING, "Error identifiying dependencies '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
                     }
                     YuiDialog resultDialog = new YuiDialog("dialog", "Error Identifying Dependencies", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
                     dialogContainer.replace( resultDialog );
@@ -452,7 +452,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                                                 failureMessage = "Could not connect to cluster.";
                                             } else {
                                                 failureMessage = "Unexpected error from cluster.";
-                                                logger.log( Level.WARNING, "Error processing selection.", e);
+                                                logger.log( Level.WARNING, "Error processing selection '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
                                             }
                                             YuiDialog resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
                                             dialogContainer.replace( resultDialog );
@@ -502,7 +502,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                         failureMessage = "Could not connect to cluster.";
                     } else {
                         failureMessage = "Unexpected error from cluster.";
-                        logger.log( Level.WARNING, "Error processing selection.", e);
+                        logger.log( Level.WARNING, "Error during migration '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
                     }
                     YuiDialog resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
                     dialogContainer.replace( resultDialog );
@@ -785,7 +785,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                         logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(me)+"'." );
                     } catch ( SOAPFaultException sfe ) {
                         if ( !GatewayContext.isNetworkException(sfe) && !GatewayContext.isConfigurationException(sfe) ) {
-                            logger.log( Level.WARNING, "Error processing selection.", sfe);
+                            logger.log( Level.WARNING, "Error processing selection '"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe));
                         }
                     } catch ( GatewayException ge ) {
                         logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
@@ -1279,7 +1279,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             logger.log( Level.INFO, "Error while gettings dependency options '"+ExceptionUtils.getMessage(me)+"'.", ExceptionUtils.getDebugException(me) );
         } catch ( SOAPFaultException sfe ) {
             if ( !GatewayContext.isNetworkException( sfe ) && !GatewayContext.isConfigurationException( sfe ) ) {
-                logger.log( Level.WARNING, "Error while gettings dependency options.", sfe );
+                logger.log( Level.WARNING, "Error while gettings dependency options'"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe));
             }
         }
 
@@ -1397,7 +1397,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             logger.log( Level.WARNING, "Error while reloading previous migration.", fe );
         } catch ( SOAPFaultException sfe ) {
             if ( !GatewayContext.isNetworkException( sfe ) && !GatewayContext.isConfigurationException( sfe ) ) {
-                logger.log( Level.WARNING, "Error while reloading previous migrations.", sfe );
+                logger.log( Level.WARNING, "Error while reloading previous migrations'"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe));
             }
         }
     }

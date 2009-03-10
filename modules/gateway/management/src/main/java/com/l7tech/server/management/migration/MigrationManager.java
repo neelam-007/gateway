@@ -15,7 +15,7 @@ public interface MigrationManager {
 
     public Collection<ExternalEntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationApi.MigrationException;
 
-    public Collection<ExternalEntityHeader> checkHeaders(Collection<ExternalEntityHeader> headers) throws MigrationApi.MigrationException;
+    public Collection<ExternalEntityHeader> checkHeaders(Collection<ExternalEntityHeader> headers);
 
     public MigrationMetadata findDependencies(Collection<ExternalEntityHeader> headers) throws MigrationApi.MigrationException;
 

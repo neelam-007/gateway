@@ -31,32 +31,17 @@ public class MigrationApiImpl implements MigrationApi {
 
     @Override
     public Collection<ExternalEntityHeader> listEntities(Class<? extends Entity> clazz) throws MigrationException {
-        try {
-            return manager.listEntities(clazz);
-        } catch ( RuntimeException re ) {
-            logger.log( Level.WARNING, "Unexpected error in Migration API.", re );
-            throw re;
-        }
+        return manager.listEntities(clazz);
     }
 
     @Override
     public Collection<ExternalEntityHeader> checkHeaders(Collection<ExternalEntityHeader> headers) {
-        try {
-            return manager.checkHeaders(headers);
-        } catch ( Exception e ) {
-            logger.log( Level.WARNING, "Unexpected error in Migration API.", e );
-            throw ExceptionUtils.wrap(e);
-        }
+        return manager.checkHeaders(headers);
     }
 
     @Override
     public MigrationMetadata findDependencies(Collection<ExternalEntityHeader> headers) throws MigrationException {
-        try {
-            return manager.findDependencies(headers);
-        } catch ( RuntimeException re ) {
-            logger.log( Level.WARNING, "Unexpected error in Migration API.", re );
-            throw re;
-        }
+        return manager.findDependencies(headers);
     }
 
     @Override
@@ -66,20 +51,12 @@ public class MigrationApiImpl implements MigrationApi {
         } catch ( MigrationException e ) {
             logger.log( Level.WARNING, "Error in Migration API '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
             throw e;
-        } catch ( Exception e ) {
-            logger.log( Level.WARNING, "Unexpected error in Migration API.", e );
-            throw ExceptionUtils.wrap(e);
         }
     }
 
     @Override
     public Map<ExternalEntityHeader, EntityHeaderSet<ExternalEntityHeader>> retrieveMappingCandidates(Collection<ExternalEntityHeader> mappables, ExternalEntityHeader scope, final Map<String,String> filters) throws MigrationException {
-        try {
-            return manager.retrieveMappingCandidates(mappables, scope, filters);
-        } catch ( RuntimeException re ) {
-            logger.log( Level.WARNING, "Unexpected error in Migration API.", re );
-            throw re;
-        }
+        return manager.retrieveMappingCandidates(mappables, scope, filters);
     }
 
     @Override
