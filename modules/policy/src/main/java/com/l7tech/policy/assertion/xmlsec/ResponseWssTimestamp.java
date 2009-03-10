@@ -102,6 +102,7 @@ public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig
     }
 
     public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
+        if (recipientContext == null) recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
         this.recipientContext = recipientContext;
     }
 

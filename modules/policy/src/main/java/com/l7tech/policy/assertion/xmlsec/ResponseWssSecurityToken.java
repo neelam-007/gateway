@@ -35,6 +35,7 @@ public class ResponseWssSecurityToken extends Assertion implements ResponseWssCo
     }
 
     public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
+        if (recipientContext == null) recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
         this.recipientContext = recipientContext;
     }
 

@@ -13,6 +13,7 @@ public class SecurityHeaderAddressableSupport extends Assertion implements Secur
     }
 
     public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
+        if (recipientContext == null) recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
         this.recipientContext = recipientContext;
     }
 

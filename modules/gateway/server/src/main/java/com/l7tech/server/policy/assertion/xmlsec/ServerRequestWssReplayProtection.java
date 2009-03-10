@@ -65,16 +65,22 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
             auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
             return AssertionStatus.FAILED;
         }
-        final String what = assertion.getTargetName();
+
+        if (TargetMessageType.REQUEST.equals(assertion.getTarget()) && !assertion.getRecipientContext().localRecipient()) {
+            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
+            return AssertionStatus.NONE;
+        }
+
+        final String targetName = assertion.getTargetName();
 
         ProcessorResult wssResults;
         try {
             if (!msg.isSoap()) {
-                auditor.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_NOT_SOAP, what);
+                auditor.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_NOT_SOAP, targetName);
                 return AssertionStatus.NOT_APPLICABLE;
             }
 
-            wssResults = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, auditor);
+            wssResults = WSSecurityProcessorUtils.getWssResults(msg, targetName, securityTokenResolver, auditor);
 
             if (wssResults == null) {
                 // WssProcessorUtil.getWssResults already audited any error messages
@@ -99,34 +105,34 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
             Element el = signedElement.asElement();
             if (DomUtils.elementInNamespace(el, SoapConstants.WSA_NAMESPACE_ARRAY) && SoapConstants.MESSAGEID_EL_NAME.equals(el.getLocalName())) {
                 if (wsaMessageId != null) {
-                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_MULTIPLE_MESSAGE_IDS, what);
+                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_MULTIPLE_MESSAGE_IDS, targetName);
                     return AssertionStatus.BAD_REQUEST;
                 } else {
                     wsaMessageId = DomUtils.getTextValue(el);
-                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_GOT_SIGNED_MESSAGE_ID, what, wsaMessageId);
+                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_GOT_SIGNED_MESSAGE_ID, targetName, wsaMessageId);
                     // continue in order to detect multiple MessageIDs
                 }
             }
         }
 
-        if (wsaMessageId == null) auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_SIGNED_MESSAGE_ID, what);
+        if (wsaMessageId == null) auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_SIGNED_MESSAGE_ID, targetName);
         // OK to proceed with timestamp alone
 
         // Validate timestamp
         WssTimestamp timestamp = wssResults.getTimestamp();
         if (timestamp == null) {
             context.setRequestPolicyViolated();
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_TIMESTAMP, what);
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_TIMESTAMP, targetName);
             return AssertionStatus.BAD_REQUEST;
         }
         if (!timestamp.isSigned()) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NOT_SIGNED, what);
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NOT_SIGNED, targetName);
             return AssertionStatus.BAD_REQUEST;
         }
 
         final WssTimestampDate createdTimestamp = timestamp.getCreated();
         if (createdTimestamp == null) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NO_CREATED_ELEMENT, what);
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NO_CREATED_ELEMENT, targetName);
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -137,20 +143,20 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
         if (timestamp.getExpires() != null) {
             expires = timestamp.getExpires().asTime();
         } else {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NO_EXPIRES_ELEMENT, what, String.valueOf(DEFAULT_EXPIRY_TIME));
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NO_EXPIRES_ELEMENT, targetName, String.valueOf(DEFAULT_EXPIRY_TIME));
             expires = created + DEFAULT_EXPIRY_TIME;
         }
 
         if (expires <= (now - EXPIRY_GRACE_TIME_MILLIS)) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_STALE_TIMESTAMP, what);
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_STALE_TIMESTAMP, targetName);
             return AssertionStatus.BAD_REQUEST;
         }
 
         if (created > now)
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_CLOCK_SKEW, what, String.valueOf(created));
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_CLOCK_SKEW, targetName, String.valueOf(created));
 
         if (created <= (now - MAXIMUM_MESSAGE_AGE_MILLIS)) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_CREATED_TOO_OLD, what);
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_CREATED_TOO_OLD, targetName);
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -173,7 +179,7 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
                 if (senderId == null) return AssertionStatus.BAD_REQUEST;
                 messageIdStr = senderId;
             } catch (MultipleSenderIdException e) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_MULTIPLE_SENDER_IDS, what);
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_MULTIPLE_SENDER_IDS, targetName);
                 return AssertionStatus.BAD_REQUEST;
             }
         }
@@ -181,9 +187,9 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
         MessageId messageId = new MessageId(messageIdStr, expires + CACHE_ID_EXTRA_TIME_MILLIS);
         try {
             messageIdManager.assertMessageIdIsUnique(messageId);
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, messageIdStr, what);
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, messageIdStr, targetName);
         } catch (MessageIdManager.DuplicateMessageIdException e) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_REPLAY, messageIdStr, what);
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_REPLAY, messageIdStr, targetName);
             return AssertionStatus.BAD_REQUEST;
         }
 

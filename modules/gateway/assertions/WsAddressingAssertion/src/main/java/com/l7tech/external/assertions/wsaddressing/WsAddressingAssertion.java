@@ -160,6 +160,7 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
     }
 
     public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
+        if (recipientContext == null) recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
         this.recipientContext = recipientContext;
     }
 

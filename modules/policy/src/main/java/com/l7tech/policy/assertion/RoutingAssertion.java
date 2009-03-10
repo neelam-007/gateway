@@ -160,8 +160,7 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
     }
 
     public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
-        if (recipientContext == null)
-            throw new NullPointerException();
+        if (recipientContext == null) recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
         this.recipientContext = recipientContext;
     }
 }

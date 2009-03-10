@@ -25,6 +25,7 @@ public abstract class XmlSecurityAssertionBase extends XpathBasedAssertion imple
     }
 
     public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
+        if (recipientContext == null) recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
         this.recipientContext = recipientContext;
     }
 

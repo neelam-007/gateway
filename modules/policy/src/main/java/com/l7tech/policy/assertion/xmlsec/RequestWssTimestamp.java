@@ -35,6 +35,7 @@ public class RequestWssTimestamp extends MessageTargetableAssertion implements S
     }
 
     public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
+        if (recipientContext == null) recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
         this.recipientContext = recipientContext;
     }
 

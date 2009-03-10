@@ -115,6 +115,7 @@ public class RequestWssSaml extends SamlPolicyAssertion implements SecurityHeade
     }
 
     public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
+        if (recipientContext == null) recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
         this.recipientContext = recipientContext;
     }
 
