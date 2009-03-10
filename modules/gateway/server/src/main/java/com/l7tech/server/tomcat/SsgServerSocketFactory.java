@@ -140,22 +140,22 @@ public class SsgServerSocketFactory extends ServerSocketFactory {
     /**
      * Calls delegate
      */
-    public ServerSocket createSocket(int i) throws IOException, InstantiationException {
-        return delegate.createSocket(i);
+    public ServerSocket createSocket(int port) throws IOException, InstantiationException {
+        return delegate.createSocket(port);
     }
 
     /**
      * Invokes delegate
      */
-    public ServerSocket createSocket(int i, int i1) throws IOException, InstantiationException {
-        return delegate.createSocket(i, i1);
+    public ServerSocket createSocket(int port, int backlog) throws IOException, InstantiationException {
+        return delegate.createSocket(port, backlog);
     }
 
     /**
      * Invokes delegate
      */
-    public ServerSocket createSocket(int i, int i1, InetAddress inetAddress) throws IOException, InstantiationException {
-        return delegate.createSocket(i, i1, inetAddress);
+    public ServerSocket createSocket(int port, int backlog, InetAddress inetAddress) throws IOException, InstantiationException {
+        return delegate.createSocket(port, backlog, inetAddress);
     }
 
     /**
