@@ -274,8 +274,8 @@ public class Configure extends EsmStandardWebPage {
                             return new JSONException("A cluster with the same name '" + newClusterName + "' already exists. Please specify a different name.");
                         }
                     } else if (ExceptionUtils.causedBy(e, DuplicateHostnameException.class)) {
-                        return new JSONException("A cluster with the hostname '" + hostname
-                                + "' already exists in the enterprise tree. Please specify a different hostname.");
+                        return new JSONException("A SSG cluster/node with the host name '" + hostname
+                                + "' already exists in the enterprise tree. Please specify a different host name.");
                     } else {
                         return new JSONException(e);
                     }

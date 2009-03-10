@@ -275,13 +275,21 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     /**
      * Verify if the hostname of a SSG Cluster is unique in the enterprise tree.
      * @param hostname The host name of the SSG Cluster
-     * @throws FindException
+     * @throws FindException : throw if not able to find SSG clusters or nodes from the database.
      * @throws DuplicateHostnameException : throw if there exists one cluster with such hostname and port.
      */
     private void verifyHostnameUniqueness(String hostname) throws FindException, DuplicateHostnameException {
+        // Check if there exists any SSG cluster having the same host name or ip address of the checked cluster's.
         for (SsgCluster cluster: findAll()) {
             if (isSameHost(cluster.getSslHostName(), hostname)) {
                 throw new DuplicateHostnameException("Find an existing SSG Cluster with the same hostname (" + hostname + ").");
+            }
+
+            // Check if there exists any SSG node having the same host name or ip address of the checked cluster's.
+            for (SsgNode node: cluster.getNodes()) {
+                if (isSameHost(node.getIpAddress(), hostname)) {
+                    throw new DuplicateHostnameException("Find an existing SSG Node with the same hostname (" + hostname + ").");
+                }
             }
         }
     }
