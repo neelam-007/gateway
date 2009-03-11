@@ -1252,7 +1252,7 @@ public class RuntimeDocUtilitiesTest {
         Assert.assertTrue("This is always true as part of the java language specification", c == '"');
         Assert.assertEquals("This is always true as part of the java language specification", toEscape, "\"");
 
-        String escaped = RuntimeDocUtilities.escapeCharacters(toEscape);
+        String escaped = RuntimeDocUtilities.escapeJavaSringLiteralChars(toEscape);
         Assert.assertEquals("String incorrectly escaped. Escaped string should equal: \\\" but was: " + escaped, escaped, "\\\"");
     }
 }

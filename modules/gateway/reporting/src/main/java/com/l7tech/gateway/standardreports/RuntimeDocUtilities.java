@@ -969,8 +969,8 @@ public class RuntimeDocUtilities {
         reportElement.setAttribute("y", String.valueOf(y));
         reportElement.setAttribute("width", String.valueOf(width));
         reportElement.setAttribute("height", String.valueOf(height));
-        reportElement.setAttribute("key", escapeCharacters(key));
-        reportElement.setAttribute("style", escapeCharacters(style));
+        reportElement.setAttribute("key", escapeJavaSringLiteralChars(key));
+        reportElement.setAttribute("style", escapeJavaSringLiteralChars(style));
 
         if (stretchElement) reportElement.setAttribute("stretchType", "RelativeToTallestObject");
 
@@ -991,13 +991,13 @@ public class RuntimeDocUtilities {
         textField.appendChild(textElement);
 
         Element textFieldExpressionElement = doc.createElement("textFieldExpression");
-        textFieldExpressionElement.setAttribute("class", escapeCharacters(textFieldExpressionClass));
+        textFieldExpressionElement.setAttribute("class", escapeJavaSringLiteralChars(textFieldExpressionClass));
 
         CDATASection cDataSection;
         if (textFieldExpressionClass.equals("java.lang.String")) {
-            cDataSection = doc.createCDATASection("\"" + escapeCharacters(markedUpCData) + "\"");
+            cDataSection = doc.createCDATASection("\"" + escapeJavaSringLiteralChars(markedUpCData) + "\"");
         } else {
-            cDataSection = doc.createCDATASection(escapeCharacters(markedUpCData));
+            cDataSection = doc.createCDATASection(escapeJavaSringLiteralChars(markedUpCData));
         }
 
         textFieldExpressionElement.appendChild(cDataSection);
@@ -1045,8 +1045,8 @@ public class RuntimeDocUtilities {
         reportElement.setAttribute("y", String.valueOf(y));
         reportElement.setAttribute("width", String.valueOf(width));
         reportElement.setAttribute("height", String.valueOf(height));
-        reportElement.setAttribute("key", escapeCharacters(key));
-        reportElement.setAttribute("style", escapeCharacters(style));
+        reportElement.setAttribute("key", escapeJavaSringLiteralChars(key));
+        reportElement.setAttribute("style", escapeJavaSringLiteralChars(style));
         if (opaque) reportElement.setAttribute("mode", "Opaque");
         staticText.appendChild(reportElement);
 
@@ -1060,7 +1060,7 @@ public class RuntimeDocUtilities {
         staticText.appendChild(textElement);
 
         Element text = doc.createElement("text");
-        CDATASection cDataSection = doc.createCDATASection(escapeCharacters(markedUpCData));
+        CDATASection cDataSection = doc.createCDATASection(escapeJavaSringLiteralChars(markedUpCData));
         text.appendChild(cDataSection);
         staticText.appendChild(text);
         frameElement.appendChild(staticText);
@@ -1094,16 +1094,16 @@ public class RuntimeDocUtilities {
                                              String resetType, String resetGroup, String calc, String functionName,
                                              String columnName) {
         Element newVariable = doc.createElement(Utilities.VARIABLE);
-        newVariable.setAttribute("name", escapeCharacters(varName));
-        newVariable.setAttribute("class", escapeCharacters(varClass));
-        newVariable.setAttribute("resetType", escapeCharacters(resetType));
+        newVariable.setAttribute("name", escapeJavaSringLiteralChars(varName));
+        newVariable.setAttribute("class", escapeJavaSringLiteralChars(varClass));
+        newVariable.setAttribute("resetType", escapeJavaSringLiteralChars(resetType));
         if (resetGroup != null && !resetGroup.equals(""))
-            newVariable.setAttribute("resetGroup", escapeCharacters(resetGroup));
-        newVariable.setAttribute("calculation", escapeCharacters(calc));
+            newVariable.setAttribute("resetGroup", escapeJavaSringLiteralChars(resetGroup));
+        newVariable.setAttribute("calculation", escapeJavaSringLiteralChars(calc));
 
         Element variableExpression = doc.createElement("variableExpression");
-        String cData = "((UsageSummaryAndSubReportHelper)$P{REPORT_SCRIPTLET})." + escapeCharacters(functionName) + "(\""
-                + escapeCharacters(columnName) + "\"," +
+        String cData = "((UsageSummaryAndSubReportHelper)$P{REPORT_SCRIPTLET})." + escapeJavaSringLiteralChars(functionName) + "(\""
+                + escapeJavaSringLiteralChars(columnName) + "\"," +
                 " $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}," +
                 "$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})";
         CDATASection cDataSection = doc.createCDATASection(cData);
@@ -1132,12 +1132,12 @@ public class RuntimeDocUtilities {
     private static void addVariableToElement(Document doc, Element variables, String varName, String varClass,
                                              String resetType, String resetGroup, String calc) {
         Element newVariable = doc.createElement(Utilities.VARIABLE);
-        newVariable.setAttribute("name", escapeCharacters(varName));
-        newVariable.setAttribute("class", escapeCharacters(varClass));
-        newVariable.setAttribute("resetType", escapeCharacters(resetType));
+        newVariable.setAttribute("name", escapeJavaSringLiteralChars(varName));
+        newVariable.setAttribute("class", escapeJavaSringLiteralChars(varClass));
+        newVariable.setAttribute("resetType", escapeJavaSringLiteralChars(resetType));
         if (resetGroup != null && !resetGroup.equals(""))
-            newVariable.setAttribute("resetGroup", escapeCharacters(resetGroup));
-        newVariable.setAttribute("calculation", escapeCharacters(calc));
+            newVariable.setAttribute("resetGroup", escapeJavaSringLiteralChars(resetGroup));
+        newVariable.setAttribute("calculation", escapeJavaSringLiteralChars(calc));
         variables.appendChild(newVariable);
 
     }
@@ -1159,9 +1159,9 @@ public class RuntimeDocUtilities {
     private static void addSubReportReturnVariable(Document doc, Element subReport, String subreportVariable,
                                                    String toVariable, String calc) {
         Element newVariable = doc.createElement(Utilities.RETURN_VALUE);
-        newVariable.setAttribute("subreportVariable", escapeCharacters(subreportVariable));
-        newVariable.setAttribute("toVariable", escapeCharacters(toVariable));
-        newVariable.setAttribute("calculation", escapeCharacters(calc));
+        newVariable.setAttribute("subreportVariable", escapeJavaSringLiteralChars(subreportVariable));
+        newVariable.setAttribute("toVariable", escapeJavaSringLiteralChars(toVariable));
+        newVariable.setAttribute("calculation", escapeJavaSringLiteralChars(calc));
         subReport.appendChild(newVariable);
     }
 
@@ -1204,7 +1204,7 @@ public class RuntimeDocUtilities {
      * @param stringToEscape
      * @return
      */
-    public static String escapeCharacters(String stringToEscape) {
+    public static String escapeJavaSringLiteralChars(String stringToEscape) {
 
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < stringToEscape.length(); i++) {

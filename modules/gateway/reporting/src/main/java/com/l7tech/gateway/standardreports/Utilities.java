@@ -714,8 +714,8 @@ public class Utilities {
      * @param isUsage                 needed in order to validate the input parameters
      * @return sql string, ready to be ran against a database. This sql query will ALWAYS produce the following columns
      *         of data: <pre>
-     *                                                                                                                         AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                                                                                         </pre>
+     *                                                                                                                                 AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                                                                                                                                 </pre>
      *         Note operation is not included. It is a mapping key under the covers but it has special meaning. Notice how
      *         authenticated_user is returned. To the user and to business logic, authenticated user is a normal mapping key
      */
@@ -800,8 +800,8 @@ public class Utilities {
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
      * @return a valid sql string ready to be ran against a database. The sql will always produce the following fields:-
      *         <pre>
-     *                                                                                                                         SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
-     *                                                                                                                         </pre>
+     *                                                                                                                                 SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
+     *                                                                                                                                 </pre>
      */
     public static String getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                      Map<String, Set<String>> serviceIdToOperations,
@@ -884,9 +884,9 @@ public class Utilities {
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
      * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
      *         <pre>
-     *                 SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                 </pre>
+     *                         SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                         </pre>
      */
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                        Map<String, Set<String>> serviceIdToOperations,
@@ -989,9 +989,9 @@ public class Utilities {
      * @param operation               the operation, if isDetail is true, that we want usage data for
      * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
      *         <pre>
-     *                                                                                                                          SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                                                                                                                         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                                                                                         </pre>
+     *                                                                                                                                  SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                                                                                                                                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                                                                                                                                 </pre>
      */
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                        Long serviceId,
@@ -1413,13 +1413,13 @@ public class Utilities {
             if (index > 0) sb.append(" OR ");
 
             sb.append("( ");
-            sb.append(" p.objectid = ").append(me.getKey());
+            sb.append(" p.objectid = ").append(Long.valueOf(me.getKey()));
             sb.append(" AND mcmv.service_operation IN (");
 
             int opIndex = 0;
             for (String op : me.getValue()) {
                 if (opIndex != 0) sb.append(",");
-                sb.append("'" + op + "'");
+                sb.append("'" + escapeIllegalSqlChars(op) + "'");
                 opIndex++;
             }
 
@@ -1954,7 +1954,7 @@ public class Utilities {
                     sb.append(" OR ");
                 }
                 sb.append("( mcmk.mapping").append(i).append("_key");
-                sb.append(" = '").append(me.getKey()).append("' ");
+                sb.append(" = '").append(escapeIllegalSqlChars(me.getKey())).append("' ");
                 if (me.getValue() == null || me.getValue().isEmpty()) {
                     throw new IllegalArgumentException("Each key must have a list of FilterPairs");
                 }
@@ -2051,7 +2051,7 @@ public class Utilities {
         for (String s : serviceIds) {
             if (!first) sb.append(", ");
             else first = false;
-            sb.append(s);
+            sb.append(escapeIllegalSqlChars(s));
         }
         sb.append(")");
     }
@@ -2139,10 +2139,11 @@ public class Utilities {
     private static String addCaseSQLForKey(String key, int index) {
         if (key == null) throw new NullPointerException("key cannot be null");
         if (key.equals("")) throw new IllegalArgumentException("key cannot be the empty string");
+        if (index < 0) throw new IllegalArgumentException("index cannot be negative");
 
         StringBuilder sb = new StringBuilder(" CASE ");
         for (int i = 1; i <= NUM_MAPPING_KEYS; i++) {
-            sb.append(" WHEN mcmk.mapping").append(i).append("_key = ").append("'").append(key).append("'");
+            sb.append(" WHEN mcmk.mapping").append(i).append("_key = ").append("'").append(escapeIllegalSqlChars(key)).append("'");
             sb.append(" THEN mcmv.mapping").append(i).append("_value");
         }
         sb.append(" END AS MAPPING_VALUE_").append(index);
@@ -2641,6 +2642,27 @@ public class Utilities {
         return colours;
     }
 
+    private static String escapeIllegalSqlChars(String stringToEscape) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < stringToEscape.length(); i++) {
+            char c = stringToEscape.charAt(i);
+
+            //the ' character must always be escaped
+            //Any other characters which must always be escaped...add them after this...
+            if (c == '\'') {
+                sb.append("\\'");//escape
+                continue;
+            }
+
+            if (c == '\\') {
+                sb.append("\\\\");//escape
+                continue;
+            }
+
+            sb.append(c);
+        }
+        return sb.toString();
+    }
 
 }
 
