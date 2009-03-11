@@ -244,7 +244,7 @@ public class MigrationManagerImpl implements MigrationManager {
         } else if ( ! metadata.wasCopied(header) && ! entitiesFromTarget.containsKey(header)) {
             op = CREATE;
             targetHeader = header;
-        } else if (! overwriteExisting) {
+        } else if (! overwriteExisting && EntityType.FOLDER != header.getType()) { // folders: don't map-to-existing, always update/overwrite
             op = MAP_EXISTING;
             targetHeader = metadata.wasCopied(header) ? getUpdatedHeader(metadata.getCopiedOrMapped(header)) : header;
         } else if (metadata.wasCopied(header) && entitiesFromTarget.containsKey(metadata.getCopied(header))) {
