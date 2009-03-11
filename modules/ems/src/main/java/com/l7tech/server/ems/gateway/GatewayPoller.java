@@ -5,6 +5,7 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.StaleUpdateException;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.ems.enterprise.JSONConstants;
 import com.l7tech.server.ems.enterprise.SsgCluster;
@@ -23,6 +24,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.dao.OptimisticLockingFailureException;
 
 import javax.xml.ws.soap.SOAPFaultException;
 import java.io.IOException;
@@ -54,7 +56,16 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                     AuditContextUtils.doAsSystem(new Runnable() {
                         @Override
                         public void run() {
-                            pollGateways();
+                            // poll gateways with retry on stale upate
+                            for ( int i=0; i<3; i++ ) {
+                                try{
+                                    pollGateways();
+                                    break;
+                                } catch ( OptimisticLockingFailureException olfe ) {
+                                    // this is either thrown by us or when the transaction commit fails
+                                    logger.log( Level.INFO, "Poller changes not persisted due to stale update." );
+                                }
+                            }
                         }
                     });
                 } catch (Exception e) {
@@ -163,6 +174,7 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
     }
 
     private void pollGateways() {
+        final boolean[] retry = {false};
         TransactionTemplate template = new TransactionTemplate( transactionManager );
         template.execute( new TransactionCallbackWithoutResult(){
             @Override
@@ -278,11 +290,17 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                             }
                         }
                     }
+                } catch ( StaleUpdateException sue ) {
+                    transactionStatus.setRollbackOnly();
+                    retry[0] = true;
                 } catch ( ObjectModelException ome ) {
                     logger.log( Level.WARNING, "Persistence error when polling gateways", ome );
+                    transactionStatus.setRollbackOnly();
                 }
             }
         } );
+
+        if ( retry[0] ) throw new OptimisticLockingFailureException("stale");
     }
 
     /**
