@@ -937,6 +937,8 @@ public class RuntimeDocUtilities {
      * &lt ![CDATA["IP_ADDRESS<br>CUSTOMER"]] &gt &lt /textFieldExpression &gt <br>
      * &lt /textField &gt
      * </pre>
+     * <p/>
+     * All string parameters are escaped with escapeCharacters()
      *
      * @param doc                      the document which is used to create new elements from
      * @param frameElement             the element from the doc to update
@@ -967,8 +969,8 @@ public class RuntimeDocUtilities {
         reportElement.setAttribute("y", String.valueOf(y));
         reportElement.setAttribute("width", String.valueOf(width));
         reportElement.setAttribute("height", String.valueOf(height));
-        reportElement.setAttribute("key", key);
-        reportElement.setAttribute("style", style);
+        reportElement.setAttribute("key", escapeCharacters(key));
+        reportElement.setAttribute("style", escapeCharacters(style));
 
         if (stretchElement) reportElement.setAttribute("stretchType", "RelativeToTallestObject");
 
@@ -989,13 +991,13 @@ public class RuntimeDocUtilities {
         textField.appendChild(textElement);
 
         Element textFieldExpressionElement = doc.createElement("textFieldExpression");
-        textFieldExpressionElement.setAttribute("class", textFieldExpressionClass);
+        textFieldExpressionElement.setAttribute("class", escapeCharacters(textFieldExpressionClass));
 
         CDATASection cDataSection;
         if (textFieldExpressionClass.equals("java.lang.String")) {
-            cDataSection = doc.createCDATASection("\"" + markedUpCData + "\"");
+            cDataSection = doc.createCDATASection("\"" + escapeCharacters(markedUpCData) + "\"");
         } else {
-            cDataSection = doc.createCDATASection(markedUpCData);
+            cDataSection = doc.createCDATASection(escapeCharacters(markedUpCData));
         }
 
         textFieldExpressionElement.appendChild(cDataSection);
@@ -1019,6 +1021,8 @@ public class RuntimeDocUtilities {
      * </textElement>
      * <text><![CDATA[NA]]></text>
      * </staticText>
+     * <p/>
+     * All string parameters are escaped with escapeCharacters()
      *
      * @param doc           the document which is used to create new elements from
      * @param frameElement  the element from the doc to update
@@ -1041,8 +1045,8 @@ public class RuntimeDocUtilities {
         reportElement.setAttribute("y", String.valueOf(y));
         reportElement.setAttribute("width", String.valueOf(width));
         reportElement.setAttribute("height", String.valueOf(height));
-        reportElement.setAttribute("key", key);
-        reportElement.setAttribute("style", style);
+        reportElement.setAttribute("key", escapeCharacters(key));
+        reportElement.setAttribute("style", escapeCharacters(style));
         if (opaque) reportElement.setAttribute("mode", "Opaque");
         staticText.appendChild(reportElement);
 
@@ -1056,7 +1060,7 @@ public class RuntimeDocUtilities {
         staticText.appendChild(textElement);
 
         Element text = doc.createElement("text");
-        CDATASection cDataSection = doc.createCDATASection(markedUpCData);
+        CDATASection cDataSection = doc.createCDATASection(escapeCharacters(markedUpCData));
         text.appendChild(cDataSection);
         staticText.appendChild(text);
         frameElement.appendChild(staticText);
@@ -1071,6 +1075,9 @@ public class RuntimeDocUtilities {
      * new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
      * $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
      * </variable>
+     * <p/>
+     * <p/>
+     * All string parameters are escaped with escapeCharacters()
      *
      * @param doc          the document which is used to create new elements from
      * @param variables    the element from the doc to update
@@ -1087,14 +1094,16 @@ public class RuntimeDocUtilities {
                                              String resetType, String resetGroup, String calc, String functionName,
                                              String columnName) {
         Element newVariable = doc.createElement(Utilities.VARIABLE);
-        newVariable.setAttribute("name", varName);
-        newVariable.setAttribute("class", varClass);
-        newVariable.setAttribute("resetType", resetType);
-        if (resetGroup != null && !resetGroup.equals("")) newVariable.setAttribute("resetGroup", resetGroup);
-        newVariable.setAttribute("calculation", calc);
+        newVariable.setAttribute("name", escapeCharacters(varName));
+        newVariable.setAttribute("class", escapeCharacters(varClass));
+        newVariable.setAttribute("resetType", escapeCharacters(resetType));
+        if (resetGroup != null && !resetGroup.equals(""))
+            newVariable.setAttribute("resetGroup", escapeCharacters(resetGroup));
+        newVariable.setAttribute("calculation", escapeCharacters(calc));
 
         Element variableExpression = doc.createElement("variableExpression");
-        String cData = "((UsageSummaryAndSubReportHelper)$P{REPORT_SCRIPTLET})." + functionName + "(\"" + columnName + "\"," +
+        String cData = "((UsageSummaryAndSubReportHelper)$P{REPORT_SCRIPTLET})." + escapeCharacters(functionName) + "(\""
+                + escapeCharacters(columnName) + "\"," +
                 " $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}," +
                 "$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})";
         CDATASection cDataSection = doc.createCDATASection(cData);
@@ -1107,6 +1116,9 @@ public class RuntimeDocUtilities {
 
     /**
      * Add an element to the supplied Element variables
+     * <p/>
+     * All string parameters are escaped with escapeCharacters()
+     * <p/>
      * <variable name="COLUMN_SERVICE_1" class="java.lang.Long" resetType="Group" resetGroup="SERVICE" calculation="Sum">
      *
      * @param doc        the document which is used to create new elements from
@@ -1120,17 +1132,21 @@ public class RuntimeDocUtilities {
     private static void addVariableToElement(Document doc, Element variables, String varName, String varClass,
                                              String resetType, String resetGroup, String calc) {
         Element newVariable = doc.createElement(Utilities.VARIABLE);
-        newVariable.setAttribute("name", varName);
-        newVariable.setAttribute("class", varClass);
-        newVariable.setAttribute("resetType", resetType);
-        if (resetGroup != null && !resetGroup.equals("")) newVariable.setAttribute("resetGroup", resetGroup);
-        newVariable.setAttribute("calculation", calc);
+        newVariable.setAttribute("name", escapeCharacters(varName));
+        newVariable.setAttribute("class", escapeCharacters(varClass));
+        newVariable.setAttribute("resetType", escapeCharacters(resetType));
+        if (resetGroup != null && !resetGroup.equals(""))
+            newVariable.setAttribute("resetGroup", escapeCharacters(resetGroup));
+        newVariable.setAttribute("calculation", escapeCharacters(calc));
         variables.appendChild(newVariable);
 
     }
 
     /**
      * Add a sub report return variable to the jrxml
+     * <p/>
+     * All string parameters are escaped with escapeCharacters()
+     * <p/>
      * <returnValue subreportVariable="COLUMN_1" toVariable="COLUMN_SERVICE_1" calculation="Sum"/>
      *
      * @param doc               the document which is used to create new elements from
@@ -1143,9 +1159,9 @@ public class RuntimeDocUtilities {
     private static void addSubReportReturnVariable(Document doc, Element subReport, String subreportVariable,
                                                    String toVariable, String calc) {
         Element newVariable = doc.createElement(Utilities.RETURN_VALUE);
-        newVariable.setAttribute("subreportVariable", subreportVariable);
-        newVariable.setAttribute("toVariable", toVariable);
-        newVariable.setAttribute("calculation", calc);
+        newVariable.setAttribute("subreportVariable", escapeCharacters(subreportVariable));
+        newVariable.setAttribute("toVariable", escapeCharacters(toVariable));
+        newVariable.setAttribute("calculation", escapeCharacters(calc));
         subReport.appendChild(newVariable);
     }
 
@@ -1175,4 +1191,32 @@ public class RuntimeDocUtilities {
         }
         return keyToColumnName;
     }
+
+    /**
+     * Escape any characters which are illegal in a java string, used by runtime methods
+     * Values used in the xml created by methods in this class are placed into jasper xml files and compiled.
+     * As a result it's possible for values found in the database to be illegal in java statements and to cause
+     * code injection. All places where strings are placed into the runtime xml documents are ran through
+     * this method to escape / removed any problamatic strings
+     * <p/>
+     * This method is called from addTextFieldToElement, addSubReportReturnVariable and addVariableToElement
+     *
+     * @param stringToEscape
+     * @return
+     */
+    private static String escapeCharacters(String stringToEscape) {
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < stringToEscape.length(); i++) {
+            char c = stringToEscape.charAt(i);
+            if (c == '\\') {
+                sb.append("\\\\");
+            } else if (c == '"') {
+                sb.append("\"");
+            } else sb.append(c);
+        }
+        return sb.toString();
+    }
+
+
 }
