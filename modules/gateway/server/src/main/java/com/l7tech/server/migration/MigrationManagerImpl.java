@@ -213,6 +213,7 @@ public class MigrationManagerImpl implements MigrationManager {
         for(ExternalEntityHeader header : headersToLoad.keySet()) {
             try {
                 ent = loadEntity(header);
+                entitiesFromTarget.put(header, ent);
                 entitiesFromTarget.put(EntityHeaderUtils.toExternal(EntityHeaderUtils.fromEntity(ent)), ent);
             } catch (MigrationApi.MigrationException e) {
                 if (headersToLoad.get(header)) throw e; // header must be present on target cluster
@@ -252,7 +253,7 @@ public class MigrationManagerImpl implements MigrationManager {
             targetHeader = metadata.getCopied(header);
         } else {
             op = OVERWRITE;
-            targetHeader = getUpdatedHeader(metadata.getCopied(header));
+            targetHeader = metadata.wasCopied(header) ? getUpdatedHeader(metadata.getCopiedOrMapped(header)) : header;
         }
 
         if (op.modifiesTarget()) {

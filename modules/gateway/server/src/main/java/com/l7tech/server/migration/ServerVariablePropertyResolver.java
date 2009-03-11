@@ -51,7 +51,7 @@ public class ServerVariablePropertyResolver extends AbstractPropertyResolver {
                 ExternalEntityHeader cpExternalHeader = new ExternalEntityHeader(cpName, EntityType.CLUSTER_PROPERTY, null, cpName, null, null);
                 try {
                     cpExternalHeader.setValueMapping(valueMappingType, ExternalEntityHeader.ValueType.TEXT, manager.getProperty(cpName));
-                } catch (FindException e) {
+                } catch (Exception e) {
                     throw new PropertyResolverException("Error loading cluster property: " + cpName, e);
                 }
                 result.put(cpExternalHeader, Collections.singleton(new MigrationDependency(source, cpExternalHeader, propertyName, getType(), mappingType, exported)));
