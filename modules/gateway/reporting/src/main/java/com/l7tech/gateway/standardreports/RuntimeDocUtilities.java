@@ -1204,7 +1204,7 @@ public class RuntimeDocUtilities {
      * @param stringToEscape
      * @return
      */
-    private static String escapeCharacters(String stringToEscape) {
+    public static String escapeCharacters(String stringToEscape) {
 
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < stringToEscape.length(); i++) {
@@ -1212,7 +1212,7 @@ public class RuntimeDocUtilities {
             if (c == '\\') {
                 sb.append("\\\\");
             } else if (c == '"') {
-                //sb.append("\"");
+                sb.append("\\\"");
             } else sb.append(c);
         }
         return sb.toString();

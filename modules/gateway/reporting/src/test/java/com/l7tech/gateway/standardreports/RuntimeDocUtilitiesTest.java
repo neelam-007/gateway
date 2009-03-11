@@ -1238,4 +1238,21 @@ public class RuntimeDocUtilitiesTest {
 
     }
 
+    /**
+     * Test which illustrates that its not possible to supply quotes or back slashes as unicode values
+     * and cause the RuntimeDocUtilities.escapeCharacters() method to not be able to detect them
+     * <p/>
+     * \u005c is the backslash character
+     * \u0022 is the double quote character
+     */
+    @Test
+    public void testEscapes() {
+        String toEscape = "\u005c\u0022";
+        char c = toEscape.charAt(0);
+        Assert.assertTrue("This is always true as part of the java language specification", c == '"');
+        Assert.assertEquals("This is always true as part of the java language specification", toEscape, "\"");
+
+        String escaped = RuntimeDocUtilities.escapeCharacters(toEscape);
+        Assert.assertEquals("String incorrectly escaped. Escaped string should equal: \\\" but was: " + escaped, escaped, "\\\"");
+    }
 }
