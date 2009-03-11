@@ -746,7 +746,7 @@ public class MessageProcessor {
                 }
             });
 
-            if (ssg.getRuntime().isEagerToProcessResponseSecurity()) {
+            if (ssg.getRuntime().isEagerToProcessResponseSecurity() && response.isSoap()) {
                 response.getSecurityKnob().getOrCreateProcessorResult();
             }
 

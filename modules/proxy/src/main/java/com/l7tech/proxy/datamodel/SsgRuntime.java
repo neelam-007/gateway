@@ -701,6 +701,11 @@ public class SsgRuntime {
         return policyServiceFile;
     }
 
+    /**
+     * @return true if SOAP responses are always run through WSS processor soon after they are received.
+     *         false if the WSS processor is not invoked on the response unless a client assertion attempts
+     *               to access the response processor results.
+     */
     public boolean isEagerToProcessResponseSecurity() {
         final String val = ssg.getProperties().get(SSGPROP_STRIPHEADER);
         return val == null ||
@@ -708,6 +713,12 @@ public class SsgRuntime {
                "secure_span".equals(val);
     }
 
+    /**
+     * @return true if a response's processed Security header is only stripped if it was explicitly
+     *               addressed to the Layer 7 actor name or URI. 
+     *         false if a response's processed Security header is always stripped before the response
+     *               is returned to the client.
+     */
     public boolean isReluctantToRemoveProcessedSecurityHeader() {
         final String stripMode = ssg.getProperties().get(SSGPROP_STRIPHEADER);
         return "secure_span".equals(stripMode) || "lazy".equals(stripMode);
