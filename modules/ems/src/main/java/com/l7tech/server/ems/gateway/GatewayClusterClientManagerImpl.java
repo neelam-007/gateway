@@ -1,6 +1,5 @@
 package com.l7tech.server.ems.gateway;
 
-import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
@@ -11,10 +10,12 @@ import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,6 +23,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * Implementation of {@link GatewayClusterClientManager}.
  */
 public class GatewayClusterClientManagerImpl implements GatewayClusterClientManager, ApplicationListener {
+    private static final Logger logger = Logger.getLogger(GatewayClusterClientManagerImpl.class.getName());
+    private static final String PROP_CONN_TIMEOUT = "com.l7tech.server.ems.gateway.clusterConnectTimeout";
+    private static final String PROP_READ_TIMEOUT = "com.l7tech.server.ems.gateway.clusterReadTimeout";
+
     private final GatewayContextFactory gatewayContextFactory;
     private final SsgClusterManager ssgClusterManager;
 
@@ -89,14 +94,19 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
                 throw new GatewayException("No SSG Cluster found with ID '" + clusterId + "'.");
             if ( !ssgCluster.getTrustStatus() )
                 throw new GatewayNoTrustException("Bad trust status for cluster with ID '" + clusterId + "'.");
-            
+
+            final long connectionTimeout = SyspropUtil.getLong(PROP_CONN_TIMEOUT, 15000);
+            final long readTimeout = SyspropUtil.getLong(PROP_READ_TIMEOUT, 30000);
             final int adminPort = ssgCluster.getAdminPort();
-            List<GatewayContext> nodeContexts = Functions.map(ssgCluster.getNodes(), new Functions.Unary<GatewayContext, SsgNode>() {
+            List<GatewayContext> nodeContexts = Functions.map(ssgCluster.getAvailableNodes(), new Functions.Unary<GatewayContext, SsgNode>() {
                 @Override
                 public GatewayContext call(SsgNode ssgNode) {
                     try {
                         final String nodeAdminAddress = ssgNode.getIpAddress();
-                        return gatewayContextFactory.createGatewayContext(user, clusterId, nodeAdminAddress, adminPort);
+                        GatewayContext nodeContext = gatewayContextFactory.createGatewayContext(user, clusterId, nodeAdminAddress, adminPort);
+                        nodeContext.setConnectionTimeout( connectionTimeout );
+                        nodeContext.setReadTimeout( readTimeout );
+                        return nodeContext;
                     } catch (GatewayException e) {
                         throw new GatewayContextCreationException(e);
                     }
@@ -105,8 +115,14 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
 
             // Add the public hostname of the entire cluster as a least-preference option, just in case
             // none of the individual node IPs are reachable from the ESM.
-            GatewayContext publicContext = gatewayContextFactory.createGatewayContext(user, clusterId, ssgCluster.getSslHostName(), adminPort);
-            nodeContexts.add(publicContext);
+            if ( ssgCluster.isAvailable() ) {
+                GatewayContext publicContext = gatewayContextFactory.createGatewayContext(user, clusterId, ssgCluster.getSslHostName(), adminPort);
+                if ( publicContext != null ) {
+                    publicContext.setConnectionTimeout( connectionTimeout );
+                    publicContext.setReadTimeout( readTimeout );
+                    nodeContexts.add(publicContext);
+                }
+            }
 
             client = new GatewayClusterClientImpl(ssgCluster, nodeContexts);
             GatewayClusterClientImpl prev = clients.putIfAbsent(key, client);
@@ -129,9 +145,10 @@ public class GatewayClusterClientManagerImpl implements GatewayClusterClientMana
             entity = updated.getEntity();
         }
 
-        if (entity instanceof User || entity instanceof SsgCluster || entity instanceof ClusterNodeInfo) {
+        if (entity instanceof User || entity instanceof SsgCluster || entity instanceof SsgNode) {
             // A User, cluster, or cluster node was changed or updated.  Flush all cached client info.
             // TODO flush only the affected caches
+            logger.fine("Flushing cluster client caches.");
             clients.clear();
         }
     }

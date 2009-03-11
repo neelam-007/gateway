@@ -37,6 +37,9 @@ public abstract class ApiContext {
     protected final DefaultKey defaultKey;
     protected final String host;
 
+    protected long connectionTimeout;
+    protected long readTimeout;
+
     /**
      * Create an API context that will use the specified settings for authenticating the ESM to the API
      * provider, and for user mapping.
@@ -52,6 +55,8 @@ public abstract class ApiContext {
         cookie = buildCookie( esmId, userId );
         this.defaultKey = defaultKey;
         this.host = host;
+        this.connectionTimeout = SyspropUtil.getLong(PROP_CONN_TIMEOUT, 30000);
+        this.readTimeout = SyspropUtil.getLong(PROP_READ_TIMEOUT, 60000);
     }
 
     public static boolean isNetworkException( final Exception exception ) {
@@ -73,6 +78,48 @@ public abstract class ApiContext {
         }
 
         return isConfigurationException;
+    }
+
+    /**
+     * Get the connection timeout (milliseconds)
+     *
+     * @return The connection timeout.
+     */
+    public long getConnectionTimeout() {
+        return connectionTimeout;
+    }
+
+    /**
+     * Set the connection timeout (milliseconds).
+     *
+     * <p>The timeout will be used on subsequent API access, the change will
+     * not update any existing APIs.</p>
+     *
+     * @param connectionTimeout The timeout to use
+     */
+    public void setConnectionTimeout(long connectionTimeout) {
+        this.connectionTimeout = connectionTimeout;
+    }
+
+    /**
+     * Get the read timeout (milliseconds)
+     *
+     * @return The read timeout.
+     */
+    public long getReadTimeout() {
+        return readTimeout;
+    }
+
+    /**
+     * Set the read timeout (milliseconds).
+     *
+     * <p>The timeout will be used on subsequent API access, the change will
+     * not update any existing APIs.</p>
+     *
+     * @param readTimeout The timeout to use
+     */
+    public void setReadTimeout(long readTimeout) {
+        this.readTimeout = readTimeout;
     }
 
     protected String buildCookie( final String esmId, final String userId ) {
@@ -126,8 +173,8 @@ public abstract class ApiContext {
         HTTPConduit hc = (HTTPConduit) c.getConduit();
         HTTPClientPolicy policy = hc.getClient();
         policy.setCookie( cookie );
-        policy.setConnectionTimeout( SyspropUtil.getLong(PROP_CONN_TIMEOUT, 30000) );
-        policy.setReceiveTimeout( SyspropUtil.getLong(PROP_READ_TIMEOUT, 60000) );
+        policy.setConnectionTimeout( connectionTimeout );
+        policy.setReceiveTimeout( readTimeout );
         hc.setTlsClientParameters(new TLSClientParameters() {
             @Override
             public TrustManager[] getTrustManagers() {

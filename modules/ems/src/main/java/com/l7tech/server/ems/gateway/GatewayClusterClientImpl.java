@@ -50,8 +50,9 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
         this.numContexts = nodeContexts.size();
 
         String failname = SyspropUtil.getString(PROP_FAILOVER_STRATEGY_NAME, DEFAULT_FAILOVER_STRATEGY_NAME);
-        final FailoverStrategy<GatewayContext> failstrat = FailoverStrategyFactory.createFailoverStrategy(failname,
-                nodeContexts.toArray(new GatewayContext[numContexts]));
+        final FailoverStrategy<GatewayContext> failstrat = numContexts>0 ?
+                FailoverStrategyFactory.createFailoverStrategy(failname, nodeContexts.toArray(new GatewayContext[numContexts])) :
+                new FailedFailoverStrategy();
         this.failover = AbstractFailoverStrategy.makeSynchronized(failstrat);
 
         this.timeout = SyspropUtil.getLong(PROP_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT);
@@ -122,6 +123,7 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
     @Override
     public GatewayApi getUncachedGatewayApi() {
         return addFailover(GatewayApi.class, new Functions.Unary<GatewayApi, GatewayContext>() {
+            @Override
             public GatewayApi call(GatewayContext context) {
                 return context.getApi();
             }
@@ -131,6 +133,7 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
     @Override
     public ReportApi getUncachedReportApi() {
         return addFailover(ReportApi.class, new Functions.Unary<ReportApi, GatewayContext>() {
+            @Override
             public ReportApi call(GatewayContext context) {
                 return context.getReportApi();
             }
@@ -140,6 +143,7 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
     @Override
     public MigrationApi getUncachedMigrationApi() {
         return addFailover(MigrationApi.class, new Functions.Unary<MigrationApi, GatewayContext>() {
+            @Override
             public MigrationApi call(GatewayContext context) {
                 return context.getMigrationApi();
             }
@@ -157,9 +161,11 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
     private <IT> IT addFailover(Class<IT> interfaceClass, final Functions.Unary<IT, GatewayContext> apiFinder) {
         //noinspection unchecked
         return (IT) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[] { interfaceClass }, new InvocationHandler() {
+            @Override
             public Object invoke(Object proxy, final Method method, final Object[] args) throws Throwable {
                 try {
                     return callWithFailover(new GatewayContextUser<Object>() {
+                        @Override
                         public Object callUsingContext(GatewayContext context) throws SOAPFaultException, InvocationTargetException {
                             IT delegate = apiFinder.call(context);
                             try {
@@ -314,6 +320,31 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
         public void clear() {
             this.when = 0;
             this.data = null;
+        }
+    }
+
+    private static final class FailedFailoverStrategy implements FailoverStrategy<GatewayContext> {
+        @Override
+        public GatewayContext selectService() {
+            return null;
+        }
+
+        @Override
+        public void reportFailure(GatewayContext service) {
+        }
+
+        @Override
+        public void reportSuccess(GatewayContext service) {
+        }
+
+        @Override
+        public String getName() {
+            return "failed";
+        }
+
+        @Override
+        public String getDescription() {
+            return "Failover Strategy that always fails";
         }
     }
 }

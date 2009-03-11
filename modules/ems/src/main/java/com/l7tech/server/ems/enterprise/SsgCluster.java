@@ -112,6 +112,27 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         this.nodes = nodes;
     }
 
+    /**
+     * Get the set of nodes that are currently operational.
+     *
+     * @return The set of operational SsgNodes.
+     */
+    @Transient
+    public Set<SsgNode> getAvailableNodes() {
+        Set<SsgNode> anodes = new LinkedHashSet<SsgNode>();
+
+        Set<SsgNode> nodes = getNodes();
+        if ( nodes != null ) {
+            for ( SsgNode node : nodes ) {
+                if ( JSONConstants.SsgNodeOnlineState.ON.equals( node.getOnlineStatus() ) ) {                
+                    anodes.add( node );
+                }
+            }
+        }
+
+        return anodes;
+    }
+
     @Column(name="ssl_host_name", length=128, nullable=false)
     public String getSslHostName() {
         return sslHostName;
@@ -181,6 +202,16 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         this.trustStatus = trustStatus;
     }
 
+    /**
+     * Is the cluster available? (at least partially up)
+     *
+     * @return true if available
+     */
+    @Transient
+    public boolean isAvailable() {
+        return getTrustStatus() && !"down".equals( getOnlineStatus() );
+    }
+
     public Set<GatewayApi.GatewayInfo> obtainGatewayInfoSet() {
         Set<GatewayApi.GatewayInfo> infoSet = new HashSet<GatewayApi.GatewayInfo>();
         for (SsgNode node: nodes) {
@@ -218,6 +249,7 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (guid != null ? guid.hashCode() : 0);
