@@ -17,7 +17,7 @@ import java.beans.PropertyChangeListener;
  */
 public class OkCancelDialog<V> extends JDialog {
     private V value;
-    private final boolean readOnly;
+    private boolean readOnly;
     private boolean wasoked = false;
 
     private JButton cancelButton;
@@ -108,6 +108,15 @@ public class OkCancelDialog<V> extends JDialog {
 
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
         getContentPane().add(mainPanel);
+    }
+
+    public boolean isReadOnly() {
+        return readOnly;
+    }
+
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
+        okButton.setEnabled(validatedPanel.isSyntaxOk() && !readOnly);
     }
 
     private void cancel() {

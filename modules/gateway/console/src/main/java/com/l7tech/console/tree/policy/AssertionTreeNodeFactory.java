@@ -98,7 +98,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(OversizedTextAssertion.class, OversizedTextAssertionTreeNode.class);
         assertionMap.put(RequestSizeLimit.class, RequestSizeLimitTreeNode.class);
         assertionMap.put(ResponseWssTimestamp.class, ResponseWssTimestampPolicyNode.class);
-        assertionMap.put(RequestWssTimestamp.class, RequestWssTimestampPolicyNode.class);
         assertionMap.put(ResponseWssSecurityToken.class, ResponseWssSecurityTokenPolicyNode.class);
         assertionMap.put(WsiBspAssertion.class, WsiBspAssertionPolicyNode.class);
         assertionMap.put(WsiSamlAssertion.class, WsiSamlAssertionPolicyNode.class);

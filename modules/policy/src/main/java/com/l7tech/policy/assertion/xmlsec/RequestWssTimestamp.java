@@ -3,9 +3,15 @@
  */
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.util.TimeUnit;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.util.Functions;
+import com.l7tech.util.TimeUnit;
+
+import java.text.MessageFormat;
 
 /**
  * This assertion verifies that the soap message contains a wsu:Timestamp element in a SOAP header.
@@ -74,6 +80,28 @@ public class RequestWssTimestamp extends MessageTargetableAssertion implements S
         this.recipientContext = other.recipientContext;
         this.setTarget(other.getTarget());
         this.setOtherTargetMessageVariable(other.getOtherTargetMessageVariable());
+    }
+
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = super.defaultMeta();
+        meta.put(PALETTE_NODE_NAME, "Require Timestamp in Message");
+        meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
+        meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
+        meta.put(POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, RequestWssTimestamp>() {
+            public String call(RequestWssTimestamp assertion) {
+                return MessageFormat.format("Require {0}Timestamp in {1}",
+                                            assertion.isSignatureRequired() ? "signed " : "",
+                                            assertion.getTargetName()) +
+                       SecurityHeaderAddressableSupport.getActorSuffix(assertion);
+            }
+        });
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.RequestWssTimestampDialog");
+
+        // Ensure that new assertions created for policy purposes have the correct default maxExpiryMilliseconds
+        // (which differs from the fields default value when deserialized from policy XML that doesn't set it explicitly)
+        meta.put(VARIANT_PROTOTYPES, new RequestWssTimestamp[] { newInstance() });
+
+        return meta;
     }
 
     private TimeUnit timeUnit = TimeUnit.MINUTES;
