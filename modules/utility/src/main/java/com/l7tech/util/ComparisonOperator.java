@@ -34,7 +34,13 @@ public enum ComparisonOperator {
     CONTAINS("contain", new ContainsStrategy()),
 
     /** Not equal to. */
-    NE("not equal to", new NotEqualsStrategy());
+    NE("not equal to", new NotEqualsStrategy()),
+
+    /** Always true. */
+    TRUE("always true", new FixedStrategy(true)),
+
+    /** Always false. */
+    FALSE("always false", new FixedStrategy(false));
 
     private ComparisonOperator(String name, ComparisonStrategy strategy) {
         this.name = name;
@@ -157,6 +163,20 @@ public enum ComparisonOperator {
             if (comp < 0) comp = -1;
             match = comp == compareVal1 || comp == compareVal2;
             return match;
+        }
+    }
+
+    private static class FixedStrategy extends ComparisonStrategy {
+        private final boolean what;
+
+        public FixedStrategy(boolean b) {
+            super(true);
+            this.what = b;
+        }
+
+        @Override
+        public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
+            return what;
         }
     }
 }
