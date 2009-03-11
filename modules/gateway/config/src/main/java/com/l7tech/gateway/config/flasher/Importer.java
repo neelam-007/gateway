@@ -11,10 +11,7 @@ import org.xml.sax.SAXException;
 
 import java.io.*;
 import java.sql.*;
-import java.util.Map;
-import java.util.UUID;
-import java.util.List;
-import java.util.Arrays;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
@@ -268,11 +265,16 @@ class Importer extends ImportExportUtility {
                 // check that target db is not currently used by an SSG
                 if (!newDatabaseCreated) {
                     try {
-                        String connectedNode = checkSSGConnectedToDatabase(true, null);
-                        if (StringUtils.isNotEmpty(connectedNode)) {
-                            logger.info("cannot import on this database because it is being used by a SSG");
-                            throw new FlashUtilityLauncher.FatalException("A SecureSpan Gateway is currently running " +
-                                    "and connected to the database. Please shutdown " + connectedNode);
+                        List<String> runningSsg = getRunningSSG(true, null, 10000);
+                        if (!runningSsg.isEmpty()) {
+                            StringBuffer runningGateways = new StringBuffer();
+                        for (int i=0; i < runningSsg.size()-1; i++) {
+                            runningGateways.append(runningSsg.get(i) + ", ");
+                        }
+                        runningGateways.append(runningSsg.get(runningSsg.size()-1));
+
+                            throw new FatalException("Possible SecureSpan Gateway(s) may be running and connected to the database." +
+                                    "  Please shutdown the following gateway(s): " + runningGateways.toString());
                         }
                     } catch (SQLException e) {
                         logger.log(Level.WARNING, "Cannot connect to target database", e);
@@ -578,64 +580,93 @@ class Importer extends ImportExportUtility {
         }
     }
 
-    private String checkSSGConnectedToDatabase(boolean outputMessages, DatabaseConfig config) throws SQLException, InterruptedException {
+    /**
+     * Gets running SSG based on the timestamp that is updated by each SSG.  This method makes it best to determine
+     * running SSG(s).  Because we are only comparing the timestamps that are updated by SSG(s), there is no guarantee
+     * that a gateway might have been starting to start up while checking is performed.
+     *
+     * @param outputMessages    TRUE if want to output status messages, otherwise FALSE for no messages to be output
+     * @param config            Database configuration to be used for connect to database
+     * @param sleepTime         The time to sleep in between each sample query to determine the active SSG(s).  Default time is set to 10secs.
+     *                          The value must be greater than 10 secs otherwise it'll revert to default 10 secs.
+     * @return                  List of SSG(s) name that are considered to be running.  Doesn't guarantee that the gateway
+     *                          is actually running or shutdown.  Will never return NULL.
+     * @throws SQLException
+     * @throws InterruptedException
+     */
+    private List<String> getRunningSSG(boolean outputMessages, DatabaseConfig config, long sleepTime) throws SQLException, InterruptedException {
+        final String gatewayList = "SELECT nodeid, statustimestamp, name FROM cluster_info";
+        final long intervalSleepTime = sleepTime <= 10000 ? 10000 : sleepTime;
+        Map<String, Long> availableSsg = new HashMap<String, Long>();
+        List<String> runningSSG = new ArrayList<String>();
+
         if (outputMessages) {
-            System.out.print("Making sure target is offline .");
+            System.out.print("Making sure targets are offline .");
         }
 
-        Connection c;
-        if (config == null) {
-            c = getConnection();
-        } else {
-            c = new DBActions().getConnection(config, false);
-        }
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet results = null;
         try {
-            Statement checkStatusStatement = c.createStatement();
-            try {
-                ResultSet statusTimeStampList = checkStatusStatement.executeQuery("select statustimestamp, name from cluster_info");
-                long longest = 0;
-                try {
-                    while (statusTimeStampList.next()) {
-                        long tmp = statusTimeStampList.getLong(1);
-                        if (tmp > longest) {
-                            longest = tmp;
-                        }
-                    }
-                } finally {
-                    statusTimeStampList.close();
-                }
-                // we're looping until we've gone beyond the status update frequency while stopping early if
-                // we find an update beforehand
-                for (int i = 0; i < 11; i++) {
+            connection = config == null ? getConnection() : (new DBActions()).getConnection(config, false);
+            statement = connection.createStatement();
+
+            //cosmetic dots
+            if (outputMessages) {
+                for (int i = 0; i < 2; i++) {
                     Thread.sleep(500);
-                    statusTimeStampList = checkStatusStatement.executeQuery("select statustimestamp, name from cluster_info");
-                    try {
-                        while (statusTimeStampList.next()) {
-                            long tmp = statusTimeStampList.getLong(1);
-                            if (tmp > longest) {
-                                if (outputMessages) {
-                                    System.out.print(" ");
-                                }
-                                return statusTimeStampList.getString(2);
-                            }
-                        }
-                    } finally {
-                        statusTimeStampList.close();
-                    }
-                    if (outputMessages) {
-                        System.out.print(".");
-                    }
+                    System.out.print(".");
                 }
-                if (outputMessages) {
-                    System.out.println(" DONE");
+            }
+
+            //gets all the cluster nodes
+            try {
+                results = statement.executeQuery(gatewayList);
+                while (results.next()) {
+                    availableSsg.put(results.getString(1), results.getLong(2));
                 }
             } finally {
-                checkStatusStatement.close();
+                ResourceUtils.closeQuietly(results);
+            }
+
+            //sleep to allow any running gateway to update their timestamp
+            Thread.sleep(intervalSleepTime);
+
+            //cosmetic dots
+            if (outputMessages) {
+                for (int i = 0; i < 3; i++) {
+                    Thread.sleep(500);
+                    System.out.print(".");
+                }
+                System.out.println(" DONE");
+            }
+
+            //determine if there were any changes to the timestamp for each nodes
+            try {
+                results = statement.executeQuery(gatewayList);
+                while (results.next()) {
+                    String nodeid = results.getString(1);
+                    if (availableSsg.containsKey(nodeid)) {
+                        //check if new timestamp
+                        Long previousTimestamp = availableSsg.get(nodeid);
+                        if (!previousTimestamp.equals(results.getLong(2))) {
+                            runningSSG.add(results.getString(3));
+                        }
+                    } else {
+                        //could be newly added node in which case, we'll just assume it's running
+                        runningSSG.add(results.getString(3));
+                    }
+                }
+            } finally {
+                ResourceUtils.closeQuietly(results);
             }
         } finally {
-            c.close();
+            ResourceUtils.closeQuietly(results);
+            ResourceUtils.closeQuietly(statement);
+            ResourceUtils.closeQuietly(connection);
         }
-        return null;
+
+        return runningSSG;
     }
 
     public void unzipToDir(final String filename, final String destinationpath, boolean outputMessages) throws IOException {
@@ -808,10 +839,17 @@ class Importer extends ImportExportUtility {
                 //if the database alerady exists, check if all gateway have been shut down
                 if (verifyDatabaseExists(host, args.get(DB_NAME.name), port, rootUsername, rootPassword)) {
                     //database doesnt exists check if gateway are shut down
-                    String connectedNode = checkSSGConnectedToDatabase(false, new DatabaseConfig(host, port, args.get(DB_NAME.name), rootUsername, rootPassword));
-                    if (StringUtils.isNotEmpty(connectedNode)) {
-                        throw new FatalException("A SecureSpan Gateway is currently running " +
-                                "and connected to the database. Please shutdown " + connectedNode);
+
+                    List<String> runningSsg = getRunningSSG(true, new DatabaseConfig(host, port, args.get(DB_NAME.name), rootUsername, rootPassword), 10000);
+                    if (!runningSsg.isEmpty()) {
+                        StringBuffer runningGateways = new StringBuffer();
+                        for (int i=0; i < runningSsg.size()-1; i++) {
+                            runningGateways.append(runningSsg.get(i) + ", ");
+                        }
+                        runningGateways.append(runningSsg.get(runningSsg.size()-1));
+
+                        throw new FatalException("Possible SecureSpan Gateway(s) may be running and connected to the database." +
+                                "  Please shutdown the following gateway(s): " + runningGateways.toString());
                     }
                 }
             } else if (args.containsKey(CREATE_NEW_DB.name)) {
