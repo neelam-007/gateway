@@ -27,6 +27,7 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -36,6 +37,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author alex
  */
 public class CrlCacheImpl implements CrlCache {
+    private static final Logger logger = Logger.getLogger(CrlCacheImpl.class.getName());
 
     private static final int ONE_HOUR = TimeUnit.HOURS.getMultiplier();
     private static final int RETRIEVAL_OFFSET = TimeUnit.MINUTES.getMultiplier(); // try to fetch new CRL one minute before expiry
@@ -71,6 +73,10 @@ public class CrlCacheImpl implements CrlCache {
         if (httpObjectCacheSize <= 0 || httpObjectCacheSize < DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE) {
             httpObjectCacheSize = DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE;
         }
+        if (SyspropUtil.getProperty(MAX_HTTP_CACHE_OBJECTS_PROP) != null) {
+            logger.config("Using system property " + MAX_HTTP_CACHE_OBJECTS_PROP + "=" + httpObjectCacheSize);
+        }
+
         httpObjectCache = new HttpObjectCache<X509CRL>(httpObjectCacheSize, 30000, httpClientFactory, new CrlHttpObjectFactory(), AbstractUrlObjectCache.WAIT_INITIAL);
     }
 
