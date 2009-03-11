@@ -1,7 +1,6 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.util.HexUtils;
-import com.l7tech.util.TextUtils;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
@@ -65,11 +64,5 @@ public class ValueReferenceEntityHeader extends ExternalEntityHeader {
     @XmlTransient
     public ExternalEntityHeader getOwnerHeader() {
         return new ExternalEntityHeader(getOwnerId(), getOwnerType(), getStrId(), getName(), getDescription(), getVersion());
-    }
-
-    @Override
-    public String getDisplayNameWithScope() {
-        return super.getDisplayNameWithScope() +
-               (getValueType() != null ? ", " + getValueType().getName() + " " + TextUtils.truncStringMiddleExact( getDisplayValue(), 128 ) : "");
     }
 }

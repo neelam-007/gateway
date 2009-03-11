@@ -2,6 +2,7 @@ package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.TextUtils;
 
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -75,8 +76,12 @@ public class ExternalEntityHeader extends EntityHeader implements ValueMappable 
     }
 
     public String getDisplayNameWithScope() {
-        return getDisplayName() +
-              ((extraProperties != null && extraProperties.containsKey("Scope Name")) ? " [" + extraProperties.get("Scope Name") + "]" : "");
+        StringBuffer sb = new StringBuffer(getDisplayName());
+        if (extraProperties != null && extraProperties.containsKey("Scope Name"))
+            sb.append(" [").append(extraProperties.get("Scope Name")).append("]");
+        if (isValueMappable())
+            sb.append(", ").append(getValueType().getName()).append(": ").append(TextUtils.truncStringMiddleExact(getDisplayValue(), 128));
+        return sb.toString();
     }
 
     /**
