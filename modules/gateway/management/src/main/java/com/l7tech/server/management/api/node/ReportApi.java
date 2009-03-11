@@ -502,62 +502,75 @@ public interface ReportApi {
          * Record the unmodified value as entered by the user, so it can be displayed to them in reports
          */
         private final String displayValue;
-        private final boolean checkForWildCard;
-        private final boolean escapeValues;
+        private final boolean useEqualsOnly;
 
         public FilterPair(final String filterValue) {
             if (filterValue == null) throw new NullPointerException("filterValue cannot be null");
-            checkForWildCard = true;
-            escapeValues = true;
+            useEqualsOnly = false;
             displayValue = filterValue.trim();
         }
 
         /**
          * Has a very specific use in Utilities.createDistinctKeyToFilterMap, where the filter pair holds a value,
          * found at runtime from the database, and we don't want to modify the string found as we are querying
-         * a specific value from the database, no need to escape or translate any part of it
+         * a specific value from the database.
          *
          * @param filterValue
-         * @param checkForWildCard true if the wild card should be left alone, no translation into '%'
-         * @param escapeValues
+         * @param useEqualsOnly if false then we only check for the ' character and do not translate
+         *                      the * into % and do not escape % and _ characters.
          */
-        public FilterPair(final String filterValue, boolean checkForWildCard, boolean escapeValues) {
-            displayValue = filterValue;
-            this.checkForWildCard = checkForWildCard;
-            this.escapeValues = escapeValues;
+        public FilterPair(final String filterValue, final boolean useEqualsOnly) {
+            if (filterValue == null) throw new NullPointerException("filterValue cannot be null");
+            this.useEqualsOnly = useEqualsOnly;
+            displayValue = filterValue.trim();
         }
 
         public FilterPair() {
             displayValue = "";
-            checkForWildCard = false;
-            escapeValues = false;
+            useEqualsOnly = false;
         }
 
         public String getDisplayValue() {
             return displayValue;
         }
 
-        public String getFilterValue() {
+        public String getFilterValue(boolean equalsOnly) {
             if (isEmpty()) return "";
 
-            boolean isUseEquals = isUseEquals();
+            boolean usingWildCard = isQueryUsingWildCard() && !equalsOnly;
 
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < displayValue.length(); i++) {
                 char c = displayValue.charAt(i);
-                if (isUseEquals) {
-                    if (c == '\'') sb.append("\\'");//escape
-                    else sb.append(c);
-                } else {
-                    if (c == '*' && checkForWildCard) sb.append('%');//translate
-                    else if (c == '%' && escapeValues) sb.append("\\%");//escape
-                    else if (c == '_' && escapeValues) sb.append("\\_");//escape
-                    else if (c == '\'' && escapeValues) sb.append("\\'");//escape
-                    else sb.append(c);
+
+                //the ' character must always be escaped
+                //Any other characters which must always be escaped...add them after this...
+                if (c == '\'') {
+                    sb.append("\\'");//escape
+                    continue;
                 }
+
+                if (c == '\\') {
+                    sb.append("\\\\");//escape
+                    continue;
+                }
+
+                if (useEqualsOnly || !usingWildCard) {
+                    sb.append(c);
+                    continue;
+                }
+
+                if (c == '*') sb.append('%');//translate
+                else if (c == '%') sb.append("\\%");//escape
+                else if (c == '_') sb.append("\\_");//escape
+                else sb.append(c);
             }
 
             return sb.toString();
+        }
+
+        public String getFilterValue() {
+            return getFilterValue(false);
         }
 
         /**
@@ -565,8 +578,8 @@ public interface ReportApi {
          *
          * @return
          */
-        public boolean isUseEquals() {
-            return displayValue.indexOf('*') == -1;
+        public boolean isQueryUsingWildCard() {
+            return displayValue.indexOf('*') != -1;
         }
 
         public boolean isEmpty() {

@@ -319,7 +319,7 @@ public class JsonConversionTest {
                 Assert.assertTrue("IP_ADDRESS constraint should equal 127.%.%.1, it was: " + fps.get(0).getFilterValue(),
                         fps.get(0).getFilterValue().equals("127.%.%.1"));
 
-                Assert.assertTrue("IP_ADDRESS constraint should be a like constraint", !fps.get(0).isUseEquals());
+                Assert.assertTrue("IP_ADDRESS constraint should be a like constraint", fps.get(0).isQueryUsingWildCard());
 
 
                 fps = keysToFilterPairs.get("CUSTOMER");
@@ -328,7 +328,7 @@ public class JsonConversionTest {
                 Assert.assertTrue("CUSTOMER constraint should equal GOLD, it was: " + fps.get(0).getFilterValue(),
                         fps.get(0).getFilterValue().equals("GOLD"));
 
-                Assert.assertTrue("CUSTOMER  constraint should be a and constraint", fps.get(0).isUseEquals());
+                Assert.assertTrue("CUSTOMER  constraint should be a and constraint", !fps.get(0).isQueryUsingWildCard());
             }
         }
     }
@@ -402,7 +402,7 @@ public class JsonConversionTest {
 
                 Assert.assertTrue("IP_ADDRESS second FilterPair should be empty", fps.get(1).isEmpty());
 
-                Assert.assertTrue("IP_ADDRESS constraint should be a like constraint", !fps.get(0).isUseEquals());
+                Assert.assertTrue("IP_ADDRESS constraint should be a like constraint", fps.get(0).isQueryUsingWildCard());
 
 
                 fps = keysToFilterPairs.get("CUSTOMER");
@@ -411,7 +411,7 @@ public class JsonConversionTest {
                 Assert.assertTrue("CUSTOMER constraint should equal GOLD, it was: " + fps.get(0).getFilterValue(),
                         fps.get(0).getFilterValue().equals("GOLD"));
 
-                Assert.assertTrue("CUSTOMER  constraint should be a and constraint", fps.get(0).isUseEquals());
+                Assert.assertTrue("CUSTOMER  constraint should be a and constraint", !fps.get(0).isQueryUsingWildCard());
             }
         }
     }
@@ -578,8 +578,13 @@ public class JsonConversionTest {
         Assert.assertTrue("Exception should have been thrown as key is empty string", exception);
     }
 
+    /**
+     * Test checks that if a report submission for a cluster for a usage report contains no groupings, that an
+     * exception is thrown. A usage report cannot run unless a grouping has been specified
+     *
+     * @throws Exception
+     */
     @Test
-    @Ignore("Perhaps no longer relevant")
     public void testUsage_ClusterMissingGrouping() throws Exception {
         Object o = JSON.parse(usageRelativeJsonSummaryTest_ClusterMissingKey);
         Map jsonMap = (Map) o;
@@ -1150,7 +1155,7 @@ public class JsonConversionTest {
             "        }," +
             "        {" +
             "            \"clusterId\"          : \"" + cluster2 + "\"," +
-            "            \"publishedServiceId\" : \"360450\"," +
+            "            \"publishedServiceId\" : \"360451\"," +
             "            \"publishedServiceName\" : \"Warehouse Service 3 [w3]\"," +
             "            \"operation\"          : \"\"," +
             "            \"relatedId\"          : null" +

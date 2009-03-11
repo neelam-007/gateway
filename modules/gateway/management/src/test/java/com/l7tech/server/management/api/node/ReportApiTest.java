@@ -132,7 +132,7 @@ public class ReportApiTest {
 
         String filterValue = "NothingSpecial";
         ReportApi.FilterPair fp = new ReportApi.FilterPair(filterValue);
-        Assert.assertTrue("Filter pair should require equals and not like", fp.isUseEquals());
+        Assert.assertFalse("Filter pair should require equals and not like", fp.isQueryUsingWildCard());
 
         Assert.assertEquals("Filter value should equal: '" + filterValue + "' it was: '" + fp.getFilterValue() + "'",
                 filterValue, fp.getFilterValue());
@@ -148,7 +148,7 @@ public class ReportApiTest {
     public void testFilterPairWildCard() {
         String filterValue = "Normal*Wildcard";
         ReportApi.FilterPair fp = new ReportApi.FilterPair(filterValue);
-        Assert.assertFalse("Filter pair should require like and not equals", fp.isUseEquals());
+        Assert.assertTrue("Filter pair should require like and not equals", fp.isQueryUsingWildCard());
 
         String actualValue = fp.getFilterValue();
         String expectedValue = "Normal%Wildcard";
@@ -224,7 +224,30 @@ public class ReportApiTest {
         actualValue = fp.getFilterValue();
         Assert.assertEquals("Filter value should equal: '" + expectedValue + "' it was: '" + actualValue + "'", expectedValue, actualValue);
 
+        filterValue = "\\";
+        fp = new ReportApi.FilterPair(filterValue);
+        expectedValue = "\\\\";
+        actualValue = fp.getFilterValue();
+        Assert.assertEquals("Filter value should equal: '" + expectedValue + "' it was: '" + actualValue + "'", expectedValue, actualValue);
+
     }
 
+    /**
+     * Interval ps reports are fed database values from the master report. These values are enscapsulated in a FilterPair
+     * object and are used in the Utilities functions for generating sql values.
+     * This test tests that these values are correctly escaped, as the database may contain characters which are not
+     * valid in a sql query expression
+     */
+    @Test
+    public void testFilterPairsLiteralDatabaseValues() {
+
+        String filterValue = "'admin_user/%=like'1'*'";
+        ReportApi.FilterPair fp = new ReportApi.FilterPair(filterValue, true);
+
+        String expectedValue = "\\'admin_user/%=like\\'1\\'*\\'";
+        String actualValue = fp.getFilterValue();
+
+        Assert.assertEquals("Filter value should equal: '" + expectedValue + "' it was: '" + actualValue + "'", expectedValue, actualValue);
+    }
 
 }
