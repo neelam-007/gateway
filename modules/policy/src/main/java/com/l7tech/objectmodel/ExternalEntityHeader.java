@@ -1,13 +1,12 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.util.HexUtils;
 
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Arrays;
+import java.util.*;
 
 /**
  * Common way of identifying entities (externally) for which their EntityHeader's ID doesn't fully identify them
@@ -20,9 +19,10 @@ public class ExternalEntityHeader extends EntityHeader implements ValueMappable 
 
     // value-mapping extra properties
     private static final String VALUE_MAPPING_SELECTION = "valueMapping";
-    private final static String VALUE_MAPPING_DATA_TYPE = "valueMappingDataType";
-    private final static String DISPLAY_VALUE = "displayValue";
-    private final static String MAPPED_VALUE = "mappedValue";
+    private static final String VALUE_MAPPING_DATA_TYPE = "valueMappingDataType";
+    private static final String DISPLAY_VALUE = "displayValue";
+    private static final String MAPPED_VALUE = "mappedValue";
+    protected static final String MAPPING_KEY = "mappingKey";
 
     private String externalId;
 
@@ -53,13 +53,6 @@ public class ExternalEntityHeader extends EntityHeader implements ValueMappable 
         this.externalId = externalId;
     }
 
-    /**
-     * @return  A key String that is best suited for database lookups.
-     */
-    public String getMappingKey() {
-        return externalId;
-    }
-
     @XmlJavaTypeAdapter(JaxbMapType.JaxbMapTypeAdapter.class)
     public Map<String, String> getExtraProperties() {
         return extraProperties;
@@ -86,13 +79,64 @@ public class ExternalEntityHeader extends EntityHeader implements ValueMappable 
               ((extraProperties != null && extraProperties.containsKey("Scope Name")) ? " [" + extraProperties.get("Scope Name") + "]" : "");
     }
 
+    /**
+     * Splits a multi-value mappable array into non-array value-mappable headers.
+     *
+     * @return An empty set, if this ExternalEntityHeader is not value-mappable;
+     *         a set with one element (itselt), if this ExternalEntityHeader is value-mappable but of a non-array type;
+     *         a set with value-mappable ExternalEntityHeader's of non-array value type,
+     *         if this ExternalEntityHeader is value-mappable but of array type and has at least one source value defined.
+     */
+    public Set<ExternalEntityHeader> getValueMappableHeaders() {
+        Set<ExternalEntityHeader> result = new HashSet<ExternalEntityHeader>();
+        Object[] values = getMappableValues();
+        if (values != null) {
+            // value-mappable, array-type, and has source value(s)
+            ExternalEntityHeader.ValueType valueType = getValueType();
+            ExternalEntityHeader.ValueType baseType = valueType.getArrayBaseType();
+            for (Object value : values) {
+                ExternalEntityHeader vmHeader = new ExternalEntityHeader(this);
+                vmHeader.setValueType(baseType);
+                String serializedValue = baseType.serialize(value);
+                vmHeader.setDisplayValue(serializedValue);
+                vmHeader.setProperty(MAPPING_KEY, computeMappingKey(serializedValue));
+                result.add(vmHeader);
+            }
+        } else if (isValueMappable()) {
+            result.add(this);
+        }
+
+        return result;
+    }
+
+    public Object[] getMappableValues() {
+        if (isValueMappable() && getValueType().isArray() && hasDisplayValue()) {
+            return (Object[]) getValueType().deserialize(getDisplayValue());
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public void setValueMapping(MigrationMappingSelection valueMappingType, ValueType dataType, Object sourceValue) {
         setProperty(VALUE_MAPPING_SELECTION, valueMappingType.name());
         if (valueMappingType != MigrationMappingSelection.NONE) {
             setProperty(VALUE_MAPPING_DATA_TYPE, dataType.name());
             setProperty(DISPLAY_VALUE, dataType.serialize(sourceValue));
+            setProperty(MAPPING_KEY, computeMappingKey());
         }
+    }
+
+    private String computeMappingKey() {
+        if ( ! isValueMappable() ) {
+            return externalId;
+        } else {
+           return computeMappingKey(hasDisplayValue() ? getDisplayValue() : "");
+        }
+    }
+
+    protected String computeMappingKey(String sourceValue) {
+        return externalId + ":" + getValueType() + ":" + HexUtils.encodeBase64( HexUtils.getMd5Digest( HexUtils.encodeUtf8(sourceValue) ) );
     }
 
     @XmlTransient
@@ -145,6 +189,13 @@ public class ExternalEntityHeader extends EntityHeader implements ValueMappable 
         return getProperty(MAPPED_VALUE);
     }
 
+    /**
+     * @return  Key String that is best suited for database lookups.
+     */
+    public String getMappingKey() {
+        return isValueMappable() ? getProperty(MAPPING_KEY) : externalId;
+    }
+
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -155,6 +206,12 @@ public class ExternalEntityHeader extends EntityHeader implements ValueMappable 
         if (this.version != null ? !version.equals(that.version) : that.version != null) return false;
         if (externalId != null ? !externalId.equals(that.externalId) : that.externalId != null) return false;
 
+        if (getValueMapping() != that.getValueMapping()) return false;
+        if (isValueMappable()) {
+            if (getValueType() != that.getValueType()) return false;
+            if (getDisplayValue() != null ? !getDisplayValue().equals(that.getDisplayValue()) : that.getDisplayValue() != null) return false;
+        }
+
         return true;
     }
 
@@ -162,6 +219,11 @@ public class ExternalEntityHeader extends EntityHeader implements ValueMappable 
         int result = (externalId != null ? externalId.hashCode() : 0);
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + (version != null ? version.hashCode() : 0);
+        result = 31 * result + getValueMapping().hashCode();
+        if (isValueMappable()) {
+            result = 31 * result + getValueType().hashCode();
+            result = 31 * result + (getDisplayValue() != null ? getDisplayValue().hashCode() : 0);
+        }
         return result;
     }
 
@@ -215,9 +277,12 @@ public class ExternalEntityHeader extends EntityHeader implements ValueMappable 
         }
 
         private static String serializeString(Object value) {
-            if (! (value instanceof String) )
-                throw new IllegalArgumentException("Invalid value type; expected String, got: " + (value == null ? null : value.getClass())) ;
-            return (String) value;
+            if (value instanceof String)
+                return (String) value;
+            else if (value != null && value.getClass().isArray() && String.class.isAssignableFrom(value.getClass().getComponentType()) && ((String[])value).length == 1)
+                return ((String[])value)[0];
+            else
+                throw new IllegalArgumentException("Invalid value type; expected String or String[] with one element, got: " + (value == null ? null : value.getClass())) ;
         }
 
         private static Object deserializeString(String serialized) {

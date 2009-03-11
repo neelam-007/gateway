@@ -88,7 +88,6 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
         if ( mapping.getSourceCluster() != null &&
              mapping.getTargetCluster() != null ) {
             try {
-                // todo: use ExternalEntityHeader.getMappingKey() for better lookup / matching
                 MigrationMappingRecord existingMapping =
                         findByMapping( mapping.getSourceCluster(), sourceEntityHeader,
                                        mapping.getTargetCluster(), targetValue );
@@ -96,7 +95,8 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
                     mapping.setTimestamp( System.currentTimeMillis() );
 
                     MigrationMappedEntity sourceEntity = new MigrationMappedEntity();
-                    sourceEntity.setExternalId(sourceEntityHeader.getExternalId());
+                    // use mappingKey as id for value-mappings
+                    sourceEntity.setExternalId(sourceEntityHeader.getMappingKey());
                     sourceEntity.setEntityType( sourceEntityHeader.getType() );
                     sourceEntity.setEntityId( sourceEntityHeader.getStrId() );
                     sourceEntity.setEntityName( sourceEntityHeader.getName() );
@@ -251,7 +251,8 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
 
         if ( sourceEntityHeader != null  ) {
             map.put("source.entityType", sourceEntityHeader.getType());
-            map.put("source.externalId", sourceEntityHeader.getExternalId());
+            // use mappingKey as id for value-mappings
+            map.put("source.externalId", sourceEntityHeader.getMappingKey());
             // source version not included in mapping lookup
         }
 

@@ -943,7 +943,7 @@ public class PolicyMigration extends EsmStandardWebPage {
 
                     DependencyItem selectedItem = null;
                     for ( DependencyItem item : items ) {
-                        if ( item.type.equals(typeIdPair[0]) && item.id.equals(typeIdPair[1]) ) {
+                        if ( item.type.equals(typeIdPair[0]) && item.mappingKey.equals(typeIdPair[1]) ) {
                             selectedItem = item;
                             break;
                         }
@@ -1160,28 +1160,12 @@ public class PolicyMigration extends EsmStandardWebPage {
         Collection<DependencyItem> exploded = new ArrayList<DependencyItem>();
 
         ExternalEntityHeader eeh = item == null ? null : item.asEntityHeader();
-
-        if ( item != null && (!eeh.isValueMappable() || !eeh.getValueType().isArray() || ! eeh.hasDisplayValue()) ) {
-            exploded.add(item);
-        } else if (item != null) { // value mappable, array-type and source value is not null
-            String sourceValue = eeh.getDisplayValue();
-            ExternalEntityHeader.ValueType valueType = eeh.getValueType();
-            ExternalEntityHeader.ValueType baseType = valueType.getArrayBaseType();
-            Object[] values = (Object[]) valueType.deserialize(sourceValue);
-
-            if (values != null) {
-                int index = 0;
-                for (Object value : values) {
-                    ExternalEntityHeader explodedHeader = new ExternalEntityHeader(eeh);
-                    // create a unique id using an array subscript for the property name
-                    //vrehEx.setExternalId(HexUtils.encodeBase64((vrehEx.getPropertyName() + "[" + index + "]").getBytes(Charset.forName("UTF-8"))) + ":" + vrehEx.getOwnerId());
-                    explodedHeader.setExternalId(eeh.getExternalId() + "[" + index + "]");
-                    explodedHeader.setValueType(baseType);
-                    explodedHeader.setDisplayValue(baseType.serialize(value));
-                    exploded.add(new DependencyItem(explodedHeader));
-                    index++;
-                }
+        if (eeh != null) {
+            for(ExternalEntityHeader vmHeader : eeh.getValueMappableHeaders()) {
+                exploded.add(new DependencyItem(vmHeader));
             }
+        } else {
+            exploded.add(item);
         }
 
         return exploded;
@@ -1731,6 +1715,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         private final String clusterId;
         private final com.l7tech.objectmodel.EntityType type;
         private final String id;
+        private final String mappingKey;
         private final ExternalEntityHeader header;
 
         DependencyKey( final String clusterId,
@@ -1739,6 +1724,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             this.type = header.getType();
             this.id = header.getExternalId();
             this.header = header;
+            this.mappingKey = header.getMappingKey();
         }
 
         @Override
@@ -1757,6 +1743,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             if (!clusterId.equals(that.clusterId)) return false;
             if (!id.equals(that.id)) return false;
             if (type != that.type) return false;
+            if (mappingKey != null ? !mappingKey.equals(that.mappingKey) : that.mappingKey != null) return false;
 
             return true;
         }
@@ -1767,6 +1754,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             result = clusterId.hashCode();
             result = 31 * result + type.hashCode();
             result = 31 * result + id.hashCode();
+            result = 31 * result + (mappingKey != null ? mappingKey.hashCode() : 0);
             return result;
         }
 
@@ -1778,9 +1766,10 @@ public class PolicyMigration extends EsmStandardWebPage {
     private static final class DependencyItem implements Comparable, JSON.Convertible, Serializable {
         private ExternalEntityHeader entityHeader;
 
-        private String uid; // id and type
+        private String uid; // type:mappingKey
         private String id;
         private String type;
+        private String mappingKey;
         private String name;
         private Integer version;
 
@@ -1827,9 +1816,10 @@ public class PolicyMigration extends EsmStandardWebPage {
                                final boolean hidden,
                                final boolean isSame ) {
             this.entityHeader = entityHeader;
-            this.uid = entityHeader.getType().toString() +":" + entityHeader.getExternalId();
+            this.uid = entityHeader.getType().toString() +":" + entityHeader.getMappingKey();
             this.id = entityHeader.getExternalId();
             this.type = entityHeader.getType().toString();
+            this.mappingKey = entityHeader.getMappingKey();
             this.name = entityHeader.getName();
             this.resolved = resolved;
             this.hidden = hidden;
@@ -1890,24 +1880,12 @@ public class PolicyMigration extends EsmStandardWebPage {
 
             DependencyItem that = (DependencyItem) o;
 
-            if (id != null ? !id.equals(that.id) : that.id != null) return false;
-            if (name != null ? !name.equals(that.name) : that.name != null) return false;
-            if (type != null ? !type.equals(that.type) : that.type != null) return false;
-            if (uid != null ? !uid.equals(that.uid) : that.uid != null) return false;
-            if (version != null ? !version.equals(that.version) : that.version != null) return false;
-
-            return true;
+            return asEntityHeader().equals(that.asEntityHeader());
         }
 
         @Override
         public int hashCode() {
-            int result;
-            result = (uid != null ? uid.hashCode() : 0);
-            result = 31 * result + (id != null ? id.hashCode() : 0);
-            result = 31 * result + (type != null ? type.hashCode() : 0);
-            result = 31 * result + (name != null ? name.hashCode() : 0);
-            result = 31 * result + (version != null ? version.hashCode() : 0);
-            return result;
+            return asEntityHeader().hashCode();
         }
 
         public String getVersionAsString() {
@@ -1975,47 +1953,29 @@ public class PolicyMigration extends EsmStandardWebPage {
          * @param eeh The ExternalEntityHeader to update.
          * @return The collection of values for persistence
          */
-        public Collection<ExternalEntityHeader> updateMappedValues( final String sourceClusterId,
-                                                                          final String targetClusterId,
-                                                                          final ExternalEntityHeader eeh ) {
+        public Collection<ExternalEntityHeader> updateMappedValues(final String sourceClusterId,
+                                                                   final String targetClusterId,
+                                                                   final ExternalEntityHeader eeh) {
+
             Collection<ExternalEntityHeader> pHeaders = new LinkedHashSet<ExternalEntityHeader>();
 
-            if ( eeh.isValueMappable() ) {
+            if (eeh.isValueMappable()) {
 
                 ExternalEntityHeader.ValueType valueType = eeh.getValueType();
-
-                if (valueType.isArray() && eeh.hasDisplayValue()) {
-                    // Each entry in the array is a separately mapped value
-                    ExternalEntityHeader.ValueType baseType = valueType.getArrayBaseType();
-                    Object[] values = (Object[]) valueType.deserialize(eeh.getDisplayValue());
-
-                    if (values != null) {
-                        Collection<String> mappedValues = new ArrayList<String>();
-                        for (Object value : values) {
-                            ExternalEntityHeader pHeader = new ExternalEntityHeader(eeh);
-                            pHeader.setValueType(baseType);
-                            String serializedValue = baseType.serialize(value);
-                            pHeader.setDisplayValue(serializedValue);
-                            final Pair<ValueKey, String> valueKey = new Pair<ValueKey, String>(new ValueKey(sourceClusterId, pHeader), targetClusterId);
-                            final String mappedValue = valueMap.get(valueKey);
-                            mappedValues.add(mappedValue == null ? serializedValue : mappedValue);
-                            if (mappedValue != null) {
-                                pHeader.setMappedValue(mappedValue);
-                                pHeaders.add(pHeader);
-                            }
-                        }
-                        if ( ! pHeaders.isEmpty() ) // there actually are mapped values
-                            eeh.setMappedValue(valueType.serialize(mappedValues.toArray(new String[mappedValues.size()])));
+                Collection<String> mappedValues = new ArrayList<String>();
+                for (ExternalEntityHeader vmHeader : eeh.getValueMappableHeaders()) {
+                    final Pair<ValueKey, String> valueKey = new Pair<ValueKey, String>(new ValueKey(sourceClusterId, vmHeader), targetClusterId);
+                    final String mappedValue = valueMap.get(valueKey);
+                    mappedValues.add(mappedValue != null ? mappedValue : vmHeader.getDisplayValue());
+                    if (mappedValue != null) {
+                        vmHeader.setMappedValue(mappedValue);
+                        pHeaders.add(vmHeader);
                     }
                 }
 
-                if (pHeaders.isEmpty()) {
-                    final Pair<ValueKey, String> valueKey = new Pair<ValueKey, String>(new ValueKey(sourceClusterId, eeh), targetClusterId);
-                    final String mappedValue = valueMap.get(valueKey);
-                    if (mappedValue != null) {
-                        eeh.setMappedValue(mappedValue);
-                        pHeaders.add(eeh);
-                    }
+                if (!pHeaders.isEmpty()) {
+                    // there actually were mapped values
+                    eeh.setMappedValue(valueType.serialize(mappedValues.toArray(new String[mappedValues.size()])));
                 }
             }
 
