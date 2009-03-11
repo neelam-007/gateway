@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gui.FilterDocument;
 
 import javax.swing.*;
 import java.awt.*;
@@ -42,6 +43,8 @@ public class NonSoapServicePanel extends WizardStepPanel {
         String hostname = TopComponents.getInstance().ssgURL().getHost();
         String ssgUrl = "http://" + hostname + ":8080/";
         prefixURL.setText(ssgUrl);
+
+        ssgURLSuffix.setDocument(new FilterDocument(127, null));
     }
 
     private void bark(Component control, String msg) {

@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gateway.common.service.ServiceTemplate;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.FilterDocument;
 import com.l7tech.util.ResolvingComparator;
 import com.l7tech.util.Resolver;
 
@@ -9,6 +10,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyListener;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -44,6 +47,23 @@ public class InternalServiceSelectionPanel extends WizardStepPanel {
             }
         }
         ));
+
+        serviceUri.setDocument(new FilterDocument(128, null));
+
+        serviceUri.addKeyListener(new KeyListener() {
+            public void keyPressed(KeyEvent e) {
+                //always start with "/" for URI
+                if (!serviceUri.getText().startsWith("/")) {
+                    String uri = serviceUri.getText();
+                    serviceUri.setText("/" + uri);
+                }
+            }
+
+            public void keyReleased(KeyEvent e) {}
+
+            public void keyTyped(KeyEvent e) {}
+        });
+
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);        
     }
