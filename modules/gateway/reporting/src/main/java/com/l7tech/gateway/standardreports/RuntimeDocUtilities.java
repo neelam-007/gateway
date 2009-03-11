@@ -1212,7 +1212,7 @@ public class RuntimeDocUtilities {
             if (c == '\\') {
                 sb.append("\\\\");
             } else if (c == '"') {
-                sb.append("\"");
+                //sb.append("\"");
             } else sb.append(c);
         }
         return sb.toString();
