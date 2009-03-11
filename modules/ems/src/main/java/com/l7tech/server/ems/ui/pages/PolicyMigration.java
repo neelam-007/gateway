@@ -1160,7 +1160,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         Collection<DependencyItem> exploded = new ArrayList<DependencyItem>();
 
         ExternalEntityHeader eeh = item == null ? null : item.asEntityHeader();
-        if (eeh != null) {
+        if (eeh != null && eeh.isValueMappable()) {
             for(ExternalEntityHeader vmHeader : eeh.getValueMappableHeaders()) {
                 exploded.add(new DependencyItem(vmHeader));
             }
