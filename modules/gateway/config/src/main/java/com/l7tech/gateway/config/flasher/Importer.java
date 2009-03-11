@@ -840,7 +840,7 @@ class Importer extends ImportExportUtility {
                 if (verifyDatabaseExists(host, args.get(DB_NAME.name), port, rootUsername, rootPassword)) {
                     //database doesnt exists check if gateway are shut down
 
-                    List<String> runningSsg = getRunningSSG(true, new DatabaseConfig(host, port, args.get(DB_NAME.name), rootUsername, rootPassword), 10000);
+                    List<String> runningSsg = getRunningSSG(false, new DatabaseConfig(host, port, args.get(DB_NAME.name), rootUsername, rootPassword), 10000);
                     if (!runningSsg.isEmpty()) {
                         StringBuffer runningGateways = new StringBuffer();
                         for (int i=0; i < runningSsg.size()-1; i++) {
