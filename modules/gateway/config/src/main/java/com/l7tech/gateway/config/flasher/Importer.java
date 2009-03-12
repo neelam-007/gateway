@@ -245,11 +245,6 @@ class Importer extends ImportExportUtility {
 
                 // if the database needs to be created, do it
                 if (!isCreateNewDatabase) {
-                    //check if the local node is running
-                    if (isLocalNodeRunning()) {
-                        throw new FatalException("local gateway may be running, please shutdown the local gateway");
-                    }
-                    
                     logger.info("Using database specified from node.properties file.");
                     System.out.println("Existing target database detected");
                 } else {
@@ -861,11 +856,6 @@ class Importer extends ImportExportUtility {
                 //check if the database exists already
                 if (verifyDatabaseExists(host, args.get(CREATE_NEW_DB.name), port, gatewayUsername, gatewayPassword)) {
                     throw new FatalException("The database " + args.get(CREATE_NEW_DB.name) + " already exists");
-                }
-
-                //check if the local node is running
-                if (isLocalNodeRunning()) {
-                    throw new IOException("local gateway may be running, please shutdown the local gateway");
                 }
             }
 

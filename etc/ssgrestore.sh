@@ -17,6 +17,30 @@ cd ../..
 SSG_HOME=`pwd`
 popd > /dev/null
 
+#Set environment variables
+SSGNODE="default"
+GATEWAY_PID="${SSG_HOME}/node/${SSGNODE}/var/ssg.pid"
+
+# Helper functions
+pid_exited() {
+  if [ -f "${GATEWAY_PID}" ]  && [ -d "/proc/$(< ${GATEWAY_PID})" ] ; then
+    return 1;
+  else
+    return 0;
+  fi
+}
+
+# Checks for the gateway pid file.
+checkRunningLocalGateway() {
+    if [ ! -z "${GATEWAY_PID}" ]; then
+        if ! pid_exited ; then
+            echo "Local gateway may be running.  Please ensure the local gateway is not running before proceeding."
+            exit 33
+        fi
+    fi
+}
+
+
 # This will set the location of the jdk into SSG_JAVA_HOME.
 . ${SSG_HOME}/runtime/etc/profile
 
@@ -33,6 +57,8 @@ if [ "$1" == "cfgdeamon" ]; then
     chmod 644 *.log
     exit
 fi
+
+checkRunningLocalGateway
 
 # This must be run as layer7
 if [ $UID -eq 0 ]; then

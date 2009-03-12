@@ -363,6 +363,7 @@ public abstract class ImportExportUtility {
     /**
      * Uses the process controller to determine if the local gateway is running.  If it fails to communicate with the
      * process controller it will assume that the gateway is not running.
+     * <b>NOTE:</b> Software gateway version will NOT have process controller.  So, be sure to know when to use this method.
      *
      * @return  TRUE if gatway is running, otherwise FALSE.
      */
