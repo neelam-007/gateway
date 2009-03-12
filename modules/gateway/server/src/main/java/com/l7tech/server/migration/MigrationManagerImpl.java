@@ -178,8 +178,8 @@ public class MigrationManagerImpl implements MigrationManager {
         errors.addAll(validateBundle(bundle, entitiesFromTarget));
 
         if (!errors.isEmpty())
-            logger.log(Level.WARNING, "Bundle validation errors: {0}.", errors);
-            // todo throw new MigrationApi.MigrationException(errors);
+            //logger.log(Level.WARNING, "Bundle validation errors: {0}.", errors);
+            throw new MigrationApi.MigrationException(errors);
 
         Map<ExternalEntityHeader, MigratedItem> result = new HashMap<ExternalEntityHeader, MigratedItem>();
         for(ExternalEntityHeader header : metadata.getHeaders()) {
@@ -440,29 +440,30 @@ public class MigrationManagerImpl implements MigrationManager {
     }
 
     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-    private Collection<String> validateBundle(MigrationBundle bundle, Map<ExternalEntityHeader, Entity> mappedEntities) {
+    private Collection<String> validateBundle(MigrationBundle bundle, Map<ExternalEntityHeader, Entity> entitiesFromTarget) {
         logger.log(Level.FINEST, "Validating bundle: {0}", bundle);
         Collection<String> errors = new HashSet<String>();
         MigrationMetadata metadata = bundle.getMetadata();
 
         // check that entity values are available for all headers, either in the bundle or already on the SSG
         for (ExternalEntityHeader header : metadata.getAllHeaders()) {
-            if (! bundle.hasItem(header) && mappedEntities.get(bundle.getMetadata().getMapping(header)) == null) {
+            if ( ! bundle.hasItem(header) && ! entitiesFromTarget.containsKey(header) &&
+                 ! entitiesFromTarget.containsKey(metadata.getCopiedOrMapped(header)) &&
+                 ! (header.isValueMappable() && header.getMappedValue() != null) ) {
                 errors.add("Entity not found for header: " + header);
             }
         }
 
-        // dependency-check covered by the above and mapping targets check below
-
         // mapping requirements
+        ExternalEntityHeader dependency;
         for(MigrationDependency dep : metadata.getDependencies()) {
-            ExternalEntityHeader dependant = dep.getDependant();
+            dependency = dep.getDependency();
             // name-mapping required
-            if (dep.getMappingType() == MigrationMappingSelection.REQUIRED && ! metadata.isMapped(dependant))
+            if (dep.getMappingType() == MigrationMappingSelection.REQUIRED && ! metadata.isMapped(dependency))
                 errors.add("Unresolved name-mapping: " + dep);
 
             // value-mapping required
-            if (! metadata.isMapped(dependant) && dep.getDependency().getValueMapping() == MigrationMappingSelection.REQUIRED && dep.getDependency().getMappedValue() == null) {
+            if (! metadata.isMapped(dependency) && dependency.getValueMapping() == MigrationMappingSelection.REQUIRED && dependency.getMappedValue() == null) {
                 errors.add("Unresolved value-mapping: " + dep);
             }
         }
