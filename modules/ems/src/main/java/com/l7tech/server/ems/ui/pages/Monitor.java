@@ -473,28 +473,30 @@ public class Monitor extends EsmStandardWebPage {
                 List<EntityMonitoringPropertyValues> entitiesList = new ArrayList<EntityMonitoringPropertyValues>();
                 try {
                     for (SsgCluster ssgCluster: ssgClusterManager.findAll()) {
+                        boolean toFetchClusterStatuses = toFetchStatuses(ssgCluster.getGuid());
                         // First get the current values for each SSG node.
-                        try {
-                            for (SsgNode ssgNode: ssgCluster.getNodes()) {
-                                entitiesList.add(monitoringService.getCurrentSsgNodePropertiesStatus(ssgNode));
+                        for (SsgNode ssgNode: ssgCluster.getNodes()) {
+                            // If a SSG cluster has property to monitor, no matter if its SSG nodes have monitored properties or not, the ESM needs to  
+                            // fetch properties statuses, because the ESM gets the statuses of a SSG cluster, while fetching SSG nodes properties statuses.
+                            if (toFetchClusterStatuses || toFetchStatuses(ssgNode.getGuid())) {
+                                final EntityMonitoringPropertyValues statuses = monitoringService.getCurrentSsgNodePropertiesStatus(ssgNode);
+                                if (statuses != null) {
+                                    entitiesList.add(statuses);
+                                }
                             }
-                        } catch (Throwable t) {
-                            logger.log(Level.WARNING, "Failed to retrieve SSG node property values: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
-                            continue;
                         }
+
                         // Then, get the current value (audit size) for the SSG cluster.
-                        try {
-                            final EntityMonitoringPropertyValues values = monitoringService.getCurrentSsgClusterPropertyStatus(ssgCluster.getGuid());
-                            if (values != null) {
-                                entitiesList.add(values);
+                        if (toFetchClusterStatuses) {
+                            final EntityMonitoringPropertyValues statuses = monitoringService.getCurrentSsgClusterPropertyStatus(ssgCluster.getGuid());
+                            if (statuses != null) {
+                                entitiesList.add(statuses);
                             }
-                        } catch (Throwable t) {
-                            logger.log(Level.WARNING, "Failed to retrieve SSG cluster property value: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
                         }
                     }
                 } catch (FindException e) {
-                    logger.log(Level.WARNING, "Failed to find SSG clusters.", e);
-                    return new JSONException("Failed to find SSG clusters.");
+                    logger.log(Level.WARNING, "Cannot find SSG clusters due to data access failure.", ExceptionUtils.getDebugException(e));
+                    return new JSONException("Failed to get entity property values due to data access failure.");
                 }
 
                 Map<String, Object> jsonDataMap = new HashMap<String, Object>();
@@ -512,6 +514,28 @@ public class Monitor extends EsmStandardWebPage {
         public void setData(Object jsonData) {
             // No data expected from the browser.
         }
+    }
+
+    /**
+     * To check if the ESM needs to fetch properties statuses.
+     * @param entityGuid: the GUID of entity such as SSG cluster or SSG node.
+     * @return true if one of properties of the entity has "monitoringEnabled" set to true.
+     * @throws FindException: throw this expception if there exists data access failure.
+     */
+    private boolean toFetchStatuses(String entityGuid) throws FindException {
+        boolean toFetch = false;
+
+        Collection<EntityMonitoringPropertySetup> entitiesSetup = entityMonitoringPropertySetupManager.findByEntityGuid(entityGuid);
+        if (entitiesSetup != null && !entitiesSetup.isEmpty()) {
+            for (EntityMonitoringPropertySetup setup: entitiesSetup) {
+                if (setup.isMonitoringEnabled()) {
+                    toFetch = true;
+                    break;
+                }
+            }
+        }
+
+        return toFetch;
     }
 
     /**

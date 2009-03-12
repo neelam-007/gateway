@@ -14,11 +14,14 @@ import com.l7tech.server.management.api.monitoring.MonitoredPropertyStatus;
 import com.l7tech.server.management.api.monitoring.MonitoredStatus;
 import com.l7tech.server.management.api.monitoring.MonitoringApi;
 import com.l7tech.server.management.config.monitoring.ComponentType;
+import com.l7tech.util.ExceptionUtils;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.io.IOException;
 
 /**
  * The implementation of Monitoring Service Interface.
@@ -40,10 +43,15 @@ public class MonitoringServiceImpl implements MonitoringService {
     }
 
     @Override
-    public EntityMonitoringPropertyValues getCurrentSsgClusterPropertyStatus(String ssgClusterGuid) throws FindException {
+    public EntityMonitoringPropertyValues getCurrentSsgClusterPropertyStatus(String ssgClusterGuid) {
         // Get the property setup of the SSG cluster from the database.
-        final EntityMonitoringPropertySetup ssgClusterPropertySetup =
-            entityMonitoringPropertySetupManager.findByEntityGuidAndPropertyType(ssgClusterGuid, JSONConstants.SsgClusterMonitoringProperty.AUDIT_SIZE);
+        EntityMonitoringPropertySetup ssgClusterPropertySetup;
+        try {
+            ssgClusterPropertySetup = entityMonitoringPropertySetupManager.findByEntityGuidAndPropertyType(ssgClusterGuid, JSONConstants.SsgClusterMonitoringProperty.AUDIT_SIZE);
+        } catch (FindException e) {
+            logger.warning("Cannot find the monitoring property setup of the SSG cluster (GUID = '" + ssgClusterGuid + "').");
+            return null;
+        }
         if (ssgClusterPropertySetup == null) {
             return null;
         }
@@ -67,19 +75,31 @@ public class MonitoringServiceImpl implements MonitoringService {
     }
 
     @Override
-    public EntityMonitoringPropertyValues getCurrentSsgNodePropertiesStatus(SsgNode ssgNode) throws GatewayException {
-        String ssgNodeGuid = ssgNode.getGuid();
+    public EntityMonitoringPropertyValues getCurrentSsgNodePropertiesStatus(SsgNode ssgNode) {
+        ProcessControllerContext pcContext;
+        List<MonitoredPropertyStatus> statuses;
 
         // Initialize the ssgNodePropertyValuesMap in which "monitored" and "unit" have been set yet.
+        String ssgNodeGuid = ssgNode.getGuid();
         Map<String, Object> ssgNodePropertyValuesMap = initSsgNodePropertyValuesMap(ssgNodeGuid);
 
-        // Create Monitoring API
-        ProcessControllerContext pcContext = gatewayContextFactory.createProcessControllerContext(ssgNode);
-        MonitoringApi monitoringApi = pcContext.getMonitoringApi();
+        try {
+            // Create Monitoring API
+            pcContext = gatewayContextFactory.createProcessControllerContext(ssgNode);
+            MonitoringApi monitoringApi = pcContext.getMonitoringApi();
 
-        // Call MonitoringApi to get a list of property statuses to update the ssgNodePropertyValuesMap
-        final List<MonitoredPropertyStatus> statuses = monitoringApi.getCurrentPropertyStatuses();
-        // Seems that Collections.emptyList() becomes null when transmitted through remote API. 
+            // Call MonitoringApi to get a list of property statuses to update the ssgNodePropertyValuesMap
+            statuses = monitoringApi.getCurrentPropertyStatuses();
+         } catch (Throwable t) {
+            if (t instanceof IOException || t instanceof GatewayException || t instanceof javax.xml.ws.ProtocolException) {
+                logger.log(Level.WARNING, "Current entity property statuses unavailable at this moment: " + ExceptionUtils.getMessage(t));
+            } else {
+                logger.log(Level.WARNING, "Failed to retrieve current entity property statuses: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
+            }
+            return new EntityMonitoringPropertyValues(ssgNodeGuid, ssgNodePropertyValuesMap);
+        }
+
+        // Seems that Collections.emptyList() becomes null when transmitted through remote API.
         if (statuses != null) {
             for (MonitoredPropertyStatus propertyStatus: statuses) {
                 // Get "value"
