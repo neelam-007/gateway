@@ -111,8 +111,10 @@ public class StandardReportsManagementPanel extends Panel {
                                 @Override
                                 public void onAction( final YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
                                     if ( button == YuiDialog.Button.OK ) {
+                                        User user = getUser();
                                         for ( StandardReport report : reports ) {
-                                            if ( securityManager.hasPermission( new AttemptedDeleteSpecific(EntityType.ESM_STANDARD_REPORT, report) ) ) {
+                                            if ( (user.getId().equals( report.getUserId() ) && user.getProviderId()==report.getProvider())
+                                                 || securityManager.hasPermission( new AttemptedDeleteSpecific(EntityType.ESM_STANDARD_REPORT, report) ) ) {
                                                 try {
                                                     reportManager.delete( report );
                                                     target.addComponent( tableContainer );
@@ -213,7 +215,11 @@ public class StandardReportsManagementPanel extends Panel {
         dynamicDialogHolder.setOutputMarkupId(true);
     }
 
-   private static final class ReportModel implements Serializable {
+    private User getUser() {
+        return securityManager.getLoginInfo( ((WebRequest)RequestCycle.get().getRequest()).getHttpServletRequest().getSession(true) ).getUser();
+    }
+
+    private static final class ReportModel implements Serializable {
         private final String id;
         private final String name;
         private final Date date;
@@ -286,7 +292,7 @@ public class StandardReportsManagementPanel extends Panel {
             User user = null;
 
             if ( !securityManager.hasPermission( new AttemptedReadAll( EntityType.ESM_STANDARD_REPORT ) ) ) {
-                user = securityManager.getLoginInfo( ((WebRequest)RequestCycle.get().getRequest()).getHttpServletRequest().getSession(true) ).getUser();
+                user = getUser();
             }
             this.user = user;
 
