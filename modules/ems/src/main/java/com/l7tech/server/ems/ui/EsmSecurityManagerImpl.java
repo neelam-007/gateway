@@ -308,6 +308,8 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
     /**
      * Check if the user of the current session is permitted to access the given page.
      *
+     * <p>This will also validate that the User still exists.</p>
+     *
      * @param session The HttpSession for the request
      * @param request The HttpServletRequest being attempted
      * @return True if access is permitted
@@ -315,7 +317,7 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
     @Override
     @SuppressWarnings({"unchecked"})
     public boolean canAccess(  final HttpSession session, final HttpServletRequest request ) {
-        return session.getAttribute(ATTR_ID) != null ||
+        return isValidUser((User)session.getAttribute(ATTR_ID)) ||
                 request.getRequestURI().equals("/favicon.ico") || // We don't have a "/favicon.ico" but browsers like to ask for this
                 request.getRequestURI().startsWith("/css") ||
                 request.getRequestURI().startsWith("/images") ||
@@ -388,6 +390,23 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
     private final LicenseManager licenseManager;
     private final SessionAuthorizer authorizer = new SessionAuthorizer();
     private ApplicationContext applicationContext;
+
+    private boolean isValidUser( final User user ) {
+        boolean valid = false;
+
+        if ( user != null ) {
+            try {
+                final IdentityProvider provider = identityProviderFactory.getProvider( user.getProviderId() );
+                if ( provider != null ) {
+                    valid = provider.getUserManager().findByPrimaryKey( user.getId() ) != null;
+                }
+            } catch (FindException fe) {
+                logger.log(Level.WARNING, "Error when validating user account.", fe);
+            }
+        }
+
+        return valid;
+    }
 
     private final class SessionAuthorizer extends Authorizer {
         @Override
