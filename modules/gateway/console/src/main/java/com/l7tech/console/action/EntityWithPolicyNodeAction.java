@@ -79,7 +79,7 @@ public abstract class EntityWithPolicyNodeAction<HT extends EntityWithPolicyNode
                 ao =  aliasType==null ? new AttemptedDeleteSpecific(type, entity) :  new AttemptedDeleteSpecific(aliasType, aliasEntity);
                 break;
             case READ:
-                ao = new AttemptedReadSpecific(type, entity.getId());
+                ao = new AttemptedReadSpecific(type, entity);
                 break;
             case UPDATE:
                 ao = new AttemptedUpdate(type, entity);
