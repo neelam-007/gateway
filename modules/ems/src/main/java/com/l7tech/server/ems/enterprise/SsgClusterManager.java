@@ -3,6 +3,7 @@ package com.l7tech.server.ems.enterprise;
 import com.l7tech.objectmodel.*;
 
 import java.util.List;
+import java.net.UnknownHostException;
 
 /**
  * @since Enterprise Manager 1.0
@@ -10,8 +11,8 @@ import java.util.List;
  */
 public interface SsgClusterManager extends EntityManager<SsgCluster, EntityHeader> {
 
-    SsgCluster create(String name, String sslHostName, int adminPort, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException;
-    SsgCluster create(String name, String sslHostName, int adminPort, String parentFolderGuid) throws FindException, InvalidNameException, SaveException;
+    SsgCluster create(String name, String sslHostName, int adminPort, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException, UnknownHostException;
+    SsgCluster create(String name, String sslHostName, int adminPort, String parentFolderGuid) throws FindException, InvalidNameException, SaveException, UnknownHostException;
 
 
     /**
@@ -30,11 +31,12 @@ public interface SsgClusterManager extends EntityManager<SsgCluster, EntityHeade
      * @param newSslHostname    the new SSL hostname of the cluster
      * @param newAdminPort      the new admin port used by the cluster
      *
-     * @throws FindException if failed to determine if a folder with <code>guid</code> exists
-     * @throws UpdateException if the new folder cannot be persisted
-     * @throws DuplicateHostnameException if the new hostname is the same as the hostname of one other cluster.
+     * @throws FindException: thrown if failed to determine if a folder with <code>guid</code> exists
+     * @throws UpdateException: thrown if the new folder cannot be persisted
+     * @throws DuplicateHostnameException: thrown if the new hostname is the same as the hostname of one other cluster.
+     * @throws UnknownHostException: thrown if a checked host name is not recognizable.
      */
-    void editByGuid(String guid, String newName, String newSslHostname, String newAdminPort) throws FindException, UpdateException, DuplicateHostnameException;
+    void editByGuid(String guid, String newName, String newSslHostname, String newAdminPort) throws FindException, UpdateException, DuplicateHostnameException, UnknownHostException;
 
     /**
      * Moves an SSG Cluster into a different parent folder.

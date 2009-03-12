@@ -555,8 +555,9 @@
             </bean>
         </constructor-arg>
         <constructor-arg index="2" ref="ssgClusterManager" />
-        <constructor-arg index="3" ref="gatewayContextFactory" />
-        <constructor-arg index="4" ref="userPropertyManager" />
+        <constructor-arg index="3" ref="ssgNodeManager" />
+        <constructor-arg index="4" ref="gatewayContextFactory" />
+        <constructor-arg index="5" ref="userPropertyManager" />
     </bean>
 
     <bean id="monitoringConfigurationSynchronizer" class="com.l7tech.server.ems.monitoring.MonitoringConfigurationSynchronizer">

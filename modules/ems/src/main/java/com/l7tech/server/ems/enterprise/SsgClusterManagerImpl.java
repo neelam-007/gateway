@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.*;
@@ -65,7 +66,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     }
 
     @Override
-    public SsgCluster create(String name, String sslHostName, int adminPort, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException {
+    public SsgCluster create(String name, String sslHostName, int adminPort, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException, UnknownHostException {
         verifyLegalClusterName(name);
         verifyHostnameUniqueness(sslHostName);
         final SsgCluster result = new SsgCluster(name, sslHostName, adminPort, parentFolder);
@@ -75,13 +76,13 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     }
 
     @Override
-    public SsgCluster create(String name, String sslHostName, int adminPort, String parentFolderGuid) throws FindException, InvalidNameException, SaveException {
+    public SsgCluster create(String name, String sslHostName, int adminPort, String parentFolderGuid) throws FindException, InvalidNameException, SaveException, UnknownHostException {
         final EnterpriseFolder parentFolder = enterpriseFolderManager.findByGuid(parentFolderGuid);
         return create(name, sslHostName, adminPort, parentFolder);
     }
 
     @Override
-    public void editByGuid(String guid, String newName, String newSslHostname, String newAdminPort) throws FindException, UpdateException, DuplicateHostnameException {
+    public void editByGuid(String guid, String newName, String newSslHostname, String newAdminPort) throws FindException, UpdateException, DuplicateHostnameException, UnknownHostException {
         boolean updated = false;
         final SsgCluster cluster = findByGuid(guid);
         if (cluster == null) return;
@@ -278,7 +279,7 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
      * @throws FindException : throw if not able to find SSG clusters or nodes from the database.
      * @throws DuplicateHostnameException : throw if there exists one cluster with such hostname and port.
      */
-    private void verifyHostnameUniqueness(String hostname) throws FindException, DuplicateHostnameException {
+    private void verifyHostnameUniqueness(String hostname) throws FindException, DuplicateHostnameException, UnknownHostException {
         // Check if there exists any SSG cluster having the same host name or ip address of the checked cluster's.
         for (SsgCluster cluster: findAll()) {
             if (isSameHost(cluster.getSslHostName(), hostname)) {
@@ -295,27 +296,58 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     }
 
     /**
-     * Check if two hosts are same or not.
+     * Check if two hosts are same/equivalent or not.
      *
-     * @param hostname1 The hostname of the first host.  It could be an IP address.
-     * @param hostname2 The hostname of the second host.  It could be an IP address.
+     * @param host1 The hostname of the first host.  It could be an IP address.
+     * @param host2 The hostname of the second host.  It could be an IP address.
      * @return true if both are the same host.
      */
-    private boolean isSameHost(String hostname1, String hostname2) {
-        String hostaddress1 = hostname1;
-        String hostaddress2 = hostname2;
+    private boolean isSameHost(String host1, String host2) throws UnknownHostException {
+        // Both hosts cannot be null.
+        if (host1 == null || host2 == null) throw new UnknownHostException("The host name is not specified.");
 
-        try {
-            InetAddress address = InetAddress.getByName(hostname1);
-            hostaddress1 = address.getHostAddress();
+        // Check if they have the exactly same host names.
+        if (host1.equals(host2)) return true;
 
-            address = InetAddress.getByName(hostname2);
-            hostaddress2 = address.getHostAddress();
-        } catch (Exception e) {
+        // Check if they are the same local hosts.
+        if (isLoopbackAddress(host1) && isLoopbackAddress(host2)) return true;
+
+        // Check if they are the same non-local hosts.
+        List<String> hostsList1 = getAllHosts(host1);
+        List<String> hostsList2 = getAllHosts(host2);
+
+        hostsList1.retainAll(hostsList2);
+        if (hostsList1.isEmpty()) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     * Check if the host is a loop back host.
+     * @param hostname: the name of the host
+     * @return true if the host is loop-back.
+     * @throws UnknownHostException: thrown if the host is not recognizable.
+     */
+    private boolean isLoopbackAddress(String hostname) throws UnknownHostException {
+        return InetAddress.getByName(hostname).isLoopbackAddress();
+    }
+
+    /**
+     * Get all hosts related to the hostname.
+     * @param hostname: the name of the host.
+     * @return: a list of hostnames.
+     * @throws UnknownHostException: thrown if the host is not recognizable.
+     */
+    private List<String> getAllHosts(String hostname) throws UnknownHostException {
+        List<String> ipList = new ArrayList<String>();
+
+        for (InetAddress inetAddress: InetAddress.getAllByName(hostname)) {
+            ipList.add(inetAddress.getHostName());
         }
 
-        return (hostaddress1 != null && hostaddress1.equals(hostaddress2))
-            || (hostaddress2 != null && hostaddress2.equals(hostaddress1));
+        return ipList;
     }
 
     /**

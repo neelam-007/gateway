@@ -7,10 +7,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.StaleUpdateException;
 import com.l7tech.server.audit.AuditContextUtils;
-import com.l7tech.server.ems.enterprise.JSONConstants;
-import com.l7tech.server.ems.enterprise.SsgCluster;
-import com.l7tech.server.ems.enterprise.SsgClusterManager;
-import com.l7tech.server.ems.enterprise.SsgNode;
+import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import com.l7tech.server.management.api.node.GatewayApi;
 import com.l7tech.server.management.api.node.NodeManagementApi;
@@ -42,11 +39,13 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
     public GatewayPoller( final PlatformTransactionManager transactionManager,
                           final Timer timer,
                           final SsgClusterManager ssgClusterManager,
+                          final SsgNodeManager ssgNodeManager,
                           final GatewayContextFactory gatewayContextFactory,
                           final UserPropertyManager userPropertyManager ) {
         this.transactionManager = transactionManager;
         this.timer = timer;
         this.ssgClusterManager = ssgClusterManager;
+        this.ssgNodeManager = ssgNodeManager;
         this.gatewayContextFactory = gatewayContextFactory;
         this.userPropertyManager = userPropertyManager;
         this.timerTask = new TimerTask(  ) {
@@ -116,6 +115,7 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
     private final PlatformTransactionManager transactionManager;
     private final Timer timer;
     private final SsgClusterManager ssgClusterManager;
+    private final SsgNodeManager ssgNodeManager;
     private final GatewayContextFactory gatewayContextFactory;
     private final UserPropertyManager userPropertyManager;
     private final TimerTask timerTask;
@@ -226,7 +226,12 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
 
                                     for (GatewayApi.GatewayInfo newInfo: newInfoSet) {
                                         SsgNode node = new SsgNode();
-                                        node.setGuid(newInfo.getId());
+                                        String nodeGuid = newInfo.getId();
+                                        if (ssgNodeManager.findByGuid(nodeGuid) != null) {
+                                            continue;
+                                        } else {
+                                            node.setGuid(nodeGuid);
+                                        }
                                         node.setName(newInfo.getName());
                                         node.setSoftwareVersion(newInfo.getSoftwareVersion());
                                         node.setIpAddress(newInfo.getIpAddress());

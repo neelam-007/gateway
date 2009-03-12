@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.EntityManagerStub;
 
 import java.util.List;
+import java.net.UnknownHostException;
 
 /**
  * 
@@ -18,12 +19,12 @@ public class MockSsgClusterManager extends EntityManagerStub<SsgCluster, EntityH
     }
 
     @Override
-    public SsgCluster create(String name, String sslHostName, int adminPort, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException {
+    public SsgCluster create(String name, String sslHostName, int adminPort, EnterpriseFolder parentFolder) throws InvalidNameException, SaveException, FindException, UnknownHostException {
         return null;
     }
 
     @Override
-    public SsgCluster create(String name, String sslHostName, int adminPort, String parentFolderGuid) throws FindException, InvalidNameException, SaveException {
+    public SsgCluster create(String name, String sslHostName, int adminPort, String parentFolderGuid) throws FindException, InvalidNameException, SaveException, UnknownHostException {
         return null;
     }
 
@@ -33,7 +34,7 @@ public class MockSsgClusterManager extends EntityManagerStub<SsgCluster, EntityH
     }
 
     @Override
-    public void editByGuid(String guid, String newName, String newSslHostname, String newAdminPort) throws FindException, UpdateException, DuplicateHostnameException {
+    public void editByGuid(String guid, String newName, String newSslHostname, String newAdminPort) throws FindException, UpdateException, DuplicateHostnameException, UnknownHostException {
     }
 
     @Override
