@@ -51,6 +51,7 @@ public class TimeRangePicker extends JComponent implements PropertyChangeListene
             return _timeZone;
         }
 
+        @Override
         public String toString() {
             return _displayString;
         }
@@ -128,6 +129,7 @@ public class TimeRangePicker extends JComponent implements PropertyChangeListene
         _endChooser.addPropertyChangeListener("date", this);
 
         _timeZoneComboBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 final TimeZone timeZone = ((TimeZoneItem)_timeZoneComboBox.getSelectedItem()).getTimeZone();
                 setTimeZone(timeZone, true);
@@ -183,11 +185,11 @@ public class TimeRangePicker extends JComponent implements PropertyChangeListene
      */
     public void setTimeZone(final TimeZone timeZone, final boolean firePropertyChange) {
         final TimeZone oldZone = _timeZone;
-        TimeZoneItem tzItem = TIME_ZONE_ITEMS.get(timeZone);
+        TimeZoneItem tzItem = TIME_ZONE_ITEMS.get(standardize(timeZone));
         
         if (tzItem == null) {
             //use the default time zone
-            tzItem = TIME_ZONE_ITEMS.get(TimeZone.getDefault());
+            tzItem = TIME_ZONE_ITEMS.get(standardize(TimeZone.getDefault()));
             logger.log(Level.WARNING, "Selected time zone not available.  Using default.");
         }
         _timeZone = tzItem.getTimeZone();
@@ -200,10 +202,12 @@ public class TimeRangePicker extends JComponent implements PropertyChangeListene
         }
     }
 
+    @Override
     public Locale getLocale() {
         return _locale;
     }
 
+    @Override
     public void setLocale(final Locale locale) {
         _locale = locale;
         _startChooser.setLocale(locale);
@@ -220,6 +224,7 @@ public class TimeRangePicker extends JComponent implements PropertyChangeListene
     }
 
     // Implements PropertyChangeListener.
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if (evt.getSource() == _startChooser) {
             final Date oldDate = _startDate;
@@ -245,5 +250,30 @@ public class TimeRangePicker extends JComponent implements PropertyChangeListene
      */
     private void createUIComponents() {
         _timeZoneComboBox = new JComboBox(TIME_ZONE_ITEMS.values().toArray());
+    }
+
+    /**
+     * Translate a custom timezone into a randomly picked standard timezone.
+     *
+     * @param maybeCustom the TimeZone to standardize
+     * @return The TimeZone or a standardized version if it was custom.
+     */
+    private TimeZone standardize( final TimeZone maybeCustom ) {
+        TimeZone standard;
+
+        if ( maybeCustom == null || TIME_ZONE_ITEMS.containsKey( maybeCustom ) ) {
+            standard = maybeCustom;
+        } else {
+            String[] ids = TimeZone.getAvailableIDs( maybeCustom.getRawOffset() );
+            if ( ids.length == 0 ) {
+                logger.warning("Unable to find standard time zone for '"+maybeCustom.getID()+"'.");
+                standard = maybeCustom;
+            } else {
+                logger.warning("Translated time zone '"+maybeCustom.getID()+"', to '"+ids[0]+"'.");
+                standard = TimeZone.getTimeZone(ids[0]);
+            }
+        }
+
+        return standard;
     }
 }
