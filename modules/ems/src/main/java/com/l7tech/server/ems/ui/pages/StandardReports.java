@@ -1,6 +1,5 @@
 package com.l7tech.server.ems.ui.pages;
 
-import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -13,6 +12,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
 import com.l7tech.util.TimeUnit;
+import com.l7tech.identity.User;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -146,16 +146,21 @@ public class StandardReports extends EsmStandardWebPage {
         reportParametersForm.add( toDateField.setOutputMarkupId(true) );
 
         final HiddenField deleteSettingsDialogInputId = new HiddenField("deleteSettingsDialog_id", new Model(""));
-        Form deleteSettingsForm = new JsonDataResponseForm("deleteSettingsForm", new AttemptedDeleteAll( EntityType.ESM_STANDARD_REPORT )){
+        Form deleteSettingsForm = new JsonDataResponseForm("deleteSettingsForm"){
             @SuppressWarnings({"ThrowableInstanceNeverThrown"})
             @Override
             protected Object getJsonResponseData() {
                 String deletedSettingsOid = (String)deleteSettingsDialogInputId.getConvertedInput();
                 try {
                     logger.fine("Deleting standard report settings (OID = "+ deletedSettingsOid + ").");
-
-                    standardReportSettingsManager.delete(Long.parseLong(deletedSettingsOid));
-                    return null;    // No response object expected if successful.
+                    final StandardReportSettings settings = standardReportSettingsManager.findByPrimaryKey(Long.parseLong(deletedSettingsOid));
+                    final User user = getUser();
+                    if ( settings != null && user.getId().equals(settings.getUserId()) && user.getProviderId()==settings.getProvider() ) {
+                        standardReportSettingsManager.delete( settings );
+                        return null;    // No response object expected if successful.
+                    } else {
+                        return "Settings not found for delete.";    
+                    }
                 } catch (Exception e) {
                     String errmsg = "Cannot delete the standard report settings (OID = '" + deletedSettingsOid + "').";
                     logger.warning(errmsg);
