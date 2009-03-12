@@ -291,7 +291,7 @@ public class RoleManagerImpl extends HibernateEntityManager<Role, EntityHeader> 
     @SuppressWarnings({ "ThrowInsideCatchBlockWhichIgnoresCaughtException" })
     public void deleteRoleAssignmentsForUser(final User user) throws DeleteException {
         try {
-            Collection<Role> roles = getAssignedRoles(user);
+            Collection<Role> roles = getAssignedRolesSkippingUserAccountValidation(user);
             for (Role role : roles) {
                 role.removeAssignedUser(user);
                 update(role);
