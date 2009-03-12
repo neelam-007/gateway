@@ -71,7 +71,7 @@
             MESSAGE_CONTEXT_KEY_NOT_EXIST : 'Message context key "{0}" does not exist in SSG Cluster "{1}".',
             STANDARD_MESSAGE_CONTEXT_MAPPING : 'Standard Mapping',
             CUSTOM_MESSAGE_CONTEXT_MAPPING : 'Custom Mapping',
-            RELATIVE_TIME_PERIOD_HINT : 'Must be positive integer',
+            RELATIVE_TIME_PERIOD_HINT : 'Must be integer and greater than zero',
             ABSOLUTE_TIME_PERIOD_HINT : 'From time must be earlier than To time',
             TIME_INTERVAL_HINT : 'Must be positive integer',
             SUBMITTING_GENERATE_REPORT : 'Submitting standard report generation',
@@ -174,7 +174,7 @@
             var valid = false;
             if (relativeTimePeriodRadioButton.checked) {
                 var timePeriod = relativeTimePeriodTextBox.value;
-                valid = l7.Util.isIntString(timePeriod) && timePeriod >= 0;
+                valid = l7.Util.isIntString(timePeriod) && timePeriod > 0;
             } else if (absoluteTimePeriodRadioButton.checked) {
                 valid = true;
             }
