@@ -84,6 +84,8 @@ public class VersioningPolicyManager implements PolicyManager {
 
     @Override
     public long save(Policy policy) throws SaveException {
+        if (policy != null)
+            policy.setVersion(0);
         long oid = policyManager.save(policy);
         try {
             policyVersionManager.checkpointPolicy(policy, true, true);

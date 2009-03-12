@@ -133,10 +133,13 @@ public class PolicyVersioningServiceManager implements ServiceManager {
 
     @Override
     public long save(PublishedService service) throws SaveException {
+        Policy policy = service.getPolicy();
+        if (policy != null)
+            policy.setVersion(0);
         long oid = serviceManager.save(service);
-        if ( service.getPolicy() != null ) {
+        if ( policy != null ) {
             try {
-                policyVersionManager.checkpointPolicy(service.getPolicy(), true, true);
+                policyVersionManager.checkpointPolicy(policy, true, true);
             } catch ( ObjectModelException ome ) {
                 throw new SaveException("Unable to save policy version when saving service.", ome);
             }
