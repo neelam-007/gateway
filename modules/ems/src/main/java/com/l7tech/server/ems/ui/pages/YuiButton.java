@@ -32,7 +32,7 @@ public class YuiButton extends Button implements SecureComponent {
     }
 
     @Override
-    public AttemptedOperation getAttemptedOperation() {
+    public final AttemptedOperation getAttemptedOperation() {
         return attemptedOperation;
     }
 

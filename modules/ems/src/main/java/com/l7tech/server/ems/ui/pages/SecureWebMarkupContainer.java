@@ -14,10 +14,12 @@ public class SecureWebMarkupContainer extends WebMarkupContainer implements Secu
 
     public SecureWebMarkupContainer( final String id ) {
         super(id);
+        this.attemptedOperation = null;
     }
 
     public SecureWebMarkupContainer( final String id, final IModel model ) {
         super(id, model);
+        this.attemptedOperation = null;
     }
 
     public SecureWebMarkupContainer( final String id, final AttemptedOperation attemptedOperation ) {
@@ -31,17 +33,12 @@ public class SecureWebMarkupContainer extends WebMarkupContainer implements Secu
     }
 
     @Override
-     public AttemptedOperation getAttemptedOperation() {
+    public final AttemptedOperation getAttemptedOperation() {
          return attemptedOperation;
-     }
+    }
 
-     public SecureWebMarkupContainer add( final AttemptedOperation attemptedOperation ) {
-         this.attemptedOperation = attemptedOperation;
-         return this;
-     }
+    //- PRIVATE
 
-     //- PRIVATE
-
-     private AttemptedOperation attemptedOperation;
+    private final AttemptedOperation attemptedOperation;
 
 }

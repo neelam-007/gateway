@@ -11,6 +11,8 @@ import com.l7tech.util.SizeUnit;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadAll;
+import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
+import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
 import com.l7tech.identity.User;
 import org.apache.wicket.markup.html.form.*;
 import org.apache.wicket.markup.html.WebMarkupContainer;
@@ -129,33 +131,38 @@ public class PolicyMapping extends EsmStandardWebPage {
         YuiAjaxButton deleteMigrationButton = new YuiAjaxButton("deleteMigrationButton") {
             @Override
             protected void onSubmit(final AjaxRequestTarget ajaxRequestTarget, final Form form) {
-                String warningText = "<p>Really delete migration record?</p>";
-                Label label = new Label(YuiDialog.getContentId(), warningText);
-                label.setEscapeModelStrings(false);
-                YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Confirm Migration Deletion", YuiDialog.Style.OK_CANCEL, label, new YuiDialog.OkCancelCallback() {
-                    @Override
-                    public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
-                        if ( button == YuiDialog.Button.OK ) {
-                            final String migrationId = (String) form.get("migrationId").getModelObject();
-                            try {
-                                logger.fine("Deleting the migration (OID = " + migrationId + ")");
+                final String migrationId = (String) form.get("migrationId").getModelObject();
+                final MigrationRecord record = findMigrationRecordById( migrationId );
+                if ( record != null && canDelete(record) ) {
+                    String warningText = "<p>Really delete migration record?</p>";
+                    Label label = new Label(YuiDialog.getContentId(), warningText);
+                    label.setEscapeModelStrings(false);
+                    YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Confirm Migration Deletion", YuiDialog.Style.OK_CANCEL, label, new YuiDialog.OkCancelCallback() {
+                        @Override
+                        public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
+                            if ( button == YuiDialog.Button.OK ) {
+                                try {
+                                    logger.fine("Deleting the migration (OID = " + migrationId + ")");
 
-                                migrationManager.delete(Long.parseLong(migrationId));
-                                migrationSummaryContainer.setVisible(false);
+                                    migrationManager.delete(Long.parseLong(migrationId));
+                                    migrationSummaryContainer.setVisible(false);
 
-                                target.addComponent(migrationTableContainer);
-                                target.addComponent(migrationSummaryContainer);
-                            } catch (Exception e) {
-                                logger.warning("Cannot delete the migration (OID = " + migrationId + "), '"+ ExceptionUtils.getMessage(e)+"'");
+                                    target.addComponent(migrationTableContainer);
+                                    target.addComponent(migrationSummaryContainer);
+                                } catch (Exception e) {
+                                    logger.warning("Cannot delete the migration (OID = " + migrationId + "), '"+ ExceptionUtils.getMessage(e)+"'");
+                                }
                             }
+                            dynamicDialogHolder.replace(new EmptyPanel("dynamic.holder.content"));
+                            target.addComponent(dynamicDialogHolder);
                         }
-                        dynamicDialogHolder.replace(new EmptyPanel("dynamic.holder.content"));
-                        target.addComponent(dynamicDialogHolder);
-                    }
-                });
+                    });
 
-                dynamicDialogHolder.replace(dialog);
-                ajaxRequestTarget.addComponent(dynamicDialogHolder);
+                    dynamicDialogHolder.replace(dialog);
+                    ajaxRequestTarget.addComponent(dynamicDialogHolder);
+                } else {
+                    logger.warning("Record not found or user is not permitted to delete '"+migrationId+"'.");
+                }
             }
         };
 
@@ -165,7 +172,7 @@ public class PolicyMapping extends EsmStandardWebPage {
                 final String migrationId = (String) form.get("migrationId").getModelObject();
 
                 final MigrationRecord record = findMigrationRecordById( migrationId );
-                if ( record != null ) {
+                if ( record != null && canUpdate(record) ) {
                     MigrationRecordEditPanel editPanel = new MigrationRecordEditPanel( YuiDialog.getContentId(), record );
                     YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Edit Label", YuiDialog.Style.OK_CANCEL, editPanel, new YuiDialog.OkCancelCallback() {
                         @Override
@@ -191,6 +198,8 @@ public class PolicyMapping extends EsmStandardWebPage {
 
                     dynamicDialogHolder.replace(dialog);
                     ajaxRequestTarget.addComponent(dynamicDialogHolder);
+                } else {
+                    logger.warning("Record not found or user is not permitted to update '"+migrationId+"'.");
                 }
             }
         };
@@ -215,7 +224,7 @@ public class PolicyMapping extends EsmStandardWebPage {
                 final String migrationId = (String) form.get("migrationId").getModelObject();
 
                 final MigrationRecord record = findMigrationRecordById( migrationId );
-                if ( record != null ) {
+                if ( record != null && canUpdate(record) ) {
                     String warningText = "<p>Really delete migration archive?</p>";
                     Label label = new Label(YuiDialog.getContentId(), warningText);
                     label.setEscapeModelStrings(false);
@@ -244,6 +253,8 @@ public class PolicyMapping extends EsmStandardWebPage {
 
                     dynamicDialogHolder.replace(dialog);
                     ajaxRequestTarget.addComponent(dynamicDialogHolder);
+                } else {
+                    logger.warning("Record not found or user is not permitted to update '"+migrationId+"'.");
                 }
             }
         };
@@ -371,6 +382,36 @@ public class PolicyMapping extends EsmStandardWebPage {
                 ajaxRequestTarget.addComponent(migrationSummaryContainer);
             }
         };
+    }
+
+    /**
+     *
+     */
+    private boolean canUpdate( final MigrationRecord migration ) {
+        boolean canUpdate = false;
+
+        User user = getUser();
+        if ( (user.getId().equals( migration.getUserId() ) && user.getProviderId()==migration.getProvider())
+             || securityManager.hasPermission( new AttemptedUpdate(EntityType.ESM_MIGRATION_RECORD, migration) ) ) {
+            canUpdate = true;
+        }
+
+        return canUpdate;
+    }
+
+    /**
+     *
+     */
+    private boolean canDelete( final MigrationRecord migration ) {
+        boolean canUpdate = false;
+
+        User user = getUser();
+        if ( (user.getId().equals( migration.getUserId() ) && user.getProviderId()==migration.getProvider())
+             || securityManager.hasPermission( new AttemptedDeleteSpecific(EntityType.ESM_MIGRATION_RECORD, migration) ) ) {
+            canUpdate = true;
+        }
+
+        return canUpdate;
     }
 
     /**

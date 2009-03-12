@@ -69,6 +69,7 @@ public enum EntityType implements Comparable<EntityType> {
     ESM_SSG_NODE("Node", false),
     ESM_STANDARD_REPORT("Report", false),
     ESM_MIGRATION_RECORD("Migration Record", false),
+    ESM_NOTIFICATION_RULE("Notification Rule", false),
     VALUE_REFERENCE("Value Reference", true) // todo: better way to deal with mappable properties
     ;
 

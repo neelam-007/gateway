@@ -32,7 +32,7 @@ public class SecureForm extends Form implements SecureComponent {
     }
 
     @Override
-     public AttemptedOperation getAttemptedOperation() {
+     public final AttemptedOperation getAttemptedOperation() {
          return attemptedOperation;
      }
 

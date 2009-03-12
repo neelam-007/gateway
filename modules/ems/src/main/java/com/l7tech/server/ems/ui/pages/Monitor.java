@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
@@ -101,7 +102,7 @@ public class Monitor extends EsmStandardWebPage {
 
         // Wicket component for deleting a system monitoring notification rule
         final HiddenField deleteNotificationRuleDialog_id = new HiddenField("deleteNotificationRuleDialog_id", new Model(""));
-        Form deleteNotificationRuleForm = new JsonDataResponseForm("deleteNotificationRuleForm") {
+        Form deleteNotificationRuleForm = new JsonDataResponseForm("deleteNotificationRuleForm", new AttemptedDeleteAll( EntityType.ESM_NOTIFICATION_RULE ) ) {
             @Override
             protected Object getJsonResponseData() {
                 String guid = (String)deleteNotificationRuleDialog_id.getConvertedInput();

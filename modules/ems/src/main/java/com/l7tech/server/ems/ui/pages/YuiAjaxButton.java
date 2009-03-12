@@ -32,7 +32,7 @@ public abstract class YuiAjaxButton extends AjaxButton implements SecureComponen
     }
     
     @Override
-    public AttemptedOperation getAttemptedOperation() {
+    public final AttemptedOperation getAttemptedOperation() {
         return attemptedOperation;
     }
 

@@ -11,17 +11,44 @@ import org.apache.wicket.markup.html.panel.Panel;
 import org.apache.wicket.protocol.http.WebRequest;
 import org.apache.wicket.protocol.http.WebResponse;
 import org.mortbay.util.ajax.JSON;
+import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
+import com.l7tech.server.ems.ui.SecureComponent;
 
 /**
  * JSON interaction is a component that provides a JavaScript URL for JSON data access.
  */
-public class JsonInteraction extends Panel {
+public class JsonInteraction extends Panel implements SecureComponent {
 
     //- PUBLIC
 
-    public JsonInteraction( final String id, final String jsonUrlVariable, final JsonDataProvider provider ) {
+    /**
+     * Create an unsecured JSON interaction.
+     *
+     * @param id The wicket component identifier
+     * @param jsonUrlVariable The URL variable to create in the containing page
+     * @param provider The data provider for the interaction
+     */
+    public JsonInteraction( final String id,
+                            final String jsonUrlVariable,
+                            final JsonDataProvider provider ) {
+        this( id, jsonUrlVariable, provider, null );
+    }
+
+    /**
+     * Create a JSON interaction.
+     *
+     * @param id The wicket component identifier
+     * @param jsonUrlVariable The URL variable to create in the containing page
+     * @param provider The data provider for the interaction
+     * @param attemptedOperation The attempted operation to check or null for no security.
+     */
+    public JsonInteraction( final String id,
+                            final String jsonUrlVariable,
+                            final JsonDataProvider provider,
+                            final AttemptedOperation attemptedOperation ) {
         super(id);
         this.provider = provider;
+        this.attemptedOperation = attemptedOperation;
 
         add( new AbstractAjaxBehavior(){
             @Override
@@ -61,6 +88,11 @@ public class JsonInteraction extends Panel {
         });
     }
 
+    @Override
+    public final AttemptedOperation getAttemptedOperation() {
+        return attemptedOperation;
+    }
+
     //- PROTECTED
 
     @SuppressWarnings({"UnusedDeclaration"})
@@ -81,4 +113,5 @@ public class JsonInteraction extends Panel {
     //- PRIVATE
 
     private final JsonDataProvider provider;
+    private final AttemptedOperation attemptedOperation;
 }

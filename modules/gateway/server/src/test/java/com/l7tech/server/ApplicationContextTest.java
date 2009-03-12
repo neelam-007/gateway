@@ -45,6 +45,7 @@ public class ApplicationContextTest  {
         EntityType.ESM_SSG_NODE,
         EntityType.ESM_STANDARD_REPORT,
         EntityType.ESM_MIGRATION_RECORD,
+        EntityType.ESM_NOTIFICATION_RULE,
         EntityType.VALUE_REFERENCE) );
 
     /**
