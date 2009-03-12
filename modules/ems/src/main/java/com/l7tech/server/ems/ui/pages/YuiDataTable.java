@@ -357,31 +357,31 @@ public class YuiDataTable extends Panel {
                 StringBuilder scriptBuilder = new StringBuilder(1024);
                 scriptBuilder.append( "(function(){" );
                 scriptBuilder.append( " initDataTable( '" );
-                scriptBuilder.append( tableId );
+                scriptBuilder.append( escapeSingleQuotes(tableId) );
                 scriptBuilder.append( "', ");
-                scriptBuilder.append( columnBuffer );
+                scriptBuilder.append( escapeSingleQuotes(columnBuffer.toString()) );
                 scriptBuilder.append( ", '" );
-                scriptBuilder.append( pagingId );
+                scriptBuilder.append( escapeSingleQuotes(pagingId) );
                 scriptBuilder.append( "', '" );
-                scriptBuilder.append( callbackBehaviour.getCallbackUrl(true) );
+                scriptBuilder.append( escapeSingleQuotes(callbackBehaviour.getCallbackUrl(true).toString()) );
                 scriptBuilder.append( "&data=true&', " );
-                scriptBuilder.append( fieldsBuffer );
+                scriptBuilder.append( escapeSingleQuotes(fieldsBuffer.toString()) );
                 scriptBuilder.append( ", " );
-                scriptBuilder.append( dataBuffer == null ? "null" : "'" + dataBuffer + "'" );
+                scriptBuilder.append( dataBuffer == null ? "null" : "'" + escapeSingleQuotes(dataBuffer.toString()) + "'" );
                 scriptBuilder.append( ", '" );
-                scriptBuilder.append( sortProperty );
+                scriptBuilder.append( escapeSingleQuotes(sortProperty) );
                 scriptBuilder.append( "', '");
                 scriptBuilder.append( sortAscending ? "yui-dt-asc" : "yui-dt-desc" );
                 scriptBuilder.append( "', " );
-                scriptBuilder.append( buttons );
+                scriptBuilder.append( escapeSingleQuotes(buttons) );
                 scriptBuilder.append( ", '" );
-                scriptBuilder.append( selectionId );
+                scriptBuilder.append( escapeSingleQuotes(selectionId) );
                 scriptBuilder.append( "', " );
                 scriptBuilder.append( multiSelect );
                 scriptBuilder.append( ", " );
-                scriptBuilder.append( "dataTableSelectionCallback" ).append( tableId );
+                scriptBuilder.append( "dataTableSelectionCallback" ).append( escapeSingleQuotes(tableId) );
                 scriptBuilder.append( ", '" );
-                scriptBuilder.append( idProperty );
+                scriptBuilder.append( escapeSingleQuotes(idProperty) );
                 scriptBuilder.append( "'); })();" );
                 return scriptBuilder.toString();
             }
@@ -389,6 +389,10 @@ public class YuiDataTable extends Panel {
 
         Label jsContainer = new Label("script", new Model(scriptHolder));
         add( jsContainer.setEscapeModelStrings(false) );
+    }
+
+    private String escapeSingleQuotes(final String string) {
+        return string.replace("'", "\\'");
     }
 
     private String buildResultsPage(int startIndex, int results, String sortRaw, boolean dir) {
