@@ -879,27 +879,8 @@ if (!l7.Connection) {
                 contentLocationHeader = contentLocationHeader.replace(/\r$/, ''); // IE7 includes trailing CR.
             }
             if (contentLocationHeader == '/Login') {
-                // Session timed out.
-                var dialog = new YAHOO.widget.SimpleDialog("sessionTimeoutDialog", {
-                    buttons     : [
-                        {
-                            text : errorDialogOkText,
-                            handler : function() {
-                                window.top.location.reload();   // For side effect of getting redirected to login page.
-                            }
-                        }
-                    ],
-                    draggable   : false,
-                    fixedcenter : true,
-                    icon        : YAHOO.widget.SimpleDialog.ICON_WARN,
-                    modal       : true,
-                    visible     : false,
-                    zindex      : 999
-                });
-                dialog.setHeader(errorDialogTitleText);
-                dialog.setBody(errorDialogSessionExpiredMessageHtml);
-                dialog.render(document.body);
-                dialog.show();
+                // Session expired.
+                l7.Dialog.showSessionExpiredDialog(errorDialogTitleText, errorDialogSessionExpiredMessageHtml, errorDialogOkText);
                 result.success = false;
                 result.isSessionExpired = true;
                 result.isJson = false;
@@ -1526,4 +1507,45 @@ if (!l7.Dialog) {
             return result;
         }
     })();
+
+    /**
+     * Displays the session expired dialog, which will send browser to the login page upon clicking OK.
+     *
+     * @param {string} header   localized header text; defaults to 'Session Expired' if null
+     * @param {html} body       HTML content; defaults to 'Your session has expired.' if null
+     * @param {string} okText   localized text label for the OK button; defaults to 'OK' if null
+     * @requires YAHOO.widget.Dialog
+     * @requires YAHOO.widget.Button
+     */
+    l7.Dialog.showSessionExpiredDialog = function(header, body, okText) {
+        if (!header) header = 'Session Expired';
+        if (!body) body = 'Your session has expired.';
+        if (!okText) okText = 'OK';
+
+        if (l7.Dialog._sessionExpiredDialog == undefined) {
+            /**
+             * @private
+             */
+            l7.Dialog._sessionExpiredDialog = new YAHOO.widget.SimpleDialog('l7_Dialog_sessionExpiredDialog', {
+                buttons     : [
+                    {
+                        text : l7.Util.escapeHtmlText(okText),
+                        handler : function() {
+                            window.top.location.reload();   // For side effect of getting redirected to login page.
+                        }
+                    }
+                ],
+                draggable   : false,
+                fixedcenter : true,
+                icon        : YAHOO.widget.SimpleDialog.ICON_WARN,
+                modal       : true,
+                visible     : false,
+                zindex      : 999
+            });
+        }
+        l7.Dialog._sessionExpiredDialog.setHeader(l7.Util.escapeHtmlText(header));
+        l7.Dialog._sessionExpiredDialog.setBody(body);
+        l7.Dialog._sessionExpiredDialog.render(document.body);
+        l7.Dialog._sessionExpiredDialog.show();
+    }
 }
