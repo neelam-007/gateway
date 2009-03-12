@@ -73,7 +73,7 @@
             CUSTOM_MESSAGE_CONTEXT_MAPPING : 'Custom Mapping',
             RELATIVE_TIME_PERIOD_HINT : 'Must be integer and greater than zero',
             ABSOLUTE_TIME_PERIOD_HINT : 'From time must be earlier than To time',
-            TIME_INTERVAL_HINT : 'Must be positive integer',
+            TIME_INTERVAL_HINT : 'Must be integer and greater than zero',
             SUBMITTING_GENERATE_REPORT : 'Submitting standard report generation',
             CANNOT_SUBMIT_GENERATE_REPORT : 'Unable to submit standard report generation.'
         }
@@ -219,7 +219,7 @@
                 valid = true;
             } else if (hasTimeIntervalRadioButton.checked) {
                 var timeInterval = timeIntervalTextBox.value;
-                valid = l7.Util.isIntString(timeInterval) && timeInterval >= 0;
+                valid = l7.Util.isIntString(timeInterval) && timeInterval > 0;
             }
             return valid;
         }
