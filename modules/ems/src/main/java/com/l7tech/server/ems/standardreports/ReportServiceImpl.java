@@ -11,6 +11,7 @@ import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayException;
 import com.l7tech.server.management.api.node.ReportApi;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -20,6 +21,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import javax.xml.ws.soap.SOAPFaultException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Timer;
@@ -86,7 +88,15 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
             ReportApi reportApi = context.getReportApi();
             submissionId = reportApi.submitReport( reportSubmission, Arrays.asList( ReportApi.ReportOutputType.PDF, ReportApi.ReportOutputType.HTML ) );
         } catch ( SOAPFaultException sfe ) {
-            throw new ReportException( "Error submitting report generation to gateway '"+(host+":"+port)+"'.", sfe );
+            final ConnectException ce = ExceptionUtils.getCauseIfCausedBy(sfe, ConnectException.class);
+            if (ce != null) {
+                // Return the ConnectionException as the direct cause of ReportException.
+                // The reason to skip SOAPFaultException is because Wicket throws WicketNotSerializableException
+                // due to com.sun.xml.messaging.saaj.soap.ver1_1.SOAPPart1_1Impl not serializable.
+                // (bugzilla 6856)
+                throw new ReportException( "Cannot contact gateway '"+(host+":"+port)+"'.", ce );
+            }
+            throw sfe;
         } catch ( GatewayException ge ) {
             throw new ReportException( "Error submitting report generation to gateway '"+(host+":"+port)+"'.", ge );
         } catch ( ReportApi.ReportException re ) {
