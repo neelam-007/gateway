@@ -19,7 +19,6 @@ import com.l7tech.policy.assertion.annotation.RequiresSOAP;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Aug 4, 2004<br/>
- * $Id$<br/>
  */
 @ProcessesRequest
 @RequiresSOAP(wss=true)
@@ -36,10 +35,8 @@ public class SecureConversation extends SecurityHeaderAddressableSupport {
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Secure Conversation");
-        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/network.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME,  "WS Secure Conversation");
-        meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
+        meta.put(AssertionMetadata.SHORT_NAME, "WS Secure Conversation");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
 
