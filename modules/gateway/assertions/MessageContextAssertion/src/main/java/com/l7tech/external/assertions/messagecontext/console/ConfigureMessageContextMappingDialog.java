@@ -228,5 +228,7 @@ public class ConfigureMessageContextMappingDialog extends JDialog {
         keyStatusLabel.setVisible(keyStatusLabelVisible);
         valueStatusLabel.setVisible(valueStatusLabelVisible);
         okButton.setEnabled(okButtonEnabled);
+
+        ConfigureMessageContextMappingDialog.this.pack();
     }
 }
