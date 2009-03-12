@@ -76,7 +76,8 @@ public abstract class Authorizer {
                         ScopePredicate pred = perm.getScope().iterator().next();
                         if ( pred instanceof ScopeEvaluator ) {
                             try {
-                                return ((ScopeEvaluator)pred).matches( attemptedEntityOperation.getEntity() );
+                                if (((ScopeEvaluator)pred).matches( attemptedEntityOperation.getEntity() ))
+                                    return true;
                             } catch ( Exception e ) {
                                 // check other permissions
                             }
@@ -90,9 +91,9 @@ public abstract class Authorizer {
                 // EntityType and Operation already match
                 return true;
             } else if (attempted instanceof AttemptedReadAll) {
-                return perm.getScope().isEmpty();
+                if ( perm.getScope().isEmpty() ) return true;
             } else if (attempted instanceof AttemptedDeleteAll) {
-                return perm.getScope().isEmpty();
+                if ( perm.getScope().isEmpty() ) return true;
             } else if (attempted instanceof AttemptedUpdateAny){
                 // EntityType and Operation already match
                 return true;
