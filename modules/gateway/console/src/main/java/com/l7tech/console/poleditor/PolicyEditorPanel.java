@@ -36,6 +36,7 @@ import com.l7tech.util.ResourceUtils;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.HtmlUtil;
 import com.l7tech.common.io.XmlUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -1192,7 +1193,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 if (!TopComponents.getInstance().isConnectionLost()) {
                     int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getTopParent(),
                       "<html><center><b>Do you want to save changes to service policy " +
-                      "for<br> '" + subjectName + "' ?</b><br>The changed policy will not be activated.</center></html>",
+                      "for<br> '" + HtmlUtil.escapeHtmlCharacters(subjectName) + "' ?</b><br>The changed policy will not be activated.</center></html>",
                       "Save Service Policy",
                       JOptionPane.YES_NO_CANCEL_OPTION));
                     if (answer == JOptionPane.YES_OPTION) {
