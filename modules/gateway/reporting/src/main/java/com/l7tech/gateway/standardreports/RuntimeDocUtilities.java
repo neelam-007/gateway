@@ -908,7 +908,7 @@ public class RuntimeDocUtilities {
 
         for (String s : mappingValues) {
             if (!first) {
-                if (!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append("\\n");
+                if (!s.equals(Utilities.SQL_PLACE_HOLDER)) sb.append("\n");
             }
             first = false;
             if (!s.equals(Utilities.SQL_PLACE_HOLDER))
@@ -1209,11 +1209,21 @@ public class RuntimeDocUtilities {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < stringToEscape.length(); i++) {
             char c = stringToEscape.charAt(i);
-            if (c == '\\') {
-                sb.append("\\\\");
-            } else if (c == '"') {
-                sb.append("\\\"");
-            } else sb.append(c);
+
+            switch (c) {
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                default:
+                    sb.append(c);
+
+            }
         }
         return sb.toString();
     }
