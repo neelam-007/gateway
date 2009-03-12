@@ -108,8 +108,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                                                           boolean isSelected,
                                                           boolean cellHasFocus) {
                 Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                IdentityProviderConfig ipc = (IdentityProviderConfig)value;
-                setText(ipc.getName());
+                if (value != null) {
+                    IdentityProviderConfig ipc = (IdentityProviderConfig) value;
+                    setText(ipc.getName());
+                }
                 return c;
             }
         });
