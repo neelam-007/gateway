@@ -756,7 +756,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             return keyEntry.getCertificate();
         }
 
-        public Object getKeyType() {
+        public String getKeyType() {
             if (keyType == null) {
                 PublicKey publicKey = getCertificate().getPublicKey();
                 String alg = publicKey.getAlgorithm();

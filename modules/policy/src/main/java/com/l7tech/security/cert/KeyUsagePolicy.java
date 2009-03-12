@@ -1,7 +1,6 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.common.io.CertUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -18,12 +17,12 @@ public class KeyUsagePolicy {
     private final Set<KeyUsageActivity> activityBlanketPermits;
 
     /** for rules that require at least one keyUsage bit. */
-    private final Map<KeyUsageActivity, List<PermitRule>> activityKuPermits;
+    private final Map<KeyUsageActivity, List<KeyUsagePermitRule>> activityKuPermits;
 
     /** for rules that do not require any keyUsage bits but require at least one extended key usage OID. */
-    private final Map<KeyUsageActivity, List<PermitRule>> activityEkuPermits;
+    private final Map<KeyUsageActivity, List<KeyUsagePermitRule>> activityEkuPermits;
 
-    private KeyUsagePolicy(Set<KeyUsageActivity> activityBlanketPermits, Map<KeyUsageActivity, List<PermitRule>> activityKuPermits, Map<KeyUsageActivity, List<PermitRule>> activityEkuPermits) {
+    private KeyUsagePolicy(Set<KeyUsageActivity> activityBlanketPermits, Map<KeyUsageActivity, List<KeyUsagePermitRule>> activityKuPermits, Map<KeyUsageActivity, List<KeyUsagePermitRule>> activityEkuPermits) {
         this.activityBlanketPermits = Collections.unmodifiableSet(activityBlanketPermits.isEmpty()
                                                                             ? EnumSet.noneOf(KeyUsageActivity.class)
                                                                             : EnumSet.copyOf(activityBlanketPermits));
@@ -40,6 +39,31 @@ public class KeyUsagePolicy {
         return Collections.unmodifiableMap(ret);
     }
 
+    /**
+     * Create a new KeyUsagePolicy from the specified rules.
+     *
+     * @param blanketPermits  activites which should always be permitted regardless of critical key usage or ext. key usage, or null
+     * @param keyUsagePermits permit rules pertaining to key usage, or null.  Any of these rules that have ext. key usage requirements will never be satisfied.
+     * @param extKeyUsagePermits permit rules pertatining to ext key usage, or null.  Any of these rules that have key usage requirements will never be satisfied.
+     * @return a KeyUsagePolicy that will enforce the specified rules.  Never null.
+     */
+    public static KeyUsagePolicy fromRules(Set<KeyUsageActivity> blanketPermits,
+                                           Map<KeyUsageActivity, List<KeyUsagePermitRule>> keyUsagePermits,
+                                           Map<KeyUsageActivity, List<KeyUsagePermitRule>> extKeyUsagePermits)
+    {
+        if (blanketPermits == null) blanketPermits = Collections.emptySet();
+        if (keyUsagePermits == null) keyUsagePermits = Collections.emptyMap();
+        if (extKeyUsagePermits == null) extKeyUsagePermits = Collections.emptyMap();
+        return new KeyUsagePolicy(blanketPermits, keyUsagePermits, extKeyUsagePermits);
+    }
+
+    /**
+     * Create a new KeyUsagePolicy from the specified policy XML.
+     *
+     * @param xml the policy XML to parse.  Required.
+     * @return a KeyUsagePolicy instance that will enforce the specified policy.  Never null.
+     * @throws SAXException if the policy cannot be parsed or is invalid.
+     */
     public static KeyUsagePolicy fromXml(String xml) throws SAXException {
         Document doc = XmlUtil.stringToDocument(xml);
         final Element root = doc.getDocumentElement();
@@ -48,12 +72,12 @@ public class KeyUsagePolicy {
         ns(root);
 
         final Set<KeyUsageActivity> blankets = new HashSet<KeyUsageActivity>();
-        final Map<KeyUsageActivity, List<PermitRule>> kuPermits = new HashMap<KeyUsageActivity, List<PermitRule>>();
-        final Map<KeyUsageActivity, List<PermitRule>> ekuPermits = new HashMap<KeyUsageActivity, List<PermitRule>>();
+        final Map<KeyUsageActivity, List<KeyUsagePermitRule>> kuPermits = new HashMap<KeyUsageActivity, List<KeyUsagePermitRule>>();
+        final Map<KeyUsageActivity, List<KeyUsagePermitRule>> ekuPermits = new HashMap<KeyUsageActivity, List<KeyUsagePermitRule>>();
 
         List<Element> permits = XmlUtil.findChildElementsByName(root, NAMESPACE_URI, "permit");
         for (Element permit : permits) {
-            PermitRule rule = PermitRule.valueOf(permit);
+            KeyUsagePermitRule rule = KeyUsagePermitRule.valueOf(permit);
             KeyUsageActivity activity = rule.getActivity();
 
             if (activity != null) {
@@ -70,20 +94,20 @@ public class KeyUsagePolicy {
 
     // File away the specified rule into the appropriate collection
     private static void collectRuleForActivity(Set<KeyUsageActivity> blankets,
-                                               Map<KeyUsageActivity, List<PermitRule>> kuPermits,
-                                               Map<KeyUsageActivity, List<PermitRule>> ekuPermits,
+                                               Map<KeyUsageActivity, List<KeyUsagePermitRule>> kuPermits,
+                                               Map<KeyUsageActivity, List<KeyUsagePermitRule>> ekuPermits,
                                                KeyUsageActivity activity,
-                                               PermitRule rule)
+                                               KeyUsagePermitRule rule)
     {
         if (rule.isBlanket()) {
             blankets.add(activity);
         } else if (rule.isKeyUsage()) {
             if (!kuPermits.containsKey(activity))
-                kuPermits.put(activity, new ArrayList<PermitRule>());
+                kuPermits.put(activity, new ArrayList<KeyUsagePermitRule>());
             kuPermits.get(activity).add(rule);
         } else {
             if (!ekuPermits.containsKey(activity))
-                ekuPermits.put(activity, new ArrayList<PermitRule>());
+                ekuPermits.put(activity, new ArrayList<KeyUsagePermitRule>());
             ekuPermits.get(activity).add(rule);
         }
     }
@@ -106,11 +130,11 @@ public class KeyUsagePolicy {
         if (activityBlanketPermits.contains(activity))
             return true;
 
-        final List<PermitRule> permitRules = activityKuPermits.get(activity);
+        final List<KeyUsagePermitRule> permitRules = activityKuPermits.get(activity);
         if (permitRules == null)
             return false;
 
-        for (PermitRule rule : permitRules) {
+        for (KeyUsagePermitRule rule : permitRules) {
             if (rule.isKeyUsagePermitted(certKeyUsageBits))
                 return true;
         }
@@ -137,11 +161,11 @@ public class KeyUsagePolicy {
         if (activityBlanketPermits.contains(activity))
             return true;
 
-        final List<PermitRule> permitRules = activityEkuPermits.get(activity);
+        final List<KeyUsagePermitRule> permitRules = activityEkuPermits.get(activity);
         if (permitRules == null)
             return false;
 
-        for (PermitRule rule : permitRules) {
+        for (KeyUsagePermitRule rule : permitRules) {
             if (rule.isAllowAnyKeyPurpose() || rule.isAllExtendedKeyUsagesPermitted(certKeyPurposeOidStrings))
                 return true;
         }
@@ -152,109 +176,5 @@ public class KeyUsagePolicy {
     private static void ns(Element element) throws SAXException {
         if (!NAMESPACE_URI.equals(element.getNamespaceURI()))
             throw new SAXException("Element " + element.getNodeName() + " not in namespace " + NAMESPACE_URI);
-    }
-
-    static class PermitRule {
-        private final KeyUsageActivity activity;
-        private final int requiredKeyUsageBits;
-        private final List<String> requiredKeyPurposeOidStrings;
-        private final boolean allowAnyKeyPurpose;
-        private final boolean blanket;
-
-        PermitRule(KeyUsageActivity activity, int requiredKeyUsageBits, List<String> requiredKeyPurposeOidStrings) {
-            this.activity = activity;
-            this.requiredKeyUsageBits = requiredKeyUsageBits;
-            this.requiredKeyPurposeOidStrings = Collections.unmodifiableList(requiredKeyPurposeOidStrings);
-            this.allowAnyKeyPurpose = requiredKeyPurposeOidStrings.isEmpty();
-            this.blanket = requiredKeyUsageBits == 0 && allowAnyKeyPurpose;
-        }
-
-        static PermitRule valueOf(Element permitElement) throws SAXException {
-            final String activityName = permitElement.getAttribute("action");
-            KeyUsageActivity activity = null;
-            try {
-                if (activityName != null && activityName.length() > 0)
-                    activity = KeyUsageActivity.valueOf(activityName);
-                int kubits = 0;
-                List<String> purposeOidStrings = new ArrayList<String>();
-
-                List<Element> requirements = XmlUtil.findChildElementsByName(permitElement, NAMESPACE_URI, "req");
-                for (Element requirement : requirements) {
-                    String str = XmlUtil.getTextValue(requirement);
-
-                    // Try to parse as key usage name
-                    Integer kubit = CertUtils.KEY_USAGE_BITS_BY_NAME.get(str);
-                    if (kubit != null) {
-                        kubits |= kubit;
-                        continue;
-                    }
-
-                    // Try to parse as well-known extended key usage name
-                    String kpid = CertUtils.KEY_PURPOSE_IDS_BY_NAME.get(str);
-                    if (kpid != null) {
-                        purposeOidStrings.add(kpid);
-                        continue;
-                    }
-
-                    // Try to parse as dotted decimal OID for extended key usage
-                    purposeOidStrings.add(str);
-                }
-
-                return new PermitRule(activity, kubits, purposeOidStrings);
-            } catch (IllegalArgumentException e) {
-                throw new SAXException("Unrecognized activity name in action attribute: " + activityName, e);
-            }
-        }
-
-        public boolean isBlanket() {
-            return blanket;
-        }
-
-        public boolean isKeyUsage() {
-            return requiredKeyUsageBits != 0;
-        }
-
-        public boolean isAllowAnyKeyPurpose() {
-            return allowAnyKeyPurpose;
-        }
-
-        /** @return the activity this rule pertains to, or null if it pertains to all activities. */
-        public KeyUsageActivity getActivity() {
-            return activity;
-        }
-
-        /**
-         * Check if the all key usage bits required by this permit rule are enabled in the specified
-         * certificate key usage bits.
-         * <p/>
-         * Before calling this method caller should ensure this isn't a blanket permit rule by
-         * checking {@link #isBlanket()}.
-         *
-         * @param certKeyUsageBits the key usage bits from the certificate.
-         * @return true iff. all key usage bits required by this permit rule are enabled by this certificate.
-         */
-        public boolean isKeyUsagePermitted(int certKeyUsageBits) {
-            return (requiredKeyUsageBits & certKeyUsageBits) == requiredKeyUsageBits;
-        }
-
-        /**
-         * Check if all the extended key usage OIDs required by this permit rule are enabled in the specified
-         * certificate key usage OID list.
-         * <p/>
-         * Before calling this method caller should ensure this isn't a blanket permit rule
-         * by checking {@link #isBlanket}, and should also ensure that this isn't an "allow any key purpose"
-         * rule by calling {@link #isAllowAnyKeyPurpose()}.
-         *
-         * @param certKeyUsageOidStrings the extended key usage OIDs enabled by the certificate.
-         * @return true if all key purpose OIDs required by this pertmit rule are provided by the certificate, OR
-         *              if the certificate provides the "any" extended key usage.
-         */
-        public boolean isAllExtendedKeyUsagesPermitted(Collection<String> certKeyUsageOidStrings) {
-            for (String reqkp : requiredKeyPurposeOidStrings) {
-                if (!certKeyUsageOidStrings.contains(reqkp))
-                    return false;
-            }
-            return true;
-        }
     }
 }

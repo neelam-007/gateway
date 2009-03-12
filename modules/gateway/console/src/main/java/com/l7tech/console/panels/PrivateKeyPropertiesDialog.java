@@ -11,18 +11,17 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.PasswordDoubleEntryDialog;
 import com.l7tech.objectmodel.*;
-import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.cert.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.HexUtils;
@@ -40,6 +39,9 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateParsingException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -148,7 +150,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         if (subject.getKeystore().isReadonly())
             location = location + "  (Read-Only)";
         locationField.setText(location);
-        typeField.setText(subject.getKeyType().toString());
+        typeField.setText(subject.getKeyType());
         populateList();
 
         defaultSslLabel.setVisible(subject.isDefaultSsl());
@@ -258,7 +260,47 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     }
 
     private void makeDefaultSsl() {
+        // Check for RSA cert that disallows keyEncipherment key usage, since this can lock you out of the SSM.  (Bug #6908)
+        if (subject.getKeyType().toUpperCase().startsWith("RSA") && !isCertChainSslCapable(subject)) {
+            DialogDisplayer.showSafeConfirmDialog(
+                    makeDefaultSSLButton,
+                    "This key's certificate chain has a key usage disallowing use as an SSL server cert.\n" +
+                    "Many SSL clients -- including the SecureSpan Manager, and web browsers -- will refuse\n" +
+                    "to connect to an SSL server that uses this key for its SSL server cert." +
+                    "\n\nAre you sure you want the cluster to use this as the default SSL private key?",
+                    "Unsuitable SSL Certificate",
+                    JOptionPane.YES_NO_CANCEL_OPTION,
+                    JOptionPane.WARNING_MESSAGE,
+                    new DialogDisplayer.OptionListener() {
+                        public void reportResult(int option) {
+                            if (option == JOptionPane.YES_OPTION)
+                                doMakeDefaultSsl();
+                        }
+                    });
+            return;
+        }
+        doMakeDefaultSsl();
+    }
+
+    private void doMakeDefaultSsl() {
         confirmPutClusterProperty(makeDefaultSSLButton, "SSL", DefaultAliasTracker.CLUSTER_PROP_DEFAULT_SSL, subject);
+    }
+
+    private KeyUsagePolicy makeRsaSslServerKeyUsagePolicy() {
+        HashMap<KeyUsageActivity, List<KeyUsagePermitRule>> kuPermits = new HashMap<KeyUsageActivity, List<KeyUsagePermitRule>>();
+        KeyUsagePermitRule permitRule = new KeyUsagePermitRule(KeyUsageActivity.sslServerRemote, CertUtils.KEY_USAGE_BITS_BY_NAME.get("keyEncipherment"));
+        kuPermits.put(KeyUsageActivity.sslServerRemote, Arrays.<KeyUsagePermitRule>asList(permitRule));
+        return KeyUsagePolicy.fromRules(null, kuPermits, null);
+    }
+
+    private boolean isCertChainSslCapable(PrivateKeyManagerWindow.KeyTableRow subject) {
+        try {
+            return new KeyUsageChecker(makeRsaSslServerKeyUsagePolicy(), KeyUsageChecker.ENFORCEMENT_MODE_ALWAYS).permitsActivity(KeyUsageActivity.sslServerRemote, subject.getCertificate());
+        } catch (CertificateParsingException e) {
+            // Can't happen by this point
+            logger.log(Level.WARNING, "Unable to parse certificate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return false;
+        }
     }
 
     private void makeDefaultCa() {

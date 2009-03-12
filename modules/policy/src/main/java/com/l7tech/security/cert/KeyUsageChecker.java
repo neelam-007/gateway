@@ -31,6 +31,10 @@ import java.util.logging.Logger;
 public class KeyUsageChecker {
     private static final Logger logger = Logger.getLogger(KeyUsageChecker.class.getName());
 
+    public static final String ENFORCEMENT_MODE_IGNORE = "IGNORE";
+    public static final String ENFORCEMENT_MODE_ALWAYS = "ALWAYS";
+
+
     /** Default key usage policy to use if no policyFile or policyXml specified. */
     static final String DEFAULT_POLICY_RESOURCE = "com/l7tech/security/cert/DefaultKeyUsagePolicy.xml";
 
@@ -59,7 +63,7 @@ public class KeyUsageChecker {
      */
     public KeyUsageChecker(KeyUsagePolicy policy, String enforcementMode) {
         this.policy = policy;
-        this.enforcePolicy = enforcementMode == null || !("IGNORE".equalsIgnoreCase(enforcementMode.trim()));
+        this.enforcePolicy = enforcementMode == null || !(ENFORCEMENT_MODE_IGNORE.equalsIgnoreCase(enforcementMode.trim()));
     }
 
     public static KeyUsageChecker getDefault() {
