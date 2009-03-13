@@ -41,12 +41,27 @@ confirmedMessage() {
 }
 
 confirmAction() {
-    confirmed=1
+    confirmed=2
     echo -n "${1} [y/n]: "
-    read choice
-    if [ "${choice}" == "y" ] || [ "${choice}" == "yes" ] ; then
-        confirmed=0
-    fi
+
+    while [ "${confirmed}" -eq 2 ]
+    do
+        read choice
+        choice=$(echo "${choice}" | tr "[:upper:]" "[:lower:]")
+
+        case $choice in
+            "y")     confirmed=0;;
+            "yes")   confirmed=0;;
+            "t")     confirmed=0;;
+            "true")  confirmed=0;;
+            "n")     confirmed=1;;
+            "no")    confirmed=1;;
+            "f")     confirmed=1;;
+            "false") confirmed=1;;
+            *) echo -n "That is not a valid choice [y/n]: ";;
+        esac
+    done
+
     return ${confirmed}
 }
 
