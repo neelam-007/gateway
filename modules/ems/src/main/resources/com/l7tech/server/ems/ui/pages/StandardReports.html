@@ -94,6 +94,7 @@
         var operationRadioButton;
 
         var summaryChartCheckBox;
+        var pageBreakCheckBox;
 
         var relativeTimePeriodTextBox;
         var relativeTimePeriodHint;
@@ -804,6 +805,7 @@
                             settings.timeInterval ? settings.timeInterval.unit : null);
             addGroupings(settings.groupings);
             summaryChartCheckBox.checked = settings.summaryChart;
+            pageBreakCheckBox.checked = !settings.isIgnoringPagination;
             setReportName(settings.reportName);
         }
 
@@ -863,6 +865,7 @@
                 settings.groupings.push(grouping);
             }
             settings.summaryChart = summaryChartCheckBox.checked;
+            settings.isIgnoringPagination = !pageBreakCheckBox.checked;
             settings.summaryReport = noTimeIntervalRadioButton.checked;
             settings.reportName = reportNameTextBox.value;
             return settings;
@@ -1752,6 +1755,7 @@
             messageWhenNoGrouping           = document.getElementById('messageWhenNoGrouping');
             groupingTableBody               = document.getElementById('groupingTableBody');
             summaryChartCheckBox            = document.getElementById('summaryChartCheckBox');
+            pageBreakCheckBox               = document.getElementById('pageBreakCheckBox');
             reportNameTextBox               = document.getElementById('reportNameTextBox');
 
             l7.Widget.initHourlyDropDown(absoluteTimePeriodFromHourDropDown);
@@ -2070,6 +2074,13 @@
                                     <td>
                                         <input id="summaryChartCheckBox" type="checkbox" checked/>
                                         <label for="summaryChartCheckBox">Include Summary Chart</label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Formatting:</th>
+                                    <td>
+                                        <input id="pageBreakCheckBox" type="checkbox"/>
+                                        <label for="pageBreakCheckBox">Add page breaks to report output</label>
                                     </td>
                                 </tr>
                                 <tr>
