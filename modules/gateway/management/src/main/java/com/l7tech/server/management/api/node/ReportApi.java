@@ -466,7 +466,7 @@ public interface ReportApi {
         /**
          * IS_IGNORE_PAGINATION when set to true, tells the Jasper engine to create the report as one long page
          */
-        //public static final String IS_IGNORE_PAGINATION = "IS_IGNORE_PAGINATION";
+        public static final String IS_IGNORE_PAGINATION = "IS_IGNORE_PAGINATION";
 
         //interval only ssg params
         public static final String SUB_INTERVAL_SUB_REPORT = "SUB_INTERVAL_SUB_REPORT";
@@ -487,7 +487,7 @@ public interface ReportApi {
 
         public static final String[] COMMON_PARAMS = new String[]{SPECIFIC_TIME_ZONE, IS_RELATIVE, IS_ABSOLUTE,
                 REPORT_RAN_BY, SERVICE_ID_TO_NAME_MAP, SERVICE_ID_TO_OPERATIONS_MAP, KEYS_TO_LIST_FILTER_PAIRS,
-                IS_CONTEXT_MAPPING, IS_DETAIL, PRINT_CHART};
+                IS_CONTEXT_MAPPING, IS_DETAIL, PRINT_CHART, IS_IGNORE_PAGINATION};
 
         public static final String[] INTERVAL_PARAMS = new String[]{INTERVAL_TIME_UNIT, INTERVAL_NUM_OF_TIME_UNITS};
     }

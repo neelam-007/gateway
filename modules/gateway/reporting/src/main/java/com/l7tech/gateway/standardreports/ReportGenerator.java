@@ -269,8 +269,13 @@ public class ReportGenerator {
         Map sMap = null;
         InputStream styleIn = null;
         try {
+            Map<String, Object> paramsForStyleGenerator = new HashMap<String, Object>();
+            paramsForStyleGenerator.putAll(parameters);
             styleIn = ReportGenerator.class.getResourceAsStream("/StyleGenerator.jasper");
-            JasperPrint jp = JasperFillManager.fillReport(styleIn, parameters);
+            //do not pass the Map 'parameters' into fillReport as this map is returned to the caller
+            //and will have some parameters overwritten by fillReport, which is not desierable as we already
+            //have user supplied values for them e.g. IS_IGNORE_PAGINATION and possibly time zone also
+            JasperPrint jp = JasperFillManager.fillReport(styleIn, paramsForStyleGenerator);
             sMap = jp.getStylesMap();
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error creating report style template.", e);
@@ -338,10 +343,6 @@ public class ReportGenerator {
             //added.
             reportParams.put(ReportApi.ReportParameters.IS_USING_KEYS, isUsingKeys);
         }
-
-        //Tell all reports explicitly to ignore pagniation. This is always set in the isIgnorePagination attribute
-        //of the jasperReport element, however the implementation seems to ignore it
-        //reportParams.put(ReportApi.ReportParameters.IS_IGNORE_PAGINATION, new Boolean(true));
 
         String sql;
         //this is a context mapping query using keys 1-5 and auth user

@@ -68,6 +68,10 @@ public class ReportApp {
 
     public static final String OPERATIONS = "OPERATIONS";
 
+    private static final String SPECIFIC_TIME_ZONE = "SPECIFIC_TIME_ZONE";
+    private static final String IS_USING_KEYS = "IS_USING_KEYS";
+    private static final String IS_IGNORE_PAGINATION = "IS_IGNORE_PAGINATION";
+
     //db props
     private static final String CONNECTION_STRING = "CONNECTION_STRING";
     private static final String DB_USER = "DB_USER";
@@ -75,7 +79,6 @@ public class ReportApp {
 
     //Non report params, just used in ReportApp
     private static final String HOURLY_MAX_RETENTION_NUM_DAYS = "HOURLY_MAX_RETENTION_NUM_DAYS";
-    private static final Properties prop = new Properties();
     private static final String STYLES_FROM_TEMPLATE = "STYLES_FROM_TEMPLATE";
     private static final String REPORT_SCRIPTLET = "REPORT_SCRIPTLET";
     private static final String SUB_INTERVAL_SUB_REPORT = "SUB_INTERVAL_SUB_REPORT";
@@ -89,9 +92,7 @@ public class ReportApp {
     private static final String REPORTING_RELATIVE_PATH = "../../../../../../../../gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports";
     private static final String SERVICE_ID_TO_NAME_MAP = "SERVICE_ID_TO_NAME_MAP";
 
-    private static final String SPECIFIC_TIME_ZONE = "SPECIFIC_TIME_ZONE";
-    private static final String IS_USING_KEYS = "IS_USING_KEYS";
-    private static final String IS_IGNORE_PAGINATION = "IS_IGNORE_PAGINATION";
+    public static final Properties prop = new Properties();
 
     public ReportApp() {
     }
@@ -521,9 +522,6 @@ public class ReportApp {
 
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
 
-//        parameters.put(IS_IGNORE_PAGINATION, new Boolean(true));
-
-
         String xslStr = getResAsString(REPORTING_RELATIVE_PATH + "/PS_SummaryTransform.xsl");
         String xmlSrc = getResAsString(REPORTING_RELATIVE_PATH + "/PS_Summary_Template.jrxml");
         //String xmlSrc = getResAsString(SKUNKWORK_RELATIVE_PATH+"/PS_Summary_Template_New_Title.jrxml");
@@ -836,6 +834,9 @@ public class ReportApp {
         parameters.put(REPORT_TYPE, prop.getProperty(REPORT_TYPE));
         parameters.put(REPORT_RAN_BY, prop.getProperty(REPORT_RAN_BY));
 
+        Boolean ignorePageBreaks = Boolean.valueOf(prop.getProperty(IS_IGNORE_PAGINATION));
+        parameters.put(IS_IGNORE_PAGINATION, ignorePageBreaks);
+
         Boolean b = Boolean.parseBoolean(prop.getProperty(IS_CONTEXT_MAPPING));
         parameters.put(IS_CONTEXT_MAPPING, b);
 
@@ -904,8 +905,6 @@ public class ReportApp {
         //Only required because jasper reports for some reason ignores the value of scriptletClass from the
         //jasperreport element attribute, so specifying it as a parameter explicitly fixes this issue
         parameters.put(REPORT_SCRIPTLET, scriplet);
-
-//        parameters.put(IS_IGNORE_PAGINATION, new Boolean(true));
 
         return parameters;
     }

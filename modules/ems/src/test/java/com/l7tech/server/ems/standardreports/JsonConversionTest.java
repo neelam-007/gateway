@@ -8,10 +8,8 @@ package com.l7tech.server.ems.standardreports;
 
 import org.junit.Test;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.mortbay.util.ajax.JSON;
 import com.l7tech.server.management.api.node.ReportApi;
-import com.l7tech.server.ems.standardreports.SummaryReportJsonConvertor;
 import com.l7tech.gateway.standardreports.Utilities;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 
@@ -637,8 +635,61 @@ public class JsonConversionTest {
         Assert.assertTrue("Exception should have been thrown as absolute date end is before start", exception);
     }
 
+    @Test
+    public void testIgnorePageBreaks() throws Exception {
+        Object o = JSON.parse(psRelativeJsonSummary);
+        Map jsonMap = (Map) o;
+        JsonReportParameterConvertor convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        Collection<ReportSubmissionClusterBean> reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+        Assert.assertNotNull(reportClusterBeans);
+
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
+
+            ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
+
+            Collection<ReportApi.ReportSubmission.ReportParam> reportParams = reportSubmission.getParameters();
+            Assert.assertNotNull(reportParams);
+
+            Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
+                    new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
+            for (ReportApi.ReportSubmission.ReportParam rP : reportParams) {
+                paramMap.put(rP.getName(), rP);
+            }
+
+            ReportApi.ReportSubmission.ReportParam isIgnorePaginationParam = paramMap.get(ReportApi.ReportParameters.IS_IGNORE_PAGINATION);
+            Boolean isIgnorePagination = (Boolean) isIgnorePaginationParam.getValue();
+            Assert.assertTrue("isIgnorePagination should be true", isIgnorePagination);
+        }
+
+
+        o = JSON.parse(psRelativeJsonSummaryTest);
+        jsonMap = (Map) o;
+        convertor = JsonReportParameterConvertorFactory.getConvertor(jsonMap);
+        reportClusterBeans = convertor.getReportSubmissions(jsonMap, "Donal");
+        Assert.assertNotNull(reportClusterBeans);
+
+        for (ReportSubmissionClusterBean clusterBean : reportClusterBeans) {
+
+            ReportApi.ReportSubmission reportSubmission = clusterBean.getReportSubmission();
+
+            Collection<ReportApi.ReportSubmission.ReportParam> reportParams = reportSubmission.getParameters();
+            Assert.assertNotNull(reportParams);
+
+            Map<String, ReportApi.ReportSubmission.ReportParam> paramMap =
+                    new HashMap<String, ReportApi.ReportSubmission.ReportParam>();
+            for (ReportApi.ReportSubmission.ReportParam rP : reportParams) {
+                paramMap.put(rP.getName(), rP);
+            }
+
+            ReportApi.ReportSubmission.ReportParam isIgnorePaginationParam = paramMap.get(ReportApi.ReportParameters.IS_IGNORE_PAGINATION);
+            Boolean isIgnorePagination = (Boolean) isIgnorePaginationParam.getValue();
+            Assert.assertFalse("isIgnorePagination should be false", isIgnorePagination);
+        }
+    }
+
     private final static String psRelativeJsonSummaryTest = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
+            "    \"isIgnoringPagination\" : false," +
             "    \"entities\" : [" +
             "        {" +
             "            \"clusterId\"          : \"" + cluster1 + "\"," +
@@ -691,6 +742,7 @@ public class JsonConversionTest {
 
     private final static String psRelativeJsonSummary = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
+            "    \"isIgnoringPagination\" : true," +
             "    \"entities\" : [" +
             "        {" +
             "            \"clusterId\"          : \"" + cluster1 + "\"," +
@@ -758,8 +810,10 @@ public class JsonConversionTest {
             "    \"reportName\" : \"My Report\"" +
             "}";
 
+
     private final static String psRelativeJsonSummaryMultipleKeyValues = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
+            "    \"isIgnoringPagination\" : true," +
             "    \"entities\" : [" +
             "        {" +
             "            \"clusterId\"          : \"" + cluster1 + "\"," +
@@ -839,6 +893,7 @@ public class JsonConversionTest {
 
     private final static String usageRelativeJson = "{\"reportType\":\"usage\",    " +
             "    \"entityType\" : \"publishedService\"," +
+            "    \"isIgnoringPagination\" : true," +
             "    \"entities\" : [" +
             "        {" +
             "            \"clusterId\"          : \"" + cluster1 + "\"," +
@@ -884,6 +939,7 @@ public class JsonConversionTest {
 
     private final static String usageIntervalRelativeJson = "{\"reportType\":\"usage\",    " +
             "    \"entityType\" : \"publishedService\"," +
+            "    \"isIgnoringPagination\" : true," +
             "    \"entities\" : [" +
             "        {" +
             "            \"clusterId\"          : \"" + cluster1 + "\"," +
@@ -929,6 +985,7 @@ public class JsonConversionTest {
 
     private final static String psRelativeJsonWithAuthUser = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
+            "    \"isIgnoringPagination\" : true," +
             "    \"entities\" : [" +
             "        {" +
             "            \"clusterId\"          : \"" + cluster1 + "\"," +
@@ -998,6 +1055,7 @@ public class JsonConversionTest {
 
     private final static String psRelativeIntervalJson = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
+            "    \"isIgnoringPagination\" : true," +
             "    \"entities\" : [" +
             "        {" +
             "            \"clusterId\"          : \"" + cluster1 + "\"," +
@@ -1067,6 +1125,7 @@ public class JsonConversionTest {
 
     private final static String usageRelativeJsonSummaryTest_MissingKey = "{\"reportType\":\"usage\",    " +
             "    \"entityType\" : \"publishedService\"," +
+            "    \"isIgnoringPagination\" : true," +
             "    \"entities\" : [" +
             "        {" +
             "            \"clusterId\"          : \"" + cluster1 + "\"," +
@@ -1131,6 +1190,7 @@ public class JsonConversionTest {
 
     private final static String usageRelativeJsonSummaryTest_ClusterMissingKey = "{\"reportType\":\"usage\",    " +
             "    \"entityType\" : \"publishedService\"," +
+            "    \"isIgnoringPagination\" : true," +
             "    \"entities\" : [" +
             "        {" +
             "            \"clusterId\"          : \"" + cluster1 + "\"," +
@@ -1190,6 +1250,7 @@ public class JsonConversionTest {
 
     private final static String invalidTimeZone = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
+            "    \"isIgnoringPagination\" : true," +
             "    \"entities\" : [" +
             "        {" +
             "            \"clusterId\"          : \"" + cluster1 + "\"," +
@@ -1259,6 +1320,7 @@ public class JsonConversionTest {
 
     private final static String usageOnlyMappingIsAuthUser = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
+            "    \"isIgnoringPagination\" : true," +
             "    \"entities\" : [" +
             "        {" +
             "            \"clusterId\"          : \"" + cluster1 + "\"," +
@@ -1318,6 +1380,7 @@ public class JsonConversionTest {
 
     private final static String absoluteInvalidDateFormat = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
+            "    \"isIgnoringPagination\" : true," +
             "    \"entities\" : [" +
             "        {" +
             "            \"clusterId\"          : \"" + cluster1 + "\"," +
@@ -1377,6 +1440,7 @@ public class JsonConversionTest {
 
     private final static String absoluteInvalidDatePeriod = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
+            "    \"isIgnoringPagination\" : true," +
             "    \"entities\" : [" +
             "        {" +
             "            \"clusterId\"          : \"" + cluster1 + "\"," +
@@ -1436,6 +1500,7 @@ public class JsonConversionTest {
 
     private final static String psRelativeJsonSummaryOnly1ClusterWithKeys = "{\"reportType\":\"performance\",    " +
             "    \"entityType\" : \"publishedService\"," +
+            "    \"isIgnoringPagination\" : true," +
             "    \"entities\" : [" +
             "        {" +
             "            \"clusterId\"          : \"" + cluster1 + "\"," +
