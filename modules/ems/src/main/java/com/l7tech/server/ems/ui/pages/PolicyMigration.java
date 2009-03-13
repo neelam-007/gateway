@@ -1602,9 +1602,12 @@ public class PolicyMigration extends EsmStandardWebPage {
         builder.append("<p>");
         int count = 0;
         for ( DependencyItem item : dependencies ) {
-            DependencyKey sourceKey = new DependencyKey( request.clusterId, item.asEntityHeader() );
+            ExternalEntityHeader header = item.asEntityHeader();
+            DependencyKey sourceKey = new DependencyKey( request.clusterId, header);
             Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
-            if ( !item.isOptional() && !mappings.dependencyMap.containsKey(mapKey) ) {
+            boolean isNameMapped = mappings.dependencyMap.containsKey(mapKey);
+            if ( ( ! item.isOptional() && ! isNameMapped ) ||
+                 ( ! isNameMapped && header.getValueMapping() == MigrationMappingSelection.REQUIRED && header.getMappedValue() == null) ) {
                 count++;
             }
         }
