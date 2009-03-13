@@ -749,8 +749,8 @@ $F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ", true, Utilities.MAPPING_KEY
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{FRTM_MIN_MAPPING}.equals(new Integer(Integer.MAX_VALUE)))?"-":$V{FRTM_MIN_MAPPING}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{FRTM_MIN_MAPPING}.equals(new Integer(Integer.MAX_VALUE)))?new Integer(0):$V{FRTM_MIN_MAPPING}]]></textFieldExpression>
                     </textField>
                     <staticText>
                         <reportElement
@@ -779,10 +779,10 @@ $F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ", true, Utilities.MAPPING_KEY
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{FRTMX_MAX_MAPPING}.equals(new Integer(Integer.MIN_VALUE)))?"-":$V{FRTMX_MAX_MAPPING}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{FRTMX_MAX_MAPPING}.equals(new Integer(Integer.MIN_VALUE)))?new Integer(0):$V{FRTMX_MAX_MAPPING}]]></textFieldExpression>
                     </textField>
-                    <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
+                    <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -811,8 +811,8 @@ $F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ", true, Utilities.MAPPING_KEY
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{BRTM_MIN_MAPPING}.equals(new Integer(Integer.MAX_VALUE)))?"-":$V{BRTM_MIN_MAPPING}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{BRTM_MIN_MAPPING}.equals(new Integer(Integer.MAX_VALUE)))?new Integer(0):$V{BRTM_MIN_MAPPING}]]></textFieldExpression>
                     </textField>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
@@ -827,10 +827,10 @@ $F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ", true, Utilities.MAPPING_KEY
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{BRTMX_MAX_MAPPING}.equals(new Integer(Integer.MIN_VALUE)))?"-":$V{BRTMX_MAX_MAPPING}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{BRTMX_MAX_MAPPING}.equals(new Integer(Integer.MIN_VALUE)))?new Integer(0):$V{BRTMX_MAX_MAPPING}]]></textFieldExpression>
                     </textField>
-                    <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
+                    <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -846,7 +846,7 @@ $F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ", true, Utilities.MAPPING_KEY
                         <textFieldExpression class="java.lang.Double">
                             <![CDATA[($V{COMPLETED_SUM_MAPPING}.doubleValue() == 0)? new Double(0) : new Double($V{BACK_SUM_MAPPING}.doubleValue()/$V{COMPLETED_SUM_MAPPING}.doubleValue())]]></textFieldExpression>
                     </textField>
-                    <textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false"
+                    <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -860,7 +860,7 @@ $F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ", true, Utilities.MAPPING_KEY
                             <font/>
                         </textElement>
                         <textFieldExpression class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_MAPPING}.doubleValue()>0)?
-new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MAPPING}.doubleValue())/$V{ATTEMPTED_SUM_MAPPING}.doubleValue())))
+new Double(new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPLETED_SUM_MAPPING}.doubleValue())/$V{ATTEMPTED_SUM_MAPPING}.doubleValue()))).doubleValue() * 100)
 :new Double(0)]]></textFieldExpression>
                     </textField>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
@@ -1176,8 +1176,8 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{FRTM_MIN}.equals(new Integer(Integer.MAX_VALUE)))?"-":$V{FRTM_MIN}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{FRTM_MIN}.equals(new Integer(Integer.MAX_VALUE)))?new Integer(0):$V{FRTM_MIN}]]></textFieldExpression>
                     </textField>
                     <staticText>
                         <reportElement
@@ -1206,10 +1206,10 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{FRTMX_MAX}.equals(new Integer(Integer.MIN_VALUE)))?"-":$V{FRTMX_MAX}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{FRTMX_MAX}.equals(new Integer(Integer.MIN_VALUE)))?new Integer(0):$V{FRTMX_MAX}]]></textFieldExpression>
                     </textField>
-                    <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
+                    <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -1238,8 +1238,8 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{BRTM_MIN}.equals(new Integer(Integer.MAX_VALUE)))?"-":$V{BRTM_MIN}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{BRTM_MIN}.equals(new Integer(Integer.MAX_VALUE)))?new Integer(0):$V{BRTM_MIN}]]></textFieldExpression>
                     </textField>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
@@ -1254,10 +1254,10 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{BRTMX_MAX}.equals(new Integer(Integer.MIN_VALUE)))?"-":$V{BRTMX_MAX}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{BRTMX_MAX}.equals(new Integer(Integer.MIN_VALUE)))?new Integer(0):$V{BRTMX_MAX}]]></textFieldExpression>
                     </textField>
-                    <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
+                    <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -1273,7 +1273,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
                         <textFieldExpression class="java.lang.Double">
                             <![CDATA[($V{COMPLETED_SUM}.doubleValue() == 0)? new Double(0) : new Double($V{BACK_SUM_SUM}.doubleValue()/$V{COMPLETED_SUM}.doubleValue())]]></textFieldExpression>
                     </textField>
-                    <textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false"
+                    <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -1287,7 +1287,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && $P{IS_DETAIL}.booleanValue()
                             <font/>
                         </textElement>
                         <textFieldExpression class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM}.doubleValue()>0)?
-new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleValue())/$V{ATTEMPTED_SUM}.doubleValue())))
+new Double(new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleValue())/$V{ATTEMPTED_SUM}.doubleValue()))).doubleValue() * 100)
 :new Double(0)]]></textFieldExpression>
                     </textField>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
@@ -1377,8 +1377,8 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{FRTM_MIN}.equals(new Integer(Integer.MAX_VALUE)))?"-":$V{FRTM_MIN}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{FRTM_MIN}.equals(new Integer(Integer.MAX_VALUE)))?new Integer(0):$V{FRTM_MIN}]]></textFieldExpression>
                     </textField>
                     <staticText>
                         <reportElement
@@ -1407,10 +1407,10 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{FRTMX_MAX}.equals(new Integer(Integer.MIN_VALUE)))?"-":$V{FRTMX_MAX}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{FRTMX_MAX}.equals(new Integer(Integer.MIN_VALUE)))?new Integer(0):$V{FRTMX_MAX}]]></textFieldExpression>
                     </textField>
-                    <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
+                    <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -1439,8 +1439,8 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{BRTM_MIN}.equals(new Integer(Integer.MAX_VALUE)))?"-":$V{BRTM_MIN}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{BRTM_MIN}.equals(new Integer(Integer.MAX_VALUE)))?new Integer(0):$V{BRTM_MIN}]]></textFieldExpression>
                     </textField>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
@@ -1455,10 +1455,10 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{BRTMX_MAX}.equals(new Integer(Integer.MIN_VALUE)))?"-":$V{BRTMX_MAX}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{BRTMX_MAX}.equals(new Integer(Integer.MIN_VALUE)))?new Integer(0):$V{BRTMX_MAX}]]></textFieldExpression>
                     </textField>
-                    <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
+                    <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -1474,7 +1474,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                         <textFieldExpression class="java.lang.Double">
                             <![CDATA[($V{COMPLETED_SUM}.doubleValue() == 0)? new Double(0) : new Double($V{BACK_SUM_SUM}.doubleValue()/$V{COMPLETED_SUM}.doubleValue())]]></textFieldExpression>
                     </textField>
-                    <textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false"
+                    <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -1488,7 +1488,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                             <font/>
                         </textElement>
                         <textFieldExpression class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM}.doubleValue()>0)?
-new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleValue())/$V{ATTEMPTED_SUM}.doubleValue())))
+new Double(new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleValue())/$V{ATTEMPTED_SUM}.doubleValue()))).doubleValue() * 100)
 :new Double(0)]]></textFieldExpression>
                     </textField>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
@@ -1606,8 +1606,8 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{FRTM_MIN_OPERATION}.equals(new Integer(Integer.MAX_VALUE)))?"-":$V{FRTM_MIN_OPERATION}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{FRTM_MIN_OPERATION}.equals(new Integer(Integer.MAX_VALUE)))?new Integer(0):$V{FRTM_MIN_OPERATION}]]></textFieldExpression>
                     </textField>
                     <staticText>
                         <reportElement
@@ -1636,10 +1636,10 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{FRTMX_MAX_OPERATION}.equals(new Integer(Integer.MIN_VALUE)))?"-":$V{FRTMX_MAX_OPERATION}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{FRTMX_MAX_OPERATION}.equals(new Integer(Integer.MIN_VALUE)))?new Integer(0):$V{FRTMX_MAX_OPERATION}]]></textFieldExpression>
                     </textField>
-                    <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
+                    <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -1668,8 +1668,8 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{BRTM_MIN_OPERATION}.equals(new Integer(Integer.MAX_VALUE)))?"-":$V{BRTM_MIN_OPERATION}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{BRTM_MIN_OPERATION}.equals(new Integer(Integer.MAX_VALUE)))?new Integer(0):$V{BRTM_MIN_OPERATION}]]></textFieldExpression>
                     </textField>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
@@ -1684,10 +1684,10 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.String">
-                            <![CDATA[($V{BRTMX_MAX_OPERATION}.equals(new Integer(Integer.MIN_VALUE)))?"-":$V{BRTMX_MAX_OPERATION}+"ms"]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Integer">
+                            <![CDATA[($V{BRTMX_MAX_OPERATION}.equals(new Integer(Integer.MIN_VALUE)))?new Integer(0):$V{BRTMX_MAX_OPERATION}]]></textFieldExpression>
                     </textField>
-                    <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
+                    <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -1703,7 +1703,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                         <textFieldExpression class="java.lang.Double">
                             <![CDATA[($V{COMPLETED_SUM_OPERATION}.doubleValue() == 0)? new Double(0) : new Double($V{BACK_SUM_OPERATION}.doubleValue()/$V{COMPLETED_SUM_OPERATION}.doubleValue())]]></textFieldExpression>
                     </textField>
-                    <textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false"
+                    <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -1717,7 +1717,7 @@ new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM}.doubleVal
                             <font/>
                         </textElement>
                         <textFieldExpression class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_OPERATION}.doubleValue()>0)?
-new Double((1 - (($V{AUTHORIZED_SUM_OPERATION}.doubleValue() - $V{COMPLETED_SUM_OPERATION}.doubleValue())/$V{ATTEMPTED_SUM_OPERATION}.doubleValue())))
+new Double(new Double((1 - (($V{AUTHORIZED_SUM_OPERATION}.doubleValue() - $V{COMPLETED_SUM_OPERATION}.doubleValue())/$V{ATTEMPTED_SUM_OPERATION}.doubleValue()))).doubleValue() * 100)
 :new Double(0)]]></textFieldExpression>
                     </textField>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
@@ -2289,8 +2289,8 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     <textElement>
                         <font/>
                     </textElement>
-                    <textFieldExpression class="java.lang.String">
-                        <![CDATA[($V{FRTM_MIN_REPORT}.equals(new Integer(Integer.MAX_VALUE)))?"-":$V{FRTM_MIN_REPORT}+"ms"]]></textFieldExpression>
+                    <textFieldExpression class="java.lang.Integer">
+                        <![CDATA[($V{FRTM_MIN_REPORT}.equals(new Integer(Integer.MAX_VALUE)))?new Integer(0):$V{FRTM_MIN_REPORT}]]></textFieldExpression>
                 </textField>
                 <staticText>
                     <reportElement
@@ -2319,11 +2319,11 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     <textElement>
                         <font/>
                     </textElement>
-                    <textFieldExpression class="java.lang.String">
-                        <![CDATA[($V{FRTMX_MAX_REPORT}.equals(new Integer(Integer.MIN_VALUE)))?"-":$V{FRTMX_MAX_REPORT}+"ms"]]></textFieldExpression>
+                    <textFieldExpression class="java.lang.Integer">
+                        <![CDATA[($V{FRTMX_MAX_REPORT}.equals(new Integer(Integer.MIN_VALUE)))?new Integer(0):$V{FRTMX_MAX_REPORT}]]></textFieldExpression>
                 </textField>
-                <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
-                           evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
+                <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now"
+                           hyperlinkType="None" hyperlinkTarget="Self">
                     <reportElement
                             style="LeftCenter"
                             x="465"
@@ -2351,8 +2351,8 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     <textElement>
                         <font/>
                     </textElement>
-                    <textFieldExpression class="java.lang.String">
-                        <![CDATA[($V{BRTM_MIN_REPORT}.equals(new Integer(Integer.MAX_VALUE)))?"-":$V{BRTM_MIN_REPORT}+"ms"]]></textFieldExpression>
+                    <textFieldExpression class="java.lang.Integer">
+                        <![CDATA[($V{BRTM_MIN_REPORT}.equals(new Integer(Integer.MAX_VALUE)))?new Integer(0):$V{BRTM_MIN_REPORT}]]></textFieldExpression>
                 </textField>
                 <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                            hyperlinkType="None" hyperlinkTarget="Self">
@@ -2367,11 +2367,11 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     <textElement>
                         <font/>
                     </textElement>
-                    <textFieldExpression class="java.lang.String">
-                        <![CDATA[($V{BRTMX_MAX_REPORT}.equals(new Integer(Integer.MIN_VALUE)))?"-":$V{BRTMX_MAX_REPORT}+"ms"]]></textFieldExpression>
+                    <textFieldExpression class="java.lang.Integer">
+                        <![CDATA[($V{BRTMX_MAX_REPORT}.equals(new Integer(Integer.MIN_VALUE)))?new Integer(0):$V{BRTMX_MAX_REPORT}]]></textFieldExpression>
                 </textField>
-                <textField isStretchWithOverflow="false" pattern="###0.00 ms" isBlankWhenNull="false"
-                           evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
+                <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now"
+                           hyperlinkType="None" hyperlinkTarget="Self">
                     <reportElement
                             style="LeftCenter"
                             x="678"
@@ -2386,8 +2386,8 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     <textFieldExpression class="java.lang.Double">
                         <![CDATA[($V{COMPLETED_SUM_REPORT}.doubleValue() == 0)? new Double(0) : new Double($V{BACK_SUM_REPORT}.doubleValue()/$V{COMPLETED_SUM_REPORT}.doubleValue())]]></textFieldExpression>
                 </textField>
-                <textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false"
-                           evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
+                <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false" evaluationTime="Now"
+                           hyperlinkType="None" hyperlinkTarget="Self">
                     <reportElement
                             style="LeftCenter"
                             x="749"
@@ -2400,7 +2400,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         <font/>
                     </textElement>
                     <textFieldExpression class="java.lang.Double"><![CDATA[($V{ATTEMPTED_SUM_REPORT}.doubleValue()>0)?
-new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REPORT}.doubleValue())/$V{ATTEMPTED_SUM_REPORT}.doubleValue())))
+new Double(new Double((1 - (($V{AUTHORIZED_SUM_REPORT}.doubleValue() - $V{COMPLETED_SUM_REPORT}.doubleValue())/$V{ATTEMPTED_SUM_REPORT}.doubleValue()))).doubleValue() * 100)
 :new Double(0)]]></textFieldExpression>
                 </textField>
                 <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
