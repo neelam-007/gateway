@@ -86,7 +86,9 @@ fi
 %preun
 # Modifications to handle upgrades properly
 if [ "$1" = "0" ] ; then
-    # $1 is  on last uninstall, ie, package remove, not upgrade
+    # $1 is 0 on last uninstall, ie, package remove, not upgrade
+
+    /sbin/chkconfig --del ssem
 
     if grep -q ^ssem: /etc/passwd; then userdel -r ssem; fi
     if grep -q ^ssem: /etc/group; then groupdel ssem; fi
