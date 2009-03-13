@@ -109,7 +109,7 @@ public class ClusterPassphraseChanger {
 
         // Update properties file with new passphrase
         if (nodePropsFile.exists()) {
-            NodeConfigurationManager.configureGatewayNode(NODE, null, null, newClusterPass, null, null);
+            NodeConfigurationManager.configureGatewayNode(NODE, null, newClusterPass, null, null);
         }
 
         System.out.println("Cluster passphrase changed successfully.");

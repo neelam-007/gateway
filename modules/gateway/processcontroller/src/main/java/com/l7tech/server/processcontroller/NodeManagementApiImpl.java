@@ -96,14 +96,14 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         node.setEnabled(enabled);
         node.setName(newNodeName);
         node.setSoftwareVersion(nodeVersion);
-        node.setGuid(UUID.randomUUID().toString().replace("-",""));
         node.setHost(configService.getHost());
         node.setClusterHostname(clusterHostname);
         node.getDatabases().add(databaseConfig);
         node.getDatabases().add(failoverDatabaseConfig);
 
         try {
-            NodeConfigurationManager.configureGatewayNode( newNodeName, node.getGuid(), enabled, clusterPassphrase, databaseConfig, failoverDatabaseConfig );
+            String guid = NodeConfigurationManager.configureGatewayNode( newNodeName, enabled, clusterPassphrase, databaseConfig, failoverDatabaseConfig );
+            node.setGuid( guid );
         } catch (NodeConfigurationManager.NodeConfigurationException nce) {
             logger.log(Level.WARNING, "Error during node configuration '"+ExceptionUtils.getMessage(nce)+"'.", ExceptionUtils.getDebugException(nce) );
             throw new SaveException( "Error during node configuration '"+ExceptionUtils.getMessage(nce)+"'");
@@ -170,7 +170,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
         DatabaseConfig failoverDatabaseConfig = configs[1];
 
         try {
-            NodeConfigurationManager.configureGatewayNode( nodeName, null, node.isEnabled(), clusterPassphrase, databaseConfig, failoverDatabaseConfig  );
+            NodeConfigurationManager.configureGatewayNode( nodeName, node.isEnabled(), clusterPassphrase, databaseConfig, failoverDatabaseConfig  );
         } catch (NodeConfigurationManager.NodeConfigurationException nce) {
             logger.log(Level.WARNING, "Error during node configuration '"+ExceptionUtils.getMessage(nce)+"'.", ExceptionUtils.getDebugException(nce) );
             throw new UpdateException( "Error during node configuration '"+ExceptionUtils.getMessage(nce)+"'");

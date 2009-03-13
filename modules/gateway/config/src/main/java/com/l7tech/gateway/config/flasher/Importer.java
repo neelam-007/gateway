@@ -3,6 +3,7 @@ package com.l7tech.gateway.config.flasher;
 import com.l7tech.util.*;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.gateway.config.manager.ClusterPassphraseManager;
+import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -201,7 +202,7 @@ class Importer extends ImportExportUtility {
                                 "wish to create a new database, use the " + CREATE_NEW_DB.name + " option");
                     }
                 } else {
-                    nodeConfig.setProperty("node.id", UUID.randomUUID().toString().replace("-", ""));
+                    nodeConfig.setProperty("node.id", NodeConfigurationManager.loadOrCreateNodeIdentifier("default", new DatabaseConfig(dbHost, Integer.parseInt(dbPort), dbName, databaseUser, databasePass), true) );
                     nodeConfig.setProperty("node.db.config.main.user", databaseUser);
                     nodeConfig.setProperty("node.db.config.main.pass", mpm.encryptPassword(databasePass.toCharArray()));
                     cleanRestore = true;

@@ -14,6 +14,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.HexUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 
@@ -21,10 +22,12 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
+import java.net.SocketException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.sql.SQLException;
 
 /**
  * Manages configuration for a node.
@@ -89,19 +92,19 @@ public class NodeConfigurationManager {
      * Configure a gateway node properties and validate database config if required..
      *
      * @param name The name of the node to configure ("default")
-     * @param nodeid The unique identifier to use for the node.
      * @param enabled Is the node enabled?
      * @param clusterPassword The cluster password
      * @param databaseConfig The database configuration to use.
+     * @return the generated or re-used GUID for the node
      * @throws IOException If an error occurs
      */
     @SuppressWarnings({"UnusedDeclaration"})
-    public static void configureGatewayNode( final String name,
-                                             final String nodeid,
-                                             final Boolean enabled,
-                                             final String clusterPassword,
-                                             final DatabaseConfig databaseConfig,
-                                             final DatabaseConfig database2ndConfig ) throws IOException, NodeConfigurationException {
+    public static String configureGatewayNode( final String name,
+                                               final Boolean enabled,
+                                               final String clusterPassword,
+                                               final DatabaseConfig databaseConfig,
+                                               final DatabaseConfig database2ndConfig ) throws IOException, NodeConfigurationException {
+        String nodeid;
         String nodeName = name;
         if ( nodeName == null ) {
             nodeName = "default";
@@ -151,12 +154,14 @@ public class NodeConfigurationManager {
             } finally {
                 ResourceUtils.closeQuietly(origFis);
             }
+            nodeid = props.getString(NODEPROPERTIES_ID);
         } else {
             // validate that we have enough settings to create a valid configuration
-            if ( nodeid == null || clusterPassword == null || databaseConfig == null ) {
+            if ( clusterPassword == null || databaseConfig == null ) {
                 throw new NodeConfigurationException("Missing configuration parameters, cannot create new configuration for node '"+nodeName+"'.");
             }
 
+            nodeid = loadOrCreateNodeIdentifier( name, databaseConfig, false );
             if ( setEnabled == null ) setEnabled = true;
         }
 
@@ -204,6 +209,37 @@ public class NodeConfigurationManager {
         } finally {
             ResourceUtils.closeQuietly(origFos);
         }
+
+        return nodeid;
+    }
+
+    /**
+     * Load the node identifier for a mac address on this system or create a new identifier.
+     *
+     * @param nodeName The name of the node
+     * @param databaseConfig The database to connect to to load the node identifier.
+     */
+    public static String loadOrCreateNodeIdentifier( final String nodeName,
+                                                     final DatabaseConfig databaseConfig,
+                                                     final boolean allowDbFail ) throws IOException {
+        String nodeid = null;
+
+        // Check for existing GUID
+        if ( "default".equals( nodeName ) ) {
+            try {
+                nodeid = dbActions.getNodeIdForMac( databaseConfig, getMacAddresses() );
+            } catch (SQLException e) {
+                if ( !allowDbFail )
+                    throw new CausedIOException("Error checking for existing nodeid for this server.", e);
+            }
+        }
+        if ( nodeid == null ) {
+            nodeid = UUID.randomUUID().toString().replace("-","");
+        } else {
+            logger.info( "Using existing node identifier '"+nodeid+"'." );
+        }
+
+        return nodeid;
     }
 
     public static void deleteNodeConfig( final String nodeName ) throws DeleteNodeConfigurationException {
@@ -472,4 +508,33 @@ public class NodeConfigurationManager {
             props.setProperty( propName, propValue.toString() );
         }
     }
+
+    private static Collection<String> getMacAddresses() {
+        ArrayList<String> output = new ArrayList<String>();
+
+        try {
+            for ( NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces()) ) {
+                byte[] macAddr = networkInterface.getHardwareAddress();
+                if ( macAddr != null ) {
+                    output.add(formatMac(macAddr));
+                }
+            }
+        } catch (SocketException e) {
+            logger.log( Level.FINE, "Error getting network interfaces '" + e.getMessage() + "'.", ExceptionUtils.getDebugException(e));
+        }
+
+        return output;
+    }
+
+    private static String formatMac( final byte[] macAddr ) {
+        String hex = HexUtils.hexDump(macAddr).toUpperCase();
+        StringBuilder hexBuilder = new StringBuilder();
+        for ( int i=0; i < hex.length(); i++ ) {
+            if ( i>0 && i%2==0 ) {
+                hexBuilder.append(':');
+            }
+            hexBuilder.append(hex.charAt(i));
+        }
+        return hexBuilder.toString();
+    }    
 }

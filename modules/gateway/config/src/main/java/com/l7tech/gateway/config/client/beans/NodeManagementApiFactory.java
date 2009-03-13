@@ -30,7 +30,6 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.UUID;
 
 /**
  *
@@ -165,8 +164,7 @@ public class NodeManagementApiFactory {
             public NodeConfig createNode( final NodeConfig node) throws SaveException {
                 if ( doGetNode(node.getName()) == null ) {
                     try {
-                        String guid = UUID.randomUUID().toString().replace("-","");
-                        NodeConfigurationManager.configureGatewayNode( node.getName(), guid, true, node.getClusterPassphrase(), node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE ), null );
+                        NodeConfigurationManager.configureGatewayNode( node.getName(), true, node.getClusterPassphrase(), node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE ), null );
                     } catch ( NodeConfigurationManager.NodeConfigurationException nce ) {
                         throw new SaveException( ExceptionUtils.getMessage(nce), nce );
                     } catch ( IOException ioe ) {
@@ -183,7 +181,7 @@ public class NodeManagementApiFactory {
             public void updateNode(final NodeConfig node) throws UpdateException, RestartRequiredException {
                 if ( doGetNode(node.getName()) != null ) {
                     try {
-                        NodeConfigurationManager.configureGatewayNode( node.getName(), null, true, node.getClusterPassphrase(), node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE ), null );
+                        NodeConfigurationManager.configureGatewayNode( node.getName(), true, node.getClusterPassphrase(), node.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE ), null );
                     } catch ( NodeConfigurationManager.NodeConfigurationException nce ) {
                         throw new UpdateException( ExceptionUtils.getMessage(nce), nce );
                     } catch ( IOException ioe ) {

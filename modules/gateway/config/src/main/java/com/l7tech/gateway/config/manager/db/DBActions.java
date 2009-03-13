@@ -651,6 +651,37 @@ public class DBActions {
         return success;
     }
 
+    public String getNodeIdForMac( final DatabaseConfig databaseConfig,
+                                   final Collection<String> macAddresses ) throws SQLException {
+        String nodeid = null;
+
+        Connection conn = null;
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        try {
+            conn = getConnection( databaseConfig, false );
+            statement = conn.prepareStatement("SELECT nodeid FROM cluster_info WHERE mac IN (?,?,?,?,?,?,?,?,?,?)");
+            Iterator<String> macIterator = macAddresses.iterator();
+            for ( int i=0; i<10; i++ ) {
+                String mac = "-";
+                if ( macIterator.hasNext() ) {
+                    mac = macIterator.next();
+                }
+                statement.setString( i+1, mac );
+            }
+            resultSet = statement.executeQuery();
+            if ( resultSet.next() ) {
+                nodeid = resultSet.getString(1);
+            }
+        } finally {
+            ResourceUtils.closeQuietly( resultSet );
+            ResourceUtils.closeQuietly( statement );
+            ResourceUtils.closeQuietly( conn );
+        }
+
+        return nodeid;
+    }
+
 //
 // PRIVATE METHODS
 //
