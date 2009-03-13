@@ -166,7 +166,7 @@ public class ReportApp {
         String sql;
         Boolean isUsage = Boolean.valueOf(prop.getProperty("IS_USAGE"));
         if (isContextMapping && isUsingKeys) {
-            sql = Utilities.getUsageDistinctMappingQuery(startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
+            sql = Utilities.getDistinctMappingQuery(startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
         } else if (isContextMapping) {
             sql = Utilities.getPerformanceStatisticsMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
         } else {
@@ -521,7 +521,7 @@ public class ReportApp {
 
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
 
-        //parameters.put(IS_IGNORE_PAGINATION, new Boolean(true));
+//        parameters.put(IS_IGNORE_PAGINATION, new Boolean(true));
 
 
         String xslStr = getResAsString(REPORTING_RELATIVE_PATH + "/PS_SummaryTransform.xsl");
@@ -904,6 +904,8 @@ public class ReportApp {
         //Only required because jasper reports for some reason ignores the value of scriptletClass from the
         //jasperreport element attribute, so specifying it as a parameter explicitly fixes this issue
         parameters.put(REPORT_SCRIPTLET, scriplet);
+
+//        parameters.put(IS_IGNORE_PAGINATION, new Boolean(true));
 
         return parameters;
     }

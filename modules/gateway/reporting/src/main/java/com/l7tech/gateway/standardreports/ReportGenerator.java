@@ -346,7 +346,7 @@ public class ReportGenerator {
         String sql;
         //this is a context mapping query using keys 1-5 and auth user
         if (isContextMapping && isUsingKeys) {
-            sql = Utilities.getUsageDistinctMappingQuery(
+            sql = Utilities.getDistinctMappingQuery(
                     startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
         }//this is a context mapping query when we just need operation, dealt with like it's not context mapping
         else if (isContextMapping) {

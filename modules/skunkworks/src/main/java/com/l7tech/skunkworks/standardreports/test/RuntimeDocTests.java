@@ -67,7 +67,7 @@ public class RuntimeDocTests {
 
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = ReportApp.getFilterPairMap(prop);
 
-        String sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keysToFilterPairs, 2, isDetail, true);
+        String sql = Utilities.getDistinctMappingQuery(null, null, null, keysToFilterPairs, 2, isDetail, true);
 
         LinkedHashSet<List<String>> distinctMappingSets = ReportApp.getDistinctMappingSets(conn, sql);
 

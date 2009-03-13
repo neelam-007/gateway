@@ -484,7 +484,7 @@ public class UtilitiesTest {
         keysToFilterPairs.put("CUSTOMER", filters);
 
 
-        String sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keysToFilterPairs, 2, true, true);
+        String sql = Utilities.getDistinctMappingQuery(null, null, null, keysToFilterPairs, 2, true, true);
 
         keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
         List<ReportApi.FilterPair> ipFilters = new ArrayList<ReportApi.FilterPair>();
@@ -494,7 +494,7 @@ public class UtilitiesTest {
         custFilters.add(new ReportApi.FilterPair());
         keysToFilterPairs.put("CUSTOMER", custFilters);
 
-        sql = Utilities.getUsageDistinctMappingQuery(null, null, null, keysToFilterPairs, 2, true, false);
+        sql = Utilities.getDistinctMappingQuery(null, null, null, keysToFilterPairs, 2, true, false);
     }
 
     //todo [Donal] finish test
