@@ -313,6 +313,7 @@ public class SystemSettings extends EsmStandardWebPage {
 
         // Feedback
         final FeedbackPanel feedback = new FeedbackPanel("licenseFeedback");
+        feedback.setFilter( new ContainerFeedbackMessageFilter(feedback) );
         add( feedback.setOutputMarkupId(true) );
 
         // labels
@@ -351,13 +352,13 @@ public class SystemSettings extends EsmStandardWebPage {
                     @Override
                     public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
                         if ( button == YuiDialog.Button.OK ) {
-                            licenseDelete();
+                            licenseDelete(feedback);
                             licenseModel.detach();
                             for ( Component component : refreshComponents ) {
                                 component.setVisible(false);
                                 target.addComponent(component);
                             }
-                            info( new StringResourceModel("license.message.deleted", SystemSettings.this, null).getString() );
+                            feedback.info( new StringResourceModel("license.message.deleted", SystemSettings.this, null).getString() );
                             target.addComponent(feedback);
                         }
                         dynamicDialogHolder.replace( new EmptyPanel("dynamic.holder.content") );
@@ -431,7 +432,7 @@ public class SystemSettings extends EsmStandardWebPage {
                 public void onAction(YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {
                     if ( button == YuiDialog.Button.CLOSE ) {
                         if (expiryStatus.isLicAboutToExpire()) {
-                            SystemSettings.this.get("licenseForm").info(expiryStatus.getWarningMessage(true));
+                            SystemSettings.this.get("licenseFeedback").info(expiryStatus.getWarningMessage(true));
                             target.addComponent(SystemSettings.this.get("licenseFeedback"));
                         }
                         if (expiryStatus.isCertAboutToExpire()) {
@@ -517,18 +518,18 @@ public class SystemSettings extends EsmStandardWebPage {
     /**
      * Add new license
      */
-    private boolean licenseSetup(final String license) {
+    private boolean licenseSetup(final String license, final Component feedback ) {
         boolean installed = false;
 
         try {
             licenseManager.installNewLicense(license);
             installed = true;
-            info( new StringResourceModel("license.message.updated", this, null).getString() );
+            feedback.info( new StringResourceModel("license.message.updated", this, null).getString() );
         } catch (InvalidLicenseException e) {
-            error(ExceptionUtils.getMessage(e));
+            feedback.error(ExceptionUtils.getMessage(e));
             logger.log( Level.WARNING, "Error installing new license '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
         } catch (UpdateException e) {
-            error(ExceptionUtils.getMessage(e));
+            feedback.error(ExceptionUtils.getMessage(e));
             logger.log( Level.WARNING, "Error installing new license", e );
         }
 
@@ -538,11 +539,11 @@ public class SystemSettings extends EsmStandardWebPage {
     /**
      * Add new license
      */
-    private void licenseDelete() {
+    private void licenseDelete( final Component feedback ) {
         try {
             setupManager.deleteLicense();
         } catch ( DeleteException de ) {
-            info( "Could not delete license '" + ExceptionUtils.getMessage(de) + "'." );
+            feedback.info( "Could not delete license '" + ExceptionUtils.getMessage(de) + "'." );
             logger.log( Level.WARNING, "Error deleting license.", de );
         }
     }
@@ -642,8 +643,6 @@ public class SystemSettings extends EsmStandardWebPage {
 
             setMaxSize(Bytes.bytes(MAX_LICENSE_FILE_UPLOAD_BYTES));
             add( new AttemptedUpdateAny( EntityType.CLUSTER_PROPERTY ) );
-
-            this.formFeedback.setFilter(new ContainerFeedbackMessageFilter(this));
         }
 
         @Override
@@ -651,6 +650,10 @@ public class SystemSettings extends EsmStandardWebPage {
             final FileUpload upload = fileUpload.getFileUpload();
             if ( upload != null ) {
                 try {
+                    if ( target != null ) {
+                        target.addComponent( formFeedback );
+                    }
+
                     final String license = XmlUtil.nodeToString(XmlUtil.parse(upload.getInputStream(), false));
                     EulaPanel eula = new EulaPanel( YuiDialog.getContentId(), new Model(new License(license, null, null)) );
 
@@ -659,7 +662,7 @@ public class SystemSettings extends EsmStandardWebPage {
                         public void onAction( final YuiDialog dialog, final AjaxRequestTarget target, final YuiDialog.Button button) {
                             if ( button == YuiDialog.Button.OK ) {
                                 logger.fine("License installation confirmed.");
-                                if ( licenseSetup( license ) ) {
+                                if ( licenseSetup( license, formFeedback ) ) {
                                     for ( Component component : components ) {
                                         component.setVisible(true);
                                         target.addComponent(component);
@@ -668,7 +671,7 @@ public class SystemSettings extends EsmStandardWebPage {
                                 }
                             } else {
                                 logger.fine("License installation cancelled.");
-                                info( new StringResourceModel("license.message.cancel", SystemSettings.this, null).getString() );
+                                formFeedback.info( new StringResourceModel("license.message.cancel", SystemSettings.this, null).getString() );
                             }
                             dynamicDialogHolder.replace( new EmptyPanel("dynamic.holder.content") );
                             target.addComponent(formFeedback);
@@ -680,22 +683,22 @@ public class SystemSettings extends EsmStandardWebPage {
                         target.addComponent(dynamicDialogHolder);
                     }
                 } catch ( IOException e ) {
-                    error( ExceptionUtils.getMessage(e) );
+                    formFeedback.error( ExceptionUtils.getMessage(e) );
                     logger.log( Level.WARNING, "Error accessing license '"+ExceptionUtils.getMessage(e)+"'." );
                 } catch ( SAXException e ) {
-                    error( ExceptionUtils.getMessage(e) );
+                    formFeedback.error( ExceptionUtils.getMessage(e) );
                     logger.log( Level.WARNING, "Error parsing license '"+ExceptionUtils.getMessage(e)+"'." );
                 } catch (TooManyChildElementsException e) {
-                    error( ExceptionUtils.getMessage(e) );
+                    formFeedback.error( ExceptionUtils.getMessage(e) );
                     logger.log( Level.WARNING, "Error parsing license '"+ExceptionUtils.getMessage(e)+"'." );
                 } catch (SignatureException e) {
-                    error( ExceptionUtils.getMessage(e) );
+                    formFeedback.error( ExceptionUtils.getMessage(e) );
                     logger.log( Level.WARNING, "Error parsing license '"+ExceptionUtils.getMessage(e)+"'." );
                 } catch (InvalidLicenseException e) {
-                    error( ExceptionUtils.getMessage(e) );
+                    formFeedback.error( ExceptionUtils.getMessage(e) );
                     logger.log( Level.WARNING, "Error parsing license '"+ExceptionUtils.getMessage(e)+"'." );
                 } catch (ParseException e) {
-                    error( ExceptionUtils.getMessage(e) );
+                    formFeedback.error( ExceptionUtils.getMessage(e) );
                     logger.log( Level.WARNING, "Error parsing license '"+ExceptionUtils.getMessage(e)+"'." );
                 } finally {
                     upload.closeStreams();
