@@ -13,7 +13,7 @@ import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.security.auth.Subject;
-import java.io.IOException;
+import java.io.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.security.PrivilegedExceptionAction;
@@ -75,6 +75,8 @@ public class EsmSecurityFilter implements Filter {
                         logger.info("Forbid access to resource : '" + httpServletRequest.getRequestURI() + "'." );
                         if ( "GET".equals(httpServletRequest.getMethod()) && httpServletRequest.getRequestURI().equals("/")) {
                             servletContext.getNamedDispatcher("sessionServlet").forward( servletRequest, servletResponse );
+                        } else if ("POST".equals(httpServletRequest.getMethod()) && httpServletRequest.getHeader("Wicket-Ajax") != null) {
+                            sendAjaxSessionTimeout(httpServletResponse);
                         } else {
                             httpServletResponse.sendRedirect( getRedirectUrl( httpServletRequest, "/" ) );
                         }
@@ -113,4 +115,30 @@ public class EsmSecurityFilter implements Filter {
         return new URL(new URL(httpServletRequest.getRequestURL().toString()), path).toString();
     }
 
+    /**
+     * Send a timeout response that is handled by Wicket.
+     */
+    private void sendAjaxSessionTimeout(HttpServletResponse httpServletResponse) throws IOException {
+        String encoding = "UTF-8";
+        httpServletResponse.setCharacterEncoding(encoding);
+        httpServletResponse.setContentType("text/xml; charset=" + encoding);
+
+        // Make sure it is not cached by a client
+        httpServletResponse.setHeader("Expires", "Mon, 26 Jul 1997 05:00:00 GMT");
+        httpServletResponse.setHeader("Cache-Control", "no-cache, must-revalidate");
+        httpServletResponse.setHeader("Pragma", "no-cache");
+
+        Writer writer = httpServletResponse.getWriter();
+        writer.write("<?xml version=\"1.0\" encoding=\"");
+        writer.write(encoding);
+        writer.write("\"?>");
+        writer.write("<ajax-response>");
+        writer.write("<evaluate");
+        writer.write(">");
+        writer.write("<![CDATA[");
+        writer.write("l7.Dialog.showSessionExpiredDialog();");
+        writer.write("]]>");
+        writer.write("</evaluate>");
+        writer.write("</ajax-response>");
+    }
 }

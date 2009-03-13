@@ -4,6 +4,8 @@ import org.apache.wicket.Component;
 import org.apache.wicket.IComponentBorder;
 import org.apache.wicket.Response;
 import org.apache.wicket.ajax.markup.html.form.AjaxButton;
+import org.apache.wicket.ajax.IAjaxCallDecorator;
+import org.apache.wicket.ajax.calldecorator.AjaxCallDecorator;
 import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.markup.html.form.Form;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
@@ -41,6 +43,18 @@ public abstract class YuiAjaxButton extends AjaxButton implements SecureComponen
         return this;
     }
 
+    //- PROTECTED
+
+    @Override
+    protected IAjaxCallDecorator getAjaxCallDecorator() {
+        return new AjaxCallDecorator(){
+            @Override
+            public CharSequence decorateOnFailureScript(final CharSequence script) {
+                return "l7.Dialog.showErrorDialog(null,'Enterprise Service Manager server is not available.',null); " + script;
+            }
+        };
+    }
+
     //- PRIVATE
     
     private AttemptedOperation attemptedOperation;
@@ -51,13 +65,15 @@ public abstract class YuiAjaxButton extends AjaxButton implements SecureComponen
     private void init() {
         // Add CSS / JS header contributions
         add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_BUTTON ) );
+        add( HeaderContributor.forCss( YuiCommon.RES_CSS_SAM_CONTAINER ) );        
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_DOM_EVENT ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_ELEMENT ) );
         add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_BUTTON ) );
+        add( HeaderContributor.forJavaScript( YuiCommon.RES_JS_CONTAINER ) );
 
         // ID is required to locate the button using JS
         setOutputMarkupId(true);
-        setComponentBorder(new YuiButtonScriptComponentBorder());        
+        setComponentBorder(new YuiButtonScriptComponentBorder());
     }
     
     /**
