@@ -216,14 +216,21 @@ else
 fi
 
 # fix file limits
-LIMITS=`egrep -e \^\*\.\*soft\.\*nofile\.\*4096\$ /etc/security/limits.conf`
-if [ -z "${LIMITS}" ]; then
-	echo "# Layer 7 Limits"  >> /etc/security/limits.conf
+
+#look for a limits.conf that we have modified.
+L7MARKER=`egrep -e "^# Layer 7 Limits$" /etc/security/limits.conf`
+#L7MARKER=`egrep -e \^\*\ Layer\ 7\ Limits\.\*\$ /etc/security/limits.conf`
+#if we don't find one then just add one the way we like it
+if [ -z "${L7MARKER}" ] ; then
+    echo "# Layer 7 Limits"  >> /etc/security/limits.conf
 	echo "*               soft    nproc   5120"  >> /etc/security/limits.conf
 	echo "*               hard    nproc   16384"  >> /etc/security/limits.conf
 	echo "*               soft    nofile  4096"  >> /etc/security/limits.conf
 	echo "*               hard    nofile  63536"  >> /etc/security/limits.conf
+	echo "# End Layer 7 Limits"  >> /etc/security/limits.conf
 	# 4096 files open and stuff
+else
+    sed -r -i -e 's/(^.*soft.*nproc[ \t]+)[0-9]+(.*)$/\15120/g' /etc/security/limits.conf
 fi
 
 # fix the getty
