@@ -1,16 +1,18 @@
 package com.l7tech.console.panels;
 
-import java.awt.Frame;
-import java.awt.Dialog;
-import java.awt.event.*;
-import java.net.PasswordAuthentication;
-import java.util.Arrays;
-import javax.swing.*;
-
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.DialogDisplayer;
-import com.l7tech.console.util.TopComponents;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.net.PasswordAuthentication;
+import java.util.Arrays;
 
 /**
  * Dialog for changing a password.
@@ -217,7 +219,7 @@ public class ChangePasswordDialog extends JDialog {
         helpBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 help = true;
-                final PasswordHelpDialog dialog = new PasswordHelpDialog();
+                final PasswordHelpDialog dialog = new PasswordHelpDialog(ChangePasswordDialog.this);
                 Utilities.centerOnScreen(dialog);
                 DialogDisplayer.display(dialog, new Runnable() {
                     public void run() {

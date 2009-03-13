@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import javax.swing.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.*;
 
 public class PasswordHelpDialog extends JDialog {
     private JPanel contentPane;
@@ -10,7 +11,17 @@ public class PasswordHelpDialog extends JDialog {
     private JEditorPane editorPane;
     private boolean ok;
 
-    public PasswordHelpDialog() {
+    public PasswordHelpDialog(Frame owner) {
+        super(owner);
+        initialize();
+    }
+
+    public PasswordHelpDialog(Dialog owner) {
+        super(owner);
+        initialize();
+    }
+
+    private void initialize() {
         setContentPane(contentPane);
         setModal(true);
         setTitle("Password Rules");
@@ -47,14 +58,4 @@ public class PasswordHelpDialog extends JDialog {
         ok = true;
         dispose();
     }
-
-    public static void main(String[] args) {
-        PasswordHelpDialog dialog = new PasswordHelpDialog();
-
-        dialog.pack();
-        dialog.setVisible(true);
-        System.exit(0);
-    }
-
-
 }
