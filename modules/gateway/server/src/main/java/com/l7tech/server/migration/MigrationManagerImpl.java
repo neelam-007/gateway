@@ -505,16 +505,8 @@ public class MigrationManagerImpl implements MigrationManager {
 
     private void findDependenciesRecursive(MigrationMetadata result, ExternalEntityHeader header, Set<ExternalEntityHeader> visited) throws MigrationApi.MigrationException, PropertyResolverException {
         logger.log(Level.FINE, "Finding dependencies for: " + header.toStringVerbose());
-
-        Entity entity = null;
-        try {
-            entity = loadEntity(header);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Error loading entity for dependency '"+header+"'.", ExceptionUtils.getDebugException(e));
-        }
         visited.add(header); // marks header as processed
-        if (entity == null || header instanceof ValueReferenceEntityHeader)
-            return;
+        Entity entity = loadEntity(header);
 
         for (Method method : entity.getClass().getMethods()) {
             if (MigrationUtils.isDependency(method)) {
@@ -530,8 +522,9 @@ public class MigrationManagerImpl implements MigrationManager {
                             logger.log(Level.FINE, "Added dependency: " + dependency);
                         }
                         if ( ! visited.contains(resolvedDepHeader) &&
-                             dependency.getMappingType() != MigrationMappingSelection.REQUIRED &&
-                             resolvedDepHeader.getValueMapping() != MigrationMappingSelection.REQUIRED) {
+                             (dependency == null || dependency.getMappingType() != MigrationMappingSelection.REQUIRED) &&
+                             resolvedDepHeader.getValueMapping() != MigrationMappingSelection.REQUIRED &&
+                             ! (depHeader instanceof ValueReferenceEntityHeader) )  {
                             findDependenciesRecursive( result, resolvedDepHeader, visited );
                         }
                     }
