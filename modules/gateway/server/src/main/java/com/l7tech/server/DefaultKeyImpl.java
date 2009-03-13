@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -291,6 +292,18 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         try {
             return keyStoreManager.lookupKeyByKeyAlias(keyaddr.right, keyaddr.left);
         } catch (ObjectNotFoundException e) {
+            // HACK:  If looking for SSL key, check for  "tomcat" alias before giving up  (Bug #6912)
+            if (SC_PROP_SSL_KEY.equals(propertyName)) {
+                SsgKeyEntry ret = keyStoreManager.lookupKeyByKeyAlias("tomcat", -1);
+                try {
+                    return new SsgKeyEntry(ret.getKeystoreId(), "tomcat", ret.getCertificateChain(), ret.getPrivateKey());
+                } catch (UnrecoverableKeyException e1) {
+                    // Can't happen
+                    logger.log(Level.SEVERE, "Unable to read 'tomcat' alias private key: " + ExceptionUtils.getMessage(e), e);
+                    return NULL_ENTRY;
+                }
+            }
+
             return NULL_ENTRY;
         }
     }
