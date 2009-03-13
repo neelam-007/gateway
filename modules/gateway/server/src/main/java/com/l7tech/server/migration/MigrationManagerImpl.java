@@ -529,7 +529,9 @@ public class MigrationManagerImpl implements MigrationManager {
                             result.addDependency(dependency);
                             logger.log(Level.FINE, "Added dependency: " + dependency);
                         }
-                        if ( !visited.contains( resolvedDepHeader ) ) {
+                        if ( ! visited.contains(resolvedDepHeader) &&
+                             dependency.getMappingType() != MigrationMappingSelection.REQUIRED &&
+                             resolvedDepHeader.getValueMapping() != MigrationMappingSelection.REQUIRED) {
                             findDependenciesRecursive( result, resolvedDepHeader, visited );
                         }
                     }
