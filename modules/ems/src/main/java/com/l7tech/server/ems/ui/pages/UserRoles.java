@@ -280,7 +280,7 @@ public class UserRoles extends EsmStandardWebPage {
                         target.addComponent(roleManagementContainer);
                     }
                 });
-                add(listChoice.setEscapeModelStrings(false));
+                add(listChoice);
             } catch (FindException e) {
                 logger.log( Level.WARNING, "Error accessing roles.", e );
             }
