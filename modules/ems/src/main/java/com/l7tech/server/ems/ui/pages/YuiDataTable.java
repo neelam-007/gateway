@@ -288,7 +288,7 @@ public class YuiDataTable extends Panel {
                 StringBuilder scriptBuilder = new StringBuilder(512);
 
                 scriptBuilder.append( "function dataTableSelectionCallback").append(tableId).append("( id ) {\n");
-                scriptBuilder.append( " wicketAjaxGet('").append(getCallbackUrl(true)).append("&selection=true&id=' + escape(id), function() { }, function() { });\n");
+                scriptBuilder.append( " wicketAjaxGet('").append(getCallbackUrl(true)).append("&selection=true&id=' + encodeURIComponent(id), function() { }, function() { });\n");
                 scriptBuilder.append( "}\n" );
 
                 iHeaderResponse.renderJavascript(scriptBuilder.toString(), YuiDataTable.this.getClass().getName() + "." + tableId);
@@ -336,7 +336,7 @@ public class YuiDataTable extends Panel {
                                 String data = buildResultsPage(startIndex, results, sortRaw, dir);
 
                                 WebResponse response = (WebResponse)requestCycle.getResponse();
-                                response.setContentType("application/json");
+                                response.setContentType("application/json; charset=UTF-8");
                                 response.setHeader("Expires", "Mon, 26 Jul 1997 05:00:00 GMT");
                                 response.setHeader("Cache-Control", "no-cache, must-revalidate");
                                 response.setHeader("Pragma", "no-cache");

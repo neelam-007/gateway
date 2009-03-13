@@ -62,7 +62,7 @@ public abstract class JsonDataResponseForm extends SecureForm {
                 json.append(dataBuffer, data);
 
                 final WebResponse response = (WebResponse)requestCycle.getResponse();
-                response.setContentType("application/json");
+                response.setContentType("application/json; charset=UTF-8");
                 response.setHeader("Expires", "Mon, 26 Jul 1997 05:00:00 GMT");
                 response.setHeader("Cache-Control", "no-cache, must-revalidate");
                 response.setHeader("Pragma", "no-cache");
