@@ -246,7 +246,7 @@ class Importer extends ImportExportUtility {
 
                 // if the database needs to be created, do it
                 if (!isCreateNewDatabase) {
-                    logger.info("Using database specified from node.properties file.");
+                    logger.info("Did not request to create new database.  Using existing target database.");
                     System.out.println("Existing target database detected");
                 } else {
                     logger.info("Requested to create new database");
