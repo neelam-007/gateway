@@ -124,6 +124,8 @@ public class NodeConfigurationManager {
             if ( databaseConfig.getName() == null ) throw new CausedIOException("Database name is required.");
             if ( databaseConfig.getNodeUsername() == null ) throw new CausedIOException("Database username is required.");
 
+            testDBConfig( databaseConfig );
+
             String dbVersion = dbActions.checkDbVersion( databaseConfig );
             if ( dbVersion != null && !dbVersion.equals(BuildInfo.getFormalProductVersion()) ) {
                 throw new NodeConfigurationException("Database version mismatch '"+dbVersion+"'.");
@@ -536,5 +538,14 @@ public class NodeConfigurationManager {
             hexBuilder.append(hex.charAt(i));
         }
         return hexBuilder.toString();
-    }    
+    }
+
+    private static void testDBConfig( final DatabaseConfig databaseConfig ) throws NodeConfigurationException {
+       try {
+            ResourceUtils.closeQuietly( dbActions.getConnection( databaseConfig, false ) );
+        } catch ( SQLException e ) {
+            throw new NodeConfigurationException( "Database connection error '"+ExceptionUtils.getMessage(e)+"'.", e );
+        }
+    }
+
 }
