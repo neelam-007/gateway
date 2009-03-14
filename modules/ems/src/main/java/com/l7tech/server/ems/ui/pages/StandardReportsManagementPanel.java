@@ -106,7 +106,6 @@ public class StandardReportsManagementPanel extends Panel {
                                     "Really delete report \"" + reports.iterator().next().getName() + "\"?" :
                                     "Really delete " + reports.size() + " reports?";
                             Label label = new Label(YuiDialog.getContentId(), warningText);
-                            label.setEscapeModelStrings(false);
                             YuiDialog dialog = new YuiDialog("dynamic.holder.content", "Confirm Generated Report Deletion", YuiDialog.Style.OK_CANCEL, label, new YuiDialog.OkCancelCallback() {
                                 @Override
                                 public void onAction( final YuiDialog dialog, AjaxRequestTarget target, YuiDialog.Button button) {

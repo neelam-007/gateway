@@ -101,7 +101,6 @@ public class UserRoles extends EsmStandardWebPage {
 
         // Step 1: create a textarea to display the description of the selected role.
         TextArea roleDescriptionTextArea = new TextArea("textarea.roleDescription", new PropertyModel(roleModel, "roleDescription"));
-        roleDescriptionTextArea.setEscapeModelStrings(false);
 
         // Step 2: create components to unassign assigned users from a role.
         HiddenField hiddenFieldForAssignedUser = new HiddenField("assignedUserId", new Model(""));

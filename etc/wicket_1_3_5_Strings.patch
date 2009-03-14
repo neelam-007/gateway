@@ -1,0 +1,51 @@
+Index: jdk-1.4/wicket/src/test/java/org/apache/wicket/util/string/StringsTest.java
+===================================================================
+--- jdk-1.4/wicket/src/test/java/org/apache/wicket/util/string/StringsTest.java	(revision 753400)
++++ jdk-1.4/wicket/src/test/java/org/apache/wicket/util/string/StringsTest.java	(working copy)
+@@ -137,8 +137,8 @@
+ 		assertEquals("", Strings.escapeMarkup("").toString());
+ 
+ 		assertEquals("&amp;", Strings.escapeMarkup("&").toString());
+-		assertEquals("&#", Strings.escapeMarkup("&#").toString());
+-		assertEquals("&#0000;", Strings.escapeMarkup("&#0000;").toString());
++		assertEquals("&amp;#", Strings.escapeMarkup("&#").toString());
++		assertEquals("&amp;#0000;", Strings.escapeMarkup("&#0000;").toString());
+ 
+ 		assertEquals("&amp;amp;", Strings.escapeMarkup("&amp;").toString());
+ 		assertEquals("&lt; &gt;&amp;&quot;&#039;?:;{}[]-_+=()*^%$#@!~`", Strings.escapeMarkup(
+@@ -177,9 +177,9 @@
+ 				.escapeMarkup("\u00c7\u00fc\u00e9\u00e2\u00e4\u00e0\u00e5\u00e7\u00ea\u00eb",
+ 						false, true).toString());
+ 
+-		assertEquals("\n \t&#233;", Strings.escapeMarkup(convertNonASCIIString("\n \t&#233;"),
++		assertEquals("\n \t&amp;#233;", Strings.escapeMarkup(convertNonASCIIString("\n \t&#233;"),
+ 				false, true).toString());
+-		assertEquals(convertNonASCIIString("\n \t&#233;"), Strings.escapeMarkup(
++		assertEquals(convertNonASCIIString("\n \t&amp;#233;"), Strings.escapeMarkup(
+ 				convertNonASCIIString("\n \t&#233;"), false, false).toString());
+ 	}
+ 
+Index: jdk-1.4/wicket/src/main/java/org/apache/wicket/util/string/Strings.java
+===================================================================
+--- jdk-1.4/wicket/src/main/java/org/apache/wicket/util/string/Strings.java	(revision 753400)
++++ jdk-1.4/wicket/src/main/java/org/apache/wicket/util/string/Strings.java	(working copy)
+@@ -333,18 +333,7 @@
+ 						break;
+ 
+ 					case '&' :
+-
+-						// if this is an entity (&#), then do not convert
+-						if ((i < len - 1) && (s.charAt(i + 1) == '#'))
+-						{
+-							buffer.append(c);
+-
+-						}
+-						else
+-						{
+-							// it is not an entity, so convert it to &amp;
+-							buffer.append("&amp;");
+-						}
++						buffer.append("&amp;");
+ 						break;
+ 
+ 					case '"' :
