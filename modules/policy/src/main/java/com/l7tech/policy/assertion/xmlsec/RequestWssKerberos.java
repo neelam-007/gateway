@@ -70,6 +70,7 @@ public class RequestWssKerberos extends SecurityHeaderAddressableSupport impleme
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME,  "Require WSS Kerberos Token");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "accessControl" });
+        meta.putNull(AssertionMetadata.PROPERTIES_ACTION_FACTORY);
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         
         return meta;

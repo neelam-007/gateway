@@ -13,8 +13,8 @@ import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.util.Functions;
 
 import javax.swing.*;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 
 /**
  * Default PolicyNode for assertions that don't provide a custom one of their own.
@@ -72,12 +72,12 @@ public class DefaultAssertionPolicyNode<AT extends Assertion> extends LeafAssert
     }
 
     public Action[] getActions() {
-        java.util.List<Action> list = new ArrayList<Action>();
-        list.addAll(Arrays.asList(super.getActions()));
+        LinkedList<Action> list = new LinkedList<Action>(Arrays.asList(super.getActions()));
+        int addIndex = getPreferredAction() == null ? 0 : 1;
         if (asAssertion() instanceof SecurityHeaderAddressable)
-            list.add(new EditXmlSecurityRecipientContextAction(this));
+            list.add(addIndex, new EditXmlSecurityRecipientContextAction(this));
         if (asAssertion() instanceof PrivateKeyable)
-            list.add(new EditKeyAliasForAssertion(this));
+            list.add(addIndex, new EditKeyAliasForAssertion(this));
         return list.toArray(new Action[list.size()]);
     }
 
