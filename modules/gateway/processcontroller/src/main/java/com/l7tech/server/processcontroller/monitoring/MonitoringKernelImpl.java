@@ -19,12 +19,12 @@ import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.io.Serializable;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 /**
  * Drives all the monitoring behaviour of the ProcessController.
@@ -502,7 +502,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     try {
                         currentInOut = op.compare(sampledValue, comparisonValue, false) ? InOut.OUT : InOut.IN;
                     } catch (Exception e) {
-                        logger.log(Level.WARNING, MessageFormat.format("{0} value {1} couldn't be compared for {2} {3}; skipping", property, sampledValueString, op, comparisonValue), e);
+                        logger.log(Level.WARNING, MessageFormat.format("{0} value {1} couldn''t be compared for {2} {3}; skipping", property, sampledValueString, op, comparisonValue), e);
                         continue;
                     }
 
