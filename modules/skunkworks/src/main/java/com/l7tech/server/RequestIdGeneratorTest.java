@@ -1,66 +1,60 @@
 package com.l7tech.server;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import com.l7tech.gateway.common.RequestId;
+import org.junit.*;
+import static org.junit.Assert.*;
 
 import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.l7tech.gateway.common.RequestId;
-
 /**
  * @author alex
  * @version $Revision$
  */
-public class RequestIdGeneratorTest extends TestCase {
-    /**
-     * test <code>RequestIdGeneratorTest</code> constructor
-     */
-    public RequestIdGeneratorTest(String name) {
-        super(name);
-    }
+public class RequestIdGeneratorTest {
 
-    /**
-     * create the <code>TestSuite</code> for the
-     * RequestIdGeneratorTest <code>TestCase</code>
-     */
-    public static Test suite() {
-        TestSuite suite = new TestSuite(RequestIdGeneratorTest.class);
-        return suite;
+    RequestIdGenerator generator;
+
+    @Before
+    public void setUp() {
+        generator = new RequestIdGenerator(System.currentTimeMillis() - 10, RequestIdGenerator.MAX_SEQ - 100000);
     }
 
     class CounterThread extends Thread {
         public void run() {
-            RequestId id = null, lastId = null;
+            RequestId id;
+            RequestId lastId = null;
             for ( int i = 0; i < 100000; i++ ) {
-                id = RequestIdGenerator.next();
+                id = generator.doNext();
                 _ids.add( id );
-                if ( lastId == null ) continue;
 
-                assertFalse( "consecutive IDs were equal!", id.compareTo( lastId ) == 0 );
-                assertFalse( "second ID smaller than previous!", id.compareTo( lastId ) < 0 );
-                assertTrue( "second ID larger than previous", id.compareTo( lastId ) > 0 );
+                if (lastId != null) {
+                    assertFalse( "consecutive IDs were equal!", id.compareTo( lastId ) == 0 );
+                    assertFalse( "second ID smaller than previous!", id.compareTo( lastId ) < 0 );
+                    assertTrue( "second ID larger than previous", id.compareTo( lastId ) > 0 );
+                }
 
                 lastId = id;
             }
         }
 
-        Set _ids = new HashSet();
+        Set<RequestId> _ids = new HashSet<RequestId>();
     }
 
+    @Test
     public void testSimple() {
-        BigInteger bigTime = new BigInteger( new Long( ServerConfig.getInstance().getServerBootTime() ).toString() );
+        BigInteger bigTime = new BigInteger(Long.toString(ServerConfig.getInstance().getServerBootTime()));
         System.err.println( "bigTime = " + bigTime + " (" + bytesToHex( bigTime.toByteArray() ) + ")" );
 
-        RequestId id1 = RequestIdGenerator.next();
+        RequestId id1 = generator.doNext();
         System.err.println( "id1 = " + id1 + " (" + id1.toString() + ")" );
-        RequestId id2 = RequestIdGenerator.next();
+        RequestId id2 = generator.doNext();
         System.err.println( "id2 = " + id2 + " (" + id2.toString() + ")" );
         assertNotSame( "Generated IDs the same", id1, id2 );
     }
 
+    @Test
     public void testMonotonicity() throws Exception {
         CounterThread ct1 = new CounterThread();
         CounterThread ct2 = new CounterThread();
@@ -96,21 +90,12 @@ public class RequestIdGeneratorTest extends TestCase {
 
         StringBuffer buffer = new StringBuffer();
 
-        for (int i = 0; i < binaryData.length; i++) {
-            int low = (binaryData[i] & 0x0f);
-            int high = ((binaryData[i] & 0xf0) >> 4);
-            buffer.append( hexadecimal[high] );
-            buffer.append( hexadecimal[low] );
+        for (byte b : binaryData) {
+            int low = (b & 0x0f);
+            int high = ((b & 0xf0) >> 4);
+            buffer.append(hexadecimal[high]);
+            buffer.append(hexadecimal[low]);
         }
         return buffer.toString();
     }
-
-    /**
-     * Test <code>RequestIdGeneratorTest</code> main.
-     */
-    public static void main(String[] args) throws
-            Throwable {
-        junit.textui.TestRunner.run(suite());
-    }
-
 }

@@ -8,6 +8,8 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.RequestId;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * Generates probably-unique request identifiers incorporating a server ID,
  * (see {@link ServerConfig#getServerId()}) a boot time and sequence number.
@@ -17,41 +19,31 @@ import com.l7tech.gateway.common.RequestId;
  */
 public class RequestIdGenerator {
     public static RequestId next() {
-        RequestIdGenerator instance = getInstance();
-        long seq;
-        long time;
-        synchronized( instance ) {
-            seq = instance.nextSequence();
-            time = instance._bootTime;
+        return _instance.doNext();
+    }
+
+    RequestId doNext() {
+        long time = _time.get();
+        long seq = _sequence.incrementAndGet();
+        if (seq > MAX_SEQ) {
+            _time.compareAndSet(time, System.currentTimeMillis());
+            _sequence.compareAndSet(seq, 0);
         }
         return new RequestId(time, seq);
     }
 
-    private static synchronized RequestIdGenerator getInstance() {
-        if ( _instance == null ) _instance = new RequestIdGenerator();
-        return _instance;
+    RequestIdGenerator() {
+        this(ServerConfig.getInstance().getServerBootTime(), 0);
     }
 
-    private void reseed( long time ) {
-        _bootTime = time;
+    RequestIdGenerator(long startTime, long startSeq) {
+        _time.set(startTime);
+        _sequence.set(startSeq);
     }
 
-    private RequestIdGenerator() {
-        ServerConfig config = ServerConfig.getInstance();
-        reseed( config.getServerBootTime() );
-    }
+    private final AtomicLong _time = new AtomicLong();
+    private final AtomicLong _sequence = new AtomicLong();
 
-    private long nextSequence() {
-        if ( _sequence >= MAX_SEQ ) {
-            _sequence = 0;
-            reseed( System.currentTimeMillis() );
-        }
-        return _sequence++;
-    }
-
-    private long _bootTime;
-    private long _sequence;
-
-    private static RequestIdGenerator _instance;
-    public static final long MAX_SEQ = Long.MAX_VALUE;
+    private static final RequestIdGenerator _instance = new RequestIdGenerator();
+    public static final long MAX_SEQ = Long.MAX_VALUE / 2;
 }

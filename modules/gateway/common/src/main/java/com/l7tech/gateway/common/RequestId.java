@@ -62,24 +62,22 @@ public class RequestId implements Comparable, Serializable {
     }
 
     public String toString() {
-        StringBuffer result = new StringBuffer();
-        result.append( paddedHex( _generation ) );
+        StringBuilder result = new StringBuilder(34);
+        paddedHex(result, _generation);
         result.append(PARSE_SEPARATOR);
-        result.append( paddedHex( _sequence ) );
+        paddedHex(result, _sequence);
         return result.toString();
     }
 
-    private String paddedHex( long num ) {
-        return paddedHex( Long.toHexString( num ), 16 );
+    private void paddedHex(StringBuilder in, long num ) {
+        paddedHex( in, Long.toHexString( num ), 16 );
     }
 
-    private String paddedHex( String num, int len ) {
-        StringBuffer result = new StringBuffer();
-        while ( result.length() < ( len - num.length() )) {
-            result.append("0");
-        }
-        result.append( num );
-        return result.toString();
+    private void paddedHex( StringBuilder in, String num, int len ) {
+        final int wantlen = len - num.length();
+        while (in.length() < wantlen)
+            in.append('0');
+        in.append( num );
     }
 
     private long _generation;
