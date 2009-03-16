@@ -54,17 +54,7 @@ else
 fi
 # FIXME: need to add other card ID's if we get new ones
 
-if [ -z "`/sbin/lspci -nv |grep Subsystem |grep 1863`" ]; then
-	# try using "Class" instead
-	if [ -z "`/sbin/lspci -nv |grep Class |grep 1863`" ]; then     
-		echo "No Tarari card was found in this system"
-    	exit
-	else 
-		CARD=`/sbin/lspci -nv |grep "Class" |grep "1863" |grep "${CARD_ID}"`
-	fi
-else
-	CARD=`/sbin/lspci -nv |grep "Subsystem" |grep "1863" |grep "${CARD_ID}"`
-fi
+CARD=`/sbin/lspci -nv  |grep "1863" |grep "${CARD_ID}"`
 
 if [ -z "${CARD}" ]; then
         echo "This release (${RELEASE}) does not support this card (${CARD_ID})"
