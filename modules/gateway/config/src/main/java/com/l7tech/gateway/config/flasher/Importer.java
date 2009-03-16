@@ -757,6 +757,31 @@ class Importer extends ImportExportUtility {
             }
         }
 
+        //if config option is specified, then we need to check that we have proper information to populate node.properties
+        if (args.containsKey(CONFIG_ONLY.name)) {
+            if (!args.containsKey(DB_HOST_NAME.name)) {
+                throw new InvalidArgumentException("missing option " + DB_HOST_NAME.name);
+            }
+
+            if (!args.containsKey(DB_NAME.name)) {
+                throw new InvalidArgumentException("missing option " + DB_NAME.name);
+            }
+
+            if (!args.containsKey(GATEWAY_DB_USERNAME.name)) {
+                throw new InvalidArgumentException("missing option " + GATEWAY_DB_USERNAME.name);
+            }
+
+            if (!args.containsKey(GATEWAY_DB_PASSWORD.name)) {
+                throw new InvalidArgumentException("missing option " + GATEWAY_DB_PASSWORD.name);
+            }
+
+            if (!args.containsKey(CLUSTER_PASSPHRASE.name)) {
+                throw new InvalidArgumentException("missing option " + CLUSTER_PASSPHRASE.name);
+            }
+
+            return; //we are done with the validation, no need to continue futher
+        }
+
         //cluster password required
         if (!args.containsKey(CLUSTER_PASSPHRASE.name)) {
             throw new InvalidArgumentException("missing option " + CLUSTER_PASSPHRASE.name);
