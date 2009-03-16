@@ -470,7 +470,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
                                              final String message ) {
         boolean notificationSent = false;
 
-        GenericHttpClient client = httpClientFactory.createHttpClient(-1,-1,getConnectionTimeout(),getTimeout(), null);
+        GenericHttpClient client = httpClientFactory.createHttpClient();
         GenericHttpRequestParams requestParams = new GenericHttpRequestParams( urltarget );
         requestParams.setFollowRedirects( false );
         requestParams.setContentType( ContentTypeHeader.XML_DEFAULT );
@@ -536,56 +536,6 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         }
 
         return notificationSent;
-    }
-
-    /**
-     * Get the connection timeout to use (set using a cluster/system property)
-     *
-     * @return the configured or default timeout.
-     */
-    private int getConnectionTimeout() {
-        return getIntProperty(ServerConfig.PARAM_IO_BACK_CONNECTION_TIMEOUT,0,Integer.MAX_VALUE,0);
-    }
-
-    /**
-     * Get the timeout to use (set using a cluster/system property)
-     *
-     * @return the configured or default timeout.
-     */
-    private int getTimeout() {
-        return getIntProperty(ServerConfig.PARAM_IO_BACK_READ_TIMEOUT,0,Integer.MAX_VALUE,0);
-    }
-
-    /**
-     * Get a server config property using the configured min, max and default values.
-     */
-    private int getIntProperty(String propName, int min, int max, int defaultValue) {
-        int value = defaultValue;
-
-        try {
-            String configuredValue = serverConfig.getPropertyCached(propName);
-            if( configuredValue != null ) {
-                value = Integer.parseInt(configuredValue);
-
-                boolean useDefault = false;
-                if(value<min) {
-                    useDefault = true;
-                    logger.warning("Configured value for property '"+propName+"', is BELOW the minimum '"+min+"', using default value '"+defaultValue+"'.");
-                }
-                else if(value>max) {
-                    useDefault = true;
-                    logger.warning("Configured value for property '"+propName+"', is ABOVE the maximum '"+max+"', using default value '"+defaultValue+"'.");
-                }
-
-                if(useDefault) value = defaultValue;
-            }
-        } catch(SecurityException se) {
-            logger.warning("Cannot access property '"+propName+"', using default value '"+defaultValue+"', error is: " + se.getMessage());
-        } catch(NumberFormatException nfe) {
-            logger.warning("Cannot parse property '"+propName+"', using default value '"+defaultValue+"', error is: " + nfe.getMessage());
-        }
-
-        return value;
     }
 
     public void onServiceCreated(final long serviceoid) {
