@@ -310,7 +310,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
      * @param session the session ID that was originally returned from {@link #createSession}.  Must not be null or empty.
      * @return the additional session info.  Return null if not found the given session.
      */
-    public Object getSessionInfo( final String session ) {
+    public synchronized Object getSessionInfo( final String session ) {
         if (session == null) throw new NullPointerException();
         SessionHolder holder = (SessionHolder)sessionMap.get(session);
         if (holder == null) return null;
