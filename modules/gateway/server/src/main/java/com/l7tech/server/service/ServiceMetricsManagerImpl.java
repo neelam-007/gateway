@@ -1,38 +1,29 @@
 package com.l7tech.server.service;
 
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.server.util.JaasUtils;
-import com.l7tech.identity.User;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.gateway.common.service.ServiceHeader;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.server.mapping.MessageContextMappingManager;
-import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.server.util.ManagedTimer;
-import com.l7tech.server.util.ManagedTimerTask;
-import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.gateway.common.service.MetricsBin;
-import com.l7tech.gateway.common.service.MetricsSummaryBin;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceState;
-import com.l7tech.gateway.common.service.MetricsBinDetail;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.mapping.MessageContextMappingKeys;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
-import com.l7tech.util.TimeUnit;
+import com.l7tech.gateway.common.security.rbac.OperationType;
+import com.l7tech.gateway.common.service.*;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.mapping.MessageContextMappingManager;
+import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.server.util.*;
 import com.l7tech.util.ResourceUtils;
-
+import com.l7tech.util.TimeUnit;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
-import org.hibernate.engine.SessionImplementor;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.engine.SessionImplementor;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
@@ -42,8 +33,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallback;
@@ -52,18 +43,18 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.Types;
-import java.sql.SQLException;
 
 /**
  * Manages the processing and accumulation of service metrics for one SSG node.
@@ -74,15 +65,17 @@ import java.sql.SQLException;
 
 @Transactional(propagation=Propagation.SUPPORTS)
 public class ServiceMetricsManagerImpl extends HibernateDaoSupport
-        implements InitializingBean, DisposableBean, PropertyChangeListener, ApplicationListener, ServiceMetricsManager {
+        implements InitializingBean, DisposableBean, PropertyChangeListener, ServiceMetricsManager {
 
     //- PUBLIC
 
-    public ServiceMetricsManagerImpl(String clusterNodeId, ManagedTimer timer) {
+    public ServiceMetricsManagerImpl(String clusterNodeId, ManagedTimer timer, ApplicationEventProxy applicationEventProxy) {
         _clusterNodeId = clusterNodeId;
 
         if (timer == null) timer = new ManagedTimer("ServiceMetricsManager ManagedTimer");
         _timer = timer;
+        _applicationEventProxy = applicationEventProxy;
+        _applicationEventProxy.addApplicationListener(applicationListener);
     }
 
     public void setTransactionManager(PlatformTransactionManager transactionManager) {
@@ -106,6 +99,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
     }
 
     public void destroy() throws Exception {
+        _applicationEventProxy.removeApplicationListener(applicationListener);
         disable();
     }
 
@@ -574,6 +568,8 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
 
     private IdentityProviderFactory identityProviderFactory;
 
+    private ApplicationEventProxy _applicationEventProxy;
+
     /** Turns on service metrics collection. */
     private void enable() {
         synchronized(_enableLock) {
@@ -773,36 +769,40 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
         }
     }
 
-    public void onApplicationEvent(ApplicationEvent event) {
-        if (event instanceof EntityInvalidationEvent) {
-            EntityInvalidationEvent eie = (EntityInvalidationEvent)event;
-            if (!PublishedService.class.isAssignableFrom(eie.getEntityClass())) {
-                return;
-            }
+    private final ApplicationListener applicationListener = new ApplicationListener() {
+        public void onApplicationEvent(ApplicationEvent event) {
+            if (event instanceof EntityInvalidationEvent)
+                handleEntityInvalidationEvent((EntityInvalidationEvent) event);
+        }
+    };
 
-            for (int i = 0; i < eie.getEntityOperations().length; i++) {
-                char op = eie.getEntityOperations()[i];
-                long oid = eie.getEntityIds()[i];
-                switch (op) {
-                    case EntityInvalidationEvent.CREATE: // Intentional fallthrough
-                    case EntityInvalidationEvent.UPDATE:
-                        try {
-                            final PublishedService service = _serviceManager.findByPrimaryKey(oid);
-                            final ServiceState state =
+    private void handleEntityInvalidationEvent(EntityInvalidationEvent eie) {
+        if (!PublishedService.class.isAssignableFrom(eie.getEntityClass())) {
+            return;
+        }
+
+        for (int i = 0; i < eie.getEntityOperations().length; i++) {
+            char op = eie.getEntityOperations()[i];
+            long oid = eie.getEntityIds()[i];
+            switch (op) {
+                case EntityInvalidationEvent.CREATE: // Intentional fallthrough
+                case EntityInvalidationEvent.UPDATE:
+                    try {
+                        final PublishedService service = _serviceManager.findByPrimaryKey(oid);
+                        final ServiceState state =
                                 service == null ? ServiceState.DELETED :
-                                    (service.isDisabled() ? ServiceState.DISABLED : ServiceState.ENABLED);
-                            serviceStates.put(oid, state);
-                            break;
-                        } catch (FindException e) {
-                            if (logger.isLoggable(Level.WARNING)) {
-                                logger.log(Level.WARNING, MessageFormat.format("Unable to find created/updated service #{0}", oid), e);
-                            }
-                            continue;
-                        }
-                    case EntityInvalidationEvent.DELETE:
-                        serviceStates.put(oid, ServiceState.DELETED);
+                                        (service.isDisabled() ? ServiceState.DISABLED : ServiceState.ENABLED);
+                        serviceStates.put(oid, state);
                         break;
-                }
+                    } catch (FindException e) {
+                        if (logger.isLoggable(Level.WARNING)) {
+                            logger.log(Level.WARNING, MessageFormat.format("Unable to find created/updated service #{0}", oid), e);
+                        }
+                        continue;
+                    }
+                case EntityInvalidationEvent.DELETE:
+                    serviceStates.put(oid, ServiceState.DELETED);
+                    break;
             }
         }
     }

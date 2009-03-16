@@ -925,6 +925,7 @@
           parent="hibernateBean">
         <constructor-arg ref="clusterNodeId"/>
         <constructor-arg ref="managedBackgroundTimer"/>
+        <constructor-arg ref="applicationEventProxy"/>
 
         <property name="serviceManager" ref ="serviceManager"/>
         <property name="roleManager" ref="roleManager"/>
