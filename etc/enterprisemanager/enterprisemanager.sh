@@ -4,11 +4,26 @@
 #############################################################################
 
 #
+function fail() {
+  echo "$2"
+  exit ${1}
+}
+
+#
 if [ -z "${SSEM_HOME}" ] ; then
   cd $(dirname ${0})
   cd ..
   SSEM_HOME="$(pwd)"
 fi
+
+#
+cd "${SSEM_HOME}" &>/dev/null || fail 2 "Directory not found: ${SSEM_HOME}"
+
+EM_JAVA_OPTS="-XX:MaxPermSize=256m -Xmx512m"
+if [ -f etc/profile ] ; then
+    source etc/profile
+fi
+
 if [ -z "${JAVA_HOME}" ] ; then
   JAVA_HOME="/opt/SecureSpan/JDK"
 fi
@@ -23,20 +38,11 @@ if [ ! -z "${1}" ] && [ ! -z "${2}" ] ; then
   chown "${EM_USER}" "${EM_PIDTEMP}"
 fi
 
-#
-function fail() {
-  echo "$2"
-  exit ${1}
-}
-
-#
-cd "${SSEM_HOME}" &>/dev/null || fail 2 "Directory not found: ${SSEM_HOME}" 
-
 if [ -z "${EM_USER}" ] ; then
-  "${JAVA_HOME}/bin/java" -Xmx256m -jar EnterpriseManager.jar &>/dev/null <&- &
+  "${JAVA_HOME}/bin/java" ${EM_JAVA_OPTS} -jar EnterpriseManager.jar 2>&1 <&- | logger -p local0.info -t ssem &>/dev/null &
 else
-  export JAVA_HOME EM_PIDTEMP
-  runuser "${EM_USER}" -c '"${JAVA_HOME}/bin/java" -Xmx256m -jar EnterpriseManager.jar &>/dev/null <&- & echo "${!}" > "${EM_PIDTEMP}"'
+  export JAVA_HOME EM_PIDTEMP EM_JAVA_OPTS
+  runuser "${EM_USER}" -c '("${JAVA_HOME}/bin/java" ${EM_JAVA_OPTS} -jar EnterpriseManager.jar & echo "${!}" > "${EM_PIDTEMP}") 2>&1 <&- | logger -p local0.info -t ssem &>/dev/null &'
 fi
 
 if [ ${?} -eq 0 ] ; then

@@ -51,6 +51,11 @@ public class EsmMain {
                 }
             }
 
+            // derby init
+            if ( System.getProperty("derby.system.home") == null ) {
+                System.setProperty("derby.system.home", "var/db");
+            }
+
             // add shutdown handler
             final CountDownLatch shutdown = new CountDownLatch(1);
             final CountDownLatch exit = new CountDownLatch(1);
