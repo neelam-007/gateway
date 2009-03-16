@@ -107,8 +107,8 @@
             AUDIT_SIZE : 'audit size',
             OPERATING_STATUS : 'operating status',
             LOG_SIZE : 'log file size',
-            DISK_USAGE : 'disk usage',
-            DISK_FREE : 'disk free',
+            DISK_USAGE : 'disk usage (root partition)',
+            DISK_FREE : 'disk free (root partition)',
             RAID_STATUS : 'RAID status',
             CPU_TEMP : 'CPU temperature',
             CPU_USAGE : 'CPU usage',
@@ -1683,12 +1683,12 @@
                                                     <td>&ge; <input id="logSizeDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="7" onkeyup="validateSetup();"/> <span id="logSizeDefaultTriggerUnitLabel"></span> <img id="logSizeDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
                                                 </tr>
                                                 <tr>
-                                                    <td>disk usage</td>
+                                                    <td>disk usage (root partition)</td>
                                                     <td class="center"><input id="diskUsageSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="diskUsageSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
                                                     <td>&ge; <input id="diskUsageDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="4" onkeyup="validateSetup();"/> <span id="diskUsageDefaultTriggerUnitLabel"></span> <img id="diskUsageDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
                                                 </tr>
                                                 <tr>
-                                                    <td>disk free</td>
+                                                    <td>disk free (root partition)</td>
                                                     <td class="center"><input id="diskFreeSamplingIntervalTextBox" class="right" type="text" size="3" maxlength="3" onkeyup="validateSetup();"/> <img id="diskFreeSamplingIntervalWarningIcon" src="../images/warning.png"/></td>
                                                     <td>&le; <input id="diskFreeDefaultTriggerValueTextBox" class="right" type="text" size="7" maxlength="4" onkeyup="validateSetup();"/> <span id="diskFreeDefaultTriggerUnitLabel"></span> <img id="diskFreeDefaultTriggerValueWarningIcon" src="../images/warning.png"/></td>
                                                 </tr>
@@ -1771,8 +1771,8 @@
                                         <th class="group0"><div class="collapsedHeader" style="display: none;">audit size (no. of audit events)</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">operating status</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">log files size</div></th>
-                                        <th class="group1"><div class="collapsedHeader" style="display: none;">disk usage</div></th>
-                                        <th class="group1"><div class="collapsedHeader" style="display: none;">disk free</div></th>
+                                        <th class="group1"><div class="collapsedHeader" style="display: none;">disk usage (root partition)</div></th>
+                                        <th class="group1"><div class="collapsedHeader" style="display: none;">disk free (root partition)</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">RAID status</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">CPU temperature</div></th>
                                         <th class="group1"><div class="collapsedHeader" style="display: none;">CPU usage</div></th>
@@ -1805,14 +1805,14 @@
                                         <th class="group0 middleStep group0middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
-                                        <th class="group1 topStep" colspan="7">disk usage</th>
+                                        <th class="group1 topStep" colspan="7">disk usage (root partition)</th>
                                     </tr>
                                     <tr>
                                         <th class="group0 middleStep group0middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
                                         <th class="group1 middleStep group1middleStep"> </th>
-                                        <th class="group1 topStep" colspan="6">disk free</th>
+                                        <th class="group1 topStep" colspan="6">disk free (root partition)</th>
                                     </tr>
                                     <tr>
                                         <th class="group0 middleStep group0middleStep"> </th>
