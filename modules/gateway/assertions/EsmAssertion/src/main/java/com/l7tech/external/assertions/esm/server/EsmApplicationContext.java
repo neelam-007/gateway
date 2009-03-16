@@ -10,6 +10,7 @@ import com.l7tech.server.wsdm.ServiceManagementAdministrationService;
 /** @author alex */
 public final class EsmApplicationContext {
     private final ClassPathXmlApplicationContext spring;
+    private final ServiceManagementAdministrationService wsdmService;
 
     private EsmApplicationContext(ApplicationContext parentSpring) {
         ClassLoader old = null;
@@ -17,6 +18,7 @@ public final class EsmApplicationContext {
             old = Thread.currentThread().getContextClassLoader();
             Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
             spring = new ClassPathXmlApplicationContext(new String[] { "com/l7tech/external/assertions/esm/server/resources/esmAssertionContext.xml" }, true, parentSpring);
+            wsdmService = (ServiceManagementAdministrationService)spring.getBean("wsdmService");
         } finally {
             if (old != null) Thread.currentThread().setContextClassLoader(old);
         }
@@ -35,10 +37,8 @@ public final class EsmApplicationContext {
     }
 
     public ServiceManagementAdministrationService getEsmService() {
-        return (ServiceManagementAdministrationService)spring.getBean("wsdmService");
+        return wsdmService;
     }
 
     private static volatile EsmApplicationContext INSTANCE;
-
-
 }
