@@ -146,7 +146,7 @@ class Importer extends ImportExportUtility {
 
             rootDBUsername = arguments.get(DB_USER.name);
             rootDBPasswd = arguments.get(DB_PASSWD.name);
-            if (rootDBUsername == null) {
+            if (rootDBUsername == null && !configOnly) {
                 throw new FlashUtilityLauncher.InvalidArgumentException("Please provide options: " + DB_USER.name +
                         " and " + DB_PASSWD.name);
             }
