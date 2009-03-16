@@ -124,8 +124,8 @@ public class TransformAndCompileTest {
         Document runtimeDoc = XmlUtil.stringToDocument(transformXml);
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", runtimeDoc);
-        params.put("FrameMinWidth", 565);
-        params.put("PageMinWidth", 595);
+        params.put("FrameMinWidth", 820);
+        params.put("PageMinWidth", 850);
         int titleInnerFrameBuffer = 7;
         params.put("TitleInnerFrameBuffer", titleInnerFrameBuffer);
 

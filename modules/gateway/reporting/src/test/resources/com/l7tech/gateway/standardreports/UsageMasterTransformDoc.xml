@@ -693,7 +693,7 @@
             <textField evaluationTime="Now" hyperlinkTarget="Self"
                        hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
                 <reportElement height="18" key="chartLegendKey1"
-                               style="chartLegendTextField" width="1153" x="0" y="0"/>
+                               style="chartLegendTextField" width="820" x="0" y="0"/>
                 <box/>
                 <textElement markup="html">
                     <font/>
@@ -704,7 +704,7 @@
             <textField evaluationTime="Now" hyperlinkTarget="Self"
                        hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
                 <reportElement height="18" key="chartLegendKey2"
-                               style="chartLegendTextField" width="1153" x="0" y="20"/>
+                               style="chartLegendTextField" width="820" x="0" y="20"/>
                 <box/>
                 <textElement markup="html">
                     <font/>
@@ -715,7 +715,7 @@
             <textField evaluationTime="Now" hyperlinkTarget="Self"
                        hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
                 <reportElement height="18" key="chartLegendKey3"
-                               style="chartLegendTextField" width="1153" x="0" y="40"/>
+                               style="chartLegendTextField" width="820" x="0" y="40"/>
                 <box/>
                 <textElement markup="html">
                     <font/>
@@ -726,7 +726,7 @@
             <textField evaluationTime="Now" hyperlinkTarget="Self"
                        hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
                 <reportElement height="18" key="chartLegendKey4"
-                               style="chartLegendTextField" width="1153" x="0" y="60"/>
+                               style="chartLegendTextField" width="820" x="0" y="60"/>
                 <box/>
                 <textElement markup="html">
                     <font/>
@@ -737,7 +737,7 @@
             <textField evaluationTime="Now" hyperlinkTarget="Self"
                        hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
                 <reportElement height="18" key="chartLegendKey5"
-                               style="chartLegendTextField" width="1153" x="0" y="80"/>
+                               style="chartLegendTextField" width="820" x="0" y="80"/>
                 <box/>
                 <textElement markup="html">
                     <font/>
@@ -748,7 +748,7 @@
             <textField evaluationTime="Now" hyperlinkTarget="Self"
                        hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
                 <reportElement height="18" key="chartLegendKey6"
-                               style="chartLegendTextField" width="1153" x="0" y="100"/>
+                               style="chartLegendTextField" width="820" x="0" y="100"/>
                 <box/>
                 <textElement markup="html">
                     <font/>
@@ -759,7 +759,7 @@
             <textField evaluationTime="Now" hyperlinkTarget="Self"
                        hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
                 <reportElement height="18" key="chartLegendKey7"
-                               style="chartLegendTextField" width="1153" x="0" y="120"/>
+                               style="chartLegendTextField" width="820" x="0" y="120"/>
                 <box/>
                 <textElement markup="html">
                     <font/>
@@ -770,7 +770,7 @@
             <textField evaluationTime="Now" hyperlinkTarget="Self"
                        hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
                 <reportElement height="18" key="chartLegendKey8"
-                               style="chartLegendTextField" width="1153" x="0" y="140"/>
+                               style="chartLegendTextField" width="820" x="0" y="140"/>
                 <box/>
                 <textElement markup="html">
                     <font/>
@@ -781,7 +781,7 @@
             <textField evaluationTime="Now" hyperlinkTarget="Self"
                        hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
                 <reportElement height="18" key="chartLegendKey9"
-                               style="chartLegendTextField" width="1153" x="0" y="160"/>
+                               style="chartLegendTextField" width="820" x="0" y="160"/>
                 <box/>
                 <textElement markup="html">
                     <font/>
@@ -792,7 +792,7 @@
             <textField evaluationTime="Now" hyperlinkTarget="Self"
                        hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
                 <reportElement height="18" key="chartLegendKey10"
-                               style="chartLegendTextField" width="1153" x="0" y="180"/>
+                               style="chartLegendTextField" width="820" x="0" y="180"/>
                 <box/>
                 <textElement markup="html">
                     <font/>
@@ -803,7 +803,7 @@
             <textField evaluationTime="Now" hyperlinkTarget="Self"
                        hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
                 <reportElement height="18" key="chartLegendKey11"
-                               style="chartLegendTextField" width="1153" x="0" y="200"/>
+                               style="chartLegendTextField" width="820" x="0" y="200"/>
                 <box/>
                 <textElement markup="html">
                     <font/>
@@ -814,7 +814,7 @@
             <textField evaluationTime="Now" hyperlinkTarget="Self"
                        hyperlinkType="None" isBlankWhenNull="false" isStretchWithOverflow="true">
                 <reportElement height="18" key="chartLegendKey12"
-                               style="chartLegendTextField" width="1153" x="0" y="220"/>
+                               style="chartLegendTextField" width="820" x="0" y="220"/>
                 <box/>
                 <textElement markup="html">
                     <font/>

@@ -397,7 +397,6 @@
                     <xsl:apply-templates select="node()|@*[local-name()!='height']"/>
                 </xsl:otherwise>
             </xsl:choose>
-
         </xsl:element>
     </xsl:template>
 
@@ -405,59 +404,26 @@
     <xsl:template
             match="/jasperReport/group[@name='CONSTANT_CHART']/groupHeader/band/frame[2]/barChart/chart/reportElement">
         <xsl:element name="reportElement">
-            <xsl:choose>
-                <xsl:when test="$useDynamicWidths = 1">
-                    <xsl:attribute name="width">
-                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth"/>
-                    </xsl:attribute>
-                    <xsl:attribute name="height">
-                        <xsl:value-of
-                                select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartHeight"/>
-                    </xsl:attribute>
+            <xsl:attribute name="height">
+                <xsl:value-of
+                        select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartHeight"/>
+            </xsl:attribute>
+            <xsl:apply-templates select="node()|@*[local-name()!='height']"/>
 
-                    <xsl:apply-templates select="node()|@*[local-name()!='height' and local-name()!='width']"/>
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:attribute name="height">
-                        <xsl:value-of
-                                select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartHeight"/>
-                    </xsl:attribute>
-                    <xsl:apply-templates select="node()|@*[local-name()!='height']"/>
-                </xsl:otherwise>
-            </xsl:choose>
         </xsl:element>
     </xsl:template>
 
     <xsl:template match="/jasperReport/group[@name='CONSTANT_CHART']/groupHeader/band/frame[2]/frame/reportElement">
         <xsl:element name="reportElement">
-            <xsl:choose>
-                <xsl:when test="$useDynamicWidths = 1">
-                    <xsl:attribute name="width">
-                        <xsl:value-of select="$RuntimeDoc/JasperRuntimeTransformation/frameWidth"/>
-                    </xsl:attribute>
-                    <xsl:attribute name="height">
-                        <xsl:value-of
-                                select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartLegendHeight"/>
-                    </xsl:attribute>
-                    <xsl:attribute name="y">
-                        <xsl:value-of
-                                select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartLegendFrameYPos"/>
-                    </xsl:attribute>
-                    <xsl:apply-templates
-                            select="node()|@*[local-name()!='height' and local-name()!='y' and local-name()!='width']"/>
-                </xsl:when>
-                <xsl:otherwise>
-                    <xsl:attribute name="height">
-                        <xsl:value-of
-                                select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartLegendHeight"/>
-                    </xsl:attribute>
-                    <xsl:attribute name="y">
-                        <xsl:value-of
-                                select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartLegendFrameYPos"/>
-                    </xsl:attribute>
-                    <xsl:apply-templates select="node()|@*[local-name()!='height' and local-name()!='y']"/>
-                </xsl:otherwise>
-            </xsl:choose>
+            <xsl:attribute name="height">
+                <xsl:value-of
+                        select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartLegendHeight"/>
+            </xsl:attribute>
+            <xsl:attribute name="y">
+                <xsl:value-of
+                        select="$RuntimeDoc/JasperRuntimeTransformation/chartElement/chartLegendFrameYPos"/>
+            </xsl:attribute>
+            <xsl:apply-templates select="node()|@*[local-name()!='height' and local-name()!='y']"/>
 
         </xsl:element>
     </xsl:template>

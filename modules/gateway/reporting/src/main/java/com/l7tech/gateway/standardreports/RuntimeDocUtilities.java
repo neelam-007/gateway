@@ -30,6 +30,7 @@ public class RuntimeDocUtilities {
     private static final String PAGE_HEIGHT = "pageHeight";
     private static final String CHART_ELEMENT = "chartElement";
     private static final int CONSTANT_HEADER_HEIGHT = 54;
+    private static final int USAGE_CHART_STATIC_WIDTH = 820;
     private static final int FRAME_MIN_WIDTH = 820;
     public static final String ALL_BORDERS_OPAQUE_CENTER_BROWN = "AllBordersOpaqueCenterBrown";
     private static final String ALL_BORDERS_GREY_CENTER = "AllBordersGreyCenter";
@@ -510,7 +511,7 @@ public class RuntimeDocUtilities {
                 true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
 
         LinkedHashMap<String, String> groupToLegendDisplayStringMap = getGroupToLegendDisplayStringMap(mappingValuesLegend);
-        addChartXMLToDocument(doc, groupToLegendDisplayStringMap, frameWidth, 595);
+        addChartXMLToDocument(doc, groupToLegendDisplayStringMap, USAGE_CHART_STATIC_WIDTH, 595);
 
         return doc;
     }
@@ -749,7 +750,7 @@ public class RuntimeDocUtilities {
         rootNode.appendChild(rightMarginElement);
 
         LinkedHashMap<String, String> groupToLegendDisplayStringMap = getGroupToLegendDisplayStringMap(mappingValuesLegend);
-        addChartXMLToDocument(doc, groupToLegendDisplayStringMap, frameWidth, 595);
+        addChartXMLToDocument(doc, groupToLegendDisplayStringMap, USAGE_CHART_STATIC_WIDTH, 595);
         return doc;
     }
 
