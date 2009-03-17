@@ -72,11 +72,11 @@ public class Folder extends NamedEntityImp implements HasFolder {
         if (parentFolder == null) return "/";
 
         StringBuilder sb = new StringBuilder();
-        Folder parent = parentFolder;
+        Folder current = this;
         int nesting = 0;
-        while(parent != null && nesting++ < MAX_NESTING_CHECK_LEVEL) {
-            sb.append(new StringBuilder(_name).reverse()).append("/");
-            parent = parent.getFolder();
+        while(current.getFolder() != null && nesting++ < MAX_NESTING_CHECK_LEVEL) {
+            sb.append(new StringBuilder(current.getName()).reverse()).append("/");
+            current = current.getFolder();
         }
         return sb.reverse().toString();
     }
