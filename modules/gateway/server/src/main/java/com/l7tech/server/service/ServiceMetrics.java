@@ -211,7 +211,7 @@ class ServiceMetrics {
     /**
      * Set of collection and summary metrics with identifying information
      */
-    static class MetricsCollectorSet {
+    public static class MetricsCollectorSet {
         private final long serviceOid;
         private final long startTime;
         private final long endTime;

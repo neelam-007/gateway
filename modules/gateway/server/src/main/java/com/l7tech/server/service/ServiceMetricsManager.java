@@ -1,11 +1,12 @@
 package com.l7tech.server.service;
 
-import com.l7tech.gateway.common.mapping.MessageContextMapping;
+import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
+import com.l7tech.gateway.common.service.ServiceHeader;
+import com.l7tech.gateway.common.service.ServiceState;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.identity.User;
+import com.l7tech.objectmodel.SaveException;
 
-import java.util.List;
 import java.util.Collection;
 import java.util.Map;
 
@@ -13,40 +14,6 @@ import java.util.Map;
  *
  */
 public interface ServiceMetricsManager {
-    
-    /**
-     * @return whether collection of service metrics is currently enabled
-     */
-    boolean isEnabled();
-
-    /**
-     * Ensure service metrics are tracked for a given published service.
-     *
-     * @param serviceOid    OID of published service
-     */
-    void trackServiceMetrics(long serviceOid);
-
-    /**
-     * Record service metrics for a given published service and mapping info.
-     *
-     * @param serviceOid  OID of published service
-     * @param operation   the published service operation (may be null)
-     * @param authorizedUser the user for the request (may be null)
-     * @param mappings    Message context mapping information (may be null)
-     * @param authorized True if the policy execution was successful (routing attempted).
-     * @param completed  True if the routing was successful
-     * @param frontTime  Complete time for request processing
-     * @param backTime   Time taken by the protected service
-     */
-    void addRequest(long serviceOid, String operation, User authorizedUser, List<MessageContextMapping> mappings, boolean authorized, boolean completed, int frontTime, int backTime);
-
-    /**
-     * Get the interval for fine metrics bins.
-     *
-     * @return the interval in millis
-     */
-    int getFineInterval();
-
     /**
      * Searches for metrics bins with the given criteria and summarizes by
      * combining bins with the same period start.
@@ -98,4 +65,33 @@ public interface ServiceMetricsManager {
                                              boolean includeEmpty)
             throws FindException;
 
+    /**
+     * Gets the current state of a service that was recently created or updated.
+     */
+    ServiceState getCreatedOrUpdatedServiceState(long oid) throws FindException;
+
+    /**
+     * Deletes old metrics bins.
+     */
+    Integer delete(long oldestSurvivor, int resolution);
+
+    /**
+     * Finds all the ServiceHeaders currently in the database.
+     */
+    Collection<ServiceHeader> findAllServiceHeaders() throws FindException;
+
+    /**
+     * The database work for the MetricsBin flush.
+     */
+    void doFlush(ServiceMetrics.MetricsCollectorSet metricsSet, MetricsBin bin);
+
+    /**
+     * Creates and saves a new hourly bin
+     */
+    void createHourlyBin(Long serviceOid, ServiceState state, long startTime) throws SaveException;
+
+    /**
+     * Creates and saves a new daily bin
+     */
+    void createDailyBin(Long serviceOid, ServiceState state, long startTime) throws SaveException;
 }

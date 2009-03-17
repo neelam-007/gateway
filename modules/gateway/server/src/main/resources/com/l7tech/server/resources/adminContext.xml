@@ -309,6 +309,7 @@
         <constructor-arg ref="clusterPropertyManager"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="serviceMetricsManager"/>
+        <constructor-arg ref="serviceMetricsServices"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="assertionRegistry"/>
         <constructor-arg ref="trustedEsmManager"/>

@@ -1,14 +1,17 @@
 package com.l7tech.server.wsdm;
 
-import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.service.MetricsBin;
+import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceMetricsManager;
+import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.wsdm.subscription.ServiceStateMonitor;
 import com.l7tech.util.ArrayUtils;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -47,13 +50,18 @@ public class Aggregator implements ServiceStateMonitor {
 
     private final HashMap<Long, MetricsSummaryBin> metrics = new HashMap<Long, MetricsSummaryBin>();
     private long lastMetricsTimestamp = 0L;
-    private final ServiceManager serviceManager;
-    private final ServiceMetricsManager metricsManager;
 
-    public Aggregator(ServiceManager serviceManager, ServiceMetricsManager metricsManager) {
-        this.serviceManager = serviceManager;
-        this.metricsManager = metricsManager;
+    @Resource
+    private ServiceManager serviceManager;
 
+    @Resource
+    private ServiceMetricsManager metricsManager;
+
+    @Resource
+    private ServiceMetricsServices metricsServices;
+
+    @PostConstruct
+    public void start() {
         // Calculate ESM metrics by summing all available service metrics bins.
         // See http://sarek/mediawiki/index.php?title=ESM#Calculating_ESM_Metrics for explanation.
         try {
@@ -144,7 +152,7 @@ public class Aggregator implements ServiceStateMonitor {
 
     private Map<Long, MetricsSummaryBin> getMetricsForServicesNoLock(boolean includeEmpty) {
         try {
-            long periodStart = MetricsBin.periodStartFor(MetricsBin.RES_FINE, metricsManager.getFineInterval(), lastMetricsTimestamp);
+            long periodStart = MetricsBin.periodStartFor(MetricsBin.RES_FINE, metricsServices.getFineInterval(), lastMetricsTimestamp);
             long[] serviceOids;
             if(metrics.size() == 0) {
                 serviceOids = new long[0];
@@ -186,14 +194,14 @@ public class Aggregator implements ServiceStateMonitor {
         // Ensure manager tracks metrics for this service
         // If this is not done then service status changes are not tracked
         // until the service is consumed.
-        metricsManager.trackServiceMetrics( serviceoid );
+        metricsServices.trackServiceMetrics( serviceoid );
     }
     
     public MetricsSummaryBin getMetricsForService(long serviceOid) {
         lock.writeLock().lock();
         try {
             if(metrics.containsKey(serviceOid)) {
-                if(System.currentTimeMillis() - lastMetricsTimestamp <= metricsManager.getFineInterval()) {
+                if(System.currentTimeMillis() - lastMetricsTimestamp <= metricsServices.getFineInterval()) {
                     return metrics.get(serviceOid);
                 } else {
                     getMetricsForServicesNoLock(true);

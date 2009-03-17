@@ -9,13 +9,17 @@ import com.l7tech.gateway.common.cluster.*;
 import com.l7tech.gateway.common.esmtrust.TrustedEsm;
 import com.l7tech.gateway.common.esmtrust.TrustedEsmUser;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.*;
 import com.l7tech.server.policy.AssertionModule;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.service.ServiceMetricsManager;
+import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.util.CollectionUpdate;
 import com.l7tech.util.CollectionUpdateProducer;
 import com.l7tech.util.TimeUnit;
@@ -45,6 +49,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
                                  ClusterPropertyManager clusterPropertyManager,
                                  LicenseManager licenseManager,
                                  ServiceMetricsManager metricsManager,
+                                 ServiceMetricsServices serviceMetricsServices,
                                  ServerConfig serverConfig,
                                  AssertionRegistry assertionRegistry,
                                  TrustedEsmManager trustedEsmManager,
@@ -53,6 +58,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceUsageManager = serviceUsageManager;
         this.clusterPropertyManager = clusterPropertyManager;
+        this.serviceMetricsServices = serviceMetricsServices;
         this.licenseManager = (GatewayLicenseManager)licenseManager;
         this.serviceMetricsManager = metricsManager;
         this.serverConfig = serverConfig;
@@ -283,12 +289,12 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
 
     @Override
     public boolean isMetricsEnabled() {
-        return serviceMetricsManager.isEnabled();
+        return serviceMetricsServices.isEnabled();
     }
 
     @Override
     public int getMetricsFineInterval() {
-        return serviceMetricsManager.getFineInterval();
+        return serviceMetricsServices.getFineInterval();
     }
 
     @Override
@@ -360,6 +366,7 @@ public class ClusterStatusAdminImp implements ClusterStatusAdmin {
     private final ClusterPropertyManager clusterPropertyManager;
     private final GatewayLicenseManager licenseManager;
     private final ServiceMetricsManager serviceMetricsManager;
+    private final ServiceMetricsServices serviceMetricsServices;
     private final ServerConfig serverConfig;
     private final ServerAssertionRegistry assertionRegistry;
     private final TrustedEsmManager trustedEsmManager;

@@ -20,6 +20,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,19 +40,22 @@ import java.util.logging.Logger;
 public class ServiceManagementAdministrationService implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(ServiceManagementAdministrationService.class.getName());
 
-    private final QoSMetricsService qosService;
-    private final SubscriptionNotifier subscriptionNotifier;
-    private final ServiceCache serviceCache;
+    @Resource
+    private QoSMetricsService qosService;
+    @Resource
+    private SubscriptionNotifier subscriptionNotifier;
+    @Resource
+    private ServiceCache serviceCache;
 
     private final ArrayList<ServiceStateMonitor> serviceStateMonitors = new ArrayList<ServiceStateMonitor>();
+    private final List<ServiceStateMonitor> monitors;
 
-    public ServiceManagementAdministrationService(final QoSMetricsService qosService,
-                                                  final SubscriptionNotifier subscriptionNotifier,
-                                                  final ServiceCache serviceCache,
-                                                  final List<ServiceStateMonitor> monitors) {
-        this.qosService = qosService;
-        this.subscriptionNotifier = subscriptionNotifier;
-        this.serviceCache = serviceCache;
+    public ServiceManagementAdministrationService(List<ServiceStateMonitor> monitors) {
+        this.monitors = monitors;
+    }
+
+    @PostConstruct
+    public void start() {
         serviceStateMonitors.add(subscriptionNotifier);
         serviceStateMonitors.addAll(monitors);
     }

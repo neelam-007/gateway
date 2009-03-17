@@ -43,7 +43,7 @@ import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceCache;
-import com.l7tech.server.service.ServiceMetricsManager;
+import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
@@ -89,7 +89,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final WssDecorator wssDecorator;
     private final SecurityTokenResolver securityTokenResolver;
     private final LicenseManager licenseManager;
-    private final ServiceMetricsManager serviceMetricsManager;
+    private final ServiceMetricsServices serviceMetricsServices;
     private final AuditContext auditContext;
     private final ServerConfig serverConfig;
     private final TrafficLogger trafficLogger;
@@ -106,7 +106,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
      * @param sc             the service cache
      * @param wssd           the Wss Decorator
      * @param licenseManager the SSG's Licence Manager
-     * @param metricsManager the SSG's ServiceMetricsManager
+     * @param metricsServices the SSG's ServiceMetricsManager
      * @throws IllegalArgumentException if any of the arguments is null
      */
     public MessageProcessor(ServiceCache sc,
@@ -114,7 +114,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                             WssDecorator wssd,
                             SecurityTokenResolver securityTokenResolver,
                             LicenseManager licenseManager,
-                            ServiceMetricsManager metricsManager,
+                            ServiceMetricsServices metricsServices,
                             AuditContext auditContext,
                             ServerConfig serverConfig,
                             TrafficLogger trafficLogger,
@@ -125,7 +125,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (pc == null) throw new IllegalArgumentException("Policy Cache is required");
         if (wssd == null) throw new IllegalArgumentException("Wss Decorator is required");
         if (licenseManager == null) throw new IllegalArgumentException("License Manager is required");
-        if (metricsManager == null) throw new IllegalArgumentException("Service Metrics Manager is required");
+        if (metricsServices == null) throw new IllegalArgumentException("Service Metrics Manager is required");
         if (auditContext == null) throw new IllegalArgumentException("Audit Context is required");
         if (serverConfig == null) throw new IllegalArgumentException("Server Config is required");
         if (trafficLogger == null) throw new IllegalArgumentException("Traffic Logger is required");
@@ -136,7 +136,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         this.wssDecorator = wssd;
         this.securityTokenResolver = securityTokenResolver;
         this.licenseManager = licenseManager;
-        this.serviceMetricsManager = metricsManager;
+        this.serviceMetricsServices = metricsServices;
         this.auditContext = auditContext;
         this.serverConfig = serverConfig;
         this.trafficLogger = trafficLogger;
@@ -525,11 +525,11 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 }
             }
 
-            if (attemptedRequest && serviceMetricsManager.isEnabled()) {
+            if (attemptedRequest && serviceMetricsServices.isEnabled()) {
                 final int frontTime = (int)(context.getEndTime() - context.getStartTime());
                 final int backTime = (int)(context.getRoutingTotalTime());
 
-                serviceMetricsManager.addRequest(
+                serviceMetricsServices.addRequest(
                         serviceOid, 
                         getOperationName(context),
                         context.getLastAuthenticatedUser(),

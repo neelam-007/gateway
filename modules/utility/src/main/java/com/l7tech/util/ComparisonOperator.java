@@ -70,7 +70,9 @@ public enum ComparisonOperator {
         return strategy.compare(left, right, ignoreCase);
     }
 
-    /** Compares two Comparables for equality. */
+    /**
+     * Compares two Comparables for equality.
+     */
     private static class EqualsStrategy extends DefaultComparisonStrategy {
         private EqualsStrategy() {
             super(0, 0);
@@ -92,14 +94,18 @@ public enum ComparisonOperator {
 
     }
 
-    /** Negated EQ. */
+    /**
+     * Negated EQ.
+     */
     private static class NotEqualsStrategy extends EqualsStrategy {
         public boolean compare(Comparable left, Comparable right, boolean ignoreCase) {
             return !super.compare(left, right, ignoreCase);
         }
     }
 
-    /** Unary operator that returns true if Comparable is null or its toString() returns empty string. */
+    /**
+     * Unary operator that returns true if Comparable is null or its toString() returns empty string.
+     */
     private static class EmptyStrategy extends ComparisonStrategy {
         protected EmptyStrategy() {
             super(true);
@@ -110,7 +116,9 @@ public enum ComparisonOperator {
         }
     }
 
-    /** Binary operator that returns true if right String is contained within left String. */
+    /**
+     * Binary operator that returns true if right String is contained within left String.
+     */
     private static class ContainsStrategy extends ComparisonStrategy {
         protected ContainsStrategy() {
             super(false);
@@ -141,7 +149,6 @@ public enum ComparisonOperator {
 
     /**
      * Default comparison strategy: compare two Comparables using this operator.
-     *
      */
     private static class DefaultComparisonStrategy extends ComparisonStrategy {
         private final int compareVal1;
@@ -166,6 +173,9 @@ public enum ComparisonOperator {
         }
     }
 
+    /**
+     * Always returns the same boolean value, no matter what operands are submitted
+     */
     private static class FixedStrategy extends ComparisonStrategy {
         private final boolean what;
 

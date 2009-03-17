@@ -15,8 +15,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.service.ServiceCache;
-import com.l7tech.server.service.ServiceMetricsManagerImpl;
-import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.server.service.ServiceMetricsServicesImpl;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.SoapFaultManager;
 
@@ -49,7 +48,7 @@ public class TestMessageProcessor extends MessageProcessor {
                 wssd,
                 null,
                 new TestLicenseManager(),
-                new ServiceMetricsManagerImpl("yo",null, new ApplicationEventProxy()),
+                new ServiceMetricsServicesImpl("yo"),
                 new AuditContextStub(),
                 ServerConfig.getInstance(),
                 new TrafficLogger(ServerConfig.getInstance(), null),

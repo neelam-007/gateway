@@ -1,10 +1,10 @@
 package com.l7tech.server.wsdm;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.server.service.ServiceCache;
-import com.l7tech.server.service.ServiceMetricsManager;
+import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.wsdm.faults.GenericWSRFExceptionFault;
 import com.l7tech.server.wsdm.faults.ResourceUnknownFault;
 import com.l7tech.server.wsdm.method.GetMultipleResourceProperties;
@@ -18,10 +18,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.annotation.Resource;
 import javax.xml.soap.SOAPConstants;
 import java.net.URL;
 import java.util.Date;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,15 +37,14 @@ import java.util.logging.Logger;
 public class QoSMetricsService {
     private final static Logger logger = Logger.getLogger(QoSMetricsService.class.getName());
 
-    private final ServiceMetricsManager serviceMetricsManager;
-    private final ServiceCache serviceCache;
-    private final Aggregator aggregator;
+    @Resource
+    private ServiceMetricsServices serviceMetricsServices;
 
-    public QoSMetricsService(ServiceCache serviceCache, ServiceMetricsManager serviceMetricsManager, Aggregator aggregator) {
-        this.serviceMetricsManager = serviceMetricsManager;
-        this.serviceCache = serviceCache;
-        this.aggregator = aggregator;
-    }
+    @Resource
+    private ServiceCache serviceCache;
+
+    @Resource
+    private Aggregator aggregator;
 
     public Document handleMultipleResourcePropertiesRequest(URL incomingURL,
                                                             GetMultipleResourceProperties method,

@@ -97,7 +97,7 @@
             <bean class="com.l7tech.server.util.LazyPropertyChangeDispatcher">
                 <constructor-arg>
                     <map>
-                        <entry key="serviceMetricsManager">
+                        <entry key="serviceMetricsServices">
                             <list>
                                 <value>serviceMetricsEnabled</value>
                                 <value>customerMapping.addToServiceMetrics</value>
@@ -564,8 +564,8 @@
 
     <!-- server side service manager -->
     <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp" parent="hibernateBean">
-        <constructor-arg ref="roleManager"/>
         <constructor-arg ref="resolutionManager"/>
+        <constructor-arg ref="roleManager"/>
         <constructor-arg ref="serviceAliasManager"/>
     </bean>
 
@@ -762,7 +762,7 @@
         <constructor-arg ref="wssDecorator"/>
         <constructor-arg ref="userSecurityTokenResolver"/>
         <constructor-arg ref="licenseManager"/>
-        <constructor-arg ref="serviceMetricsManager"/>
+        <constructor-arg ref="serviceMetricsServices"/>
         <constructor-arg ref="auditContext"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="trafficLogger"/>
@@ -921,18 +921,13 @@
     </bean>
 
     <!-- Dependency ensures system.properties file is processed first -->
-   <bean id="serviceMetricsManager"
-          class="com.l7tech.server.service.ServiceMetricsManagerImpl"
-          depends-on="ssgBoot"
-          parent="hibernateBean">
+   <bean id="serviceMetricsManager" class="com.l7tech.server.service.ServiceMetricsManagerImpl" depends-on="ssgBoot">
         <constructor-arg ref="clusterNodeId"/>
-        <constructor-arg ref="managedBackgroundTimer"/>
-        <constructor-arg ref="applicationEventProxy"/>
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
 
-        <property name="serviceManager" ref ="serviceManager"/>
-        <property name="roleManager" ref="roleManager"/>
-        <property name="messageContextMappingManager" ref="messageContextMappingManager"/>
-        <property name="identityProviderFactory" ref="identityProviderFactory" />
+    <bean id="serviceMetricsServices" class="com.l7tech.server.service.ServiceMetricsServicesImpl" depends-on="ssgBoot">
+        <constructor-arg ref="clusterNodeId"/>
     </bean>
 
     <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker" depends-on="ssgBoot">
