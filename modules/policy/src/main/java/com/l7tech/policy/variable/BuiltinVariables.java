@@ -142,6 +142,8 @@ public class BuiltinVariables {
         new VariableMetadata("request.wss.signingcertificate", false, false, null, false, DataType.CERTIFICATE),
         new VariableMetadata("request.wss.signingcertificate.base64", false, false, null, false, DataType.STRING),
         new VariableMetadata("request.wss.signingcertificate.pem", false, false, null, false, DataType.STRING),
+
+        new VariableMetadata("request.compression.gzip.found", false, false, null, true, DataType.BOOLEAN),
     };
 
     static {

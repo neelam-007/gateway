@@ -332,6 +332,10 @@ public class PolicyEnforcementContext extends ProcessingContext {
      * case-insensitive upon lookup.
      * If the name passed in is existing but with character case change, the new
      * spelling will be adopted.
+     * <p/>
+     * This method is more expensive than you might assume.  If your intent is to make a built-in
+     * variable available, consider adding it to BuiltinVariables instead.  That way it won't cost anything
+     * until someone attempts to use it.
      *
      * @param name the name of the variable to set.  if null, do nothing.
      * @param value may be null.

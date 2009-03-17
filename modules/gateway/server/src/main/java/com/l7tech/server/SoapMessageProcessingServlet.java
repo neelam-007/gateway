@@ -211,10 +211,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             if (gzipEncodedTransaction) {
                 request.initialize(stashManager, ctype, gis);
-                context.setVariable("request.compression.gzip.found", Boolean.TRUE);
             } else {
                 request.initialize(stashManager, ctype, hrequest.getInputStream());
-                context.setVariable("request.compression.gzip.found", Boolean.FALSE);
             }
 
             final MimeKnob mk = request.getMimeKnob();

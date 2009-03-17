@@ -539,6 +539,11 @@ public class ServerVariables {
                 return null;
             }
         }),
+        new Variable("request.compression.gzip.found", new Getter() {
+            public Object get(String name, PolicyEnforcementContext context) {
+                return context.isRequestWasCompressed();
+            }
+        }),
     };
 
     private static String getRequestRemoteIp(Message request) {
