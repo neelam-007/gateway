@@ -218,6 +218,10 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
         }
     }
 
+    public String getHeaderFirstValue(String name) {
+        return request.getHeader(name);
+    }
+
     public String getHeaderSingleValue(String name) throws IOException {
         Enumeration en = request.getHeaders(name);
         if (en.hasMoreElements()) {

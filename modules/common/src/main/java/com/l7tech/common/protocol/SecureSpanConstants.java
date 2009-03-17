@@ -291,6 +291,9 @@ public class SecureSpanConstants {
          * The Bridge does not attempt to interpret this value -- it is treated as an opaque string.  The Gateway
          * currently uses the form "oid|version" where OID is the published service object ID and version is the
          * generation count.
+         * <p/>
+         * If a request contains more than one copy of this header, the recipient shall either signal an use the first copy
+         * and ignore any subsequent copies.
          *
          * <h3>Usages:<ul>
          * <li>Returned by the policy servlet to the Bridge along with every policy download.
@@ -331,6 +334,9 @@ public class SecureSpanConstants {
          * Contains a reconstruction of the original URL the end user client was connecting to when it
          * made contact with the Client Proxy.  This is passed on to the SSG in case the SSG wishes to
          * use the information for service routing.
+         * <p/>
+         * If a request contains more than one copy of this header, the recipient shall use the first copy
+         * and ignore any subsequent copies.
          *
          * <h3>Usages:<ul>
          * <li>Sent by the Bridge to the Gateway along with every request.

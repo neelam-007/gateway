@@ -408,6 +408,10 @@ public class ExpandVariablesTest {
         }
 
         public String getHeaderSingleValue(String name) throws IOException {
+            return getHeaderFirstValue(name);
+        }
+
+        public String getHeaderFirstValue(String name) {
             final MimeHeader header = headers.get(name);
             if (header == null) return null;
             return header.getMainValue();

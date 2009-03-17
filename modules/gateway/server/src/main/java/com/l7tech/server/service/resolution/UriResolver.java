@@ -3,16 +3,15 @@
  */
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
-import com.l7tech.server.audit.Auditor;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
-import com.l7tech.message.FtpRequestKnob;
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.server.audit.Auditor;
 import org.springframework.context.ApplicationContext;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.MessageFormat;
@@ -263,11 +262,7 @@ public class UriResolver extends ServiceResolver<String> {
             return uri;
         }
         String originalUrl;
-        try {
-            originalUrl = httpReqKnob.getHeaderSingleValue(SecureSpanConstants.HttpHeaders.ORIGINAL_URL);
-        } catch (IOException e) {
-            throw new ServiceResolutionException("Found multiple " + SecureSpanConstants.HttpHeaders.ORIGINAL_URL + " values"); // can't happen
-        }
+        originalUrl = httpReqKnob.getHeaderFirstValue(SecureSpanConstants.HttpHeaders.ORIGINAL_URL);
         if (originalUrl == null) {
             String uri = httpReqKnob.getRequestUri();
             if (uri == null || uri.startsWith(SecureSpanConstants.SSG_RESERVEDURI_PREFIX)) uri = "";

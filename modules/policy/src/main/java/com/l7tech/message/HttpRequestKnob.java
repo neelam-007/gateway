@@ -58,9 +58,26 @@ public interface HttpRequestKnob extends TcpKnob, HasSoapAction, HasHeaders {
      * @param name the name of the header whose value should be retrieved. Must not be null.
      * @return the value of the specified header, expressed as a int, -1 if the request doesn't have a header of this name or it cannot be parsed
      */
-    public int getIntHeader(String name);
+    int getIntHeader(String name);
 
     /**
+     * Get the value of a header.  If the header has multiple values, this will return the first value.
+     * <p/>
+     * This method is faster than {@link #getHeaderFirstValue(String)} and should be preferred when there
+     * is no risk of a bug or security hole if subsequent multiple values are ignored.
+     *
+     * @param name the name of the header whose value should be retrieved.  Required.
+     * @return the first value of the specified header, or null if the requested header was not present.
+     */
+    String getHeaderFirstValue(String name);
+
+    /**
+     * Get the value of a header, enforcing that only one value is present.
+     * <p/>
+     * This method is slower than {@link #getHeaderSingleValue(String)} but should be used when there is
+     * risk of a bug or security problem if multiple values for a header are present and only the first value
+     * is examined.
+     *
      * @param name the name of the header whose value should be retrieved. Must not be null.
      * @return the first value of the specified header, or null if the requested header was not present.
      * @throws IOException if the header is multivalued

@@ -27,10 +27,7 @@ public class HttpRequestKnobAdapter implements HttpRequestKnob {
     }
 
     public String getHeaderSingleValue(String name) throws IOException {
-        if (name.equals(SoapUtil.SOAPACTION)) {
-            return soapAction;
-        }
-        return null;
+        return getHeaderFirstValue(name);
     }
 
     public String getSoapAction() {
@@ -52,6 +49,13 @@ public class HttpRequestKnobAdapter implements HttpRequestKnob {
     public long getDateHeader(String name) throws ParseException {return 0;}
 
     public int getIntHeader(String name){return -1;}
+
+    public String getHeaderFirstValue(String name) {
+        if (name.equals(SoapUtil.SOAPACTION)) {
+            return soapAction;
+        }
+        return null;
+    }
 
     public String[] getHeaderNames() {return new String[0];}
 
