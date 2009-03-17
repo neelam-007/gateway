@@ -11,6 +11,7 @@ package com.l7tech.message;
  */
 public class HttpResponseFacet extends MessageFacet {
     private final HttpResponseKnob httpResponseKnob;
+    private final boolean isServletKnob;
 
     /**
      * Create an HttpResponseFacet that will expose the specified HttpResponseKnob.
@@ -22,12 +23,13 @@ public class HttpResponseFacet extends MessageFacet {
         super(message, delegate);
         if (httpResponseKnob == null) throw new NullPointerException();
         this.httpResponseKnob = httpResponseKnob;
+        this.isServletKnob = httpResponseKnob instanceof HttpServletResponseKnob;
     }
 
     public MessageKnob getKnob(Class c) {
         if (c == HttpResponseKnob.class)
             return httpResponseKnob;
-        if (c == HttpServletResponseKnob.class && httpResponseKnob instanceof HttpServletResponseKnob)
+        if (c == HttpServletResponseKnob.class && isServletKnob)
             return httpResponseKnob;
         return super.getKnob(c);
     }
