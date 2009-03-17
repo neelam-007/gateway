@@ -8,11 +8,11 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.ExceptionUtils;
 import org.apache.ftpserver.ConfigurableFtpServerContext;
@@ -56,6 +56,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
                             final SsgKeyStoreManager ssgKeyStoreManager,
                             final DefaultKey defaultKeystore,
                             final SsgConnectorManager ssgConnectorManager,
+                            final EventChannel messageProcessingEventChannel,
                             final Timer timer) {
         super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
 
@@ -67,6 +68,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         this.ssgKeyStoreManager = ssgKeyStoreManager;
         this.defaultKeystore = defaultKeystore;
         this.ssgConnectorManager = ssgConnectorManager;
+        this.messageProcessingEventChannel = messageProcessingEventChannel;
         this.timer = timer;
     }
 
@@ -162,6 +164,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
     private final MessageProcessor messageProcessor;
     private final SoapFaultManager soapFaultManager;
     private final StashManagerFactory stashManagerFactory;
+    private final EventChannel messageProcessingEventChannel;
     private final SsgKeyStoreManager ssgKeyStoreManager;
     private final DefaultKey defaultKeystore;
     private final SsgConnectorManager ssgConnectorManager;
@@ -254,7 +257,8 @@ public class FtpServerManager extends TransportModule implements ApplicationList
                 auditContext,
                 soapFaultManager,
                 clusterPropertyCache,
-                stashManagerFactory);
+                stashManagerFactory,
+                messageProcessingEventChannel);
 
         Properties props = asFtpProperties(connector);
         SsgKeyEntry privateKey = findPrivateKey(connector);

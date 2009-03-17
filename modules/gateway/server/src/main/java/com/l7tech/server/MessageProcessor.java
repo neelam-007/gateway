@@ -58,6 +58,7 @@ import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.context.ApplicationEventPublisher;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.Operation;
@@ -95,7 +96,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private SoapFaultManager soapFaultManager;
     private final ArrayList<TrafficMonitor> trafficMonitors = new ArrayList<TrafficMonitor>();
     private final AtomicLong signedAttachmentMaxSize = new AtomicLong();
-    private final EventChannel messageProcessingEventChannel;
+    private final ApplicationEventPublisher messageProcessingEventChannel;
 
     /**
      * Create the new <code>MessageProcessor</code> instance with the service
@@ -118,7 +119,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                             ServerConfig serverConfig,
                             TrafficLogger trafficLogger,
                             SoapFaultManager soapFaultManager,
-                            EventChannel messageProcessingEventChannel)
+                            ApplicationEventPublisher messageProcessingEventChannel)
       throws IllegalArgumentException {
         if (sc == null) throw new IllegalArgumentException("Service Cache is required");
         if (pc == null) throw new IllegalArgumentException("Policy Cache is required");

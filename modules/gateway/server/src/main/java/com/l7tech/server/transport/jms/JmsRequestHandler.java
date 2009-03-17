@@ -3,11 +3,8 @@
  */
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.message.JmsKnob;
 import com.l7tech.message.MimeKnob;
@@ -20,10 +17,15 @@ import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.soap.SoapFaultUtils;
+import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
 import org.xml.sax.SAXException;
 
 import javax.jms.*;
@@ -43,6 +45,7 @@ class JmsRequestHandler {
     final private SoapFaultManager soapFaultManager;
     final private ClusterPropertyCache clusterPropertyCache;
     final private StashManagerFactory stashManagerFactory;
+    final private ApplicationEventPublisher messageProcessingEventChannel;
 
     public JmsRequestHandler(ApplicationContext ctx) {
         this.springContext = ctx;
@@ -54,6 +57,7 @@ class JmsRequestHandler {
         soapFaultManager = (SoapFaultManager)ctx.getBean("soapFaultManager", SoapFaultManager.class);
         clusterPropertyCache = (ClusterPropertyCache)ctx.getBean("clusterPropertyCache", ClusterPropertyCache.class);
         stashManagerFactory = (StashManagerFactory) springContext.getBean("stashManagerFactory", StashManagerFactory.class);
+        messageProcessingEventChannel = (ApplicationEventPublisher) springContext.getBean("messageProcessingEventChannel", EventChannel.class);
     }
 
     /**
@@ -241,7 +245,7 @@ class JmsRequestHandler {
                                 responseStream = new ByteArrayInputStream(faultXml.getBytes("UTF-8"));
 
                                 if (faultXml != null)
-                                    springContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+                                    messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
                             } catch (SAXException e) {
                                 throw new JmsRuntimeException(e);
                             }

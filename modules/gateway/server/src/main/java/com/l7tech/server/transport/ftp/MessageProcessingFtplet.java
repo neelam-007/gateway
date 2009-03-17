@@ -11,6 +11,7 @@ import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ResourceUtils;
@@ -49,7 +50,8 @@ class MessageProcessingFtplet extends DefaultFtplet {
                                    final AuditContext auditContext,
                                    final SoapFaultManager soapFaultManager,
                                    final ClusterPropertyCache clusterPropertyCache,
-                                   final StashManagerFactory stashManagerFactory) {
+                                   final StashManagerFactory stashManagerFactory,
+                                   final EventChannel messageProcessingEventChannel) {
         this.applicationContext = applicationContext;
         this.ftpServerManager = ftpServerManager;
         this.messageProcessor = messageProcessor;
@@ -57,6 +59,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
         this.soapFaultManager = soapFaultManager;
         this.clusterPropertyCache = clusterPropertyCache;
         this.stashManagerFactory = stashManagerFactory;
+        this.messageProcessingEventChannel = messageProcessingEventChannel;
     }
 
     /**
@@ -118,6 +121,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
     private final SoapFaultManager soapFaultManager;
     private final ClusterPropertyCache clusterPropertyCache;
     private final StashManagerFactory stashManagerFactory;
+    private final EventChannel messageProcessingEventChannel;
 
     /**
      * Process a file upload 
@@ -284,7 +288,7 @@ class MessageProcessingFtplet extends DefaultFtplet {
                 }
 
                 if (faultXml != null)
-                    applicationContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+                    messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
 
                 if (!context.isStealthResponseMode()) {
                     if (status == AssertionStatus.NONE) {

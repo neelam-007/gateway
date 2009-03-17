@@ -1,13 +1,14 @@
 package com.l7tech.server.event;
 
-import org.springframework.context.ApplicationEvent;
-
-import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import org.springframework.context.ApplicationEvent;
 
 /**
  * Event generated when a SOAP Fault response is sent (an SSG generated fault).
+ * <p/>
+ * This event is sent and received on the high-speed messageProcessingEventChannel rather than the
+ * primary Spring ApplicationEvent channel.
  *
  * @author Steve Jones, $Author$
  * @version $Revision$

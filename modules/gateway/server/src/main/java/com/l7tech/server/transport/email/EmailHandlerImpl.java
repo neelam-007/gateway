@@ -1,37 +1,35 @@
 package com.l7tech.server.transport.email;
 
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.message.EmailKnob;
+import com.l7tech.message.MimeKnob;
+import com.l7tech.message.XmlKnob;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.cluster.ClusterPropertyManager;
-import com.l7tech.server.cluster.ClusterPropertyCache;
-import com.l7tech.server.event.FaultProcessed;
-import com.l7tech.server.policy.PolicyVersionException;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.xml.soap.SoapFaultUtils;
-import com.l7tech.xml.soap.SoapVersion;
-import com.l7tech.message.EmailKnob;
-import com.l7tech.message.XmlKnob;
-import com.l7tech.message.MimeKnob;
-import com.l7tech.gateway.common.transport.jms.JmsConnection;
+import com.l7tech.server.cluster.ClusterPropertyCache;
+import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.event.FaultProcessed;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.PolicyVersionException;
+import com.l7tech.server.util.EventChannel;
+import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.ExceptionUtils;
-
-import javax.mail.internet.MimeMessage;
-import javax.mail.Header;
-import javax.mail.MessagingException;
-
+import com.l7tech.xml.soap.SoapFaultUtils;
+import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
-import java.io.InputStream;
+import javax.mail.Header;
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,6 +45,7 @@ public class EmailHandlerImpl implements EmailHandler {
     private ClusterPropertyManager clusterPropertyManager;
     private ClusterPropertyCache clusterPropertyCache;
     private StashManagerFactory stashManagerFactory;
+    private EventChannel messageProcessingEventChannel;
     
     public EmailHandlerImpl(ApplicationContext ctx) {
         if (ctx == null) {
@@ -58,6 +57,7 @@ public class EmailHandlerImpl implements EmailHandler {
         clusterPropertyManager = (ClusterPropertyManager)ctx.getBean("clusterPropertyManager", ClusterPropertyManager.class);
         clusterPropertyCache = (ClusterPropertyCache)ctx.getBean("clusterPropertyCache", ClusterPropertyCache.class);
         stashManagerFactory = (StashManagerFactory) ctx.getBean("stashManagerFactory", StashManagerFactory.class);
+        messageProcessingEventChannel = (EventChannel) ctx.getBean("messageProcessingEventChannel", EventChannel.class);
     }
 
     public void onMessage( final EmailListenerConfig emailListenerCfg,
@@ -213,7 +213,7 @@ public class EmailHandlerImpl implements EmailHandler {
                             responseStream = new ByteArrayInputStream(faultXml.getBytes("UTF-8"));
 
                             if (faultXml != null) {
-                                emailListenerCfg.getApplicationContext().publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+                                messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
                             }
                         } catch (SAXException e) {
                             throw new EmailListenerRuntimeException(e);

@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationEvent;
 
 /**
  * An {@link ApplicationEvent} that records the creation of an {@link AuditDetail}
+ * TODO this should be moved to its own separate event channel rather than the default ApplicationEvent channel.
  */
 public class AuditDetailEvent extends ApplicationEvent {
     private final AuditDetail detail;

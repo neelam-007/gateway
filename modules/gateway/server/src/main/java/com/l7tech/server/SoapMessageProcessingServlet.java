@@ -5,7 +5,6 @@ package com.l7tech.server;
 
 import com.l7tech.common.http.CookieUtils;
 import com.l7tech.common.http.HttpCookie;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -30,13 +29,16 @@ import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.DelegatingServletInputStream;
+import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.context.ApplicationEventPublisher;
 import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
@@ -90,6 +92,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private ClusterPropertyCache clusterPropertyCache;
     private LicenseManager licenseManager;
     private StashManagerFactory stashManagerFactory;
+    private ApplicationEventPublisher messageProcessingEventChannel;
     private Auditor auditor;
 
     @Override
@@ -106,6 +109,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         clusterPropertyCache = (ClusterPropertyCache)applicationContext.getBean("clusterPropertyCache");
         licenseManager = (LicenseManager)applicationContext.getBean("licenseManager");
         stashManagerFactory = (StashManagerFactory)applicationContext.getBean("stashManagerFactory");
+        messageProcessingEventChannel = (EventChannel)applicationContext.getBean("messageProcessingEventChannel", EventChannel.class);
         auditor = new Auditor(this, applicationContext, logger);
     }
 
@@ -449,7 +453,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             if (responseStream != null) responseStream.close();
         }
 
-        applicationContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+        messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
     }
 
     private void sendExceptionFault(PolicyEnforcementContext context, Throwable e,
@@ -484,7 +488,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             if (responseStream != null) responseStream.close();
         }
 
-        applicationContext.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+        messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
     }
 
     /**

@@ -1078,6 +1078,7 @@
         <constructor-arg ref="ssgKeyStoreManager"/>
         <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="ssgConnectorManager"/>
+        <constructor-arg ref="messageProcessingEventChannel"/>
         <constructor-arg ref="managedBackgroundTimer"/>
     </bean>
 

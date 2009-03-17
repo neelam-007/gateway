@@ -3,15 +3,12 @@
  */
 package com.l7tech.server.transport.jms2;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.message.JmsKnob;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.XmlKnob;
-import com.l7tech.xml.soap.SoapVersion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
@@ -25,10 +22,15 @@ import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.server.util.EventChannel;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.util.ExceptionUtils;
+import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
 import org.xml.sax.SAXException;
 
 import javax.jms.*;
@@ -56,6 +58,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
     private ClusterPropertyCache clusterPropertyCache;
     private StashManagerFactory stashManagerFactory;
     private MessageProducer responseProducer;
+    private final ApplicationEventPublisher messageProcessingEventChannel;
 
     public JmsRequestHandlerImpl(ApplicationContext ctx) {
 
@@ -68,6 +71,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         soapFaultManager = (SoapFaultManager)ctx.getBean("soapFaultManager", SoapFaultManager.class);
         clusterPropertyCache = (ClusterPropertyCache)ctx.getBean("clusterPropertyCache", ClusterPropertyCache.class);
         stashManagerFactory = (StashManagerFactory) ctx.getBean("stashManagerFactory", StashManagerFactory.class);
+        messageProcessingEventChannel = (ApplicationEventPublisher) ctx.getBean("messageProcessingEventChannel", EventChannel.class);
     }
 
 
@@ -257,7 +261,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                                 responseStream = new ByteArrayInputStream(faultXml.getBytes("UTF-8"));
 
                                 if (faultXml != null) {
-                                    endpointCfg.getApplicationContext().publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
+                                    messageProcessingEventChannel.publishEvent(new FaultProcessed(context, faultXml, messageProcessor));
                                 }
                             } catch (SAXException e) {
                                 throw new JmsRuntimeException(e);
