@@ -195,7 +195,23 @@ class Importer extends ImportExportUtility {
                     databaseUser = nodeConfig.getString("node.db.config.main.user") == null ? databaseUser : nodeConfig.getString("node.db.config.main.user");
                     databasePass = nodeConfig.getString("node.db.config.main.pass") == null ? databasePass : nodeConfig.getString("node.db.config.main.pass");
                     databasePass = new String(mpm.decryptPasswordIfEncrypted(databasePass));
-                    logger.info("Using database gateway username/password defined from node.properties");
+
+                    logger.info("node.properties file was found.");
+                    if (arguments.containsKey(GATEWAY_DB_USERNAME.name)) {
+                        logger.info("Using " + GATEWAY_DB_USERNAME.name + " and " + GATEWAY_DB_PASSWORD.name + " for gateway username/password");
+                        databaseUser = gatewayDbUsername;
+                        if (arguments.containsKey(GATEWAY_DB_PASSWORD.name)) {
+                            databasePass = arguments.get(GATEWAY_DB_PASSWORD.name);
+                        } else {
+                            databasePass = "";
+                        }
+
+                        logger.info("Using values from " + GATEWAY_DB_USERNAME.name + " and " + GATEWAY_DB_PASSWORD.name + " options to update node.properties for gateway username/password.");
+                        nodeConfig.setProperty("node.db.config.main.user", databaseUser);
+                        nodeConfig.setProperty("node.db.config.main.pass", mpm.encryptPassword(databasePass.toCharArray()));
+                    } else {
+                        logger.info("Using database gateway username/password defined from node.properties");
+                    }
 
                     if (!isCreateNewDatabase && !dbName.equals(nodeConfig.getString("node.db.config.main.name"))) {
                         throw new InvalidArgumentException("provided database name does not match with database name in node.properties file.  If you " +
@@ -849,6 +865,16 @@ class Importer extends ImportExportUtility {
                 gatewayUsername = nodeConfig.getString("node.db.config.main.user") == null ? gatewayUsername : nodeConfig.getString("node.db.config.main.user");
                 gatewayPassword = nodeConfig.getString("node.db.config.main.pass") == null ? gatewayPassword : nodeConfig.getString("node.db.config.main.pass");
                 gatewayPassword = new String(mpm.decryptPasswordIfEncrypted(gatewayPassword));
+
+                if (args.containsKey(GATEWAY_DB_USERNAME.name)) {
+                    //use the one defined by option
+                    gatewayUsername = args.get(GATEWAY_DB_USERNAME.name);
+                    if (args.containsKey(GATEWAY_DB_PASSWORD.name)) {
+                        gatewayPassword = args.get(GATEWAY_DB_PASSWORD.name);
+                    } else {
+                        gatewayPassword = "";
+                    }
+                }
             } else {
                 //node.properties file does not exists, and no gateway username defined, we need to ask for this
                 if (gatewayUsername == null) {
