@@ -50,6 +50,7 @@ class Importer extends ImportExportUtility {
             "overwrite os level config files",
             false, true);
     public static final CommandLineOption CREATE_NEW_DB = new CommandLineOption("-newdb" ,"create new database");
+    public static final CommandLineOption OMIT_TABLES = new CommandLineOption("-otbls", "the file name which contains list of tables to exclude upon import");
 
     public static final CommandLineOption CONFIG_ONLY = new CommandLineOption("-config", "only restore configuration files, no database restore", false, true);
     public static final CommandLineOption CLUSTER_PASSPHRASE = new CommandLineOption("-cp", "the cluster passphrase for the (resulting) database");
@@ -57,8 +58,8 @@ class Importer extends ImportExportUtility {
     public static final CommandLineOption GATEWAY_DB_PASSWORD = new CommandLineOption("-gdbp", "gateway database password");
 
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, MAPPING_PATH, DB_HOST_NAME, DB_NAME, DB_PASSWD, DB_USER,
-            OS_OVERWRITE, Exporter.AUDIT, CONFIG_ONLY, CLUSTER_PASSPHRASE, GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD,
-            CREATE_NEW_DB};
+            OS_OVERWRITE, CONFIG_ONLY, CLUSTER_PASSPHRASE, GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD,
+            CREATE_NEW_DB, OMIT_TABLES};
 
     public static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
             new CommandLineOption("-p", "Ignored parameter for partition", true, false),
@@ -81,9 +82,9 @@ class Importer extends ImportExportUtility {
     private String dbHost;
     private String dbPort;
     private String dbName;
-    private boolean includeAudit = false;
     private String suppliedClusterPassphrase;
     private boolean newDatabaseCreated = false;
+    private boolean omitTables = false;
 
     // do the import
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, FlashUtilityLauncher.FatalException, IOException {
@@ -110,17 +111,7 @@ class Importer extends ImportExportUtility {
                 throw new IOException("the file " + inputpathval + " does not appear to be a valid SSG flash image");
             }
 
-            // check whether or not we are expected to include audits
-            String auditval = arguments.get(Exporter.AUDIT.name);
-            if (auditval != null && !auditval.toLowerCase().equals("no") && !auditval.toLowerCase().equals("false")) {
-                //check if an audit backup file exists in the image
-                if (new File(tempDirectory + File.separator + DBDumpUtil.AUDIT_BACKUP_FILENAME).exists()) {
-                    includeAudit = true;
-                } else {
-                    System.out.println("Ignoring " + Exporter.AUDIT.name + " option...");
-                    logger.info(Exporter.AUDIT.name + " option was requested but no audit backup exists in image; the option will be ignored");
-                }
-            }
+            omitTables = arguments.containsKey(OMIT_TABLES.name);
 
             boolean configOnly = false;
             //check if we are only importing config
@@ -334,7 +325,7 @@ class Importer extends ImportExportUtility {
                 // load database dump
                 logger.info("loading database dump");
                 try {
-                    loadDumpFromExplodedImage();
+                    loadDumpFromExplodedImage(arguments.get(OMIT_TABLES.name));
                 } catch (SQLException e) {
                     throw new IOException("Error loading database.", e);
                 }
@@ -412,17 +403,14 @@ class Importer extends ImportExportUtility {
         }
     }
 
-    private void doLoadDump(Connection c, /*String dumpFilePath,*/ String msg) throws IOException, SQLException {
+    private void doLoadDump(Connection c, /*String dumpFilePath,*/ String msg, String omitTablesFileName) throws IOException, SQLException {
         System.out.print(msg + " [please wait] ..");
 
         String mainDumpFilePath = tempDirectory + File.separator + DBDumpUtil.MAIN_BACKUP_FILENAME;
-        String auditDumpFilePath = tempDirectory + File.separator + DBDumpUtil.AUDIT_BACKUP_FILENAME;
 
-        FileReader auditFileReader = null;
-        BufferedReader auditBackupReader = null;
-        if (includeAudit) {
-            auditFileReader = new FileReader(auditDumpFilePath);
-            auditBackupReader = new BufferedReader(auditFileReader);
+        List<String> omitTablesList = null;
+        if (omitTables) {
+            omitTablesList = getOmitTableNames(omitTablesFileName);
         }
 
         FileReader mainFileReader = new FileReader(mainDumpFilePath);
@@ -435,20 +423,13 @@ class Importer extends ImportExportUtility {
                 //always test importing the main backup
                 while ((tmp = mainBackupReader.readLine()) != null) {
                     if (tmp.endsWith(";")) {
-                        stmt.executeUpdate(tmp.substring(0, tmp.length() - 1));
+                        if (omitTables && affectsOmitTables(tmp, omitTablesList)) {
+                            logger.finest("SQL statement: '" + tmp + "' was not executed.");
+                        } else {
+                            stmt.executeUpdate(tmp.substring(0, tmp.length() - 1));
+                        }
                     } else {
                         throw new SQLException("unexpected statement " + tmp);
-                    }
-                }
-
-                //do the audit backup if its asked for
-                if (includeAudit) {
-                    while ((tmp = auditBackupReader.readLine()) != null) {
-                        if (tmp.endsWith(";")) {
-                            stmt.executeUpdate(tmp.substring(0, tmp.length() - 1));
-                        } else {
-                            throw new SQLException("unexpected statement " + tmp);
-                        }
                     }
                 }
 
@@ -470,16 +451,76 @@ class Importer extends ImportExportUtility {
         } finally {
             mainBackupReader.close();
             mainFileReader.close();
-
-            if (includeAudit) {
-                auditBackupReader.close();
-                auditFileReader.close();
-            }
         }
         System.out.println(". DONE");
     }
 
-    private void loadDumpFromExplodedImage() throws IOException, SQLException, FlashUtilityLauncher.InvalidArgumentException, FlashUtilityLauncher.FatalException {
+    /**
+     * Compares the SQL statement and see if it will CREATE/DROP/INSERT any of the tables contained
+     * in the provided omit table list.
+     *
+     * @param sqlStatement  SQL statement to compare             
+     * @param omitTableNames    list of omit tables to compare with
+     * @return
+     */
+    private boolean affectsOmitTables(String sqlStatement, List<String> omitTableNames) {
+        if (sqlStatement == null) return false;
+        if (omitTableNames == null) return false;
+
+        final String createTable = "CREATE TABLE ";
+        final String dropTable = "DROP TABLE IF EXISTS ";
+        final String insertTable = "INSERT INTO ";
+
+        for (String tableName : omitTableNames) {
+            if (sqlStatement.startsWith(createTable + tableName)
+                    || sqlStatement.startsWith(dropTable + tableName)
+                    || sqlStatement.startsWith(insertTable + tableName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Reads the list of table names within the file.
+     *
+     * @param omitFileName  The file name with full path
+     * @return  The list of table names found in the file.
+     * @throws IOException
+     */
+    private List<String> getOmitTableNames(String omitFileName) throws IOException {
+        List<String> omitTableList = new ArrayList<String>();
+
+        if (omitFileName == null) return omitTableList;
+
+        FileReader omitFileReader = null;
+        BufferedReader omitBufferedReader = null;
+        File file = null;
+        try {
+            file = new File(omitFileName);
+            if (file.isFile() && file.exists()) {
+                omitFileReader = new FileReader(file);
+                omitBufferedReader = new BufferedReader(omitFileReader);
+
+                String line;
+                while ((line = omitBufferedReader.readLine()) != null) {
+                    if (!line.startsWith("#")) {//ignore comments
+                        String tableName = line.trim();
+                        if (!omitTableList.contains(tableName)) {//no duplicates
+                            omitTableList.add(tableName);
+                        }
+                    }
+                }
+            }
+        } finally {
+            ResourceUtils.closeQuietly(omitBufferedReader);
+            ResourceUtils.closeQuietly(omitFileReader);
+        }
+
+        return omitTableList;
+    }
+
+    private void loadDumpFromExplodedImage(String omitFile) throws IOException, SQLException, FlashUtilityLauncher.InvalidArgumentException, FlashUtilityLauncher.FatalException {
         // create temporary database copy to test the import
         System.out.print("Creating copy of target database for testing import ..");
         String testdbname = "TstDB_" + System.currentTimeMillis();
@@ -500,7 +541,7 @@ class Importer extends ImportExportUtility {
             String msg = "Loading image on temporary database";
             Connection c = dba.getConnection(targetConfig, true, false);
             try {
-                doLoadDump(c, msg);
+                doLoadDump(c, msg, omitFile);
 
                 //if not a new DB, verify the supplied cluster passphrase is correct
                 if (!newDatabaseCreated) {
@@ -533,7 +574,7 @@ class Importer extends ImportExportUtility {
         String msg = "Loading image on target database";
         Connection c = getConnection();
         try {
-            doLoadDump(c, msg);
+            doLoadDump(c, msg, omitFile);
         } finally {
             ResourceUtils.closeQuietly( c );
         }
@@ -771,6 +812,11 @@ class Importer extends ImportExportUtility {
                 //always delete tmp directory
                 FileUtils.deleteDir(new File(tempDirectory));
             }
+        }
+
+        //check if wan to ignore tables upon import
+        if (args.containsKey(OMIT_TABLES.name)) {
+            verifyFileExistence(args.get(OMIT_TABLES.name), false);
         }
 
         //if config option is specified, then we need to check that we have proper information to populate node.properties

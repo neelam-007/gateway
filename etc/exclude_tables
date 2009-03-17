@@ -1,0 +1,17 @@
+# -----------------------------------------------------------------------------
+# LAYER 7 TECHNOLOGIES
+# March 2009
+#
+# Used on restore for excluding tables.
+#
+# This file contains the list of tables that will be excluded upon
+# importing the image to the database.
+#
+# should not be edited unless instructed to
+# -----------------------------------------------------------------------------
+cluster_info
+email_listener_state
+message_id
+service_metrics
+service_metrics_details
+service_usage

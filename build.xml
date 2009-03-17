@@ -2809,8 +2809,9 @@
         <!-- copy new sudo exececuted files to new libexec directory -->
         <copy file="${src.root}/etc/backup_manifest" todir="${install.src.app.migconfig}"/>
         <copy file="${src.root}/etc/backup_tables_audit" todir="${install.src.ssg.flasher.cfg}"/>
-        <copy file="${src.root}/etc/backup_tables_excluded" todir="${install.src.ssg.flasher.cfg}"/>
-        <copy file="${src.root}/etc/backup_tables_mapping_excluded" todir="${install.src.ssg.flasher.cfg}"/>
+        <copy file="${src.root}/etc/exclude_tables" todir="${install.src.ssg.flasher.cfg}"/>
+        <!--<copy file="${src.root}/etc/backup_tables_excluded" todir="${install.src.ssg.flasher.cfg}"/>-->
+        <!--<copy file="${src.root}/etc/backup_tables_mapping_excluded" todir="${install.src.ssg.flasher.cfg}"/>-->
         <copy file="${src.root}/etc/db/mysql/my.cnf" tofile="${install.src.app}/etc/my.cnf.ssg"/>
         <copy file="${src.root}/etc/appliance/appliancedefs.sh" todir="${install.src.app.ssgprofile}"/>
         <copy file="${src.root}/etc/processcontroller/sspc-initd" tofile="${install.src.app}/etc/init.d/ssg"/>

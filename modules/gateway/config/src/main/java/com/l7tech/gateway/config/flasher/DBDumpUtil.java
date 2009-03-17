@@ -1,6 +1,7 @@
 package com.l7tech.gateway.config.flasher;
 
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 
@@ -29,8 +30,6 @@ class DBDumpUtil {
 
     //configuration files
     private static final String AUDIT_TABLES_CONFIG = "./cfg/backup_tables_audit";
-    private static final String EXCLUDED_TABLES_CONFIG = "./cfg/backup_tables_excluded";
-    private static final String MAPPING_EXCLUDED_TABLES_CONFIG = "./cfg/backup_tables_mapping_excluded";
 
     /**
      * outputs database dump files
@@ -54,13 +53,6 @@ class DBDumpUtil {
 
         //read all configuration file data in to arrays
         String[] auditTables = parseConfigFile(AUDIT_TABLES_CONFIG);
-        String[] excludedTables;
-        
-        if(mappingEnabled){
-            excludedTables = parseConfigFile(MAPPING_EXCLUDED_TABLES_CONFIG);
-        }else{
-            excludedTables = parseConfigFile(EXCLUDED_TABLES_CONFIG);
-        }
 
         String[] tableTypes = {
                 "TABLE"
@@ -69,12 +61,6 @@ class DBDumpUtil {
 
         FileOutputStream mainOutput = new FileOutputStream(outputDirectory + File.separator + MAIN_BACKUP_FILENAME);
         mainOutput.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
-
-        FileOutputStream auditOutput = null;
-        if (includeAudit) {
-            auditOutput = new FileOutputStream(outputDirectory + File.separator + AUDIT_BACKUP_FILENAME);
-            auditOutput.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
-        }
 
         if (stdout != null) stdout.print("Dumping database to " + outputDirectory + " ..");
         while (tableNames.next()) {
@@ -90,9 +76,6 @@ class DBDumpUtil {
                 s = s.replace("\n", " ");
                 s = s.replace("`", "");
                 mainOutput.write((s + ";\n").getBytes());
-            }
-            if (tableInList(tableName, excludedTables)){
-                continue;
             }
 
             if (!includeAudit) {
@@ -173,22 +156,13 @@ class DBDumpUtil {
                     }
                 }
                 insertStatementToRecord.append(");\n");
-                if(includeAudit && tableInList(tableName, auditTables)){
-                    auditOutput.write(insertStatementToRecord.toString().getBytes());
-                }else{
-                    mainOutput.write(insertStatementToRecord.toString().getBytes());
-                }
+                mainOutput.write(insertStatementToRecord.toString().getBytes());
             }
             tdataList.close();
         }
         c.close();
         mainOutput.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
-        mainOutput.close();
-        
-        if(includeAudit){
-            auditOutput.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
-            auditOutput.close();
-        }
+        ResourceUtils.closeQuietly(mainOutput);
 
         if (stdout != null) stdout.println(". Done");
     }
