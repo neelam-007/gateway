@@ -642,8 +642,7 @@ public class Monitor extends EsmStandardWebPage {
             }
 
             if (errmsg != null) {
-                logger.warning(errmsg);
-                err.printStackTrace();
+                logger.log(Level.WARNING, errmsg, ExceptionUtils.getDebugException(err));
                 returnValue = new JSONException(new Exception(errmsg, err));
             } else {
                 returnValue = new JSONSupport((JSON.Convertible)returnValue){
