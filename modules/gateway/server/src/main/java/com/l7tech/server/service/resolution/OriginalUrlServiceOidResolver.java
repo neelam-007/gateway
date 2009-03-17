@@ -3,17 +3,15 @@
  */
 package com.l7tech.server.service.resolution;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.gateway.common.service.PublishedService;
 import org.springframework.context.ApplicationContext;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -61,11 +59,7 @@ public class OriginalUrlServiceOidResolver extends NameValueServiceResolver<Stri
         HttpRequestKnob httpReqKnob = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
         if (httpReqKnob == null) return null;
         String originalUrl;
-        try {
-            originalUrl = httpReqKnob.getHeaderSingleValue(SecureSpanConstants.HttpHeaders.ORIGINAL_URL);
-        } catch (IOException e) {
-            throw new ServiceResolutionException("Found multiple " + SecureSpanConstants.HttpHeaders.ORIGINAL_URL + " values"); // can't happen
-        }
+        originalUrl = httpReqKnob.getHeaderFirstValue(SecureSpanConstants.HttpHeaders.ORIGINAL_URL);
 
         if (originalUrl == null) {
             auditor.logAndAudit(MessageProcessingMessages.SR_ORIGURL_NOHEADER, SecureSpanConstants.HttpHeaders.ORIGINAL_URL);

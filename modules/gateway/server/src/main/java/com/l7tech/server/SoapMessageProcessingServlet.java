@@ -500,7 +500,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         try {
             // Did client claim a policy version?
             requestorVersion = context.getRequest().getHttpRequestKnob().
-                    getHeaderSingleValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
+                    getHeaderFirstValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
         } catch (IllegalStateException e) {
             // Didn't get as far as adding the HTTP knob, so assume not  (Bug #3002)
         }

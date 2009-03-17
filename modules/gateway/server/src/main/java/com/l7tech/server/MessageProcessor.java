@@ -256,7 +256,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     context.setCache(cache);
                 }
                 // check if requestor provided a version number for published service
-                String requestorVersion = httpRequestKnob.getHeaderSingleValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
+                String requestorVersion = httpRequestKnob.getHeaderFirstValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
                 if (requestorVersion != null && requestorVersion.length() > 0) {
                     // format is policyId|policyVersion (seperated with char '|')
                     boolean wrongPolicyVersion = false;
