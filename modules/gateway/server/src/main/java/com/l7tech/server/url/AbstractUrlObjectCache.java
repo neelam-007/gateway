@@ -5,13 +5,16 @@ package com.l7tech.server.url;
 
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeSource;
+import com.l7tech.util.TimeUnit;
 import com.l7tech.common.mime.ContentTypeHeader;
 
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.*;
 
 /**
  * A browser cache that ensures that only 1 thread at a time will attempt to download (and cache) a URL; other
@@ -96,12 +99,15 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
     protected abstract Lock getWriteLock();
 
     /** Create a new, empty cache entry. */
-    protected AbstractCacheEntry<UT> newCacheEntry() {
-        return new AbstractCacheEntry<UT>();
+    protected AbstractCacheEntry<UT> newCacheEntry( final String url ) {
+        return new AbstractCacheEntry<UT>(url);
     }
 
     /** Find an entry in the cache, or null if it isn't there.  Caller already holds the write lock. */
     protected abstract AbstractCacheEntry<UT> cacheGet(String url);
+
+    /** Iterate entries in the cache, or null if none or if not iterable.  Caller already holds the read lock. */
+    protected abstract Iterator<AbstractCacheEntry<UT>> cacheIterator();
 
     /** Place an entry into the cache, replacing any entry that's already there.  Caller already holds the write lock. */
     protected abstract void cachePut(String url, AbstractCacheEntry<UT> cacheEntry);
@@ -162,14 +168,14 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
             entry = cacheGet(urlStr);
             if (entry == null) {
                 // We are the first thread currently interested in this URL, so we'll be doing the download
-                entry = newCacheEntry();
+                entry = newCacheEntry(urlStr);
                 entry.downloadingThread = threadId;
                 cachePut(urlStr, entry);
                 shouldDownload = true;
             } else {
                 if (entry.downloadingThread == threadId) {
                     // Prevent deadlock due to recursive fetch of same URL on the same thread
-                    entry = newCacheEntry();
+                    entry = newCacheEntry(urlStr);
                     entry.exception = new IOException("Recursive or circular fetch of URL: " + urlStr);
                     entry.exceptionCreated = clock.currentTimeMillis();
                     return new FetchResult<UT>(500, entry);
@@ -217,10 +223,12 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
                 }
             } else {
                 // Nobody else is currently downloading a fresh copy.  See if we need to do so ourselves.
-                if (!needToPoll(entry)) {
+                if (!needToPoll(entry, clock.currentTimeMillis())) {
                     // Cached info is fine for now -- just return it
                     if (logger.isLoggable(Level.FINE)) logger.fine("Returning cached entry for URL '" + urlStr + "'");
-                    return new FetchResult<UT>(RESULT_USED_CACHED, entry);
+                    entry.accessed();
+                    return new FetchResult<UT>(null == entry.exception ? RESULT_USED_CACHED : RESULT_DOWNLOAD_FAILED,
+                                               entry);
                 }
                 entry.downloadingThread = threadId;
                 shouldDownload = true;
@@ -233,6 +241,10 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
         assert shouldDownload;
 
         if (logger.isLoggable(Level.FINE)) logger.fine("Cache entry for URL '" + urlStr + "' is too old; contacting server");
+        return doRefresh( urlStr, entry );
+    }
+
+    private FetchResult<UT> doRefresh( final String urlStr, final AbstractCacheEntry<UT> entry) {
         boolean ok = false;
         try {
             onStaleEntryAboutToBeReplaced(entry, urlStr);
@@ -244,6 +256,71 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
         return doPoll(entry, urlStr);
     }
 
+    /**
+     * Process the cache, which may cause refresh of any entries that are about to expire.
+     *
+     * @param executor The executor to run refresh tasks
+     * @param preExpiryTime The time offset for cache expiry checks (is expired in preExpiryTime millis?)
+     */
+    public void serviceCache( final Executor executor, final long preExpiryTime ) {
+        final long threadId = Thread.currentThread().getId();
+        final Lock readLock = getReadLock();
+
+        final long refreshTime = clock.currentTimeMillis() + preExpiryTime;
+        final Collection<AbstractCacheEntry<UT>> entriesToService = new ArrayList<AbstractCacheEntry<UT>>();
+        readLock.lock();
+        try {
+            final Iterator<AbstractCacheEntry<UT>> iterator = cacheIterator();
+            if ( iterator != null ) {
+                while( iterator.hasNext() ) {
+                    AbstractCacheEntry<UT> entry = iterator.next();
+                    if ( entry != null ) {
+                        synchronized( entry ) {
+                            if ( entry.downloadingThread == 0 &&
+                                 entry.accessCount > 0 &&
+                                 needToPoll(entry, refreshTime) ) {
+                                entriesToService.add( entry );
+                            }
+                        }
+                    }
+                }
+            }
+        } finally {
+            readLock.unlock();
+        }
+
+        final long timeout = refreshTime - TimeUnit.SECONDS.toMillis(30);
+        for ( final AbstractCacheEntry<UT> entry : entriesToService ) {
+            executor.execute( new Runnable(){
+                @Override
+                public void run() {
+                    // don't bother with refresh it we don't get around to it fast enough
+                    if ( clock.currentTimeMillis() < timeout ) {
+                        boolean refresh = false;
+                        final String urlStr;
+                        synchronized( entry ) {
+                            urlStr = entry.url;
+                            if ( entry.downloadingThread == 0 ) {
+                                refresh = true;
+                                entry.downloadingThread = threadId;
+                            }
+                        }
+
+                        if ( refresh ) {
+                            if (logger.isLoggable(Level.INFO)) logger.info("Cache entry for URL '" + urlStr + "' needs refresh; contacting server");
+                            try {
+                                doRefresh( urlStr, entry );
+                            } catch ( Exception e ) {
+                                logger.log( Level.WARNING, "Error refreshing cache entry for URL '"+urlStr+"'.", e );
+                            }
+                        }
+                    }
+                 }
+            } );
+        }
+    }
+
+    @Override
     public UT resolveUrl(String url) throws IOException, ParseException {
         FetchResult<UT> result = fetchCached(url, defaultWaitMode);
 
@@ -263,7 +340,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
         IOException err = result.getException();
         if (err != null) {
             // Unwrap any wrapped ParseException
-            ParseException pe = (ParseException)ExceptionUtils.getCauseIfCausedBy(err, ParseException.class);
+            ParseException pe = ExceptionUtils.getCauseIfCausedBy(err, ParseException.class);
             if (pe != null)
                 throw pe;
 
@@ -299,16 +376,15 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
      * @param entry the entry to check.  Must not be null.
      * @return true if this entry needs to be polled for up-to-date information.
      */
-    private boolean needToPoll(AbstractCacheEntry<UT> entry) {
+    private boolean needToPoll(AbstractCacheEntry<UT> entry, long time) {
         final boolean haveObject = entry.userObject != null;
         final boolean haveException = entry.exception != null;
         if (!haveObject && !haveException) {
             // Don't have anything yet; must poll
             return true;
         }
-        long now = clock.currentTimeMillis();
-        final boolean staleOrMissingUserObject = (!haveObject) || (now - entry.userObjectCreated) >= maxCacheAge;
-        final boolean staleOrMissingException = (!haveException) || (now - entry.exceptionCreated) >= maxCacheAge;
+        final boolean staleOrMissingUserObject = (!haveObject) || (time - entry.userObjectCreated) >= maxCacheAge;
+        final boolean staleOrMissingException = (!haveException) || (time - entry.exceptionCreated) >= maxCacheAge;
 
         // Poll only if everything we've got is stale
         return staleOrMissingException && staleOrMissingUserObject;
@@ -331,11 +407,20 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
         // so readers will be guaranteed to pick them up.
         long requestStart = clock.currentTimeMillis();
 
+        UT entryObject;
+        String entryLastModified;
+        long entryLastSuccessfulPollStarted;
+        synchronized( entry ) {
+            entryObject = entry.userObject;
+            entryLastModified = entry.lastModified;
+            entryLastSuccessfulPollStarted = entry.lastSuccessfulPollStarted;
+        }
+
         boolean reported = false;
         try {
-            DatedUserObject<UT> dup = doGet(urlStr, entry.lastModified, entry.lastSuccessfulPollStarted);
+            DatedUserObject<UT> dup = doGet(urlStr, entryLastModified, entryLastSuccessfulPollStarted);
             UT userObject = dup.getUserObject();
-            if (userObject == null) userObject = entry.userObject;
+            if (userObject == null) userObject = entryObject;
             FetchResult<UT> ret = doSuccessfulDownload(entry, requestStart, dup.getLastModified(), userObject);
             reported = true;
             return ret;
@@ -390,6 +475,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
 
     private FetchResult<UT> doFailedDownload(AbstractCacheEntry<UT> entry, IOException exception) {
         synchronized (entry) {
+            entry.accessCount = 0;
             entry.exception = exception;
             entry.exceptionCreated = clock.currentTimeMillis();
             entry.downloadingThread = 0;
@@ -401,6 +487,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
     /** Called if an unchecked exception occurs while we are holding the entry lock. */
     private void doCancelDownload(AbstractCacheEntry<UT> entry, String urlStr) {
         synchronized (entry) {
+            entry.accessCount = 0;
             if (entry.exception == null) {
                 entry.exception = new IOException("Unexpected internal error while attempting to download external resource: " + urlStr);
                 entry.exceptionCreated = clock.currentTimeMillis();
@@ -417,6 +504,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
     {
         // Record the success, wake up other threads, and return the result.
         synchronized (entry) {
+            entry.accessCount = 0;
             entry.lastSuccessfulPollStarted = requestStart;
             entry.lastModified = modified;
             entry.exception = null;
@@ -452,7 +540,13 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
      * by AbstractUrlObjectCache to keep multiple threads from reloading the same URL at the same time.
      */
     protected static class AbstractCacheEntry<UT> {
+        private AbstractCacheEntry( final String url ) {
+            this.url = url;
+        }
+
+        private final String url;        
         private long downloadingThread;  // ID of downloading thread, or 0 if nobody is downloading
+        private int accessCount; // Number of time this entry has been accessed since last download
         private long lastSuccessfulPollStarted; // time of last successful poll; use only if lastModified not provided
         private String lastModified; // last Modified: header from server; use in preference to lastPollStarted
         private UT userObject;
@@ -462,6 +556,12 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
 
         public UT getUserObject() {
             return userObject;
+        }
+
+        private void accessed() {
+            if ( accessCount < Integer.MAX_VALUE ) {
+                accessCount++;
+            }
         }
     }
 

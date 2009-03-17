@@ -25,18 +25,22 @@ import java.io.StringReader;
 import java.security.cert.CRLException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+
+import org.springframework.beans.factory.DisposableBean;
 
 /**
  * A read-through cache of X.509 CRLs that knows how to retrieve them from http(s) and ldap(s) URLs
  * @author alex
  */
-public class CrlCacheImpl implements CrlCache {
+public class CrlCacheImpl implements CrlCache, DisposableBean {
     private static final Logger logger = Logger.getLogger(CrlCacheImpl.class.getName());
 
     private static final int ONE_HOUR = TimeUnit.HOURS.getMultiplier();
@@ -53,21 +57,32 @@ public class CrlCacheImpl implements CrlCache {
 
     private final LdapUrlObjectCache<X509CRL> ldapUrlObjectCache;
     private final HttpObjectCache<X509CRL> httpObjectCache;
+    private final ExecutorService executor;
     private final ServerConfig serverConfig;
     private static final long MAX_CACHE_AGE_VALUE = 30000;
+    private static final int DEFAULT_CACHE_THREADS = 3;
     private static final int DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE = 1000;
     private static final String MAX_HTTP_CACHE_OBJECTS_PROP = "com.l7tech.server.security.cert.crlCacheSize";
 
-    public CrlCacheImpl(HttpClientFactory httpClientFactory, ServerConfig serverConfig) throws Exception {
+    public CrlCacheImpl( final HttpClientFactory httpClientFactory,
+                         final ServerConfig serverConfig,
+                         final Timer cacheTimer ) throws Exception {
         this.crlCache = WhirlycacheFactory.createCache(CrlCache.class.getSimpleName() + ".crlCache", 100, 1800, WhirlycacheFactory.POLICY_LRU);
         this.certCache = WhirlycacheFactory.createCache(CrlCache.class.getSimpleName() + ".certCache", 1000, 1800, WhirlycacheFactory.POLICY_LRU);
 
-        // TODO support configuration of login, password and LDAP timeouts
         this.serverConfig = serverConfig;
+        final long maxCacheAge = serverConfig.getTimeUnitPropertyCached("pkixCRL.cache.expiry", 300000, MAX_CACHE_AGE_VALUE);
+        final long cacheExpiry = serverConfig.getTimeUnitPropertyCached("pkixCRL.cache.preexpiry", 60000, MAX_CACHE_AGE_VALUE);
+        int cacheThreads = serverConfig.getIntProperty("pkixCRL.cache.threads", DEFAULT_CACHE_THREADS);
+        if ( cacheThreads < 0 || cacheThreads > 100 ) {
+            cacheThreads = DEFAULT_CACHE_THREADS;
+            logger.warning("Ignoring configured value for cache servicing threads '"+cacheThreads+"', using default '"+DEFAULT_CACHE_THREADS+"'.");
+        }
 
+        // TODO support configuration of login, password
         long connectTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_CONNECTION_TIMEOUT, MAX_CACHE_AGE_VALUE);
         long readTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_READ_TIMEOUT, LdapIdentityProvider.DEFAULT_LDAP_READ_TIMEOUT, MAX_CACHE_AGE_VALUE);
-        ldapUrlObjectCache = new LdapUrlObjectCache<X509CRL>(300000, AbstractUrlObjectCache.WAIT_LATEST, null, null, connectTimeout, readTimeout, true);
+        ldapUrlObjectCache = new LdapUrlObjectCache<X509CRL>(maxCacheAge, AbstractUrlObjectCache.WAIT_LATEST, null, null, connectTimeout, readTimeout, true);
 
         int httpObjectCacheSize = SyspropUtil.getInteger(MAX_HTTP_CACHE_OBJECTS_PROP, DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE) ;
         if (httpObjectCacheSize <= 0 || httpObjectCacheSize < DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE) {
@@ -77,10 +92,19 @@ public class CrlCacheImpl implements CrlCache {
             logger.config("Using system property " + MAX_HTTP_CACHE_OBJECTS_PROP + "=" + httpObjectCacheSize);
         }
 
-        httpObjectCache = new HttpObjectCache<X509CRL>(httpObjectCacheSize, 30000, httpClientFactory, new CrlHttpObjectFactory(), AbstractUrlObjectCache.WAIT_INITIAL);
+        this.httpObjectCache = new HttpObjectCache<X509CRL>(httpObjectCacheSize, maxCacheAge, httpClientFactory, new CrlHttpObjectFactory(), AbstractUrlObjectCache.WAIT_INITIAL);
+
+        executor = buildExecutor( cacheThreads );
+        scheduleCacheRefresh( cacheTimer, cacheExpiry );
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        if ( executor != null ) executor.shutdown();
     }
 
     private static class CrlHttpObjectFactory implements AbstractUrlObjectCache.UserObjectFactory<X509CRL> {
+        @Override
         public X509CRL createUserObject(String url, AbstractUrlObjectCache.UserObjectSource response) throws IOException {
             ContentTypeHeader cth = response.getContentType();
             String encoding = "UTF-8";
@@ -90,7 +114,7 @@ public class CrlCacheImpl implements CrlCache {
 
             byte[] data = response.getBytes();
             byte[] pemPrefix = "-----".getBytes(encoding);
-            byte[] der = null;
+            byte[] der;
 
             if ( ArrayUtils.compareArrays(data, 0, pemPrefix, 0, pemPrefix.length) ) {
                 BufferedReader br = new BufferedReader(new StringReader(new String(data,encoding)));
@@ -114,12 +138,14 @@ public class CrlCacheImpl implements CrlCache {
         }
     }
 
+    @Override
     public String[] getCrlUrlsFromCertificate(X509Certificate cert, Audit audit) throws IOException {
         String[] urls = getCachedCrlUrls(cert);
         if (urls == null) throw new IllegalStateException();
         return urls;
     }
 
+    @Override
     public X509CRL getCrl(String crlUrl, Audit auditor) throws CRLException, IOException {
         X509CRL crl;
         X509CRL cachedCRL = null;
@@ -237,6 +263,31 @@ public class CrlCacheImpl implements CrlCache {
         } else {
             throw fr.getException();
         }
+    }
+
+    private void scheduleCacheRefresh( final Timer cacheTimer, final long cacheExpiry ) {
+        if ( executor != null && cacheTimer != null ) {
+            cacheTimer.schedule( new TimerTask(){
+                @Override
+                public void run() {
+                    try {
+                        httpObjectCache.serviceCache( executor, cacheExpiry );
+                    } catch ( Exception e ) {
+                        logger.log( Level.WARNING, "Error during CRL cache refresh.", e );
+                    }
+                }
+            }, 74033, 27157 );
+        }
+    }
+
+    private ExecutorService buildExecutor( final int cacheThreads ) {
+        ExecutorService executor = null;
+
+        if ( cacheThreads > 0 ) {
+            executor = Executors.newFixedThreadPool( cacheThreads );
+        }
+
+        return executor;
     }
 
     private class CrlCacheEntry {

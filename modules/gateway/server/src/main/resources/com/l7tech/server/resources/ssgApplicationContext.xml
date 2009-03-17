@@ -1092,6 +1092,11 @@
     <bean id="crlCache" class="com.l7tech.server.security.cert.CrlCacheImpl">
         <constructor-arg ref="httpClientFactory"/>
         <constructor-arg ref="serverConfig"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="CRL Refresh"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <bean id="ocspCache" class="com.l7tech.server.security.cert.OCSPCache">

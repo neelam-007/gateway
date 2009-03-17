@@ -16,9 +16,7 @@ import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
@@ -56,23 +54,35 @@ public class LdapUrlObjectCache<PT> extends AbstractUrlObjectCache<LdapUrlObject
     }
 
     private final Lock lock = new ReentrantLock();
+    @Override
     protected Lock getReadLock() { return lock; }
+    @Override
     protected Lock getWriteLock() { return lock; }
 
+    @Override
     protected AbstractCacheEntry<LdapCacheEntry<PT>> cacheGet(String url) {
         //noinspection unchecked
         return (AbstractCacheEntry<LdapCacheEntry<PT>>)cache.retrieve(url);
     }
 
+    @Override
     protected void cachePut(String url, AbstractCacheEntry abstractCacheEntry) {
         cache.store(url, abstractCacheEntry);
     }
 
+    @Override
     protected AbstractCacheEntry<LdapCacheEntry<PT>> cacheRemove(String url) {
         //noinspection unchecked
         return (AbstractCacheEntry<LdapCacheEntry<PT>>) cache.remove(url);
     }
 
+    @SuppressWarnings({"unchecked"})
+    @Override
+    protected Iterator<AbstractCacheEntry<LdapCacheEntry<PT>>> cacheIterator() {
+        return null;
+    }
+
+    @Override
     protected DatedUserObject<LdapCacheEntry<PT>> doGet(String urlStr, String lastModifiedStr, long lastSuccessfulPollStarted) throws IOException {
         try {
             LdapURL ldapUrl = new LdapURL(urlStr);

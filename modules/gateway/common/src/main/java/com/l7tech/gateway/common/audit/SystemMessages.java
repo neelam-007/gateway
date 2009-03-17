@@ -58,8 +58,8 @@ public class SystemMessages extends Messages {
     public static final M CERTVAL_REV_ISSUER_NOT_FOUND        = m(2048, Level.WARNING, "Unable to locate {0} issuer certificate {1}");
     public static final M CERTVAL_REV_CACHE_MISS              = m(2049, Level.INFO,    "No {0} cache for {1}; refreshing");
     public static final M CERTVAL_REV_CACHE_HIT               = m(2050, Level.FINE,    "Using {0} cache for {1}");
-    public static final M CERTVAL_REV_CACHE_STALE             = m(2051, Level.INFO,    "{0} cache for {1} was last updated at {2}; refreshing");
-    public static final M CERTVAL_REV_CACHE_FRESH             = m(2052, Level.FINE,    "{0} cache for {1} was last updated at {2}; using cache");
+    public static final M CERTVAL_REV_CACHE_STALE             = m(2051, Level.INFO,    "{0} cache for {1} refresh due at {2}; refreshing");
+    public static final M CERTVAL_REV_CACHE_FRESH             = m(2052, Level.FINE,    "{0} cache for {1} refresh due at {2}; using cache");
     public static final M CERTVAL_REV_SIGNER_IS_ISSUER        = m(2053, Level.FINE,    "Using issuer ''{1}'' as {0} signer.");
     public static final M CERTVAL_REV_SIGNER_IS_ISSUER_DELE   = m(2054, Level.FINE,    "Using issuer authorized certificate ''{1}'' as {0} signer");
     public static final M CERTVAL_REV_SIGNER_IS_TRUSTED       = m(2055, Level.FINE,    "Using trusted certificate ''{1}'' as {0} signer");

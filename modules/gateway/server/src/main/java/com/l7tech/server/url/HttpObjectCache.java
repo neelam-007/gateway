@@ -12,7 +12,7 @@ import org.apache.commons.collections.map.LRUMap;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.Date;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.IOException;
@@ -62,21 +62,43 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
     }
 
     private final Lock lock = new ReentrantLock();
+    @Override
     protected Lock getReadLock() { return lock; }
+    @Override
     protected Lock getWriteLock() { return lock; }
 
+    @SuppressWarnings({"unchecked"})
+    @Override
     protected AbstractCacheEntry<UT> cacheGet(String url) {
-        return (AbstractCacheEntry<UT>)cache.get(url);
+        synchronized( cache ) {
+            return (AbstractCacheEntry<UT>)cache.get(url);
+        }
     }
 
+    @Override
     protected void cachePut(String url, AbstractCacheEntry<UT> cacheEntry) {
-        cache.put(url, cacheEntry);
+        synchronized( cache ) {
+            cache.put(url, cacheEntry);
+        }
     }
 
+    @SuppressWarnings({"unchecked"})
+    @Override
     protected AbstractCacheEntry<UT> cacheRemove(String url) {
-        return (AbstractCacheEntry<UT>)cache.remove(url);
+        synchronized( cache ) {
+            return (AbstractCacheEntry<UT>)cache.remove(url);
+        }
     }
 
+    @SuppressWarnings({"unchecked"})
+    @Override
+    protected Iterator<AbstractCacheEntry<UT>> cacheIterator() {
+        synchronized( cache ) {
+            return new ArrayList<AbstractCacheEntry<UT>>(cache.values()).iterator();
+        }
+    }
+
+    @Override
     protected DatedUserObject<UT> doGet(String urlStr,
                                             String lastModifiedStr,
                                             long lastSuccessfulPollStarted)
@@ -119,14 +141,17 @@ public class HttpObjectCache<UT> extends AbstractUrlObjectCache<UT> {
             String modified = headers.getFirstValue(HttpConstants.HEADER_LAST_MODIFIED);
             final GenericHttpResponse sourceResponse = resp;
             UT userObject = userObjectFactory.createUserObject(params.getTargetUrl().toExternalForm(), new UserObjectSource(){
+                @Override
                 public byte[] getBytes() throws IOException {
                     return IOUtils.slurpStream(sourceResponse.getInputStream(), maxCrlSize);
                 }
 
+                @Override
                 public ContentTypeHeader getContentType() {
                     return sourceResponse.getContentType();
                 }
 
+                @Override
                 public String getString(boolean isXml) throws IOException {
                     return sourceResponse.getAsString(isXml);
                 }
