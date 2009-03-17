@@ -38,6 +38,8 @@ public final class Message {
     private TcpKnob tcpKnob;
     private XmlKnob xmlKnob;
     private SoapKnob soapKnob;
+    private MimeKnob mimeKnob;
+    private SecurityKnob securityKnob;
 
     /**
      * Create a Message with no facets.
@@ -170,6 +172,8 @@ public final class Message {
      * @throws IllegalStateException if this Message has not yet been attached to an InputStream.
      */
     public MimeKnob getMimeKnob() throws IllegalStateException {
+        if (this.mimeKnob != null)
+            return this.mimeKnob;
         MimeKnob mimeKnob = (MimeKnob)getKnob(MimeKnob.class);
         if (mimeKnob == null) throw new IllegalStateException("This Message has not yet been attached to an InputStream");
         return mimeKnob;
@@ -185,6 +189,8 @@ public final class Message {
      * @throws IllegalStateException if this Message has not yet been attached to an InputStream.
      */
     public XmlKnob getXmlKnob() throws SAXException {
+        if (this.xmlKnob != null)
+            return this.xmlKnob;
         XmlKnob xmlKnob = (XmlKnob)getKnob(XmlKnob.class);
         if (xmlKnob == null) {
             try {
@@ -228,6 +234,8 @@ public final class Message {
      * @throws IOException if XML serialization is necessary, and it throws IOException (perhaps due to a lazy DOM)
      */
     public boolean isXml() throws IOException {
+        if (xmlKnob != null)
+            return true;
         if (getKnob(XmlKnob.class) != null)
             return true;
         MimeKnob mimeKnob = (MimeKnob)getKnob(MimeKnob.class);
@@ -315,6 +323,8 @@ public final class Message {
      * @throws IllegalStateException if the SOAP MIME part has already been destructively read.
      */
     public boolean isSoap(boolean preferDOM) throws IOException, SAXException {
+        if (this.soapKnob != null)
+            return true;
         HttpRequestKnob hrk = (HttpRequestKnob) getKnob(HttpRequestKnob.class);
         if (hrk != null && hrk.getMethod() != HttpMethod.POST)
             return false;
@@ -531,39 +541,30 @@ public final class Message {
 
         // These knobs account for at least 2/3rds of the dozens of calls to this method that are made
         // per request.  Traversing the knob list so much was starting to show up in the profile.
-        if (c == HttpRequestKnob.class && httpRequestKnob != null)
-            return httpRequestKnob;
-        if (c == HttpServletRequestKnob.class && httpServletRequestKnob != null)
-            return httpServletRequestKnob;
-        if (c == HttpResponseKnob.class && httpResponseKnob != null)
-            return httpResponseKnob;
-        if (c == HttpServletResponseKnob.class && httpServletResponseKnob != null)
-            return httpServletResponseKnob;
-        if (c == TcpKnob.class && tcpKnob != null)
-            return tcpKnob;
-        if (c == XmlKnob.class && xmlKnob != null)
-            return xmlKnob;
-        if (c == SoapKnob.class && soapKnob != null)
-            return soapKnob;
+        if (c == MimeKnob.class)
+            return mimeKnob != null ? mimeKnob : (mimeKnob = (MimeKnob)findKnob(c));
+        if (c == HttpRequestKnob.class)
+            return httpRequestKnob != null ? httpRequestKnob : (httpRequestKnob = (HttpRequestKnob)findKnob(c));
+        if (c == HttpServletRequestKnob.class)
+            return httpServletRequestKnob != null ? httpServletRequestKnob : (httpServletRequestKnob = (HttpServletRequestKnob)findKnob(c));
+        if (c == HttpResponseKnob.class)
+            return httpResponseKnob != null ? httpResponseKnob : (httpResponseKnob = (HttpResponseKnob)findKnob(c));
+        if (c == HttpServletResponseKnob.class)
+            return httpServletResponseKnob != null ? httpServletResponseKnob : (httpServletResponseKnob = (HttpServletResponseKnob)findKnob(c));
+        if (c == TcpKnob.class)
+            return tcpKnob != null ? tcpKnob : (tcpKnob = (TcpKnob)findKnob(c));
+        if (c == XmlKnob.class)
+            return xmlKnob != null ? xmlKnob : (xmlKnob = (XmlKnob)findKnob(c));
+        if (c == SecurityKnob.class)
+            return securityKnob != null ? securityKnob : (securityKnob = (SecurityKnob)findKnob(c));
+        if (c == SoapKnob.class)
+            return soapKnob != null ? soapKnob : (soapKnob = (SoapKnob)findKnob(c));
 
-        final MessageKnob got = rootFacet.getKnob(c);
+        return findKnob(c);
+    }
 
-        if (c == HttpRequestKnob.class && httpRequestKnob == null)
-            return httpRequestKnob = (HttpRequestKnob)got;
-        if (c == HttpServletRequestKnob.class && httpServletRequestKnob == null)
-            return httpServletRequestKnob = (HttpServletRequestKnob)got;
-        if (c == HttpResponseKnob.class && httpResponseKnob == null)
-            return httpResponseKnob = (HttpResponseKnob)got;
-        if (c == HttpServletResponseKnob.class && httpServletResponseKnob == null)
-            return httpServletResponseKnob = (HttpServletResponseKnob)got;
-        if (c == TcpKnob.class && tcpKnob == null)
-            return tcpKnob = (TcpKnob)got;
-        if (c == XmlKnob.class && xmlKnob == null)
-            return xmlKnob = (XmlKnob)got;
-        if (c == SoapKnob.class && soapKnob == null)
-            return soapKnob = (SoapKnob)got;
-
-        return got;
+    private MessageKnob findKnob(Class c) {
+        return rootFacet.getKnob(c);
     }
 
     private void invalidateCachedKnobs() {
@@ -574,6 +575,8 @@ public final class Message {
         tcpKnob = null;
         xmlKnob = null;
         soapKnob = null;
+        mimeKnob = null;
+        securityKnob = null;
     }
 
     /**
