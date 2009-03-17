@@ -122,6 +122,7 @@
                                 <value>trafficLoggerDetail</value>
                                 <value>trafficLoggerRecordReq</value>
                                 <value>trafficLoggerRecordRes</value>
+                                <value>trafficLoggerSelective</value>
                             </list>
                         </entry>
                         <entry key="sinkManager"><list><value>logLevels</value></list></entry>
