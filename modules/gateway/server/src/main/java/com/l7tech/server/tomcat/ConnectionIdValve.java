@@ -40,18 +40,17 @@ public class ConnectionIdValve extends ValveBase {
      */
     public ConnectionIdValve(HttpTransportModule transportModule) {
         this.httpTransportModule = transportModule;
-        this.connectionSequence.set(0);
+        final long transportId = httpTransportModule.getInstanceId();
         SsgServerSocketFactory.addListener(new SsgServerSocketFactory.Listener(){
             public void onGetInputStream(long transportModuleInstanceId, long connectorOid, Socket accepted) {
-                if (transportModuleInstanceId != httpTransportModule.getInstanceId())
+                if (transportModuleInstanceId != transportId)
                     // not for us
                     return;
 
                 long id = connectionSequence.incrementAndGet();
-                if(logger.isLoggable(Level.FINE)) {
-                    logger.log(Level.FINE, "Setting id for connection '"+id+"'.");
-                }
-                connectionId.set(Long.valueOf(id));
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "Setting id for connection '{0}'", id);
+                connectionId.set(id);
                 ssgConnectorOid.set(connectorOid);
             }
         });
