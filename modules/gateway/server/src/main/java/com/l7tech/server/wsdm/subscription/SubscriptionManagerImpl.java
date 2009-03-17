@@ -5,27 +5,25 @@ package com.l7tech.server.wsdm.subscription;
 
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import com.l7tech.server.wsdm.Aggregator;
 import com.l7tech.server.wsdm.faults.ResourceUnknownFault;
 import com.l7tech.server.wsdm.faults.UnacceptableTerminationTimeFault;
-import com.l7tech.server.wsdm.Aggregator;
-import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.util.Pair;
-
+import org.apache.commons.lang.StringUtils;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
-import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.criterion.Restrictions;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
-import org.apache.commons.lang.StringUtils;
 
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 /** @author alex */
 public class SubscriptionManagerImpl
@@ -42,8 +40,12 @@ public class SubscriptionManagerImpl
     private static final String COLUMN_TERMINATION = "termination";
     private static final String COLUMN_TOPIC = "topic";
     private static final String COLUMN_UUID = "uuid";
-    private static final String HQL_UPDATE_TIME_BY_ID = "UPDATE " + Subscription.class.getName() +
-                    " set " + COLUMN_NOTIFIED + " = :"+COLUMN_NOTIFIED+" where " + COLUMN_NODEID + " = :"+COLUMN_NODEID;
+    private static final String HQL_UPDATE_TIME_BY_ID = String.format("UPDATE %s set %s = :%s where %s = :%s", 
+                                                                      Subscription.class.getName(),
+                                                                      COLUMN_NOTIFIED,
+                                                                      COLUMN_NOTIFIED,
+                                                                      COLUMN_NODEID,
+                                                                      COLUMN_NODEID);
 
     private Aggregator aggregator;
 
@@ -88,32 +90,35 @@ public class SubscriptionManagerImpl
         return subs.iterator().next();
     }
 
-    public void deleteExpiredSubscriptions() {
-        getHibernateTemplate().execute(new HibernateCallback() {
-            public Object doInHibernate(Session session) throws HibernateException, SQLException {
-                Criteria crit = session.createCriteria(Subscription.class);
-                crit.add(Restrictions.lt(COLUMN_TERMINATION, System.currentTimeMillis()));
-                ScrollableResults sr = crit.scroll();
-                int victims = 0;
-                while (sr.next()) {
-                    Subscription deadGuy = (Subscription)sr.get()[0];
-                    logger.log(Level.INFO, "Subscription {0} has expired and will be forgotten", deadGuy.getUuid());
-                    try {
-                        session.delete(deadGuy);
-                        victims++;
-                    } catch (HibernateException e) {
-                        logger.log(Level.WARNING, "Unable to delete expired Subscription " + deadGuy.getUuid(), e);
+    public void deleteExpiredSubscriptions() throws DeleteException {
+        try {
+            getHibernateTemplate().execute(new HibernateCallback() {
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    Criteria crit = session.createCriteria(Subscription.class);
+                    crit.add(Restrictions.lt(COLUMN_TERMINATION, System.currentTimeMillis()));
+                    @SuppressWarnings({"unchecked"})
+                    final List<Subscription> subs = crit.list();
+                    int victims = 0;
+                    for (Subscription deadGuy : subs) {
+                        logger.log(Level.INFO, "Subscription {0} has expired and will be forgotten", deadGuy.getUuid());
+                        try {
+                            session.delete(deadGuy);
+                            victims++;
+                        } catch (HibernateException e) {
+                            logger.log(Level.WARNING, "Unable to delete expired Subscription " + deadGuy.getUuid(), e);
+                        }
                     }
+                    if (victims < 1) {
+                        logger.fine("Nothing to clean up");
+                    } else {
+                        logger.log(Level.FINE, "{0} subscriptions cleaned up", victims);
+                    }
+                    return null;
                 }
-                sr.close();
-                if (victims < 1) {
-                    logger.fine("Nothing to clean up");
-                } else {
-                    logger.log(Level.FINE, "{0} subscriptions cleaned up", victims);
-                }
-                return null;
-            }
-        });
+            });
+        } catch (DataAccessException e) {
+            throw new DeleteException("Unable to delete expired subscriptions", e);
+        }
     }
 
     public void renewSubscription(String subscriptionId, long newTermination, String policyGuid) throws FindException, UpdateException, ResourceUnknownFault, UnacceptableTerminationTimeFault {

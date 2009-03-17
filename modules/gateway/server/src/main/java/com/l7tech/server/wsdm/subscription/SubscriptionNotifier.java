@@ -3,55 +3,57 @@
  */
 package com.l7tech.server.wsdm.subscription;
 
+import com.l7tech.common.http.*;
 import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.IOUtils;
-import com.l7tech.message.HttpRequestKnobAdapter;
-import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.objectmodel.*;
+import com.l7tech.gateway.common.audit.ServiceMessages;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.service.MetricsSummaryBin;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.message.HttpRequestKnobAdapter;
+import com.l7tech.message.Message;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.service.ServiceCache;
-import com.l7tech.server.transport.SsgConnectorManager;
+import com.l7tech.server.wsdm.Aggregator;
 import com.l7tech.server.wsdm.MetricsRequestContext;
 import com.l7tech.server.wsdm.QoSMetricsService;
-import com.l7tech.server.wsdm.Aggregator;
 import com.l7tech.server.wsdm.faults.FaultMappableException;
 import com.l7tech.server.wsdm.faults.GenericWSRFExceptionFault;
 import com.l7tech.server.wsdm.faults.ResourceUnknownFault;
 import com.l7tech.server.wsdm.faults.UnacceptableTerminationTimeFault;
 import com.l7tech.server.wsdm.method.Subscribe;
 import com.l7tech.util.*;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.MetricsSummaryBin;
-import com.l7tech.gateway.common.audit.ServiceMessages;
-import com.l7tech.message.Message;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ByteArrayInputStream;
-import java.net.*;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -77,48 +79,45 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
 
     private static final EnumSet<NotificationType> DISABLED_OR_ENABLED = EnumSet.of(NotificationType.DISABLED, NotificationType.ENABLED);
 
-    private final ServiceCache serviceCache;
     private Auditor auditor;
 
-    private final SubscriptionManager subscriptionManager;
-    private final URL incomingUrl;
+    private URL incomingUrl;
 
     private final AtomicLong notificationPeriod = new AtomicLong(0);
     private final AtomicBoolean notificationEnabled = new AtomicBoolean(false);
     private volatile long lastNotificationRun;
 
-    private final PolicyCache policyCache;
-    private final MessageSummaryAuditFactory auditFactory;
-    private final String clusterNodeId;
-    private final ServerConfig serverConfig;
-    private final GenericHttpClientFactory httpClientFactory;
+    @Resource
+    private ServiceCache serviceCache;
+    @Resource
+    private SubscriptionManager subscriptionManager;
+    @Resource
+    private PolicyCache policyCache;
+    @Resource
+    private MessageSummaryAuditFactory auditFactory;
+    @Resource
+    private ServerConfig serverConfig;
+    @Resource
+    private GenericHttpClientFactory httpClientFactory;
+    @Resource
+    private Aggregator aggregator;
 
-    private final TimerTask maintenanceTask;
-    private final TimerTask notificationTask ;
-    private final TimerTask notificationStealerTask;
+    private final String clusterNodeId;
+
+    private TimerTask maintenanceTask;
+    private TimerTask notificationTask ;
+    private TimerTask notificationStealerTask;
 
     private final ExecutorService threadPool = Executors.newSingleThreadExecutor();
 
     private AuditContext auditContext;
 
-    public SubscriptionNotifier(final SubscriptionManager subscriptionManager,
-                                final ServiceCache serviceCache,
-                                final SsgConnectorManager connectorManager,
-                                final PolicyCache policyCache,
-                                final MessageSummaryAuditFactory auditFactory,
-                                final String clusterNodeId,
-                                final Aggregator aggregator,
-                                final ServerConfig serverConfig,
-                                final GenericHttpClientFactory httpClientFactory )
-    {
-        this.subscriptionManager = subscriptionManager;
-        this.serviceCache = serviceCache;
-        this.policyCache = policyCache;
-        this.auditFactory = auditFactory;
+    public SubscriptionNotifier(final String clusterNodeId) {
         this.clusterNodeId = clusterNodeId;
-        this.serverConfig = serverConfig;
-        this.httpClientFactory = httpClientFactory;
+    }
 
+    @PostConstruct
+    private void start() {
         loadNotificationProperties(true);
 
         String hostname = serverConfig.getHostname();
@@ -140,11 +139,16 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         // worker thread deleting expired subscriptions
         maintenanceTask = new TimerTask() {
             public void run() {
-                subscriptionManager.deleteExpiredSubscriptions();
-                if ( loadNotificationProperties(false) ) {
-                    scheduleTasks( true, notificationEnabled.get() ? notificationPeriod.get() : 0 );
+                try {
+                    subscriptionManager.deleteExpiredSubscriptions();
+                    if ( loadNotificationProperties(false) ) {
+                        scheduleTasks( true, notificationEnabled.get() ? notificationPeriod.get() : 0 );
+                    }
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Unable to perform subscription cleanup; will retry in " + CLEANUP_PERIOD + "ms.", e);
                 }
             }
+            
             public String toString() {
                 return "ESM Maintenance Task";
             }
@@ -470,7 +474,7 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
                                              final String message ) {
         boolean notificationSent = false;
 
-        GenericHttpClient client = httpClientFactory.createHttpClient();
+        GenericHttpClient client = httpClientFactory.createHttpClient(-1,-1,getConnectionTimeout(),getTimeout(), null);
         GenericHttpRequestParams requestParams = new GenericHttpRequestParams( urltarget );
         requestParams.setFollowRedirects( false );
         requestParams.setContentType( ContentTypeHeader.XML_DEFAULT );
@@ -536,6 +540,56 @@ public class SubscriptionNotifier implements ServiceStateMonitor, ApplicationCon
         }
 
         return notificationSent;
+    }
+
+    /**
+     * Get the connection timeout to use (set using a cluster/system property)
+     *
+     * @return the configured or default timeout.
+     */
+    private int getConnectionTimeout() {
+        return getIntProperty(ServerConfig.PARAM_IO_BACK_CONNECTION_TIMEOUT,0,Integer.MAX_VALUE,0);
+    }
+
+    /**
+     * Get the timeout to use (set using a cluster/system property)
+     *
+     * @return the configured or default timeout.
+     */
+    private int getTimeout() {
+        return getIntProperty(ServerConfig.PARAM_IO_BACK_READ_TIMEOUT,0,Integer.MAX_VALUE,0);
+    }
+
+    /**
+     * Get a server config property using the configured min, max and default values.
+     */
+    private int getIntProperty(String propName, int min, int max, int defaultValue) {
+        int value = defaultValue;
+
+        try {
+            String configuredValue = serverConfig.getPropertyCached(propName);
+            if( configuredValue != null ) {
+                value = Integer.parseInt(configuredValue);
+
+                boolean useDefault = false;
+                if(value<min) {
+                    useDefault = true;
+                    logger.warning("Configured value for property '"+propName+"', is BELOW the minimum '"+min+"', using default value '"+defaultValue+"'.");
+                }
+                else if(value>max) {
+                    useDefault = true;
+                    logger.warning("Configured value for property '"+propName+"', is ABOVE the maximum '"+max+"', using default value '"+defaultValue+"'.");
+                }
+
+                if(useDefault) value = defaultValue;
+            }
+        } catch(SecurityException se) {
+            logger.warning("Cannot access property '"+propName+"', using default value '"+defaultValue+"', error is: " + se.getMessage());
+        } catch(NumberFormatException nfe) {
+            logger.warning("Cannot parse property '"+propName+"', using default value '"+defaultValue+"', error is: " + nfe.getMessage());
+        }
+
+        return value;
     }
 
     public void onServiceCreated(final long serviceoid) {

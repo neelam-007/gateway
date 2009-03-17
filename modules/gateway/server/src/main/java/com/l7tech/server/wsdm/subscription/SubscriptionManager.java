@@ -22,7 +22,7 @@ public interface SubscriptionManager extends EntityManager<Subscription, EntityH
 
     void deleteByUuid(String uuid) throws FindException, DeleteException, ResourceUnknownFault;
 
-    void deleteExpiredSubscriptions();
+    void deleteExpiredSubscriptions() throws DeleteException;
 
     @Transactional(readOnly = true, rollbackFor = Throwable.class)
     void renewSubscription(String subscriptionId, long newTermination, String policyGuid) throws FindException, UpdateException, ResourceUnknownFault, UnacceptableTerminationTimeFault;
