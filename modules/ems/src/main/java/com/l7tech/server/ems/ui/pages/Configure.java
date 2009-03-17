@@ -66,7 +66,7 @@ public class Configure extends EsmStandardWebPage {
     @SpringBean
     private MigrationRecordManager migrationRecordManager;
 
-    @SpringBean
+    @SpringBean(name = "eventPublisher")
     ApplicationEventPublisher publisher;
 
     @SpringBean
