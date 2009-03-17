@@ -21,6 +21,7 @@ import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
+import org.hibernate.jdbc.Work;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.engine.SessionImplementor;
@@ -98,6 +99,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
         this.identityProviderFactory = identityProviderFactory;
     }
 
+    @Override
     public void destroy() throws Exception {
         _applicationEventProxy.removeApplicationListener(applicationListener);
         disable();
@@ -106,6 +108,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
     /**
      * @return whether collection of service metrics is currently enabled
      */
+    @Override
     public boolean isEnabled() {
         return _enabled.get();
     }
@@ -116,6 +119,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
      * @param serviceOid    OID of published service
      * @return null if service metrics processing is disabled
      */
+    @Override
     public void trackServiceMetrics(final long serviceOid) {
         getServiceMetrics( serviceOid );
     }
@@ -143,6 +147,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
         }
     }
 
+    @Override
     public void addRequest(long serviceOid, String operation, User authorizedUser, List<MessageContextMapping> mappings, boolean authorized, boolean completed, int frontTime, int backTime) {
         ServiceMetrics metrics = getServiceMetrics( serviceOid );
         if ( metrics != null ) {
@@ -155,6 +160,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
     }
 
 
+    @Override
     public int getFineInterval() {
         return _fineBinInterval;
     }
@@ -175,6 +181,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
      * @return collection of summary bins; can be empty but never <code>null</code>
      * @throws FindException if failure to query database
      */
+    @Override
     @Transactional(propagation=Propagation.REQUIRED, readOnly=true, rollbackFor=Throwable.class)
     public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId,
                                                            final long[] serviceOids,
@@ -189,6 +196,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
         return MetricsSummaryBin.createSummaryMetricsBinsByPeriodStart(bins);
     }
 
+    @Override
     public Map<Long, MetricsSummaryBin> summarizeByService(final String nodeId, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart, long[] serviceOids, boolean includeEmpty)
         throws FindException
     {
@@ -219,6 +227,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
         try {
             //noinspection UnnecessaryLocalVariable
             List<MetricsBin> bins = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {
                     Criteria crit = session.createCriteria(MetricsBin.class);
 
@@ -294,6 +303,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
      * @return a summary bin; <code>null</code> if no metrics bins are found
      * @throws FindException if failure to query database
      */
+    @Override
     public MetricsSummaryBin summarizeLatest(final String clusterNodeId,
                                              final long[] serviceOids,
                                              final int resolution,
@@ -320,6 +330,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
         try {
             // noinspection unchecked
             bins = getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                @Override
                 public Object doInHibernateReadOnly(Session session) throws HibernateException {
                     final Criteria criteria = session.createCriteria(MetricsBin.class);
                     if (clusterNodeId != null) {
@@ -362,6 +373,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
         return summaryBin;
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent event) {
         if (CLUSTER_PROP_ENABLED.equals(event.getPropertyName())) {
             if (Boolean.valueOf((String)event.getNewValue())) {
@@ -383,6 +395,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
 
     //- PROTECTED
 
+    @Override
     protected void initDao() throws Exception {
         if (_transactionManager == null) throw new IllegalStateException("TransactionManager must be set");
         if (_serviceManager == null) throw new IllegalStateException("ServiceManager must be set");
@@ -410,7 +423,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
     private static final String CLUSTER_PROP_ENABLED = "serviceMetricsEnabled";
 
     private static final String HQL_DELETE = "DELETE FROM " + MetricsBin.class.getName() + " WHERE periodStart < ? AND resolution = ?";
-    private static final String HQL_DELETE_DETAILS = "DELETE FROM " + MetricsBinDetail.class.getName() + " WHERE metricsBinOid = ?";
+    private static final String SQL_DELETE_DETAILS = "DELETE FROM service_metrics_details WHERE service_metrics_oid = ?";
 
     private static final String SQL_INSERT_OR_UPDATE_BIN =
         "INSERT INTO service_metrics\n" +
@@ -770,6 +783,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
     }
 
     private final ApplicationListener applicationListener = new ApplicationListener() {
+        @Override
         public void onApplicationEvent(ApplicationEvent event) {
             if (event instanceof EntityInvalidationEvent)
                 handleEntityInvalidationEvent((EntityInvalidationEvent) event);
@@ -814,6 +828,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
      * <p>Also archives an empty uptime bin (since 4.0).
      */
     private class FineTask extends ManagedTimerTask {
+        @Override
         protected void doRun() {
             List<ServiceMetrics> list = new ArrayList<ServiceMetrics>();
             synchronized(_serviceMetricsMapLock) {
@@ -856,6 +871,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
      * current hourly bins and start new ones.
      */
     private class HourlyTask extends ManagedTimerTask {
+        @Override
         protected void doRun() {
             Set<Long> list = new HashSet<Long>();
             synchronized(_serviceMetricsMapLock) {
@@ -878,6 +894,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
      * current daily bins and start new ones.
      */
     private class DailyTask extends ManagedTimerTask {
+        @Override
         protected void doRun() {
             Set<Long> list = new HashSet<Long>();
             synchronized(_serviceMetricsMapLock) {
@@ -913,8 +930,10 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
     private void createSummaryBin( final long serviceOid, final ServiceState serviceState, final long startTime, final int binResolution, final int summaryResolution ) {
         try {
             new TransactionTemplate(_transactionManager).execute(new TransactionCallback() {
+                @Override
                 public Object doInTransaction(final TransactionStatus status) {
                     return getHibernateTemplate().execute(new HibernateCallback() {
+                        @Override
                         @SuppressWarnings({"deprecation"})
                         public Object doInHibernate(final Session session) throws HibernateException {
                             MetricsBin bin = new MetricsBin( startTime, _fineBinInterval, binResolution, _clusterNodeId, serviceOid );
@@ -1007,6 +1026,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
             }
         }
 
+        @Override
         public void run() {
             _logger.info("Database flusher beginning");
             while (true) {
@@ -1029,7 +1049,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
                         quit();
                     }
                 } catch (DataIntegrityViolationException e) {
-                    _logger.log(Level.INFO, "Failed to save a MetricsBin due to constraint violation; likely clock skew");
+                    _logger.log(Level.INFO, "Failed to save a MetricsBin due to constraint violation;");
                 } catch (Exception e) {
                     _logger.log(Level.WARNING, "Couldn't save MetricsBin", e);
                 }
@@ -1065,17 +1085,19 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
                 _logger.finest("Saving " + bin.toString());
 
             new TransactionTemplate(_transactionManager).execute(new TransactionCallbackWithoutResult() {
+                @Override
                 protected void doInTransactionWithoutResult(TransactionStatus status) {
                     try {
                         getHibernateTemplate().execute(new HibernateCallback(){
+                            @Override
                             public Object doInHibernate(Session session) throws HibernateException {
                                 Criteria criteria = session.createCriteria(MetricsBin.class);
                                 criteria.add(Restrictions.eq("clusterNodeId", bin.getClusterNodeId()));
                                 criteria.add(Restrictions.eq("serviceOid", bin.getServiceOid()));
                                 criteria.add(Restrictions.eq("resolution", bin.getResolution()));
                                 criteria.add(Restrictions.eq("periodStart", bin.getPeriodStart()));
-                                MetricsBin existing = (MetricsBin) criteria.uniqueResult();
-                                if (existing == null) {
+                                final MetricsBin existing = (MetricsBin) criteria.uniqueResult();
+                                if ( existing == null ) {
                                     Long id = (Long) session.save( bin );
                                     saveDetails( session, id, metricsSet.getDetailMetrics() );
                                 } else {
@@ -1086,10 +1108,24 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
                                     existing.merge(bin);
                                     session.save(existing);
 
-                                    // could merge these too
-                                    Query deleteDetails = session.createQuery(HQL_DELETE_DETAILS);
-                                    deleteDetails.setLong(0, existing.getOid());
-                                    deleteDetails.executeUpdate();
+                                    // could merge the details too
+                                    session.doWork( new Work(){
+                                        @Override
+                                        public void execute( final Connection connection ) throws SQLException {
+                                            PreparedStatement statement = null;
+                                            try {
+                                                statement = connection.prepareStatement( SQL_DELETE_DETAILS );
+                                                statement.setLong( 1, existing.getOid() );
+                                                int count = statement.executeUpdate();
+                                                if (_logger.isLoggable(Level.FINE)) {
+                                                    _logger.log(Level.FINE, "Deleted {4} detail metrics bins [ClusterNodeId={0}; ServiceOid={1}; Resolution={2}; PeriodStart={3}]",
+                                                            new Object[]{bin.getClusterNodeId(), bin.getServiceOid(), bin.getResolution(), bin.getPeriodStart(), count});
+                                                }
+                                            } finally {
+                                                ResourceUtils.closeQuietly( statement );
+                                            }
+                                        }
+                                    } );
 
                                     saveDetails( session, existing.getOid(), metricsSet.getDetailMetrics() );
                                 }
@@ -1144,12 +1180,15 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport
             _resolution = resolution;
         }
 
+        @Override
         protected void doRun() {
             final long oldestSurvivor = System.currentTimeMillis() - _ttl;
             try {
                 Integer num = (Integer)new TransactionTemplate(_transactionManager).execute(new TransactionCallback() {
+                    @Override
                     public Object doInTransaction(TransactionStatus status) {
                         return getHibernateTemplate().execute(new HibernateCallback() {
+                            @Override
                             public Object doInHibernate(Session session) throws HibernateException {
                                 Query query = session.createQuery(HQL_DELETE);
                                 query.setLong(0, oldestSurvivor);
