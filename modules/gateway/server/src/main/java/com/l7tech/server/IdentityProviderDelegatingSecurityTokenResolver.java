@@ -118,7 +118,7 @@ public class IdentityProviderDelegatingSecurityTokenResolver implements Security
             public void run() {
                 buildAuthenticatingProviderList();
             }
-        }, 10000, 10000);
+        }, 10000, 47533);
     }
 
     private void buildAuthenticatingProviderList() {
