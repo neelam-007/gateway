@@ -259,6 +259,8 @@
 
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy"/>
 
+    <bean id="messageProcessingEventChannel" class="com.l7tech.server.util.EventChannel"/>
+
     <bean id="crlCache" class="com.l7tech.server.TestCrlCache"/>
 
     <bean id="certValidationProcessor" class="com.l7tech.server.security.cert.TestCertValidationProcessor"/>

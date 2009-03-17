@@ -38,6 +38,7 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -66,7 +67,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
 
     // instance
     protected final ApplicationContext applicationContext;
-    protected final EventChannel messageProcessingEventChannel;
+    protected final ApplicationEventPublisher messageProcessingEventChannel;
 
     /**
      *
@@ -77,7 +78,12 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     protected ServerRoutingAssertion(RAT data, ApplicationContext applicationContext, Logger logger) {
         super(data);
         this.applicationContext = applicationContext;
-        this.messageProcessingEventChannel = (EventChannel) applicationContext.getBean("messageProcessingEventChannel", EventChannel.class);
+        if (applicationContext == null) {
+            this.messageProcessingEventChannel = new EventChannel();
+        } else {
+            ApplicationEventPublisher mpchannel = (EventChannel) applicationContext.getBean("messageProcessingEventChannel", EventChannel.class);
+            this.messageProcessingEventChannel = mpchannel != null ? mpchannel : applicationContext;             
+        }
         this.logger = logger != null ? logger : sraLogger;
         this.auditor = new Auditor(this, applicationContext, logger);
     }
