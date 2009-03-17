@@ -441,7 +441,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 }
             }
         };
-        checker.schedule(task, 10000, 30000);
+        checker.schedule(task, 10000, 56893);
     }
 
     private void updateOverrides() {
