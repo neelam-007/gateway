@@ -8,6 +8,7 @@ package com.l7tech.server.util;
 import com.l7tech.server.policy.AssertionModuleUnregistrationEvent;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationListener;
 
 import java.util.ArrayList;
@@ -21,8 +22,33 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * handler gets wrapped in expensive Spring TX-checking plumbing, which was otherwise going to cause
  * a 30% performance decrease system-wide between Gateway versions 3.5 and 3.6.
  */
-public class ApplicationEventProxy implements ApplicationListener, DisposableBean {
+public class ApplicationEventProxy implements ApplicationListener, DisposableBean, ApplicationEventPublisher {
     final Set<ApplicationListener> subscribers = new CopyOnWriteArraySet<ApplicationListener>();
+    final boolean primaryChannel;
+
+    /**
+     * Create an ApplicationEventProxy that assumes it is proxying the primary ApplicationEvent channel
+     * for the ApplicationContext in which it is created.
+     */
+    public ApplicationEventProxy() {
+        this(true);
+    }
+
+    /**
+     * Create an ApplicationEventProxy that can proxy either the primary applicaiton event channel or
+     * an alternative event channel.
+     * <p/>
+     * If proxying an alternate channel, the proxy will
+     * not deliver events to subscribers if they arrive via {@link #onApplicationEvent};
+     * it will only deliver events that are submitted directly to the proxy instance itself
+     * via {@link #publishEvent}.
+     *
+     * @param primaryChannel true if this bean should proxy application events from the main Spring context.
+     *                       false if it should only proxy events submitted directly to this bean via publishEvent.
+     */
+    public ApplicationEventProxy(boolean primaryChannel) {
+        this.primaryChannel = primaryChannel;
+    }
 
     /**
      * Add an application listener.  The subscription will persist until the application context is closed,
@@ -37,7 +63,7 @@ public class ApplicationEventProxy implements ApplicationListener, DisposableBea
     }
 
     /**
-     * Unsubscribe from application events.
+     * Unsubscribe from application events from this proxy.
      *
      * @param listener The ApplicationListener to unsubscribe from events.
      */
@@ -45,10 +71,37 @@ public class ApplicationEventProxy implements ApplicationListener, DisposableBea
         subscribers.remove(listener);
     }
 
+    /**
+     * Check if this proxy is proxying the primary Spring application event channel.
+     *
+     * @return true iff. this proxy will deliver events to subscribers that arrive via {@link #onApplicationEvent}.
+     */
+    public boolean isPrimaryChannel() {
+        return primaryChannel;
+    }
+
+    /**
+     * Deliver an event from the primary Spring channel.  This event will only be passed on to subscribers
+     * if {@link #isPrimaryChannel()} is true.
+     * <p/>
+     * <b>You should not normally invoke this method directly.</b> To submit an event to be delivered to all of this proxy's
+     * subscribers, use {@link #publishEvent} instead.
+     * <p/>
+     * Regardless of whether this proxy is providing an alternate event channel, it will still monitor the primary event
+     * channel to watch for modules that are unloaded so that it can remove subscribers from that module.
+     * <p/>
+     *
+     * @param event the application event from the primary Spring application event channel. Required.
+     */
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof AssertionModuleUnregistrationEvent)
             removeListenersFromClassLoader(((AssertionModuleUnregistrationEvent)event).getModule().getModuleClassLoader());
 
+        if (isPrimaryChannel())
+            deliverEventToSubscribers(event);
+    }
+
+    private void deliverEventToSubscribers(ApplicationEvent event) {
         for (ApplicationListener applicationListener : subscribers)
             applicationListener.onApplicationEvent(event);
     }
@@ -65,5 +118,14 @@ public class ApplicationEventProxy implements ApplicationListener, DisposableBea
 
     public void destroy() throws Exception {
         subscribers.clear();
+    }
+
+    /**
+     * Publish an application event to all subscribers of this proxy.
+     *
+     * @param event
+     */
+    public void publishEvent(ApplicationEvent event) {
+        deliverEventToSubscribers(event);
     }
 }

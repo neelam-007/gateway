@@ -43,8 +43,18 @@ public class TestMessageProcessor extends MessageProcessor {
      * @throws IllegalArgumentException if any of the arguments is null
      */
     public TestMessageProcessor(ServiceCache sc, PolicyCache pc, WssDecorator wssd)
-      throws IllegalArgumentException {
-        super(sc, pc, wssd, null, new TestLicenseManager(), new ServiceMetricsManagerImpl("yo",null, new ApplicationEventProxy()), new AuditContextStub(), ServerConfig.getInstance(), new TrafficLogger(ServerConfig.getInstance(), null), new SoapFaultManager(ServerConfig.getInstance(), new ManagedTimer("Soap fault manager refresh")));
+            throws IllegalArgumentException {
+        super(  sc,
+                pc,
+                wssd,
+                null,
+                new TestLicenseManager(),
+                new ServiceMetricsManagerImpl("yo",null, new ApplicationEventProxy()),
+                new AuditContextStub(),
+                ServerConfig.getInstance(),
+                new TrafficLogger(ServerConfig.getInstance(), null),
+                new SoapFaultManager(ServerConfig.getInstance(), new ManagedTimer("Soap fault manager refresh")),
+                null);
     }
 
     @Override

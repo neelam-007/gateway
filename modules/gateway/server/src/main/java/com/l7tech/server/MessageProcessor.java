@@ -45,6 +45,7 @@ import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceMetricsManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
+import com.l7tech.server.util.EventChannel;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
@@ -94,6 +95,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private SoapFaultManager soapFaultManager;
     private final ArrayList<TrafficMonitor> trafficMonitors = new ArrayList<TrafficMonitor>();
     private final AtomicLong signedAttachmentMaxSize = new AtomicLong();
+    private final EventChannel messageProcessingEventChannel;
 
     /**
      * Create the new <code>MessageProcessor</code> instance with the service
@@ -115,7 +117,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                             AuditContext auditContext,
                             ServerConfig serverConfig,
                             TrafficLogger trafficLogger,
-                            SoapFaultManager soapFaultManager )
+                            SoapFaultManager soapFaultManager,
+                            EventChannel messageProcessingEventChannel)
       throws IllegalArgumentException {
         if (sc == null) throw new IllegalArgumentException("Service Cache is required");
         if (pc == null) throw new IllegalArgumentException("Policy Cache is required");
@@ -126,6 +129,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (serverConfig == null) throw new IllegalArgumentException("Server Config is required");
         if (trafficLogger == null) throw new IllegalArgumentException("Traffic Logger is required");
         if (soapFaultManager == null) throw new IllegalArgumentException("SoapFaultManager is required");
+        if (messageProcessingEventChannel == null) messageProcessingEventChannel = new EventChannel();
         this.serviceCache = sc;
         this.policyCache = pc;
         this.wssDecorator = wssd;
@@ -136,6 +140,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         this.serverConfig = serverConfig;
         this.trafficLogger = trafficLogger;
         this.soapFaultManager = soapFaultManager;
+        this.messageProcessingEventChannel = messageProcessingEventChannel;
         initSettings(SETTINGS_RECHECK_MILLIS);
     }
 
@@ -536,7 +541,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             }
 
             try {
-                getApplicationContext().publishEvent(new MessageProcessed(context, status, this));
+                messageProcessingEventChannel.publishEvent(new MessageProcessed(context, status, this));
             } catch (Throwable t) {
                 auditor.logAndAudit(MessageProcessingMessages.EVENT_MANAGER_EXCEPTION, null, t);
             }

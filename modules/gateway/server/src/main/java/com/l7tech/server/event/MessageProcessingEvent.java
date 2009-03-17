@@ -11,8 +11,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
  * {@link com.l7tech.server.policy.assertion.ServerAssertion}s to notify components of the status
  * of message processing.
  * <p/>
- * In order to receive events, components must register as a Spring bean (e.g. in <code>webApplicationContext.xml</code>)
- * and implement {@link org.springframework.context.ApplicationListener}.
+ * In order to receive events, components must subscribe with the "messageProcessingEventChannel" bean.
  */
 public abstract class MessageProcessingEvent extends ApplicationEvent {
     protected final PolicyEnforcementContext context;

@@ -58,6 +58,7 @@ public class ApplicationEventProxyTest {
     
     @Test
     public void testProxying() {
+        assertTrue(proxy.isPrimaryChannel());
         proxy.addApplicationListener(la);
         proxy.addApplicationListener(lb);
         proxy.onApplicationEvent(e1);
@@ -76,6 +77,24 @@ public class ApplicationEventProxyTest {
         proxy.onApplicationEvent(e1);
         proxy.removeApplicationListener(la);
         proxy.onApplicationEvent(e2);
+        delivered(3);
+        delivery(0, e1, la);
+        delivery(1, e1, lb);
+        delivery(2, e2, lb);
+    }
+
+    @Test
+    public void testAlternateChannel() {
+        ApplicationEventProxy proxy = new ApplicationEventProxy(false);
+        assertFalse(proxy.isPrimaryChannel());
+        proxy.addApplicationListener(la);
+        proxy.addApplicationListener(lb);
+        proxy.onApplicationEvent(e1);
+        proxy.onApplicationEvent(e2);
+        delivered(0); // Didn't publish anything via publishEvent yet
+        proxy.publishEvent(e1);
+        proxy.removeApplicationListener(la);
+        proxy.publishEvent(e2);
         delivered(3);
         delivery(0, e1, la);
         delivery(1, e1, lb);

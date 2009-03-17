@@ -26,10 +26,13 @@ import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.event.PostRoutingEvent;
+import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.security.kerberos.KerberosRoutingClient;
+import com.l7tech.server.util.EventChannel;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
@@ -42,6 +45,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.net.URL;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.util.logging.Logger;
@@ -62,6 +66,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
 
     // instance
     protected final ApplicationContext applicationContext;
+    protected final EventChannel messageProcessingEventChannel;
 
     /**
      *
@@ -72,6 +77,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     protected ServerRoutingAssertion(RAT data, ApplicationContext applicationContext, Logger logger) {
         super(data);
         this.applicationContext = applicationContext;
+        this.messageProcessingEventChannel = (EventChannel) applicationContext.getBean("messageProcessingEventChannel", EventChannel.class);
         this.logger = logger != null ? logger : sraLogger;
         this.auditor = new Auditor(this, applicationContext, logger);
     }
@@ -415,5 +421,13 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
         }
 
         return value;
+    }
+
+    protected void firePostRouting(PolicyEnforcementContext context, URL url, int status) {
+        messageProcessingEventChannel.publishEvent(new PostRoutingEvent(this, context, url, status));
+    }
+
+    protected void firePreRouting(PolicyEnforcementContext context, URL u) {
+        messageProcessingEventChannel.publishEvent(new PreRoutingEvent(this, context, u));
     }
 }

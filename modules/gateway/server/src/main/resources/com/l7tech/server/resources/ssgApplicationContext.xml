@@ -767,6 +767,7 @@
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="trafficLogger"/>
         <constructor-arg ref="soapFaultManager"/>
+        <constructor-arg ref="messageProcessingEventChannel"/>
      </bean>
     <!-- server side policy service -->
     <bean id="policyService" class="com.l7tech.server.policy.PolicyService">
@@ -825,8 +826,9 @@
     </bean>
 
     <bean id="messageProcessingAuditListener" class="com.l7tech.server.audit.MessageProcessingAuditListener">
-        <constructor-arg ref="messageSummaryAuditFactory"/>
-        <constructor-arg ref="auditContext"/>
+        <constructor-arg index="0" ref="messageSummaryAuditFactory"/>
+        <constructor-arg index="1" ref="auditContext"/>
+        <constructor-arg index="2" ref="messageProcessingEventChannel"/>
     </bean>
 
     <bean id="adminAuditListener" class="com.l7tech.server.audit.AdminAuditListener">
@@ -997,9 +999,10 @@
 
     </bean>
 
-    <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy">
+    <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy"/>
 
-    </bean>
+    <!-- A fast event channel just for MessageProcessingEvent subclasses. -->
+    <bean id="messageProcessingEventChannel" class="com.l7tech.server.util.EventChannel"/>
 
     <bean id="managedBackgroundTimer" class="com.l7tech.server.util.ManagedTimer">
         <constructor-arg value="Background timer"/>

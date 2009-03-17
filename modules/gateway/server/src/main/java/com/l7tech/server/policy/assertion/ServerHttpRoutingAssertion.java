@@ -3,42 +3,39 @@
  */
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.util.BuildInfo;
-import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.SingleCertX509KeyManager;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.io.failover.AbstractFailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategy;
 import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.StickyFailoverStrategy;
-import com.l7tech.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
-import com.l7tech.security.xml.SignerInfo;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.kerberos.KerberosClient;
+import com.l7tech.kerberos.KerberosException;
+import com.l7tech.kerberos.KerberosServiceTicket;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.*;
-import com.l7tech.server.event.PostRoutingEvent;
-import com.l7tech.server.event.PreRoutingEvent;
+import com.l7tech.security.xml.SignerInfo;
+import com.l7tech.server.DefaultKey;
+import com.l7tech.server.DefaultStashManagerFactory;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.security.kerberos.KerberosRoutingClient;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.server.util.IdentityBindingHttpClientFactory;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.kerberos.KerberosException;
-import com.l7tech.kerberos.KerberosServiceTicket;
-import com.l7tech.kerberos.KerberosClient;
+import com.l7tech.util.*;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -210,7 +207,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 return AssertionStatus.FAILED;
             }
 
-            applicationContext.publishEvent(new PreRoutingEvent(this, context, u));
+            firePreRouting(context, u);
             if (failoverStrategy == null)
                 return tryUrl(context, getRequestMessage(context), u);
 
@@ -653,7 +650,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     }
                 });
             }
-            applicationContext.publishEvent(new PostRoutingEvent(this, context, url, status));
+            firePostRouting(context, url, status);
         }
 
         return AssertionStatus.FAILED;

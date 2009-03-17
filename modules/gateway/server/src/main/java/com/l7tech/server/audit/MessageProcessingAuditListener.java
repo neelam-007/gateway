@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditDetailEvent;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.event.MessageProcessed;
+import com.l7tech.server.util.EventChannel;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -18,9 +19,10 @@ public class MessageProcessingAuditListener implements ApplicationListener {
     private final MessageSummaryAuditFactory messageSummaryAuditFactory;
     private final AuditContext auditContext;
 
-    public MessageProcessingAuditListener(MessageSummaryAuditFactory msaf, AuditContext auditContext) {
+    public MessageProcessingAuditListener(MessageSummaryAuditFactory msaf, AuditContext auditContext, EventChannel messageProcessingEventChannel) {
         this.messageSummaryAuditFactory = msaf;
         this.auditContext = auditContext;
+        messageProcessingEventChannel.addApplicationListener(this);
     }
 
     public void onApplicationEvent(ApplicationEvent event) {

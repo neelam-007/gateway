@@ -7,30 +7,34 @@ import com.ca.wsdm.monitor.ManagerEndpointNotDefinedException;
 import com.ca.wsdm.monitor.ObserverProperties;
 import com.ca.wsdm.monitor.WsdmHandlerUtilSOAP;
 import com.ca.wsdm.monitor.WsdmMessageContext;
-import com.l7tech.gateway.common.RequestId;
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.gateway.common.RequestId;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.SoapKnob;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.xml.SoapFaultDetail;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
 import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.event.RoutingEvent;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.event.system.Starting;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.AssertionModuleRegistrationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.server.util.EventChannel;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.xml.SoapFaultDetail;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import javax.wsdl.Operation;
 import javax.xml.namespace.QName;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -71,6 +75,7 @@ public class CaWsdmObserver implements ApplicationListener {
 
     private final ServerConfig _serverConfig;
     private final ApplicationEventProxy _applicationEventProxy;
+    private final EventChannel _messageProcessingEventChannel;
     private CaWsdmPropertiesAdaptor propsAdaptor;
 
     private boolean _initializationAttempted = false;
@@ -103,7 +108,9 @@ public class CaWsdmObserver implements ApplicationListener {
     public CaWsdmObserver(ApplicationContext applicationContext) {
         this._serverConfig = (ServerConfig)applicationContext.getBean("serverConfig", ServerConfig.class);
         this._applicationEventProxy = (ApplicationEventProxy)applicationContext.getBean("applicationEventProxy", ApplicationEventProxy.class);
+        this._messageProcessingEventChannel = (EventChannel)applicationContext.getBean("messageProcessingEventChannel", EventChannel.class);
         _applicationEventProxy.addApplicationListener(this);
+        _messageProcessingEventChannel.addApplicationListener(this);
     }
 
     /**
@@ -438,6 +445,8 @@ public class CaWsdmObserver implements ApplicationListener {
             // Unsubscribe ourself from the applicationEventProxy
             if (_applicationEventProxy != null)
                 _applicationEventProxy.removeApplicationListener(this);
+            if (_messageProcessingEventChannel != null)
+                _messageProcessingEventChannel.removeApplicationListener(this);
         }
     }
 
