@@ -313,8 +313,8 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
         if (isLoopbackAddress(host1) && isLoopbackAddress(host2)) return true;
 
         // Check if they are the same non-local hosts.
-        List<String> hostsList1 = getAllHosts(host1);
-        List<String> hostsList2 = getAllHosts(host2);
+        Collection<String> hostsList1 = getAllHosts(host1);
+        Collection<String> hostsList2 = getAllHosts(host2);
 
         hostsList1.retainAll(hostsList2);
         if (hostsList1.isEmpty()) {
@@ -337,17 +337,17 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     /**
      * Get all hosts related to the hostname.
      * @param hostname: the name of the host.
-     * @return: a list of host ip addresses.
+     * @return: a set of host ip addresses.
      * @throws UnknownHostException: thrown if the host is not recognizable.
      */
-    private List<String> getAllHosts(String hostname) throws UnknownHostException {
-        List<String> ipList = new ArrayList<String>();
+    private Set<String> getAllHosts(String hostname) throws UnknownHostException {
+        Set<String> ipSet = new HashSet<String>();
 
         for (InetAddress inetAddress: InetAddress.getAllByName(hostname)) {
-            ipList.add(inetAddress.getHostAddress());
+            ipSet.add(inetAddress.getHostAddress());
         }
 
-        return ipList;
+        return ipSet;
     }
 
     /**
