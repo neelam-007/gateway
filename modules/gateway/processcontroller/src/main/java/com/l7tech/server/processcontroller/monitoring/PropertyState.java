@@ -120,6 +120,6 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
     }
 
     void schedule(Timer samplerTimer) {
-        samplerTimer.scheduleAtFixedRate(task, 0, samplingInterval);
+        samplerTimer.schedule(task, 0, samplingInterval);
     }
 }

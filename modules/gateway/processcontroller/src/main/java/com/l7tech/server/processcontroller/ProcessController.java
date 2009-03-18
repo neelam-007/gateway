@@ -24,6 +24,7 @@ import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
+import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
 
 import javax.annotation.Resource;
 import javax.net.ssl.TrustManager;
@@ -71,6 +72,8 @@ public class ProcessController {
     private static final String LOG_TIMEOUT = "{0} still hasn''t started after {1}ms.  Killing it dead.";
 
     private volatile boolean daemon;
+    private static final int NODEAPI_CONNECT_TIMEOUT = 2000;
+    private static final int NODEAPI_RECEIVE_TIMEOUT = 2000;
 
     public synchronized void stopNode(final String nodeName, final int timeout) {
         logger.info("Stopping " + nodeName);
@@ -670,8 +673,14 @@ public class ProcessController {
         if (url == null) url = autoUrl;
         if (url == null) url = "https://localhost:2124/ssg/services/processControllerNodeApi";
         pfb.setAddress(url);
-        Client c = pfb.getClientFactoryBean().create();
-        HTTPConduit httpConduit = (HTTPConduit)c.getConduit();
+        final Client c = pfb.getClientFactoryBean().create();
+        final HTTPConduit httpConduit = (HTTPConduit)c.getConduit();
+
+        final HTTPClientPolicy clientPolicy = new HTTPClientPolicy();
+        clientPolicy.setConnectionTimeout(NODEAPI_CONNECT_TIMEOUT);
+        clientPolicy.setReceiveTimeout(NODEAPI_RECEIVE_TIMEOUT);
+        httpConduit.setClient(clientPolicy);
+
         httpConduit.setTlsClientParameters(new TLSClientParameters() {
             @Override
             public boolean isDisableCNCheck() {
