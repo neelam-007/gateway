@@ -840,8 +840,6 @@ class Importer extends ImportExportUtility {
             if (!args.containsKey(CLUSTER_PASSPHRASE.name)) {
                 throw new InvalidArgumentException("missing option " + CLUSTER_PASSPHRASE.name);
             }
-
-            return; //we are done with the validation, no need to continue futher
         }
 
         //cluster password required
@@ -860,7 +858,7 @@ class Importer extends ImportExportUtility {
             throw new InvalidArgumentException("either specify " + DB_NAME.name + " or " + CREATE_NEW_DB.name);
         }
 
-        if (!args.containsKey(DB_USER.name)) {
+        if (!args.containsKey(DB_USER.name) && !args.containsKey(CONFIG_ONLY.name)) {
             throw new InvalidArgumentException("missing option " + DB_USER.name);
         }
 
@@ -935,7 +933,7 @@ class Importer extends ImportExportUtility {
                 verifyDatabaseConnection(new DatabaseConfig(host, port, args.get(DB_NAME.name), gatewayUsername, gatewayPassword), false);
 
                 //if the database alerady exists, check if all gateway have been shut down
-                if (verifyDatabaseExists(host, args.get(DB_NAME.name), port, rootUsername, rootPassword)) {
+                if (!args.containsKey(CONFIG_ONLY.name) && verifyDatabaseExists(host, args.get(DB_NAME.name), port, rootUsername, rootPassword)) {
                     //database doesnt exists check if gateway are shut down
 
                     List<String> runningSsg = getRunningSSG(false, new DatabaseConfig(host, port, args.get(DB_NAME.name), rootUsername, rootPassword), 10000);
