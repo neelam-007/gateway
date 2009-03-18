@@ -22,7 +22,8 @@ public class ServiceHeader extends OrganizationHeader {
               svc.getFolder() == null ? null : svc.getFolder().getOid(),
               null,
               svc.getPolicy() == null ? 0L : svc.getPolicy().getVersionOrdinal(),
-              svc.getVersion() );
+              svc.getVersion(),
+              svc.getRoutingUri());
     }
 
     public ServiceHeader(final ServiceHeader serviceHeader){
@@ -35,7 +36,8 @@ public class ServiceHeader extends OrganizationHeader {
              serviceHeader.getFolderOid(),
              serviceHeader.getAliasOid(),
              serviceHeader.getPolicyRevision(),
-             serviceHeader.getVersion());
+             serviceHeader.getVersion(),
+             serviceHeader.getRoutingUri());
     }
     
     public ServiceHeader(final boolean isSoap,
@@ -47,7 +49,8 @@ public class ServiceHeader extends OrganizationHeader {
                          final Long folderOid,
                          final Long aliasOid,
                          final long policyRevision,
-                         final int version) {
+                         final int version,
+                         final String routingUri) {
         super(serviceOid == null ? -1 : serviceOid, EntityType.SERVICE, name, description, version);
         this.isSoap = isSoap;
         this.isDisabled = isDisabled;
@@ -55,6 +58,7 @@ public class ServiceHeader extends OrganizationHeader {
         this.folderOid = folderOid;
         this.aliasOid = aliasOid;
         this.policyRevision = policyRevision;
+        this.routingUri = routingUri;
     }
 
     public boolean isSoap() {
@@ -67,6 +71,10 @@ public class ServiceHeader extends OrganizationHeader {
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public String getRoutingUri() {
+        return routingUri;
     }
 
     /**
@@ -89,4 +97,5 @@ public class ServiceHeader extends OrganizationHeader {
     private final boolean isDisabled;
     private final String displayName;
     private final long policyRevision;
+    private final String routingUri;
 }

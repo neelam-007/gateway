@@ -165,6 +165,10 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         return getEntityHeader().getName();
     }
 
+    public String getRoutingUri() {
+        return getEntityHeader().getRoutingUri();
+    }
+
     /**
      *
      */
