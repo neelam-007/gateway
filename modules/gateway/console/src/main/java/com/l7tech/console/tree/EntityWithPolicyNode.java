@@ -51,7 +51,16 @@ public abstract class EntityWithPolicyNode<ET extends Entity, HT extends EntityH
         return true;
     }
 
+    /** @return the object ID of the entity for this node (either a PublishedService or a Policy). */
+    public long getEntityOid() {
+        return getEntityHeader().getOid();
+    }
+
     /**
+     * Get the entity.  As this may trigger a lazy download you should prefer to use
+     * the entity header instead whenever possible.  If you only need the entity OID,
+     * use {@link #getEntityOid()}.
+     *
      * @return the Entity behind this Service Node
      * @throws FindException if the Entity cannot be loaded, or has been deleted
      */

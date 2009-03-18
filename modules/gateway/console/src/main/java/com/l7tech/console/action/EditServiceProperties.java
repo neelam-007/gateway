@@ -11,21 +11,17 @@ import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
-import java.util.Collection;
 import java.util.logging.Level;
 
 /**
@@ -107,7 +103,7 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
                         if (pn instanceof ServiceNode) {
                             PublishedService editedSvc = ((ServiceNode) pn).getEntity();
                             // if currently edited service was deleted
-                            if (serviceNode.getEntity().getOid() == editedSvc.getOid()) {
+                            if (serviceNode.getEntityOid() == editedSvc.getOid()) {
                                 // update name on top of editor
                                 pe.changeSubjectName(serviceNode.getName());
                                 pe.updateHeadings();

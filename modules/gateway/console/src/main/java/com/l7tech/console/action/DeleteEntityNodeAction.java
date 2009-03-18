@@ -3,19 +3,16 @@
  */
 package com.l7tech.console.action;
 
+import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
-import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.panels.WorkSpacePanel;
-import com.l7tech.console.panels.HomePagePanel;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.gateway.common.security.rbac.OperationType;
-import com.l7tech.util.Functions;
 import com.l7tech.objectmodel.OrganizationHeader;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -116,26 +113,9 @@ public abstract class DeleteEntityNodeAction <HT extends EntityWithPolicyNode> e
                         }
 
                         //Update the workspace if this service was being displayed
-                        final WorkSpacePanel cws = creg.getCurrentWorkspace();
-                        JComponent jc = cws.getComponent();
-                        if (jc == null || !(jc instanceof PolicyEditorPanel)) {
-                            return;
-                        }
-                        try {
-                            PolicyEditorPanel pe = (PolicyEditorPanel)jc;
-                            EntityWithPolicyNode pn = pe.getPolicyNode();
-                            // if currently edited entity was deleted
-                            if (Long.valueOf(entityNode.getEntity().getId()).equals(Long.valueOf(pn.getEntity().getId()))) {
-                                cws.setComponent(new HomePagePanel());
-                            }
-                        } catch (FindException fe) {
-                            try {
-                                cws.setComponent(new HomePagePanel());
-                            } catch (ActionVetoException ave) {
-                                return;
-                            }
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
+                        PolicyEditorPanel pe = creg.getPolicyEditorPanel();
+                        if (pe != null && pe.getPolicyNode().getEntityOid() == entityNode.getEntityOid()) {
+                            new HomeAction().performAction();
                         }
                     }
                 };

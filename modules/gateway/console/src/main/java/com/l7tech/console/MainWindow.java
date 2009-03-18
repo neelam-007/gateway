@@ -1,47 +1,47 @@
 package com.l7tech.console;
 
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
-import com.l7tech.gateway.common.Authorizer;
-import com.l7tech.gateway.common.InvalidLicenseException;
-import com.l7tech.gateway.common.License;
-import com.l7tech.gateway.common.VersionException;
-import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.gateway.common.audit.LogonEvent;
-import com.l7tech.gui.util.*;
-import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
 import com.l7tech.console.action.*;
 import com.l7tech.console.auditalerts.AuditAlertChecker;
 import com.l7tech.console.auditalerts.AuditAlertConfigBean;
 import com.l7tech.console.auditalerts.AuditAlertOptionsAction;
 import com.l7tech.console.auditalerts.AuditAlertsNotificationPanel;
 import com.l7tech.console.event.WeakEventListenerList;
+import com.l7tech.console.logging.CascadingErrorHandler;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.console.security.AuthenticationProvider;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.security.PermissionRefreshListener;
 import com.l7tech.console.security.SecurityProvider;
-import com.l7tech.console.security.AuthenticationProvider;
 import com.l7tech.console.tree.*;
-import com.l7tech.console.tree.servicesAndPolicies.*;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.policy.PolicyToolBar;
+import com.l7tech.console.tree.servicesAndPolicies.*;
 import com.l7tech.console.util.*;
-import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.logging.CascadingErrorHandler;
+import com.l7tech.gateway.common.Authorizer;
+import com.l7tech.gateway.common.InvalidLicenseException;
+import com.l7tech.gateway.common.License;
+import com.l7tech.gateway.common.VersionException;
+import com.l7tech.gateway.common.audit.LogonEvent;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
+import com.l7tech.gui.util.*;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 
+import javax.security.auth.login.LoginException;
 import javax.swing.*;
 import javax.swing.Timer;
-import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import javax.swing.border.Border;
 import javax.swing.event.*;
+import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.html.HTMLEditorKit;
@@ -49,7 +49,6 @@ import javax.swing.text.html.StyleSheet;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
-import javax.security.auth.login.LoginException;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
@@ -59,8 +58,8 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.URL;
 import java.rmi.server.RMIClassLoader;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
@@ -2182,14 +2181,9 @@ public class MainWindow extends JFrame implements SheetHolder {
                     //match uri as well
                     if (obj instanceof ServiceNode) {
                         ServiceNode serviceNode = (ServiceNode) obj;
-                        try {
-                            PublishedService service = serviceNode.getEntity();
-                            String routingUri = service.getRoutingUri();
-                            if (routingUri != null) {
-                                matches = matches || routingUri.toLowerCase().startsWith(this.prefix.toLowerCase());
-                            }
-                        } catch (FindException fe) {
-                            //do nothing, just return the results from the previous matches
+                        String routingUri = serviceNode.getEntityHeader().getRoutingUri();
+                        if (routingUri != null) {
+                            matches = matches || routingUri.toLowerCase().startsWith(this.prefix.toLowerCase());
                         }
                     }
 
