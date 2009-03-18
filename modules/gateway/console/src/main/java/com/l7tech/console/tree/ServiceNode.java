@@ -13,6 +13,8 @@ import com.l7tech.wsdl.Wsdl;
 
 import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,7 +29,7 @@ import java.util.logging.Logger;
  */
 public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceHeader> implements Comparable<ServiceNode> {
     static final Logger log = Logger.getLogger(ServiceNode.class.getName());
-    private PublishedService svc;
+    private volatile Reference<PublishedService> svc = null;
 
     /**
      * construct the <CODE>ServiceNode</CODE> instance for
@@ -54,7 +56,11 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
 
     @Override
     public PublishedService getEntity() throws FindException {
-        if (svc != null) return svc;
+        if (svc != null) {
+            PublishedService s = svc.get();
+            if (s != null)
+                return s;
+        }
 
         ServiceHeader serviceHeader = getEntityHeader();
         PublishedService svc = Registry.getDefault().getServiceManager().findServiceByID(serviceHeader.getStrId());
@@ -65,7 +71,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
             return null; // Unreached; method always throws
         }
 
-        this.svc = svc;
+        this.svc = new SoftReference<PublishedService>(svc);
 
         ServiceHeader newEh = new ServiceHeader(svc);
         newEh.setAliasOid(serviceHeader.getAliasOid());
@@ -130,7 +136,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
         try {
             PublishedService s = getEntity();
             if (s != null && s.isSoap()) {
-                Wsdl wsdl = svc.parsedWsdl();
+                Wsdl wsdl = s.parsedWsdl();
 //                Wsdl wsdl = Wsdl.newInstance(Wsdl.extractBaseURI(s.getWsdlUrl()), new StringReader(svc.getWsdlXml()));
                 WsdlTreeNode.Options opts = new WsdlTreeNode.Options();
                 opts.setShowMessages(false);

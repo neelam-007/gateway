@@ -6,14 +6,14 @@ package com.l7tech.console.tree;
 import com.l7tech.console.action.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
 
 import javax.swing.*;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -21,7 +21,7 @@ import java.util.logging.Level;
 
 /** @author alex */
 public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader> {
-    protected volatile Policy policy;
+    protected volatile Reference<Policy> policy;
 
     public PolicyEntityNode(PolicyHeader e) {
         this(e, null);
@@ -38,7 +38,11 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
     }
     
     public Policy getPolicy() throws FindException {
-        if (policy != null) return policy;
+        if (policy != null) {
+            Policy p = policy.get();
+            if (p != null)
+                return p;
+        }
 
         PolicyHeader eh = getEntityHeader();
         Policy updatedPolicy = Registry.getDefault().getPolicyAdmin().findPolicyByGuid(eh.getGuid());
@@ -55,8 +59,8 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
         setUserObject(newEh);
         firePropertyChange(this, "UserObject", eh, newEh);
 
-        this.policy = updatedPolicy;
-        return this.policy;
+        this.policy = new SoftReference<Policy>(updatedPolicy);
+        return updatedPolicy;
     }
 
     public Policy getEntity() throws FindException {
