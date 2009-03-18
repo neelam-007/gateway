@@ -337,14 +337,14 @@ public class SsgClusterManagerImpl extends HibernateEntityManager<SsgCluster, En
     /**
      * Get all hosts related to the hostname.
      * @param hostname: the name of the host.
-     * @return: a list of hostnames.
+     * @return: a list of host ip addresses.
      * @throws UnknownHostException: thrown if the host is not recognizable.
      */
     private List<String> getAllHosts(String hostname) throws UnknownHostException {
         List<String> ipList = new ArrayList<String>();
 
         for (InetAddress inetAddress: InetAddress.getAllByName(hostname)) {
-            ipList.add(inetAddress.getHostName());
+            ipList.add(inetAddress.getHostAddress());
         }
 
         return ipList;
