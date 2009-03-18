@@ -6,14 +6,16 @@
 
 package com.l7tech.console.panels;
 
+import com.l7tech.gui.util.DialogFactoryShower;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.concurrent.Callable;
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.Callable;
 
 /**
  * Simple "Please Wait.." dialog.
@@ -22,7 +24,10 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class CancelableOperationDialog extends JDialog {
     private final JLabel messageLabel = new JLabel();
-    private boolean wasCancel;
+    private final JProgressBar progressBar;
+    private boolean wasCancel = false;
+    private boolean needsInit = true;
+    private boolean needsPack = true;
 
     public static CancelableOperationDialog newCancelableOperationDialog(Component component, String title, String message) {
         CancelableOperationDialog dialog;
@@ -35,35 +40,33 @@ public class CancelableOperationDialog extends JDialog {
             dialog = new CancelableOperationDialog((Frame)window, title, message);
         }
 
-        Utilities.centerOnParentWindow(dialog);
-
         return dialog;
     }
 
     public CancelableOperationDialog(Frame owner, String title, String message, JProgressBar progressBar) {
         super(owner, title, true);
-        doInit(message, progressBar);
+        messageLabel.setText(message);
+        this.progressBar = progressBar;
     }
 
     public CancelableOperationDialog(Dialog parent, String title, String message) {
         super(parent, title, true);
-        doInit(message, null);
+        messageLabel.setText(message);
+        this.progressBar = null;
     }
 
     public CancelableOperationDialog(Frame parent, String title, String message) {
         super(parent, title, true);
-        doInit(message, null);
+        messageLabel.setText(message);
+        this.progressBar = null;
     }
 
-    private void doInit(String message, JProgressBar progressBar) {
-        wasCancel = false;
-
+    private void doInit() {
         setResizable(false);
         Utilities.setAlwaysOnTop(this, true);
 
         Container p = getContentPane();
         p.setLayout(new GridBagLayout());
-        messageLabel.setText(message);
         p.add(messageLabel,
               new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
                                      GridBagConstraints.CENTER,
@@ -81,21 +84,52 @@ public class CancelableOperationDialog extends JDialog {
                                      GridBagConstraints.EAST,
                                      GridBagConstraints.NONE,
                                      new Insets(0, 0, 5, 5), 0, 0));
-        if (progressBar != null) {
+        if (this.progressBar != null) {
             p.add(progressBar,
                   new GridBagConstraints(1, 2, GridBagConstraints.REMAINDER, 1, 1000.0, 0.0,
                                          GridBagConstraints.CENTER,
                                          GridBagConstraints.HORIZONTAL,
                                          new Insets(5, 15, 5, 15), 0, 0));
         }
+    }
 
+    private void doPack() {
         pack();
         Utilities.centerOnScreen(this);
     }
 
+    private void maybeInit() {
+        if (needsInit) {
+            doInit();
+            needsInit = false;
+        }
+    }
+
+    private void maybePack() {
+        if (needsPack) {
+            doPack();
+            needsPack = false;
+        }
+    }
+
+    private void requestPack() {
+        if (isVisible())
+            pack();
+        else
+            needsPack=true;
+    }
+
+    public void setVisible(boolean b) {
+        if (b) {
+            maybeInit();
+            maybePack();
+        }
+        super.setVisible(b);
+    }
+
     public void setMessage(String message) {
         messageLabel.setText(message);
-        pack();                             // Bug 3686
+        requestPack(); // Repack after changing label (Bug #3686)
         Utilities.centerOnScreen(this);
     }
 
@@ -127,17 +161,19 @@ public class CancelableOperationDialog extends JDialog {
      * @throws InterruptedException if the task was canceled by the user, or the Swing thread was interrupted
      * @throws java.lang.reflect.InvocationTargetException if the callable terminated with any exception other than InterruptedException
      */
-    public static <T> T doWithDelayedCancelDialog(final Callable<T> callable, String dialogTitle, String dialogMessage, long msBeforeDlg)
+    public static <T> T doWithDelayedCancelDialog(final Callable<T> callable, final String dialogTitle, final String dialogMessage, final long msBeforeDlg)
             throws InterruptedException, InvocationTargetException
     {
-        final JProgressBar progressBar = new JProgressBar();
-        progressBar.setIndeterminate(true);
-        final CancelableOperationDialog cancelDialog =
-                new CancelableOperationDialog(null, dialogTitle, dialogMessage, progressBar);
-        cancelDialog.pack();
-        cancelDialog.setModal(true);
-        Utilities.centerOnScreen(cancelDialog);
-
-        return Utilities.doWithDelayedCancelDialog(callable, cancelDialog, msBeforeDlg);
+        final DialogFactoryShower factory = new DialogFactoryShower(new Functions.Nullary<JDialog>() {
+            public JDialog call() {
+                final JProgressBar progressBar = new JProgressBar();
+                progressBar.setIndeterminate(true);
+                final CancelableOperationDialog cancelDialog =
+                        new CancelableOperationDialog(null, dialogTitle, dialogMessage, progressBar);
+                cancelDialog.setModal(true);
+                return cancelDialog;
+            }
+        });
+        return Utilities.doWithDelayedCancelDialog(callable, factory, msBeforeDlg);
     }
 }

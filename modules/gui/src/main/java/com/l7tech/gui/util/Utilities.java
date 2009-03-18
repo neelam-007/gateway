@@ -616,6 +616,10 @@ public class Utilities {
      * InterruptedException to signal that this has occurred.
      * <p/>
      * This method must be called on the Swing event queue thread.
+     * <p/>
+     * If the overwhelmingly common case is that the dialog will never be displayed, consider using
+     * {@link #doWithDelayedCancelDialog(java.util.concurrent.Callable, DialogShower , long)}
+     * instead to avoid creating lots of invisible cancel dialogs that are never displayed.
      *
      * @param callable      some work that may safely be done in a new thread.  Required.
      * @param cancelDlg     a cancel dialog to put up if the work runs too long.  This should be a modal dialog
@@ -633,6 +637,36 @@ public class Utilities {
      * @throws java.lang.reflect.InvocationTargetException if the callable terminated with any exception other than InterruptedException
      */
     public static <T> T doWithDelayedCancelDialog(final Callable<T> callable, final JDialog cancelDlg, long msBeforeDlg)
+                throws InterruptedException, InvocationTargetException
+    {
+        return doWithDelayedCancelDialog(callable, new DialogFactoryShower(cancelDlg), msBeforeDlg);
+    }
+
+    /**
+     * Synchronously run the specified callable in a background thread, putting up a lazily-created modal Cancel... dialog and returning
+     * control to the user if the thread runs for longer than msBeforeDlg milliseconds.
+     * <p/>
+     * Substantially similar to {@link #doWithDelayedCancelDialog(java.util.concurrent.Callable, javax.swing.JDialog, long)}
+     * except construction of the dialog can be deferred until it actually needs to be displayed.  In the hopefully-common
+     * case of quick response time most cancel dialogs will never need to be instantiated.
+     *
+     * @param callable      some work that may safely be done in a new thread.  Required.
+     * @param cancelShower  a factory that will (when invoked on the Swing thread) lazily produce
+     *                      a cancel dialog to put up if the work runs too long.  This should be a modal dialog
+     *                      that blocks until it is either disposed or the user dismisses it by pressing cancel.
+     *                      <p/>
+     *                      The dialog should be ready to display -- already packed and positioned.
+     *                      This method will dispose the dialog when the callable completes.
+     *                      <p/>
+     *                      See <code>com.l7tech.console.panels.CancelableOperationDialog</code> for a suitable
+     *                      JDialog for this purpose, if writing SSM code.
+     * @param msBeforeDlg  number of milliseconds to wait (blocking the event queue) before
+     *                                            putting up the cancel dialog.  If less than one, defaults to 500ms.
+     * @return the result of the callable.  May be null if the callable may return null.
+     * @throws InterruptedException if the task was canceled by the user, or the Swing thread was interrupted
+     * @throws java.lang.reflect.InvocationTargetException if the callable terminated with any exception other than InterruptedException
+     */
+    public static <T> T doWithDelayedCancelDialog(final Callable<T> callable, final DialogShower cancelShower, long msBeforeDlg)
             throws InterruptedException, InvocationTargetException
     {
         boolean alreadyPending = isAnyThreadDoingWithDelayedCancelDialog.getAndSet(true);
@@ -647,17 +681,17 @@ public class Utilities {
 
         // The pending dialog belongs to us
         try {
-            return doDoWithDelayedCancelDialog(callable, cancelDlg, msBeforeDlg);
+            return doDoWithDelayedCancelDialog(callable, cancelShower, msBeforeDlg);
         } finally {
             isAnyThreadDoingWithDelayedCancelDialog.set(false);
         }
     }
 
     @SuppressWarnings({ "SynchronizationOnLocalVariableOrMethodParameter" })
-    private static <T> T doDoWithDelayedCancelDialog(final Callable<T> callable, final JDialog cancelDlg, long msBeforeDlg)
+    private static <T> T doDoWithDelayedCancelDialog(final Callable<T> callable, final DialogShower dialogShower, long msBeforeDlg)
                 throws InterruptedException, InvocationTargetException
         {
-        if (callable == null || cancelDlg == null) throw new IllegalArgumentException();
+        if (callable == null || dialogShower == null) throw new IllegalArgumentException();
 
         final Thread[] workerThread = { null };
         final boolean[] finished = { false };
@@ -686,7 +720,7 @@ public class Utilities {
             }
 
             public void finished() {
-                cancelDlg.dispose();
+                dialogShower.hideDialog();
             }
         };
 
@@ -699,7 +733,7 @@ public class Utilities {
 
         boolean wasCanceled = false;
         if (!done) {
-            cancelDlg.setVisible(true); // blocks until job complete or canceled
+            dialogShower.showDialog(); // blocks until job complete or canceled
 
             // Cancel dialog returned.  Did job succeed or was it canceled?
             Thread wt;
