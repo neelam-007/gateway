@@ -821,6 +821,10 @@ class Importer extends ImportExportUtility {
 
         //if config option is specified, then we need to check that we have proper information to populate node.properties
         if (args.containsKey(CONFIG_ONLY.name)) {
+            if (args.containsKey(CREATE_NEW_DB.name)) {
+                throw new InvalidArgumentException("cannot use options " + CONFIG_ONLY.name + " and " + CREATE_NEW_DB.name + " together.");
+            }
+
             if (!args.containsKey(DB_HOST_NAME.name)) {
                 throw new InvalidArgumentException("missing option " + DB_HOST_NAME.name);
             }
