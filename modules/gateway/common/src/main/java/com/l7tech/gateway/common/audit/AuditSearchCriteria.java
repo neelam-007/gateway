@@ -127,10 +127,11 @@ public final class AuditSearchCriteria implements Serializable {
         //construct time information
         Date fromTime = this.fromTime;
         Date toTime = this.toTime;
+        final String fromStr = fromTime.getTime() == 0 ? "<Start of calendar>" : fromTime.toString();
         if (fromTime != null && toTime != null) {
-            searchCriteria.append("Time: " + fromTime.toString() + " to " + toTime.toString() + " ");
+            searchCriteria.append("Time: " + fromStr + " to " + toTime.toString() + " ");
         } else if (fromTime != null && toTime == null) {
-            searchCriteria.append("Start Time: " + fromTime.toString() + " ");
+            searchCriteria.append("Start Time: " + fromStr + " ");
         } else if (fromTime == null && toTime != null) {
             searchCriteria.append("End Time: " + toTime.toString() + " ");
         }
