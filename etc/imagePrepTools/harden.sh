@@ -100,6 +100,12 @@ auth        requisite     pam_listfile.so item=user sense=allow file=/etc/ssh/ss
 auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_users onerr=succeed' /etc/pam.d/login
   fi
 
+  # SSH set to protocol 2 only (Bug #6371)
+  sed -i -e '/Protocol/d' /etc/ssh/sshd_config
+  echo "# Only allow Protocol 2 as per bug #6371" >> /etc/ssh/sshd_config
+  echo "Protocol 2" >> /etc/ssh/sshd_config
+
+
   # GEN000480
   echo 'FAIL_DELAY 4' >> /etc/login.defs
 
@@ -331,6 +337,10 @@ halt:*:13637:0:99999:7:::' /etc/shadow
   sed -i -e '/auth       requisite    pam_listfile.so item=user sense=allow file=\/etc\/ssh\/ssh_allowed_users onerr=succeed/d' /etc/pam.d/sshd
   rm -f /etc/tty_users
   sed -i -e '/auth       requisite    pam_listfile.so item=user sense=allow file=\/etc\/tty_users onerr=succeed/d' /etc/pam.d/login
+
+  # SSH set either protocol (Reverse Bug #6371)
+  sed -i -e '/Protocol/d' /etc/ssh/sshd_config
+  echo "# Protocol 2,1" >> /etc/ssh/sshd_config
 
   # GEN000480
   sed -i -e '/FAIL_DELAY 4/d' /etc/login.defs
@@ -775,6 +785,14 @@ if [ "$ISNCES" ] ; then
 	fi
 	if [ "`cat /etc/hosts.allow`" ] ; then
 		echo "Error - hosts.allow is not empty"
+	fi
+fi
+
+# SSH set either protocol (Reverse Bug #6371)
+# Only for version 5.0+
+if [ "`rpm -qa | grep ssg-5`" ] ; then
+	if [ ! "`grep '^Protocol 2$' /etc/ssh/sshd_config`" ] ; then
+		echo "Error - SSH protocol 2 only is not enabled"
 	fi
 fi
 
