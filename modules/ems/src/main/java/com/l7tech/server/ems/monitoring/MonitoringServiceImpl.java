@@ -32,6 +32,8 @@ public class MonitoringServiceImpl implements MonitoringService {
     private GatewayContextFactory gatewayContextFactory;
     private EntityMonitoringPropertySetupManager entityMonitoringPropertySetupManager;
 
+    // Keep tracking if the warning message for properties statuses unavailable has been logged or not.
+    private boolean statusesUnavailableWarningMsgLogged;
     // The next three variables used to keep tracking of SSG cluster property status
     private long latestSsgClusterMonitoringTimestamp;
     private Object latestSsgClusterMonitoredValue;
@@ -90,11 +92,17 @@ public class MonitoringServiceImpl implements MonitoringService {
 
             // Call MonitoringApi to get a list of property statuses to update the ssgNodePropertyValuesMap
             statuses = monitoringApi.getCurrentPropertyStatuses();
+
+            // Reset this flag as false.  If property statuses are unavailable again, then the logger will work again.
+            statusesUnavailableWarningMsgLogged = false;
          } catch (Throwable t) {
-            if (t instanceof IOException || t instanceof GatewayException || t instanceof javax.xml.ws.ProtocolException) {
-                logger.log(Level.WARNING, "Current entity property statuses unavailable at this moment: " + ExceptionUtils.getMessage(t));
-            } else {
-                logger.log(Level.WARNING, "Failed to retrieve current entity property statuses: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
+            if (! statusesUnavailableWarningMsgLogged) {
+                if (t instanceof IOException || t instanceof GatewayException || t instanceof javax.xml.ws.ProtocolException) {
+                    logger.log(Level.WARNING, "Current entity property statuses unavailable at this moment: " + ExceptionUtils.getMessage(t));
+                } else {
+                    logger.log(Level.WARNING, "Failed to retrieve current entity property statuses: " + ExceptionUtils.getMessage(t), ExceptionUtils.getDebugException(t));
+                }
+                statusesUnavailableWarningMsgLogged = true;
             }
             return new EntityMonitoringPropertyValues(ssgNodeGuid, ssgNodePropertyValuesMap);
         }
