@@ -1255,4 +1255,12 @@ public class RuntimeDocUtilitiesTest {
         String escaped = RuntimeDocUtilities.escapeJavaSringLiteralChars(toEscape);
         Assert.assertEquals("String incorrectly escaped. Escaped string should equal: \\\" but was: " + escaped, escaped, "\\\"");
     }
+
+    @Test
+    public void testCarriageReturn() {
+        String s = "\r";
+        String expected = "\\r";
+        String actualValue = RuntimeDocUtilities.escapeJavaSringLiteralChars(s);
+        Assert.assertEquals("Expected value: " + expected + " actual value: " + actualValue, actualValue, expected);
+    }
 }

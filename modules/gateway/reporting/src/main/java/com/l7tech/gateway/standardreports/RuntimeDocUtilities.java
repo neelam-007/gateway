@@ -1221,6 +1221,9 @@ public class RuntimeDocUtilities {
                 case '\n':
                     sb.append("\\n");
                     break;
+                case '\r':
+                    sb.append("\\r");
+                    break;
                 default:
                     sb.append(c);
 

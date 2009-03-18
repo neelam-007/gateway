@@ -1,6 +1,7 @@
 package com.l7tech.server.management.api.node;
 
 import com.l7tech.server.management.api.TypedValue;
+import com.l7tech.util.SqlUtils;
 
 import javax.activation.DataHandler;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -539,21 +540,11 @@ public interface ReportApi {
 
             boolean usingWildCard = isQueryUsingWildCard() && !equalsOnly;
 
+            String escapedString = SqlUtils.mySqlEscapeIllegalSqlChars(displayValue);
+
             StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < displayValue.length(); i++) {
-                char c = displayValue.charAt(i);
-
-                //the ' character must always be escaped
-                //Any other characters which must always be escaped...add them after this...
-                if (c == '\'') {
-                    sb.append("\\'");//escape
-                    continue;
-                }
-
-                if (c == '\\') {
-                    sb.append("\\\\");//escape
-                    continue;
-                }
+            for (int i = 0; i < escapedString.length(); i++) {
+                char c = escapedString.charAt(i);
 
                 if (useEqualsOnly || !usingWildCard) {
                     sb.append(c);
