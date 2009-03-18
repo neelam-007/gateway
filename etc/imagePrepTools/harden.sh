@@ -254,11 +254,11 @@ auth       requisite    pam_listfile.so item=user sense=allow file=/etc/tty_user
 #	usermod -p $1$c.vxuRpE$uNvTtWmyjg/UzmVXGOJaT. ssgconfig
 
 	# remove hwaddr in eth configs
-	sed -i -e '/HWADDR/d' /etc/sysconfig/network-scripts/ifcfg-eth0
-	sed -i -e '/HWADDR/d' /etc/sysconfig/network-scripts/ifcfg-eth1
-	sed -i -e '/HWADDR/d' /etc/sysconfig/network-scripts/ifcfg-eth2
-	sed -i -e '/HWADDR/d' /etc/sysconfig/network-scripts/ifcfg-eth3
-
+	for i in 0 1 2 3 ; do 
+		if [ -e "/etc/sysconfig/network-scripts/ifcfg-eth${i}" ] ; then
+			sed -i -e '/HWADDR/d' /etc/sysconfig/network-scripts/ifcfg-eth${i}
+		fi
+	done
 }
 
 soften() {
