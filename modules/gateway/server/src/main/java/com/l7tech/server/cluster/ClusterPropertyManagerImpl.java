@@ -140,12 +140,15 @@ public class ClusterPropertyManagerImpl
             throw new IllegalArgumentException("Invalid header type: " + header);
         }
 
+        ClusterProperty cp = null;
         try {
-            return super.findByPrimaryKey(EntityTypeRegistry.getEntityClass(EntityType.CLUSTER_PROPERTY), Long.parseLong(header.getStrId()));
+            cp = super.findByPrimaryKey(EntityTypeRegistry.getEntityClass(EntityType.CLUSTER_PROPERTY), Long.parseLong(header.getStrId()));
         } catch (NumberFormatException e) {
-            // fallback to name lookup
-            return super.findByUniqueName(header.getName());
+            // do nothing
         }
+
+        // fallback to name lookup
+        return cp != null ? cp : super.findByUniqueName(header.getName());
     }
 
     public Class getImpClass() {
