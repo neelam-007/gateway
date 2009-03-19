@@ -670,6 +670,7 @@
                     var item;
                     for ( item in sourceItems ) {
                         srcSSGClusterContentSelectorWindow.getEntityTreeTable().setEntityTristateCheckboxState( sourceItems[item], true );
+                        srcSSGClusterContentSelectorWindow.getEntityTreeTable().expandAncestorsOf( sourceItems[item] );
                     }
                     resetAfterLoad();
                 } );
@@ -677,6 +678,7 @@
                 destSSGClusterSelectorWindow.getEntityTreeTable().highlightEntity( targetGuid, true );
                 destSSGClusterContentSelectorWindow.setSsgClusterContentLoadedCallback( function() {
                     destSSGClusterContentSelectorWindow.getEntityTreeTable().setEntityRadioButtonState( targetItem, true );
+                    destSSGClusterContentSelectorWindow.getEntityTreeTable().expandAncestorsOf( targetItem );
                     resetAfterLoad();
                 } );
             }

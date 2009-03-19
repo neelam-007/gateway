@@ -55,6 +55,25 @@ if (!l7.EntityTreeTable) {
                    imgName == TOGGLER_COLLAPSED_IMG_NAME ||
                    imgName == TOGGLER_NONE_IMG_NAME;
         }
+
+        /**
+         * @param {HTMLImageElement} toggler    the toggler IMG element
+         * @return {boolean} true if the given toggler IMG element is in expanded state
+         */
+        function isTogglerExpanded(toggler) {
+            return l7.Util.getFileName(toggler.src) == TOGGLER_EXPANDED_IMG_NAME;
+        }
+
+        /**
+         * Sets the state of the given toggler IMG element.
+         * @param {HTMLImageElement} toggler    the toggler IMG element
+         * @param {boolean} expanded            true for expanded state; false for collapsed state
+         */
+        function setTogglerState(toggler, expanded) {
+            toggler.src = l7.Util.getParent(toggler.src)
+                        + (expanded ? TOGGLER_EXPANDED_IMG_NAME : TOGGLER_COLLAPSED_IMG_NAME);
+        }
+
         /**
          * @param {string} columnId     an l7.EntityTreeTable.COLUMN enum value
          * @return {boolean} true if a column for monitored property
@@ -214,6 +233,73 @@ if (!l7.EntityTreeTable) {
             // --------------------------------------------------------------------------------
 
             /**
+             * Unhides the children of a given entity. The expansion states of those children
+             * will be restored according to their respective toggler state.
+             * Caller is responsible for changing the toggler image of the given entity.
+             * @param entities      array of entity object literal
+             * @param entityId      ID of the entity whose children are to be unhidden
+             */
+            function unhideChildren(entities, entityId) {
+                // We cannot use recursion because browsers cannot cope with that.
+                // Instead, we use a single-pass algorithm that take advantage of the fact that
+                // the entities array is ordered with children following their parent.
+
+                // First, find the array index position of the given entity.
+                for (var i = 0; i < entities.length; ++i) {
+                    if (entities[i].id == entityId) {
+                        // Found. Starting from the position after that, iterates through its descendents.
+                        var idsToUnhide = [ entityId ]; // IDs of entities whose children need to be unhidden.
+                        for (++i; i < entities.length; ++i) {
+                            var entity = entities[i];
+                            if (l7.Util.arrayContains(idsToUnhide, entity.parentId)) {
+                                entity._tr.style.display = '';
+                                if (entity._children && entity._children.length > 0) {
+                                    // This entity itself is a parent.
+                                    // If its toggler is in expanded state, then its children needs to be unhidden too.
+                                    if (isTogglerExpanded(entity._toggler)) {
+                                        idsToUnhide.push(entity.id);
+                                    }
+                                }
+                            }
+                        }
+                        break; // All done.
+                    }
+                }
+            }
+
+            /**
+             * Hides the children of a given entity. The descendents of those children
+             * will of course be hidden too.
+             * Caller is responsible for changing the toggler image of the given entity.
+             * @param entities      array of entity object literal
+             * @param entityId      ID of the entity whose children are to be hidden
+             */
+            function hideChildren(entities, entityId) {
+                // We cannot use recursion because browsers cannot cope with that.
+                // Instead, we use a single-pass algorithm that take advantage of the fact that
+                // the entities array is ordered with children following their parent.
+
+                // First, find the array index position of the entity being clicked.
+                for (var i = 0; i < entities.length; ++i) {
+                    if (entities[i].id == entityId) {
+                        // Found. Starting from the position after that, iterates through its descendents.
+                        var idsToHide = [ entityId ]; // IDs of entities whose children need to be hidden.
+                        for (++i; i < entities.length; ++i) {
+                            var entity = entities[i];
+                            if (l7.Util.arrayContains(idsToHide, entity.parentId)) {
+                                entity._tr.style.display = 'none';
+                                if (entity._children && entity._children.length > 0) {
+                                    // This entity itself is a parent. Remember to hide its children.
+                                    idsToHide.push(entity.id);
+                                }
+                            }
+                        }
+                        break; // All done.
+                    }
+                }
+            }
+
+            /**
              * Onclick event handler for the table body.
              * @param {MouseEvent} event    the click event
              * Expected execution scope is the l7.EntityTreeTable instance.
@@ -245,86 +331,12 @@ if (!l7.EntityTreeTable) {
                 var entities = params.entities;
                 var entityId = params.entityId;
 
-                /**
-                 * @param {HTMLImageElement} toggler    the toggler IMG element
-                 * @return {boolean} true if the give toggler IMG element is in expanded state
-                 */
-                function isExpanded(toggler) {
-                    return l7.Util.getFileName(toggler.src) == TOGGLER_EXPANDED_IMG_NAME;
-                }
-
-                /**
-                 * Sets the state of the give toggler IMG element.
-                 * @param {HTMLImageElement} toggler    the toggler IMG element
-                 * @param {boolean} expanded            true for expanded state; false for collapsed state
-                 */
-                function setExpanded(toggler, expanded) {
-                    toggler.src = l7.Util.getParent(toggler.src)
-                                + (expanded ? TOGGLER_EXPANDED_IMG_NAME : TOGGLER_COLLAPSED_IMG_NAME);
-                }
-
-                /**
-                 * Hides all descendents of this row.
-                 */
-                function hideDescendents() {
-                    // We cannot use recursion because browsers cannot cope with that.
-                    // Instead, we use a single-pass algorithm that take advantage of the fact that
-                    // the entities array is ordered with children following their parent.
-
-                    // First, find the array index position of the entity being clicked.
-                    for (var i = 0; i < entities.length; ++i) {
-                        if (entities[i].id == entityId) {
-                            // Found. Starting from the position after that, iterates through its descendents.
-                            var idsToHide = [ entityId ]; // IDs of entities whose children need to be hidden.
-                            for (++i; i < entities.length; ++i) {
-                                var entity = entities[i];
-                                if (l7.Util.arrayContains(idsToHide, entity.parentId)) {
-                                    entity._tr.style.display = 'none';
-                                    if (entity._children.length > 0) {
-                                        // This entity itself is a parent. Remember to hide its children.
-                                        idsToHide.push(entity.id);
-                                    }
-                                }
-                            }
-                            break; // All done.
-                        }
-                    }
-                }
-
-                /**
-                 * Unhide descendents of this row; subject to the state of its parent toggler.
-                 */
-                function unhideDescendents() {
-                    // Single-pass algorithm.
-                    // First, find the array index position of the entity being clicked.
-                    for (var i = 0; i < entities.length; ++i) {
-                        if (entities[i].id == entityId) {
-                            // Found. Starting from the position after that, iterates through its descendents.
-                            var idsToUnhide = [ entityId ]; // IDs of entities whose children need to be unhidden.
-                            for (++i; i < entities.length; ++i) {
-                                var entity = entities[i];
-                                if (l7.Util.arrayContains(idsToUnhide, entity.parentId)) {
-                                    entity._tr.style.display = '';
-                                    if (entity._children.length > 0) {
-                                        // This entity itself is a parent.
-                                        // If its toggler is in expanded state, then its children needs to be unhidden too.
-                                        if (isExpanded(entity._toggler)) {
-                                            idsToUnhide.push(entity.id);
-                                        }
-                                    }
-                                }
-                            }
-                            break; // All done.
-                        }
-                    }
-                }
-
-                if (isExpanded(this)) {
-                    hideDescendents();
-                    setExpanded(this, false);
+                if (isTogglerExpanded(this)) {
+                    hideChildren(entities, entityId);
+                    setTogglerState(this, false);
                 } else {
-                    unhideDescendents();
-                    setExpanded(this, true);
+                    unhideChildren(entities, entityId);
+                    setTogglerState(this, true);
                 }
             }
 
@@ -846,6 +858,50 @@ if (!l7.EntityTreeTable) {
              */
             this.getConfig = function() {
                 return this._config;
+            }
+
+            /**
+             * Expands a given entity so that its immediate children are visible.
+             * Its toggler image is also updated.
+             * @param {string} entityId     ID of the target entity
+             * @return {boolean} false if entity with the given ID is not found
+             */
+            this.expandEntity = function(entityId) {
+                var entity = this._entitiesById[entityId];
+                if (!entity) {
+                    YAHOO.log('No entity with ID = ' + entityId, 'warning', 'l7.EntityTreeTable.expandEntity');
+                    return false;
+                }
+
+                unhideChildren(this._entities, entityId);
+                if (entity._toggler) setTogglerState(entity._toggler, true);
+                return true;
+            }
+
+            /**
+             * Expands ancestors of a given entity so that the entity is visible in the tree.
+             * @param {string} entityId     ID of the target entity
+             * @return {boolean} false if entity with the given ID is not found
+             */
+            this.expandAncestorsOf = function(entityId) {
+                var entity = this._entitiesById[entityId];
+                if (!entity) {
+                    YAHOO.log('No entity with ID = ' + entityId, 'warning', 'l7.EntityTreeTable.expandAncestorsOf');
+                    return false;
+                }
+
+                // Tallies the ancestors.
+                var ancestorIds = [];
+                for (var e = entity; e && e.parentId && e.parentId != null; e = this._entitiesById[e.parentId]) {
+                    ancestorIds.unshift(e.parentId);
+                }
+                
+                // Expands each ancestor, beginning with the top most.
+                for (var i in ancestorIds) {
+                    this.expandEntity(ancestorIds[i]);
+                }
+
+                return true;
             }
 
             this.expandAll = function() {
