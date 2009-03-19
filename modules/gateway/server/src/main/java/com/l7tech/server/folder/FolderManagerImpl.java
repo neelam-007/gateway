@@ -1,20 +1,7 @@
 package com.l7tech.server.folder;
 
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.StaleUpdateException;
-import com.l7tech.objectmodel.SaveException;
-import static com.l7tech.objectmodel.EntityType.FOLDER;
-import static com.l7tech.objectmodel.EntityType.SERVICE;
-import static com.l7tech.objectmodel.EntityType.POLICY;
-import static com.l7tech.objectmodel.EntityType.ID_PROVIDER_CONFIG;
-import static com.l7tech.objectmodel.EntityType.USER;
-import static com.l7tech.objectmodel.EntityType.GROUP;
-import static com.l7tech.objectmodel.EntityType.JMS_CONNECTION;
-import static com.l7tech.objectmodel.EntityType.JMS_ENDPOINT;
-import static com.l7tech.objectmodel.EntityType.POLICY_ALIAS;
-import static com.l7tech.objectmodel.EntityType.SERVICE_ALIAS;
+import com.l7tech.objectmodel.*;
+import static com.l7tech.objectmodel.EntityType.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.server.FolderSupportHibernateEntityManager;
@@ -188,6 +175,9 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
 
         // Read this folders's folder ancestry
         role.addEntityFolderAncestryPermission(FOLDER, folder.getId());
+
+        // Read all service templates
+        role.addEntityPermission(READ, SERVICE_TEMPLATE, null);
 
         // Set role as entity-specific
         role.setEntityType(FOLDER);
