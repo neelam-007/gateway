@@ -43,6 +43,7 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
         List<ServerAssertion> result = new ArrayList<ServerAssertion>(composite.getChildren().size());
         for (Iterator i = composite.children(); i.hasNext();) {
             child = (Assertion)i.next();
+            if (! child.isEnabled()) continue;
             ServerAssertion sass = pf.compileSubtree(child);
             if (sass != null)
                 result.add(sass);

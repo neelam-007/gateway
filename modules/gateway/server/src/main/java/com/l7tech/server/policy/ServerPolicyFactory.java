@@ -133,7 +133,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
                     return new ServerAcceleratedOversizedTextAssertion((OversizedTextAssertion)genericAssertion, applicationContext);
             }
 
-            if (genericAssertion instanceof CommentAssertion) return null;
+            if (genericAssertion instanceof CommentAssertion || !genericAssertion.isEnabled()) return null;
 
             Class genericAssertionClass = genericAssertion.getClass();
             String productClassname = (String)genericAssertion.meta().get(AssertionMetadata.SERVER_ASSERTION_CLASSNAME);
