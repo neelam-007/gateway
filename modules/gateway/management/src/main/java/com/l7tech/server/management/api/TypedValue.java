@@ -15,34 +15,34 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 
 /**
- * 
+ *
  */
-@XmlRootElement(name="TypedValue", namespace="http://www.layer7tech.com/management")
+@XmlRootElement(name = "TypedValue", namespace = "http://www.layer7tech.com/management")
 public class TypedValue {
-
+//todo [Donal] this class needs test coverage
     //- PUBLIC
 
     public TypedValue() {
     }
 
     @SuppressWarnings({"unchecked"})
-    public TypedValue( final Object value ) {
-        if ( value instanceof Boolean ) {
+    public TypedValue(final Object value) {
+        if (value instanceof Boolean) {
             type = Type.BOOLEAN;
             booleanValue = (Boolean) value;
-        } else if ( value instanceof Integer ) {
+        } else if (value instanceof Integer) {
             type = Type.INTEGER;
             integerValue = (Integer) value;
-        } else if ( value instanceof String ) {
+        } else if (value instanceof String) {
             type = Type.STRING;
             stringValue = (String) value;
-        } else if ( value instanceof Set ) {
+        } else if (value instanceof Set) {
             type = Type.SET_STRING;
-            stringArrayValue =  new NamedStringArray((Set<String>) value);
-        } else if ( value instanceof List ) {
+            stringArrayValue = new NamedStringArray((Set<String>) value);
+        } else if (value instanceof List) {
             type = Type.LIST_STRING;
-            stringArrayValue =  new NamedStringArray((List<String>) value);
-        }else if( value instanceof LinkedHashMap){
+            stringArrayValue = new NamedStringArray((List<String>) value);
+        } else if (value instanceof LinkedHashMap) {
             LinkedHashMap<String, List<ReportApi.FilterPair>>
                     keysToFilterPairs = (LinkedHashMap<String, List<ReportApi.FilterPair>>) value;
             type = Type.LINKED_HASH_MAP_TO_LIST_FILTER_PAIR;
@@ -50,41 +50,40 @@ public class TypedValue {
             namedStringArrayValue = new NamedStringArray[keysToFilterPairs.size()];
 
             int index = 0;
-            for(Map.Entry<String, List<ReportApi.FilterPair>> me: keysToFilterPairs.entrySet()){
+            for (Map.Entry<String, List<ReportApi.FilterPair>> me : keysToFilterPairs.entrySet()) {
                 List<String> filterPairDisplayStrings = new ArrayList<String>();
-                for(ReportApi.FilterPair fp: me.getValue()){
+                for (ReportApi.FilterPair fp : me.getValue()) {
                     filterPairDisplayStrings.add(fp.getDisplayValue());
                 }
                 namedStringArrayValue[index++] = new NamedStringArray(me.getKey(), filterPairDisplayStrings);
             }
-            
-        }
-        else if ( value instanceof Map) {
+
+        } else if (value instanceof Map) {
             Map testMap = (Map) value;
             Object testVal = testMap.values().iterator().next();
-            if(testVal instanceof Collection){
+            if (testVal instanceof Collection) {
                 type = Type.MAP_STRING_SET_STRING;
-                Map<String,Set<String>> map = (Map<String,Set<String>>) value;
+                Map<String, Set<String>> map = (Map<String, Set<String>>) value;
                 Collection<NamedStringArray> values = new ArrayList<NamedStringArray>();
-                for ( Map.Entry<String,Set<String>> entry : map.entrySet() ) {
-                    values.add( new NamedStringArray( entry.getKey(), entry.getValue() ) );
+                for (Map.Entry<String, Set<String>> entry : map.entrySet()) {
+                    values.add(new NamedStringArray(entry.getKey(), entry.getValue()));
                 }
-                namedStringArrayValue = values.toArray( new NamedStringArray[values.size()] );
-            }else if(testVal instanceof String){
+                namedStringArrayValue = values.toArray(new NamedStringArray[values.size()]);
+            } else if (testVal instanceof String) {
                 type = Type.MAP_STRING_STRING;
                 Map<String, String> map = (Map<String, String>) value;
                 Collection<NamedStringArray> values = new ArrayList<NamedStringArray>();
-                for ( Map.Entry<String,String> entry : map.entrySet() ) {
+                for (Map.Entry<String, String> entry : map.entrySet()) {
                     List<String> oneString = new ArrayList<String>();
                     oneString.add(entry.getValue());
-                    values.add( new NamedStringArray( entry.getKey(), oneString) );
+                    values.add(new NamedStringArray(entry.getKey(), oneString));
                 }
-                namedStringArrayValue = values.toArray( new NamedStringArray[values.size()] );
-            }else{
-                throw new IllegalArgumentException( "Type not supported" );
+                namedStringArrayValue = values.toArray(new NamedStringArray[values.size()]);
+            } else {
+                throw new IllegalArgumentException("Type not supported");
             }
         } else {
-            throw new IllegalArgumentException( "Type not supported" );
+            throw new IllegalArgumentException("Type not supported");
         }
     }
 
@@ -145,9 +144,9 @@ public class TypedValue {
     public Object value() {
         Object value;
 
-        if ( type == null ) throw new IllegalStateException("type is not defined.");
+        if (type == null) throw new IllegalStateException("type is not defined.");
 
-        switch ( type ) {
+        switch (type) {
             case BOOLEAN:
                 value = booleanValue;
                 break;
@@ -158,28 +157,28 @@ public class TypedValue {
                 value = stringValue;
                 break;
             case SET_STRING:
-                if ( stringArrayValue == null ) {
+                if (stringArrayValue == null) {
                     value = new LinkedHashSet<String>();
                 } else {
-                    value = new LinkedHashSet<String>( Arrays.asList( stringArrayValue.asStringArray() ) );
+                    value = new LinkedHashSet<String>(Arrays.asList(stringArrayValue.asStringArray()));
                 }
                 break;
             case LIST_STRING:
-                if ( stringArrayValue == null ) {
+                if (stringArrayValue == null) {
                     value = new ArrayList<String>();
                 } else {
-                    value = new ArrayList<String>( Arrays.asList( stringArrayValue.asStringArray() ) );
+                    value = new ArrayList<String>(Arrays.asList(stringArrayValue.asStringArray()));
                 }
                 break;
             case MAP_STRING_SET_STRING:
-                Map<String,Set<String>> valueMap = new LinkedHashMap<String,Set<String>>();
-                if ( namedStringArrayValue != null ) {
-                    for ( NamedStringArray nsa : namedStringArrayValue ) {
+                Map<String, Set<String>> valueMap = new LinkedHashMap<String, Set<String>>();
+                if (namedStringArrayValue != null) {
+                    for (NamedStringArray nsa : namedStringArrayValue) {
                         String[] values = nsa.asStringArray();
-                        if ( values == null ) {
-                            valueMap.put( nsa.getName(), new LinkedHashSet<String>() );
+                        if (values == null) {
+                            valueMap.put(nsa.getName(), new LinkedHashSet<String>());
                         } else {
-                            valueMap.put( nsa.getName(), new LinkedHashSet<String>( Arrays.asList( values ) ) );
+                            valueMap.put(nsa.getName(), new LinkedHashSet<String>(Arrays.asList(values)));
                         }
                     }
                 }
@@ -189,16 +188,15 @@ public class TypedValue {
                 LinkedHashMap<String, List<ReportApi.FilterPair>>
                         keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
 
-                if ( namedStringArrayValue != null ) {
-                    for ( NamedStringArray nsa : namedStringArrayValue ) {
+                if (namedStringArrayValue != null) {
+                    for (NamedStringArray nsa : namedStringArrayValue) {
                         String key = nsa.getName();
                         String[] values = nsa.asStringArray();
-                        //values should never be null as even an empty FilterPair() will have "" internally
                         List<ReportApi.FilterPair> fpL = new ArrayList<ReportApi.FilterPair>();
-                        for(String s: values){
-                            if(s.equals("")){
+                        for (String s : values) {
+                            if (s == null) {
                                 fpL.add(new ReportApi.FilterPair());
-                            }else{
+                            } else {
                                 fpL.add(new ReportApi.FilterPair(s));
                             }
                         }
@@ -208,14 +206,14 @@ public class TypedValue {
                 value = keysToFilterPairs;
                 break;
             case MAP_STRING_STRING:
-                Map<String,String> valueMapString = new LinkedHashMap<String,String>();
-                if ( namedStringArrayValue != null ) {
-                    for ( NamedStringArray nsa : namedStringArrayValue ) {
+                Map<String, String> valueMapString = new LinkedHashMap<String, String>();
+                if (namedStringArrayValue != null) {
+                    for (NamedStringArray nsa : namedStringArrayValue) {
                         String[] values = nsa.asStringArray();
-                        if ( values == null ) {
-                            valueMapString.put( nsa.getName(), null);
+                        if (values == null) {
+                            valueMapString.put(nsa.getName(), null);
                         } else {
-                            valueMapString.put( nsa.getName(), values[0] );
+                            valueMapString.put(nsa.getName(), values[0]);
                         }
                     }
                 }
@@ -259,8 +257,10 @@ public class TypedValue {
         return result;
     }
 
-    public static enum Type { BOOLEAN, INTEGER, STRING, SET_STRING, LIST_STRING, MAP_STRING_SET_STRING,
-        MAP_STRING_STRING, LINKED_HASH_MAP_TO_LIST_FILTER_PAIR }
+    public static enum Type {
+        BOOLEAN, INTEGER, STRING, SET_STRING, LIST_STRING, MAP_STRING_SET_STRING,
+        MAP_STRING_STRING, LINKED_HASH_MAP_TO_LIST_FILTER_PAIR
+    }
 
     @XmlRootElement
     public static final class NamedStringArray {
@@ -270,13 +270,13 @@ public class TypedValue {
         public NamedStringArray() {
         }
 
-        public NamedStringArray( Collection<String> values ) {
-            this( null, values );            
+        public NamedStringArray(Collection<String> values) {
+            this(null, values);
         }
 
-        public NamedStringArray( String name, Collection<String> values ) {
+        public NamedStringArray(String name, Collection<String> values) {
             this.name = name;
-            this.values = values == null ? null : toArray( values );
+            this.values = values == null ? null : toArray(values);
         }
 
         @XmlAttribute
@@ -300,16 +300,16 @@ public class TypedValue {
         public String[] asStringArray() {
             String[] stringArray;
 
-            if ( values != null ) {
-                stringArray = new String[ values.length ];
-                for ( int i=0; i<values.length; i++ ) {
+            if (values != null) {
+                stringArray = new String[values.length];
+                for (int i = 0; i < values.length; i++) {
                     stringArray[i] = values[i].getValue();
                 }
             } else {
                 stringArray = new String[0];
             }
 
-            return stringArray;            
+            return stringArray;
         }
 
         @Override
@@ -334,10 +334,10 @@ public class TypedValue {
             return result;
         }
 
-        private NullableString[] toArray( Collection<String> values ) {
-            String[] stringArray = values.toArray( new String[values.size()] );
+        private NullableString[] toArray(Collection<String> values) {
+            String[] stringArray = values.toArray(new String[values.size()]);
             NullableString[] nullableStringArray = new NullableString[stringArray.length];
-            for ( int i=0; i<stringArray.length; i++ ) {
+            for (int i = 0; i < stringArray.length; i++) {
                 nullableStringArray[i] = new NullableString(stringArray[i]);
             }
             return nullableStringArray;
@@ -351,7 +351,7 @@ public class TypedValue {
         public NullableString() {
         }
 
-        public NullableString( final String value ) {
+        public NullableString(final String value) {
             this.value = value;
         }
 
@@ -360,7 +360,7 @@ public class TypedValue {
             return value;
         }
 
-        public void setValue( final String value ) {
+        public void setValue(final String value) {
             this.value = value;
         }
 

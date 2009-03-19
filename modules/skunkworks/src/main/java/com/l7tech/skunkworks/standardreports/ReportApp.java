@@ -146,9 +146,23 @@ public class ReportApp {
 
         int numRelativeTimeUnits = Integer.valueOf(parameters.get(RELATIVE_NUM_OF_TIME_UNITS).toString());
         Utilities.UNIT_OF_TIME relUnitOfTime = Utilities.getUnitFromString(prop.getProperty(RELATIVE_TIME_UNIT));
-        String timeZone = "Canada/Pacific";
-        long startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, relUnitOfTime, timeZone);
-        long endTimeInPast = Utilities.getMillisForEndTimePeriod(relUnitOfTime, timeZone);
+
+        String timeZone = prop.getProperty(SPECIFIC_TIME_ZONE);
+        boolean isAbsolute = Boolean.parseBoolean(prop.getProperty(IS_ABSOLUTE).toString());
+
+        long startTimeInPast;
+        long endTimeInPast;
+
+        if (!isAbsolute) {
+            startTimeInPast = Utilities.getRelativeMilliSecondsInPast(numRelativeTimeUnits, relUnitOfTime, timeZone);
+            endTimeInPast = Utilities.getMillisForEndTimePeriod(relUnitOfTime, timeZone);
+        } else {
+            String abStartTime = prop.getProperty(ABSOLUTE_START_TIME);
+            String abEndTime = prop.getProperty(ABSOLUTE_END_TIME);
+
+            startTimeInPast = Utilities.getAbsoluteMilliSeconds(abStartTime, timeZone);
+            endTimeInPast = Utilities.getAbsoluteMilliSeconds(abEndTime, timeZone);
+        }
 
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getFilterPairMap(prop);
         parameters.put(KEYS_TO_LIST_FILTER_PAIRS, keysToFilterPairs);
@@ -163,6 +177,21 @@ public class ReportApp {
         boolean isContextMapping = Boolean.valueOf(parameters.get(IS_CONTEXT_MAPPING).toString());
 
         boolean isUsingKeys = !keysToFilterPairs.isEmpty();
+
+        //
+//        Connection conn1 = getConnection(prop);
+//        Statement stmt = conn1.createStatement();
+//        ResultSet rs = stmt.executeQuery("SELECT distinct p.objectid as SERVICE_ID, p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI ,'1' as CONSTANT_GROUP, ';' AS AUTHENTICATED_USER,  mcmv.service_operation AS SERVICE_OPERATION_VALUE, CASE  WHEN mcmk.mapping1_key = 'CustomHeader' THEN mcmv.mapping1_value WHEN mcmk.mapping2_key = 'CustomHeader' THEN mcmv.mapping2_value WHEN mcmk.mapping3_key = 'CustomHeader' THEN mcmv.mapping3_value WHEN mcmk.mapping4_key = 'CustomHeader' THEN mcmv.mapping4_value WHEN mcmk.mapping5_key = 'CustomHeader' THEN mcmv.mapping5_value END AS MAPPING_VALUE_1, ';' AS MAPPING_VALUE_2, ';' AS MAPPING_VALUE_3, ';' AS MAPPING_VALUE_4, ';' AS MAPPING_VALUE_5 FROM service_metrics sm, published_service p, service_metrics_details smd, message_context_mapping_values mcmv, message_context_mapping_keys mcmk WHERE p.objectid = sm.published_service_oid AND sm.objectid = smd.service_metrics_oid AND smd.mapping_values_oid = mcmv.objectid AND mcmv.mapping_keys_oid = mcmk.objectid  AND sm.period_start >=1237399200000 AND sm.period_start <1237410000000 AND p.objectid IN (688129, 688128, 360451, 688130, 688131) AND (( mcmk.mapping1_key = 'CustomHeader'  )  OR ( mcmk.mapping2_key = 'CustomHeader'  )  OR ( mcmk.mapping3_key = 'CustomHeader'  )  OR ( mcmk.mapping4_key = 'CustomHeader'  )  OR ( mcmk.mapping5_key = 'CustomHeader'  )  )  ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5 ,p.objectid, SERVICE_OPERATION_VALUE");
+//        while(rs.next()){
+//            String colVal = rs.getString("MAPPING_VALUE_1");
+//            System.out.println("ColVal is : '" + colVal+"'");
+//            if(colVal == null){
+//                System.out.println("Col val is actually java null");
+//            }
+//        }
+//        System.out.println("After query");
+//        if(true) System.exit(1);
+        //
 
         String sql;
         Boolean isUsage = Boolean.valueOf(prop.getProperty("IS_USAGE"));

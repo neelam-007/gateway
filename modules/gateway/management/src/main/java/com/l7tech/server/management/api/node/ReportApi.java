@@ -505,10 +505,16 @@ public interface ReportApi {
         private final String displayValue;
         private final boolean useEqualsOnly;
 
+        /**
+         * Create a filter pair where filterValue is the value to match database records
+         *
+         * @param filterValue the filters value
+         * @throws NullPointerException if filterValue is null
+         */
         public FilterPair(final String filterValue) {
             if (filterValue == null) throw new NullPointerException("filterValue cannot be null");
             useEqualsOnly = false;
-            displayValue = filterValue.trim();
+            displayValue = filterValue;
         }
 
         /**
@@ -516,27 +522,46 @@ public interface ReportApi {
          * found at runtime from the database, and we don't want to modify the string found as we are querying
          * a specific value from the database.
          *
-         * @param filterValue
+         * @param filterValue   the filters value
          * @param useEqualsOnly if false then we only check for the ' character and do not translate
          *                      the * into % and do not escape % and _ characters.
+         * @throws NullPointerException if filterValue is null
          */
         public FilterPair(final String filterValue, final boolean useEqualsOnly) {
             if (filterValue == null) throw new NullPointerException("filterValue cannot be null");
             this.useEqualsOnly = useEqualsOnly;
-            displayValue = filterValue.trim();
+            displayValue = filterValue;
         }
 
         public FilterPair() {
-            displayValue = "";
+            displayValue = null;
             useEqualsOnly = false;
         }
 
+        /**
+         * If displayString is null, it returns "null"
+         * If displayString is empty after applying tail(), then "" is returned
+         * otherwise displayString is returned
+         *
+         * @return String the string to display on report output. Can be null if FilterPair was created with
+         *         no arg constructor
+         */
         public String getDisplayValue() {
             return displayValue;
         }
 
+        /**
+         * Get the filter value to use in a constraint in a sql query.
+         *
+         * @param equalsOnly if true it specifies that the constrain will only be used in an = sql constraint, in which
+         *                   case the values _ and % should not be escaped so as to not stop these characters being matched literally in
+         *                   a database record
+         * @return String the value to use in a sql constraint
+         * @throws IllegalStateException if this method is called and isConstraintNotRequired returns true
+         */
         public String getFilterValue(boolean equalsOnly) {
-            if (isEmpty()) return "";
+            if (isConstraintNotRequired())
+                throw new IllegalStateException("If a constraint is not required getFilterValue() should not be called");
 
             boolean usingWildCard = isQueryUsingWildCard() && !equalsOnly;
 
@@ -567,15 +592,23 @@ public interface ReportApi {
         /**
          * Should the = or like value be used for string constraints in sql queries
          *
-         * @return
+         * @return true if the * character is anywhere in the filter's value, otherwise false
          */
         public boolean isQueryUsingWildCard() {
+            if (isConstraintNotRequired())
+                throw new IllegalStateException("If a constraint is not required isQueryUsingWildCard() should not be called");
+
             return displayValue.indexOf('*') != -1;
         }
 
-        public boolean isEmpty() {
-            if (displayValue.equals("") || displayValue.equals("*")) return true;
-            return false;
+        /**
+         * The purpose of this method is to determine if a constraint should be added to the sql statement
+         * for the key this FilterPair relates to
+         *
+         * @return true if a constraint is not required based on the state of this FilterPair, false otherwise
+         */
+        public boolean isConstraintNotRequired() {
+            return displayValue == null || displayValue.equals("*");
         }
     }
 }

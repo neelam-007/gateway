@@ -398,7 +398,7 @@ public class JsonConversionTest {
                 Assert.assertTrue("IP_ADDRESS constraint should equal 127.%.%.1, it was: " + fps.get(0).getFilterValue(),
                         fps.get(0).getFilterValue().equals("127.%.%.1"));
 
-                Assert.assertTrue("IP_ADDRESS second FilterPair should be empty", fps.get(1).isEmpty());
+                Assert.assertTrue("IP_ADDRESS second FilterPair should be empty", fps.get(1).isConstraintNotRequired());
 
                 Assert.assertTrue("IP_ADDRESS constraint should be a like constraint", fps.get(0).isQueryUsingWildCard());
 
@@ -479,7 +479,7 @@ public class JsonConversionTest {
                 Assert.assertFalse("authUsers should not be empty", authFilters.isEmpty());
                 Assert.assertTrue("Authusers should be 2, actual size was " + authFilters.size(), authFilters.size() == 2);
                 for (ReportApi.FilterPair fp : authFilters) {
-                    Assert.assertTrue("FilterPair for auth user should be empty", fp.isEmpty());
+                    Assert.assertTrue("FilterPair for auth user should be empty", fp.isConstraintNotRequired());
                 }
             }
         }

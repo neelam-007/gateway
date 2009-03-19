@@ -117,10 +117,10 @@ public class ReportApiTest {
     @Test
     public void testFilterPairEmpty() {
         ReportApi.FilterPair fp = new ReportApi.FilterPair();
-        Assert.assertTrue("Filter pair should be empty", fp.isEmpty());
+        Assert.assertTrue("Filter pair should be empty", fp.isConstraintNotRequired());
 
         fp = new ReportApi.FilterPair("*");
-        Assert.assertTrue("Filter pair with only '*' should be empty", fp.isEmpty());
+        Assert.assertTrue("Filter pair with only '*' should be empty", fp.isConstraintNotRequired());
     }
 
 

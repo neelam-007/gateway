@@ -8,9 +8,7 @@ package com.l7tech.skunkworks.standardreports.test;
 
 import org.junit.*;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
-import java.io.File;
 import java.util.*;
 import java.sql.*;
 
@@ -18,7 +16,7 @@ import com.l7tech.gateway.standardreports.Utilities;
 import com.l7tech.skunkworks.standardreports.ReportApp;
 import com.l7tech.server.management.api.node.ReportApi;
 
-public class CheckTestData{
+public class CheckTestData {
 
     private Properties prop;
 
@@ -45,30 +43,30 @@ public class CheckTestData{
 
     @After
     public void tearDown() throws SQLException {
-        if(stmt != null) {
+        if (stmt != null) {
             stmt.close();
             stmt = null;
         }
-        if(conn != null){
+        if (conn != null) {
             conn.close();
             conn = null;
         }
         //System.out.println("DB conn closed");
     }
 
-    private int getNumValueRows() throws Exception{
+    private int getNumValueRows() throws Exception {
         ResultSet rs = stmt.executeQuery(sqlNumDistinctValueRows);
         Assert.assertTrue(rs.first());
         return rs.getInt("num_rows");
     }
-    
+
     @Test
     public void testCreatedData_NumValueRows() throws Exception {
         int numRows = getNumValueRows();
-        Assert.assertTrue("numRows should equal 24, it was: " +numRows ,numRows == 24);
+        Assert.assertTrue("numRows should equal 24, it was: " + numRows, numRows == 24);
     }
 
-    private int getNumDailyRows() throws Exception{
+    private int getNumDailyRows() throws Exception {
         ResultSet rs = stmt.executeQuery(sqlNumDailyMetricRows);
         Assert.assertTrue(rs.first());
         return rs.getInt("total_rows");
@@ -77,7 +75,7 @@ public class CheckTestData{
     @Test
     public void testCreatedData_NumDailyMetricRows() throws Exception {
         int numRows = getNumDailyRows();
-        Assert.assertTrue("numRows should equal 43680, it was: " +numRows, numRows == 43680);
+        Assert.assertTrue("numRows should equal 43680, it was: " + numRows, numRows == 43680);
     }
 
     private int getMetricRowsPerDistinctValue() throws Exception {
@@ -94,7 +92,7 @@ public class CheckTestData{
         Assert.assertTrue(numPerDistinctValues == 364);
     }
 
-    private int getNumDistinctMetricDetailRows() throws Exception{
+    private int getNumDistinctMetricDetailRows() throws Exception {
         //LinkedHashMap<String, List<FilterPair>> keysToFilterPairs = ReportApp.getFilterPairMap(prop);
 
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = new LinkedHashMap<String, List<ReportApi.FilterPair>>();
@@ -110,11 +108,11 @@ public class CheckTestData{
         authFilters.add(new ReportApi.FilterPair());
         keysToFilterPairs.put("AUTH_USER", authFilters);
 
-       // Assert.assertTrue("2 mapping keys should be specified in report.properties", keysToFilterPairs.keySet().size() == 2);
+        // Assert.assertTrue("2 mapping keys should be specified in report.properties", keysToFilterPairs.keySet().size() == 2);
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         //is usage is false, as keys must be specified for this test
-        String s = Utilities.getPerformanceStatisticsMappingQuery(true, null, null, serviceIdsToOps,keysToFilterPairs, 2, true, false);
+        String s = Utilities.getPerformanceStatisticsMappingQuery(true, null, null, serviceIdsToOps, keysToFilterPairs, 2, true, false);
 
         StringBuilder sql = new StringBuilder();
         sql.append("select count(*) as total from (");
@@ -123,7 +121,7 @@ public class CheckTestData{
 
         ResultSet rs = stmt.executeQuery(sql.toString());
         Assert.assertTrue(rs.first());
-        System.out.println("Value sql: "+ sql.toString());
+        System.out.println("Value sql: " + sql.toString());
         return rs.getInt("total");
     }
 
@@ -137,7 +135,7 @@ public class CheckTestData{
      * @throws Exception
      */
     @Test
-    public void testMasterMappingQuery_Master() throws Exception{
+    public void testMasterMappingQuery_Master() throws Exception {
         int totalMasterRowsFound = getNumDistinctMetricDetailRows();
         int numValueRows = getNumValueRows();
 
@@ -145,7 +143,7 @@ public class CheckTestData{
 //        System.out.println("numValueRows: "+numValueRows);
 //        System.out.println("numServices: "+numServices);
 
-        Assert.assertTrue("Expected: " + totalMasterRowsFound+" rows, actual number found: " + (numValueRows * numServices),totalMasterRowsFound == (numValueRows * numServices));
+        Assert.assertTrue("Expected: " + totalMasterRowsFound + " rows, actual number found: " + (numValueRows * numServices), totalMasterRowsFound == (numValueRows * numServices));
     }
 
     private int getSumOfAllDailyValueGroups() throws SQLException {
@@ -166,11 +164,11 @@ public class CheckTestData{
         //Assert.assertTrue("2 mapping keys should be specified in report.properties", keysToFilterPairs.keySet().size() == 2);
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
-        String s = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps,keysToFilterPairs, 2, true, false);
+        String s = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps, keysToFilterPairs, 2, true, false);
 
         StringBuilder sql = new StringBuilder();
         sql.append("select sum(total) as overall_total from (");
-        sql.append(s.substring(0,s.indexOf("FROM")));
+        sql.append(s.substring(0, s.indexOf("FROM")));
         sql.append(", count(*) as total ");
         sql.append(s.substring(s.indexOf("FROM"), s.length()));
         sql.append(") a");
@@ -187,29 +185,31 @@ public class CheckTestData{
      * If we group by every value group, operation, auth_user_id and add up the
      * sum of all the rows in each group, it should equal the total number of
      * daily metric bins in service_metric_details
+     *
      * @throws Exception
      */
     @Test
-    public void testMappingQuery_SummaryDaily() throws Exception{
+    public void testMappingQuery_SummaryDaily() throws Exception {
         int sumOfAllValueGroups = getSumOfAllDailyValueGroups();
         int totalDailyRows = getNumDailyRows();
 
-        Assert.assertTrue("Expected: totalDailyRows == sumOfAllValueGroups: " + totalDailyRows+" != " + sumOfAllValueGroups,totalDailyRows == sumOfAllValueGroups);
+        Assert.assertTrue("Expected: totalDailyRows == sumOfAllValueGroups: " + totalDailyRows + " != " + sumOfAllValueGroups, totalDailyRows == sumOfAllValueGroups);
     }
 
     /**
      * Run a mapping query from Utilities.getPerformanceStatisticsMappingQuery(false... with keys and value specified. Wrap the query
-     * to determine the sum of all rows found for each group that match the key and value criteria 
+     * to determine the sum of all rows found for each group that match the key and value criteria
+     *
      * @return
      * @throws SQLException
      */
     private int getMappingQueryOverallTotalSpecificValues_Daily(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) throws SQLException {
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
-        String s = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps,keysToFilterPairs, 2, true, false);
+        String s = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps, keysToFilterPairs, 2, true, false);
 
         StringBuilder sql = new StringBuilder();
         sql.append("select sum(total) as overall_total from (");
-        sql.append(s.substring(0,s.indexOf("FROM")));
+        sql.append(s.substring(0, s.indexOf("FROM")));
         sql.append(", count(*) as total ");
         sql.append(s.substring(s.indexOf("FROM"), s.length()));
         sql.append(") a");
@@ -228,7 +228,7 @@ public class CheckTestData{
 
         StringBuilder sql = new StringBuilder();
         sql.append("select sum(total) as overall_total from (");
-        sql.append(s.substring(0,s.indexOf("FROM")));
+        sql.append(s.substring(0, s.indexOf("FROM")));
         sql.append(", count(*) as total ");
         sql.append(s.substring(s.indexOf("FROM"), s.length()));
         sql.append(") a");
@@ -240,9 +240,9 @@ public class CheckTestData{
         return rs.getInt("overall_total");
     }
 
-    private int getDistinctValuesForKey(String key) throws Exception{
+    private int getDistinctValuesForKey(String key) throws Exception {
         PreparedStatement ps = null;
-        try{
+        try {
             String distinctValues = "SELECT count(*) as count from (select distinct CASE WHEN mcmk.mapping1_key = ? " +
                     "THEN mcmv.mapping1_value WHEN mcmk.mapping2_key = ? THEN mcmv.mapping2_value " +
                     "WHEN mcmk.mapping3_key = ? THEN mcmv.mapping3_value WHEN " +
@@ -252,16 +252,16 @@ public class CheckTestData{
 
             ps = conn.prepareStatement(distinctValues);
 
-            for(int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++){
-                ps.setString(i+1, key);
+            for (int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++) {
+                ps.setString(i + 1, key);
             }
 
             ResultSet rs1 = ps.executeQuery();
             Assert.assertTrue(rs1.first());
             int totalNumValue = rs1.getInt("count");
             return totalNumValue;
-        }finally{
-            if(ps != null) ps.close();
+        } finally {
+            if (ps != null) ps.close();
             ps = null;
         }
     }
@@ -282,11 +282,12 @@ public class CheckTestData{
      * 4) Gets the total number of normalized distinct value rows
      * 5) Determines the applicable number of value rows by dividing the result from 4) by the sum from 3)
      * 6) Gets the number of rows expected for an individual value row
-     * 7) Multiples 5) x 6) which must equal the value from 1) 
+     * 7) Multiples 5) x 6) which must equal the value from 1)
+     *
      * @throws Exception
      */
     @Test
-    public void testMappingQuerySpecificValues_SummaryDaily() throws Exception{
+    public void testMappingQuerySpecificValues_SummaryDaily() throws Exception {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = ReportApp.getFilterPairMap(prop);
         validateKeyFilterMap(keysToFilterPairs);
 
@@ -297,7 +298,7 @@ public class CheckTestData{
         int numValueRows = getNumValueRows();
 
         int numApplicableValueRows = 0;
-        for(String s1: keysToFilterPairs.keySet()){
+        for (String s1 : keysToFilterPairs.keySet()) {
             numApplicableValueRows += getDistinctValuesForKey(s1);
         }
 
@@ -306,37 +307,37 @@ public class CheckTestData{
         int queryExpectedTotal = rowsPerDistinctValue * totalValueFactor * numServices;
         //System.out.println("queryExpectedTotal: " + queryExpectedTotal);
         //System.out.println("total: " + total);
-        Assert.assertTrue("Expected: " + queryExpectedTotal+" rows, found: " + total,queryExpectedTotal == total);
+        Assert.assertTrue("Expected: " + queryExpectedTotal + " rows, found: " + total, queryExpectedTotal == total);
     }
 
     private void validateKeyFilterMap(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) {
-        if(keysToFilterPairs.keySet().size()!=2){
+        if (keysToFilterPairs.keySet().size() != 2) {
             throw new IllegalArgumentException("This test designed to work with two keys");
         }
-        for(Map.Entry<String, List<ReportApi.FilterPair>> me: keysToFilterPairs.entrySet()){
-            if(me.getValue().size() != 1){
+        for (Map.Entry<String, List<ReportApi.FilterPair>> me : keysToFilterPairs.entrySet()) {
+            if (me.getValue().size() != 1) {
                 throw new IllegalArgumentException("Each key must have 1 FilterPair");
             }
-            if(me.getValue().get(0).isEmpty()){
+            if (me.getValue().get(0).isConstraintNotRequired()) {
                 throw new IllegalArgumentException("Test is designed to work with actual key constraint values");
             }
         }
     }
 
     @Test
-    public void testMappingQuerySpecificValues_SummaryDailyNew() throws Exception{
+    public void testMappingQuerySpecificValues_SummaryDailyNew() throws Exception {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = ReportApp.getFilterPairMap(prop);
         validateKeyFilterMap(keysToFilterPairs);
-        
-        Map<String, Set<String>> serviceIdToOp = new HashMap<String,Set<String>>();
+
+        Map<String, Set<String>> serviceIdToOp = new HashMap<String, Set<String>>();
 
         List<String> ops = ReportApp.loadListFromProperties(ReportApp.OPERATIONS, prop);
 
-        String serviceOid = prop.getProperty(ReportApp.SERVICE_ID_TO_NAME_OID+"_1");
+        String serviceOid = prop.getProperty(ReportApp.SERVICE_ID_TO_NAME_OID + "_1");
         int index = 2;
-        while(serviceOid != null){
+        while (serviceOid != null) {
             serviceIdToOp.put(serviceOid, new HashSet<String>(ops));
-            serviceOid = prop.getProperty(ReportApp.SERVICE_ID_TO_NAME_OID+"_"+index);
+            serviceOid = prop.getProperty(ReportApp.SERVICE_ID_TO_NAME_OID + "_" + index);
             index++;
         }
 
@@ -347,7 +348,7 @@ public class CheckTestData{
         int numValueRows = getNumValueRows();
 
         int numApplicableValueRows = 0;
-        for(String s1: keysToFilterPairs.keySet()){
+        for (String s1 : keysToFilterPairs.keySet()) {
             numApplicableValueRows += getDistinctValuesForKey(s1);
         }
 
@@ -356,7 +357,7 @@ public class CheckTestData{
         int queryExpectedTotal = rowsPerDistinctValue * totalValueFactor * numServices;
         //System.out.println("queryExpectedTotal: " + queryExpectedTotal);
         //System.out.println("total: " + total);
-        Assert.assertTrue("Expected total was: " + queryExpectedTotal+" actual total was: " + total+", " +
-                "check that the operations match those in the db",queryExpectedTotal == total);
+        Assert.assertTrue("Expected total was: " + queryExpectedTotal + " actual total was: " + total + ", " +
+                "check that the operations match those in the db", queryExpectedTotal == total);
     }
 }

@@ -113,7 +113,7 @@ public class UtilitiesTest {
             }
 
             for (ReportApi.FilterPair fp : me.getValue()) {
-                if (!fp.isEmpty()) {
+                if (!fp.isConstraintNotRequired()) {
                     for (int z = 1; z <= Utilities.NUM_MAPPING_KEYS; z++) {
                         int index = sql.indexOf("mcmv.mapping" + z + "_value = '" + fp.getFilterValue() + "'");
                         Assert.assertTrue("mcmv.mapping" + z + "_value = '" + fp.getFilterValue() + "' should be in the sql: " + sql, index != -1);
@@ -172,7 +172,7 @@ public class UtilitiesTest {
             String s = me.getKey();
 
             for (ReportApi.FilterPair fp : me.getValue()) {
-                if (!fp.isEmpty()) {
+                if (!fp.isConstraintNotRequired()) {
                     for (int z = 1; z <= Utilities.NUM_MAPPING_KEYS; z++) {
                         boolean useAnd = !fp.isQueryUsingWildCard();
                         String fValue = (useAnd) ? "=" : "LIKE";
