@@ -17,11 +17,11 @@ import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import javax.xml.ws.soap.SOAPFaultException;
 import java.io.IOException;
@@ -438,7 +438,7 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
             node.setOnlineStatus( status );
         } else if ( !status.equals( node.getOnlineStatus() ) ) {
             updated = true;
-            logger.info("Gateway node status changed, status is now '"+status+"' (was '"+node.getOnlineStatus()+"').");
+            logger.info("Online status of gateway node '" + node.getName() + "' (" + node.getIpAddress() + ") in cluster '" + node.getSsgCluster().getName() + "' (" + node.getSsgCluster().getSslHostName() + ") changed from '" + node.getOnlineStatus() + "' to '" + status + "'.");
             node.setOnlineStatus( status );
         }
 
