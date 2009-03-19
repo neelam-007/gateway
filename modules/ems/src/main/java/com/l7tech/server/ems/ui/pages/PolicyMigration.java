@@ -1,7 +1,7 @@
 package com.l7tech.server.ems.ui.pages;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.*;
 import com.l7tech.server.ems.migration.*;
@@ -1607,7 +1607,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
             boolean isNameMapped = mappings.dependencyMap.containsKey(mapKey);
             if ( ( ! item.isOptional() && ! isNameMapped ) ||
-                 ( ! isNameMapped && header.getValueMapping() == MigrationMappingSelection.REQUIRED && header.getMappedValue() == null) ) {
+                 ( ! isNameMapped && header.getValueMapping() == REQUIRED && header.getMappedValue() == null) ) {
                 count++;
             }
         }
@@ -1639,7 +1639,7 @@ public class PolicyMigration extends EsmStandardWebPage {
     private static boolean isSearchable( final ExternalEntityHeader header ) {
         return header != null &&
                com.l7tech.objectmodel.EntityType.VALUE_REFERENCE != header.getType() &&
-               MigrationMappingSelection.REQUIRED != header.getValueMapping();
+               REQUIRED != header.getValueMapping();
 
     }
 
@@ -1787,7 +1787,10 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
 
         public DependencyItem( final ExternalEntityHeader entityHeader  ) {
-            this( entityHeader, null, false );
+            this( entityHeader,
+                  OPTIONAL == entityHeader.getValueMapping() ? null :
+                  NONE == entityHeader.getValueMapping() || entityHeader.getMappedValue() != null,
+                  false );
         }
 
         public DependencyItem( final ExternalEntityHeader entityHeader,
