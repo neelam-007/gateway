@@ -15,7 +15,6 @@ import com.l7tech.server.mapping.MessageContextMappingManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
@@ -29,11 +28,8 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import java.sql.Connection;
@@ -74,7 +70,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
      * @throws FindException if failure to query database
      */
     @Override
-    @Transactional(readOnly=true)
+    @Transactional(propagation=Propagation.REQUIRED, readOnly=true)
     public Collection<MetricsSummaryBin> summarizeByPeriod(final String nodeId,
                                                            final long[] serviceOids,
                                                            final Integer resolution,
@@ -89,6 +85,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
     }
 
     @Override
+    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     public Map<Long, MetricsSummaryBin> summarizeByService(final String nodeId, final Integer resolution, final Long minPeriodStart, final Long maxPeriodStart, long[] serviceOids, boolean includeEmpty)
         throws FindException
     {
@@ -196,6 +193,7 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
      * @throws FindException if failure to query database
      */
     @Override
+    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     public MetricsSummaryBin summarizeLatest(final String clusterNodeId,
                                              final long[] serviceOids,
                                              final int resolution,
@@ -265,6 +263,8 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         return summaryBin;
     }
 
+    @Override
+    @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
     public ServiceState getCreatedOrUpdatedServiceState(long oid) throws FindException {
         final PublishedService service = _serviceManager.findByPrimaryKey(oid);
         return service == null ? ServiceState.DELETED :
@@ -272,28 +272,26 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
     }
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRED)
     public Integer delete(final long oldestSurvivor, final int resolution) {
-        return (Integer)new TransactionTemplate(_transactionManager).execute(new TransactionCallback() {
-            public Object doInTransaction(TransactionStatus status) {
-                return getHibernateTemplate().execute(new HibernateCallback() {
-                    public Object doInHibernate(Session session) throws HibernateException {
-                        Query query = session.createQuery(HQL_DELETE);
-                        query.setLong(0, oldestSurvivor);
-                        query.setInteger(1, resolution);
-                        return query.executeUpdate();
-                    }
-                });
+        return (Integer) getHibernateTemplate().execute(new HibernateCallback() {
+            public Object doInHibernate(Session session) throws HibernateException {
+                Query query = session.createQuery(HQL_DELETE);
+                query.setLong(0, oldestSurvivor);
+                query.setInteger(1, resolution);
+                return query.executeUpdate();
             }
         });
     }
 
     @Override
-    @Transactional(readOnly=true)
+    @Transactional(propagation=Propagation.REQUIRED, readOnly=true)
     public Collection<ServiceHeader> findAllServiceHeaders() throws FindException {
         return _serviceManager.findAllHeaders(false);
     }
 
     @Override
+    @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public void doFlush(final ServiceMetrics.MetricsCollectorSet metricsSet, final MetricsBin bin) {
         try {
             getHibernateTemplate().execute(new HibernateCallback() {
@@ -460,10 +458,14 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
     @Resource
     private IdentityProviderFactory identityProviderFactory;
 
+    @Override
+    @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public void createHourlyBin(final Long serviceOid, final ServiceState serviceState, final long startTime ) throws SaveException {
         createSummaryBin( serviceOid, serviceState, startTime, MetricsBin.RES_HOURLY, MetricsBin.RES_FINE );
     }
 
+    @Override
+    @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
     public void createDailyBin(final Long serviceOid, final ServiceState serviceState, final long startTime ) throws SaveException {
         createSummaryBin( serviceOid, serviceState, startTime, MetricsBin.RES_DAILY, MetricsBin.RES_HOURLY );
     }
@@ -473,79 +475,71 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
             getHibernateTemplate().execute(new HibernateCallback() {
                 @SuppressWarnings({"deprecation"})
                 public Object doInHibernate(final Session session) throws HibernateException {
-                    MetricsBin bin = new MetricsBin(startTime, services.getFineInterval(), binResolution, _clusterNodeId, serviceOid);
-                    Long id = (Long) ((SessionImplementor) session).getEntityPersister(null, bin).getIdentifierGenerator().generate(((SessionImplementor) session), bin);
+                    final MetricsBin bin = new MetricsBin(startTime, services.getFineInterval(), binResolution, _clusterNodeId, serviceOid);
+                    final Long id = (Long) ((SessionImplementor) session).getEntityPersister(null, bin).getIdentifierGenerator().generate(((SessionImplementor) session), bin);
 
-                    Connection connection = null;
-                    PreparedStatement statement = null;
-                    try {
-                        connection = session.connection();
-                        statement = connection.prepareStatement(SQL_INSERT_OR_UPDATE_BIN);
+                    session.doWork(new Work() {
+                        @Override
+                        public void execute(Connection connection) throws SQLException {
+                            PreparedStatement statement = null;
+                            try {
+                                statement = connection.prepareStatement(SQL_INSERT_OR_UPDATE_BIN);
 
-                        int i = 0;
-                        // INSERT PARAMS
-                        statement.setLong(++i, id);
-                        statement.setString(++i, _clusterNodeId);
-                        statement.setLong(++i, serviceOid);
-                        statement.setInt(++i, binResolution);
-                        statement.setLong(++i, startTime);
-                        statement.setInt(++i, bin.getInterval());
-                        if (serviceState == null)
-                            statement.setNull(++i, Types.VARCHAR);
-                        else
-                            statement.setString(++i, serviceState.toString());
+                                int i = 0;
+                                // INSERT PARAMS
+                                statement.setLong(++i, id);
+                                statement.setString(++i, _clusterNodeId);
+                                statement.setLong(++i, serviceOid);
+                                statement.setInt(++i, binResolution);
+                                statement.setLong(++i, startTime);
+                                statement.setInt(++i, bin.getInterval());
+                                if (serviceState == null)
+                                    statement.setNull(++i, Types.VARCHAR);
+                                else
+                                    statement.setString(++i, serviceState.toString());
 
-                        // FROM PARAMS
-                        statement.setString(++i, _clusterNodeId);
-                        statement.setLong(++i, serviceOid);
-                        statement.setInt(++i, summaryResolution);
-                        statement.setLong(++i, startTime);
-                        statement.setLong(++i, startTime + bin.getInterval());
+                                // FROM PARAMS
+                                statement.setString(++i, _clusterNodeId);
+                                statement.setLong(++i, serviceOid);
+                                statement.setInt(++i, summaryResolution);
+                                statement.setLong(++i, startTime);
+                                statement.setLong(++i, startTime + bin.getInterval());
 
-                        int result = statement.executeUpdate();
-                        statement.close();
-                        statement = null;
-                        _logger.log(Level.FINE, "Row count for inserting/updating summary bin is " + result + ".");
+                                int result = statement.executeUpdate();
+                                statement.close();
+                                statement = null;
+                                _logger.log(Level.FINE, "Row count for inserting/updating summary bin is " + result + ".");
 
+                                statement = connection.prepareStatement(SQL_INSERT_OR_UPDATE_DETAILS);
+                                i = 0;
 
-                        statement = connection.prepareStatement(SQL_INSERT_OR_UPDATE_DETAILS);
-                        i = 0;
+                                // INSERT BIN IDENTIFIER PARAMS
+                                statement.setString(++i, _clusterNodeId);
+                                statement.setLong(++i, serviceOid);
+                                statement.setInt(++i, binResolution);
+                                statement.setLong(++i, startTime);
 
-                        // INSERT BIN IDENTIFIER PARAMS
-                        statement.setString(++i, _clusterNodeId);
-                        statement.setLong(++i, serviceOid);
-                        statement.setInt(++i, binResolution);
-                        statement.setLong(++i, startTime);
+                                // SOURCE BIN ID PARAMS
+                                statement.setString(++i, _clusterNodeId);
+                                statement.setLong(++i, serviceOid);
+                                statement.setInt(++i, summaryResolution);
+                                statement.setLong(++i, startTime);
+                                statement.setLong(++i, startTime + bin.getInterval());
 
-                        // SOURCE BIN ID PARAMS
-                        statement.setString(++i, _clusterNodeId);
-                        statement.setLong(++i, serviceOid);
-                        statement.setInt(++i, summaryResolution);
-                        statement.setLong(++i, startTime);
-                        statement.setLong(++i, startTime + bin.getInterval());
-
-                        result = statement.executeUpdate();
-                        _logger.log(Level.FINE, "Row count for inserting/updating summary detail bins is " + result + ".");
-                    } catch (SQLException se) {
-                        //noinspection ThrowableInstanceNeverThrown
-                        throw new HibernateException(new SaveException("Error inserting/updating summary bin", se));
-                    } finally {
-                        ResourceUtils.closeQuietly(statement);
-                        ResourceUtils.closeQuietly(connection);
-                    }
+                                result = statement.executeUpdate();
+                                _logger.log(Level.FINE, "Row count for inserting/updating summary detail bins is " + result + ".");
+                            } finally {
+                                ResourceUtils.closeQuietly(statement);
+                            }
+                        }
+                    });
 
                     return null;
-                }
-            });
-        } catch (DataAccessException e) {
-            SaveException se = ExceptionUtils.getCauseIfCausedBy(e, SaveException.class);
-            if (se != null)
-                throw se;
-            else
-                throw new SaveException("Coudln't save summary bin", e);
+                }});
+        } catch (Exception e) {
+            throw new SaveException("Coudln't save metrics summary bin", e);
         }
     }
-
 
     private void saveDetails( final Session session, final Long id, final Map<ServiceMetrics.MetricsDetailKey,ServiceMetrics.MetricsCollector> detailMap ) {
         if ( detailMap != null ) {

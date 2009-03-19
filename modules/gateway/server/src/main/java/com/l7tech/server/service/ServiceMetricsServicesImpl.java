@@ -16,7 +16,6 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.util.TimeUnit;
-import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -35,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ServiceMetricsServicesImpl implements ServiceMetricsServices, ApplicationListener, PropertyChangeListener, DisposableBean {
+public class ServiceMetricsServicesImpl implements ServiceMetricsServices, ApplicationListener, PropertyChangeListener {
     private static final Logger logger = Logger.getLogger(ServiceMetricsServicesImpl.class.getName());
 
     public ServiceMetricsServicesImpl(String clusterNodeId) {
@@ -43,7 +42,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
     }
 
     @PostConstruct
-    public void start() throws Exception {
+    void start() throws Exception {
         int fineBinInterval = serverConfig.getIntProperty("metricsFineInterval", DEF_FINE_BIN_INTERVAL);
         if (fineBinInterval > MAX_FINE_BIN_INTERVAL || fineBinInterval < MIN_FINE_BIN_INTERVAL) {
             logger.warning(String.format("Configured metricsFineInterval %d is out of the valid range (%d-%d); using default %d", fineBinInterval, MIN_FINE_BIN_INTERVAL, MAX_FINE_BIN_INTERVAL, DEF_FINE_BIN_INTERVAL));
@@ -66,7 +65,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
     }
 
     @PreDestroy
-    public void destroy() throws Exception {
+    void destroy() throws Exception {
         disable();
     }
 
@@ -222,34 +221,38 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
 
             logger.info("Disabling service metrics collection.");
 
-            // Cancels the timer tasks; not the timer since we don't own it.
-            //
-            // (Bug 5244) After cancelling, we explicitly trigger the archiving of the current
-            // partial hourly and daily bins so that we don't lose any data. Note that upon
-            // restart/re-enabling we don't have to reinitialized memory from matching persisted
-            // partial bins because service metrics queries are always done against database,
-            // not from memory.
-            if (_fineArchiver != null) { _fineArchiver.cancel(); _fineArchiver = null; }
-            if (_hourlyArchiver != null) { _hourlyArchiver.cancel(); _hourlyArchiver.doRun(); _hourlyArchiver = null; }
-            if (_dailyArchiver != null) { _dailyArchiver.cancel(); _dailyArchiver.doRun(); _dailyArchiver = null; }
-            if (_fineDeleter != null) { _fineDeleter.cancel(); _fineDeleter = null; }
-            if (_hourlyDeleter != null) { _hourlyDeleter.cancel(); _hourlyDeleter = null; }
-            if (_dailyDeleter != null) { _dailyDeleter.cancel(); _dailyDeleter = null; }
+            try {
+                // Cancels the timer tasks; not the timer since we don't own it.
+                //
+                // (Bug 5244) After cancelling, we explicitly trigger the archiving of the current
+                // partial hourly and daily bins so that we don't lose any data. Note that upon
+                // restart/re-enabling we don't have to reinitialized memory from matching persisted
+                // partial bins because service metrics queries are always done against database,
+                // not from memory.
+                if (_fineArchiver != null) { _fineArchiver.cancel(); _fineArchiver = null; }
+                if (_hourlyArchiver != null) { _hourlyArchiver.cancel(); _hourlyArchiver.doRun(); _hourlyArchiver = null; }
+                if (_dailyArchiver != null) { _dailyArchiver.cancel(); _dailyArchiver.doRun(); _dailyArchiver = null; }
+                if (_fineDeleter != null) { _fineDeleter.cancel(); _fineDeleter = null; }
+                if (_hourlyDeleter != null) { _hourlyDeleter.cancel(); _hourlyDeleter = null; }
+                if (_dailyDeleter != null) { _dailyDeleter.cancel(); _dailyDeleter = null; }
 
-            if (_flusher != null) { _flusher.quit(); }
-            if (_flusherThread != null) { _flusherThread.interrupt(); _flusherThread = null; }
-            if (_flusher != null) {
-                try {
-                    // Runs the flusher one last time for the partial hourly and daily bins.
-                    // The flusher will merge similar partial bins already in database in the
-                    // event disabling happens several times within the clock hour/day.
-                    while (_flusherQueue.size() != 0) {
-                        _flusher.flush();
+                if (_flusher != null) { _flusher.quit(); }
+                if (_flusherThread != null) { _flusherThread.interrupt(); _flusherThread = null; }
+                if (_flusher != null) {
+                    try {
+                        // Runs the flusher one last time for the partial hourly and daily bins.
+                        // The flusher will merge similar partial bins already in database in the
+                        // event disabling happens several times within the clock hour/day.
+                        while (_flusherQueue.size() != 0) {
+                            _flusher.flush();
+                        }
+                    } catch (InterruptedException e) {
+                        logger.info("Final run of flusher interrupted.");
                     }
-                } catch (InterruptedException e) {
-                    logger.info("Final run of flusher interrupted.");
+                    _flusher = null;
                 }
-                _flusher = null;
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Caught exception while disabling ServiceMetrics collection", e);
             }
 
             synchronized(_serviceMetricsMapLock) {
@@ -522,7 +525,7 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
                         quit();
                     }
                 } catch (DataIntegrityViolationException e) {
-                    logger.log(Level.INFO, "Failed to save a MetricsBin due to constraint violation; likely clock skew");
+                    logger.log(Level.INFO, "Failed to save a MetricsBin due to constraint violation");
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "Couldn't save MetricsBin", e);
                 }
@@ -561,7 +564,6 @@ public class ServiceMetricsServicesImpl implements ServiceMetricsServices, Appli
         }
 
     }
-
 
     @Resource
     private ServiceMetricsManager serviceMetricsManager;
