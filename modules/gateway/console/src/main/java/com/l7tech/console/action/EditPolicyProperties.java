@@ -27,8 +27,11 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.util.logging.Level;
+import java.util.ArrayList;
+import java.util.Enumeration;
 
 /**
  * Action to edit the policy properties
@@ -91,9 +94,7 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
 
                             SwingUtilities.invokeLater(new Runnable() {
                                 public void run() {
-                                    RefreshTreeNodeAction refresh = new RefreshTreeNodeAction((RootNode)tree.getModel().getRoot());
-                                    refresh.setTree(tree);
-                                    refresh.invoke();
+                                    refreshTree(policyNode, tree);
                                 }
                             });
                         }
@@ -153,5 +154,51 @@ public class EditPolicyProperties extends EntityWithPolicyNodeAction<PolicyEntit
                 }
             }
         });
+    }
+
+    private void sortChildren(AbstractTreeNode node){
+        if(!(node instanceof FolderNode)){
+            return;
+        }
+
+        java.util.List<AbstractTreeNode> childNodes = new ArrayList<AbstractTreeNode>();
+        for(int i = 0; i < node.getChildCount(); i++){
+            AbstractTreeNode childNode = (AbstractTreeNode)node.getChildAt(i);
+            childNodes.add(childNode);
+            if(childNode instanceof FolderNode){
+                sortChildren(childNode);
+            }
+        }
+
+        //Detach all children
+        node.removeAllChildren();
+        for(AbstractTreeNode atn: childNodes){
+            node.insert(atn, node.getInsertPosition(atn, RootNode.getComparator()));
+        }
+    }
+
+    private void refreshTree(EntityWithPolicyNode policyNode, final JTree tree) {
+        try {
+            policyNode.updateUserObject();
+
+            TreePath rootPath = tree.getPathForRow(0);
+            final TreePath selectedNodeTreePath = tree.getSelectionPath();
+            final Enumeration pathEnum = tree.getExpandedDescendants(rootPath);
+
+            DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
+            RootNode rootNode = (RootNode) model.getRoot();
+            sortChildren(rootNode);
+            model.nodeStructureChanged(rootNode);
+
+            while (pathEnum.hasMoreElements()) {
+                Object pathObj = pathEnum.nextElement();
+                TreePath tp = (TreePath) pathObj;
+                tree.expandPath(tp);
+            }
+            tree.setSelectionPath(selectedNodeTreePath);
+
+        } catch (FindException fe) {
+            logger.info("Cannot the new policy to update policy node.");
+        }
     }
 }

@@ -8,6 +8,7 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
+import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
@@ -21,8 +22,10 @@ import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.util.logging.Level;
+import java.util.*;
 
 /**
  * Action to edit the published service properties
@@ -67,6 +70,7 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
         DialogDisplayer.display(dlg, new Runnable() {
             public void run() {
                 if (dlg.wasOKed()) {
+                    serviceNode.clearCachedEntities();
                     serviceNode.reloadChildren();
 
                     final ServicesAndPoliciesTree tree = (ServicesAndPoliciesTree) TopComponents.getInstance().getComponent(ServicesAndPoliciesTree.NAME);
@@ -83,9 +87,7 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
 
                             SwingUtilities.invokeLater(new Runnable() {
                                 public void run() {
-                                    RefreshTreeNodeAction refresh = new RefreshTreeNodeAction((RootNode)tree.getModel().getRoot());
-                                    refresh.setTree(tree);
-                                    refresh.invoke();
+                                    refreshTree(serviceNode, tree);
                                 }
                             });
                         }
@@ -116,5 +118,51 @@ public class EditServiceProperties extends EntityWithPolicyNodeAction<ServiceNod
                 serviceNode.clearCachedEntities();
             }
         });
+    }
+
+    private void sortChildren(AbstractTreeNode node){
+        if(!(node instanceof FolderNode)){
+            return;
+        }
+
+        java.util.List<AbstractTreeNode> childNodes = new ArrayList<AbstractTreeNode>();
+        for(int i = 0; i < node.getChildCount(); i++){
+            AbstractTreeNode childNode = (AbstractTreeNode)node.getChildAt(i);
+            childNodes.add(childNode);
+            if(childNode instanceof FolderNode){
+                sortChildren(childNode);
+            }
+        }
+
+        //Detach all children
+        node.removeAllChildren();
+        for(AbstractTreeNode atn: childNodes){
+            node.insert(atn, node.getInsertPosition(atn, RootNode.getComparator()));
+        }
+    }
+
+    private void refreshTree(EntityWithPolicyNode serviceNode, final JTree tree) {
+        try {
+            serviceNode.updateUserObject();
+
+            TreePath rootPath = tree.getPathForRow(0);
+            final TreePath selectedNodeTreePath = tree.getSelectionPath();
+            final Enumeration pathEnum = tree.getExpandedDescendants(rootPath);
+
+            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+            RootNode rootNode = (RootNode) model.getRoot();
+            sortChildren(rootNode);
+            model.nodeStructureChanged(rootNode);
+
+            while (pathEnum.hasMoreElements()) {
+                Object pathObj = pathEnum.nextElement();
+                TreePath tp = (TreePath) pathObj;
+                tree.expandPath(tp);
+            }
+            tree.setSelectionPath(selectedNodeTreePath);
+
+        } catch (FindException fe) {
+            logger.info("Cannot the new service to update service node.");
+        }
     }
 }
