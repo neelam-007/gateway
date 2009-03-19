@@ -201,7 +201,7 @@ public class RuntimeDocUtilities {
                 if (i != keys.size() - 1) sb.append(", ");
                 else sb.append(" and ");
             }
-            sb.append(TextUtils.truncStringMiddleExact(mappingKey, truncateKeyMaxValue));
+            sb.append(escapeJavaSringLiteralChars(TextUtils.truncStringMiddleExact(mappingKey, truncateKeyMaxValue)));
         }
         return sb.toString();
     }
