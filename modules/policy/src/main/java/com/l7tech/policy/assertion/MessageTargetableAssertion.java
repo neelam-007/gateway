@@ -33,9 +33,9 @@ public abstract class MessageTargetableAssertion extends Assertion implements Me
     public String getTargetName() {
         switch(target) {
             case REQUEST:
-                return "request";
+                return "Request";
             case RESPONSE:
-                return "response";
+                return "Response";
             case OTHER:
                 return "${" + otherTargetMessageVariable + "}";
             default:
