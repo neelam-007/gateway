@@ -203,12 +203,10 @@
             initEntityTreeTable();
             initDialogs();
         }
-
-        YAHOO.util.Event.onDOMReady(init);
     </script>
     </wicket:head>
 </head>
-<body class="dataIFrame yui-skin-sam">
+<body class="dataIFrame yui-skin-sam" onload="init();">
 <table class="dataTable" width="100%">
     <thead>
         <tr>

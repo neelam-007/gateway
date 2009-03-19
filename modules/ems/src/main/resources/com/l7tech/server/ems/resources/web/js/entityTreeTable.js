@@ -135,8 +135,8 @@ if (!l7.EntityTreeTable) {
          * @return {l7.EntityTreeTable} an l7.EntityTreeTable instance or null if error
          */
         l7.EntityTreeTable = function(tbody, entities, imgFolder, config) {
-            if (tbody == null || tbody.nodeName == undefined || tbody.nodeName.toLowerCase() != 'tbody') {
-                YAHOO.log('Cannot instantiate EntityTreeTable: tbody must be an HTMLTableSectionElement', 'error', 'l7.EntityTreeTable constructor');
+            if (tbody == undefined || tbody == null || tbody.nodeName == undefined || tbody.nodeName.toLowerCase() != 'tbody') {
+                YAHOO.log('Cannot instantiate EntityTreeTable: tbody must be an HTMLTableSectionElement: tbody = ' + tbody, 'error', 'l7.EntityTreeTable constructor');
                 return;
             }
             if (!(entities instanceof Array)) {
