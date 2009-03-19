@@ -204,6 +204,7 @@ public class NodeConfigurationManager {
         try {
             origFos = new FileOutputStream( nodeProperties );
             props.save(origFos);
+            nodeProperties.setReadable(true, false);
         } catch (ConfigurationException ce) {
             throw new CausedIOException("Error writing properties file '"+nodeProperties.getAbsolutePath()+"'.", ce);
         } catch (FileNotFoundException e) {

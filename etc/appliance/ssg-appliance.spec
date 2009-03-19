@@ -98,7 +98,7 @@ sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf
 %attr(0555,layer7,layer7) /opt/SecureSpan/Gateway/runtime/etc/profile.d/*.sh
 
 # Gateway process controller
-%defattr(0644,layer7,layer7,0755)
+%defattr(0640,layer7,layer7,0750)
 %dir /opt/SecureSpan/Appliance/controller
 %config /opt/SecureSpan/Appliance/controller/etc/conf
 /opt/SecureSpan/Appliance/controller/var

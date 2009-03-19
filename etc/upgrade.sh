@@ -273,9 +273,9 @@ if [ ! -z "${JAVA_PROFILE}" ] ; then
 fi
 
 echo "Setting permissions on modified files"
-setPermissions "${INSTALL_DIR}/node/default/etc/conf" "layer7:layer7" 644
-setPermissions "${INSTALL_DIR}/node/default/var" "gateway:gateway" 664
-setPermissions "${INSTALL_DIR}/node/default/var/logs" "gateway:gateway" 664
-setPermissions "${INSTALL_DIR}/node/default/var/upgrade" "gateway:gateway" 664
+setPermissions "${INSTALL_DIR}/node/default/etc/conf" "layer7:gateway" 640
+setPermissions "${INSTALL_DIR}/node/default/var" "gateway:gateway" 660
+setPermissions "${INSTALL_DIR}/node/default/var/logs" "gateway:gateway" 660
+setPermissions "${INSTALL_DIR}/node/default/var/upgrade" "gateway:gateway" 660
 
 echo "Upgrade completed at $(date)"

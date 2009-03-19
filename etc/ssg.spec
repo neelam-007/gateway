@@ -36,7 +36,7 @@ rm -fr %{buildroot}
 %dir /opt/SecureSpan/Gateway
 
 # Group writable config files
-%defattr(0644,layer7,layer7,0755)
+%defattr(0640,layer7,gateway,0750)
 %dir /opt/SecureSpan/Gateway/node
 %dir /opt/SecureSpan/Gateway/node/default
 %dir /opt/SecureSpan/Gateway/runtime
@@ -112,7 +112,7 @@ fi
 
 # Chown any files that have been left behind by a previous installation
 [ ! -d %{prefix}/config ] || chown -R layer7.layer7 %{prefix}/config
-[ ! -d %{prefix}/node/default/etc/conf ] || chown -R layer7.layer7 %{prefix}/node/default/etc/conf
+[ ! -d %{prefix}/node/default/etc/conf ] || chown -R layer7.gateway %{prefix}/node/default/etc/conf
 [ ! -d %{prefix}/node/default/var ] || chown -R gateway.gateway %{prefix}/node/default/var
 
 %post

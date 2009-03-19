@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #set the current working directory to where this script lives
-umask 0002
+umask 0007
 whereami=$0
 cd `dirname $whereami`
 
