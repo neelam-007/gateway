@@ -17,6 +17,7 @@ import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.management.NodeStateType;
+import com.l7tech.objectmodel.FindException;
 
 import java.io.IOException;
 import java.io.File;
@@ -56,7 +57,8 @@ public class Main {
 
         if ( args.length > 0 && args[0].equals("-lifecycle") ) {
             if ( args.length > 1 ) {
-                doGatewayControl( args[1] );
+                int resultCode = doGatewayControl( args[1] );
+                System.exit(resultCode);
             }
         } else {
             ConfigurationType type = getConfigurationType(configurationTypes, typeName);
@@ -126,60 +128,87 @@ public class Main {
     private static final String PROP_NODE_PROPS = "com.l7tech.server.config.nodePropsPath";
     private static final String DEFAULT_NODE_PROPS = "../node/default/etc/conf/node.properties";
 
-    private static void doGatewayControl( String command ) {
+    private static int doGatewayControl( String command ) {
         NodeManagementApiFactory nodeManagementApiFactory = new NodeManagementApiFactory( pcUrl );
 
         try {
             if ( command.equals("start") ) {
                 nodeManagementApiFactory.getManagementService().startNode("default");
                 System.out.println("Start requested.");
+                return 0;
             } else if ( command.equals("stop") ) {
                 nodeManagementApiFactory.getManagementService().stopNode("default", 20000);
                 System.out.println("Stop requested.");
+                return 0;
+            } else if ( command.equals("ensureStopped") ) {
+                final NodeStateType state = getNodeState(nodeManagementApiFactory);
+                if (state == null || state == NodeStateType.STOPPED)
+                    return 0;
+                return stopNodeAndWait(nodeManagementApiFactory, false) ? 0 : 77;
             } else if ( command.equals("restart") ) {
-                NodeManagementApi nma = nodeManagementApiFactory.getManagementService();
-                nma.stopNode("default", 20000);
-                System.out.print("Stop requested, waiting for shutdown ");
-
-                for ( int i=0; i< 5; i++ ) {
-                    Thread.sleep( 1000 );
-                    System.out.print(".");
-                }
-
-                boolean handled = false;
-                loop:
-                for ( int i=0; i< 25; i++ ) {
-                    Thread.sleep( 1000 );
-                    System.out.print(".");
-
-                    Collection<NodeManagementApi.NodeHeader> config = nma.listNodes();
-                    for ( NodeManagementApi.NodeHeader header : config ) {
-                        if ( "default".equals( header.getName() ) ) {
-                            if ( header.getState() == NodeStateType.STOPPED) {
-                                handled = true;
-                                System.out.println( " stopped" );        
-
-                                nodeManagementApiFactory.getManagementService().startNode("default");
-                                System.out.println("Restart requested.");
-                                break loop;
-                            } else if ( header.getState() == NodeStateType.STOPPING) {
-                                continue loop;
-                            } else {
-                                handled = true;
-                                System.out.println( " shutdown failed." );
-                                break loop;
-                            }
-                        }
-                    }
-                }
-
-                if ( !handled ) {
-                    System.out.println( " shutdown timedout." );                            
-                }
+                return stopNodeAndWait(nodeManagementApiFactory, true) ? 0 : 77;
+            } else {
+                System.out.println("Unrecognized lifecycle command.");
+                return 80;
             }
         } catch ( Exception e ) {
             logger.log( Level.WARNING, "Exception during node control.", e );
+            return 79;
         }
+    }
+
+    private static NodeStateType getNodeState(NodeManagementApiFactory nodeManagementApiFactory) throws FindException {
+        NodeManagementApi nma = nodeManagementApiFactory.getManagementService();
+        Collection<NodeManagementApi.NodeHeader> config = nma.listNodes();
+        if (config != null) for (NodeManagementApi.NodeHeader nodeHeader : config) {
+            if ( "default".equals( nodeHeader.getName() ) )
+                return nodeHeader.getState();
+        }
+        return null;
+    }
+
+    private static boolean stopNodeAndWait(NodeManagementApiFactory nodeManagementApiFactory, boolean restart) throws FindException, InterruptedException, NodeManagementApi.StartupException {
+        NodeManagementApi nma = nodeManagementApiFactory.getManagementService();
+        nma.stopNode("default", 20000);
+        System.out.print("Stop requested, waiting for shutdown ");
+
+        for ( int i=0; i< 5; i++ ) {
+            Thread.sleep( 1000 );
+            System.out.print(".");
+        }
+
+        boolean handled = false;
+        loop:
+                for ( int i=0; i< 25; i++ ) {
+            Thread.sleep( 1000 );
+            System.out.print(".");
+
+                    Collection<NodeManagementApi.NodeHeader> config = nma.listNodes();
+            for ( NodeManagementApi.NodeHeader header : config ) {
+                if ( "default".equals( header.getName() ) ) {
+                    if ( header.getState() == NodeStateType.STOPPED) {
+                        handled = true;
+                        System.out.println( " stopped" );
+
+                        if (restart) {
+                            nodeManagementApiFactory.getManagementService().startNode("default");
+                            System.out.println("Restart requested.");
+                        }
+                        break loop;
+                    } else if ( header.getState() == NodeStateType.STOPPING) {
+                        continue loop;
+                    } else {
+                        handled = true;
+                        System.out.println( " shutdown failed." );
+                        break loop;
+                    }
+                }
+            }
+        }
+
+        if (!handled)
+            System.out.println( " shutdown timedout." );
+        return handled;
     }
 
     private static ConfigurationType getConfigurationType( final ConfigurationType[] types, final String name ) {

@@ -368,11 +368,24 @@ doInitializeHsm() {
     case $choice in
         1)
             clear;
-            confirmedMessage "This will initialize the HSM"
-            (${HSMCONFIG} -initializeHsm);;
+            confirmedMessage "This will stop the Gateway (if it is running) and then initialize the HSM"
+            (${CONFWIZARD} -lifecycle ensureStopped);
+            STOPRESULT=$?
+            if [ ${STOPRESULT} -eq 0 ]; then
+                (${HSMCONFIG} -initializeHsm)
+            else
+                printf "Unable to confirm that the Gateway is stopped (code=${STOPRESULT}).\nPlease reboot and try again."
+            fi;;
         2)
             clear;
-            doHsmMasterKeyRestore;;
+            confirmedMessage "This will stop the Gateway (if it is running),\nthen restore the master key (and reinitialize) the HSM"
+            (${CONFWIZARD} -lifecycle ensureStopped);
+            STOPRESULT=$?
+            if [ ${STOPRESULT} -eq 0 ]; then
+                (${HSMCONFIG} -restoreMasterKey)
+            else
+                printf "Unable to confirm that the Gateway is stopped (code=${STOPRESULT}).\nPlease reboot and try again."
+            fi;;
         x|X)
             clear;
             echo "The HSM will not be initialized";;
@@ -380,11 +393,6 @@ doInitializeHsm() {
             echo "$choice is not a valid selection";;
     esac
     confirmedMessage ""
-}
-
-doHsmMasterKeyRestore() {
-    confirmedMessage "This will restore the master key (and reinitialize) the HSM"
-    (${HSMCONFIG} -restoreMasterKey)
 }
 
 checkHsmStatus() {
