@@ -96,8 +96,21 @@ if [ "$(id -u)" != "$(id -u ${SSGUSER})" ] ; then
 fi
 
 # Helper functions
+pid_running() {
+  if [ -f "${GATEWAY_PID}" ] ; then (
+    PIDTEXT=`cat ${GATEWAY_PID}`;
+    PID=`printf "%d" ${PIDTEXT}`;
+    if [ ${PID} -eq 0 ]; then
+      return 1;
+    fi;
+    (ps -e -o pid | egrep -- "^ *${PID}$" >/dev/null);
+    return $?);
+  else
+    return 1;
+  fi}
+
 pid_exited() {
-  if [ -f "${GATEWAY_PID}" ]  && [ -d "/proc/$(< ${GATEWAY_PID})" ] ; then
+  if pid_running ; then
     return 1;
   else
     return 0;
@@ -109,7 +122,7 @@ wait_for_pid() {
   while [ $TRYCOUNT -lt 45 ]
   do
     if pid_exited; then
-      return 0 
+      return 0
     fi
     TRYCOUNT=`expr $TRYCOUNT + 1`
     sleep 1
@@ -120,7 +133,7 @@ wait_for_pid() {
 
 ensureNotRunning() {
     if [ ! -z "${GATEWAY_PID}" ]; then
-        if ! pid_exited ; then
+        if pid_running ; then
             echo "Gateway is already running."
             exit 33
         fi
