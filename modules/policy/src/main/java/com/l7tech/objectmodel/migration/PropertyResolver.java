@@ -24,7 +24,8 @@ public interface PropertyResolver {
         USERGROUP,
         VALUE_REFERENCE,
         SSGKEY,
-        SERVER_VARIABLE
+        SERVER_VARIABLE,
+        SCHEMA_ENTRY
     }
 
     /**
@@ -40,7 +41,7 @@ public interface PropertyResolver {
      * @param property the method for which the property value is retrieved
      * @param propertyName the property's name; normally the method's name, but can be different,
      *                     e.g. in the case where structured names are required
-     * @return a map with migration mappings as values, keyed on the (target) dependency header.
+     * @return a map with migration dependencies as values, keyed on the (target) dependency header.
      */
     public Map<ExternalEntityHeader, Set<MigrationDependency>> getDependencies(ExternalEntityHeader source, Object entity, final Method property, String propertyName)
         throws PropertyResolverException;

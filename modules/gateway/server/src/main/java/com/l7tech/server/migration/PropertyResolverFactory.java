@@ -14,7 +14,9 @@ import static com.l7tech.objectmodel.migration.PropertyResolver.Type.USERGROUP;
 import static com.l7tech.objectmodel.migration.PropertyResolver.Type.VALUE_REFERENCE;
 import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SSGKEY;
 import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SERVER_VARIABLE;
+import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SCHEMA_ENTRY;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.server.communityschemas.SchemaEntryManager;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.service.ServiceDocumentManager;
@@ -31,14 +33,17 @@ public class PropertyResolverFactory {
     private SsgKeyStoreManager keyManager;
     private ServiceDocumentManager serviceDocumentManager;
     private ClusterPropertyManager cpManager;
+    private SchemaEntryManager schemaManager;
 
     private Map<PropertyResolver.Type, PropertyResolver> registry = new HashMap<PropertyResolver.Type, PropertyResolver>();
 
-    public PropertyResolverFactory(EntityFinder entityFinder, ServiceDocumentManager serviceDocumentManager, SsgKeyStoreManager keyManager, ClusterPropertyManager cpManager) {
+    public PropertyResolverFactory(EntityFinder entityFinder, ServiceDocumentManager serviceDocumentManager, SsgKeyStoreManager keyManager,
+                                   ClusterPropertyManager cpManager, SchemaEntryManager schemaManager) {
         this.entityFinder = entityFinder;
         this.keyManager = keyManager;
         this.serviceDocumentManager = serviceDocumentManager;
         this.cpManager = cpManager;
+        this.schemaManager = schemaManager;
         initRegistry();
     }
 
@@ -64,6 +69,7 @@ public class PropertyResolverFactory {
         addToRegistry(new ValueReferencePropertyResolver(this, VALUE_REFERENCE));
         addToRegistry(new SsgKeyResolver(this, SSGKEY, keyManager));
         addToRegistry(new ServerVariablePropertyResolver(this, SERVER_VARIABLE, cpManager));
+        addToRegistry(new SchemaEntryPropertyResolver(this, SCHEMA_ENTRY, schemaManager));
     }
 
     private void addToRegistry(PropertyResolver resolver) {

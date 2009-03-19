@@ -58,6 +58,7 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
         this.applyToArguments = applyToArguments;
     }
 
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, mapValue = MigrationMappingSelection.NONE, resolver = PropertyResolver.Type.SCHEMA_ENTRY)
     public AssertionResourceInfo getResourceInfo() {
         return resourceInfo;
     }
