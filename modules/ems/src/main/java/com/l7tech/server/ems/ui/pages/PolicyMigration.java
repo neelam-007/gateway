@@ -1719,6 +1719,7 @@ public class PolicyMigration extends EsmStandardWebPage {
         private final String clusterId;
         private final com.l7tech.objectmodel.EntityType type;
         private final String id;
+        private final Integer version;
         private final String mappingKey;
         private final ExternalEntityHeader header;
 
@@ -1727,13 +1728,14 @@ public class PolicyMigration extends EsmStandardWebPage {
             this.clusterId = clusterId;
             this.type = header.getType();
             this.id = header.getExternalId();
-            this.header = header;
+            this.version = header.getVersion();
             this.mappingKey = header.getMappingKey();
+            this.header = header;
         }
 
         @Override
         public String toString() {
-            return "DependencyKey[clusterId='"+clusterId+"'; id='"+id+"'; type='"+type+"']";
+            return "DependencyKey[clusterId='"+clusterId+"'; id='"+id+"'; type='"+type+"'; version='" + version +"']";
         }
 
         @Override
@@ -1747,6 +1749,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             if (!clusterId.equals(that.clusterId)) return false;
             if (!id.equals(that.id)) return false;
             if (type != that.type) return false;
+            if (! version.equals(that.version)) return false;
             if (mappingKey != null ? !mappingKey.equals(that.mappingKey) : that.mappingKey != null) return false;
 
             return true;
@@ -1758,6 +1761,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             result = clusterId.hashCode();
             result = 31 * result + type.hashCode();
             result = 31 * result + id.hashCode();
+            result = 31 * result + version.hashCode();
             result = 31 * result + (mappingKey != null ? mappingKey.hashCode() : 0);
             return result;
         }
