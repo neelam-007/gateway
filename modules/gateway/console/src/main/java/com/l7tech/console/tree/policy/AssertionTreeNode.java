@@ -205,6 +205,7 @@ public abstract class AssertionTreeNode<AT extends Assertion> extends AbstractTr
                             .append("</b>")
                             .append(Syntax.SYNTAX_SUFFIX);
                         if (i < vars.length-1) sb.append(", ");
+                        if (i%3 == 2) sb.append("<br>");
                     }
                 }
             }
