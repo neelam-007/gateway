@@ -63,10 +63,10 @@ fi
 
 #
 if [ -z "${PC_USER}" ] ; then
-  "${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -Dcom.l7tech.server.processcontroller.hostPropertiesFile="$SSPC_HOME/etc/host.properties" -jar ${PC_JAR} &>/dev/null <&- &
+  "${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -jar ${PC_JAR} &>/dev/null <&- &
 else
   export JAVA_HOME SSPC_HOME PC_JAR PC_PIDTEMP
-  runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -Dcom.l7tech.server.processcontroller.hostPropertiesFile="$SSPC_HOME/etc/host.properties" -jar ${PC_JAR} &>/dev/null <&- & echo "${!}" > "${PC_PIDTEMP}"'
+  runuser "${PC_USER}" -c '"${JAVA_HOME}/bin/java" ${PC_JAVAOPT} -jar ${PC_JAR} &>/dev/null <&- & echo "${!}" > "${PC_PIDTEMP}"'
 fi
 
 if [ ${?} -eq 0 ] ; then
