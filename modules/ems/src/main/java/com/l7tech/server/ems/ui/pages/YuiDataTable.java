@@ -7,8 +7,8 @@ import org.apache.wicket.Component;
 import org.apache.wicket.IRequestTarget;
 import org.apache.wicket.Page;
 import org.apache.wicket.RequestCycle;
-import org.apache.wicket.ajax.AjaxRequestTarget;
-import org.apache.wicket.ajax.WicketAjaxReference;
+import org.apache.wicket.ajax.*;
+import org.apache.wicket.ajax.calldecorator.AjaxCallDecorator;
 import org.apache.wicket.behavior.AbstractAjaxBehavior;
 import org.apache.wicket.behavior.HeaderContributor;
 import org.apache.wicket.extensions.markup.html.repeater.data.sort.ISortState;
@@ -267,6 +267,23 @@ public class YuiDataTable extends Panel {
         if (selectionComponent != null && !selectionComponent.getOutputMarkupId()) {
             throw new IllegalArgumentException("Hidden component markup id must be output.");
         }
+
+        // Add an ajax event behavior to monitor failure such as session timeout, etc.
+        add( new AjaxEventBehavior("onmousedown"){
+            @Override
+            protected void onEvent( final AjaxRequestTarget target ) {
+                // No action here.
+            }
+
+            protected IAjaxCallDecorator getAjaxCallDecorator() {
+                return new AjaxCallDecorator(){
+                    @Override
+                    public CharSequence decorateOnFailureScript(final CharSequence script) {
+                        return "l7.Dialog.showErrorDialog(null,'Enterprise Service Manager server is not available.',null); " + script;
+                    }
+                };
+            }
+        });
 
         final AbstractAjaxBehavior callbackBehaviour = new AbstractAjaxBehavior(){
             @Override
