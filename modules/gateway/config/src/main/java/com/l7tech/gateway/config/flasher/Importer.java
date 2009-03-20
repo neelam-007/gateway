@@ -50,7 +50,7 @@ class Importer extends ImportExportUtility {
             "overwrite os level config files",
             false, true);
     public static final CommandLineOption CREATE_NEW_DB = new CommandLineOption("-newdb" ,"create new database");
-    public static final CommandLineOption OMIT_TABLES = new CommandLineOption("-otbls", "the file name which contains list of tables to exclude upon import");
+    public static final CommandLineOption OMIT_TABLES = new CommandLineOption("-migrate", "migrate from environment to environment using exclusion table file");
 
     public static final CommandLineOption CONFIG_ONLY = new CommandLineOption("-config", "only restore configuration files, no database restore", false, true);
     public static final CommandLineOption CLUSTER_PASSPHRASE = new CommandLineOption("-cp", "the cluster passphrase for the (resulting) database");
