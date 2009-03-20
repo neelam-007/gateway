@@ -75,7 +75,8 @@ public class EsmSecurityFilter implements Filter {
                         logger.info("Forbid access to resource : '" + httpServletRequest.getRequestURI() + "'." );
                         if ( "GET".equals(httpServletRequest.getMethod()) && httpServletRequest.getRequestURI().equals("/")) {
                             servletContext.getNamedDispatcher("sessionServlet").forward( servletRequest, servletResponse );
-                        } else if ("POST".equals(httpServletRequest.getMethod()) && httpServletRequest.getHeader("Wicket-Ajax") != null) {
+                        } else if ( ("POST".equals(httpServletRequest.getMethod()) || "GET".equals(httpServletRequest.getMethod()))
+                            && httpServletRequest.getHeader("Wicket-Ajax") != null) {
                             sendAjaxSessionTimeout(httpServletResponse);
                         } else {
                             httpServletResponse.sendRedirect( getRedirectUrl( httpServletRequest, "/" ) );
