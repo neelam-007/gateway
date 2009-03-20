@@ -258,11 +258,11 @@ public class MigrationMetadata implements Serializable {
         }
     }
 
-    public Set<ExternalEntityHeader> getMappableDependencies() {
-        Set<ExternalEntityHeader> result = new HashSet<ExternalEntityHeader>();
+    public Set<MigrationDependency> getMappableDependencies() {
+        Set<MigrationDependency> result = new HashSet<MigrationDependency>();
         for(MigrationDependency dep : dependencies) {
             if (dep.getMappingType() != NONE || dep.getDependency().isValueMappable())
-                result.add(dep.getDependency());
+                result.add(dep);
         }
         return result;
     }

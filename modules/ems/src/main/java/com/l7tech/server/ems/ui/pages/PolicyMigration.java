@@ -2,6 +2,7 @@ package com.l7tech.server.ems.ui.pages;
 
 import com.l7tech.objectmodel.*;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.*;
+import com.l7tech.objectmodel.migration.MigrationDependency;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.*;
 import com.l7tech.server.ems.migration.*;
@@ -1089,8 +1090,8 @@ public class PolicyMigration extends EsmStandardWebPage {
                 GatewayClusterClient context = gatewayClusterClientManager.getGatewayClusterClient(cluster, getUser());
                 MigrationApi api = context.getUncachedMigrationApi();
                 MigrationMetadata metadata = api.findDependencies( request.asEntityHeaders() );
-                for (ExternalEntityHeader header : metadata.getMappableDependencies()) {
-                    deps.add( new DependencyItem( header, metadata.isMappingRequired(header) ? isResolved( mappingModel, header, request.clusterId, targetClusterId ) : null ) );
+                for (MigrationDependency dep : metadata.getMappableDependencies()) {
+                    deps.add( new DependencyItem( dep.getDependency(), metadata.isMappingRequired(dep.getDependency()) ? isResolved( mappingModel, dep.getDependency(), request.clusterId, targetClusterId ) : null ) );
                 }
 
                 for (ExternalEntityHeader header : metadata.getAllHeaders() ) {
@@ -1523,8 +1524,8 @@ public class PolicyMigration extends EsmStandardWebPage {
                                     mapping.getValue().same);
                         }
                     }
-                    for ( ExternalEntityHeader eeh : metadata.getMappableDependencies() ) {
-                        Collection<ExternalEntityHeader> persistenceHeaders = mappingModel.updateMappedValues( sourceClusterId, targetClusterId, eeh );
+                    for ( MigrationDependency dep : metadata.getMappableDependencies() ) {
+                        Collection<ExternalEntityHeader> persistenceHeaders = mappingModel.updateMappedValues( sourceClusterId, targetClusterId, dep );
                         for ( ExternalEntityHeader pHeader : persistenceHeaders ) {
                             migrationMappingRecordManager.persistMapping( sourceCluster.getGuid(), pHeader, targetCluster.getGuid(), pHeader.getMappedValue() );
                         }
@@ -1961,10 +1962,11 @@ public class PolicyMigration extends EsmStandardWebPage {
          */
         public Collection<ExternalEntityHeader> updateMappedValues(final String sourceClusterId,
                                                                    final String targetClusterId,
-                                                                   final ExternalEntityHeader eeh) {
+                                                                   final MigrationDependency dep) {
 
             Collection<ExternalEntityHeader> pHeaders = new LinkedHashSet<ExternalEntityHeader>();
 
+            ExternalEntityHeader eeh = dep.getDependency();
             if (eeh.isValueMappable()) {
 
                 ExternalEntityHeader.ValueType valueType = eeh.getValueType();
