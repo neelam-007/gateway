@@ -107,7 +107,8 @@ pid_running() {
     return $?);
   else
     return 1;
-  fi}
+  fi
+}
 
 pid_exited() {
   if pid_running ; then
