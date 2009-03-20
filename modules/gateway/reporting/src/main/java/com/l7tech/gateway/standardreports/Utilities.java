@@ -24,7 +24,7 @@ import com.l7tech.gateway.common.mapping.MessageContextMapping;
 
 public class Utilities {
 
-    public static final String REPORT_DISPLAY_DATE_STRING = "MMM dd, yyyy HH:mm";
+    private static final String REPORT_DISPLAY_DATE_STRING = "MMM dd, yyyy HH:mm";
     public static final String DATE_STRING = "yyyy/MM/dd HH:mm";
     private static final String HOUR_DATE_STRING = "HH:mm";
     private static final String DAY_HOUR_DATE_STRING = "MM/dd HH:mm";
@@ -41,21 +41,15 @@ public class Utilities {
      * The ';' character is used as a placeholder for sql column values, primiarly because no operation name of
      * value ';' is valid in a wsdl.
      */
-    public static final String SQL_PLACE_HOLDER = ";";
-    public static final String TOP_LEFT_BOTTOM_CENTER_GREY = "TopLeftBottomCenterGrey";
-    public static final String TOP_LEFT_GREY_CENTER = "TopLeftGreyCenter";
-    public static final String ALL_BORDERS_GREY_CENTER = "AllBordersGreyCenter";
-    public static final String TOP_LEFT_RIGHT_GREY_CENTER = "TopLeftRightGreyCenter";
-    public static final String TOP_LEFT_BOTTOM_CENTER_BROWN = "TopLeftBottomCenterBrown";
-    public static final String ALL_BORDERS_OPAQUE_CENTER_BROWN = "AllBordersOpaqueCenterBrown";
+    static final String SQL_PLACE_HOLDER = ";";
 
     private static final Logger logger = Logger.getLogger(Utilities.class.getName());
     private static final long HOUR_IN_MILLISECONDS = 3600000L;
     private static final long DAY_IN_MILLISECONDS = 86400000L;
     private static final long WEEK_IN_MILLISECONDS = 604800000L;
     private static final long MONTH_32DAYS_IN_MILLISECONDS = 2764800000L;
-    public static final Integer USAGE_HEADING_VALUE_MAX_SIZE = 30;
     public static final Integer MAPPING_KEY_MAX_SIZE = 100;
+    public static final Integer USAGE_HEADING_VALUE_MAX_SIZE = 30;
 
     public static enum UNIT_OF_TIME {
         HOUR, DAY, WEEK, MONTH
@@ -72,30 +66,30 @@ public class Utilities {
 
 
     public static final int NUM_MAPPING_KEYS = 5;
-    public static final String AUTHENTICATED_USER_DISPLAY = "Authenticated User";
+    static final String AUTHENTICATED_USER_DISPLAY = "Authenticated User";
 
     //SQL select fields
-    public static final String SERVICE_ID = "SERVICE_ID";
+    static final String SERVICE_ID = "SERVICE_ID";
     public static final String SERVICE_NAME = "SERVICE_NAME";
     public static final String ROUTING_URI = "ROUTING_URI";
-    public static final String THROUGHPUT = "THROUGHPUT";
-    public static final String POLICY_VIOLATIONS = "POLICY_VIOLATIONS";
-    public static final String ROUTING_FAILURES = "ROUTING_FAILURES";
-    public static final String FRTM = "FRTM";
-    public static final String FRTMX = "FRTMX";
-    public static final String FRTA = "FRTA";
-    public static final String BRTM = "BRTM";
-    public static final String BRTMX = "BRTMX";
-    public static final String AP = "AP";
+    static final String THROUGHPUT = "THROUGHPUT";
+    static final String POLICY_VIOLATIONS = "POLICY_VIOLATIONS";
+    static final String ROUTING_FAILURES = "ROUTING_FAILURES";
+    static final String FRTM = "FRTM";
+    static final String FRTMX = "FRTMX";
+    static final String FRTA = "FRTA";
+    static final String BRTM = "BRTM";
+    static final String BRTMX = "BRTMX";
+    static final String AP = "AP";
 
-    public static final String CONSTANT_GROUP = "CONSTANT_GROUP";
+    static final String CONSTANT_GROUP = "CONSTANT_GROUP";
     public static final String AUTHENTICATED_USER = "AUTHENTICATED_USER";
-    public static final String SERVICE_OPERATION_VALUE = "SERVICE_OPERATION_VALUE";
-    public static final String MAPPING_VALUE_1 = "MAPPING_VALUE_1";
-    public static final String MAPPING_VALUE_2 = "MAPPING_VALUE_2";
-    public static final String MAPPING_VALUE_3 = "MAPPING_VALUE_3";
-    public static final String MAPPING_VALUE_4 = "MAPPING_VALUE_4";
-    public static final String MAPPING_VALUE_5 = "MAPPING_VALUE_5";
+    static final String SERVICE_OPERATION_VALUE = "SERVICE_OPERATION_VALUE";
+    static final String MAPPING_VALUE_1 = "MAPPING_VALUE_1";
+    static final String MAPPING_VALUE_2 = "MAPPING_VALUE_2";
+    static final String MAPPING_VALUE_3 = "MAPPING_VALUE_3";
+    static final String MAPPING_VALUE_4 = "MAPPING_VALUE_4";
+    static final String MAPPING_VALUE_5 = "MAPPING_VALUE_5";
 
     private final static String distinctFrom = "SELECT distinct p.objectid as SERVICE_ID, p.name as SERVICE_NAME, " +
             "p.routing_uri as ROUTING_URI ,'1' as CONSTANT_GROUP";
@@ -130,35 +124,8 @@ public class Utilities {
     private final static String noMappingJoin = " FROM service_metrics sm, published_service p WHERE " +
             "p.objectid = sm.published_service_oid ";
 
-    public final static String onlyIsDetailDisplayText = "Detail Report";
+    final static String onlyIsDetailDisplayText = "Detail Report";
 
-    public final static String VARIABLES = "variables";
-    public final static String VARIABLE = "variable";
-
-    public final static String CONSTANT_HEADER = "constantHeader";
-    public static final String COLUMN_WIDTH = "columnWidth";
-    public static final String PAGE_WIDTH = "pageWidth";
-    public static final String FRAME_WIDTH = "frameWidth";
-    public static final String SERVICE_AND_OPERATION_FOOTER = "serviceAndOperationFooter";
-    public static final String SERVICE_ID_FOOTER = "serviceIdFooter";
-    public static final String CONSTANT_FOOTER = "constantFooter";
-    public static final String LEFT_MARGIN = "leftMargin";
-    public static final String RIGHT_MARGIN = "rightMargin";
-    public static final int FIELD_HEIGHT = 18;
-    public static final int RIGHT_MARGIN_WIDTH = 15;
-    public static final int LEFT_MARGIN_WIDTH = RIGHT_MARGIN_WIDTH;
-    public static final int TOTAL_COLUMN_WIDTH = 80;
-    public static final int DATA_COLUMN_WIDTH = 160;
-    public static final String SERVICE_HEADER = "serviceHeader";
-    public static final String SUB_REPORT = "subReport";
-    public static final String RETURN_VALUE = "returnValue";
-    public static final String SUMMARY = "summary";
-    public static final String NO_DATA = "noData";
-    public static final int SUB_INTERVAL_STATIC_WIDTH = 113;
-    public static final int MAPPING_VALUE_FIELD_HEIGHT = 36;
-    //service text field is 5 from left margin
-    public static final int CONSTANT_HEADER_START_X = 113;
-    public static final int SERVICE_HEADER_X_POS = 50;
 
     /**
      * Relative time is calculated from a fixed point of time in the past depending on the unit of time supplied.
@@ -718,8 +685,8 @@ public class Utilities {
      * @return sql string, ready to be ran against a database. This sql query will ALWAYS produce the following columns
      *         of data:
      *         <pre>
-     *                                                                         AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                                         </pre>
+     *                                                                                 AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                                                                                 </pre>
      *         Note operation is not included. It is a mapping key under the covers but it has special meaning. Notice how
      *         authenticated_user is returned. To the user and to business logic, authenticated user is a normal mapping key
      */
@@ -804,8 +771,8 @@ public class Utilities {
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
      * @return a valid sql string ready to be ran against a database. The sql will always produce the following fields:-
      *         <pre>
-     *                                                                                                                                                                                                         SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
-     *                                                                                                                                                                                                         </pre>
+     *                                                                                                                                                                                                                 SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
+     *                                                                                                                                                                                                                 </pre>
      */
     public static String getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                      Map<String, Set<String>> serviceIdToOperations,
@@ -888,9 +855,9 @@ public class Utilities {
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
      * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
      *         <pre>
-     *                                                                                                 SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                                                                                                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                                                                 </pre>
+     *                                                                                                         SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                                                                                                         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                                                                                                         </pre>
      */
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                        Map<String, Set<String>> serviceIdToOperations,
@@ -993,9 +960,9 @@ public class Utilities {
      * @param operation               the operation, if isDetail is true, that we want usage data for
      * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
      *         <pre>
-     *                                                                                                                                                                                                          SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                                                                                                                                                                                                         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                                                                                                                                                                         </pre>
+     *                                                                                                                                                                                                                  SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                                                                                                                                                                                                                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                                                                                                                                                                                                                 </pre>
      */
     public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                        Long serviceId,

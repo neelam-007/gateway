@@ -114,7 +114,7 @@ public class ReportTransformTests {
         valueList.add("GOLD");
         distinctMappingSets.add(valueList);
 
-        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageRuntimeTransform.jrxml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);
@@ -162,7 +162,7 @@ public class ReportTransformTests {
         valueList.add("127.0.0.1");
         distinctMappingSets.add(valueList);
 
-        Document transformDoc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document transformDoc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/UsageReportTransform.xsl");
         String xmlFileName = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_Summary_Template.jrxml");
         Map<String, Object> params = new HashMap<String, Object>();
@@ -227,7 +227,7 @@ public class ReportTransformTests {
         String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/UsageReportIntervalTransform_Master.xsl");
         String xmlSrc = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_IntervalMasterReport_Template.jrxml");
 
-        Document transformDoc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document transformDoc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("FrameMinWidth", 535);
@@ -283,7 +283,7 @@ public class ReportTransformTests {
         distinctMappingSets.add(valueList);
         distinctMappingSets.add(valueList);
 
-        Document transformDoc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document transformDoc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
 
         File f = new File("/home/darmstrong/ideaprojects/UneasyRoosterModular/modules/skunkworks/src/main/java/com/l7tech/standardreports/UsageTestMasterTransformDoc.xml");
         f.createNewFile();
@@ -337,7 +337,7 @@ public class ReportTransformTests {
         String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/UsageReportSubIntervalTransform_Master.xsl");
         String xmlSrc = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
 
-        Document transformDoc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
+        Document transformDoc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets).getDocument();
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 535);
@@ -378,7 +378,7 @@ public class ReportTransformTests {
         String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/UsageReportSubIntervalTransform_Master.xsl");
         String xmlSrc = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_SubIntervalMasterReport_Template.jrxml");
 
-        Document transformDoc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
+        Document transformDoc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets).getDocument();
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 535);
@@ -406,7 +406,7 @@ public class ReportTransformTests {
         String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_SubReport.xsl");
         String xmlSrc = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
 
-        Document transformDoc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
+        Document transformDoc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets).getDocument();
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 535);
@@ -446,7 +446,7 @@ public class ReportTransformTests {
         String xslStr = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_SubReport.xsl");
         String xmlSrc = getResAsString("modules/gateway/reporting/src/main/resources/com/l7tech/gateway/standardreports/Usage_SubIntervalMasterReport_subreport0_Template.jrxml");
 
-        Document transformDoc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
+        Document transformDoc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets).getDocument();
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("RuntimeDoc", transformDoc);
         params.put("PageMinWidth", 535);
@@ -487,7 +487,7 @@ public class ReportTransformTests {
         l4.add("GOLD");
         distinctMappingSets.add(l4);
 
-        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilters, distinctMappingSets);
+        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilters, distinctMappingSets).getDocument();
         Assert.assertTrue(transformDoc != null);
 
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/PerfStatIntervalMastereRuntimeDoc.xml");
@@ -534,7 +534,7 @@ public class ReportTransformTests {
         linkedHashMap.put("Service 3", "Warehouse [w3]");
         linkedHashMap.put("Service 4", "Warehouse [w4]");
 
-        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(linkedHashMap);
+        Document transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(linkedHashMap).getDocument();
         Assert.assertTrue(transformDoc != null);
 
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/PerfStatIntervalRuntimeDoc.xml");

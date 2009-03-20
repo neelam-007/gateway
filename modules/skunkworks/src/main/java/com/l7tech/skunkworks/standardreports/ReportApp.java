@@ -376,7 +376,7 @@ public class ReportApp {
         helper.setIndexToGroupMap(groupIndexToGroup);
 
         //Master report first
-        Document transformDoc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document transformDoc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
 
         File f = new File(SKUNKWORK_RELATIVE_PATH + "/UsageMasterTransformDoc.xml");
         f.createNewFile();
@@ -408,7 +408,7 @@ public class ReportApp {
         }
 
         //MasterSubInterval report
-        transformDoc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
+        transformDoc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets).getDocument();
         f = new File(SKUNKWORK_RELATIVE_PATH + "/UsageSubIntervalTransformDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
@@ -437,7 +437,7 @@ public class ReportApp {
         }
 
         //subreport report
-        transformDoc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
+        transformDoc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets).getDocument();
         f = new File(SKUNKWORK_RELATIVE_PATH + "/UsageSubReportTransformDoc.xml");
         f.createNewFile();
         fos = new FileOutputStream(f);
@@ -530,7 +530,7 @@ public class ReportApp {
                 index++;
             }
 
-            transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+            transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         } else {
             LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sql);
             //We need to look up the mappingValues from both the group value and also the display string value
@@ -542,7 +542,7 @@ public class ReportApp {
                 displayStringToGroup.put(s, service);
                 index++;
             }
-            transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(groupToDisplayString);
+            transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(groupToDisplayString).getDocument();
         }
 
         //Set the parameter IS_USING_KEYS to let chart know if operation is being used alone, to make some display changes
@@ -634,7 +634,7 @@ public class ReportApp {
                 index++;
             }
 
-            transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+            transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         } else {
             LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sql);
             //We need to look up the mappingValues from both the group value and also the display string value
@@ -646,7 +646,7 @@ public class ReportApp {
                 displayStringToGroup.put(s, service);
                 index++;
             }
-            transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(groupToDisplayString);
+            transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(groupToDisplayString).getDocument();
         }
 
         parameters.put(IS_USING_KEYS, isUsingKeys);
@@ -722,7 +722,7 @@ public class ReportApp {
         LinkedHashMap<String, String> displayStringToGroup = Utilities.getLegendDisplayStringToGroupMap(mappingValuesLegend);
         parameters.put(DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
 
-        Document transformDoc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document transformDoc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         File f = new File(SKUNKWORK_RELATIVE_PATH + "/UsageTransformDoc.xml");
         f.createNewFile();
         FileOutputStream fos = new FileOutputStream(f);

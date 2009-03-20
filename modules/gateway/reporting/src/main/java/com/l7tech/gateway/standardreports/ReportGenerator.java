@@ -421,7 +421,7 @@ public class ReportGenerator {
     @SuppressWarnings({"unchecked"})
     private Document getRuntimeDocument(final ReportTemplate template,
                                         final Map<String, Object> reportParameters) {
-        Document runtimeDocument = null;
+        JasperDocument runtimeDocument = null;
 
         LinkedHashSet<List<String>> distinctMappingSets =
                 (LinkedHashSet<List<String>>) reportParameters.get(ReportApi.ReportParameters.DISTINCT_MAPPING_SETS);
@@ -443,7 +443,7 @@ public class ReportGenerator {
                         RuntimeDocUtilities.getPerfStatAnyRuntimeDoc((LinkedHashMap<String, String>)
                                 reportParameters.get(ReportApi.ReportParameters.MAPPING_GROUP_TO_DISPLAY_STRING));
             }
-            return runtimeDocument;
+            return runtimeDocument.getDocument();
         }
 
         ReportApi.ReportType templateType = template.getType();
@@ -462,7 +462,7 @@ public class ReportGenerator {
             runtimeDocument = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
         }
 
-        return runtimeDocument;
+        return runtimeDocument.getDocument();
     }
 
     /**

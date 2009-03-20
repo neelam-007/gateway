@@ -6,35 +6,31 @@
  */
 package com.l7tech.gateway.standardreports;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.Element;
-import org.w3c.dom.CDATASection;
-
 import java.util.*;
 
-import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.util.TextUtils;
 
 public class RuntimeDocUtilities {
-    public static final String DEFAULT_CENTER_ALIGNED = "DefaultCenterAligned";
-    private static final String SUB_REPORT_WIDTH = "subReportWidth";
-    private static final String IS_CONTEXT_MAPPING = "isContextMapping";
-    private static final String CHART_LEGEND = "chartLegend";
-    private static final String CHART_HEIGHT = "chartHeight";
-    private static final String CHART_LEGEND_FRAME_YPOS = "chartLegendFrameYPos";
-    private static final String CHART_LEGEND_HEIGHT = "chartLegendHeight";
-    private static final String BAND_HEIGHT = "bandHeight";
-    private static final String CHART_FRAME_HEIGHT = "chartFrameHeight";
-    private static final String PAGE_HEIGHT = "pageHeight";
-    private static final String CHART_ELEMENT = "chartElement";
+    static final String DEFAULT_CENTER_ALIGNED = "DefaultCenterAligned";
     private static final int CONSTANT_HEADER_HEIGHT = 54;
     private static final int USAGE_CHART_STATIC_WIDTH = 820;
     private static final int FRAME_MIN_WIDTH = 820;
-    public static final String ALL_BORDERS_OPAQUE_CENTER_BROWN = "AllBordersOpaqueCenterBrown";
-    private static final String ALL_BORDERS_GREY_CENTER = "AllBordersGreyCenter";
+    static final String ALL_BORDERS_OPAQUE_CENTER_BROWN = "AllBordersOpaqueCenterBrown";
+    static final String ALL_BORDERS_GREY_CENTER = "AllBordersGreyCenter";
     private static final String LEFT_PADDED_HEADING_HTML = "LeftPaddedHeadingHtml";
+    static final int FIELD_HEIGHT = 18;
+    static final int RIGHT_MARGIN_WIDTH = 15;
+    static final int LEFT_MARGIN_WIDTH = RIGHT_MARGIN_WIDTH;
+    static final int DATA_COLUMN_WIDTH = 160;
+    static final int SUB_INTERVAL_STATIC_WIDTH = 113;
+    static final int MAPPING_VALUE_FIELD_HEIGHT = 36;
+    //service text field is 5 from left margin
+    static final int CONSTANT_HEADER_START_X = 113;
+    static final String TOP_LEFT_BOTTOM_CENTER_GREY = "TopLeftBottomCenterGrey";
+    static final String TOP_LEFT_GREY_CENTER = "TopLeftGreyCenter";
+    static final String TOP_LEFT_RIGHT_GREY_CENTER = "TopLeftRightGreyCenter";
+    static final String TOP_LEFT_BOTTOM_CENTER_BROWN = "TopLeftBottomCenterBrown";
 
     /**
      * Get the runtime document used as the transform parameter for a usage sub report.<br>
@@ -47,9 +43,9 @@ public class RuntimeDocUtilities {
      * @param distinctMappingSets represents the runtime report meta data, which are the distinct set of mapping values
      *                            that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
      *                            followed by 5 mapping values
-     * @return a Document which can be used as parameter to transform a template jrxml file
+     * @return a JasperDocument encapsulating a Document, which can be used as parameter to transform a template jrxml file
      */
-    public static Document getUsageSubReportRuntimeDoc(LinkedHashSet<List<String>> distinctMappingSets) {
+    public static JasperDocument getUsageSubReportRuntimeDoc(LinkedHashSet<List<String>> distinctMappingSets) {
 
         LinkedHashSet<String> distinctMappingValues = getMappingValues(distinctMappingSets);
 
@@ -57,57 +53,46 @@ public class RuntimeDocUtilities {
             distinctMappingValues = new LinkedHashSet<String>();
         }
 
-        Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
+        JasperDocument jasperDoc = new JasperDocument();
         int numMappingValues = distinctMappingValues.size();
 
-        Node rootNode = doc.getFirstChild();
-
-        //Create variables element
-        Element variables = doc.createElement(Utilities.VARIABLES);
-        rootNode.appendChild(variables);
-
         for (int i = 0; i < numMappingValues; i++) {
-            addVariableToElement(doc, variables, "COLUMN_" + (i + 1), "java.lang.Long", "None", null, "Nothing", "getColumnValue", "COLUMN_" + (i + 1));
+            jasperDoc.addVariableToElement(JasperDocument.ElementName.VARIABLES, "COLUMN_" + (i + 1), "java.lang.Long", "None", null, "Nothing", "getColumnValue", "COLUMN_" + (i + 1));
         }
-
-        Element serviceAndOperationFooterElement = doc.createElement(Utilities.SERVICE_AND_OPERATION_FOOTER);
-        rootNode.appendChild(serviceAndOperationFooterElement);
 
         int xPos = 0;
         int yPos = 0;
 
         for (int i = 0; i < numMappingValues; i++) {
-            addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                    "textField-ServiceOperationFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_" + (i + 1) + "}",
+            jasperDoc.addTextFieldToElement(JasperDocument.ElementName.SERVICE_AND_OPERATION_FOOTER, xPos, yPos,
+                    DATA_COLUMN_WIDTH, FIELD_HEIGHT,
+                    "textField-ServiceOperationFooter-" + (i + 1),
+                    new TertiaryJavaLongExpression(TertiaryJavaLongExpression.TERNARY_STRING_VARIABLE.COLUMN_, i + 1),
                     DEFAULT_CENTER_ALIGNED, false, false, false, false);
-            xPos += Utilities.DATA_COLUMN_WIDTH;
+            xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{TOTAL}",
-                Utilities.ALL_BORDERS_GREY_CENTER, true, false, false, false);
-
-        Element noDataElement = doc.createElement(Utilities.NO_DATA);
-        rootNode.appendChild(noDataElement);
+        jasperDoc.addTextFieldToElement(JasperDocument.ElementName.SERVICE_AND_OPERATION_FOOTER, xPos, yPos,
+                JasperDocument.TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
+                "textField-ServiceOperationFooterTotal",
+                new SimpleJavaLongExpression(SimpleJavaLongExpression.PLAIN_STRING_VARIABLE.TOTAL),
+                ALL_BORDERS_GREY_CENTER, true, false, false, false);
 
         xPos = 0;
 
         for (int i = 0; i < numMappingValues; i++) {
-            addStaticTextToElement(doc, noDataElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
+            jasperDoc.addStaticTextToElement(JasperDocument.ElementName.NO_DATA, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
                     "noDataStaticText-" + (i + 1), "NA", DEFAULT_CENTER_ALIGNED, false);
-            xPos += Utilities.DATA_COLUMN_WIDTH;
+            xPos += DATA_COLUMN_WIDTH;
         }
 
-        addStaticTextToElement(doc, noDataElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "noDataStaticText-Total", "NA", Utilities.ALL_BORDERS_GREY_CENTER, true);
-        xPos += Utilities.TOTAL_COLUMN_WIDTH;
+        jasperDoc.addStaticTextToElement(JasperDocument.ElementName.NO_DATA, xPos, yPos, JasperDocument.TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
+                "noDataStaticText-Total", "NA", ALL_BORDERS_GREY_CENTER, true);
+        xPos += JasperDocument.TOTAL_COLUMN_WIDTH;
 
         //frame width is the same as page width for the subreport
-        Element pageWidth = doc.createElement(Utilities.PAGE_WIDTH);
-        rootNode.appendChild(pageWidth);
-        pageWidth.setTextContent(String.valueOf(xPos));
-
-        return doc;
+        jasperDoc.addIntElement(JasperDocument.ElementName.PAGE_WIDTH, xPos);
+        return jasperDoc;
     }
 
     /*
@@ -122,9 +107,9 @@ public class RuntimeDocUtilities {
     * that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
     * followed by 5 mapping values
     *
-    * @return a Document which can be used as parameter to transform a template jrxml file
+    * @return a JasperDocument encapsulating a Document, which can be used as parameter to transform a template jrxml file
     * */
-    public static Document getUsageSubIntervalMasterRuntimeDoc(LinkedHashSet<List<String>> distinctMappingSets) {
+    public static JasperDocument getUsageSubIntervalMasterRuntimeDoc(LinkedHashSet<List<String>> distinctMappingSets) {
 
         LinkedHashSet<String> distinctMappingValues = getMappingValues(distinctMappingSets);
 
@@ -132,48 +117,33 @@ public class RuntimeDocUtilities {
             distinctMappingValues = new LinkedHashSet<String>();
         }
 
-        Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
+        JasperDocument jasperDoc = new JasperDocument();
         int numMappingValues = distinctMappingValues.size();
-
-        Node rootNode = doc.getFirstChild();
-
-        //Create variables element
-        Element variables = doc.createElement(Utilities.VARIABLES);
-        rootNode.appendChild(variables);
 
         //Create the COLUMN_X variables first
         for (int i = 0; i < numMappingValues; i++) {
             //<variable name="COLUMN_1" class="java.lang.Long" resetType="Report" calculation="Sum">
-            addVariableToElement(doc, variables, "COLUMN_" + (i + 1), "java.lang.Long", "Report", null, "Sum");
+            jasperDoc.addVariableToElement(JasperDocument.ElementName.VARIABLES, "COLUMN_" + (i + 1), "java.lang.Long", "Report", null, "Sum");
         }
-
-        //Subreport return values
-        //<returnValue subreportVariable="COLUMN_1" toVariable="COLUMN_1" calculation="Sum"/>
-        Element subReport = doc.createElement(Utilities.SUB_REPORT);
-        rootNode.appendChild(subReport);
 
         for (int i = 0; i < numMappingValues; i++) {
             //<returnValue subreportVariable="COLUMN_1" toVariable="COLUMN_1" calculation="Sum"/>
-            addSubReportReturnVariable(doc, subReport, "COLUMN_" + (i + 1), "COLUMN_" + (i + 1), "Sum");
+            jasperDoc.addSubReportReturnVariable("COLUMN_" + (i + 1), "COLUMN_" + (i + 1), "Sum");
         }
 
         //determine how wide the sub report should be
         int subReportWidth = 0;
         for (int i = 0; i < numMappingValues; i++) {
-            subReportWidth += Utilities.DATA_COLUMN_WIDTH;
+            subReportWidth += DATA_COLUMN_WIDTH;
         }
-        subReportWidth += Utilities.TOTAL_COLUMN_WIDTH;
+        subReportWidth += JasperDocument.TOTAL_COLUMN_WIDTH;
 
-        Element subReportWidthElement = doc.createElement(SUB_REPORT_WIDTH);
-        rootNode.appendChild(subReportWidthElement);
-        subReportWidthElement.setTextContent(String.valueOf(subReportWidth));
+        jasperDoc.addIntElement(JasperDocument.ElementName.SUB_REPORT_WIDTH, subReportWidth);
 
-        int pageWidth = subReportWidth + Utilities.SUB_INTERVAL_STATIC_WIDTH;
-        Element pageWidthElement = doc.createElement(Utilities.PAGE_WIDTH);
-        rootNode.appendChild(pageWidthElement);
-        pageWidthElement.setTextContent(String.valueOf(pageWidth));
+        int pageWidth = subReportWidth + SUB_INTERVAL_STATIC_WIDTH;
+        jasperDoc.addIntElement(JasperDocument.ElementName.PAGE_WIDTH, pageWidth);
 
-        return doc;
+        return jasperDoc;
     }
 
     /**
@@ -201,23 +171,13 @@ public class RuntimeDocUtilities {
                 if (i != keys.size() - 1) sb.append(", ");
                 else sb.append(" and ");
             }
-            sb.append(escapeJavaSringLiteralChars(TextUtils.truncStringMiddleExact(mappingKey, truncateKeyMaxValue)));
+            sb.append(TextUtils.truncStringMiddleExact(mappingKey, truncateKeyMaxValue));
         }
         return sb.toString();
     }
 
-
-    private static Document getRuntimeEmptyDoc() {
-        Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
-        return doc;
-    }
-
-    private static void addPerfChartXml(Document doc, Map<String, String> displayMap) {
+    private static void addPerfChartXml(JasperDocument jasperDoc, Map<String, String> displayMap) {
         //Create all the text fields for the chart legend
-        Node rootNode = doc.getFirstChild();
-        Element chartLegend = doc.createElement(CHART_LEGEND);
-        rootNode.appendChild(chartLegend);
-
         int x = 0;
         int y = 0;
         int vSpace = 2;
@@ -226,8 +186,10 @@ public class RuntimeDocUtilities {
         int index = 0;
 
         for (Map.Entry<String, String> me : displayMap.entrySet()) {
-            addTextFieldToElement(doc, chartLegend, x, y, frameWidth, height, "chartLegendKey" + (index + 1), "java.lang.String",
-                    "<b>" + me.getKey() + ":</b> " + Utilities.escapeHtmlCharacters(me.getValue()) + "<br>", LEFT_PADDED_HEADING_HTML, false, true, true, false);
+            jasperDoc.addTextFieldToElement(JasperDocument.ElementName.CHART_LEGEND, x, y, frameWidth, height,
+                    "chartLegendKey" + (index + 1),
+                    "<b>" + me.getKey() + ":</b> " + Utilities.escapeHtmlCharacters(me.getValue()) + "<br>",
+                    LEFT_PADDED_HEADING_HTML, false, true, true, false);
 
             y += height + vSpace;
             index++;
@@ -240,32 +202,22 @@ public class RuntimeDocUtilities {
             chartHeight += 30 * (numMappingSets - 2);
         }
 
-        Element chartHeightElement = doc.createElement(CHART_HEIGHT);
-        rootNode.appendChild(chartHeightElement);
-        chartHeightElement.setTextContent(String.valueOf(chartHeight));
+        jasperDoc.addIntElement(JasperDocument.ElementName.CHART_HEIGHT, chartHeight);
 
         //start of chart legend = chart height + 18 for the title of the chart frame
         int chartLegendFrameYPos = chartHeight;// + height;
-        Element chartLegendYPosElement = doc.createElement(CHART_LEGEND_FRAME_YPOS);
-        rootNode.appendChild(chartLegendYPosElement);
-        chartLegendYPosElement.setTextContent(String.valueOf(chartLegendFrameYPos));
+        jasperDoc.addIntElement(JasperDocument.ElementName.CHART_LEGEND_FRAME_YPOS, chartLegendFrameYPos);
 
         //height of chart legend = num mapping sets * height + vSpace
         int chartLegendHeight = numMappingSets * (height + vSpace);
-        Element chartLegendHeightElement = doc.createElement(CHART_LEGEND_HEIGHT);
-        rootNode.appendChild(chartLegendHeightElement);
-        chartLegendHeightElement.setTextContent(String.valueOf(chartLegendHeight));
+        jasperDoc.addIntElement(JasperDocument.ElementName.CHART_LEGEND_HEIGHT, chartLegendHeight);
 
         int chartFrameHeight = chartHeight + 18 + chartLegendHeight;
-        Element chartFrameHeightElement = doc.createElement(CHART_FRAME_HEIGHT);
-        rootNode.appendChild(chartFrameHeightElement);
-        chartFrameHeightElement.setTextContent(String.valueOf(chartFrameHeight));
+        jasperDoc.addIntElement(JasperDocument.ElementName.CHART_FRAME_HEIGHT, chartFrameHeight);
 
         //Calculate the height of the band
         int bandHeight = chartFrameHeight + height + height;//18 from the summary frame + 18 for a gap
-        Element bandHeightElement = doc.createElement(BAND_HEIGHT);
-        rootNode.appendChild(bandHeightElement);
-        bandHeightElement.setTextContent(String.valueOf(bandHeight));
+        jasperDoc.addIntElement(JasperDocument.ElementName.BAND_HEIGHT, bandHeight);
 
         int titleHeight = 186;
         int margins = 20 + 20;
@@ -273,10 +225,7 @@ public class RuntimeDocUtilities {
         int minPageHeight = 595;
         if (totalFirstPageHeight < minPageHeight) totalFirstPageHeight = minPageHeight;
 
-        Element pageHeightElement = doc.createElement(PAGE_HEIGHT);
-        rootNode.appendChild(pageHeightElement);
-        pageHeightElement.setTextContent(String.valueOf(totalFirstPageHeight));
-
+        jasperDoc.addIntElement(JasperDocument.ElementName.PAGE_HEIGHT, totalFirstPageHeight);
     }
 
     /**
@@ -287,22 +236,18 @@ public class RuntimeDocUtilities {
      *                            to display as the category value in a chart:- <br>
      *                            e.g. group 1 instead of IpAddress=...Customer=..., or service 1
      *                            instead of Warehouse [routing uri].....
-     * @return a Document which can be used as parameter to transform a template jrxml file
+     * @return a JasperDocument encapsulating a Document, which can be used as parameter to transform a template jrxml file
      */
-    public static Document getPerfStatAnyRuntimeDoc(LinkedHashMap<String, String> groupToMappingValue) {
-        Document doc = getRuntimeEmptyDoc();
-        Node rootNode = doc.getFirstChild();
+    public static JasperDocument getPerfStatAnyRuntimeDoc(LinkedHashMap<String, String> groupToMappingValue) {
+        JasperDocument jasperDoc = new JasperDocument();
 
-        //Create variables element
-        Element isCtxMapElement = doc.createElement(IS_CONTEXT_MAPPING);
-        rootNode.appendChild(isCtxMapElement);
+        jasperDoc.addIntElement(JasperDocument.ElementName.IS_CONTEXT_MAPPING, 0);
         //the style sheet uses just this element to know whether to show the normal chart or the group chart
         //see the jrxml files which have two charts defined.
-        isCtxMapElement.setTextContent("0");
 
-        addPerfChartXml(doc, groupToMappingValue);
+        addPerfChartXml(jasperDoc, groupToMappingValue);
 
-        return doc;
+        return jasperDoc;
     }
 
     /**
@@ -311,29 +256,33 @@ public class RuntimeDocUtilities {
      * <p/>
      * the report if context mapping is being used ONLY to get at operation level data.
      *
-     * @return a Document which can be used as parameter to transform a template jrxml file
+     * @param keysToFilters       a LinkedHashMap of each key to use in the query, and for each key 0..* FilterPair's, which
+     *                            represent it's constraints. All keys should have at least one FilterPair supplied. If no constrain was added for a
+     *                            key then the isEmpty() method of FilterPair should return true. The order of this parameter is very important
+     *                            and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
+     *                            hash map.
+     * @param distinctMappingSets represents the runtime report meta data, which are the distinct set of mapping values
+     *                            that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
+     *                            followed by 5 mapping values
+     * @return a JasperDocument encapsulating a Document, which can be used as parameter to transform a template jrxml file
      */
-    public static Document getPerfStatAnyRuntimeDoc(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
-                                                    LinkedHashSet<List<String>> distinctMappingSets) {
-        Document doc = getRuntimeEmptyDoc();
-        Node rootNode = doc.getFirstChild();
-        //Create variables element
-        Element isCtxMapElement = doc.createElement(IS_CONTEXT_MAPPING);
-        rootNode.appendChild(isCtxMapElement);
+    public static JasperDocument getPerfStatAnyRuntimeDoc(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
+                                                          LinkedHashSet<List<String>> distinctMappingSets) {
+        JasperDocument jasperDoc = new JasperDocument();
+
+        jasperDoc.addIntElement(JasperDocument.ElementName.IS_CONTEXT_MAPPING, 1);
         //the style sheet uses just this element to know whether to show the normal chart or the group chart
         //see the jrxml files which have two charts defined.
-        isCtxMapElement.setTextContent("1");
 
         Utilities.checkMappingQueryParams(keysToFilters, false, false);
         LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
                 true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
         LinkedHashMap<String, String> groupToLegendDisplayStringMap = getGroupToLegendDisplayStringMap(mappingValuesLegend);
 
-        addPerfChartXml(doc, groupToLegendDisplayStringMap);
+        addPerfChartXml(jasperDoc, groupToLegendDisplayStringMap);
 
-        return doc;
+        return jasperDoc;
     }
-
 
     /**
      * Create a document, given the input properties, which will be used to transform the
@@ -347,10 +296,10 @@ public class RuntimeDocUtilities {
      * @param distinctMappingSets represents the runtime report meta data, which are the distinct set of mapping values
      *                            that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
      *                            followed by 5 mapping values
-     * @return a Document which can be used as parameter to transform a template jrxml file
+     * @return a JasperDocument encapsulating a Document, which can be used as parameter to transform a template jrxml file
      */
-    public static Document getUsageIntervalMasterRuntimeDoc(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
-                                                            LinkedHashSet<List<String>> distinctMappingSets) {
+    public static JasperDocument getUsageIntervalMasterRuntimeDoc(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
+                                                                  LinkedHashSet<List<String>> distinctMappingSets) {
 
         //is detail is not considered a valid key for usage queries
         Utilities.checkMappingQueryParams(keysToFilters, false, true);
@@ -367,153 +316,133 @@ public class RuntimeDocUtilities {
             distinctMappingValues = new LinkedHashSet<String>();
         }
 
-        Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
+        JasperDocument jasperDoc = new JasperDocument();
         int numMappingValues = distinctMappingValues.size();
-
-        Node rootNode = doc.getFirstChild();
-        //Create variables element
-        Element variables = doc.createElement(Utilities.VARIABLES);
-        rootNode.appendChild(variables);
 
         //Create the COLUMN_X variables first
         for (int i = 0; i < numMappingValues; i++) {
             //<variable name="COLUMN_SERVICE_1" class="java.lang.Long" resetType="Group" resetGroup="SERVICE" calculation="Sum">
-            addVariableToElement(doc, variables, "COLUMN_SERVICE_" + (i + 1), "java.lang.Long", "Group", "SERVICE", "Sum");
+            jasperDoc.addVariableToElement(JasperDocument.ElementName.VARIABLES, "COLUMN_SERVICE_" + (i + 1), "java.lang.Long", "Group", "SERVICE", "Sum");
         }
 
         for (int i = 0; i < numMappingValues; i++) {
             //<variable name="COLUMN_OPERATION_1" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_OPERATION" calculation="Sum">
-            addVariableToElement(doc, variables, "COLUMN_OPERATION_" + (i + 1), "java.lang.Long", "Group", "SERVICE_OPERATION", "Sum");
+            jasperDoc.addVariableToElement(JasperDocument.ElementName.VARIABLES, "COLUMN_OPERATION_" + (i + 1), "java.lang.Long", "Group", "SERVICE_OPERATION", "Sum");
         }
 
         for (int i = 0; i < numMappingValues; i++) {
             //<variable name="COLUMN_REPORT_1" class="java.lang.Long" resetType="Report" calculation="Sum">
-            addVariableToElement(doc, variables, "COLUMN_REPORT_" + (i + 1), "java.lang.Long", "Report", null, "Sum");
+            jasperDoc.addVariableToElement(JasperDocument.ElementName.VARIABLES, "COLUMN_REPORT_" + (i + 1), "java.lang.Long", "Report", null, "Sum");
         }
 
-        //serviceHeader
-        Element serviceHeader = doc.createElement(Utilities.SERVICE_HEADER);
-        rootNode.appendChild(serviceHeader);
-
-        int xPos = Utilities.CONSTANT_HEADER_START_X;
+        int xPos = CONSTANT_HEADER_START_X;
         int yPos = 0;
 
         String keyDisplayValue = getContextKeysDiaplayString(keysToFilters, Utilities.MAPPING_KEY_MAX_SIZE);
-        Element keyInfoElement = doc.createElement("keyInfo");
-        rootNode.appendChild(keyInfoElement);
-        CDATASection cData = doc.createCDATASection(keyDisplayValue);
-        keyInfoElement.appendChild(cData);
+
+        jasperDoc.addCDataElement(JasperDocument.ElementName.KEY_INFO, keyDisplayValue);
 
         List<String> listMappingValues = new ArrayList<String>();
         listMappingValues.addAll(distinctMappingValues);
 
         //add a text field for each column
         for (int i = 0; i < numMappingValues; i++) {
-            addTextFieldToElement(doc, serviceHeader, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.MAPPING_VALUE_FIELD_HEIGHT,
-                    "textField-serviceHeader-" + (i + 1), "java.lang.String", listMappingValues.get(i), Utilities.TOP_LEFT_BOTTOM_CENTER_BROWN,
+            jasperDoc.addTextFieldToElement(JasperDocument.ElementName.SERVICE_HEADER, xPos, yPos,
+                    DATA_COLUMN_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
+                    "textField-serviceHeader-" + (i + 1),
+                    listMappingValues.get(i), TOP_LEFT_BOTTOM_CENTER_BROWN,
                     true, false, false, true);
-            xPos += Utilities.DATA_COLUMN_WIDTH;
+            xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, serviceHeader, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.MAPPING_VALUE_FIELD_HEIGHT,
-                "textField-serviceHeader-ServiceTotals", "java.lang.String", "Service Totals", Utilities.ALL_BORDERS_OPAQUE_CENTER_BROWN,
+        jasperDoc.addTextFieldToElement(JasperDocument.ElementName.SERVICE_HEADER, xPos, yPos,
+                JasperDocument.TOTAL_COLUMN_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
+                "textField-serviceHeader-ServiceTotals", "Service Totals",
+                ALL_BORDERS_OPAQUE_CENTER_BROWN,
                 true, false, false, true);
 
-        xPos += Utilities.TOTAL_COLUMN_WIDTH;
+        xPos += JasperDocument.TOTAL_COLUMN_WIDTH;
 
-        int docTotalWidth = xPos + Utilities.LEFT_MARGIN_WIDTH + Utilities.RIGHT_MARGIN_WIDTH;
+        int docTotalWidth = xPos + LEFT_MARGIN_WIDTH + RIGHT_MARGIN_WIDTH;
         int frameWidth = xPos;
-        Element pageWidth = doc.createElement(Utilities.PAGE_WIDTH);
-        pageWidth.setTextContent(String.valueOf(docTotalWidth));
-        Element columnWidthElement = doc.createElement(Utilities.COLUMN_WIDTH);
-        columnWidthElement.setTextContent(String.valueOf(frameWidth));
-        Element frameWidthElement = doc.createElement(Utilities.FRAME_WIDTH);
-        frameWidthElement.setTextContent(String.valueOf(frameWidth));
+        jasperDoc.addIntElement(JasperDocument.ElementName.PAGE_WIDTH, docTotalWidth);
+        jasperDoc.addIntElement(JasperDocument.ElementName.COLUMN_WIDTH, frameWidth);
+        jasperDoc.addIntElement(JasperDocument.ElementName.FRAME_WIDTH, frameWidth);
 
-        //sub report variables
-        Element subReport = doc.createElement(Utilities.SUB_REPORT);
-        rootNode.appendChild(subReport);
 
         for (int i = 0; i < numMappingValues; i++) {
             //<returnValue subreportVariable="COLUMN_1" toVariable="COLUMN_SERVICE_1" calculation="Sum"/>
-            addSubReportReturnVariable(doc, subReport, "COLUMN_" + (i + 1), "COLUMN_SERVICE_" + (i + 1), "Sum");
+            jasperDoc.addSubReportReturnVariable("COLUMN_" + (i + 1), "COLUMN_SERVICE_" + (i + 1), "Sum");
         }
 
         for (int i = 0; i < numMappingValues; i++) {
             //<returnValue subreportVariable="COLUMN_1" toVariable="COLUMN_OPERATION_1" calculation="Sum"/>
-            addSubReportReturnVariable(doc, subReport, "COLUMN_" + (i + 1), "COLUMN_OPERATION_" + (i + 1), "Sum");
+            jasperDoc.addSubReportReturnVariable("COLUMN_" + (i + 1), "COLUMN_OPERATION_" + (i + 1), "Sum");
         }
 
         for (int i = 0; i < numMappingValues; i++) {
             //<returnValue subreportVariable="COLUMN_1" toVariable="COLUMN_REPORT_1" calculation="Sum"/>
-            addSubReportReturnVariable(doc, subReport, "COLUMN_" + (i + 1), "COLUMN_REPORT_" + (i + 1), "Sum");
+            jasperDoc.addSubReportReturnVariable("COLUMN_" + (i + 1), "COLUMN_REPORT_" + (i + 1), "Sum");
         }
 
-        //SERVICE_OPERATION footer
-        Element serviceAndOperationFooterElement = doc.createElement(Utilities.SERVICE_AND_OPERATION_FOOTER);
-        rootNode.appendChild(serviceAndOperationFooterElement);
         //todo [Donal] this is out by 5, 113 instead of 118, affects summary and master transforms, fix when reports completed
-        xPos = Utilities.CONSTANT_HEADER_START_X;
+        xPos = CONSTANT_HEADER_START_X;
         for (int i = 0; i < numMappingValues; i++) {
-            addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                    "textField-ServiceOperationFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_OPERATION_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_OPERATION_" + (i + 1) + "}",
-                    Utilities.TOP_LEFT_BOTTOM_CENTER_GREY, true, false, false, false);
-            xPos += Utilities.DATA_COLUMN_WIDTH;
+            jasperDoc.addTextFieldToElement(JasperDocument.ElementName.SERVICE_AND_OPERATION_FOOTER, xPos, yPos,
+                    DATA_COLUMN_WIDTH, FIELD_HEIGHT,
+                    "textField-ServiceOperationFooter-" + (i + 1),
+                    new TertiaryJavaLongExpression(TertiaryJavaLongExpression.TERNARY_STRING_VARIABLE.COLUMN_OPERATION_, i + 1),
+                    TOP_LEFT_BOTTOM_CENTER_GREY, true, false, false, false);
+            xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{ROW_OPERATION_TOTAL}",
-                Utilities.ALL_BORDERS_GREY_CENTER, true, false, false, false);
+        jasperDoc.addTextFieldToElement(JasperDocument.ElementName.SERVICE_AND_OPERATION_FOOTER, xPos, yPos,
+                JasperDocument.TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
+                "textField-ServiceOperationFooterTotal",
+                new SimpleJavaLongExpression(SimpleJavaLongExpression.PLAIN_STRING_VARIABLE.ROW_OPERATION_TOTAL),
+                ALL_BORDERS_GREY_CENTER, true, false, false, false);
 
-        //serviceIdFooter
-        Element serviceIdFooterElement = doc.createElement(Utilities.SERVICE_ID_FOOTER);
-        rootNode.appendChild(serviceIdFooterElement);
-
-        xPos = Utilities.CONSTANT_HEADER_START_X;
+        xPos = CONSTANT_HEADER_START_X;
         for (int i = 0; i < numMappingValues; i++) {
-            addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                    "textField-ServiceIdFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_SERVICE_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_SERVICE_" + (i + 1) + "}",
-                    Utilities.TOP_LEFT_BOTTOM_CENTER_GREY, true, false, false, false);
-            xPos += Utilities.DATA_COLUMN_WIDTH;
+            jasperDoc.addTextFieldToElement(JasperDocument.ElementName.SERVICE_ID_FOOTER, xPos, yPos,
+                    DATA_COLUMN_WIDTH, FIELD_HEIGHT,
+                    "textField-ServiceIdFooter-" + (i + 1),
+                    new TertiaryJavaLongExpression(TertiaryJavaLongExpression.TERNARY_STRING_VARIABLE.COLUMN_SERVICE_, i + 1),
+                    TOP_LEFT_BOTTOM_CENTER_GREY, true, false, false, false);
+            xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{ROW_SERVICE_TOTAL}", Utilities.ALL_BORDERS_GREY_CENTER, true, false, false, false);
+        jasperDoc.addTextFieldToElement(JasperDocument.ElementName.SERVICE_ID_FOOTER, xPos, yPos,
+                JasperDocument.TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
+                "textField-ServiceIdFooterTotal",
+                new SimpleJavaLongExpression(SimpleJavaLongExpression.PLAIN_STRING_VARIABLE.ROW_SERVICE_TOTAL),
+                ALL_BORDERS_GREY_CENTER, true, false, false, false);
 
-        //summary
-        Element summaryElement = doc.createElement(Utilities.SUMMARY);
-        rootNode.appendChild(summaryElement);
-
-        xPos = Utilities.CONSTANT_HEADER_START_X;
+        xPos = CONSTANT_HEADER_START_X;
         for (int i = 0; i < numMappingValues; i++) {
-            addTextFieldToElement(doc, summaryElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                    "textField-constantFooter-" + (i + 1), "java.lang.Long", "$V{COLUMN_REPORT_" + (i + 1) + "}",
-                    Utilities.TOP_LEFT_GREY_CENTER, true, false, false, false);
-            xPos += Utilities.DATA_COLUMN_WIDTH;
+            jasperDoc.addTextFieldToElement(JasperDocument.ElementName.SUMMARY, xPos, yPos, DATA_COLUMN_WIDTH, FIELD_HEIGHT,
+                    "textField-constantFooter-" + (i + 1),
+                    new SimpleIndexJavaLongExpression(SimpleIndexJavaLongExpression.INDEX_MISSING_VARIABLE.COLUMN_REPORT_, i + 1),
+                    TOP_LEFT_GREY_CENTER, true, false, false, false);
+            xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, summaryElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-constantFooterTotal", "java.lang.Long", "$V{ROW_REPORT_TOTAL}", Utilities.TOP_LEFT_RIGHT_GREY_CENTER, true, false, false, false);
+        jasperDoc.addTextFieldToElement(JasperDocument.ElementName.SUMMARY, xPos, yPos,
+                JasperDocument.TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
+                "textField-constantFooterTotal",
+                new SimpleJavaLongExpression(SimpleJavaLongExpression.PLAIN_STRING_VARIABLE.ROW_REPORT_TOTAL),
+                TOP_LEFT_RIGHT_GREY_CENTER, true, false, false, false);
 
-        rootNode.appendChild(pageWidth);
-        //columnWidth -is page width - left + right margin
-        rootNode.appendChild(columnWidthElement);
-        rootNode.appendChild(frameWidthElement);
-        Element leftMarginElement = doc.createElement(Utilities.LEFT_MARGIN);
-        leftMarginElement.setTextContent(String.valueOf(Utilities.LEFT_MARGIN_WIDTH));
-        rootNode.appendChild(leftMarginElement);
-
-        Element rightMarginElement = doc.createElement(Utilities.RIGHT_MARGIN);
-        rightMarginElement.setTextContent(String.valueOf(Utilities.LEFT_MARGIN_WIDTH));
-        rootNode.appendChild(rightMarginElement);
+        jasperDoc.addIntElement(JasperDocument.ElementName.LEFT_MARGIN, LEFT_MARGIN_WIDTH);
+        jasperDoc.addIntElement(JasperDocument.ElementName.RIGHT_MARGIN, LEFT_MARGIN_WIDTH);
 
         LinkedHashSet<String> mappingValuesLegend = getMappingLegendValues(keysToFilters, distinctMappingSets,
                 true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
 
         LinkedHashMap<String, String> groupToLegendDisplayStringMap = getGroupToLegendDisplayStringMap(mappingValuesLegend);
-        addChartXMLToDocument(doc, groupToLegendDisplayStringMap, USAGE_CHART_STATIC_WIDTH, 595);
+        addChartXMLToDocument(jasperDoc, groupToLegendDisplayStringMap, USAGE_CHART_STATIC_WIDTH, 595);
 
-        return doc;
+        return jasperDoc;
     }
 
     /**
@@ -596,10 +525,10 @@ public class RuntimeDocUtilities {
      * @param distinctMappingSets represents the runtime report meta data, which are the distinct set of mapping values
      *                            that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
      *                            followed by 5 mapping values
-     * @return a Document which can be used as parameter to transform a template jrxml file
+     * @return a JasperDocument encapsulating a Document, which can be used as parameter to transform a template jrxml file
      */
-    public static Document getUsageRuntimeDoc(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
-                                              LinkedHashSet<List<String>> distinctMappingSets) {
+    public static JasperDocument getUsageRuntimeDoc(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
+                                                    LinkedHashSet<List<String>> distinctMappingSets) {
 
         //usage queires do not use isDetail to determine validity of parameters, it's not considered a key for usage reports
         Utilities.checkMappingQueryParams(keysToFilters, false, true);
@@ -620,138 +549,193 @@ public class RuntimeDocUtilities {
             distinctMappingValues = new LinkedHashSet<String>();
         }
 
-        Document doc = XmlUtil.createEmptyDocument("JasperRuntimeTransformation", null, null);
+        JasperDocument jasperDoc = new JasperDocument();
 
         int numMappingValues = distinctMappingValues.size();
 
-        Node rootNode = doc.getFirstChild();
-        //Create variables element
-        Element variables = doc.createElement(Utilities.VARIABLES);
-        rootNode.appendChild(variables);
-
         //Create the COLUMN_X variables first
         for (int i = 0; i < numMappingValues; i++) {
-            addVariableToElement(doc, variables, "COLUMN_" + (i + 1), "java.lang.Long", "Group", "SERVICE_AND_OPERATION",
+            jasperDoc.addVariableToElement(JasperDocument.ElementName.VARIABLES, "COLUMN_" + (i + 1), "java.lang.Long", "Group", "SERVICE_AND_OPERATION",
                     "Nothing", "getColumnValue", "COLUMN_" + (i + 1));
         }
 
         //then the COLUMN_MAPPING_TOTAL_X variables
         for (int i = 0; i < numMappingValues; i++) {
-            addVariableToElement(doc, variables, "COLUMN_MAPPING_TOTAL_" + (i + 1), "java.lang.Long", "Group", "CONSTANT",
+            jasperDoc.addVariableToElement(JasperDocument.ElementName.VARIABLES, "COLUMN_MAPPING_TOTAL_" + (i + 1), "java.lang.Long", "Group", "CONSTANT",
                     "Sum", "getVariableValue", "COLUMN_" + (i + 1));
         }
 
         //then the COLUMN_SERVICE_TOTAL_X variables
         for (int i = 0; i < numMappingValues; i++) {
-            addVariableToElement(doc, variables, "COLUMN_SERVICE_TOTAL_" + (i + 1), "java.lang.Long", "Group", "SERVICE_ID",
+            jasperDoc.addVariableToElement(JasperDocument.ElementName.VARIABLES, "COLUMN_SERVICE_TOTAL_" + (i + 1), "java.lang.Long", "Group", "SERVICE_ID",
                     "Sum", "getVariableValue", "COLUMN_" + (i + 1));
         }
-
-        //create constantHeader element
-        Element constantHeader = doc.createElement(Utilities.CONSTANT_HEADER);
-        rootNode.appendChild(constantHeader);
 
         //Constant header starts at x = 113
         //The widths for the entire document are determined from this first header.
         //it has slightly different make up as it has an additional text field, however all other headers
         //should always work out to the be the same width. If they are wider, the report will not compile
-        int xPos = Utilities.CONSTANT_HEADER_START_X;
+        int xPos = CONSTANT_HEADER_START_X;
         int yPos = 0;
 
         String keyDisplayValue = getContextKeysDiaplayString(keysToFilters, Utilities.MAPPING_KEY_MAX_SIZE);
-        Element keyInfoElement = doc.createElement("keyInfo");
-        rootNode.appendChild(keyInfoElement);
-        CDATASection cData = doc.createCDATASection(keyDisplayValue);
-        keyInfoElement.appendChild(cData);
+        jasperDoc.addCDataElement(JasperDocument.ElementName.KEY_INFO, keyDisplayValue);
 
         List<String> listMappingValues = new ArrayList<String>();
         listMappingValues.addAll(distinctMappingValues);
 
         //add a text field for each column
         for (int i = 0; i < numMappingValues; i++) {
-            addTextFieldToElement(doc, constantHeader, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.MAPPING_VALUE_FIELD_HEIGHT,
-                    "textField-constantHeader-" + (i + 1), "java.lang.String", listMappingValues.get(i), Utilities.TOP_LEFT_BOTTOM_CENTER_BROWN,
+            jasperDoc.addTextFieldToElement(JasperDocument.ElementName.CONSTANT_HEADER, xPos, yPos,
+                    DATA_COLUMN_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
+                    "textField-constantHeader-" + (i + 1),
+                    listMappingValues.get(i), TOP_LEFT_BOTTOM_CENTER_BROWN,
                     false, false, false, true);
-            xPos += Utilities.DATA_COLUMN_WIDTH;
+            xPos += DATA_COLUMN_WIDTH;
         }
         //move x pos along for width of a column
 
-        addTextFieldToElement(doc, constantHeader, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.MAPPING_VALUE_FIELD_HEIGHT,
-                "textField-constantHeader-ServiceTotals", "java.lang.String", "Service Totals", ALL_BORDERS_OPAQUE_CENTER_BROWN,
+        jasperDoc.addTextFieldToElement(JasperDocument.ElementName.CONSTANT_HEADER, xPos, yPos,
+                JasperDocument.TOTAL_COLUMN_WIDTH, MAPPING_VALUE_FIELD_HEIGHT,
+                "textField-constantHeader-ServiceTotals", "Service Totals",
+                ALL_BORDERS_OPAQUE_CENTER_BROWN,
                 false, false, false, true);
 
-        xPos += Utilities.TOTAL_COLUMN_WIDTH;
+        xPos += JasperDocument.TOTAL_COLUMN_WIDTH;
 
-        int docTotalWidth = xPos + Utilities.LEFT_MARGIN_WIDTH + Utilities.RIGHT_MARGIN_WIDTH;
+        int docTotalWidth = xPos + LEFT_MARGIN_WIDTH + RIGHT_MARGIN_WIDTH;
+        jasperDoc.addIntElement(JasperDocument.ElementName.PAGE_WIDTH, docTotalWidth);
         int frameWidth = xPos;
-        Element pageWidth = doc.createElement(Utilities.PAGE_WIDTH);
-        pageWidth.setTextContent(String.valueOf(docTotalWidth));
-        Element columnWidthElement = doc.createElement(Utilities.COLUMN_WIDTH);
-        columnWidthElement.setTextContent(String.valueOf(frameWidth));
-        Element frameWidthElement = doc.createElement(Utilities.FRAME_WIDTH);
-        frameWidthElement.setTextContent(String.valueOf(frameWidth));
+        jasperDoc.addIntElement(JasperDocument.ElementName.COLUMN_WIDTH, frameWidth);
+        jasperDoc.addIntElement(JasperDocument.ElementName.FRAME_WIDTH, frameWidth);
 
         //serviceAndOperationFooter
-        Element serviceAndOperationFooterElement = doc.createElement(Utilities.SERVICE_AND_OPERATION_FOOTER);
-        rootNode.appendChild(serviceAndOperationFooterElement);
-        xPos = Utilities.CONSTANT_HEADER_START_X;
+        xPos = CONSTANT_HEADER_START_X;
         for (int i = 0; i < numMappingValues; i++) {
-            addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                    "textField-ServiceOperationFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_" + (i + 1) + "} == null)?new Long(0):$V{COLUMN_" + (i + 1) + "}",
+            jasperDoc.addTextFieldToElement(JasperDocument.ElementName.SERVICE_AND_OPERATION_FOOTER, xPos, yPos,
+                    DATA_COLUMN_WIDTH, FIELD_HEIGHT,
+                    "textField-ServiceOperationFooter-" + (i + 1),
+                    new TertiaryJavaLongExpression(TertiaryJavaLongExpression.TERNARY_STRING_VARIABLE.COLUMN_, i + 1),
                     DEFAULT_CENTER_ALIGNED, false, false, false, false);
-            xPos += Utilities.DATA_COLUMN_WIDTH;
+            xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, serviceAndOperationFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-ServiceOperationFooterTotal", "java.lang.Long", "$V{SERVICE_AND_OR_OPERATION_TOTAL}",
+        jasperDoc.addTextFieldToElement(JasperDocument.ElementName.SERVICE_AND_OPERATION_FOOTER, xPos, yPos,
+                JasperDocument.TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
+                "textField-ServiceOperationFooterTotal",
+                new SimpleJavaLongExpression(SimpleJavaLongExpression.PLAIN_STRING_VARIABLE.SERVICE_AND_OR_OPERATION_TOTAL),
                 ALL_BORDERS_GREY_CENTER, true, false, false, false);
 
         //serviceIdFooter
-        Element serviceIdFooterElement = doc.createElement(Utilities.SERVICE_ID_FOOTER);
-        rootNode.appendChild(serviceIdFooterElement);
-
-        xPos = Utilities.CONSTANT_HEADER_START_X;
+        xPos = CONSTANT_HEADER_START_X;
         for (int i = 0; i < numMappingValues; i++) {
-            addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                    "textField-ServiceIdFooter-" + (i + 1), "java.lang.Long", "($V{COLUMN_SERVICE_TOTAL_" + (i + 1) + "} == null || $V{COLUMN_SERVICE_TOTAL_" + (i + 1) + "}.intValue() == 0)?new Long(0):$V{COLUMN_SERVICE_TOTAL_" + (i + 1) + "}",
-                    Utilities.TOP_LEFT_BOTTOM_CENTER_GREY, true, false, false, false);
-            xPos += Utilities.DATA_COLUMN_WIDTH;
+            jasperDoc.addTextFieldToElement(JasperDocument.ElementName.SERVICE_ID_FOOTER, xPos, yPos,
+                    DATA_COLUMN_WIDTH, FIELD_HEIGHT,
+                    "textField-ServiceIdFooter-" + (i + 1),
+                    new TertiaryJavaLongExpression(TertiaryJavaLongExpression.TERNARY_STRING_VARIABLE.COLUMN_SERVICE_TOTAL_, i + 1),
+                    TOP_LEFT_BOTTOM_CENTER_GREY, true, false, false, false);
+            xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, serviceIdFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-ServiceIdFooterTotal", "java.lang.Long", "$V{SERVICE_ONLY_TOTAL}", Utilities.ALL_BORDERS_GREY_CENTER, true, false, false, false);
+        jasperDoc.addTextFieldToElement(JasperDocument.ElementName.SERVICE_ID_FOOTER, xPos, yPos,
+                JasperDocument.TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
+                "textField-ServiceIdFooterTotal",
+                new SimpleJavaLongExpression(SimpleJavaLongExpression.PLAIN_STRING_VARIABLE.SERVICE_ONLY_TOTAL),
+                ALL_BORDERS_GREY_CENTER, true, false, false, false);
 
         //constantFooter
-        Element constantFooterElement = doc.createElement(Utilities.CONSTANT_FOOTER);
-        rootNode.appendChild(constantFooterElement);
-
-        xPos = Utilities.CONSTANT_HEADER_START_X;
+        xPos = CONSTANT_HEADER_START_X;
         for (int i = 0; i < numMappingValues; i++) {
-            addTextFieldToElement(doc, constantFooterElement, xPos, yPos, Utilities.DATA_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                    "textField-constantFooter-" + (i + 1), "java.lang.Long", "$V{COLUMN_MAPPING_TOTAL_" + (i + 1) + "}",
-                    Utilities.TOP_LEFT_GREY_CENTER, true, false, false, false);
-            xPos += Utilities.DATA_COLUMN_WIDTH;
+            jasperDoc.addTextFieldToElement(JasperDocument.ElementName.CONSTANT_FOOTER, xPos, yPos,
+                    DATA_COLUMN_WIDTH, FIELD_HEIGHT,
+                    "textField-constantFooter-" + (i + 1),
+                    new SimpleIndexJavaLongExpression(SimpleIndexJavaLongExpression.INDEX_MISSING_VARIABLE.COLUMN_MAPPING_TOTAL_, i + 1),
+                    TOP_LEFT_GREY_CENTER, true, false, false, false);
+            xPos += DATA_COLUMN_WIDTH;
         }
 
-        addTextFieldToElement(doc, constantFooterElement, xPos, yPos, Utilities.TOTAL_COLUMN_WIDTH, Utilities.FIELD_HEIGHT,
-                "textField-constantFooterTotal", "java.lang.Long", "$V{GRAND_TOTAL}", Utilities.TOP_LEFT_RIGHT_GREY_CENTER, true, false, false, false);
+        jasperDoc.addTextFieldToElement(JasperDocument.ElementName.CONSTANT_FOOTER, xPos, yPos,
+                JasperDocument.TOTAL_COLUMN_WIDTH, FIELD_HEIGHT,
+                "textField-constantFooterTotal",
+                new SimpleJavaLongExpression(SimpleJavaLongExpression.PLAIN_STRING_VARIABLE.GRAND_TOTAL),
+                TOP_LEFT_RIGHT_GREY_CENTER, true, false, false, false);
 
 
-        rootNode.appendChild(pageWidth);
-        //columnWidth -is page width - left + right margin
-        rootNode.appendChild(columnWidthElement);
-        rootNode.appendChild(frameWidthElement);
-        Element leftMarginElement = doc.createElement(Utilities.LEFT_MARGIN);
-        leftMarginElement.setTextContent(String.valueOf(Utilities.LEFT_MARGIN_WIDTH));
-        rootNode.appendChild(leftMarginElement);
-
-        Element rightMarginElement = doc.createElement(Utilities.RIGHT_MARGIN);
-        rightMarginElement.setTextContent(String.valueOf(Utilities.LEFT_MARGIN_WIDTH));
-        rootNode.appendChild(rightMarginElement);
+        jasperDoc.addIntElement(JasperDocument.ElementName.LEFT_MARGIN, LEFT_MARGIN_WIDTH);
+        jasperDoc.addIntElement(JasperDocument.ElementName.RIGHT_MARGIN, LEFT_MARGIN_WIDTH);
 
         LinkedHashMap<String, String> groupToLegendDisplayStringMap = getGroupToLegendDisplayStringMap(mappingValuesLegend);
-        addChartXMLToDocument(doc, groupToLegendDisplayStringMap, USAGE_CHART_STATIC_WIDTH, 595);
-        return doc;
+        addChartXMLToDocument(jasperDoc, groupToLegendDisplayStringMap, USAGE_CHART_STATIC_WIDTH, 595);
+        return jasperDoc;
+
+    }
+
+    /**
+     * Add the dynamic elements of the chart xml to the supplied document, which is used to transform template jrxml
+     * files. The groupToMappingValue is used for creating the legend jrxml elements.
+     *
+     * @param jasperDoc           the JasperDocument to update
+     * @param groupToMappingValue represents the distinct mapping sets for the keys in the query. The key is a shorted
+     *                            version of the string it maps to. This information is displayed in a legend element created by this function
+     * @param frameWidth          the frame width in the jrxml file which will contain the chart
+     * @param minPageHeight       the minimum page height of the report which will be created using the updated document
+     *                            passed into this function as it's transform parameter
+     */
+    private static void addChartXMLToDocument(JasperDocument jasperDoc, LinkedHashMap<String, String> groupToMappingValue,
+                                              int frameWidth, int minPageHeight) {
+        //Create all the text fields for the chart legend
+
+        jasperDoc.createRootDirectAncestorElement(JasperDocument.ElementName.CHART_ELEMENT);
+
+        jasperDoc.createElementAncestorElement(JasperDocument.ElementName.CHART_LEGEND, JasperDocument.ElementName.CHART_ELEMENT);
+        int x = 0;
+        int y = 0;
+        int vSpace = 2;
+        int height = 18;
+
+        int index = 0;
+        if (frameWidth < FRAME_MIN_WIDTH) frameWidth = FRAME_MIN_WIDTH;
+        for (Map.Entry<String, String> me : groupToMappingValue.entrySet()) {
+
+            jasperDoc.addTextFieldToElement(JasperDocument.ElementName.CHART_LEGEND, x, y, frameWidth, height,
+                    "chartLegendKey" + (index + 1),
+                    "<b>" + me.getKey() + ":</b> " + Utilities.escapeHtmlCharacters(me.getValue()),
+                    LEFT_PADDED_HEADING_HTML, false, true, true, false);
+
+            y += height + vSpace;
+            index++;
+        }
+
+        //Chart height is minimum 130, if there are more than 2 mapping value sets then increase it
+        int chartHeight = 130;
+        int numMappingSets = groupToMappingValue.size();
+        if (numMappingSets > 2) {
+            chartHeight += 30 * (numMappingSets - 2);
+        }
+
+        jasperDoc.addIntElement(JasperDocument.ElementName.CHART_HEIGHT, chartHeight, JasperDocument.ElementName.CHART_ELEMENT);
+
+        //start of chart legend = chart height + 18 for the title of the chart frame
+        int chartLegendFrameYPos = chartHeight;// + height;
+        jasperDoc.addIntElement(JasperDocument.ElementName.CHART_LEGEND_FRAME_YPOS, chartLegendFrameYPos, JasperDocument.ElementName.CHART_ELEMENT);
+
+        //height of chart legend = num mapping sets * height + vSpace
+        int chartLegendHeight = numMappingSets * (height + vSpace);
+        jasperDoc.addIntElement(JasperDocument.ElementName.CHART_LEGEND_HEIGHT, chartLegendHeight, JasperDocument.ElementName.CHART_ELEMENT);
+
+        int chartFrameHeight = chartHeight + 18 + chartLegendHeight;
+        jasperDoc.addIntElement(JasperDocument.ElementName.CHART_FRAME_HEIGHT, chartFrameHeight, JasperDocument.ElementName.CHART_ELEMENT);
+
+        //Calculate the height of the band
+        int bandHeight = chartFrameHeight + height + height;//18 from the summary frame + 18 for a gap
+        jasperDoc.addIntElement(JasperDocument.ElementName.BAND_HEIGHT, bandHeight, JasperDocument.ElementName.CHART_ELEMENT);
+
+        int titleHeight = 243;
+        int margins = 20 + 20;
+        int totalFirstPageHeight = titleHeight + margins + bandHeight + CONSTANT_HEADER_HEIGHT;
+        if (totalFirstPageHeight < minPageHeight) totalFirstPageHeight = minPageHeight;
+
+        jasperDoc.addIntElement(JasperDocument.ElementName.PAGE_HEIGHT, totalFirstPageHeight, JasperDocument.ElementName.CHART_ELEMENT);
     }
 
     /**
@@ -768,9 +752,10 @@ public class RuntimeDocUtilities {
      * @param distinctMappingSets  represents the runtime report meta data, which are the distinct set of mapping values
      *                             that the report <em>WILL</em> find when it runs. The first value of each list is always the authenticated user,
      *                             followed by 5 mapping values
-     * @param truncateValues
-     * @param truncateKeyMaxSize
-     * @param truncateValueMaxSize @return
+     * @param truncateValues       if true truncation will be appplied to keys and values
+     * @param truncateKeyMaxSize   if truncateValues is true, then this is the maximum size of a key after truncation
+     * @param truncateValueMaxSize if truncateValues is true, then this is the maximum size of a value after truncation
+     * @return a LinkedHashSet with a string representing each distint group of valus from distinctMappingSets
      */
     public static LinkedHashSet<String> getMappingLegendValues(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
                                                                LinkedHashSet<List<String>> distinctMappingSets,
@@ -802,87 +787,6 @@ public class RuntimeDocUtilities {
         }
 
         return mappingValues;
-    }
-
-    /**
-     * Add the dynamic elements of the chart xml to the supplied document, which is used to transform template jrxml
-     * files. The groupToMappingValue is used for creating the legend jrxml elements.
-     *
-     * @param doc                 the document to update
-     * @param groupToMappingValue represents the distinct mapping sets for the keys in the query. The key is a shorted
-     *                            version of the string it maps to. This information is displayed in a legend element created by this function
-     * @param frameWidth          the frame width in the jrxml file which will contain the chart
-     * @param minPageHeight       the minimum page height of the report which will be created using the updated document
-     *                            passed into this function as it's transform parameter
-     */
-    private static void addChartXMLToDocument(Document doc, LinkedHashMap<String, String> groupToMappingValue,
-                                              int frameWidth, int minPageHeight) {
-        //Create all the text fields for the chart legend
-        Node rootNode = doc.getFirstChild();
-        Element chartElement = doc.createElement(CHART_ELEMENT);
-        rootNode.appendChild(chartElement);
-
-        Element chartLegend = doc.createElement(CHART_LEGEND);
-        chartElement.appendChild(chartLegend);
-        int x = 0;
-        int y = 0;
-        int vSpace = 2;
-        int height = 18;
-
-        int index = 0;
-        if (frameWidth < FRAME_MIN_WIDTH) frameWidth = FRAME_MIN_WIDTH;
-        for (Map.Entry<String, String> me : groupToMappingValue.entrySet()) {
-
-            addTextFieldToElement(doc, chartLegend, x, y, frameWidth, height, "chartLegendKey" + (index + 1), "java.lang.String",
-                    "<b>" + me.getKey() + ":</b> " + Utilities.escapeHtmlCharacters(me.getValue()), LEFT_PADDED_HEADING_HTML, false, true, true, false);
-
-            y += height + vSpace;
-            index++;
-        }
-
-        //Chart height is minimum 130, if there are more than 2 mapping value sets then increase it
-        int chartHeight = 130;
-        int numMappingSets = groupToMappingValue.size();
-        if (numMappingSets > 2) {
-            chartHeight += 30 * (numMappingSets - 2);
-        }
-
-        Element chartHeightElement = doc.createElement(CHART_HEIGHT);
-        chartElement.appendChild(chartHeightElement);
-        chartHeightElement.setTextContent(String.valueOf(chartHeight));
-
-        //start of chart legend = chart height + 18 for the title of the chart frame
-        int chartLegendFrameYPos = chartHeight;// + height;
-        Element chartLegendYPosElement = doc.createElement(CHART_LEGEND_FRAME_YPOS);
-        chartElement.appendChild(chartLegendYPosElement);
-        chartLegendYPosElement.setTextContent(String.valueOf(chartLegendFrameYPos));
-
-        //height of chart legend = num mapping sets * height + vSpace
-        int chartLegendHeight = numMappingSets * (height + vSpace);
-        Element chartLegendHeightElement = doc.createElement(CHART_LEGEND_HEIGHT);
-        chartElement.appendChild(chartLegendHeightElement);
-        chartLegendHeightElement.setTextContent(String.valueOf(chartLegendHeight));
-
-        int chartFrameHeight = chartHeight + 18 + chartLegendHeight;
-        Element chartFrameHeightElement = doc.createElement(CHART_FRAME_HEIGHT);
-        chartElement.appendChild(chartFrameHeightElement);
-        chartFrameHeightElement.setTextContent(String.valueOf(chartFrameHeight));
-
-        //Calculate the height of the band
-        int bandHeight = chartFrameHeight + height + height;//18 from the summary frame + 18 for a gap
-        Element bandHeightElement = doc.createElement(BAND_HEIGHT);
-        chartElement.appendChild(bandHeightElement);
-        bandHeightElement.setTextContent(String.valueOf(bandHeight));
-
-        int titleHeight = 243;
-        int margins = 20 + 20;
-        int totalFirstPageHeight = titleHeight + margins + bandHeight + CONSTANT_HEADER_HEIGHT;
-        if (totalFirstPageHeight < minPageHeight) totalFirstPageHeight = minPageHeight;
-
-        Element pageHeightElement = doc.createElement(PAGE_HEIGHT);
-        chartElement.appendChild(pageHeightElement);
-        pageHeightElement.setTextContent(String.valueOf(totalFirstPageHeight));
-
     }
 
     /**
@@ -920,253 +824,6 @@ public class RuntimeDocUtilities {
     }
 
     /**
-     * Add a text field jrxml element to the supplied document. The xml created will look like:
-     * <pre>
-     * &lt textField isStretchWithOverflow="true" isBlankWhenNull="false" evaluationTime="Now"
-     * hyperlinkType="None" hyperlinkTarget="Self" &gt
-     * &lt reportElement
-     * x="50"
-     * y="0"
-     * width="68"
-     * height="36"
-     * key="textField-MappingKeys"/ &gt  <br>
-     * &lt box> &lt /box &gt <br>
-     * &lt textElement markup="html" &gt <br>
-     * &lt font/ &gt <br>
-     * &lt /textElement &gt <br>
-     * &lt textFieldExpression class="java.lang.String" &gt <br>
-     * &lt ![CDATA["IP_ADDRESS<br>CUSTOMER"]] &gt &lt /textFieldExpression &gt <br>
-     * &lt /textField &gt
-     * </pre>
-     * <p/>
-     * All string parameters are escaped with escapeCharacters()
-     *
-     * @param doc                      the document which is used to create new elements from
-     * @param frameElement             the element from the doc to update
-     * @param x                        x value
-     * @param y                        y value
-     * @param width                    width
-     * @param height                   height
-     * @param key                      the text field key value
-     * @param textFieldExpressionClass what type of data the text field will hold - String, Integer etc...
-     * @param markedUpCData            if data is to be included, then it's put inside a CDATA section to avoid any illegal chars
-     * @param style                    the style to apply to the text field
-     * @param isHtmlFormatted
-     * @param floatElement
-     * @param stretchElement
-     */
-    private static void addTextFieldToElement(Document doc, Element frameElement, int x, int y, int width, int height,
-                                              String key, String textFieldExpressionClass, String markedUpCData,
-                                              String style, boolean opaque, boolean isHtmlFormatted, boolean floatElement, boolean stretchElement) {
-        Element textField = doc.createElement("textField");
-        textField.setAttribute("isStretchWithOverflow", "true");
-        textField.setAttribute("isBlankWhenNull", "false");
-        textField.setAttribute("evaluationTime", "Now");
-        textField.setAttribute("hyperlinkType", "None");
-        textField.setAttribute("hyperlinkTarget", "Self");
-
-        Element reportElement = doc.createElement("reportElement");
-        reportElement.setAttribute("x", String.valueOf(x));
-        reportElement.setAttribute("y", String.valueOf(y));
-        reportElement.setAttribute("width", String.valueOf(width));
-        reportElement.setAttribute("height", String.valueOf(height));
-        reportElement.setAttribute("key", escapeJavaSringLiteralChars(key));
-        reportElement.setAttribute("style", escapeJavaSringLiteralChars(style));
-
-        if (stretchElement) reportElement.setAttribute("stretchType", "RelativeToTallestObject");
-
-        if (floatElement) reportElement.setAttribute("positionType", "Float");
-
-        if (opaque) reportElement.setAttribute("mode", "Opaque");
-
-        textField.appendChild(reportElement);
-
-        Element boxElement = doc.createElement("box");
-        textField.appendChild(boxElement);
-
-        Element textElement = doc.createElement("textElement");
-        if (isHtmlFormatted) textElement.setAttribute("markup", "html");
-
-        Element fontElement = doc.createElement("font");
-        textElement.appendChild(fontElement);
-        textField.appendChild(textElement);
-
-        Element textFieldExpressionElement = doc.createElement("textFieldExpression");
-        textFieldExpressionElement.setAttribute("class", escapeJavaSringLiteralChars(textFieldExpressionClass));
-
-        CDATASection cDataSection;
-        if (textFieldExpressionClass.equals("java.lang.String")) {
-            cDataSection = doc.createCDATASection("\"" + escapeJavaSringLiteralChars(markedUpCData) + "\"");
-        } else {
-            cDataSection = doc.createCDATASection(escapeJavaSringLiteralChars(markedUpCData));
-        }
-
-        textFieldExpressionElement.appendChild(cDataSection);
-        textField.appendChild(textFieldExpressionElement);
-
-        frameElement.appendChild(textField);
-    }
-
-    /**
-     * Add a static text jrxml element to the supplied document
-     * <staticText>
-     * <reportElement
-     * x="0"
-     * y="0"
-     * width="50"
-     * height="17"
-     * key="staticText-1"/>
-     * <box></box>
-     * <textElement>
-     * <font/>
-     * </textElement>
-     * <text><![CDATA[NA]]></text>
-     * </staticText>
-     * <p/>
-     * All string parameters are escaped with escapeCharacters()
-     *
-     * @param doc           the document which is used to create new elements from
-     * @param frameElement  the element from the doc to update
-     * @param x             x value
-     * @param y             y value
-     * @param width         width
-     * @param height        height
-     * @param key           the text field key value
-     * @param markedUpCData if data is to be included, then it's put inside a CDATA section to avoid any illegal chars
-     * @param style         the style to apply to the text field
-     * @param opaque        if true the text field is not see through, if false the style of the element behind it will come
-     *                      through
-     */
-    private static void addStaticTextToElement(Document doc, Element frameElement, int x, int y, int width, int height,
-                                               String key, String markedUpCData, String style, boolean opaque) {
-        Element staticText = doc.createElement("staticText");
-
-        Element reportElement = doc.createElement("reportElement");
-        reportElement.setAttribute("x", String.valueOf(x));
-        reportElement.setAttribute("y", String.valueOf(y));
-        reportElement.setAttribute("width", String.valueOf(width));
-        reportElement.setAttribute("height", String.valueOf(height));
-        reportElement.setAttribute("key", escapeJavaSringLiteralChars(key));
-        reportElement.setAttribute("style", escapeJavaSringLiteralChars(style));
-        if (opaque) reportElement.setAttribute("mode", "Opaque");
-        staticText.appendChild(reportElement);
-
-        Element boxElement = doc.createElement("box");
-        staticText.appendChild(boxElement);
-
-        Element textElement = doc.createElement("textElement");
-        textElement.setAttribute("markup", "html");
-        Element fontElement = doc.createElement("font");
-        textElement.appendChild(fontElement);
-        staticText.appendChild(textElement);
-
-        Element text = doc.createElement("text");
-        CDATASection cDataSection = doc.createCDATASection(escapeJavaSringLiteralChars(markedUpCData));
-        text.appendChild(cDataSection);
-        staticText.appendChild(text);
-        frameElement.appendChild(staticText);
-    }
-
-    /**
-     * Create a variable and add it to the supplied document
-     * <variable name="COLUMN_1_MAPPING_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="CONSTANT"
-     * calculation="Sum">
-     * <variableExpression><![CDATA[((UsageReportHelper)$P{REPORT_SCRIPTLET})
-     * .getVariableValue("COLUMN_1", $F{AUTHENTICATED_USER},
-     * new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3},
-     * $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})]]></variableExpression>
-     * </variable>
-     * <p/>
-     * <p/>
-     * All string parameters are escaped with escapeCharacters()
-     *
-     * @param doc          the document which is used to create new elements from
-     * @param variables    the element from the doc to update
-     * @param varName      the variable name
-     * @param varClass     the java type the variable is
-     * @param resetType    when the variable gets reset
-     * @param resetGroup   if the resetType is 'Group', then which group resets the variable
-     * @param calc         what calculation the variable performs
-     * @param functionName the function name within the report scriptlet which the variable will call
-     * @param columnName   parameter to the function which will be called at runtime when this variable is being
-     *                     evaluated. The column name is used within the report scriptlet to look up the correct value for this variable
-     */
-    private static void addVariableToElement(Document doc, Element variables, String varName, String varClass,
-                                             String resetType, String resetGroup, String calc, String functionName,
-                                             String columnName) {
-        Element newVariable = doc.createElement(Utilities.VARIABLE);
-        newVariable.setAttribute("name", escapeJavaSringLiteralChars(varName));
-        newVariable.setAttribute("class", escapeJavaSringLiteralChars(varClass));
-        newVariable.setAttribute("resetType", escapeJavaSringLiteralChars(resetType));
-        if (resetGroup != null && !resetGroup.equals(""))
-            newVariable.setAttribute("resetGroup", escapeJavaSringLiteralChars(resetGroup));
-        newVariable.setAttribute("calculation", escapeJavaSringLiteralChars(calc));
-
-        Element variableExpression = doc.createElement("variableExpression");
-        String cData = "((UsageSummaryAndSubReportHelper)$P{REPORT_SCRIPTLET})." + escapeJavaSringLiteralChars(functionName) + "(\""
-                + escapeJavaSringLiteralChars(columnName) + "\"," +
-                " $F{AUTHENTICATED_USER},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, $F{MAPPING_VALUE_3}," +
-                "$F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}})";
-        CDATASection cDataSection = doc.createCDATASection(cData);
-        variableExpression.appendChild(cDataSection);
-
-        newVariable.appendChild(variableExpression);
-        variables.appendChild(newVariable);
-
-    }
-
-    /**
-     * Add an element to the supplied Element variables
-     * <p/>
-     * All string parameters are escaped with escapeCharacters()
-     * <p/>
-     * <variable name="COLUMN_SERVICE_1" class="java.lang.Long" resetType="Group" resetGroup="SERVICE" calculation="Sum">
-     *
-     * @param doc        the document which is used to create new elements from
-     * @param variables  the element to add the variable to
-     * @param varName    variable name
-     * @param varClass   variable java class type
-     * @param resetType  when the variable gets reset
-     * @param resetGroup if the resetType is 'Group', then which group resets the variable
-     * @param calc       what calculation the variable performs
-     */
-    private static void addVariableToElement(Document doc, Element variables, String varName, String varClass,
-                                             String resetType, String resetGroup, String calc) {
-        Element newVariable = doc.createElement(Utilities.VARIABLE);
-        newVariable.setAttribute("name", escapeJavaSringLiteralChars(varName));
-        newVariable.setAttribute("class", escapeJavaSringLiteralChars(varClass));
-        newVariable.setAttribute("resetType", escapeJavaSringLiteralChars(resetType));
-        if (resetGroup != null && !resetGroup.equals(""))
-            newVariable.setAttribute("resetGroup", escapeJavaSringLiteralChars(resetGroup));
-        newVariable.setAttribute("calculation", escapeJavaSringLiteralChars(calc));
-        variables.appendChild(newVariable);
-
-    }
-
-    /**
-     * Add a sub report return variable to the jrxml
-     * <p/>
-     * All string parameters are escaped with escapeCharacters()
-     * <p/>
-     * <returnValue subreportVariable="COLUMN_1" toVariable="COLUMN_SERVICE_1" calculation="Sum"/>
-     *
-     * @param doc               the document which is used to create new elements from
-     * @param subReport         the element to add the new element to
-     * @param subreportVariable the sub report variable name
-     * @param toVariable        the variabel name of the report this element will belong to, into which the sub report value
-     *                          will be placed
-     * @param calc              what calculation the variable performs
-     */
-    private static void addSubReportReturnVariable(Document doc, Element subReport, String subreportVariable,
-                                                   String toVariable, String calc) {
-        Element newVariable = doc.createElement(Utilities.RETURN_VALUE);
-        newVariable.setAttribute("subreportVariable", escapeJavaSringLiteralChars(subreportVariable));
-        newVariable.setAttribute("toVariable", escapeJavaSringLiteralChars(toVariable));
-        newVariable.setAttribute("calculation", escapeJavaSringLiteralChars(calc));
-        subReport.appendChild(newVariable);
-    }
-
-    /**
      * The linked hash map this function creates is used by the usage sub reports. The usage sub reports have the
      * complicated requirement of pretending that data formatted with one row per distinct set of mapping values
      * is actually one row for <em>every</em> distinct set of mapping values.
@@ -1192,45 +849,4 @@ public class RuntimeDocUtilities {
         }
         return keyToColumnName;
     }
-
-    /**
-     * Escape any characters which are illegal in a java string, used by runtime methods
-     * Values used in the xml created by methods in this class are placed into jasper xml files and compiled.
-     * As a result it's possible for values found in the database to be illegal in java statements and to cause
-     * code injection. All places where strings are placed into the runtime xml documents are ran through
-     * this method to escape / removed any problamatic strings
-     * <p/>
-     * This method is called from addTextFieldToElement, addSubReportReturnVariable and addVariableToElement
-     *
-     * @param stringToEscape
-     * @return
-     */
-    public static String escapeJavaSringLiteralChars(String stringToEscape) {
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < stringToEscape.length(); i++) {
-            char c = stringToEscape.charAt(i);
-
-            switch (c) {
-                case '\\':
-                    sb.append("\\\\");
-                    break;
-                case '"':
-                    sb.append("\\\"");
-                    break;
-                case '\n':
-                    sb.append("\\n");
-                    break;
-                case '\r':
-                    sb.append("\\r");
-                    break;
-                default:
-                    sb.append(c);
-
-            }
-        }
-        return sb.toString();
-    }
-
-
 }

@@ -1108,7 +1108,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && !$P{IS_USING_KEYS}.booleanValue()
                         <textFieldExpression class="java.lang.Double">
                             <![CDATA[($V{COMPLETED_SUM_MAPPING}.doubleValue() == 0)? new Double(0) : new Double($V{BACK_SUM_MAPPING}.doubleValue()/$V{COMPLETED_SUM_MAPPING}.doubleValue())]]></textFieldExpression>
                     </textField>
-                    <textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false"
+                    <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -1292,7 +1292,7 @@ new Double((new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMP
                         <textFieldExpression class="java.lang.Double">
                             <![CDATA[($V{COMPLETED_SUM_MAPPING}.doubleValue() == 0)? new Double(0) : new Double($V{BACK_SUM_MAPPING}.doubleValue()/$V{COMPLETED_SUM_MAPPING}.doubleValue())]]></textFieldExpression>
                     </textField>
-                    <textField isStretchWithOverflow="false" pattern="#,##0.00 %" isBlankWhenNull="false"
+                    <textField isStretchWithOverflow="false" pattern="###0.00" isBlankWhenNull="false"
                                evaluationTime="Now" hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"

@@ -33,7 +33,7 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         Assert.assertNotNull(doc);
     }
 
@@ -77,33 +77,33 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         //Ensure all the first level elements exist
-        NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.VARIABLES.getName());
         Assert.assertTrue(list.getLength() == 1);
 
-        list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
+        list = doc.getElementsByTagName(JasperDocument.ElementName.CONSTANT_HEADER.getName());
         Assert.assertTrue(list.getLength() == 1);
 
-        list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
+        list = doc.getElementsByTagName(JasperDocument.ElementName.SERVICE_AND_OPERATION_FOOTER.getName());
         Assert.assertTrue(list.getLength() == 1);
 
-        list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
+        list = doc.getElementsByTagName(JasperDocument.ElementName.SERVICE_ID_FOOTER.getName());
         Assert.assertTrue(list.getLength() == 1);
 
-        list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
+        list = doc.getElementsByTagName(JasperDocument.ElementName.CONSTANT_FOOTER.getName());
         Assert.assertTrue(list.getLength() == 1);
 
-        list = doc.getElementsByTagName(Utilities.COLUMN_WIDTH);
+        list = doc.getElementsByTagName(JasperDocument.ElementName.COLUMN_WIDTH.getName());
         Assert.assertTrue(list.getLength() == 1);
 
-        list = doc.getElementsByTagName(Utilities.FRAME_WIDTH);
+        list = doc.getElementsByTagName(JasperDocument.ElementName.FRAME_WIDTH.getName());
         Assert.assertTrue(list.getLength() == 1);
 
-        list = doc.getElementsByTagName(Utilities.LEFT_MARGIN);
+        list = doc.getElementsByTagName(JasperDocument.ElementName.LEFT_MARGIN.getName());
         Assert.assertTrue(list.getLength() == 1);
 
-        list = doc.getElementsByTagName(Utilities.RIGHT_MARGIN);
+        list = doc.getElementsByTagName(JasperDocument.ElementName.RIGHT_MARGIN.getName());
         Assert.assertTrue(list.getLength() == 1);
     }
 
@@ -112,12 +112,13 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         //Ensure all the first level elements exist
-        NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.VARIABLES.getName());
         list = list.item(0).getChildNodes();
         //3 sets of variables X 4 value sets from getTestMappingValues()
-        Assert.assertTrue(Utilities.VARIABLES + " element should have " + (3 * distinctMappingSets.size()) + " elements",
+        Assert.assertTrue(JasperDocument.ElementName.VARIABLES.getName()
+                + " element should have " + (3 * distinctMappingSets.size()) + " elements",
                 list.getLength() == (3 * distinctMappingSets.size()));
 
     }
@@ -131,8 +132,8 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
-        NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.VARIABLES.getName());
         list = list.item(0).getChildNodes();
         String[] variableNames = new String[]{"COLUMN_", "COLUMN_MAPPING_TOTAL_", "COLUMN_SERVICE_TOTAL_"};
         String[] calculations = new String[]{"Nothing", "Sum", "Sum"};
@@ -191,12 +192,13 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         //Ensure all the first level elements exist
-        NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.CONSTANT_HEADER.getName());
         list = list.item(0).getChildNodes();
         //1 text fields which are hardcoded, and 4 value sets from getTestMappingValues()
-        Assert.assertTrue(Utilities.CONSTANT_HEADER + " element should have " + (distinctMappingSets.size() + 1) + " elements, " +
+        Assert.assertTrue(JasperDocument.ElementName.CONSTANT_HEADER.getName() + " element should have "
+                + (distinctMappingSets.size() + 1) + " elements, " +
                 "instead it had " + list.getLength(),
                 list.getLength() == distinctMappingSets.size() + 1);
     }
@@ -206,8 +208,8 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
-        NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_HEADER);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.CONSTANT_HEADER.getName());
         list = list.item(0).getChildNodes();
         for (int i = 0; i < list.getLength(); i++) {
             Node textFieldNode = list.item(i);
@@ -224,22 +226,23 @@ public class RuntimeDocUtilitiesTest {
             attributes = reportElementNode.getAttributes();
             Node height = attributes.getNamedItem("height");
             int actualIntValue = Integer.valueOf(height.getNodeValue());
-            int expectedIntValue = Utilities.MAPPING_VALUE_FIELD_HEIGHT;
+            int expectedIntValue = RuntimeDocUtilities.MAPPING_VALUE_FIELD_HEIGHT;
 
             Assert.assertTrue("height attribute should equal " + expectedIntValue + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node width = attributes.getNamedItem("width");
             actualIntValue = Integer.valueOf(width.getNodeValue());
-            if (i < list.getLength() - 1) expectedIntValue = Utilities.DATA_COLUMN_WIDTH;
-            else expectedIntValue = Utilities.TOTAL_COLUMN_WIDTH;
+            if (i < list.getLength() - 1) expectedIntValue = RuntimeDocUtilities.DATA_COLUMN_WIDTH;
+            else expectedIntValue = JasperDocument.TOTAL_COLUMN_WIDTH;
 
             Assert.assertTrue("width attribute should equal " + expectedIntValue + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node x = attributes.getNamedItem("x");
-            if (i == 0) expectedIntValue = Utilities.CONSTANT_HEADER_START_X;
-            else expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * i);
+            if (i == 0) expectedIntValue = RuntimeDocUtilities.CONSTANT_HEADER_START_X;
+            else
+                expectedIntValue = RuntimeDocUtilities.CONSTANT_HEADER_START_X + (RuntimeDocUtilities.DATA_COLUMN_WIDTH * i);
             actualIntValue = Integer.valueOf(x.getNodeValue());
 
             Assert.assertTrue("x attribute should equal " + expectedIntValue + " Actual value was: "
@@ -253,13 +256,11 @@ public class RuntimeDocUtilitiesTest {
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node style = attributes.getNamedItem("style");
-            if (i < list.getLength() - 1) expectedValue = Utilities.TOP_LEFT_BOTTOM_CENTER_BROWN;
+            if (i < list.getLength() - 1) expectedValue = RuntimeDocUtilities.TOP_LEFT_BOTTOM_CENTER_BROWN;
             else expectedValue = RuntimeDocUtilities.ALL_BORDERS_OPAQUE_CENTER_BROWN;
 
             Assert.assertTrue("style attribute should equal " + expectedValue + " Actual value was: " + style.getNodeValue()
                     , style.getNodeValue().equals(expectedValue));
-
-
         }
     }
 
@@ -280,12 +281,13 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         //Ensure all the first level elements exist
-        NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.SERVICE_AND_OPERATION_FOOTER.getName());
         list = list.item(0).getChildNodes();
         //1 text fields which is hardcoded, and 4 value sets from getTestMappingValues()
-        Assert.assertTrue(Utilities.SERVICE_AND_OPERATION_FOOTER + " element should have " + (distinctMappingSets.size() + 1)
+        Assert.assertTrue(JasperDocument.ElementName.SERVICE_AND_OPERATION_FOOTER.getName()
+                + " element should have " + (distinctMappingSets.size() + 1)
                 + " elements", list.getLength() == distinctMappingSets.size() + 1);
     }
 
@@ -294,9 +296,9 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         //printOutDocument(doc);
-        NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.SERVICE_AND_OPERATION_FOOTER.getName());
         list = list.item(0).getChildNodes();
         for (int i = 0; i < list.getLength(); i++) {
             Node textFieldNode = list.item(i);
@@ -305,21 +307,21 @@ public class RuntimeDocUtilitiesTest {
             NamedNodeMap attributes = reportElementNode.getAttributes();
             Node height = attributes.getNamedItem("height");
             int actualIntValue = Integer.valueOf(height.getNodeValue());
-            int expectedIntValue = Utilities.FIELD_HEIGHT;
+            int expectedIntValue = RuntimeDocUtilities.FIELD_HEIGHT;
 
-            Assert.assertTrue("height attribute should equal " + Utilities.FIELD_HEIGHT + " Actual value was: "
+            Assert.assertTrue("height attribute should equal " + RuntimeDocUtilities.FIELD_HEIGHT + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node width = attributes.getNamedItem("width");
             actualIntValue = Integer.valueOf(width.getNodeValue());
-            if (i < list.getLength() - 1) expectedIntValue = Utilities.DATA_COLUMN_WIDTH;
-            else expectedIntValue = Utilities.TOTAL_COLUMN_WIDTH;
+            if (i < list.getLength() - 1) expectedIntValue = RuntimeDocUtilities.DATA_COLUMN_WIDTH;
+            else expectedIntValue = JasperDocument.TOTAL_COLUMN_WIDTH;
 
             Assert.assertTrue("width attribute should equal " + expectedIntValue + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node x = attributes.getNamedItem("x");
-            expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * i);
+            expectedIntValue = RuntimeDocUtilities.CONSTANT_HEADER_START_X + (RuntimeDocUtilities.DATA_COLUMN_WIDTH * i);
             actualIntValue = Integer.valueOf(x.getNodeValue());
 
             Assert.assertTrue("x attribute should equal " + expectedIntValue + " Actual value was: "
@@ -335,7 +337,7 @@ public class RuntimeDocUtilitiesTest {
             Node style = attributes.getNamedItem("style");
             String expectedValue;
             if (i < list.getLength() - 1) expectedValue = RuntimeDocUtilities.DEFAULT_CENTER_ALIGNED;
-            else expectedValue = Utilities.ALL_BORDERS_GREY_CENTER;
+            else expectedValue = RuntimeDocUtilities.ALL_BORDERS_GREY_CENTER;
 
             Assert.assertTrue("style attribute should equal " + expectedValue + " Actual value was: " + style.getNodeValue()
                     , style.getNodeValue().equals(expectedValue));
@@ -381,12 +383,13 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         //Ensure all the first level elements exist
-        NodeList list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.SERVICE_ID_FOOTER.getName());
         list = list.item(0).getChildNodes();
         //1 text fields which is hardcoded, and 4 value sets from getTestMappingValues()
-        Assert.assertTrue(Utilities.SERVICE_ID_FOOTER + " element should have " + (distinctMappingSets.size() + 1)
+        Assert.assertTrue(JasperDocument.ElementName.SERVICE_ID_FOOTER.getName()
+                + " element should have " + (distinctMappingSets.size() + 1)
                 + " elements", list.getLength() == distinctMappingSets.size() + 1);
     }
 
@@ -395,8 +398,8 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
-        NodeList list = doc.getElementsByTagName(Utilities.SERVICE_ID_FOOTER);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.SERVICE_ID_FOOTER.getName());
         list = list.item(0).getChildNodes();
         for (int i = 0; i < list.getLength(); i++) {
             Node textFieldNode = list.item(i);
@@ -405,21 +408,21 @@ public class RuntimeDocUtilitiesTest {
             NamedNodeMap attributes = reportElementNode.getAttributes();
             Node height = attributes.getNamedItem("height");
             int actualIntValue = Integer.valueOf(height.getNodeValue());
-            int expectedIntValue = Utilities.FIELD_HEIGHT;
+            int expectedIntValue = RuntimeDocUtilities.FIELD_HEIGHT;
 
-            Assert.assertTrue("height attribute should equal " + Utilities.FIELD_HEIGHT + " Actual value was: "
+            Assert.assertTrue("height attribute should equal " + RuntimeDocUtilities.FIELD_HEIGHT + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node width = attributes.getNamedItem("width");
             actualIntValue = Integer.valueOf(width.getNodeValue());
-            if (i < list.getLength() - 1) expectedIntValue = Utilities.DATA_COLUMN_WIDTH;
-            else expectedIntValue = Utilities.TOTAL_COLUMN_WIDTH;
+            if (i < list.getLength() - 1) expectedIntValue = RuntimeDocUtilities.DATA_COLUMN_WIDTH;
+            else expectedIntValue = JasperDocument.TOTAL_COLUMN_WIDTH;
 
             Assert.assertTrue("width attribute should equal " + expectedIntValue + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node x = attributes.getNamedItem("x");
-            expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * i);
+            expectedIntValue = RuntimeDocUtilities.CONSTANT_HEADER_START_X + (RuntimeDocUtilities.DATA_COLUMN_WIDTH * i);
             actualIntValue = Integer.valueOf(x.getNodeValue());
 
             Assert.assertTrue("x attribute should equal " + expectedIntValue + " Actual value was: "
@@ -433,9 +436,9 @@ public class RuntimeDocUtilitiesTest {
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node style = attributes.getNamedItem("style");
-            String expectedValue = null;
-            if (i < list.getLength() - 1) expectedValue = Utilities.TOP_LEFT_BOTTOM_CENTER_GREY;
-            else expectedValue = Utilities.ALL_BORDERS_GREY_CENTER;
+            String expectedValue;
+            if (i < list.getLength() - 1) expectedValue = RuntimeDocUtilities.TOP_LEFT_BOTTOM_CENTER_GREY;
+            else expectedValue = RuntimeDocUtilities.ALL_BORDERS_GREY_CENTER;
 
             Assert.assertTrue("style attribute should equal " + expectedValue + " Actual value was: " + style.getNodeValue()
                     , style.getNodeValue().equals(expectedValue));
@@ -479,12 +482,13 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         //Ensure all the first level elements exist
-        NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.CONSTANT_FOOTER.getName());
         list = list.item(0).getChildNodes();
         //1 text fields which is hardcoded, and 4 value sets from getTestMappingValues()
-        Assert.assertTrue(Utilities.CONSTANT_FOOTER + " element should have " + (distinctMappingSets.size() + 1)
+        Assert.assertTrue(JasperDocument.ElementName.CONSTANT_FOOTER.getName() + " element should have "
+                + (distinctMappingSets.size() + 1)
                 + " elements", list.getLength() == distinctMappingSets.size() + 1);
     }
 
@@ -493,8 +497,8 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
-        NodeList list = doc.getElementsByTagName(Utilities.CONSTANT_FOOTER);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.CONSTANT_FOOTER.getName());
         list = list.item(0).getChildNodes();
         for (int i = 0; i < list.getLength(); i++) {
             Node textFieldNode = list.item(i);
@@ -503,21 +507,21 @@ public class RuntimeDocUtilitiesTest {
             NamedNodeMap attributes = reportElementNode.getAttributes();
             Node height = attributes.getNamedItem("height");
             int actualIntValue = Integer.valueOf(height.getNodeValue());
-            int expectedIntValue = Utilities.FIELD_HEIGHT;
+            int expectedIntValue = RuntimeDocUtilities.FIELD_HEIGHT;
 
-            Assert.assertTrue("height attribute should equal " + Utilities.FIELD_HEIGHT + " Actual value was: "
+            Assert.assertTrue("height attribute should equal " + RuntimeDocUtilities.FIELD_HEIGHT + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node width = attributes.getNamedItem("width");
             actualIntValue = Integer.valueOf(width.getNodeValue());
-            if (i < list.getLength() - 1) expectedIntValue = Utilities.DATA_COLUMN_WIDTH;
-            else expectedIntValue = Utilities.TOTAL_COLUMN_WIDTH;
+            if (i < list.getLength() - 1) expectedIntValue = RuntimeDocUtilities.DATA_COLUMN_WIDTH;
+            else expectedIntValue = JasperDocument.TOTAL_COLUMN_WIDTH;
 
             Assert.assertTrue("width attribute should equal " + expectedIntValue + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node x = attributes.getNamedItem("x");
-            expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * i);
+            expectedIntValue = RuntimeDocUtilities.CONSTANT_HEADER_START_X + (RuntimeDocUtilities.DATA_COLUMN_WIDTH * i);
             actualIntValue = Integer.valueOf(x.getNodeValue());
 
             Assert.assertTrue("x attribute should equal " + expectedIntValue + " Actual value was: "
@@ -531,9 +535,9 @@ public class RuntimeDocUtilitiesTest {
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node style = attributes.getNamedItem("style");
-            String expectedValue = null;
-            if (i < list.getLength() - 1) expectedValue = Utilities.TOP_LEFT_GREY_CENTER;
-            else expectedValue = Utilities.TOP_LEFT_RIGHT_GREY_CENTER;
+            String expectedValue;
+            if (i < list.getLength() - 1) expectedValue = RuntimeDocUtilities.TOP_LEFT_GREY_CENTER;
+            else expectedValue = RuntimeDocUtilities.TOP_LEFT_RIGHT_GREY_CENTER;
 
             Assert.assertTrue("style attribute should equal " + expectedValue + " Actual value was: " + style.getNodeValue()
                     , style.getNodeValue().equals(expectedValue));
@@ -575,7 +579,7 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         Element rootNode = doc.getDocumentElement();
         testWidths(rootNode, distinctMappingSets.size());
     }
@@ -589,8 +593,9 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
-        NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
+        Document doc =
+                RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.VARIABLES.getName());
         list = list.item(0).getChildNodes();
         String[] variableNames = new String[]{"COLUMN_SERVICE_", "COLUMN_OPERATION_", "COLUMN_REPORT_"};
         String[] resetTypes = new String[]{"Group", "Group", "Report"};
@@ -651,8 +656,9 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
-        NodeList list = doc.getElementsByTagName(Utilities.SERVICE_HEADER);
+        Document doc =
+                RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.SERVICE_HEADER.getName());
         list = list.item(0).getChildNodes();
         for (int i = 0; i < list.getLength(); i++) {
             Node textFieldNode = list.item(i);
@@ -661,22 +667,23 @@ public class RuntimeDocUtilitiesTest {
             NamedNodeMap attributes = reportElementNode.getAttributes();
             Node height = attributes.getNamedItem("height");
             int actualIntValue = Integer.valueOf(height.getNodeValue());
-            int expectedIntValue = Utilities.MAPPING_VALUE_FIELD_HEIGHT;
+            int expectedIntValue = RuntimeDocUtilities.MAPPING_VALUE_FIELD_HEIGHT;
 
             Assert.assertTrue("height attribute should equal " + expectedIntValue + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node width = attributes.getNamedItem("width");
             actualIntValue = Integer.valueOf(width.getNodeValue());
-            if (i == list.getLength() - 1) expectedIntValue = Utilities.TOTAL_COLUMN_WIDTH;
-            else expectedIntValue = Utilities.DATA_COLUMN_WIDTH;
+            if (i == list.getLength() - 1) expectedIntValue = JasperDocument.TOTAL_COLUMN_WIDTH;
+            else expectedIntValue = RuntimeDocUtilities.DATA_COLUMN_WIDTH;
 
             Assert.assertTrue("width attribute should equal " + expectedIntValue + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node x = attributes.getNamedItem("x");
-            if (i == 0) expectedIntValue = Utilities.CONSTANT_HEADER_START_X;
-            else expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * i);
+            if (i == 0) expectedIntValue = RuntimeDocUtilities.CONSTANT_HEADER_START_X;
+            else
+                expectedIntValue = RuntimeDocUtilities.CONSTANT_HEADER_START_X + (RuntimeDocUtilities.DATA_COLUMN_WIDTH * i);
 
             actualIntValue = Integer.valueOf(x.getNodeValue());
 
@@ -691,9 +698,9 @@ public class RuntimeDocUtilitiesTest {
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node style = attributes.getNamedItem("style");
-            String expectedValue = null;
-            if (i < list.getLength() - 1) expectedValue = Utilities.TOP_LEFT_BOTTOM_CENTER_BROWN;
-            else expectedValue = Utilities.ALL_BORDERS_OPAQUE_CENTER_BROWN;
+            String expectedValue;
+            if (i < list.getLength() - 1) expectedValue = RuntimeDocUtilities.TOP_LEFT_BOTTOM_CENTER_BROWN;
+            else expectedValue = RuntimeDocUtilities.ALL_BORDERS_OPAQUE_CENTER_BROWN;
 
             Assert.assertTrue("style attribute should equal " + expectedValue + " Actual value was: " + style.getNodeValue()
                     , style.getNodeValue().equals(expectedValue));
@@ -723,8 +730,9 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
-        NodeList list = doc.getElementsByTagName(Utilities.RETURN_VALUE);
+        Document doc =
+                RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
+        NodeList list = doc.getElementsByTagName(JasperDocument.RETURN_VALUE);
         list = list.item(0).getChildNodes();
         String[] variableNames = new String[]{"COLUMN_SERVICE_", "COLUMN_OPERATION_", "COLUMN_REPORT_"};
         String[] calculations = new String[]{"Sum", "Sum", "Sum"};
@@ -767,7 +775,8 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc =
+                RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         NodeList list = doc.getElementsByTagName(elementName);
         list = list.item(0).getChildNodes();
         for (int i = 0; i < list.getLength(); i++) {
@@ -777,21 +786,21 @@ public class RuntimeDocUtilitiesTest {
             NamedNodeMap attributes = reportElementNode.getAttributes();
             Node height = attributes.getNamedItem("height");
             int actualIntValue = Integer.valueOf(height.getNodeValue());
-            int expectedIntValue = Utilities.FIELD_HEIGHT;
+            int expectedIntValue = RuntimeDocUtilities.FIELD_HEIGHT;
 
-            Assert.assertTrue("height attribute should equal " + Utilities.FIELD_HEIGHT + " Actual value was: "
+            Assert.assertTrue("height attribute should equal " + RuntimeDocUtilities.FIELD_HEIGHT + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node width = attributes.getNamedItem("width");
             actualIntValue = Integer.valueOf(width.getNodeValue());
-            if (i < list.getLength() - 1) expectedIntValue = Utilities.DATA_COLUMN_WIDTH;
-            else expectedIntValue = Utilities.TOTAL_COLUMN_WIDTH;
+            if (i < list.getLength() - 1) expectedIntValue = RuntimeDocUtilities.DATA_COLUMN_WIDTH;
+            else expectedIntValue = JasperDocument.TOTAL_COLUMN_WIDTH;
 
             Assert.assertTrue("width attribute should equal " + expectedIntValue + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node x = attributes.getNamedItem("x");
-            expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * i);
+            expectedIntValue = RuntimeDocUtilities.CONSTANT_HEADER_START_X + (RuntimeDocUtilities.DATA_COLUMN_WIDTH * i);
             actualIntValue = Integer.valueOf(x.getNodeValue());
 
             Assert.assertTrue("x attribute should equal " + expectedIntValue + " Actual value was: "
@@ -805,7 +814,7 @@ public class RuntimeDocUtilitiesTest {
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node style = attributes.getNamedItem("style");
-            String expectedValue = null;
+            String expectedValue;
             if (i < list.getLength() - 1) expectedValue = rowTotalStyle;
             else expectedValue = rowGrandTotalStyle;
 
@@ -851,56 +860,58 @@ public class RuntimeDocUtilitiesTest {
 
     @Test
     public void getUsageIntervalMasterRuntimeDoc_serviceAndOperationFooter_CheckElements() {
-        testGroupTotalRow(Utilities.SERVICE_AND_OPERATION_FOOTER, "COLUMN_OPERATION_", "ROW_OPERATION_TOTAL",
-                true, Utilities.TOP_LEFT_BOTTOM_CENTER_GREY, Utilities.ALL_BORDERS_GREY_CENTER);
+        testGroupTotalRow(JasperDocument.ElementName.SERVICE_AND_OPERATION_FOOTER.getName(),
+                "COLUMN_OPERATION_", "ROW_OPERATION_TOTAL",
+                true, RuntimeDocUtilities.TOP_LEFT_BOTTOM_CENTER_GREY, RuntimeDocUtilities.ALL_BORDERS_GREY_CENTER);
     }
 
     @Test
     public void getUsageIntervalMasterRuntimeDoc_serviceIdFooter_CheckElements() {
-        testGroupTotalRow(Utilities.SERVICE_ID_FOOTER, "COLUMN_SERVICE_", "ROW_SERVICE_TOTAL", true,
-                Utilities.TOP_LEFT_BOTTOM_CENTER_GREY, Utilities.ALL_BORDERS_GREY_CENTER);
+        testGroupTotalRow(JasperDocument.ElementName.SERVICE_ID_FOOTER.getName(),
+                "COLUMN_SERVICE_", "ROW_SERVICE_TOTAL", true,
+                RuntimeDocUtilities.TOP_LEFT_BOTTOM_CENTER_GREY, RuntimeDocUtilities.ALL_BORDERS_GREY_CENTER);
     }
 
     @Test
     public void getUsageIntervalMasterRuntimeDoc_summary_CheckElements() {
-        testGroupTotalRow(Utilities.SUMMARY, "COLUMN_REPORT_", "ROW_REPORT_TOTAL", false,
-                Utilities.TOP_LEFT_GREY_CENTER, Utilities.TOP_LEFT_RIGHT_GREY_CENTER);
+        testGroupTotalRow(JasperDocument.ElementName.SUMMARY.getName(), "COLUMN_REPORT_", "ROW_REPORT_TOTAL", false,
+                RuntimeDocUtilities.TOP_LEFT_GREY_CENTER, RuntimeDocUtilities.TOP_LEFT_RIGHT_GREY_CENTER);
     }
 
     private void testWidths(Node rootNode, int numMappingValues) {
         Node pageWidth = findFirstChildElementByName(rootNode, "pageWidth");
-        int expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * numMappingValues)
-                + Utilities.TOTAL_COLUMN_WIDTH + Utilities.LEFT_MARGIN_WIDTH + Utilities.RIGHT_MARGIN_WIDTH;
+        int expectedIntValue = RuntimeDocUtilities.CONSTANT_HEADER_START_X + (RuntimeDocUtilities.DATA_COLUMN_WIDTH * numMappingValues)
+                + JasperDocument.TOTAL_COLUMN_WIDTH + RuntimeDocUtilities.LEFT_MARGIN_WIDTH + RuntimeDocUtilities.RIGHT_MARGIN_WIDTH;
         int actualIntValue = Integer.valueOf(pageWidth.getTextContent());
 
         Assert.assertTrue("pageWidth element should equal " + expectedIntValue + " Actual value was: " +
                 actualIntValue, actualIntValue == expectedIntValue);
 
         Node columnWidth = findFirstChildElementByName(rootNode, "columnWidth");
-        expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * numMappingValues)
-                + Utilities.TOTAL_COLUMN_WIDTH;
+        expectedIntValue = RuntimeDocUtilities.CONSTANT_HEADER_START_X + (RuntimeDocUtilities.DATA_COLUMN_WIDTH * numMappingValues)
+                + JasperDocument.TOTAL_COLUMN_WIDTH;
         actualIntValue = Integer.valueOf(columnWidth.getTextContent());
 
         Assert.assertTrue("columnWidth element should equal " + expectedIntValue + " Actual value was: " +
                 actualIntValue, actualIntValue == expectedIntValue);
 
         Node frameWidth = findFirstChildElementByName(rootNode, "frameWidth");
-        expectedIntValue = Utilities.CONSTANT_HEADER_START_X + (Utilities.DATA_COLUMN_WIDTH * numMappingValues)
-                + Utilities.TOTAL_COLUMN_WIDTH;
+        expectedIntValue = RuntimeDocUtilities.CONSTANT_HEADER_START_X + (RuntimeDocUtilities.DATA_COLUMN_WIDTH * numMappingValues)
+                + JasperDocument.TOTAL_COLUMN_WIDTH;
         actualIntValue = Integer.valueOf(frameWidth.getTextContent());
 
         Assert.assertTrue("frameWidth element should equal " + expectedIntValue + " Actual value was: " +
                 actualIntValue, actualIntValue == expectedIntValue);
 
         Node leftMargin = findFirstChildElementByName(rootNode, "leftMargin");
-        expectedIntValue = Utilities.LEFT_MARGIN_WIDTH;
+        expectedIntValue = RuntimeDocUtilities.LEFT_MARGIN_WIDTH;
         actualIntValue = Integer.valueOf(leftMargin.getTextContent());
 
         Assert.assertTrue("leftMargin element should equal " + expectedIntValue + " Actual value was: " +
                 actualIntValue, actualIntValue == expectedIntValue);
 
         Node rightMargin = findFirstChildElementByName(rootNode, "rightMargin");
-        expectedIntValue = Utilities.RIGHT_MARGIN_WIDTH;
+        expectedIntValue = RuntimeDocUtilities.RIGHT_MARGIN_WIDTH;
         actualIntValue = Integer.valueOf(rightMargin.getTextContent());
 
         Assert.assertTrue("rightMargin element should equal " + expectedIntValue + " Actual value was: " +
@@ -913,7 +924,8 @@ public class RuntimeDocUtilitiesTest {
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = getTestKeys();
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc =
+                RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         Element rootNode = doc.getDocumentElement();
         testWidths(rootNode, distinctMappingSets.size());
     }
@@ -922,8 +934,8 @@ public class RuntimeDocUtilitiesTest {
     public void getUsageSubIntervalMasterRuntimeDoc_Variables() {
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
-        NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
+        Document doc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets).getDocument();
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.VARIABLES.getName());
         list = list.item(0).getChildNodes();
 
         for (int i = 0; i < list.getLength(); i++) {
@@ -962,8 +974,8 @@ public class RuntimeDocUtilitiesTest {
     @Test
     public void getUsageSubIntervalMasterRuntimeDoc_CheckSubReport() {
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
-        Document doc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
-        NodeList list = doc.getElementsByTagName(Utilities.RETURN_VALUE);
+        Document doc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets).getDocument();
+        NodeList list = doc.getElementsByTagName(JasperDocument.RETURN_VALUE);
         list = list.item(0).getChildNodes();
 
         for (int i = 0; i < list.getLength(); i++) {
@@ -997,19 +1009,19 @@ public class RuntimeDocUtilitiesTest {
     public void getUsageSubIntervalMasterRuntimeDoc_CheckWidths() {
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets).getDocument();
         Element rootNode = doc.getDocumentElement();
 
-        Node subReportWidth = findFirstChildElementByName(rootNode, "subReportWidth");
-        int expectedIntValue = (Utilities.DATA_COLUMN_WIDTH * distinctMappingSets.size()) + Utilities.TOTAL_COLUMN_WIDTH;
+        Node subReportWidth = findFirstChildElementByName(rootNode, JasperDocument.ElementName.SUB_REPORT_WIDTH.getName());
+        int expectedIntValue = (RuntimeDocUtilities.DATA_COLUMN_WIDTH * distinctMappingSets.size()) + JasperDocument.TOTAL_COLUMN_WIDTH;
         int actualIntValue = Integer.valueOf(subReportWidth.getTextContent());
 
         Assert.assertTrue("subReportWidth element should equal " + expectedIntValue + " Actual value was: " +
                 actualIntValue, actualIntValue == expectedIntValue);
 
         Node pageWidth = findFirstChildElementByName(rootNode, "pageWidth");
-        expectedIntValue = (Utilities.DATA_COLUMN_WIDTH * distinctMappingSets.size()) + Utilities.TOTAL_COLUMN_WIDTH
-                + Utilities.SUB_INTERVAL_STATIC_WIDTH;
+        expectedIntValue = (RuntimeDocUtilities.DATA_COLUMN_WIDTH * distinctMappingSets.size()) + JasperDocument.TOTAL_COLUMN_WIDTH
+                + RuntimeDocUtilities.SUB_INTERVAL_STATIC_WIDTH;
         actualIntValue = Integer.valueOf(pageWidth.getTextContent());
 
         Assert.assertTrue("pageWidth element should equal " + expectedIntValue + " Actual value was: " +
@@ -1021,8 +1033,8 @@ public class RuntimeDocUtilitiesTest {
     public void getUsageSubReportRuntimeDoc_Variables() {
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
-        NodeList list = doc.getElementsByTagName(Utilities.VARIABLES);
+        Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets).getDocument();
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.VARIABLES.getName());
         list = list.item(0).getChildNodes();
 
         for (int i = 0; i < list.getLength(); i++) {
@@ -1072,8 +1084,8 @@ public class RuntimeDocUtilitiesTest {
     public void getUsageSubReportRuntimeDoc_serviceAndOperationFooter_CheckElements() {
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
-        NodeList list = doc.getElementsByTagName(Utilities.SERVICE_AND_OPERATION_FOOTER);
+        Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets).getDocument();
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.SERVICE_AND_OPERATION_FOOTER.getName());
         list = list.item(0).getChildNodes();
 
         for (int i = 0; i < list.getLength(); i++) {
@@ -1083,21 +1095,21 @@ public class RuntimeDocUtilitiesTest {
             NamedNodeMap attributes = reportElementNode.getAttributes();
             Node height = attributes.getNamedItem("height");
             int actualIntValue = Integer.valueOf(height.getNodeValue());
-            int expectedIntValue = Utilities.FIELD_HEIGHT;
+            int expectedIntValue = RuntimeDocUtilities.FIELD_HEIGHT;
 
-            Assert.assertTrue("height attribute should equal " + Utilities.FIELD_HEIGHT + " Actual value was: "
+            Assert.assertTrue("height attribute should equal " + RuntimeDocUtilities.FIELD_HEIGHT + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node width = attributes.getNamedItem("width");
             actualIntValue = Integer.valueOf(width.getNodeValue());
-            if (i < list.getLength() - 1) expectedIntValue = Utilities.DATA_COLUMN_WIDTH;
-            else expectedIntValue = Utilities.TOTAL_COLUMN_WIDTH;
+            if (i < list.getLength() - 1) expectedIntValue = RuntimeDocUtilities.DATA_COLUMN_WIDTH;
+            else expectedIntValue = JasperDocument.TOTAL_COLUMN_WIDTH;
 
             Assert.assertTrue("width attribute should equal " + expectedIntValue + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node x = attributes.getNamedItem("x");
-            expectedIntValue = Utilities.DATA_COLUMN_WIDTH * i;
+            expectedIntValue = RuntimeDocUtilities.DATA_COLUMN_WIDTH * i;
             actualIntValue = Integer.valueOf(x.getNodeValue());
 
             Assert.assertTrue("x attribute should equal " + expectedIntValue + " Actual value was: "
@@ -1113,7 +1125,7 @@ public class RuntimeDocUtilitiesTest {
             Node style = attributes.getNamedItem("style");
             String expectedValue;
             if (i < list.getLength() - 1) expectedValue = RuntimeDocUtilities.DEFAULT_CENTER_ALIGNED;
-            else expectedValue = Utilities.ALL_BORDERS_GREY_CENTER;
+            else expectedValue = RuntimeDocUtilities.ALL_BORDERS_GREY_CENTER;
 
             Assert.assertTrue("style attribute should equal " + expectedValue + " Actual value was: " + style.getNodeValue()
                     , style.getNodeValue().equals(expectedValue));
@@ -1158,8 +1170,8 @@ public class RuntimeDocUtilitiesTest {
     public void getUsageSubReportRuntimeDoc_noData_CheckElements() {
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
-        NodeList list = doc.getElementsByTagName(Utilities.NO_DATA);
+        Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets).getDocument();
+        NodeList list = doc.getElementsByTagName(JasperDocument.ElementName.NO_DATA.getName());
         list = list.item(0).getChildNodes();
 
         for (int i = 0; i < list.getLength(); i++) {
@@ -1169,21 +1181,21 @@ public class RuntimeDocUtilitiesTest {
             NamedNodeMap attributes = reportElementNode.getAttributes();
             Node height = attributes.getNamedItem("height");
             int actualIntValue = Integer.valueOf(height.getNodeValue());
-            int expectedIntValue = Utilities.FIELD_HEIGHT;
+            int expectedIntValue = RuntimeDocUtilities.FIELD_HEIGHT;
 
-            Assert.assertTrue("height attribute should equal " + Utilities.FIELD_HEIGHT + " Actual value was: "
+            Assert.assertTrue("height attribute should equal " + RuntimeDocUtilities.FIELD_HEIGHT + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node width = attributes.getNamedItem("width");
             actualIntValue = Integer.valueOf(width.getNodeValue());
-            if (i < list.getLength() - 1) expectedIntValue = Utilities.DATA_COLUMN_WIDTH;
-            else expectedIntValue = Utilities.TOTAL_COLUMN_WIDTH;
+            if (i < list.getLength() - 1) expectedIntValue = RuntimeDocUtilities.DATA_COLUMN_WIDTH;
+            else expectedIntValue = JasperDocument.TOTAL_COLUMN_WIDTH;
 
             Assert.assertTrue("width attribute should equal " + expectedIntValue + " Actual value was: "
                     + actualIntValue, actualIntValue == expectedIntValue);
 
             Node x = attributes.getNamedItem("x");
-            expectedIntValue = Utilities.DATA_COLUMN_WIDTH * i;
+            expectedIntValue = RuntimeDocUtilities.DATA_COLUMN_WIDTH * i;
             actualIntValue = Integer.valueOf(x.getNodeValue());
 
             Assert.assertTrue("x attribute should equal " + expectedIntValue + " Actual value was: "
@@ -1199,7 +1211,7 @@ public class RuntimeDocUtilitiesTest {
             Node style = attributes.getNamedItem("style");
             String expectedValue;
             if (i < list.getLength() - 1) expectedValue = RuntimeDocUtilities.DEFAULT_CENTER_ALIGNED;
-            else expectedValue = Utilities.ALL_BORDERS_GREY_CENTER;
+            else expectedValue = RuntimeDocUtilities.ALL_BORDERS_GREY_CENTER;
 
             Assert.assertTrue("style attribute should equal " + expectedValue + " Actual value was: " + style.getNodeValue()
                     , style.getNodeValue().equals(expectedValue));
@@ -1226,11 +1238,11 @@ public class RuntimeDocUtilitiesTest {
     public void getUsageSubReportRuntimeDoc_CheckWidths() {
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets).getDocument();
         Element rootNode = doc.getDocumentElement();
 
-        Node pageWidth = findFirstChildElementByName(rootNode, "pageWidth");
-        int expectedIntValue = (Utilities.DATA_COLUMN_WIDTH * distinctMappingSets.size()) + Utilities.TOTAL_COLUMN_WIDTH;
+        Node pageWidth = findFirstChildElementByName(rootNode, JasperDocument.ElementName.PAGE_WIDTH.getName());
+        int expectedIntValue = (RuntimeDocUtilities.DATA_COLUMN_WIDTH * distinctMappingSets.size()) + JasperDocument.TOTAL_COLUMN_WIDTH;
         int actualIntValue = Integer.valueOf(pageWidth.getTextContent());
 
         Assert.assertTrue("pageWidth element should equal " + expectedIntValue + " Actual value was: " +
@@ -1252,7 +1264,7 @@ public class RuntimeDocUtilitiesTest {
         Assert.assertTrue("This is always true as part of the java language specification", c == '"');
         Assert.assertEquals("This is always true as part of the java language specification", toEscape, "\"");
 
-        String escaped = RuntimeDocUtilities.escapeJavaSringLiteralChars(toEscape);
+        String escaped = JasperDocument.escapeJavaSringLiteralChars(toEscape);
         Assert.assertEquals("String incorrectly escaped. Escaped string should equal: \\\" but was: " + escaped, escaped, "\\\"");
     }
 
@@ -1260,7 +1272,7 @@ public class RuntimeDocUtilitiesTest {
     public void testCarriageReturn() {
         String s = "\r";
         String expected = "\\r";
-        String actualValue = RuntimeDocUtilities.escapeJavaSringLiteralChars(s);
+        String actualValue = JasperDocument.escapeJavaSringLiteralChars(s);
         Assert.assertEquals("Expected value: " + expected + " actual value: " + actualValue, actualValue, expected);
     }
 }

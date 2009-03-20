@@ -71,7 +71,7 @@ public class RuntimeDocTests {
 
         LinkedHashSet<List<String>> distinctMappingSets = ReportApp.getDistinctMappingSets(conn, sql);
 
-        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         Assert.assertTrue(doc != null);
         XmlUtil.format(doc, true);
         File f = new File("modules/skunkworks/src/main/java/com/l7tech/standardreports/RuntimeDoc.xml");
@@ -109,7 +109,7 @@ public class RuntimeDocTests {
 
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageIntervalMasterRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);
@@ -126,7 +126,7 @@ public class RuntimeDocTests {
     @Test
     public void testGetUsageSubIntervalMasterRuntimeDoc() throws Exception {
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
-        Document doc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageSubIntervalMasterRuntimeDoc(distinctMappingSets).getDocument();
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);
@@ -144,7 +144,7 @@ public class RuntimeDocTests {
     public void testGetUsageSubReportRuntimeDoc() throws Exception {
         LinkedHashSet<List<String>> distinctMappingSets = getTestDistinctMappingSets();
 
-        Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getUsageSubReportRuntimeDoc(distinctMappingSets).getDocument();
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);
@@ -187,7 +187,7 @@ public class RuntimeDocTests {
         l4.add("GOLD");
         distinctMappingSets.add(l4);
 
-        Document doc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilters, distinctMappingSets);
+        Document doc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilters, distinctMappingSets).getDocument();
         Assert.assertTrue(doc != null);
 
         XmlUtil.format(doc, true);
