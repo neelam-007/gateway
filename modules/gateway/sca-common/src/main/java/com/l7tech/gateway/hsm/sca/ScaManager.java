@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 public class ScaManager {
     protected static final Logger logger = Logger.getLogger(ScaManager.class.getName());
 
-    private static final String DEFAULT_SCAKIOD_PATH = "/opt/sun/sca6000/bin/scakiod_load";
+    private static final String DEFAULT_SCAKIOD_PATH = "/opt/SecureSpan/Appliance/libexec/scakiod_load_wrapper";
     private static final String DEFAULT_LOAD_KEYDATA_PATH = "/opt/SecureSpan/Appliance/libexec/load_keydata";
     private static final String DEFAULT_SAVE_KEYDATA_PATH = "/opt/SecureSpan/Appliance/libexec/save_keydata";
     private static final String DEFAULT_WIPE_KEYDATA_PATH = "/opt/SecureSpan/Appliance/libexec/wipe_keydata";

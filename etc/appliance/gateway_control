@@ -1,4 +1,5 @@
 #!/bin/sh
+. /opt/SecureSpan/Appliance/libexec/envclean
 
 if [ "$(whoami)" = "layer7" ] || [ "$(whoami)" = "root" ] ; then
     exec sudo -u gateway $0 "$@"

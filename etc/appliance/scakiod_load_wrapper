@@ -1,4 +1,3 @@
 #!/bin/sh
 . /opt/SecureSpan/Appliance/libexec/envclean
-
-/opt/sun/sca6000/sbin/scadiag -z mca0 2>&1
+exec /opt/sun/sca6000/bin/scakiod_load $1 

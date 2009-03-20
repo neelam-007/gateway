@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+# Utility include for scripts invoked by sudo.
+#
+# This include assumes that the env_reset option was set and that sudo has already removed
+# all but a tiny list of the user-provided environment variables.
+#
+# This include does NOT assume that the PATH has already been made secure, since we need
+# to run with versions of sudo that do not yet support the secure_path option.
+#
+
+# Ensure PATH is sane, reasonably minimal, and includes no directories under the user's control
+PATH="/sbin:/usr/sbin:/bin:/usr/bin:/usr/X11R6/bin:/usr/local/bin"
+export PATH
+
+# Ensure JAVA_HOME is present
+JAVA_HOME="/opt/SecureSpan/JDK"
+export JAVA_HOME

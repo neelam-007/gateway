@@ -1,5 +1,5 @@
 #!/bin/sh
-unset PATH
+. /opt/SecureSpan/Appliance/libexec/envclean
 
 if [ z$1z != zreallyForSurez ]; then
     /bin/echo 'Confirmation argument not present -- aborted' 1>&2

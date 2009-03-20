@@ -1,11 +1,8 @@
 #!/bin/bash
+. /opt/SecureSpan/Appliance/libexec/envclean
 
 #set the current working directory to where this script lives
 cd `dirname $0`
-
-if [ -z "${JAVA_HOME}" ] ; then
-  JAVA_HOME="/opt/SecureSpan/JDK"
-fi
 
 if [ ! -x "${JAVA_HOME}/bin/java" ] ; then
   echo "Java not found."

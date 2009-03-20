@@ -22,6 +22,10 @@
 # 3 - format of ipmitool data isn't correct (no 'degrees' in second field)
 
 use strict;
+
+# Secure the PATH at compile time, before any libraries get included.  sudo is expected to have already sanitized the rest of the environment.
+BEGIN { $ENV{'PATH'} = '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' };
+
 #use Data::Dumper;
 my $cputemp = "null";
 my $errornum = "";

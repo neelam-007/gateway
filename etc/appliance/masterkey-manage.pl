@@ -2,6 +2,10 @@
 
 require 5.005;
 use strict;
+
+# Secure the PATH at compile time, before any libraries get included.  sudo is expected to have already sanitized the rest of the environment.
+BEGIN { $ENV{'PATH'} = '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' };
+
 use IO::File;
 use Expect;
 use warnings;

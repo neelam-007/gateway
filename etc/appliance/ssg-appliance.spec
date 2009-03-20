@@ -171,21 +171,22 @@ fi
 
 if grep -q ^ssgconfig /etc/sudoers; then
     #user already exists in the sudoers file but since the paths may have changed we'll remove everything and reset
-    perl -pi.bak -e 's/^ssgconfig.*$//gs' /etc/sudoers
+    perl -pi.bak -e 's/^(Defaults:)?ssgconfig.*$//gs' /etc/sudoers
 fi
 
 if grep -q ^layer7 /etc/sudoers; then
     #user already exists in the sudoers file but since the paths may have changed we'll remove everything and reset
-    perl -pi.bak -e 's/^layer7.*$//gs' /etc/sudoers
+    perl -pi.bak -e 's/^(Defaults:)?layer7.*$//gs' /etc/sudoers
 fi
 
 if grep -q ^gateway /etc/sudoers; then
     #user already exists in the sudoers file but since the paths have changed we'll remove everything and reset
-    perl -pi.bak -e 's/^gateway.*$//gs' /etc/sudoers
+    perl -pi.bak -e 's/^(Defaults:)?gateway.*$//gs' /etc/sudoers
 fi
 
 # The ssgconfig user is allowed to reboot the system, even when not at the console
 # The ssgconfig user can run system and software configuration as layer7 user
+echo "Defaults:ssgconfig env_reset" >> /etc/sudoers
 echo "ssgconfig ALL = NOPASSWD: /sbin/reboot" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/config/systemconfig.sh" >> /etc/sudoers
 echo "ssgconfig ALL = (layer7) NOPASSWD: /opt/SecureSpan/Appliance/config/scahsmconfig.sh" >> /etc/sudoers
@@ -196,15 +197,14 @@ echo "ssgconfig ALL = NOPASSWD: /sbin/chkconfig ssem on, /sbin/chkconfig ssem of
 echo "ssgconfig ALL = NOPASSWD: /sbin/service ssem start, /sbin/service ssem stop, /sbin/service ssem status" >> /etc/sudoers
 
 # The layer7 user is allowed to run the sca stuff without having to enter a password
+echo "Defaults:layer7 env_reset" >> /etc/sudoers
 echo "layer7 ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/masterkey-manage.pl" >> /etc/sudoers
-echo "layer7 ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
-echo "layer7 ALL = NOPASSWD: /opt/sun/sca6000/sbin/scadiag" >> /etc/sudoers
 echo "layer7 ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
 echo "layer7 ALL = (gateway) NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
 
 # The gateway user is allowed to run the sca stuff without having to enter a password
 # The gateway user is allowed to update the firewall configuration
-echo "gateway ALL = NOPASSWD: /opt/sun/sca6000/bin/scakiod_load" >> /etc/sudoers
+echo "Defaults:gateway env_reset" >> /etc/sudoers
 echo "gateway ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
 
 if grep -q kernel.panic /etc/sysctl.conf; then
@@ -294,19 +294,19 @@ if [ "$1" = "0" ] ; then
     SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
     if [ -n "${SSGCONFIGENTRY}" ]; then
         #remove the sudoers entry for ssgconfig
-        perl -pi.bak -e 's/^ssgconfig.*$//gs' /etc/sudoers
+        perl -pi.bak -e 's/^(Defaults:)?ssgconfig.*$//gs' /etc/sudoers
     fi
 
     SSPANENTRY=`grep ^layer7 /etc/sudoers`
     if [ -n "${SSPANENTRY}" ]; then
         #remove the sudoers entry for layer7
-        perl -pi.bak -e 's/^layer7.*$//gs' /etc/sudoers
+        perl -pi.bak -e 's/^(Defaults:)?layer7.*$//gs' /etc/sudoers
     fi
 
     GATEWAYENTRY=`grep ^gateway /etc/sudoers`
     if [ -n "${GATEWAYENTRY}" ]; then
         #remove the sudoers entry for gateway
-        perl -pi.bak -e 's/^gateway.*$//gs' /etc/sudoers
+        perl -pi.bak -e 's/^(Defaults:)?gateway.*$//gs' /etc/sudoers
     fi
 
     GETTYS=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`

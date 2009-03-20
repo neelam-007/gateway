@@ -1,12 +1,10 @@
 #!/bin/bash
+. /opt/SecureSpan/Appliance/libexec/envclean
+
 #set the current working directory to where this script lives
 umask 0002
 whereami=$0
 cd `dirname $whereami`
-
-if [ -z "${JAVA_HOME}" ] ; then
-  JAVA_HOME="/opt/SecureSpan/JDK"
-fi
 
 if [ ! -x "${JAVA_HOME}/bin/java" ] ; then
   echo "Java not found."

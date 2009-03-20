@@ -2824,6 +2824,9 @@
 
         <copy todir="${install.src.app.libexec}">
             <fileset dir="${src.root}/etc/appliance">
+                <include name="envclean"/>
+                <include name="scadiag_wrapper"/>
+                <include name="scakiod_load_wrapper"/>
                 <include name="load_keydata"/>
                 <include name="save_keydata"/>
                 <include name="wipe_keydata"/>
