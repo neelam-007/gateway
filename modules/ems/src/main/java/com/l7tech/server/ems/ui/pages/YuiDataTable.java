@@ -1,10 +1,12 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.server.ems.util.TypedPropertyColumn;
+import com.l7tech.util.Resolver;
+import com.l7tech.util.ResolvingComparator;
+import org.apache.wicket.Component;
 import org.apache.wicket.IRequestTarget;
 import org.apache.wicket.Page;
 import org.apache.wicket.RequestCycle;
-import org.apache.wicket.Component;
-import org.apache.wicket.util.convert.IConverter;
 import org.apache.wicket.ajax.AjaxRequestTarget;
 import org.apache.wicket.ajax.WicketAjaxReference;
 import org.apache.wicket.behavior.AbstractAjaxBehavior;
@@ -20,29 +22,18 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Button;
 import org.apache.wicket.markup.html.form.HiddenField;
 import org.apache.wicket.markup.html.panel.Panel;
-import org.apache.wicket.model.Model;
-import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.model.AbstractReadOnlyModel;
 import org.apache.wicket.model.IModel;
+import org.apache.wicket.model.Model;
+import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.http.WebResponse;
+import org.apache.wicket.util.convert.IConverter;
 import org.mortbay.util.ajax.JSON;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Arrays;
+import java.util.*;
 import java.util.logging.Level;
-
-import com.l7tech.util.ResolvingComparator;
-import com.l7tech.util.Resolver;
-import com.l7tech.server.ems.util.TypedPropertyColumn;
 
 /**
  * Wicket component for YUI table
@@ -392,7 +383,7 @@ public class YuiDataTable extends Panel {
     }
 
     private String escapeSingleQuotes(final String string) {
-        return string.replace("'", "\\'");
+        return string == null ? null : string.replace("'", "\\'");
     }
 
     private String buildResultsPage(int startIndex, int results, String sortRaw, boolean dir) {
