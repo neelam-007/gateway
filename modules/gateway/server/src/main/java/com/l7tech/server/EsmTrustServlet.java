@@ -517,13 +517,13 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
             return;
         }
 
-        // Check license
-        if ( !licenseManager.isFeatureEnabled( GatewayFeatureSets.SERVICE_REMOTE_MANAGEMENT ) ) {
-            sendError( hresp, "Not licensed. Please install a Gateway license that enables this feature." );
+        if ( handleResourceRequest( hreq, hresp ) ) {
             return;
         }
 
-        if ( handleResourceRequest( hreq, hresp ) ) {
+        // Check license
+        if ( !licenseManager.isFeatureEnabled( GatewayFeatureSets.SERVICE_REMOTE_MANAGEMENT ) ) {
+            sendError( hresp, "Not licensed. Please install a Gateway license that enables this feature." );
             return;
         }
 
