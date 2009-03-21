@@ -262,21 +262,14 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     private void makeDefaultSsl() {
         // Check for RSA cert that disallows keyEncipherment key usage, since this can lock you out of the SSM.  (Bug #6908)
         if (subject.getKeyType().toUpperCase().startsWith("RSA") && !isCertChainSslCapable(subject)) {
-            DialogDisplayer.showSafeConfirmDialog(
+            DialogDisplayer.showMessageDialog(
                     makeDefaultSSLButton,
                     "This key's certificate chain has a key usage disallowing use as an SSL server cert.\n" +
                     "Many SSL clients -- including the SecureSpan Manager, and web browsers -- will refuse\n" +
-                    "to connect to an SSL server that uses this key for its SSL server cert." +
-                    "\n\nAre you sure you want the cluster to use this as the default SSL private key?",
+                    "to connect to an SSL server that uses this key for its SSL server cert.",
                     "Unsuitable SSL Certificate",
-                    JOptionPane.YES_NO_CANCEL_OPTION,
                     JOptionPane.WARNING_MESSAGE,
-                    new DialogDisplayer.OptionListener() {
-                        public void reportResult(int option) {
-                            if (option == JOptionPane.YES_OPTION)
-                                doMakeDefaultSsl();
-                        }
-                    });
+                    null);
             return;
         }
         doMakeDefaultSsl();
