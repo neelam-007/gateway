@@ -438,7 +438,10 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
             node.setOnlineStatus( status );
         } else if ( !status.equals( node.getOnlineStatus() ) ) {
             updated = true;
-            logger.info("Online status of gateway node '" + node.getName() + "' (" + node.getIpAddress() + ") in cluster '" + node.getSsgCluster().getName() + "' (" + node.getSsgCluster().getSslHostName() + ") changed from '" + node.getOnlineStatus() + "' to '" + status + "'.");
+            final SsgCluster clust = node.getSsgCluster();
+            final String clustName = clust == null ? "<unknown>" : clust.getName();
+            final String clustSslName = clust == null ? "<unknown>" : clust.getSslHostName();
+            logger.info("Online status of gateway node '" + node.getName() + "' (" + node.getIpAddress() + ") in cluster '" + clustName + "' (" + clustSslName + ") changed from '" + node.getOnlineStatus() + "' to '" + status + "'.");
             node.setOnlineStatus( status );
         }
 
