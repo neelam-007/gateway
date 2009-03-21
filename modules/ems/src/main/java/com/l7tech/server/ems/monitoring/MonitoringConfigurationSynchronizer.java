@@ -63,6 +63,21 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
             ServerConfig.PARAM_SYSTEM_MONITORING_SETUP_SETTINGS
     )));
 
+    private static final Set<String> RELEVANT_SSGNODE_PROPERTIES = new HashSet<String>(Arrays.asList(
+            "name",
+            "guid",
+            "ipAddress",
+            "ssgCluster"
+    ));
+
+    private static final Set<String> RELEVANT_SSGCLUSTER_PROPERTIES = new HashSet<String>(Arrays.asList(
+            "name",
+            "guid",
+            "ipAddress",
+            "sslHostName",
+            "nodes"
+    ));
+
     private final Timer timer;
     private final TimeSource timeSource;
     private final SsgClusterManager ssgClusterManager;
@@ -113,13 +128,15 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
                 suspendBackoffForNextRun.set(true);
             } else if (entity instanceof SsgCluster) {
                 final SsgCluster cluster = (SsgCluster) entity;
+                if (event instanceof Updated && isIgnorableUpdate((Updated) event, RELEVANT_SSGCLUSTER_PROPERTIES))
+                    return;
                 if (event instanceof Deleted)
                     for (SsgNode node : cluster.getNodes())
                         onNodeDeleted(node);
                 setClusterDirty(cluster.getGuid(), cluster.getName());
                 suspendBackoffForNextRun.set(true);
             } else if (entity instanceof SsgNode) {
-                if (event instanceof Updated && isIgnoreableUpdateForSsgNode((Updated) event))
+                if (event instanceof Updated && isIgnorableUpdate((Updated) event, RELEVANT_SSGNODE_PROPERTIES))
                     return;
                 if (event instanceof Deleted)
                     onNodeDeleted((SsgNode)entity); // Turn off monitoring config before we forget all about node
@@ -176,9 +193,27 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         }, DELAY_BETWEEN_CONFIG_PUSHES + DELAY_UNTIL_FIRST_CONFIG_PUSH);
     }
 
-    private boolean isIgnoreableUpdateForSsgNode(Updated updated) {
+    private boolean isIgnorableUpdate(Updated updated, Set<String> relevantProps) {
         EntityChangeSet cs = updated.getChangeSet();
-        return cs.getNumProperties() == 1 && "notificationAuditTime".equals(cs.getProperties().next());
+        if (cs == null || cs.getNumProperties() == 0)
+            return false;
+
+        final Iterator<String> iterator = cs.getProperties();
+        while (iterator.hasNext()) {
+            String propName = iterator.next();
+
+            // Ignore the property if it didn't actually change
+            Object old = cs.getOldValue(propName);
+            Object nval = cs.getNewValue(propName);
+            if ((old == null && nval == null) || (old != null && old.equals(nval)))
+                continue;
+
+            if (relevantProps.contains(propName))
+                return false;
+        }
+
+        // Didn't see any relevant properties, ignore it
+        return true;
     }
 
     private void start() {
