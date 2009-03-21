@@ -526,6 +526,8 @@ public class PolicyService extends ApplicationObjectSupport {
             Assertion[] path = assertionPath.getPath();
             boolean pathContainsIdAssertion = false;
             for (Assertion a : path) {
+                if (!a.isEnabled())
+                    continue;
                 if (a instanceof IdentityAssertion) {
                     pathContainsIdAssertion = true;
                 }
