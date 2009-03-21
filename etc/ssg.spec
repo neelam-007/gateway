@@ -42,7 +42,10 @@ rm -fr %{buildroot}
 %dir /opt/SecureSpan/Gateway/runtime
 %dir /opt/SecureSpan/Gateway/runtime/etc
 %dir /opt/SecureSpan/Gateway/node/default/etc
+# Conf dir must be sgid so config files created by layer7 are readable by gateway group
+%defattr(0640,layer7,gateway,2750)
 %dir /opt/SecureSpan/Gateway/node/default/etc/conf
+%defattr(0640,layer7,gateway,0750)
 %config(noreplace) /opt/SecureSpan/Gateway/node/default/etc/conf/*
 
 # Group directories and files
