@@ -51,6 +51,7 @@ public class ConfigServiceImpl implements ConfigService {
     private final File configDirectory;
     private final File applianceLibexecDirectory;
     private final File javaBinary;
+    private final boolean useSca; // TODO this should go through ScaFeature
 
     private volatile boolean responsibleForClusterMonitoring;
     private volatile MonitoringConfiguration currentMonitoringConfiguration;
@@ -121,6 +122,7 @@ public class ConfigServiceImpl implements ConfigService {
         this.sslIPAddress = hostProps.getProperty(HOSTPROPERTIES_SSL_IPADDRESS, "127.0.0.1");
         this.sslKeypair = readSslKeypair(hostProps);
         this.trustedRemoteNodeManagementCerts = readTrustedNodeManagementCerts(hostProps);
+        this.useSca = Boolean.valueOf(hostProps.getProperty("host.sca", "false"));
 
         reverseEngineerIps(hostConfig);
 
@@ -438,6 +440,11 @@ public class ConfigServiceImpl implements ConfigService {
     @Override
     public boolean isResponsibleForClusterMonitoring() {
         return responsibleForClusterMonitoring;
+    }
+
+    @Override
+    public boolean isUseSca() {
+        return useSca;
     }
 
     @Override

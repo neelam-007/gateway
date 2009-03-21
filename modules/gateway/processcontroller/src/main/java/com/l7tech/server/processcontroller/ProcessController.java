@@ -577,6 +577,10 @@ public class ProcessController {
                         cmds.add("-J-Dcom.l7tech.server.defaultClusterHostname=\"" + node.getClusterHostname() + "\"");
                     }
 
+                    if (configService.isUseSca()) { // TODO this should just use the ScaFeature
+                        cmds.add("-J-Dcom.l7tech.server.sca.enable=true");
+                    }
+
                     for (HostFeature hf : node.getHost().getFeatures()) {  // TODO needs more scala.Seq#filter
                         collectArgs(cmds, hf);
                     }

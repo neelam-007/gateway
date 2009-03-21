@@ -56,9 +56,6 @@ fi
 if [ "${SSGTARARI}" == "true" ] && [ -e /usr/local/Tarari ] ; then
     JAVA_OPTS="-Dcom.l7tech.common.xml.tarari.enable=true ${JAVA_OPTS}"
 fi
-if [ "${SSGSCA}" == "true" ] && [ -s /opt/sun/sca6000/sbin/scadiag ] ; then
-    JAVA_OPTS="-Dcom.l7tech.server.sca.enable=true ${JAVA_OPTS}"
-fi
 if [ -n "${SSG_JAVA_OPTS}" ] ; then
   JAVA_OPTS="${JAVA_OPTS} ${SSG_JAVA_OPTS}"
 fi

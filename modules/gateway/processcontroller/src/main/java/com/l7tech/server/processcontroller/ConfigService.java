@@ -79,4 +79,12 @@ public interface ConfigService {
      * @param config the new configuration
      */
     void pushMonitoringConfiguration(MonitoringConfiguration config);
+
+    /**
+     * Check if the SCA is enabled on the default node.
+     * TODO this should use the ScaFeature
+     *
+     * @return true if the SCA should be enabled on the default node.
+     */
+    boolean isUseSca();
 }
