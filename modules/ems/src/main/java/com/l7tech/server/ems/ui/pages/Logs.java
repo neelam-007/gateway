@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.security.rbac.RequiredPermissionSet;
 import com.l7tech.gateway.common.security.rbac.RequiredPermission;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.util.SizeUnit;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ResourceReference;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -192,7 +193,7 @@ public class Logs extends EsmStandardWebPage {
         }
 
         public String getSize() {
-            return Long.toString(size);
+            return SizeUnit.format(size);
         }
 
         public Date getDate() {
