@@ -644,6 +644,7 @@
         <constructor-arg ref="identityProviderFactory"/>
         <constructor-arg>
             <list>
+                <value>com.l7tech.server.policy.filter.HideDisabledAssertions</value>
                 <value>com.l7tech.server.policy.filter.IdentityRule</value>
                 <value>com.l7tech.server.policy.filter.HideUnsupportedClientAssertions</value>
             </list>
@@ -655,6 +656,7 @@
         <constructor-arg ref="identityProviderFactory"/>
         <constructor-arg>
             <list>
+                <value>com.l7tech.server.policy.filter.HideDisabledAssertions</value>
                 <value>com.l7tech.server.policy.filter.HideUnsupportedClientAssertions</value>
             </list>
         </constructor-arg>
