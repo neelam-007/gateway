@@ -291,6 +291,8 @@ public class MonitoringConfigurationSynchronizerTest {
     private Updated<SsgNode> makeUpdatedNodeEvent(TestNode node, String... props) {
         Object[] oldvals = new Object[props.length];
         Object[] newvals = new Object[props.length];
+        if (props.length > 0)
+            newvals[0] = new Object();
         EntityChangeSet changes = new EntityChangeSet(props, oldvals, newvals);
         return new Updated<SsgNode>(node, changes);
     }
