@@ -146,7 +146,7 @@ public class LogonDialog extends JDialog {
                                                    "<li> Incorrect password for client certificate</li>" +
                                                    "<li> Revoked client certificate</li>" +
                                                    "<li> Not authorized to use service</li>" +
-                                                   "<li> ﻿User name in some identity providers may <br/>" +
+                                                   "<li> User name in some identity providers may <br/>" +
                                                     "be case sensitive</li></ul></html>");
             constraints.gridx = 1;
             constraints.gridy = 0;
