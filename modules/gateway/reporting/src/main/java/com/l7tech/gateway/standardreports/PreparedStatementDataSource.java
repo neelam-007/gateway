@@ -58,12 +58,12 @@ public class PreparedStatementDataSource implements JRDataSource {
         // Note: if you want to find usages of this method, you need to search based on text as its used from within
         // jrxml files
 
-        PreparedStatementDataSource psds = new PreparedStatementDataSource(this);
+        final PreparedStatementDataSource psds = new PreparedStatementDataSource(this);
         subReportInstances.add(psds);
         return psds;
     }
 
-    public Boolean configure(Pair<String, List<Object>> sqlAndParamsPair) throws SQLException {
+    public Boolean configure(final Pair<String, List<Object>> sqlAndParamsPair) throws SQLException {
         return configure(sqlAndParamsPair.getKey(), sqlAndParamsPair.getValue());
     }
 
@@ -76,7 +76,7 @@ public class PreparedStatementDataSource implements JRDataSource {
      * @throws IllegalStateException    if the number of parameters does not match the number of ?'s in the sql string
      * @throws NullPointerException     if params is null
      */
-    public Boolean configure(String sql, List<Object> params) throws SQLException {
+    public Boolean configure(final String sql, final List<Object> params) throws SQLException {
         if (hasExecuted) throw new IllegalStateException("DataSource cannot be configured after it has been executed");
         if (sql == null || sql.equals("")) throw new IllegalArgumentException("Sql cannot be null or the emtpy String");
         if (params == null) throw new NullPointerException("params must be specified. It can be empty");
@@ -88,8 +88,8 @@ public class PreparedStatementDataSource implements JRDataSource {
         preparedStatement = conn.prepareStatement(sql);
         //replace all sql ? with their param
         for (int i = 0; i < params.size(); i++) {
-            Object o = params.get(i);
-            String className = o.getClass().getName();
+            final Object o = params.get(i);
+            final String className = o.getClass().getName();
             SupportedType st;
             try {
                 st = SupportedType.getType(className);
@@ -117,21 +117,21 @@ public class PreparedStatementDataSource implements JRDataSource {
         return true;//this is only to avoid hacking jrxml file, need a return value for assignment
     }
 
-    public Object getFieldValue(JRField jrField) throws JRException {
+    public Object getFieldValue(final JRField jrField) throws JRException {
         //only testing for rs here because its used below
         if (rs == null) {
             close();
             throw new IllegalStateException("Resultset is closed");
         }
 
-        String name = jrField.getName();
+        final String name = jrField.getName();
         if (!fieldNameToColumnName.containsKey(name)) {
             close();
             throw new IllegalStateException("Column '" + name + "' unknown");
         }
 
         ColumnName fc = fieldNameToColumnName.get(name);
-        SupportedType st = fc.getType();
+        final SupportedType st = fc.getType();
 
         try {
             switch (st) {
@@ -245,12 +245,15 @@ public class PreparedStatementDataSource implements JRDataSource {
      * ColumnName represents every string value which can be returned from any of the standard reports
      */
     public enum ColumnName {
-        AUTHORIZED("AUTHORIZED", SupportedType.JAVA_LANG_DOUBLE),
-        ATTEMPTED("ATTEMPTED", SupportedType.JAVA_LANG_DOUBLE),
-        FRONT_SUM("FRONT_SUM", SupportedType.JAVA_LANG_DOUBLE),
-        BACK_SUM("BACK_SUM", SupportedType.JAVA_LANG_DOUBLE),
-        COMPLETED("COMPLETED", SupportedType.JAVA_LANG_DOUBLE),
-        THROUGHPUT("THROUGHPUT", SupportedType.JAVA_LANG_DOUBLE),
+        AUTHORIZED("AUTHORIZED", SupportedType.JAVA_LANG_DOUBLE),//todo [Donal] should be long
+        ATTEMPTED("ATTEMPTED", SupportedType.JAVA_LANG_DOUBLE),//todo [Donal] should be long
+        FRONT_SUM("FRONT_SUM", SupportedType.JAVA_LANG_DOUBLE),//todo [Donal] should be long
+        BACK_SUM("BACK_SUM", SupportedType.JAVA_LANG_DOUBLE),//todo [Donal] should be long
+        COMPLETED("COMPLETED", SupportedType.JAVA_LANG_DOUBLE),//todo [Donal] should be long
+        THROUGHPUT("THROUGHPUT", SupportedType.JAVA_LANG_DOUBLE),//todo [Donal] should be long
+        POLICY_VIOLATIONS("POLICY_VIOLATIONS", SupportedType.JAVA_LANG_LONG),
+        ROUTING_FAILURES("ROUTING_FAILURES", SupportedType.JAVA_LANG_LONG),
+        USAGE_SUM("USAGE_SUM", SupportedType.JAVA_LANG_LONG),
         SERVICE_ID("SERVICE_ID", SupportedType.JAVA_LANG_LONG),
         SERVICE_NAME("SERVICE_NAME", SupportedType.JAVA_LANG_STRING),
         ROUTING_URI("ROUTING_URI", SupportedType.JAVA_LANG_STRING),
@@ -268,10 +271,7 @@ public class PreparedStatementDataSource implements JRDataSource {
         MAPPING_VALUE_4("MAPPING_VALUE_4", SupportedType.JAVA_LANG_STRING),
         MAPPING_VALUE_5("MAPPING_VALUE_5", SupportedType.JAVA_LANG_STRING),
         AUTHENTICATED_USER("AUTHENTICATED_USER", SupportedType.JAVA_LANG_STRING),
-        CONSTANT_GROUP("CONSTANT_GROUP", SupportedType.JAVA_LANG_STRING),
-        POLICY_VIOLATIONS("POLICY_VIOLATIONS", SupportedType.JAVA_LANG_LONG),
-        ROUTING_FAILURES("ROUTING_FAILURES", SupportedType.JAVA_LANG_LONG),
-        USAGE_SUM("USAGE_SUM", SupportedType.JAVA_LANG_LONG);
+        CONSTANT_GROUP("CONSTANT_GROUP", SupportedType.JAVA_LANG_STRING);
 
         ColumnName(String columnName, SupportedType type) {
             this.columnName = columnName;
