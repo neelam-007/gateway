@@ -26,7 +26,7 @@ import com.l7tech.util.Pair;
  * The use of this object is not very natural as it's a minimum change injection into current implementation of
  * reports. Currently each report manages and creates all the parameters it requires in it's parameters section.
  * As a result this object will be created outside of the report, passed into the report, when it's configuration
- * will be completed
+ * will be completed by calling configure()
  */
 public class PreparedStatementDataSource implements JRDataSource {
 
@@ -63,13 +63,30 @@ public class PreparedStatementDataSource implements JRDataSource {
         return psds;
     }
 
+    /**
+     * Convenience method for reports, which will have a Pair&lt;String, List&lt;Object&gt;&gt;
+     *
+     * @param sqlAndParamsPair the pair containing the sql and the list of parameters
+     * @return true, the value does not indiciate anything other than the method completed successfully. It never
+     *         returns false
+     * @throws SQLException
+     */
     public Boolean configure(final Pair<String, List<Object>> sqlAndParamsPair) throws SQLException {
         return configure(sqlAndParamsPair.getKey(), sqlAndParamsPair.getValue());
     }
 
     /**
-     * @param sql
-     * @param params
+     * configure is called exclusively from within reports. Each report is passed an instance of this class via
+     * a parameter. The report has all the parameters required to create the parameters required for configure(). The
+     * report should call this method as the last parameter in it's configuration. This method returns a boolean so
+     * that an assignment can be made, making it easy to call from within reports.
+     * <p/>
+     * After configure has been called, next() can be called to start retrieveing data
+     *
+     * @param sql    the paramaterized sql string
+     * @param params the list of parameters to supply to the prepared statement
+     * @return true, the value does not indiciate anything other than the method completed successfully. It never
+     *         returns false
      * @throws SQLException
      * @throws IllegalStateException    if this data source has already been executed
      * @throws IllegalArgumentException if either, sql is null or empty, or colummNames is null or empty
@@ -155,6 +172,10 @@ public class PreparedStatementDataSource implements JRDataSource {
     }
 
     /**
+     * The first call to next() will execute the underlying query and will automatically move onto the first row.
+     * Client code does not need to worry about this, once configure() has been called, next() can be called to
+     * start retrieving data.
+     * <p/>
      * next() calls next on the underlying ResultSet. When rs.next() returns false, we close both the result set
      * and the PreparedStatement, so client code does not need to explicitly close
      *
