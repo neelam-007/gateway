@@ -13,7 +13,7 @@ At any time type "quit" to quit.</prompt>
     <optionGroup id="delete">
         <description>Delete Node Configuration</description>
         <prompt>Delete the configuration for the node. If running the node will be
-stopped and the configuration for node will be removed.</prompt>
+stopped and the configuration for the node will be removed.</prompt>
     </optionGroup>
 
     <optionGroup id="dbdelete" required="false">
