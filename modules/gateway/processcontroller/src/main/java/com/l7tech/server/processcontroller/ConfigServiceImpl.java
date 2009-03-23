@@ -457,6 +457,11 @@ public class ConfigServiceImpl implements ConfigService {
         if (monitoringConfigFile == null) return;
 
         if (config == null) {
+            if (!monitoringConfigFile.exists()) {
+                logger.log(Level.INFO, "Monitoring configuration has been unset, but configuration file was already deleted");
+                return;
+            }
+
             try {
                 if (!FileUtils.deleteFileSafely(monitoringConfigFile.getPath())) {
                     logger.log(Level.WARNING, "Unable to delete unset monitoring configuration");
