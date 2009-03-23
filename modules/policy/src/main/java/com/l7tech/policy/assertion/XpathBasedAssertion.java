@@ -23,6 +23,7 @@ import java.util.Map;
 public abstract class XpathBasedAssertion extends Assertion implements AssertionServiceChangeListener {
     protected XpathExpression xpathExpression;
     protected SoapVersion soapVersion = SoapVersion.SOAP_1_1;
+    protected boolean hasBeenUpdated = false;
 
     protected XpathBasedAssertion() {
     }
@@ -71,16 +72,21 @@ public abstract class XpathBasedAssertion extends Assertion implements Assertion
     }
 
     public void updateSoapVersion(SoapVersion soapVersion) {
-        this.soapVersion = soapVersion;
-        
-        if (getXpathExpression() == null) return;
-        String expression = xpathExpression.getExpression();
-        if(SoapUtil.SOAP_ENVELOPE_XPATH.equals(expression) && soapVersion == SoapVersion.SOAP_1_2) {
-            xpathExpression.setExpression(expression.replaceAll("soapenv:", "s12:"));
-            xpathExpression.getNamespaces().put("s12", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
-        } else if(SoapUtil.SOAP_1_2_ENVELOPE_XPATH.equals(expression) && soapVersion == SoapVersion.SOAP_1_1) {
-            xpathExpression.setExpression(expression.replaceAll("s12:", "soapenv:"));
-            xpathExpression.getNamespaces().remove("s12");
+        if (!hasBeenUpdated) {
+            this.soapVersion = soapVersion;
+
+            if (getXpathExpression() == null) return;
+            String expression = xpathExpression.getExpression();
+            if (SoapUtil.SOAP_ENVELOPE_XPATH.equals(expression) && soapVersion == SoapVersion.SOAP_1_2) {
+                xpathExpression.setExpression(expression.replaceAll("soapenv:", "s12:"));
+                xpathExpression.getNamespaces().put("s12", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
+                this.soapVersion = SoapVersion.SOAP_1_2;
+            } else if (SoapUtil.SOAP_1_2_ENVELOPE_XPATH.equals(expression) && soapVersion == SoapVersion.SOAP_1_1) {
+                xpathExpression.setExpression(expression.replaceAll("s12:", "soapenv:"));
+                xpathExpression.getNamespaces().remove("s12");
+                this.soapVersion = SoapVersion.SOAP_1_1;
+            }
         }
+        hasBeenUpdated = true;
     }
 }
