@@ -666,6 +666,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 hasSecurity = isSoap && context.getRequest().getSoapKnob().isSecurityHeaderPresent();
             } catch (SAXException e) {
                 auditor.logAndAudit(MessageProcessingMessages.REQUEST_INVALID_XML_FORMAT_WITH_DETAIL, new String[]{e.getMessage()}, e);
+                context.setMalformedRequest();
                 assertionStatusHolder[0] = AssertionStatus.BAD_REQUEST;
                 return false;
             } catch (MessageNotSoapException e) {

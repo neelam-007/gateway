@@ -94,6 +94,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private List<MessageContextMapping> mappings = new ArrayList<MessageContextMapping>(5);
     private boolean requestWasCompressed;
     private boolean responseWss11;
+    private boolean malformedRequest;
 
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
@@ -648,6 +649,14 @@ public class PolicyEnforcementContext extends ProcessingContext {
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         }
+    }
+
+    public void setMalformedRequest() {
+        this.malformedRequest = true;
+    }
+
+    public boolean isMalformedRequest() {
+        return malformedRequest;
     }
 
     public final static class AssertionResult {

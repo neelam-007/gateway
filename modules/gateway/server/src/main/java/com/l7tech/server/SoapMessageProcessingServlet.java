@@ -139,7 +139,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             return;
         } catch (TransportModule.ListenerException e) {
             logger.log(Level.WARNING, "Published service message input is not enabled on this port, " + hrequest.getServerPort());
-            hresponse.sendError(500);
+            hresponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             return;
         }
 
@@ -157,7 +157,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     OutputStream responseStream = null;
                     try {
                         responseStream = hresponse.getOutputStream();
-                        hresponse.setStatus(500);
+                        hresponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                         hresponse.setContentType(DEFAULT_CONTENT_TYPE);
                         responseStream.write(soapFault.getBytes("UTF-8"));
                     } finally {
@@ -305,6 +305,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 logger.fine("servlet transport returning challenge");
                 respKnob.beginChallenge();
                 sendChallenge(context, hrequest, hresponse);
+            } else if (context.isMalformedRequest()) {
+                logger.fine("Servlet transport returning 400 due to early parse failure");
+                hresponse.sendError(HttpServletResponse.SC_BAD_REQUEST);
             } else {
                 logger.fine("servlet transport returning 500");
                 returnFault(context, hrequest, hresponse, status);
@@ -431,7 +434,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         String faultXml = null;
         try {
             responseStream = hresp.getOutputStream();
-            hresp.setStatus(status == AssertionStatus.BAD_REQUEST ? 400 : 500); // soap faults "MUST" be sent with status 500 per Basic profile
+            hresp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // soap faults "MUST" be sent with status 500 per Basic profile
 
             SoapFaultLevel faultLevelInfo = context.getFaultlevel();
             if (faultLevelInfo.isIncludePolicyDownloadURL()) {
@@ -471,7 +474,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             } else {
                 hresp.setContentType(DEFAULT_CONTENT_TYPE);
             }
-            hresp.setStatus(status == AssertionStatus.BAD_REQUEST ? 400 : 500); // soap faults "MUST" be sent with status 500 per Basic profile
+            hresp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // soap faults "MUST" be sent with status 500 per Basic profile
 
             SoapFaultLevel faultLevelInfo = context.getFaultlevel();
             if (faultLevelInfo.isIncludePolicyDownloadURL()) {
