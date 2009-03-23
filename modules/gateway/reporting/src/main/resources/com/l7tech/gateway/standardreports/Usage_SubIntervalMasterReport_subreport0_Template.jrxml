@@ -36,13 +36,18 @@
         <defaultValueExpression><![CDATA[new Boolean(false)]]></defaultValueExpression>
     </parameter>
     <parameter name="RESOLUTION" isForPrompting="false" class="java.lang.Integer"/>
-    <parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
+    <parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
+
+    <parameter name="sqlQueryAndParam" isForPrompting="false" class="com.l7tech.util.Pair">
         <defaultValueExpression><![CDATA[Utilities.getUsageQuery($P{INTERVAL_START},
 $P{INTERVAL_END},$P{SERVICE_ID}, $P{KEYS_TO_LIST_FILTER_PAIRS}, $P{RESOLUTION}.intValue(), $P{IS_DETAIL}.booleanValue(), $P{SERVICE_OPERATION_VALUE})
 ]]></defaultValueExpression>
     </parameter>
-    <parameter name="TEMPLATE_FILE_ABSOLUTE" isForPrompting="false" class="java.lang.String"/>
-    <queryString><![CDATA[$P!{sqlQuery}]]></queryString>
+    <parameter name="dataSourceIsConfigured" isForPrompting="false" class="java.lang.Boolean">
+        <defaultValueExpression>
+            <![CDATA[((PreparedStatementDataSource)$P{REPORT_DATA_SOURCE}).configure($P{sqlQueryAndParam})]]>
+        </defaultValueExpression>
+    </parameter>
 
     <field name="SERVICE_ID" class="java.lang.Long"/>
     <field name="SERVICE_NAME" class="java.lang.String"/>

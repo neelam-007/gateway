@@ -31,6 +31,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.common.io.ResourceMapEntityResolver;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.management.api.node.ReportApi;
@@ -55,6 +56,7 @@ public class ReportGenerator {
     private static final int SUB_REPORT_WIDTH = 707;
     private static final int PAGE_WIDTH_INCLUDING_BORDERS = 850;
     private static final int REPORT_INFO_FRAME_RIGHT_PADDING = 7;
+    private static final String REPORT_DATA_SOURCE = "REPORT_DATA_SOURCE";
 
     //- PUBLIC
 
@@ -108,14 +110,19 @@ public class ReportGenerator {
 
         Map<String, Object> reportParams = new HashMap<String, Object>(handle.getReportParameters());
         JasperPrint jasperPrint;
+        PreparedStatementDataSource psds = null;
         try {
-            jasperPrint = JasperFillManager.fillReport(handle.getJasperReport(), reportParams, connection);
+            psds = new PreparedStatementDataSource(connection);
+            reportParams.put(REPORT_DATA_SOURCE, psds);
+            jasperPrint = JasperFillManager.fillReport(handle.getJasperReport(), reportParams, psds);
         } catch (JRException jre) {
             if (ExceptionUtils.causedBy(jre.getCause(), UtilityConstraintException.class)) {
                 Throwable t = ExceptionUtils.getCauseIfCausedBy(jre, UtilityConstraintException.class);
                 throw new ReportGenerationException("Error filling report: " + t.getMessage(), t);
             }
             throw new ReportGenerationException("Error filling report.", jre);
+        } finally {
+            if (psds != null) psds.close();
         }
 
         return new ReportHandle(handle.getType(), reportParams, handle.getJasperReport(), jasperPrint);
@@ -233,6 +240,7 @@ public class ReportGenerator {
         GatewayJavaReportCompiler.registerClass(UsageSummaryAndSubReportHelper.class);
         GatewayJavaReportCompiler.registerClass(UsageReportHelper.class);
         GatewayJavaReportCompiler.registerClass(UtilityConstraintException.class);
+        GatewayJavaReportCompiler.registerClass(PreparedStatementDataSource.class);
 
         final Map<ReportApi.ReportType, ReportTemplate> templates = new HashMap<ReportApi.ReportType, ReportTemplate>();
         final String resourcePath = "/com/l7tech/gateway/standardreports";
@@ -344,24 +352,25 @@ public class ReportGenerator {
             reportParams.put(ReportApi.ReportParameters.IS_USING_KEYS, isUsingKeys);
         }
 
-        String sql;
+        Pair<String, List<Object>> sqlAndParamsPair;
         //this is a context mapping query using keys 1-5 and auth user
         if (isContextMapping && isUsingKeys) {
-            sql = Utilities.getDistinctMappingQuery(
+            sqlAndParamsPair = Utilities.getDistinctMappingQuery(
                     startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
         }//this is a context mapping query when we just need operation, dealt with like it's not context mapping
         else if (isContextMapping) {
-            sql = Utilities.getPerformanceStatisticsMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
+            sqlAndParamsPair = Utilities.getPerformanceStatisticsMappingQuery(true, startTimeInPast, endTimeInPast,
+                    serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
         }//this is a report on the original service_metrics table
         else {
-            sql = Utilities.getNoMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp.keySet(), resolution);
+            sqlAndParamsPair = Utilities.getNoMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp.keySet(), resolution);
         }
 
         LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
         LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
 
         if (isContextMapping && isUsingKeys) {
-            LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
+            LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sqlAndParamsPair);
             reportParams.put(ReportApi.ReportParameters.DISTINCT_MAPPING_SETS, distinctMappingSets);
             LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null, null);
             //We need to look up the mappingValues from both the group value and also the display string value
@@ -387,14 +396,14 @@ public class ReportGenerator {
                 reportParams.put(ReportApi.ReportParameters.SUB_REPORT_HELPER, summaryAndSubReportHelper);
 
                 UsageReportHelper reportHelper = new UsageReportHelper();
-                LinkedHashMap<Integer, String> groupIndexToGroup = Utilities.getGroupIndexToGroupString(mappingValuesLegend);
+                LinkedHashMap<Integer, String> groupIndexToGroup = Utilities.getGroupIndexToGroupString(mappingValuesLegend.size());
                 reportHelper.setKeyToColumnMap(keyToColumnName);
                 reportHelper.setIndexToGroupMap(groupIndexToGroup);
                 reportParams.put(ReportApi.ReportParameters.REPORT_SCRIPTLET, reportHelper);
             }
 
         } else {
-            LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sql);
+            LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sqlAndParamsPair);
             //We need to look up the mappingValues from both the group value and also the display string value
             int index = 1;
             for (String s : serviceValues) {
@@ -567,54 +576,82 @@ public class ReportGenerator {
     /**
      * Get the ordered set of distinct mapping sets for the keys and values in the sql string from the db
      */
-    public static LinkedHashSet<List<String>> getDistinctMappingSets(Connection connection, String sql) throws ReportGenerationException {
+    public static LinkedHashSet<List<String>> getDistinctMappingSets(Connection connection,
+                                                                     Pair<String, List<Object>> sqlAndParamsPair)
+            throws ReportGenerationException {
         LinkedHashSet<List<String>> returnSet = new LinkedHashSet<List<String>>();
 
-        Statement stmt = null;
-        ResultSet rs = null;
+        PreparedStatementDataSource psds = null;
         try {
-            stmt = connection.createStatement();
-            rs = stmt.executeQuery(sql);
+            psds = new PreparedStatementDataSource(connection);
+            psds.configure(sqlAndParamsPair.getKey(), sqlAndParamsPair.getValue());
 
-            while (rs.next()) {
+            while (psds.next()) {
                 List<String> mappingStrings = new ArrayList<String>();
-                String authUser = rs.getString(Utilities.AUTHENTICATED_USER);
+                String authUser = (String) psds.getFieldValue(new JRFieldAdapter() {
+                    public String getName() {
+                        return PreparedStatementDataSource.ColumnName.AUTHENTICATED_USER.getColumnName();
+                    }
+                });
+
                 mappingStrings.add(authUser);
                 for (int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++) {
-                    mappingStrings.add(rs.getString("MAPPING_VALUE_" + (i + 1)));
+                    final int index = i;
+                    String aMapStr = (String) psds.getFieldValue(new JRFieldAdapter() {
+                        public String getName() {
+                            PreparedStatementDataSource.ColumnName columnName =
+                                    PreparedStatementDataSource.ColumnName.getColumnName("MAPPING_VALUE_" + (index + 1));
+                            return columnName.getColumnName();
+                        }
+                    });
+
+                    mappingStrings.add(aMapStr);
                 }
                 returnSet.add(mappingStrings);
             }
+        } catch (JRException ex) {
+            throw new ReportGenerationException("Error generating mapping set.", ex);
         } catch (SQLException ex) {
             throw new ReportGenerationException("Error generating mapping set.", ex);
         } finally {
-            ResourceUtils.closeQuietly(rs);
-            ResourceUtils.closeQuietly(stmt);
+            if (psds != null) psds.close();
         }
 
         return returnSet;
     }
 
-    private LinkedHashSet<String> getServiceDisplayStrings(Connection connection, String sql) throws ReportGenerationException {
+    private LinkedHashSet<String> getServiceDisplayStrings(Connection connection,
+                                                           Pair<String, List<Object>> sqlAndParamsPair)
+            throws ReportGenerationException {
         LinkedHashSet<String> set = new LinkedHashSet<String>();
 
-        Statement stmt = null;
-        ResultSet rs = null;
+        PreparedStatementDataSource psds = null;
         try {
-            stmt = connection.createStatement();
-            rs = stmt.executeQuery(sql);
+            psds = new PreparedStatementDataSource(connection);
+            psds.configure(sqlAndParamsPair.getKey(), sqlAndParamsPair.getValue());
 
-            while (rs.next()) {
-                String serviceName = rs.getString(Utilities.SERVICE_NAME);
-                String routingUri = rs.getString(Utilities.ROUTING_URI);
+            while (psds.next()) {
+                String serviceName = (String) psds.getFieldValue(new JRFieldAdapter() {
+                    public String getName() {
+                        return PreparedStatementDataSource.ColumnName.SERVICE_NAME.getColumnName();
+                    }
+                });
+
+                String routingUri = (String) psds.getFieldValue(new JRFieldAdapter() {
+                    public String getName() {
+                        return PreparedStatementDataSource.ColumnName.ROUTING_URI.getColumnName();
+                    }
+                });
+
                 String service = Utilities.getServiceDisplayStringNotTruncatedNoEscape(serviceName, routingUri);
                 set.add(service);
             }
         } catch (SQLException ex) {
             throw new ReportGenerationException("Error generating service display values.", ex);
+        } catch (JRException ex) {
+            throw new ReportGenerationException("Error generating service display values.", ex);
         } finally {
-            ResourceUtils.closeQuietly(rs);
-            ResourceUtils.closeQuietly(stmt);
+            if (psds != null) psds.close();
         }
 
         return set;

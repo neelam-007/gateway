@@ -48,7 +48,7 @@
                class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME">
         <parameterDescription><![CDATA[Valid values are HOUR, DAY, WEEK and MONTH]]></parameterDescription>
         <defaultValueExpression>
-            <![CDATA[com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME.DAY]]></defaultValueExpression>
+            <![CDATA[Utilities.UNIT_OF_TIME.DAY]]></defaultValueExpression>
     </parameter>
     <parameter name="IS_ABSOLUTE" isForPrompting="false" class="java.lang.Boolean"/>
     <parameter name="ABSOLUTE_START_TIME" isForPrompting="false" class="java.lang.String"/>
@@ -56,7 +56,7 @@
     <parameter name="INTERVAL_TIME_UNIT" isForPrompting="false"
                class="com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME">
         <defaultValueExpression>
-            <![CDATA[com.l7tech.gateway.standardreports.Utilities.UNIT_OF_TIME.HOUR]]></defaultValueExpression>
+            <![CDATA[Utilities.UNIT_OF_TIME.HOUR]]></defaultValueExpression>
     </parameter>
     <parameter name="INTERVAL_NUM_OF_TIME_UNITS" isForPrompting="false" class="java.lang.Integer">
         <defaultValueExpression><![CDATA[new Integer(1)]]></defaultValueExpression>
@@ -87,20 +87,20 @@
     </parameter>
     <parameter name="relativeStartTimeMilli" isForPrompting="false" class="java.lang.Long">
         <defaultValueExpression>
-            <![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(com.l7tech.gateway.standardreports.Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT}, $P{SPECIFIC_TIME_ZONE})): null]]></defaultValueExpression>
+            <![CDATA[($P{IS_RELATIVE}.booleanValue())?new Long(Utilities.getRelativeMilliSecondsInPast($P{RELATIVE_NUM_OF_TIME_UNITS}.intValue(), $P{RELATIVE_TIME_UNIT}, $P{SPECIFIC_TIME_ZONE})): null]]></defaultValueExpression>
     </parameter>
     <parameter name="relativeEndTimeMilli" isForPrompting="false" class="java.lang.Long">
         <defaultValueExpression><![CDATA[($P{IS_RELATIVE}.booleanValue())
-?new Long(com.l7tech.gateway.standardreports.Utilities.getMillisForEndTimePeriod($P{RELATIVE_TIME_UNIT}, $P{SPECIFIC_TIME_ZONE}))
+?new Long(Utilities.getMillisForEndTimePeriod($P{RELATIVE_TIME_UNIT}, $P{SPECIFIC_TIME_ZONE}))
         : null]]></defaultValueExpression>
     </parameter>
     <parameter name="absoluteStartTimeMilli" isForPrompting="false" class="java.lang.Long">
         <defaultValueExpression>
-            <![CDATA[new Long(com.l7tech.gateway.standardreports.Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_START_TIME}, $P{SPECIFIC_TIME_ZONE}))]]></defaultValueExpression>
+            <![CDATA[new Long(Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_START_TIME}, $P{SPECIFIC_TIME_ZONE}))]]></defaultValueExpression>
     </parameter>
     <parameter name="absoluteEndTimeMilli" isForPrompting="false" class="java.lang.Long">
         <defaultValueExpression>
-            <![CDATA[new Long(com.l7tech.gateway.standardreports.Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_END_TIME}, $P{SPECIFIC_TIME_ZONE}))]]></defaultValueExpression>
+            <![CDATA[new Long(Utilities.getAbsoluteMilliSeconds($P{ABSOLUTE_END_TIME}, $P{SPECIFIC_TIME_ZONE}))]]></defaultValueExpression>
     </parameter>
     <parameter name="startTimeMilli" isForPrompting="false" class="java.lang.Long">
         <defaultValueExpression>
@@ -112,7 +112,7 @@
     </parameter>
     <parameter name="resolution" isForPrompting="false" class="java.lang.Integer">
         <defaultValueExpression>
-            <![CDATA[com.l7tech.gateway.standardreports.Utilities.getIntervalResolutionFromTimePeriod($P{INTERVAL_TIME_UNIT}, $P{HOURLY_MAX_RETENTION_NUM_DAYS}, $P{startTimeMilli}, $P{endTimeMilli} )]]></defaultValueExpression>
+            <![CDATA[Utilities.getIntervalResolutionFromTimePeriod($P{INTERVAL_TIME_UNIT}, $P{HOURLY_MAX_RETENTION_NUM_DAYS}, $P{startTimeMilli}, $P{endTimeMilli} )]]></defaultValueExpression>
     </parameter>
     <parameter name="intervalAsString" isForPrompting="false" class="java.lang.String">
         <defaultValueExpression>
@@ -132,16 +132,21 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
 ? "All Available"
 : $P{serviceIdDisplayText}]]></defaultValueExpression>
     </parameter>
-    <parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
-        <defaultValueExpression><![CDATA[Utilities.getUsageMasterIntervalQuery($P{startTimeMilli},$P{endTimeMilli}
-,$P{SERVICE_ID_TO_OPERATIONS_MAP}, $P{KEYS_TO_LIST_FILTER_PAIRS}, $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue())
-]]></defaultValueExpression>
-    </parameter>
     <parameter name="DISPLAY_STRING_TO_MAPPING_GROUP" isForPrompting="false" class="java.util.Map"/>
     <parameter name="PRINT_CHART" isForPrompting="false" class="java.lang.Boolean"/>
     <parameter name="SUB_REPORT_HELPER" isForPrompting="false"
                class="com.l7tech.gateway.standardreports.UsageSummaryAndSubReportHelper"/>
-    <queryString><![CDATA[$P!{sqlQuery}]]></queryString>
+
+    <parameter name="sqlQueryAndParam" isForPrompting="false" class="com.l7tech.util.Pair">
+        <defaultValueExpression><![CDATA[Utilities.getUsageMasterIntervalQuery($P{startTimeMilli},$P{endTimeMilli}
+,$P{SERVICE_ID_TO_OPERATIONS_MAP}, $P{KEYS_TO_LIST_FILTER_PAIRS}, $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue())
+]]></defaultValueExpression>
+    </parameter>
+    <parameter name="dataSourceIsConfigured" isForPrompting="false" class="java.lang.Boolean">
+        <defaultValueExpression>
+            <![CDATA[((PreparedStatementDataSource)$P{REPORT_DATA_SOURCE}).configure($P{sqlQueryAndParam})]]>
+        </defaultValueExpression>
+    </parameter>
 
     <field name="SERVICE_ID" class="java.lang.Long"/>
     <field name="SERVICE_NAME" class="java.lang.String"/>
@@ -152,9 +157,9 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
     <variable name="TIME_PERIOD_DS" class="java.lang.Object" resetType="Group" resetGroup="SERVICE"
               calculation="Nothing">
         <variableExpression>
-            <![CDATA[new com.l7tech.gateway.standardreports.TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT}, $P{SPECIFIC_TIME_ZONE})]]></variableExpression>
+            <![CDATA[new TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT}, $P{SPECIFIC_TIME_ZONE})]]></variableExpression>
         <initialValueExpression><![CDATA[($P{IS_RELATIVE}.booleanValue())
-?(new com.l7tech.gateway.standardreports.TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT}, $P{SPECIFIC_TIME_ZONE})):null]]></initialValueExpression>
+?(new TimePeriodDataSource($P{startTimeMilli}.longValue(), $P{endTimeMilli}.longValue(), $P{INTERVAL_NUM_OF_TIME_UNITS}.intValue(), $P{INTERVAL_TIME_UNIT}, $P{SPECIFIC_TIME_ZONE})):null]]></initialValueExpression>
     </variable>
     <variable name="ROW_OPERATION_TOTAL" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_OPERATION"
               calculation="Sum">
@@ -516,7 +521,7 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
         <groupHeader>
             <band height="18" isSplitAllowed="false">
                 <printWhenExpression><![CDATA[new Boolean(
-                !com.l7tech.gateway.standardreports.Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE})
+                !Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE})
                 )]]></printWhenExpression>
                 <frame>
                     <reportElement
@@ -551,7 +556,7 @@ $P{IS_DETAIL}.booleanValue())]]></defaultValueExpression>
         <groupFooter>
             <band height="18" isSplitAllowed="false">
                 <printWhenExpression><![CDATA[new Boolean(
-                !com.l7tech.gateway.standardreports.Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE})
+                !Utilities.isPlaceHolderValue($F{SERVICE_OPERATION_VALUE})
                 )]]></printWhenExpression>
                 <frame>
                     <reportElement
@@ -934,8 +939,9 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         <subreportParameterExpression>
                             <![CDATA[$P{INTERVAL_NUM_OF_TIME_UNITS}]]></subreportParameterExpression>
                     </subreportParameter>
-                    <subreportParameter name="REPORT_CONNECTION">
-                        <subreportParameterExpression><![CDATA[$P{REPORT_CONNECTION}]]></subreportParameterExpression>
+                    <subreportParameter name="SUB_REPORT_DATA_SOURCE">
+                        <!-- Note: the sub report MAY NOT use this data source as it. It must call getSubReportInstance() to get a new instance-->
+                        <subreportParameterExpression><![CDATA[$P{REPORT_DATA_SOURCE}]]></subreportParameterExpression>
                     </subreportParameter>
                     <subreportParameter name="KEYS_TO_LIST_FILTER_PAIRS">
                         <subreportParameterExpression>

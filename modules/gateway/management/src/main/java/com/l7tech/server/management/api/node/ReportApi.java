@@ -497,6 +497,9 @@ public interface ReportApi {
     /**
      * Records a filter value for a mapping key. Each instance represents one value and whether the value in the
      * database should be compared using = or like.
+     * //todo [Donal] this is called 'FilterPair' however the key lhs of the pair is not yet included. A FilterPair
+     * //is associated with a Key, however FilterPair does not yet retain the Key info, and relies on it's usages
+     * to ensure that the correct FilterPair is associated with the correct key
      */
     public static class FilterPair {
         /**

@@ -122,7 +122,16 @@ $P{IS_DETAIL}.booleanValue() && $P{IS_CONTEXT_MAPPING}.booleanValue())]]></defau
 ? "All Available"
 : $P{serviceIdDisplayText}]]></defaultValueExpression>
     </parameter>
-    <parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
+    <parameter name="PRINT_CHART" isForPrompting="false" class="java.lang.Boolean"/>
+    <parameter name="DISPLAY_STRING_TO_MAPPING_GROUP" isForPrompting="false" class="java.util.Map"/>
+    <parameter name="SUB_INTERVAL_SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>
+    <parameter name="SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport">
+        <parameterDescription>
+            <![CDATA[Subreport, for the 3rd level report. Not used directly by this report, but passes to its subreport]]></parameterDescription>
+    </parameter>
+    <parameter name="IS_USING_KEYS" isForPrompting="false" class="java.lang.Boolean"/>
+
+    <parameter name="sqlQueryAndParam" isForPrompting="false" class="com.l7tech.util.Pair">
         <defaultValueExpression><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
 Utilities.getPerformanceStatisticsMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 ,$P{SERVICE_ID_TO_OPERATIONS_MAP}, $P{KEYS_TO_LIST_FILTER_PAIRS},
@@ -132,15 +141,11 @@ Utilities.getNoMappingQuery(true, $P{startTimeMilli},$P{endTimeMilli}
 ,$P{SERVICE_ID_TO_OPERATIONS_MAP}.keySet(),$P{resolution}.intValue())
 )]]></defaultValueExpression>
     </parameter>
-    <parameter name="PRINT_CHART" isForPrompting="false" class="java.lang.Boolean"/>
-    <parameter name="DISPLAY_STRING_TO_MAPPING_GROUP" isForPrompting="false" class="java.util.Map"/>
-    <parameter name="SUB_INTERVAL_SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport"/>
-    <parameter name="SUB_REPORT" isForPrompting="false" class="net.sf.jasperreports.engine.JasperReport">
-        <parameterDescription>
-            <![CDATA[Subreport, for the 3rd level report. Not used directly by this report, but passes to its subreport]]></parameterDescription>
+    <parameter name="dataSourceIsConfigured" isForPrompting="false" class="java.lang.Boolean">
+        <defaultValueExpression>
+            <![CDATA[((PreparedStatementDataSource)$P{REPORT_DATA_SOURCE}).configure($P{sqlQueryAndParam})]]>
+        </defaultValueExpression>
     </parameter>
-    <parameter name="IS_USING_KEYS" isForPrompting="false" class="java.lang.Boolean"/>
-    <queryString><![CDATA[$P!{sqlQuery}]]></queryString>
 
     <field name="SERVICE_ID" class="java.lang.Long"/>
     <field name="SERVICE_NAME" class="java.lang.String"/>
@@ -2110,8 +2115,9 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         <subreportParameterExpression>
                             <![CDATA[$P{INTERVAL_NUM_OF_TIME_UNITS}]]></subreportParameterExpression>
                     </subreportParameter>
-                    <subreportParameter name="REPORT_CONNECTION">
-                        <subreportParameterExpression><![CDATA[$P{REPORT_CONNECTION}]]></subreportParameterExpression>
+                    <subreportParameter name="SUB_REPORT_DATA_SOURCE">
+                        <!-- Note: the sub report MAY NOT use this data source as it. It must call getSubReportInstance() to get a new instance-->
+                        <subreportParameterExpression><![CDATA[$P{REPORT_DATA_SOURCE}]]></subreportParameterExpression>
                     </subreportParameter>
                     <subreportParameter name="KEYS_TO_LIST_FILTER_PAIRS">
                         <subreportParameterExpression>

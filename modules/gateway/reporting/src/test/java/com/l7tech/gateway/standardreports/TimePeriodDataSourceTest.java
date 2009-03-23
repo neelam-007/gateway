@@ -8,8 +8,6 @@ package com.l7tech.gateway.standardreports;
 
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JRField;
-import net.sf.jasperreports.engine.JRPropertiesHolder;
-import net.sf.jasperreports.engine.JRPropertiesMap;
 
 import java.util.Date;
 import java.util.Calendar;
@@ -23,9 +21,11 @@ import org.junit.Test;
 public class TimePeriodDataSourceTest {
 
     private SimpleDateFormat DATE_FORMAT = new SimpleDateFormat(Utilities.DATE_STRING);
+
     /**
      * Checks that the data source contains the correct number of rows for the inputs supplied.
      * Checks the number of rows over 24 hours for an interval of 1, 2, 3 and 5 hours
+     *
      * @throws ParseException
      * @throws JRException
      */
@@ -48,7 +48,7 @@ public class TimePeriodDataSourceTest {
                 1, Utilities.UNIT_OF_TIME.HOUR, timeZone);
 
         int counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
@@ -57,7 +57,7 @@ public class TimePeriodDataSourceTest {
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 2, Utilities.UNIT_OF_TIME.HOUR, timeZone);
         counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
@@ -66,7 +66,7 @@ public class TimePeriodDataSourceTest {
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 3, Utilities.UNIT_OF_TIME.HOUR, timeZone);
         counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
@@ -75,7 +75,7 @@ public class TimePeriodDataSourceTest {
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 5, Utilities.UNIT_OF_TIME.HOUR, timeZone);
         counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
@@ -85,6 +85,7 @@ public class TimePeriodDataSourceTest {
     /**
      * Checks that the data source contains the correct number of rows for the inputs supplied.
      * Checks the number of rows over the month of september for an interval of 1, 2, 3 and 7 days
+     *
      * @throws ParseException
      * @throws JRException
      */
@@ -107,7 +108,7 @@ public class TimePeriodDataSourceTest {
                 1, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         int counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
@@ -117,7 +118,7 @@ public class TimePeriodDataSourceTest {
                 2, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
@@ -127,7 +128,7 @@ public class TimePeriodDataSourceTest {
                 3, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
@@ -137,7 +138,7 @@ public class TimePeriodDataSourceTest {
                 7, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
@@ -147,6 +148,7 @@ public class TimePeriodDataSourceTest {
     /**
      * Checks that the data source contains the correct number of rows for the inputs supplied.
      * Checks the number of rows over the months of August and September for an interval of 1, 2, 3 and 5 weeks
+     *
      * @throws ParseException
      * @throws JRException
      */
@@ -169,7 +171,7 @@ public class TimePeriodDataSourceTest {
                 1, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
         int counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
@@ -180,7 +182,7 @@ public class TimePeriodDataSourceTest {
                 2, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
         counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
@@ -191,7 +193,7 @@ public class TimePeriodDataSourceTest {
                 3, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
         counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
@@ -201,7 +203,7 @@ public class TimePeriodDataSourceTest {
                 5, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
         counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
@@ -211,6 +213,7 @@ public class TimePeriodDataSourceTest {
     /**
      * Checks that the data source contains the correct number of rows for the inputs supplied.
      * Checks the number of rows over the lats 12 months for an interval of 1, 2, 3 and 5 months
+     *
      * @throws ParseException
      * @throws JRException
      */
@@ -233,7 +236,7 @@ public class TimePeriodDataSourceTest {
                 1, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
         int counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
@@ -244,7 +247,7 @@ public class TimePeriodDataSourceTest {
                 2, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
         counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
@@ -255,18 +258,18 @@ public class TimePeriodDataSourceTest {
                 3, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
         counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
         Assert.assertTrue(counter == 4);
-        
+
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 5, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
         counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             counter++;
         }
 
@@ -276,6 +279,7 @@ public class TimePeriodDataSourceTest {
     /**
      * Tests that the values returned for each row of the data source are correct for intervals
      * of 1,2,3 and 5 hours, over a 24 hour period
+     *
      * @throws ParseException
      * @throws JRException
      */
@@ -298,7 +302,7 @@ public class TimePeriodDataSourceTest {
                 1, Utilities.UNIT_OF_TIME.HOUR, timeZone);
 
         long hourInMilli = 3600000L;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
@@ -311,7 +315,7 @@ public class TimePeriodDataSourceTest {
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 2, Utilities.UNIT_OF_TIME.HOUR, timeZone);
 
-        while(dataSource.next()){
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
@@ -324,7 +328,7 @@ public class TimePeriodDataSourceTest {
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 3, Utilities.UNIT_OF_TIME.HOUR, timeZone);
 
-        while(dataSource.next()){
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
@@ -338,7 +342,7 @@ public class TimePeriodDataSourceTest {
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 5, Utilities.UNIT_OF_TIME.HOUR, timeZone);
         int counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
@@ -347,7 +351,7 @@ public class TimePeriodDataSourceTest {
             long intervalEndtime = start + (hourInMilli * 5);
 
             //the last interval has only 4 days 24/5 = 4 and 4 days over.
-            if(counter < 4) Assert.assertTrue(intervalEndtime == end);
+            if (counter < 4) Assert.assertTrue(intervalEndtime == end);
             else Assert.assertTrue((start + (hourInMilli * 4)) == end);
             counter++;
         }
@@ -356,6 +360,7 @@ public class TimePeriodDataSourceTest {
     /**
      * Tests that the values returned for each row of the data source are correct for intervals
      * of 1,2,3 and 7 days, over the month of September
+     *
      * @throws ParseException
      * @throws JRException
      */
@@ -378,8 +383,8 @@ public class TimePeriodDataSourceTest {
         TimePeriodDataSource dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 1, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
-        long dayInMilli = 86400000L; 
-        while(dataSource.next()){
+        long dayInMilli = 86400000L;
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
@@ -393,7 +398,7 @@ public class TimePeriodDataSourceTest {
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 2, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
-        while(dataSource.next()){
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
@@ -406,7 +411,7 @@ public class TimePeriodDataSourceTest {
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 3, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
-        while(dataSource.next()){
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
@@ -420,7 +425,7 @@ public class TimePeriodDataSourceTest {
                 7, Utilities.UNIT_OF_TIME.DAY, timeZone);
 
         int counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
@@ -429,7 +434,7 @@ public class TimePeriodDataSourceTest {
             long intervalEndtime = start + (dayInMilli * 7);
 
             //the last interval has only 2 30/7=4 and 2 days over
-            if(counter < 4) Assert.assertTrue(intervalEndtime == end);
+            if (counter < 4) Assert.assertTrue(intervalEndtime == end);
             else Assert.assertTrue((start + (dayInMilli * 2)) == end);
 
             counter++;
@@ -440,6 +445,7 @@ public class TimePeriodDataSourceTest {
      * Tests that the values returned for each row of the data source are correct for intervals
      * of 1,2,3 and 5 weeks, over the month of August September ,and 2 days in October, to make the time
      * period dividible by 7 days = 63 days
+     *
      * @throws ParseException
      * @throws JRException
      */
@@ -462,7 +468,7 @@ public class TimePeriodDataSourceTest {
                 1, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
         long weekInMilli = 604800000L;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
@@ -477,23 +483,23 @@ public class TimePeriodDataSourceTest {
                 2, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
         int counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
             Assert.assertTrue(start < end);
 
             long intervalEndtime = start + (weekInMilli * 2);
-            if(counter < 4) Assert.assertTrue(intervalEndtime == end);
+            if (counter < 4) Assert.assertTrue(intervalEndtime == end);
             else Assert.assertTrue((start + weekInMilli) == end);
             counter++;
         }
-        
+
 
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 3, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
-        while(dataSource.next()){
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
@@ -508,7 +514,7 @@ public class TimePeriodDataSourceTest {
                 5, Utilities.UNIT_OF_TIME.WEEK, timeZone);
 
         counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
@@ -518,18 +524,19 @@ public class TimePeriodDataSourceTest {
 
             //the first interval has 35 days and the last has 28
 
-            if(counter < 1) Assert.assertTrue(intervalEndtime == end);
-            else{
+            if (counter < 1) Assert.assertTrue(intervalEndtime == end);
+            else {
                 long dayInMilli = 86400000L;
                 Assert.assertTrue((start + (dayInMilli * 28)) == end);
             }
             counter++;
         }
     }
-    
+
     /**
      * Tests that the values returned for each row of the data source are correct for intervals
      * of 1,2,3 and 5 months, over the last 12 months
+     *
      * @throws ParseException
      * @throws JRException
      */
@@ -552,15 +559,15 @@ public class TimePeriodDataSourceTest {
                 1, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
         Calendar cal = Calendar.getInstance(tz);
-        
-        while(dataSource.next()){
+
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
             Assert.assertTrue(start < end);
 
             cal.setTimeInMillis(start);
-            cal.add(Calendar.MONTH,1);
+            cal.add(Calendar.MONTH, 1);
 
             Assert.assertTrue(cal.getTimeInMillis() == end);
         }
@@ -569,14 +576,14 @@ public class TimePeriodDataSourceTest {
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 2, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
-        while(dataSource.next()){
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
             Assert.assertTrue(start < end);
 
             cal.setTimeInMillis(start);
-            cal.add(Calendar.MONTH,2);
+            cal.add(Calendar.MONTH, 2);
 
             Assert.assertTrue(cal.getTimeInMillis() == end);
         }
@@ -585,14 +592,14 @@ public class TimePeriodDataSourceTest {
         dataSource = new TimePeriodDataSource(timePeriodStartInclusive, timePeriodEndExclusive,
                 3, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
-        while(dataSource.next()){
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
             Assert.assertTrue(start < end);
 
             cal.setTimeInMillis(start);
-            cal.add(Calendar.MONTH,3);
+            cal.add(Calendar.MONTH, 3);
 
             Assert.assertTrue(cal.getTimeInMillis() == end);
         }
@@ -601,7 +608,7 @@ public class TimePeriodDataSourceTest {
                 5, Utilities.UNIT_OF_TIME.MONTH, timeZone);
 
         int counter = 0;
-        while(dataSource.next()){
+        while (dataSource.next()) {
             Long start = (Long) dataSource.getFieldValue(fieldStart);
             Long end = (Long) dataSource.getFieldValue(fieldEnd);
 
@@ -610,66 +617,27 @@ public class TimePeriodDataSourceTest {
             cal.setTimeInMillis(start);
 
 
-            if(counter < 2){
-                cal.add(Calendar.MONTH,5);
+            if (counter < 2) {
+                cal.add(Calendar.MONTH, 5);
                 Assert.assertTrue(cal.getTimeInMillis() == end);
-            }
-            else{
-                cal.add(Calendar.MONTH,2);
+            } else {
+                cal.add(Calendar.MONTH, 2);
                 Assert.assertTrue(cal.getTimeInMillis() == end);
             }
             counter++;
         }
     }
-    
-    private JRField fieldStart = new JRFieldAdapter(){
+
+    private JRField fieldStart = new JRFieldAdapter() {
         public String getName() {
             return TimePeriodDataSource.INTERVAL_START;
         }
     };
 
-    private JRField fieldEnd = new JRFieldAdapter(){
+    private JRField fieldEnd = new JRFieldAdapter() {
         public String getName() {
             return TimePeriodDataSource.INTERVAL_END;
         }
     };
 
-    //class just to implement JRField so we can adapt it above
-    private class JRFieldAdapter implements JRField{
-        public String getDescription() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public String getName() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public Class getValueClass() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public String getValueClassName() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public void setDescription(String s) {
-            //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public JRPropertiesHolder getParentProperties() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public JRPropertiesMap getPropertiesMap() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public boolean hasProperties() {
-            return false;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-
-        public Object clone() {
-            return null;  //To change body of implemented methods use File | Settings | File Templates.
-        }
-    }
 }

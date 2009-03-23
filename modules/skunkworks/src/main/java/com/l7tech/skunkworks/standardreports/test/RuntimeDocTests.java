@@ -19,6 +19,7 @@ import com.l7tech.gateway.standardreports.Utilities;
 import com.l7tech.gateway.standardreports.RuntimeDocUtilities;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.skunkworks.standardreports.ReportApp;
 import com.l7tech.server.management.api.node.ReportApi;
 
@@ -67,9 +68,9 @@ public class RuntimeDocTests {
 
         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs = ReportApp.getFilterPairMap(prop);
 
-        String sql = Utilities.getDistinctMappingQuery(null, null, null, keysToFilterPairs, 2, isDetail, true);
+        Pair<String, List<Object>> sqlAndParamsPair = Utilities.getDistinctMappingQuery(null, null, null, keysToFilterPairs, 2, isDetail, true);
 
-        LinkedHashSet<List<String>> distinctMappingSets = ReportApp.getDistinctMappingSets(conn, sql);
+        LinkedHashSet<List<String>> distinctMappingSets = ReportApp.getDistinctMappingSets(conn, sqlAndParamsPair);
 
         Document doc = RuntimeDocUtilities.getUsageRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         Assert.assertTrue(doc != null);

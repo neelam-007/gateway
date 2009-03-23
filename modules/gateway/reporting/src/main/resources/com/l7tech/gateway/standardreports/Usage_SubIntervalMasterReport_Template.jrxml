@@ -52,6 +52,7 @@
     <parameter name="SPECIFIC_TIME_ZONE" isForPrompting="false" class="java.lang.String">
         <defaultValueExpression><![CDATA["Europe/London"]]></defaultValueExpression>
     </parameter>
+    <parameter name="SUB_REPORT_DATA_SOURCE" isForPrompting="false" class="net.sf.jasperreports.engine.JRDataSource"/>
 
     <field name="INTERVAL_START" class="java.lang.Long"/>
     <field name="INTERVAL_END" class="java.lang.Long"/>
@@ -134,7 +135,8 @@
                 <subreportParameter name="SPECIFIC_TIME_ZONE">
                     <subreportParameterExpression><![CDATA[$P{SPECIFIC_TIME_ZONE}]]></subreportParameterExpression>
                 </subreportParameter>
-                <connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+                <dataSourceExpression>
+                    <![CDATA[((PreparedStatementDataSource)$P{SUB_REPORT_DATA_SOURCE}).getSubReportInstance()]]></dataSourceExpression>
                 <returnValue subreportVariable="TOTAL" toVariable="TOTAL" calculation="Sum"/>
                 <subreportExpression class="net.sf.jasperreports.engine.JasperReport">
                     <![CDATA[$P{SUB_REPORT}]]></subreportExpression>

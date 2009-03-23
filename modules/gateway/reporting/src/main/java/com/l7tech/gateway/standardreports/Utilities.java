@@ -18,7 +18,7 @@ import java.util.logging.Level;
 import java.awt.*;
 
 import com.l7tech.util.TextUtils;
-import com.l7tech.util.SqlUtils;
+import com.l7tech.util.Pair;
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 
@@ -97,12 +97,11 @@ public class Utilities {
     private final static String aggregateSelect = "SELECT p.objectid as SERVICE_ID, " +
             "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
             "SUM({0}.attempted) as ATTEMPTED, " +
-            //todo [Donal] duplicate column creaped in, check if this is being used, if it is replace usages with THROUGHPUT
-            "SUM({0}.completed) as COMPLETED, " +
             "SUM({0}.authorized) as AUTHORIZED, " +
             "SUM({0}.front_sum) as FRONT_SUM, " +
             "SUM({0}.back_sum) as BACK_SUM, " +
             "SUM({0}.completed) as THROUGHPUT," +
+            "SUM({0}.completed) as COMPLETED," +
             "SUM({0}.attempted)-SUM({0}.authorized) as POLICY_VIOLATIONS, " +
             "SUM({0}.authorized)-SUM({0}.completed) as ROUTING_FAILURES, " +
             " MIN({0}.front_min) as FRTM, " +
@@ -218,7 +217,6 @@ public class Utilities {
      *                            kept for
      * @param startTimeMilli      start of time period, in milliseconds, since epoch
      * @param endTimeMilli        end of time period, in milliseconds, since epoch
-     * @param
      * @return Integer 1 for hourly metric bin or 2 for daily metric bin. If UNIT_OF_TIME was hour, then the return
      *         value can only ever be 1.
      * @throws UtilityConstraintException if the intervalUnitOfTime is HOUR, and based on the value for hourRetentionPeriod
@@ -329,10 +327,13 @@ public class Utilities {
      * @param startIntervalMilliSeconds milli second value since epoch
      * @param endIntervalMilliSeconds   milli second value since epoch
      * @param intervalUnitOfTime        HOUR, DAY, WEEK or MONTH
+     * @param numberOfTimeUnits         use to help valid the interval represented between the start and end milli second
+     *                                  times. also used for determing the format of the string returned. End time not included in the returned String if
+     *                                  the value is <= 1
      * @param timeZone                  what timezone to use when converting the epoch start and end time values into strings
      * @return String representing the interval, to be shown alongside the interval data.
      * @throws IllegalArgumentException if the startIntervalMilliSeconds >= endIntervalMilliSeconds
-     * @throws IllegalArgumentException if the difference between the startIntervalMilliSeconds and the
+     *                                  or if the difference between the startIntervalMilliSeconds and the
      *                                  endIntervalMilliSeconds is greater than the difference allowed for the UNIT_OF_TIME in intervalUnitOfTime
      */
     public static String getIntervalDisplayDate(Long startIntervalMilliSeconds, Long endIntervalMilliSeconds,
@@ -377,7 +378,7 @@ public class Utilities {
 
                 StringBuilder sb = new StringBuilder();
                 if (numberOfTimeUnits > 1) {
-                    sb.append(dateDateFormat.format(calStart.getTime()) + "-" + endDateFormat.format(calEnd.getTime()));
+                    sb.append(dateDateFormat.format(calStart.getTime())).append("-").append(endDateFormat.format(calEnd.getTime()));
                 } else {
                     sb.append(dateDateFormat.format(calStart.getTime()));
                 }
@@ -386,7 +387,7 @@ public class Utilities {
                     //only want to show the year when were showing two months, and end month is in the new year
                     SimpleDateFormat yearFormat = new SimpleDateFormat(YEAR_TWO_DIGIT);
                     yearFormat.setTimeZone(tz);
-                    sb.append(" '" + yearFormat.format(calEnd.getTime()));
+                    sb.append(" '").append(yearFormat.format(calEnd.getTime()));
                 }
                 return sb.toString();
 
@@ -413,6 +414,7 @@ public class Utilities {
      * the unit of time represented by unitOfTime
      *
      * @param unitOfTime             which UNIT_OF_TIME we will use as the range
+     * @param numberOfTimeUnits      used to validate the time interval represented by start and end milli second args
      * @param startRangeMilliSeconds the start of the range in milliseconds since epoch
      * @param endRangeMilliSeconds   the end of the range in milliseconds since epoch
      * @throws IllegalArgumentException if the startRangeMilliSeconds >= endRangeMilliSeconds
@@ -484,9 +486,12 @@ public class Utilities {
      * Note: Where ever this calendar is used, any add functions should be using the Calendar field which matches
      * the UNIT_OF_TIME the returned Calendar has been configured with. See getCalendarTimeUnit
      *
-     * @param unitOfTime
-     * @param timeZone
-     * @return
+     * @param unitOfTime for which we want the millisecond value of. The rules for getting this value are specified in
+     *                   getCalendarForTimeUnit.
+     * @param timeZone   is very important for configuring the calendar. The epoch value for the end of
+     *                   the last day, week and month are 100% dependant on the timezone chosen.
+     * @return Calendar correctly configured to be at exactly the end time of the UNIT_OF_TIME specified, for the
+     *         timezone specified
      */
     public static Calendar getCalendarForTimeUnit(UNIT_OF_TIME unitOfTime, String timeZone) {
         Calendar calendar = Calendar.getInstance(getTimeZone(timeZone));
@@ -631,7 +636,7 @@ public class Utilities {
     public static String getIntervalDateInfoString(UNIT_OF_TIME intervalUnitOfTime) {
 
         if (intervalUnitOfTime == UNIT_OF_TIME.HOUR || intervalUnitOfTime == UNIT_OF_TIME.WEEK) {
-            return new String(" (mm/dd)");
+            return " (mm/dd)";
         }
         return "";
     }
@@ -682,18 +687,19 @@ public class Utilities {
      *                                query or not.  The keysToFilters cannot be validated without knowing if the report is at the operation level.
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
      * @param isUsage                 needed in order to validate the input parameters
-     * @return sql string, ready to be ran against a database. This sql query will ALWAYS produce the following columns
-     *         of data:
+     * @return Pair&lt;String, List&lt;Object&gt;&gt; A Pair of a String containing the query sql and a List&lt;Object&gt;> containing the
+     *         parameters to be added to the SQL. Each entry in List<Object> matches the index of a ? character in the sql
+     *         <p/>
      *         <pre>
-     *                                                                                 AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                                                 </pre>
+     *                 AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                 </pre>
      *         Note operation is not included. It is a mapping key under the covers but it has special meaning. Notice how
      *         authenticated_user is returned. To the user and to business logic, authenticated user is a normal mapping key
      */
-    public static String getDistinctMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                                 Map<String, Set<String>> serviceIdToOperations,
-                                                 LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, int resolution,
-                                                 boolean isDetail, boolean isUsage) {
+    public static Pair<String, List<Object>> getDistinctMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                                                     Map<String, Set<String>> serviceIdToOperations,
+                                                                     LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, int resolution,
+                                                                     boolean isDetail, boolean isUsage) {
 
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
@@ -705,47 +711,48 @@ public class Utilities {
 
         boolean useUser = (keysSupplied) && isUserSupplied(keysToFilters);
 
+        List<Object> queryParams = new ArrayList<Object>();
         StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
 
-        addUserToSelect(false, useUser, sb);
+        addUserToSelect(false, useUser, sb, queryParams);
         List<String> keys = new ArrayList<String>();
         if (keysSupplied) keys.addAll(keysToFilters.keySet());
-        addCaseSQL(keys, sb);
+        addCaseSQL(keys, sb, queryParams);
 
         sb.append(mappingJoin);
-        addResolutionConstraint(resolution, sb);
+        addResolutionConstraint(resolution, sb, queryParams);
         if (useTime) {
-            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
+            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb, queryParams);
         }
 
         boolean isBlankedOpQuery = isBlanketOperationQuery(serviceIdToOperations);
         //not a detail query and service id's are ok
         // OR is a detail query, and we have blanked operation requirements
         if (serviceIdsOk && ((!isDetail) || (isBlankedOpQuery && isDetail))) {
-            addServiceIdConstraint(serviceIdToOperations.keySet(), sb);
+            addServiceIdConstraint(serviceIdToOperations.keySet(), sb, queryParams);
         }
         //else isDetail and were going to use operations
         else if (serviceIdsOk && !isBlankedOpQuery && isDetail) {
             //new method to constrain serivce id and operation together
-            addServiceAndOperationConstraint(serviceIdToOperations, sb);
+            addServiceAndOperationConstraint(serviceIdToOperations, sb, queryParams);
         }
 
         if (useUser) {
             List<ReportApi.FilterPair> userFilterPairs = getAuthenticatedUserFilterPairs(keysToFilters);
             if (!userFilterPairs.isEmpty()) {
-                addUserConstraint(userFilterPairs, sb);
+                addUserConstraint(userFilterPairs, sb, queryParams);
             } else {
                 addUserNotNullConstraint(sb);
             }
         }
 
         if (keysSupplied) {
-            addMappingConstraint(keysToFilters, sb);
+            addMappingConstraint(keysToFilters, sb, queryParams);
         }
         addUsageDistinctMappingOrder(sb);
 
         logger.log(Level.FINER, "getDistinctMappingQuery: " + sb.toString());
-        return sb.toString();
+        return new Pair<String, List<Object>>(sb.toString(), queryParams);
     }
 
     /**
@@ -769,15 +776,17 @@ public class Utilities {
      * @param isDetail                is used in validating the parameters, some constrains are relative to the query being a detail
      *                                query or not.  The keysToFilters cannot be validated without knowing if the report is at the operation level.
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
-     * @return a valid sql string ready to be ran against a database. The sql will always produce the following fields:-
+     * @return Pair&lt;String, List&lt;Object&gt;&gt; A Pair of a String containing the query sql and a List&lt;Object&gt;> containing the
+     *         parameters to be added to the SQL. Each entry in List<Object> matches the index of a ? character in the sql
+     *         <p/>
      *         <pre>
-     *                                                                                                                                                                                                                 SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
-     *                                                                                                                                                                                                                 </pre>
+     *         SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
+     *         </pre>
      */
-    public static String getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                                     Map<String, Set<String>> serviceIdToOperations,
-                                                     LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
-                                                     int resolution, boolean isDetail) {
+    public static Pair<String, List<Object>> getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                                                         Map<String, Set<String>> serviceIdToOperations,
+                                                                         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
+                                                                         int resolution, boolean isDetail) {
 
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
@@ -789,47 +798,49 @@ public class Utilities {
 
         boolean useUser = (keysSupplied) && isUserSupplied(keysToFilters);
 
+        List<Object> queryParams = new ArrayList<Object>();
+
         StringBuilder sb = new StringBuilder(distinctFrom);
 
-        addOperationToSelect(isDetail, sb);
+        addOperationToSelect(isDetail, sb, queryParams);
 
         sb.append(mappingJoin);
 
-        addResolutionConstraint(resolution, sb);
+        addResolutionConstraint(resolution, sb, queryParams);
 
         if (useTime) {
-            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
+            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb, queryParams);
         }
 
         boolean isBlankedOpQuery = isBlanketOperationQuery(serviceIdToOperations);
         //not a detail query and service id's are ok
         // OR is a detail query, and we have blanked operation requirements
         if (serviceIdsOk && ((!isDetail) || (isBlankedOpQuery && isDetail))) {
-            addServiceIdConstraint(serviceIdToOperations.keySet(), sb);
+            addServiceIdConstraint(serviceIdToOperations.keySet(), sb, queryParams);
         }
         //else isDetail and were going to use operations
         else if (serviceIdsOk && !isBlankedOpQuery && isDetail) {
             //new method to constrain serivce id and operation together
-            addServiceAndOperationConstraint(serviceIdToOperations, sb);
+            addServiceAndOperationConstraint(serviceIdToOperations, sb, queryParams);
         }
 
         if (useUser) {
             List<ReportApi.FilterPair> userFilterPairs = getAuthenticatedUserFilterPairs(keysToFilters);
             if (!userFilterPairs.isEmpty()) {
-                addUserConstraint(userFilterPairs, sb);
+                addUserConstraint(userFilterPairs, sb, queryParams);
             } else {
                 addUserNotNullConstraint(sb);
             }
         }
 
         if (keysSupplied) {
-            addMappingConstraint(keysToFilters, sb);
+            addMappingConstraint(keysToFilters, sb, queryParams);
         }
 
         sb.append(" ORDER BY SERVICE_ID, SERVICE_OPERATION_VALUE");
 
         logger.log(Level.FINER, "getUsageMasterIntervalQuery: " + sb.toString());
-        return sb.toString();
+        return new Pair<String, List<Object>>(sb.toString(), queryParams);
     }
 
     /**
@@ -853,17 +864,20 @@ public class Utilities {
      * @param isDetail                is used in validating the parameters, some constrains are relative to the query being a detail
      *                                query or not.  The keysToFilters cannot be validated without knowing if the report is at the operation level.
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
-     * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
+     * @return Pair&lt;String, List&lt;Object&gt;&gt; A Pair of a String containing the query sql and a List&lt;Object&gt;> containing the
+     *         parameters to be added to the SQL. Each entry in List<Object> matches the index of a ? character in the sql
+     *         <p/>
+     *         The sql always returns the following fields:-
      *         <pre>
-     *                                                                                                         SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                                                                                                         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                                                                         </pre>
+     *         SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *         </pre>
      */
-    public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                       Map<String, Set<String>> serviceIdToOperations,
-                                       LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
-                                       int resolution,
-                                       boolean isDetail) {
+    public static Pair<String, List<Object>> getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                                           Map<String, Set<String>> serviceIdToOperations,
+                                                           LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
+                                                           int resolution,
+                                                           boolean isDetail) {
 
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
@@ -875,26 +889,27 @@ public class Utilities {
 
         boolean useUser = (keysSupplied) && isUserSupplied(keysToFilters);
 
+        List<Object> queryParams = new ArrayList<Object>();
         //----SECTION A----
         StringBuilder sb = new StringBuilder(usageAggregateSelect);
 
         //----SECTION B----
-        addUserToSelect(true, useUser, sb);
+        addUserToSelect(true, useUser, sb, queryParams);
         //----SECTION C----
-        addOperationToSelect(isDetail, sb);
+        addOperationToSelect(isDetail, sb, queryParams);
         //----SECTION D's----
         List<String> keys = new ArrayList<String>();
         //this is a usage query, no npe due to checkMappingQueryParams above
         keys.addAll(keysToFilters.keySet());
-        addCaseSQL(keys, sb);
+        addCaseSQL(keys, sb, queryParams);
         //----SECTION E----
         sb.append(mappingJoin);
         //----SECTION F----
-        addResolutionConstraint(resolution, sb);
+        addResolutionConstraint(resolution, sb, queryParams);
 
         //----SECTION G----
         if (useTime) {
-            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
+            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb, queryParams);
         }
 
         //----SECTION H & I----
@@ -905,19 +920,19 @@ public class Utilities {
         //not a detail query and service id's are ok
         // OR is a detail query, and we have blanked operation requirements
         if (serviceIdsOk && ((!isDetail) || (isBlankedOpQuery && isDetail))) {
-            addServiceIdConstraint(serviceIdToOperations.keySet(), sb);
+            addServiceIdConstraint(serviceIdToOperations.keySet(), sb, queryParams);
         }
         //else isDetail and were going to use operations
         else if (serviceIdsOk && !isBlankedOpQuery && isDetail) {
             //new method to constrain serivce id and operation together
-            addServiceAndOperationConstraint(serviceIdToOperations, sb);
+            addServiceAndOperationConstraint(serviceIdToOperations, sb, queryParams);
         }
 
         //----SECTION J----
         if (useUser) {
             List<ReportApi.FilterPair> userFilterPairs = getAuthenticatedUserFilterPairs(keysToFilters);
             if (!userFilterPairs.isEmpty()) {
-                addUserConstraint(userFilterPairs, sb);
+                addUserConstraint(userFilterPairs, sb, queryParams);
             } else {
                 addUserNotNullConstraint(sb);
             }
@@ -925,7 +940,7 @@ public class Utilities {
 
         //----SECTION K----
         if (keysSupplied) {
-            addMappingConstraint(keysToFilters, sb);
+            addMappingConstraint(keysToFilters, sb, queryParams);
         }
 
         addGroupBy(sb);
@@ -934,7 +949,7 @@ public class Utilities {
         addUsageMappingOrder(sb);
 
         logger.log(Level.FINER, "getUsageQuery: " + sb.toString());
-        return sb.toString();
+        return new Pair<String, List<Object>>(sb.toString(), queryParams);
     }
 
     /**
@@ -958,16 +973,19 @@ public class Utilities {
      *                                query or not.  The keysToFilters cannot be validated without knowing if the report is at the operation level.
      *                                In addition, isDetail determins whether we just constrain by service id or service id and operation
      * @param operation               the operation, if isDetail is true, that we want usage data for
-     * @return valid sql query ready to be ran against a database. It ALWAYS returns the following fields:-
+     * @return Pair<String, List<Object>> A Pair of a String containing the query sql and a List<Object> containing the
+     *         parameters to be added to the SQL. Each entry in List<Object> matches the index of a ? character in the sql
+     *         <p/>
+     *         The sql always returns the following fields:-
      *         <pre>
-     *                                                                                                                                                                                                                  SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                                                                                                                                                                                                                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                                                                                                                                                                                                                 </pre>
+     *         SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *         </pre>
      */
-    public static String getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                       Long serviceId,
-                                       LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, int resolution,
-                                       boolean isDetail, String operation) {
+    public static Pair<String, List<Object>> getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                                           Long serviceId,
+                                                           LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, int resolution,
+                                                           boolean isDetail, String operation) {
         if (serviceId == null) throw new NullPointerException("serviceId cannot be null");
         if (operation == null || operation.equals("")) {
             throw new IllegalArgumentException("operation can be null or empty");
@@ -1261,18 +1279,25 @@ public class Utilities {
      *                                table message_context_mapping_values, with the values in operaitons
      *                                message_context_mapping_values, with the values in authenticatedUsers
      * @param isUsage                 needed in order to validate the input parameters
-     * @return String query if isMasterQuery is true, it has the following columns:
-     *         SERVICE_ID, SERVICE_NAME, ROUTING_URI and CONSTANT_GROUP.
+     * @return Pair&lt;String, List&lt;Object&gt;&gt; A Pair of a String containing the query sql and a List&lt;Object&gt;> containing the
+     *         parameters to be added to the SQL. Each entry in List<Object> matches the index of a ? character in the sql
+     *         <p/>
+     *         If isMasterQuery is true, then the sql query has the following columns:
+     *         <pre>
+     *          SERVICE_ID, SERVICE_NAME, ROUTING_URI and CONSTANT_GROUP
+     *          </pre>
      *         If isMasterQuery is false, it has the following columns:-
-     *         SERVICE_ID | SERVICE_NAME | ROUTING_URI | ATTEMPTED | COMPLETED | AUTHORIZED | FRONT_SUM | BACK_SUM | THROUGHPUT
-     *         | POLICY_VIOLATIONS | ROUTING_FAILURES | FRTM | FRTMX | FRTA   | BRTM | BRTMX | BRTA   | AP     | CONSTANT_GROUP
-     *         | AUTHENTICATED_USER | SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 |
-     *         MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *         <pre>
+     *          SERVICE_ID | SERVICE_NAME | ROUTING_URI | ATTEMPTED | COMPLETED | AUTHORIZED | FRONT_SUM | BACK_SUM | THROUGHPUT
+     *          | POLICY_VIOLATIONS | ROUTING_FAILURES | FRTM | FRTMX | FRTA   | BRTM | BRTMX | BRTA   | AP     | CONSTANT_GROUP
+     *          | AUTHENTICATED_USER | SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 |
+     *          MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *          </pre>
      */
-    public static String getPerformanceStatisticsMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                                              Map<String, Set<String>> serviceIdToOperations,
-                                                              LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, int resolution,
-                                                              boolean isDetail, boolean isUsage) {
+    public static Pair<String, List<Object>> getPerformanceStatisticsMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                                                                  Map<String, Set<String>> serviceIdToOperations,
+                                                                                  LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters, int resolution,
+                                                                                  boolean isDetail, boolean isUsage) {
 
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
 
@@ -1284,6 +1309,8 @@ public class Utilities {
 
         boolean useUser = (keysSupplied) && isUserSupplied(keysToFilters);
 
+        List<Object> queryParams = new ArrayList<Object>();
+
         //----SECTION A----
         StringBuilder sb;
         if (isMasterQuery) {
@@ -1293,21 +1320,21 @@ public class Utilities {
             sb = new StringBuilder(select);
         }
         //----SECTION B----
-        addUserToSelect(true, useUser, sb);
+        addUserToSelect(true, useUser, sb, queryParams);
         //----SECTION C----
-        addOperationToSelect(isDetail, sb);
+        addOperationToSelect(isDetail, sb, queryParams);
         //----SECTION D's----
         List<String> keys = new ArrayList<String>();
         if (keysSupplied) keys.addAll(keysToFilters.keySet());
-        addCaseSQL(keys, sb);
+        addCaseSQL(keys, sb, queryParams);
         //----SECTION E----
         sb.append(mappingJoin);
         //----SECTION F----
-        addResolutionConstraint(resolution, sb);
+        addResolutionConstraint(resolution, sb, queryParams);
 
         //----SECTION G----
         if (useTime) {
-            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
+            addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb, queryParams);
         }
 
         //----SECTION H & I----
@@ -1318,19 +1345,19 @@ public class Utilities {
         //not a detail query and service id's are ok
         // OR is a detail query, and we have blanked operation requirements
         if (serviceIdsOk && ((!isDetail) || (isBlankedOpQuery && isDetail))) {
-            addServiceIdConstraint(serviceIdToOperations.keySet(), sb);
+            addServiceIdConstraint(serviceIdToOperations.keySet(), sb, queryParams);
         }
         //else isDetail and were going to use operations
         else if (serviceIdsOk && !isBlankedOpQuery && isDetail) {
             //new method to constrain serivce id and operation together
-            addServiceAndOperationConstraint(serviceIdToOperations, sb);
+            addServiceAndOperationConstraint(serviceIdToOperations, sb, queryParams);
         }
 
         //----SECTION J----
         if (useUser) {
             List<ReportApi.FilterPair> userFilterPairs = getAuthenticatedUserFilterPairs(keysToFilters);
             if (!userFilterPairs.isEmpty()) {
-                addUserConstraint(userFilterPairs, sb);
+                addUserConstraint(userFilterPairs, sb, queryParams);
             } else {
                 addUserNotNullConstraint(sb);
             }
@@ -1338,7 +1365,7 @@ public class Utilities {
 
         //----SECTION K----
         if (keysSupplied) {
-            addMappingConstraint(keysToFilters, sb);
+            addMappingConstraint(keysToFilters, sb, queryParams);
         }
 
         if (!isMasterQuery) {
@@ -1350,7 +1377,7 @@ public class Utilities {
         addMappingOrder(sb);
 
         logger.log(Level.FINER, "getPerformanceStatisticsMappingQuery: " + sb.toString());
-        return sb.toString();
+        return new Pair<String, List<Object>>(sb.toString(), queryParams);
     }
 
     /**
@@ -1363,10 +1390,13 @@ public class Utilities {
      *
      * @param serviceIdToOperations a map of service id to the set of operations.
      * @param sb                    the string builder to add sql to
+     * @param queryParams           List&lt;Object&gt; the list to add query parameters to. Values are added immediately after any ?
+     *                              character is added to the string sql being build in sb, before any other ? characters are added
      * @throws IllegalArgumentException if serviceIdToOperations is null or empty. Calling code should ensure that this
      *                                  function is only called when it is required. See usages
      */
-    protected static void addServiceAndOperationConstraint(Map<String, Set<String>> serviceIdToOperations, StringBuilder sb) {
+    protected static void addServiceAndOperationConstraint(Map<String, Set<String>> serviceIdToOperations,
+                                                           StringBuilder sb, List<Object> queryParams) {
         if (serviceIdToOperations == null || serviceIdToOperations.isEmpty()) {
             throw new IllegalArgumentException("serviceIdToOperations cannot be null and cannot be empty");
         }
@@ -1384,13 +1414,17 @@ public class Utilities {
             if (index > 0) sb.append(" OR ");
 
             sb.append("( ");
-            sb.append(" p.objectid = ").append(Long.valueOf(me.getKey()));
+
+            sb.append(" p.objectid = ? ");
+            queryParams.add(Long.valueOf(me.getKey()));
+
             sb.append(" AND mcmv.service_operation IN (");
 
             int opIndex = 0;
             for (String op : me.getValue()) {
                 if (opIndex != 0) sb.append(",");
-                sb.append("'" + SqlUtils.mySqlEscapeIllegalSqlChars(op) + "'");
+                sb.append(" ? ");
+                queryParams.add(op);
                 opIndex++;
             }
 
@@ -1456,9 +1490,9 @@ public class Utilities {
      * @return String query, see getPerformanceStatisticsMappingQuery for details of the return columns
      * @throws IllegalArgumentException If all the lists are not the same size and if they are empty.
      */
-    public static String getPerformanceStatisticsMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                                              Long serviceId, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterValues,
-                                                              int resolution, boolean isDetail, String operation, boolean isUsage) {
+    public static Pair<String, List<Object>> getPerformanceStatisticsMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                                                                  Long serviceId, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterValues,
+                                                                                  int resolution, boolean isDetail, String operation, boolean isUsage) {
 
         if (serviceId == null) throw new IllegalArgumentException("Service Id must be supplied");
         Set<String> operationSet = new HashSet<String>();
@@ -1477,16 +1511,19 @@ public class Utilities {
      * added to all select lists for performance statistics queries, however this method determines whether or not
      * the real column is selected or the placeholder is selected.
      *
-     * @param addComma should a comma be added before any sql is written to sb
-     * @param useUser  should the real value of mcmv.auth_user_id be used or the sql place holder
-     * @param sb       the string builder to write the sql to
+     * @param addComma    should a comma be added before any sql is written to sb
+     * @param useUser     should the real value of mcmv.auth_user_id be used or the sql place holder
+     * @param sb          the string builder to write the sql to
+     * @param queryParams List&lt;Object&gt; the list to add query parameters to. Values are added immediately after any ?
+     *                    character is added to the string sql being build in sb, before any other ? characters are added
      */
-    private static void addUserToSelect(boolean addComma, boolean useUser, StringBuilder sb) {
+    private static void addUserToSelect(boolean addComma, boolean useUser, StringBuilder sb, List<Object> queryParams) {
         if (addComma) sb.append(",");
         if (useUser) {
             sb.append(" mcmv.auth_user_id AS ").append(AUTHENTICATED_USER);
         } else {
-            sb.append(" '" + SQL_PLACE_HOLDER + "' AS ").append(AUTHENTICATED_USER);
+            sb.append(" ? AS ").append(AUTHENTICATED_USER);
+            queryParams.add(SQL_PLACE_HOLDER);
         }
     }
 
@@ -1512,13 +1549,15 @@ public class Utilities {
      *         MAPPING_VALUE_4 | MAPPING_VALUE_5
      * @throws IllegalArgumentException if both start and end time parameters have not been specified
      */
-    public static String getNoMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                           Collection<String> serviceIds, int resolution) {
+    public static Pair<String, List<Object>> getNoMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                                               Collection<String> serviceIds, int resolution) {
 
 
         boolean useTime = checkTimeParameters(startTimeInclusiveMilli, endTimeInclusiveMilli);
         if (!useTime) throw new IllegalArgumentException("Both start and end time must be specified");
         checkResolutionParameter(resolution);
+
+        List<Object> queryParams = new ArrayList<Object>();
 
         StringBuilder sb;
         if (isMasterQuery) {
@@ -1529,22 +1568,29 @@ public class Utilities {
         }
 
         //fill in place holder's
-        sb.append(", '" + SQL_PLACE_HOLDER + "' AS AUTHENTICATED_USER");
-        sb.append(", '" + SQL_PLACE_HOLDER + "' AS SERVICE_OPERATION_VALUE");
-        sb.append(", '" + SQL_PLACE_HOLDER + "' AS MAPPING_VALUE_1");
-        sb.append(", '" + SQL_PLACE_HOLDER + "' AS MAPPING_VALUE_2");
-        sb.append(", '" + SQL_PLACE_HOLDER + "' AS MAPPING_VALUE_3");
-        sb.append(", '" + SQL_PLACE_HOLDER + "' AS MAPPING_VALUE_4");
-        sb.append(", '" + SQL_PLACE_HOLDER + "' AS MAPPING_VALUE_5");
+        sb.append(", ? AS AUTHENTICATED_USER");
+        queryParams.add(SQL_PLACE_HOLDER);
+        sb.append(", ? AS SERVICE_OPERATION_VALUE");
+        queryParams.add(SQL_PLACE_HOLDER);
+        sb.append(", ? AS MAPPING_VALUE_1");
+        queryParams.add(SQL_PLACE_HOLDER);
+        sb.append(", ? AS MAPPING_VALUE_2");
+        queryParams.add(SQL_PLACE_HOLDER);
+        sb.append(", ? AS MAPPING_VALUE_3");
+        queryParams.add(SQL_PLACE_HOLDER);
+        sb.append(", ? AS MAPPING_VALUE_4");
+        queryParams.add(SQL_PLACE_HOLDER);
+        sb.append(", ? AS MAPPING_VALUE_5");
+        queryParams.add(SQL_PLACE_HOLDER);
 
         sb.append(noMappingJoin);
 
-        addResolutionConstraint(resolution, sb);
+        addResolutionConstraint(resolution, sb, queryParams);
 
-        addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb);
+        addTimeConstraint(startTimeInclusiveMilli, endTimeInclusiveMilli, sb, queryParams);
 
         if (serviceIds != null && !serviceIds.isEmpty()) {
-            addServiceIdConstraint(serviceIds, sb);
+            addServiceIdConstraint(serviceIds, sb, queryParams);
         }
 
         if (isMasterQuery) {
@@ -1554,7 +1600,7 @@ public class Utilities {
         }
 
         logger.log(Level.FINER, "getNoMappingQuery: " + sb.toString());
-        return sb.toString();
+        return new Pair<String, List<Object>>(sb.toString(), queryParams);
     }
 
     /**
@@ -1567,8 +1613,8 @@ public class Utilities {
      * @return String sql. See getNoMappingQuery for details of return columns
      * @throws IllegalArgumentException if service id is null or empty
      */
-    public static String getNoMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
-                                           Long serviceId, int resolution) {
+    public static Pair<String, List<Object>> getNoMappingQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
+                                                               Long serviceId, int resolution) {
 
         if (serviceId == null) throw new IllegalArgumentException("Service id must be supplied");
         List<String> sIds = new ArrayList<String>();
@@ -1582,14 +1628,17 @@ public class Utilities {
      * Whether or not the value of SERVICE_OPERATION_VALUE is the sql place holder or mcmv.service_operation is
      * determined by isDetail being true or false
      *
-     * @param isDetail if true, add the real column to the select, else add the sql place holder
-     * @param sb       the string builder to add the sql to
+     * @param isDetail    if true, add the real column to the select, else add the sql place holder
+     * @param sb          the string builder to add the sql to
+     * @param queryParams List&lt;Object&gt; the list to add query parameters to. Values are added immediately after any ?
+     *                    character is added to the string sql being build in sb, before any other ? characters are added
      */
-    private static void addOperationToSelect(boolean isDetail, StringBuilder sb) {
+    private static void addOperationToSelect(boolean isDetail, StringBuilder sb, List<Object> queryParams) {
         if (isDetail) {
             sb.append(",  mcmv.service_operation AS SERVICE_OPERATION_VALUE");
         } else {
-            sb.append(",  '" + SQL_PLACE_HOLDER + "' AS SERVICE_OPERATION_VALUE");
+            sb.append(",  ? AS SERVICE_OPERATION_VALUE");
+            queryParams.add(SQL_PLACE_HOLDER);
         }
     }
 
@@ -1705,11 +1754,14 @@ public class Utilities {
     /**
      * Add the resolution constraint to the sql query
      *
-     * @param resolution valid resolution 1 or 2, not rechecked here
-     * @param sb         string bulder to add the sql to
+     * @param resolution  valid resolution 1 or 2, not rechecked here
+     * @param sb          string bulder to add the sql to
+     * @param queryParams List&lt;Object&gt; the list to add query parameters to. Values are added immediately after any ?
+     *                    character is added to the string sql being build in sb, before any other ? characters are added
      */
-    private static void addResolutionConstraint(int resolution, StringBuilder sb) {
-        sb.append(" AND sm.resolution = ").append(resolution).append(" ");
+    private static void addResolutionConstraint(int resolution, StringBuilder sb, List<Object> queryParams) {
+        sb.append(" AND sm.resolution = ? ");
+        queryParams.add(resolution);
     }
 
     /**
@@ -1718,10 +1770,14 @@ public class Utilities {
      * @param startTimeInclusiveMilli start of the time period inclusive
      * @param endTimeInclusiveMilli   end of the time period exclusive
      * @param sb                      string builder to add the sql to
+     * @param queryParams             List&lt;Object&gt; the list to add query parameters to. Values are added immediately after any ?
+     *                                character is added to the string sql being build in sb, before any other ? characters are added
      */
-    private static void addTimeConstraint(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli, StringBuilder sb) {
-        sb.append(" AND sm.period_start >=").append(startTimeInclusiveMilli);
-        sb.append(" AND sm.period_start <").append(endTimeInclusiveMilli);
+    private static void addTimeConstraint(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli, StringBuilder sb, List<Object> queryParams) {
+        sb.append(" AND sm.period_start >= ? ");
+        queryParams.add(startTimeInclusiveMilli);
+        sb.append(" AND sm.period_start < ? ");
+        queryParams.add(endTimeInclusiveMilli);
     }
 
     /**
@@ -1828,7 +1884,7 @@ public class Utilities {
         sb.append(" ORDER BY AUTHENTICATED_USER, ");
         for (int i = 0; i < NUM_MAPPING_KEYS; i++) {
             if (i != 0) sb.append(", ");
-            sb.append("MAPPING_VALUE_" + (i + 1));
+            sb.append("MAPPING_VALUE_").append((i + 1));
         }
         sb.append(" ,p.objectid, SERVICE_OPERATION_VALUE ");
     }
@@ -1850,7 +1906,7 @@ public class Utilities {
         sb.append(" ,AUTHENTICATED_USER, ");
         for (int i = 0; i < NUM_MAPPING_KEYS; i++) {
             if (i != 0) sb.append(", ");
-            sb.append("MAPPING_VALUE_" + (i + 1));
+            sb.append("MAPPING_VALUE_").append((i + 1));
         }
     }
 
@@ -1859,7 +1915,6 @@ public class Utilities {
      * This is currently only used by getDistinctMappingQuery, which is only used from ReportGenerator. It's used
      * to get meta data about what data the report will get at runtime, to prepare data to be given to the report
      * as a parameter. The order is not strictly required.
-     * //todo look into removing this function
      *
      * @param sb string builder to add the sql to
      */
@@ -1909,9 +1964,11 @@ public class Utilities {
      *                      and must be maintained for all functions which use the same instance of keysToFilters, which is why its a linked
      *                      hash map.
      * @param sb            string builder to add the sql to
+     * @param queryParams   List&lt;Object&gt; the list to add query parameters to. Values are added immediately after any ?
+     *                      character is added to the string sql being build in sb, before any other ? characters are added
      */
     private static void addMappingConstraint(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilters,
-                                             StringBuilder sb) {
+                                             StringBuilder sb, List<Object> queryParams) {
         if (keysToFilters == null || keysToFilters.isEmpty()) {
             throw new IllegalArgumentException("keysToFilters cannot be empty");
         }
@@ -1925,7 +1982,8 @@ public class Utilities {
                     sb.append(" OR ");
                 }
                 sb.append("( mcmk.mapping").append(i).append("_key");
-                sb.append(" = '").append(SqlUtils.mySqlEscapeIllegalSqlChars(me.getKey())).append("' ");
+                sb.append(" = ? ");
+                queryParams.add(me.getKey());
                 if (me.getValue() == null || me.getValue().isEmpty()) {
                     throw new IllegalArgumentException("Each key must have a list of FilterPairs");
                 }
@@ -1940,9 +1998,11 @@ public class Utilities {
 
                         tempBuffer.append(" mcmv.mapping").append(i).append("_value");
                         if (!fp.isQueryUsingWildCard()) {
-                            tempBuffer.append(" = '").append(fp.getFilterValue()).append("' ");
+                            tempBuffer.append(" = ? ");
+                            queryParams.add(fp.getFilterValue());
                         } else {
-                            tempBuffer.append(" LIKE '").append(fp.getFilterValue()).append("' ");
+                            tempBuffer.append(" LIKE ? ");
+                            queryParams.add(fp.getFilterValue());
                         }
                     }
                     index++;
@@ -1956,7 +2016,6 @@ public class Utilities {
             }
             sb.append(" ) ");
         }
-
     }
 
     /**
@@ -1965,16 +2024,19 @@ public class Utilities {
      * <pre>
      * AND(mcmv.auth_user_id = 'Donal' OR mcmv.auth_user_id LIKE 'Ldap%')
      * </pre>
-     * Note: Any caller of this function should ensure that teh list authUserFilterPairs only contains FilterPairs
+     * Note: Any caller of this function should ensure that the list authUserFilterPairs only contains FilterPairs
      * which are related to AUTH_USER mapping key. See usages for where this is done.<br>
      * Note: Any caller has already determined that calling this function is required, based on the set of mapping keys
-     * submitted to a callers function.
+     * submitted to the callers function.
      * //todo possibly refactor FilterPair to include the mapping key, so we can validate here that only AUTH_USER fp's are received
      *
      * @param authUserFilterPairs the list of all FilterPairs, representing the AUTH_USER mapping key
      * @param sb                  string builder to add the sql to
+     * @param queryParams         List&lt;Object&gt; the list to add query parameters to. Values are added immediately after any ?
+     *                            character is added to the string sql being build in sb, before any other ? characters are added
      */
-    private static void addUserConstraint(List<ReportApi.FilterPair> authUserFilterPairs, StringBuilder sb) {
+    private static void addUserConstraint(List<ReportApi.FilterPair> authUserFilterPairs,
+                                          StringBuilder sb, List<Object> queryParams) {
         if (authUserFilterPairs.isEmpty()) throw new IllegalArgumentException("authUserFilterPairs cannot be empty");
 
         sb.append(" AND (");
@@ -1986,9 +2048,11 @@ public class Utilities {
 
             if (index != 0) sb.append(" OR ");
             if (!fp.isQueryUsingWildCard()) {
-                sb.append("mcmv.auth_user_id = '" + fp.getFilterValue() + "' ");
+                sb.append("mcmv.auth_user_id = ? ");
+                queryParams.add(fp.getFilterValue());
             } else {
-                sb.append("mcmv.auth_user_id LIKE '" + fp.getFilterValue() + "' ");
+                sb.append("mcmv.auth_user_id LIKE ? ");
+                queryParams.add(fp.getFilterValue());
             }
             index++;
         }
@@ -2000,7 +2064,7 @@ public class Utilities {
      * get a value or it's simply not in a context assertion. In this case we want to filter out any null values
      * when we are interested in auth_user
      *
-     * @param sb
+     * @param sb string builder to add the sql to
      */
     private static void addUserNotNullConstraint(StringBuilder sb) {
         sb.append(" AND mcmv.auth_user_id IS NOT NULL ");
@@ -2013,16 +2077,20 @@ public class Utilities {
      * Note: A caller has already decided that this function is required. Calling this function means the sql
      * being generated is not for a detail report
      *
-     * @param serviceIds the list of service ids the sql should be constrained by
-     * @param sb         string builder to add the sql to
+     * @param serviceIds  the list of service ids the sql should be constrained by
+     * @param sb          string builder to add the sql to
+     * @param queryParams List&lt;Object&gt; the list to add query parameters to. Values are added immediately after any ?
+     *                    character is added to the string sql being build in sb, before any other ? characters are added
      */
-    private static void addServiceIdConstraint(Collection<String> serviceIds, StringBuilder sb) {
+    private static void addServiceIdConstraint(Collection<String> serviceIds, StringBuilder sb, List<Object> queryParams) {
         sb.append(" AND p.objectid IN (");
         boolean first = true;
         for (String s : serviceIds) {
             if (!first) sb.append(", ");
             else first = false;
-            sb.append(SqlUtils.mySqlEscapeIllegalSqlChars(s));
+
+            sb.append(" ? ");
+            queryParams.add(s);
         }
         sb.append(")");
     }
@@ -2063,15 +2131,17 @@ public class Utilities {
      * </pre>
      * Note how even though there are only 2 keys, that all 5 mapping value columns are created
      *
-     * @param keys the mapping keys values
-     * @param sb   string builder to add the sql to
+     * @param keys        the mapping keys values
+     * @param sb          string builder to add the sql to
+     * @param queryParams List&lt;Object&gt; the list to add query parameters to. Values are added immediately after any ?
+     *                    character is added to the string sql being build in sb, before any other ? characters are added
      */
-    private static void addCaseSQL(List<String> keys, StringBuilder sb) {
+    private static void addCaseSQL(List<String> keys, StringBuilder sb, List<Object> queryParams) {
         int max = 0;
         if (keys != null && !keys.isEmpty()) {
             for (String s : keys) {
                 if (!s.equals(MessageContextMapping.MappingType.AUTH_USER.toString())) {
-                    sb.append(",").append(addCaseSQLForKey(s, max + 1));
+                    sb.append(",").append(addCaseSQLForKey(s, max + 1, queryParams));
                     max++;
                 }
             }
@@ -2079,7 +2149,8 @@ public class Utilities {
 
         //if were not using all 5 possible mappings, then we need to create the missing to help jasper report impl
         for (int i = max + 1; i <= NUM_MAPPING_KEYS; i++) {
-            sb.append(", '").append(SQL_PLACE_HOLDER).append("' AS MAPPING_VALUE_").append(i);
+            sb.append(", ? AS MAPPING_VALUE_").append(i);
+            queryParams.add(SQL_PLACE_HOLDER);
         }
     }
 
@@ -2102,19 +2173,22 @@ public class Utilities {
      * END AS MAPPING_VALUE_2
      * </pre>
      *
-     * @param key   the key value to create the case statement for. The key is not validated in any way.
-     * @param index the index for the column MAPPING_VALUE_ being created. The index will be appended. If the index is 2,
-     *              then the column created is MAPPING_VALUE_2
+     * @param key         the key value to create the case statement for. The key is not validated in any way.
+     * @param index       the index for the column MAPPING_VALUE_ being created. The index will be appended. If the index is 2,
+     *                    then the column created is MAPPING_VALUE_2
+     * @param queryParams List&lt;Object&gt; the list to add query parameters to. Values are added immediately after any ?
+     *                    character is added to the string sql being build in sb, before any other ? characters are added
      * @return the String representing the complete case statement for the supplied key
      */
-    private static String addCaseSQLForKey(String key, int index) {
+    private static String addCaseSQLForKey(String key, int index, List<Object> queryParams) {
         if (key == null) throw new NullPointerException("key cannot be null");
         if (key.equals("")) throw new IllegalArgumentException("key cannot be the empty string");
         if (index < 0) throw new IllegalArgumentException("index cannot be negative");
 
         StringBuilder sb = new StringBuilder(" CASE ");
         for (int i = 1; i <= NUM_MAPPING_KEYS; i++) {
-            sb.append(" WHEN mcmk.mapping").append(i).append("_key = ").append("'").append(SqlUtils.mySqlEscapeIllegalSqlChars(key)).append("'");
+            sb.append(" WHEN mcmk.mapping").append(i).append("_key = ? ");
+            queryParams.add(key);
             sb.append(" THEN mcmv.mapping").append(i).append("_value");
         }
         sb.append(" END AS MAPPING_VALUE_").append(index);
@@ -2131,8 +2205,7 @@ public class Utilities {
      * @return true if testVal is equal to SQL_PLACE_HOLDER
      */
     public static boolean isPlaceHolderValue(String testVal) {
-        if (testVal == null || testVal.equals("")) return false;
-        else return testVal.equals(SQL_PLACE_HOLDER);
+        return !(testVal == null || testVal.equals("")) && testVal.equals(SQL_PLACE_HOLDER);
     }
 
     /**
@@ -2231,7 +2304,7 @@ public class Utilities {
 
         stringToEscape = stringToEscape.replaceAll("&", "&amp;");
         stringToEscape = stringToEscape.replaceAll("<", "&lt;");
-        return stringToEscape = stringToEscape.replaceAll(">", "&gt;");
+        return stringToEscape.replaceAll(">", "&gt;");
     }
 
     /**
@@ -2334,8 +2407,8 @@ public class Utilities {
      * @param prefix               stirng to include at the start of the returned string. If includePreFix is true, it cannot be
      *                             null or the empty string
      * @param truncateValues       should the return string be truncated? If trur truncateMaxSize cannot be null or < -1
-     * @param truncateKeyMaxSize
-     * @param truncateValueMaxSize what is the max size the returned string can be?
+     * @param truncateKeyMaxSize   maximum size any string representing a key can be
+     * @param truncateValueMaxSize maximum size any string representing a value can be
      * @return a string representing all the supplied parameters
      * @throws IllegalArgumentException if the length of keyValues is less than the size of keys, or if truncateValues is
      *                                  true and truncateMaxSize is null or < -1
@@ -2467,9 +2540,8 @@ public class Utilities {
             else sb.append("<br>");
         }
 
-        //todo [Donal] need test coverage for this condition
         if (keysToFilters == null || keysToFilters.isEmpty()) {
-            //The only constraint on the params is that if all are null, then isDetail or useUser must be true,
+            //The only constraint on the params is that if all are null/empty, then isDetail or useUser must be true,
             //however if sb is empty here, then useUser was false, in which case it's a detail query. Show something
             //instead of nothing for this corner case.
             if (sb.toString().equals("")) {
@@ -2502,18 +2574,14 @@ public class Utilities {
             if (!isHtml) sb.append("\n");
             else sb.append("<br>");
         }
-        //todo [Donal] confirm the use case this supports. If an error case, catch it when validating the parameters
-        if (sb.toString().equals("")) return "None";
         return sb.toString();
     }
 
-    public static LinkedHashMap<Integer, String> getGroupIndexToGroupString(LinkedHashSet<String> mappingValuesLegend) {
+    public static LinkedHashMap<Integer, String> getGroupIndexToGroupString(int numGroups) {
         LinkedHashMap<Integer, String> groupIndexToGroup = new LinkedHashMap<Integer, String>();
-        int index = 1;
-        for (String s : mappingValuesLegend) {
-            String group = "Group " + index;
-            groupIndexToGroup.put(index, group);
-            index++;
+        for (int i = 1; i <= numGroups; i++) {
+            String group = "Group " + i;
+            groupIndexToGroup.put(i, group);
         }
         return groupIndexToGroup;
     }
@@ -2532,29 +2600,43 @@ public class Utilities {
 
 
     /**
-     * @param serviceIdToOperationMap
+     * Called exclusively from reports and test cases
+     * As this is called from reports, there are no type parameters on any of the Collection arguments
+     * <p/>
+     * This method escapes any HTML characters. See escapeHtmlCharacters
+     *
+     * @param serviceIdToOperationMap map of all service ids used in the report to the list of operations required
      * @param printOperations         this should be the result of isDetail && isContextMapping from the report's params
-     * @return
+     * @return a String representing the supplied services and operations. If none supplied it's the empty string.
+     *         If printOperations is false then no operation information is included in the returned list and the services names
+     *         are not new line formatted in html. If printOperaitons is true, then the  returned string is HTML formatted with
+     *         &lt;br&gt; seperating the services within the returned String
      */
     public static String getServiceAndIdDisplayString(Map serviceIdToOperationMap, Map serviceIdToNameMap, boolean printOperations) {
-        Map<String, Set<String>> sIdToOpMap = serviceIdToOperationMap;
+        if (serviceIdToNameMap == null) serviceIdToNameMap = new HashMap();
 
         if (!printOperations) {
-            if (serviceIdToNameMap == null) serviceIdToNameMap = new HashMap();
             List sortedList = new ArrayList(serviceIdToNameMap.values());
             Collections.sort(sortedList);
             return getStringNamesFromCollectionEscaped(sortedList);
         }
 
+        //This supports the case when all services are selected, not a feature yet of the reporting ui
+        //when this happens the report detects the empty string and shows 'All Available'. See usages
         if (serviceIdToOperationMap == null || serviceIdToOperationMap.isEmpty()) return "";
 
-
+        //this is done just for convenience in code below so it can use entrySet
+        Map<String, Set<String>> sIdToOpMap = serviceIdToOperationMap;
         Map<String, String> idToDisplayString = new HashMap<String, String>();
         for (Map.Entry<String, Set<String>> me : sIdToOpMap.entrySet()) {
             String serviceName = (String) serviceIdToNameMap.get(me.getKey());
             StringBuilder sb = new StringBuilder();
             int index = 0;
-            for (String s : me.getValue()) {
+
+            List<String> sortedList = new ArrayList<String>();
+            if (me.getValue() != null) sortedList.addAll(me.getValue());
+            Collections.sort(sortedList);
+            for (String s : sortedList) {
                 if (index != 0) sb.append(", ");
                 sb.append(s);
                 index++;
@@ -2575,6 +2657,8 @@ public class Utilities {
             if (!operations.equals("")) {
                 sb.append(" -> ").append(operations);
             } else {
+                //reports can handle a detail query with no ops supplied, implying all are selected
+                //not a feature yet in reporting UI. This handles that case
                 sb.append(" -> All");
             }
             if (rowIndex < maxRows - 1) sb.append("<br>");
@@ -2593,20 +2677,14 @@ public class Utilities {
      * this class can. It specifies how many series colours it wants, and it should get back a list of strings, each
      * representing a unique html color code
      *
-     * @param howMany
-     * @return
+     * @param howMany how many unique colours are required. 3 is the maximum
+     * @return a List&lt;Color&gt; of colors to use
      */
     public static List<Color> getSeriesColours(int howMany) {
+        if (howMany < 1 || howMany > 3) throw new IllegalArgumentException("howMany must be >= 1 and <= 3");
         List<Color> colours = new ArrayList<Color>();
         for (int i = 0; i < hexColours.length; i++) {
-
-            int l;
-            if (i > hexColours.length) {
-                l = hexColours[i % hexColours.length];
-                l = l + (i * 20) + 20;
-            } else {
-                l = hexColours[i];
-            }
+            int l = hexColours[i];
             Color c = new Color(l);
             colours.add(c);
         }

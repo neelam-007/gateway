@@ -110,27 +110,32 @@ $P{IS_DETAIL}.booleanValue() && $P{IS_CONTEXT_MAPPING}.booleanValue())]]></defau
         <defaultValueExpression>
             <![CDATA[" sm.period_start >= "+$P{startTimeMilli} + " AND sm.period_start < " + $P{endTimeMilli}]]></defaultValueExpression>
     </parameter>
-    <parameter name="sqlQuery" isForPrompting="false" class="java.lang.String">
+    <parameter name="IS_USING_KEYS" isForPrompting="false" class="java.lang.Boolean"/>
+    <parameter name="sqlQueryAndParam" isForPrompting="false" class="com.l7tech.util.Pair">
         <defaultValueExpression><![CDATA[(($P{IS_CONTEXT_MAPPING}.booleanValue())?
 Utilities.getPerformanceStatisticsMappingQuery(false, $P{startTimeMilli},
-		 $P{endTimeMilli}, $P{SERVICE_ID_TO_OPERATIONS_MAP}, $P{KEYS_TO_LIST_FILTER_PAIRS},
+         $P{endTimeMilli}, $P{SERVICE_ID_TO_OPERATIONS_MAP}, $P{KEYS_TO_LIST_FILTER_PAIRS},
 $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
 : Utilities.getNoMappingQuery
 (false, $P{startTimeMilli},$P{endTimeMilli}, $P{SERVICE_ID_TO_OPERATIONS_MAP}.keySet(),$P{resolution}.intValue())
 )]]></defaultValueExpression>
     </parameter>
-    <parameter name="IS_USING_KEYS" isForPrompting="false" class="java.lang.Boolean"/>
-    <queryString><![CDATA[$P!{sqlQuery}]]></queryString>
+    <parameter name="dataSourceIsConfigured" isForPrompting="false" class="java.lang.Boolean">
+        <defaultValueExpression>
+            <![CDATA[((PreparedStatementDataSource)$P{REPORT_DATA_SOURCE}).configure($P{sqlQueryAndParam})]]>
+        </defaultValueExpression>
+    </parameter>
+
 
     <field name="AUTHORIZED" class="java.lang.Double"/>
     <field name="ATTEMPTED" class="java.lang.Double"/>
     <field name="FRONT_SUM" class="java.lang.Double"/>
     <field name="BACK_SUM" class="java.lang.Double"/>
     <field name="COMPLETED" class="java.lang.Double"/>
+    <field name="THROUGHPUT" class="java.lang.Double"/>
     <field name="SERVICE_ID" class="java.lang.Long"/>
     <field name="SERVICE_NAME" class="java.lang.String"/>
     <field name="ROUTING_URI" class="java.lang.String"/>
-    <field name="THROUGHPUT" class="java.lang.Long"/>
     <field name="FRTM" class="java.lang.Integer"/>
     <field name="FRTMX" class="java.lang.Integer"/>
     <field name="FRTA" class="java.lang.Double"/>
@@ -152,7 +157,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
     <variable name="SERVICE_ID" class="java.lang.Long" resetType="Report" calculation="Nothing">
         <variableExpression><![CDATA[$F{SERVICE_ID}]]></variableExpression>
     </variable>
-    <variable name="THROUGHPUT_SUM" class="java.lang.Long" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
+    <variable name="THROUGHPUT_SUM" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS" calculation="Sum">
         <variableExpression><![CDATA[$F{THROUGHPUT}]]></variableExpression>
     </variable>
     <variable name="AUTHORIZED_SUM_MAPPING" class="java.lang.Double" resetType="Group" resetGroup="MAPPINGS"
@@ -206,7 +211,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
               calculation="Nothing">
         <variableExpression><![CDATA[$F{MAPPING_VALUE_1} + " " + $F{MAPPING_VALUE_2}]]></variableExpression>
     </variable>
-    <variable name="THROUGHPUT_SERVICE_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_ID_GROUP"
+    <variable name="THROUGHPUT_SERVICE_SUM" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_ID_GROUP"
               calculation="Sum">
         <variableExpression><![CDATA[$F{THROUGHPUT}]]></variableExpression>
     </variable>
@@ -262,7 +267,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
               calculation="Average">
         <variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
     </variable>
-    <variable name="THROUGHPUT_REPORT_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
+    <variable name="THROUGHPUT_REPORT_SUM" class="java.lang.Double" resetType="Report" calculation="Sum">
         <variableExpression><![CDATA[$F{THROUGHPUT}]]></variableExpression>
     </variable>
     <variable name="AUTHORIZED_REPORT_SUM" class="java.lang.Double" resetType="Report" calculation="Sum">
@@ -305,7 +310,7 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue(), false)
     <variable name="AP_REPORT_AVG" class="java.lang.Double" resetType="Report" calculation="Average">
         <variableExpression><![CDATA[($F{AP}.equals(new Double(0)))? null: $F{AP}]]></variableExpression>
     </variable>
-    <variable name="THROUGHPUT_OPERATION_SUM" class="java.lang.Long" resetType="Group" resetGroup="SERVICE_OPERATION"
+    <variable name="THROUGHPUT_OPERATION_SUM" class="java.lang.Double" resetType="Group" resetGroup="SERVICE_OPERATION"
               calculation="Sum">
         <variableExpression><![CDATA[$F{THROUGHPUT}]]></variableExpression>
     </variable>
@@ -983,7 +988,7 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && !$P{IS_USING_KEYS}.booleanValue()
                             height="18"
                             key="frame-33"/>
                     <box></box>
-                    <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
+                    <textField isStretchWithOverflow="false" pattern="###0" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -996,7 +1001,8 @@ $P{IS_CONTEXT_MAPPING}.booleanValue() && !$P{IS_USING_KEYS}.booleanValue()
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.Long"><![CDATA[$V{THROUGHPUT_SUM}]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Double">
+                            <![CDATA[$V{THROUGHPUT_SUM}]]></textFieldExpression>
                     </textField>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
@@ -1181,7 +1187,7 @@ new Double((new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMP
                             height="18"
                             key="frame-46"/>
                     <box></box>
-                    <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
+                    <textField isStretchWithOverflow="false" pattern="###0" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -1194,7 +1200,8 @@ new Double((new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMP
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.Long"><![CDATA[$V{THROUGHPUT_SUM}]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Double">
+                            <![CDATA[$V{THROUGHPUT_SUM}]]></textFieldExpression>
                     </textField>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
@@ -1615,7 +1622,7 @@ $F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ", true, Utilities.MAPPING_KEY
                             height="18"
                             key="frame-8"/>
                     <box></box>
-                    <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
+                    <textField isStretchWithOverflow="false" pattern="###0" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -1628,7 +1635,8 @@ $F{MAPPING_VALUE_5}}, true, "<b>Group values:</b> ", true, Utilities.MAPPING_KEY
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.Long"><![CDATA[$V{THROUGHPUT_SUM}]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Double">
+                            <![CDATA[$V{THROUGHPUT_SUM}]]></textFieldExpression>
                     </textField>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
@@ -1814,7 +1822,7 @@ new Double((new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMP
                             height="18"
                             key="frame-47"/>
                     <box></box>
-                    <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
+                    <textField isStretchWithOverflow="false" pattern="###0" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -1827,7 +1835,8 @@ new Double((new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMP
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.Long"><![CDATA[$V{THROUGHPUT_SUM}]]></textFieldExpression>
+                        <textFieldExpression class="java.lang.Double">
+                            <![CDATA[$V{THROUGHPUT_SUM}]]></textFieldExpression>
                     </textField>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
@@ -2042,7 +2051,7 @@ new Double((new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMP
                             height="18"
                             key="frame-3"/>
                     <box></box>
-                    <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
+                    <textField isStretchWithOverflow="false" pattern="###0" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="LeftCenter"
@@ -2055,7 +2064,7 @@ new Double((new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMP
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.Long">
+                        <textFieldExpression class="java.lang.Double">
                             <![CDATA[$V{THROUGHPUT_SERVICE_SUM}]]></textFieldExpression>
                     </textField>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
@@ -2243,7 +2252,7 @@ new Double((new Double((1 - (($V{AUTHORIZED_SERVICE_SUM}.doubleValue() - $V{COMP
                             height="18"
                             key="frame-17"/>
                     <box></box>
-                    <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
+                    <textField isStretchWithOverflow="false" pattern="###0" isBlankWhenNull="false" evaluationTime="Now"
                                hyperlinkType="None" hyperlinkTarget="Self">
                         <reportElement
                                 style="DefaultCenterAligned"
@@ -2256,7 +2265,7 @@ new Double((new Double((1 - (($V{AUTHORIZED_SERVICE_SUM}.doubleValue() - $V{COMP
                         <textElement>
                             <font/>
                         </textElement>
-                        <textFieldExpression class="java.lang.Long">
+                        <textFieldExpression class="java.lang.Double">
                             <![CDATA[$V{THROUGHPUT_OPERATION_SUM}]]></textFieldExpression>
                     </textField>
                     <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
@@ -2770,7 +2779,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     <textFieldExpression class="java.lang.String">
                         <![CDATA[Utilities.getServiceDisplayString($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
                 </textField>
-                <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
+                <textField isStretchWithOverflow="false" pattern="###0" isBlankWhenNull="false" evaluationTime="Now"
                            hyperlinkType="None" hyperlinkTarget="Self">
                     <reportElement
                             style="DefaultCenterAligned"
@@ -2783,7 +2792,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     <textElement>
                         <font/>
                     </textElement>
-                    <textFieldExpression class="java.lang.Long"><![CDATA[$F{THROUGHPUT}]]></textFieldExpression>
+                    <textFieldExpression class="java.lang.Double"><![CDATA[$F{THROUGHPUT}]]></textFieldExpression>
                 </textField>
                 <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
                            hyperlinkType="None" hyperlinkTarget="Self">
@@ -2950,7 +2959,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                         height="18"
                         key="frame-16"/>
                 <box></box>
-                <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"
+                <textField isStretchWithOverflow="false" pattern="###0" isBlankWhenNull="false" evaluationTime="Now"
                            hyperlinkType="None" hyperlinkTarget="Self">
                     <reportElement
                             style="LeftCenter"
@@ -2963,7 +2972,7 @@ Utilities.getMilliSecondAsStringDate($P{startTimeMilli}, $P{SPECIFIC_TIME_ZONE})
                     <textElement>
                         <font/>
                     </textElement>
-                    <textFieldExpression class="java.lang.Long">
+                    <textFieldExpression class="java.lang.Double">
                         <![CDATA[$V{THROUGHPUT_REPORT_SUM}]]></textFieldExpression>
                 </textField>
                 <textField isStretchWithOverflow="false" isBlankWhenNull="false" evaluationTime="Now"

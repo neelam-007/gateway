@@ -8,19 +8,14 @@
 package com.l7tech.skunkworks.standardreports;
 
 import java.io.*;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.*;
 
 import net.sf.jasperreports.engine.*;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.IOUtils;
-import com.l7tech.gateway.standardreports.UsageSummaryAndSubReportHelper;
-import com.l7tech.gateway.standardreports.UsageReportHelper;
-import com.l7tech.gateway.standardreports.Utilities;
-import com.l7tech.gateway.standardreports.RuntimeDocUtilities;
+import com.l7tech.util.Pair;
+import com.l7tech.gateway.standardreports.*;
 import com.l7tech.server.management.api.node.ReportApi;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -93,6 +88,8 @@ public class ReportApp {
     private static final String SERVICE_ID_TO_NAME_MAP = "SERVICE_ID_TO_NAME_MAP";
 
     public static final Properties prop = new Properties();
+    private static final String REPORT_DATA_SOURCE = "REPORT_DATA_SOURCE";
+    private static final String SQL_PARAMS = "sqlParams";
 
     public ReportApp() {
     }
@@ -128,6 +125,8 @@ public class ReportApp {
             long start = System.currentTimeMillis();
             if (TASK_RUN.equals(taskName)) {
                 fill(start);
+            } else if ("ps".equals(taskName)) {
+                testPS();
             } else {
                 usage();
             }
@@ -138,6 +137,63 @@ public class ReportApp {
         catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Fill a report using a prepared statement
+     */
+    private void testPS() throws Exception {
+        Map<String, Object> parameters = getParameters();
+
+        String sql = "" +
+                "SELECT distinct p.objectid as SERVICE_ID, p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI ,'1' as " +
+                "CONSTANT_GROUP, ';' AS AUTHENTICATED_USER, ';' AS SERVICE_OPERATION_VALUE, ';' AS MAPPING_VALUE_1, ';' " +
+                "AS MAPPING_VALUE_2, ';' AS MAPPING_VALUE_3, ';' AS MAPPING_VALUE_4, ';' AS MAPPING_VALUE_5 " +
+                "FROM service_metrics sm, published_service p WHERE p.objectid = sm.published_service_oid  " +
+                "AND sm.resolution = ?  AND sm.period_start >= ? " +
+                "AND sm.period_start < ? AND p.objectid IN (?, ?, ?, ?, ?) ORDER BY p.objectid ";
+
+        sql = "SELECT DISTINCT  ';' AS AUTHENTICATED_USER, CASE  WHEN mcmk.mapping1_key = ? THEN mcmv.mapping1_value " +
+                "WHEN mcmk.mapping2_key = ? THEN mcmv.mapping2_value WHEN mcmk.mapping3_key = ? THEN mcmv.mapping3_value " +
+                "WHEN mcmk.mapping4_key = ? THEN mcmv.mapping4_value WHEN mcmk.mapping5_key = ? THEN mcmv.mapping5_value " +
+                "END AS MAPPING_VALUE_1, ';' AS MAPPING_VALUE_2, ';' AS MAPPING_VALUE_3, ';' AS MAPPING_VALUE_4, ';' " +
+                "AS MAPPING_VALUE_5 FROM service_metrics sm, published_service p, service_metrics_details smd, " +
+                "message_context_mapping_values mcmv, message_context_mapping_keys mcmk WHERE " +
+                "p.objectid = sm.published_service_oid AND sm.objectid = smd.service_metrics_oid " +
+                "AND smd.mapping_values_oid = mcmv.objectid AND mcmv.mapping_keys_oid = mcmk.objectid  " +
+                "AND sm.resolution = ?  AND sm.period_start >= ? AND sm.period_start < ? " +
+                "AND p.objectid IN (?, ?, ?, ?, ?) AND (( mcmk.mapping1_key = ?  )  OR ( mcmk.mapping2_key = ?  )  " +
+                "OR ( mcmk.mapping3_key = ?  )  OR ( mcmk.mapping4_key = ?  )  OR ( mcmk.mapping5_key = ?  )  )  " +
+                "ORDER BY AUTHENTICATED_USER, MAPPING_VALUE_1, MAPPING_VALUE_2, MAPPING_VALUE_3, MAPPING_VALUE_4, MAPPING_VALUE_5";
+
+        Connection conn = getConnection(prop);
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        ps.setString(1, "IP_ADDRESS");
+        ps.setString(2, "IP_ADDRESS");
+        ps.setString(3, "IP_ADDRESS");
+        ps.setString(4, "IP_ADDRESS");
+        ps.setString(5, "IP_ADDRESS");
+        ps.setInt(6, 1);
+        ps.setLong(7, 1237489200000L);
+        ps.setLong(8, 1237525200000L);
+        ps.setLong(9, 688129L);
+        ps.setLong(10, 688128L);
+        ps.setLong(11, 360451L);
+        ps.setLong(12, 688130L);
+        ps.setLong(13, 688131L);
+        ps.setString(14, "IP_ADDRESS");
+        ps.setString(15, "IP_ADDRESS");
+        ps.setString(16, "IP_ADDRESS");
+        ps.setString(17, "IP_ADDRESS");
+        ps.setString(18, "IP_ADDRESS");
+
+        ResultSet rs = ps.executeQuery();
+        while (rs.next()) {
+            System.out.println(rs.getString("MAPPING_VALUE_1"));
+        }
+
+
     }
 
     private void fill(long start) throws Exception {
@@ -193,28 +249,28 @@ public class ReportApp {
 //        if(true) System.exit(1);
         //
 
-        String sql;
+        Pair<String, List<Object>> sqlAndParamsPair;
         Boolean isUsage = Boolean.valueOf(prop.getProperty("IS_USAGE"));
         if (isContextMapping && isUsingKeys) {
-            sql = Utilities.getDistinctMappingQuery(startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
+            sqlAndParamsPair = Utilities.getDistinctMappingQuery(startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
         } else if (isContextMapping) {
-            sql = Utilities.getPerformanceStatisticsMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
+            sqlAndParamsPair = Utilities.getPerformanceStatisticsMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp, keysToFilterPairs, resolution, isDetail, isUsage);
         } else {
-            sql = Utilities.getNoMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp.keySet(), resolution);
+            sqlAndParamsPair = Utilities.getNoMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp.keySet(), resolution);
         }
         //System.out.println("Distinct sql: " + sql);
 
         if (!type.equals("Usage") && !type.equals("Usage_Interval")) {
             if (type.equals("Performance_Interval")) {
-                runPerfStatIntervalReport(isContextMapping, isUsingKeys, prop, parameters, sql, keysToFilterPairs);
+                runPerfStatIntervalReport(isContextMapping, isUsingKeys, prop, parameters, sqlAndParamsPair, keysToFilterPairs);
             } else {
-                runPerfStatSummaryReport(isContextMapping, isUsingKeys, prop, parameters, sql, keysToFilterPairs);
+                runPerfStatSummaryReport(isContextMapping, isUsingKeys, prop, parameters, sqlAndParamsPair, keysToFilterPairs);
             }
         } else {
             if (type.equals("Usage")) {
-                runUsageReport(prop, parameters, scriplet, sql, keysToFilterPairs);
+                runUsageReport(prop, parameters, scriplet, sqlAndParamsPair, keysToFilterPairs);
             } else if (type.equals("Usage_Interval")) {
-                runUsageIntervalReport(prop, parameters, scriplet, sql, keysToFilterPairs);
+                runUsageIntervalReport(prop, parameters, scriplet, sqlAndParamsPair, keysToFilterPairs);
             }
         }
 
@@ -288,24 +344,37 @@ public class ReportApp {
      * Get the ordered set of distinct mapping sets for the keys and values in the sql string from the db
      *
      * @param connection
-     * @param sql
+     * @param sqlAndParamsPair
      * @return
      * @throws Exception
      */
-    public static LinkedHashSet<List<String>> getDistinctMappingSets(Connection connection, String sql) throws Exception {
+    public static LinkedHashSet<List<String>> getDistinctMappingSets(Connection connection,
+                                                                     Pair<String, List<Object>> sqlAndParamsPair) throws Exception {
         LinkedHashSet<List<String>> returnSet = new LinkedHashSet<List<String>>();
 
         try {
-            Statement stmt = connection.createStatement();
-            LinkedHashSet<String> set = new LinkedHashSet<String>();
-            ResultSet rs = stmt.executeQuery(sql);
+            PreparedStatementDataSource psds = new PreparedStatementDataSource(connection);
+            psds.configure(sqlAndParamsPair.getKey(), sqlAndParamsPair.getValue());
 
-            while (rs.next()) {
+            while (psds.next()) {
                 List<String> mappingStrings = new ArrayList<String>();
-                String authUser = rs.getString(Utilities.AUTHENTICATED_USER);
+                String authUser = (String) psds.getFieldValue(new JRFieldAdapter() {
+                    public String getName() {
+                        return PreparedStatementDataSource.ColumnName.AUTHENTICATED_USER.getColumnName();
+                    }
+                });
                 mappingStrings.add(authUser);
                 for (int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++) {
-                    mappingStrings.add(rs.getString("MAPPING_VALUE_" + (i + 1)));
+                    final int index = i;
+                    String aMapStr = (String) psds.getFieldValue(new JRFieldAdapter() {
+                        public String getName() {
+                            PreparedStatementDataSource.ColumnName columnName =
+                                    PreparedStatementDataSource.ColumnName.getColumnName("MAPPING_VALUE_" + (index + 1));
+                            return columnName.getColumnName();
+                        }
+                    });
+
+                    mappingStrings.add(aMapStr);
                 }
                 returnSet.add(mappingStrings);
             }
@@ -316,38 +385,26 @@ public class ReportApp {
         return returnSet;
     }
 
-//    private LinkedHashSet<String> getMappingDisplayStrings(Connection connection, String sql, List<String> keys) throws Exception{
-//        try{
-//            Statement stmt = connection.createStatement();
-//            LinkedHashSet<String> set = new LinkedHashSet<String>();
-//            ResultSet rs = stmt.executeQuery(sql);
-//
-//            while(rs.next()){
-//                List<String> mappingStrings = new ArrayList<String>();
-//                String authUser = rs.getString(Utilities.AUTHENTICATED_USER);
-//                for(int i = 0; i < Utilities.NUM_MAPPING_KEYS; i++){
-//                    mappingStrings.add(rs.getString("MAPPING_VALUE_"+(i+1)));
-//                }
-//                String mappingValue = Utilities.getMappingValueDisplayString(keys, authUser, mappingStrings.toArray(new String[]{}), false, null);
-//                set.add(mappingValue);
-//            }
-//            return set;
-//
-//        }catch(Exception ex){
-//            if(connection != null) connection.close();
-//            throw(ex);
-//        }
-//    }
-
-    private LinkedHashSet<String> getServiceDisplayStrings(Connection connection, String sql) throws Exception {
+    private LinkedHashSet<String> getServiceDisplayStrings(Connection connection,
+                                                           Pair<String, List<Object>> sqlAndParamsPair) throws Exception {
         try {
-            Statement stmt = connection.createStatement();
-            LinkedHashSet<String> set = new LinkedHashSet<String>();
-            ResultSet rs = stmt.executeQuery(sql);
+            PreparedStatementDataSource psds = new PreparedStatementDataSource(connection);
+            psds.configure(sqlAndParamsPair.getKey(), sqlAndParamsPair.getValue());
 
-            while (rs.next()) {
-                String serviceName = rs.getString(Utilities.SERVICE_NAME);
-                String routingUri = rs.getString(Utilities.ROUTING_URI);
+            LinkedHashSet<String> set = new LinkedHashSet<String>();
+            while (psds.next()) {
+                String serviceName = (String) psds.getFieldValue(new JRFieldAdapter() {
+                    public String getName() {
+                        return PreparedStatementDataSource.ColumnName.SERVICE_NAME.getColumnName();
+                    }
+                });
+
+                String routingUri = (String) psds.getFieldValue(new JRFieldAdapter() {
+                    public String getName() {
+                        return PreparedStatementDataSource.ColumnName.ROUTING_URI.getColumnName();
+                    }
+                });
+
                 String service = Utilities.getServiceDisplayStringNotTruncatedNoEscape(serviceName, routingUri);
                 set.add(service);
             }
@@ -359,12 +416,13 @@ public class ReportApp {
         }
     }
 
-    private void runUsageIntervalReport(Properties prop, Map parameters, Object scriplet, String sql,
+    private void runUsageIntervalReport(Properties prop, Map parameters, Object scriplet,
+                                        Pair<String, List<Object>> sqlAndParamsPair,
                                         LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs)
             throws Exception {
         UsageReportHelper helper = (UsageReportHelper) scriplet;
         Connection connection = getConnection(prop);
-        LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
+        LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sqlAndParamsPair);
         LinkedHashMap<String, String> keyToColumnName = RuntimeDocUtilities.getKeyToColumnValues(distinctMappingSets);
         helper.setKeyToColumnMap(keyToColumnName);
         UsageSummaryAndSubReportHelper summaryAndSubReportHelper = new UsageSummaryAndSubReportHelper();
@@ -372,7 +430,7 @@ public class ReportApp {
         parameters.put(SUB_REPORT_HELPER, summaryAndSubReportHelper);
 
         LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null, null);
-        LinkedHashMap<Integer, String> groupIndexToGroup = Utilities.getGroupIndexToGroupString(mappingValuesLegend);
+        LinkedHashMap<Integer, String> groupIndexToGroup = Utilities.getGroupIndexToGroupString(mappingValuesLegend.size());
         helper.setIndexToGroupMap(groupIndexToGroup);
 
         //Master report first
@@ -486,10 +544,14 @@ public class ReportApp {
 
         System.out.println("Reports compiled");
 
+        //add in the data source
+        PreparedStatementDataSource psds = new PreparedStatementDataSource(connection);
+        parameters.put(REPORT_DATA_SOURCE, psds);
+
         JasperPrint jp = null;
         try {
             System.out.println("Filling report");
-            jp = JasperFillManager.fillReport(masterReport, parameters, connection);
+            jp = JasperFillManager.fillReport(masterReport, parameters, psds);
             System.out.println("Report filled");
         } finally {
             connection.close();
@@ -509,7 +571,7 @@ public class ReportApp {
     }
 
     private void runPerfStatSummaryReport(boolean isContextMapping, boolean isUsingKeys, Properties prop, Map parameters,
-                                          String sql, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) throws Exception {
+                                          Pair<String, List<Object>> sqlAndParamsPair, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) throws Exception {
         Connection connection = getConnection(prop);
 
         LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
@@ -517,7 +579,7 @@ public class ReportApp {
 
         Document transformDoc = null;
         if (isContextMapping && isUsingKeys) {
-            LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
+            LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sqlAndParamsPair);
             LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null, null);
             //We need to look up the mappingValues from both the group value and also the display string value
 
@@ -532,7 +594,7 @@ public class ReportApp {
 
             transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         } else {
-            LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sql);
+            LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sqlAndParamsPair);
             //We need to look up the mappingValues from both the group value and also the display string value
             int index = 1;
             for (String s : serviceValues) {
@@ -576,12 +638,18 @@ public class ReportApp {
         JasperReport summaryReport = JasperCompileManager.compileReport(bais);
         System.out.println("Report compiled");
 
+        //add in the data source
+        PreparedStatementDataSource psds = new PreparedStatementDataSource(connection);
+        parameters.put(REPORT_DATA_SOURCE, psds);
+
         JasperPrint jp = null;
         try {
             System.out.println("Filling summaryReport");
-            jp = JasperFillManager.fillReport(summaryReport, parameters, connection);
+            jp = JasperFillManager.fillReport(summaryReport, parameters, psds);
             System.out.println("Report filled");
         } finally {
+//            psds.close();
+            System.out.println("IN FINALLY AFTER FILLING REPORT");
             connection.close();
         }
 
@@ -601,7 +669,9 @@ public class ReportApp {
 
 
     private void runPerfStatIntervalReport(boolean isContextMapping, boolean isUsingKeys, Properties prop, Map parameters,
-                                           String sql, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) throws Exception {
+                                           Pair<String, List<Object>> sqlAndParamsPair,
+                                           LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs)
+            throws Exception {
 
         //Compile both subreports and add to parameters
         String subIntervalReport = getResAsString(REPORTING_RELATIVE_PATH + "/PS_SubIntervalMasterReport.jrxml");
@@ -621,7 +691,7 @@ public class ReportApp {
         LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
 
         if (isContextMapping && isUsingKeys) {
-            LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
+            LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sqlAndParamsPair);
             LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null, null);
             //We need to look up the mappingValues from both the group value and also the display string value
 
@@ -636,7 +706,7 @@ public class ReportApp {
 
             transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         } else {
-            LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sql);
+            LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sqlAndParamsPair);
             //We need to look up the mappingValues from both the group value and also the display string value
             int index = 1;
             for (String s : serviceValues) {
@@ -688,10 +758,15 @@ public class ReportApp {
 
         System.out.println("Report compiled");
 
+        //add in the data source
+        //REPORT_DATA_SOURCE
+        PreparedStatementDataSource psds = new PreparedStatementDataSource(connection);
+        parameters.put(REPORT_DATA_SOURCE, psds);
+
         JasperPrint jp = null;
         try {
             System.out.println("Filling intervalMasterReport");
-            jp = JasperFillManager.fillReport(intervalMasterReport, parameters, connection);
+            jp = JasperFillManager.fillReport(intervalMasterReport, parameters, psds);
             System.out.println("Report filled");
         } finally {
             connection.close();
@@ -710,12 +785,13 @@ public class ReportApp {
         JasperExportManager.exportReportToHtmlFile(jp, "PS_Interval.html");
     }
 
-    private void runUsageReport(Properties prop, Map parameters, Object scriplet, String sql,
+    private void runUsageReport(Properties prop, Map parameters, Object scriplet,
+                                Pair<String, List<Object>> sqlAndParamsPair,
                                 LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs)
             throws Exception {
         UsageSummaryAndSubReportHelper helper = (UsageSummaryAndSubReportHelper) scriplet;
         Connection connection = getConnection(prop);
-        LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sql);
+        LinkedHashSet<List<String>> distinctMappingSets = getDistinctMappingSets(connection, sqlAndParamsPair);
         LinkedHashMap<String, String> keyToColumnName = RuntimeDocUtilities.getKeyToColumnValues(distinctMappingSets);
         helper.setKeyToColumnMap(keyToColumnName);
         LinkedHashSet<String> mappingValuesLegend = RuntimeDocUtilities.getMappingLegendValues(keysToFilterPairs, distinctMappingSets, false, null, null);
@@ -761,10 +837,14 @@ public class ReportApp {
 
         System.out.println("Report compiled");
 
+        //add in the data source
+        PreparedStatementDataSource psds = new PreparedStatementDataSource(connection);
+        parameters.put(REPORT_DATA_SOURCE, psds);
+
         JasperPrint jp = null;
         try {
             System.out.println("Filling report");
-            jp = JasperFillManager.fillReport(report, parameters, connection);
+            jp = JasperFillManager.fillReport(report, parameters, psds);
             System.out.println("Report filled");
         } finally {
             connection.close();

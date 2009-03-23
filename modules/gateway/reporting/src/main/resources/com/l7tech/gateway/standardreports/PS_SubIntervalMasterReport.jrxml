@@ -24,6 +24,7 @@
     <import value="java.util.*"/>
     <import value="net.sf.jasperreports.engine.*"/>
     <import value="net.sf.jasperreports.engine.data.*"/>
+    <import value="com.l7tech.gateway.standardreports.*"/>
     <template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
 
@@ -54,25 +55,26 @@
     <parameter name="SPECIFIC_TIME_ZONE" isForPrompting="false" class="java.lang.String">
         <defaultValueExpression><![CDATA["Europe/London"]]></defaultValueExpression>
     </parameter>
+    <parameter name="SUB_REPORT_DATA_SOURCE" isForPrompting="false" class="net.sf.jasperreports.engine.JRDataSource"/>
 
     <field name="INTERVAL_START" class="java.lang.Long"/>
     <field name="INTERVAL_END" class="java.lang.Long"/>
 
-    <variable name="THROUGHPUT_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
+    <variable name="THROUGHPUT_SUM" class="java.lang.Double" resetType="Report" calculation="Sum">
     </variable>
     <variable name="POLICY_VIOLATIONS_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
     </variable>
     <variable name="ROUTING_FAILURES_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
     </variable>
-    <variable name="AUTHORIZED_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
+    <variable name="AUTHORIZED_SUM" class="java.lang.Double" resetType="Report" calculation="Sum">
     </variable>
-    <variable name="ATTEMPTED_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
+    <variable name="ATTEMPTED_SUM" class="java.lang.Double" resetType="Report" calculation="Sum">
     </variable>
-    <variable name="FRONT_SUM_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
+    <variable name="FRONT_SUM_SUM" class="java.lang.Double" resetType="Report" calculation="Sum">
     </variable>
-    <variable name="COMPLETED_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
+    <variable name="COMPLETED_SUM" class="java.lang.Double" resetType="Report" calculation="Sum">
     </variable>
-    <variable name="BACK_SUM_SUM" class="java.lang.Long" resetType="Report" calculation="Sum">
+    <variable name="BACK_SUM_SUM" class="java.lang.Double" resetType="Report" calculation="Sum">
     </variable>
     <variable name="FRTM_MIN" class="java.lang.Integer" resetType="Report" calculation="Lowest">
     </variable>
@@ -175,7 +177,8 @@ getIntervalDisplayDate($F{INTERVAL_START},$F{INTERVAL_END}, $P{INTERVAL_UNIT_OF_
                 <subreportParameter name="TEMPLATE_FILE_ABSOLUTE">
                     <subreportParameterExpression><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></subreportParameterExpression>
                 </subreportParameter>
-                <connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+                <dataSourceExpression>
+                    <![CDATA[((PreparedStatementDataSource)$P{SUB_REPORT_DATA_SOURCE}).getSubReportInstance()]]></dataSourceExpression>
                 <returnValue subreportVariable="THROUGHPUT" toVariable="THROUGHPUT_SUM" calculation="Sum"/>
                 <returnValue subreportVariable="POLICY_VIOLATIONS" toVariable="POLICY_VIOLATIONS_SUM"
                              calculation="Sum"/>

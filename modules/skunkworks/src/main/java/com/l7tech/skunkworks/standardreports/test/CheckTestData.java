@@ -15,6 +15,7 @@ import java.sql.*;
 import com.l7tech.gateway.standardreports.Utilities;
 import com.l7tech.skunkworks.standardreports.ReportApp;
 import com.l7tech.server.management.api.node.ReportApi;
+import com.l7tech.util.Pair;
 
 public class CheckTestData {
 
@@ -112,11 +113,11 @@ public class CheckTestData {
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
         //is usage is false, as keys must be specified for this test
-        String s = Utilities.getPerformanceStatisticsMappingQuery(true, null, null, serviceIdsToOps, keysToFilterPairs, 2, true, false);
+        Pair<String, List<Object>> sqlAndParamsPair = Utilities.getPerformanceStatisticsMappingQuery(true, null, null, serviceIdsToOps, keysToFilterPairs, 2, true, false);
 
         StringBuilder sql = new StringBuilder();
         sql.append("select count(*) as total from (");
-        sql.append(s);
+        sql.append(sqlAndParamsPair.getKey());
         sql.append(") a");
 
         ResultSet rs = stmt.executeQuery(sql.toString());
@@ -164,8 +165,8 @@ public class CheckTestData {
         //Assert.assertTrue("2 mapping keys should be specified in report.properties", keysToFilterPairs.keySet().size() == 2);
 
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
-        String s = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps, keysToFilterPairs, 2, true, false);
-
+        Pair<String, List<Object>> sqlAndParamsPair = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps, keysToFilterPairs, 2, true, false);
+        String s = sqlAndParamsPair.getKey();
         StringBuilder sql = new StringBuilder();
         sql.append("select sum(total) as overall_total from (");
         sql.append(s.substring(0, s.indexOf("FROM")));
@@ -205,10 +206,11 @@ public class CheckTestData {
      */
     private int getMappingQueryOverallTotalSpecificValues_Daily(LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) throws SQLException {
         Map<String, Set<String>> serviceIdsToOps = new HashMap<String, Set<String>>();
-        String s = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps, keysToFilterPairs, 2, true, false);
+        Pair<String, List<Object>> sqlAndParamsPair = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdsToOps, keysToFilterPairs, 2, true, false);
 
         StringBuilder sql = new StringBuilder();
         sql.append("select sum(total) as overall_total from (");
+        String s = sqlAndParamsPair.getKey();
         sql.append(s.substring(0, s.indexOf("FROM")));
         sql.append(", count(*) as total ");
         sql.append(s.substring(s.indexOf("FROM"), s.length()));
@@ -224,8 +226,9 @@ public class CheckTestData {
     private int getMappingQueryOverallTotalSpecificValues_DailyNew(Map<String, Set<String>> serviceIdToOp,
                                                                    LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs
     ) throws SQLException {
-        String s = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdToOp, keysToFilterPairs, 2, true, false);
+        Pair<String, List<Object>> sqlAndParamsPair = Utilities.getPerformanceStatisticsMappingQuery(false, null, null, serviceIdToOp, keysToFilterPairs, 2, true, false);
 
+        String s = sqlAndParamsPair.getKey();
         StringBuilder sql = new StringBuilder();
         sql.append("select sum(total) as overall_total from (");
         sql.append(s.substring(0, s.indexOf("FROM")));
