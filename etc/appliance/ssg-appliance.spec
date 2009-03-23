@@ -56,6 +56,7 @@ sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf
 /etc/init.d/ssgsysconfig
 /etc/init.d/ssg-dbstatus
 /etc/init.d/tcp_tune
+/etc/profile.d/ssgenv.sh
 
 # Config components, owned by root
 %defattr(0644,root,root)
