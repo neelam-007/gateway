@@ -86,6 +86,11 @@ public class ConfigurationBean<T> {
         return deletable;
     }
 
+    /**
+     * Override to get notified when you're deleted from the menu (should only happen if {@link #deletable})
+     */
+    public void onDelete() { }
+
     @Override
     @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {

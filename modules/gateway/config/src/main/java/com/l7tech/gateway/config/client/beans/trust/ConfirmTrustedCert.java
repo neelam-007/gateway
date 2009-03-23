@@ -3,23 +3,25 @@
  */
 package com.l7tech.gateway.config.client.beans.trust;
 
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.gateway.config.client.beans.BooleanConfigurableBean;
 import com.l7tech.gateway.config.client.beans.ConfigResult;
 import com.l7tech.gateway.config.client.beans.ConfigurationContext;
-import com.l7tech.config.client.beans.ConfigurationBean;
 import com.l7tech.util.HexUtils;
-import com.l7tech.common.io.CertUtils;
 
-import java.security.cert.X509Certificate;
 import java.security.GeneralSecurityException;
+import java.security.cert.X509Certificate;
 
 /** @author alex */
 public class ConfirmTrustedCert extends BooleanConfigurableBean {
     private final X509Certificate cert;
+    private final NewTrustedCertFactory factory;
 
-    ConfirmTrustedCert( final X509Certificate cert ) {
+    ConfirmTrustedCert(final X509Certificate cert, NewTrustedCertFactory factory) {
         super("host.controller.remoteNodeManagement.confirmTrustedCert", "Confirm Trusted Certificate", false);
         this.cert = cert;
+        this.factory = factory;
     }
 
     @Override
@@ -59,7 +61,10 @@ public class ConfirmTrustedCert extends BooleanConfigurableBean {
                     }
                 }
             }
-            return ConfigResult.pop(new ConfiguredTrustedCert(cert));
+
+            factory.consume();
+
+            return ConfigResult.pop(new ConfiguredTrustedCert(cert, factory));
         } else {
             return ConfigResult.pop();
         }

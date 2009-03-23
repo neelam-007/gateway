@@ -9,9 +9,15 @@ import java.security.cert.X509Certificate;
 
 /** @author alex */
 public class ConfiguredTrustedCert extends ConfigurationBean<X509Certificate> {
+    private final NewTrustedCertFactory factory;
 
-    ConfiguredTrustedCert(X509Certificate cert) {
+    /**
+     * @param cert the certificate that's trusted
+     * @param factory the factory that was originally used to create this trusted cert bean, or null to skip the factory maintenance
+     */
+    ConfiguredTrustedCert(X509Certificate cert, NewTrustedCertFactory factory) {
         super("host.controller.remoteNodeManagement.trustedCert", "Trusted Certificate", cert, null, true);
+        this.factory = factory;
     }
 
     @Override
@@ -20,4 +26,10 @@ public class ConfiguredTrustedCert extends ConfigurationBean<X509Certificate> {
         if (cert == null) return null;
         return cert.getSubjectDN().getName();
     }
+
+    @Override
+    public void onDelete() {
+        if (factory != null) factory.release();
+    }
+
 }

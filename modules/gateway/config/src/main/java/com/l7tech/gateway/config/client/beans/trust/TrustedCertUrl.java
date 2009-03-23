@@ -1,14 +1,14 @@
 /**
- * Copyright (C) 2008 Layer 7 Technologies Inc.
+ * Copyright (C) 2008-2009 Layer 7 Technologies Inc.
  */
 package com.l7tech.gateway.config.client.beans.trust;
 
 import com.l7tech.common.io.PermissiveHostnameVerifier;
 import com.l7tech.common.io.PermissiveSSLSocketFactory;
 import com.l7tech.config.client.ConfigurationException;
-import com.l7tech.gateway.config.client.beans.UrlConfigurableBean;
 import com.l7tech.gateway.config.client.beans.ConfigResult;
 import com.l7tech.gateway.config.client.beans.ConfigurationContext;
+import com.l7tech.gateway.config.client.beans.UrlConfigurableBean;
 import com.l7tech.util.SyspropUtil;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -22,9 +22,11 @@ import java.util.regex.Pattern;
 /** @author alex */
 public class TrustedCertUrl extends UrlConfigurableBean {
     private volatile X509Certificate cert;
+    private final NewTrustedCertFactory factory;
 
-    TrustedCertUrl() {
+    TrustedCertUrl(NewTrustedCertFactory factory) {
         super("host.controller.remoteNodeManagement.tempTrustedCertUrl", "HTTPS URL", null, "https");
+        this.factory = factory;
     }
 
     @Override
@@ -52,7 +54,7 @@ public class TrustedCertUrl extends UrlConfigurableBean {
     @Override
     public ConfigResult onConfiguration(URL value, ConfigurationContext context) {
         if (cert == null) throw new IllegalStateException("cert is null");
-        return ConfigResult.chain(new ConfirmTrustedCert(cert));
+        return ConfigResult.chain(new ConfirmTrustedCert(cert, factory));
     }
 
     @Override

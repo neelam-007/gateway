@@ -275,16 +275,18 @@ public class ConfigInterviewer {
         for (ConfigurationBean config : ctx.getBeans()) {
             if (config instanceof ConfigurableBeanFactory) {
                 final ConfigurableBeanFactory factory = (ConfigurableBeanFactory)config;
-                final ConfigurationBean bean = factory.make();
-                configurables.add(new Pair<String, DynamicConfigurationBean>(
-                            String.format("%3d) %s", ++i, "New " + config.getConfigName()),
-                            new DynamicConfigurationBean("_new." + bean.getId(), "New " + bean.getConfigName(), null) {
-                                @Override
-                                public ConfigResult onConfiguration(Object value, ConfigurationContext context) {
-                                    return ConfigResult.push(bean);
+                if (factory.getConsumedInstances() < factory.getMax()) {
+                    final ConfigurationBean bean = factory.make();
+                    configurables.add(new Pair<String, DynamicConfigurationBean>(
+                                String.format("%3d) %s", ++i, "New " + config.getConfigName()),
+                                new DynamicConfigurationBean("_new." + bean.getId(), "New " + bean.getConfigName(), null) {
+                                    @Override
+                                    public ConfigResult onConfiguration(Object value, ConfigurationContext context) {
+                                        return ConfigResult.push(bean);
+                                    }
                                 }
-                            }
-                        ));
+                            ));
+                }
             } else if (config instanceof EditableConfigurationBean) {
                 // TODO what if a bean is both editable and deletable?
                 EditableConfigurationBean configurableBean = (EditableConfigurationBean)config;

@@ -78,12 +78,7 @@ public class TrustInterviewer {
 
             final MasterPasswordManager masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( masterPasswordFile ) );
 
-            List<ConfigurationBean> inBeans = new ArrayList<ConfigurationBean>();
-            inBeans.add(new RemoteNodeManagementEnabled(enabled));
-            inBeans.add(new NewTrustedCertFactory());
-            inBeans.add(new TypedConfigurableBean<String>( "host.controller.sslIpAddress", "Listener IP Address", "Valid inputs are any IP Address or * for all.", "localhost", listenIpAddr, OptionType.IP_ADDRESS ) );
-            inBeans.add(new TypedConfigurableBean<Integer>( "host.controller.sslPort", "Listener Port", "Valid inputs are integers in the range 1024-65535.", 8765, Integer.parseInt(listenPort), OptionType.PORT, 1024, null ) );
-
+            final NewTrustedCertFactory trustedCertFactory = new NewTrustedCertFactory(1); // max=1, temporary fix for Bug #6979
             Map<ConfiguredTrustedCert, String> inCertBeans = null;
             KeyStore trustStore = null;
             if ( tsFile.exists() ) {
@@ -107,13 +102,21 @@ public class TrustInterviewer {
                 }
 
                 try {
-                    inCertBeans = readCertsFromTruststore(trustStore);
-                    inBeans.addAll(inCertBeans.keySet());
+                    inCertBeans = readCertsFromTruststore(trustStore, trustedCertFactory);
                 } catch (GeneralSecurityException e) {
                     logger.log(Level.WARNING, "Couldn't read certs from trust store", e);
                     throw new ExitErrorException(2, "Couldn't read certs from trust store");
                 }
-            } 
+            }
+
+            trustedCertFactory.setConsumedInstances(inCertBeans.size());
+
+            List<ConfigurationBean> inBeans = new ArrayList<ConfigurationBean>();
+            inBeans.add(new RemoteNodeManagementEnabled(enabled));
+            inBeans.add(trustedCertFactory);
+            inBeans.add(new TypedConfigurableBean<String>( "host.controller.sslIpAddress", "Listener IP Address", "Valid inputs are any IP Address or * for all.", "localhost", listenIpAddr, OptionType.IP_ADDRESS ) );
+            inBeans.add(new TypedConfigurableBean<Integer>( "host.controller.sslPort", "Listener Port", "Valid inputs are integers in the range 1024-65535.", 8765, Integer.parseInt(listenPort), OptionType.PORT, 1024, null ) );
+            inBeans.addAll(inCertBeans.keySet());
 
             ResourceBundle bundle = ResourceBundle.getBundle("com/l7tech/gateway/config/client/beans/trust/TrustInterviewerMessages");
             List<ConfigurationBean> outBeans;
@@ -348,14 +351,15 @@ public class TrustInterviewer {
         return hostProps;
     }
 
-    private static Map<ConfiguredTrustedCert, String> readCertsFromTruststore(final KeyStore trustStore) throws GeneralSecurityException {
+    private static Map<ConfiguredTrustedCert, String> readCertsFromTruststore(final KeyStore trustStore, NewTrustedCertFactory trustedCertFactory) throws GeneralSecurityException {
         Map<ConfiguredTrustedCert, String> beansFromTruststore = new HashMap<ConfiguredTrustedCert, String>();
         final Enumeration<String> aliases = trustStore.aliases();
         while (aliases.hasMoreElements()) {
             String alias = aliases.nextElement();
             Certificate cert = trustStore.getCertificate(alias);
             if (!(cert instanceof X509Certificate)) continue;
-            beansFromTruststore.put(new ConfiguredTrustedCert((X509Certificate)cert), alias);
+            beansFromTruststore.put(new ConfiguredTrustedCert((X509Certificate)cert, trustedCertFactory), alias);
+            // Note, don't consume() here because we want to leave open the "back door" of modifying the truststore externally
         }
         return beansFromTruststore;
     }

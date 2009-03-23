@@ -7,12 +7,12 @@ import com.l7tech.gateway.config.client.beans.ConfigurableBeanFactory;
 
 /** @author alex */
 public class NewTrustedCertFactory extends ConfigurableBeanFactory<TrustedCertUrl> {
-    protected NewTrustedCertFactory() {
-        super("host.controller.remoteNodeManagement.trustedCertUrlBeanFactory", "Trusted Certificate", 1, -1);
+    protected NewTrustedCertFactory(int max) {
+        super("host.controller.remoteNodeManagement.trustedCertUrlBeanFactory", "Trusted Certificate", 0, max);
     }
 
     @Override
     public TrustedCertUrl make() {
-        return new TrustedCertUrl();
+        return new TrustedCertUrl(this);
     }
 }

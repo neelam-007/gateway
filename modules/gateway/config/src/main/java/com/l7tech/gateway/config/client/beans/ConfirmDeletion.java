@@ -28,6 +28,7 @@ public class ConfirmDeletion extends BooleanConfigurableBean {
     public ConfigResult onConfiguration(Boolean value, ConfigurationContext context) {
         if (value) {
             context.removeBean(victim);
+            victim.onDelete();
             return ConfigResult.pop();
         } else {
             return ConfigResult.stay();

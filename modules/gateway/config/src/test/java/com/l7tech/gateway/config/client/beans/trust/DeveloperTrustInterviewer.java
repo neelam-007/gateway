@@ -61,7 +61,7 @@ public class DeveloperTrustInterviewer extends TrustInterviewer {
             if (certs == null || certs.length < 1) throw new Exception("Server presented no certificates");
             if (!(certs[0] instanceof X509Certificate)) throw new Exception("Server certificate wasn't X.509");
             X509Certificate cert = (X509Certificate)certs[0];
-            inBeans.add( new ConfiguredTrustedCert(cert) );
+            inBeans.add( new ConfiguredTrustedCert(cert, null) );
         } catch (Exception e) {
             e.printStackTrace();
         }
