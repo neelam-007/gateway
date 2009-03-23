@@ -99,7 +99,6 @@
         <dependency org="fiorano" name="fmq-client" rev="1.0-4507" force="true" conf="optional"/>
         <dependency org="fiorano" name="fiorano-framework" rev="1.0-4507" force="true" conf="optional"/>
         
-        <exclude org="asm" module="asm" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="org.apache.cxf" module="cxf-rt-transports-http-jetty" artifact="*" type="*" ext="*" conf="" matcher="exact"/>

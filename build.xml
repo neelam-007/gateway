@@ -1533,9 +1533,6 @@
             <fileset dir="${build.dir}/gatewaylibs" includes="layer7-*"/>
         </delete>
         <copy todir="${build.dir}/gatewaylibs">
-            <fileset dir="modules/gateway/management/build/dependency">
-                <include name="*.jar"/>
-            </fileset>
             <fileset dir="modules/gateway/server/build/dependency">
                 <include name="*.jar"/>
             </fileset>
