@@ -160,9 +160,9 @@ class ServiceMetrics {
         private final String userId;
         private final Set<MessageContextMapping> mappings;
 
-        private MetricsDetailKey(String operation, User user, List<MessageContextMapping> mappings) {
+        MetricsDetailKey(String operation, User user, List<MessageContextMapping> mappings) {
             this.operation = operation;
-            this.userProviderId = user==null ? -1 : user.getProviderId();
+            this.userProviderId = user==null ? -1L : user.getProviderId();
             this.userId = user == null ? null : user.getId();
             this.mappings = mappings == null ? null : new TreeSet<MessageContextMapping>(mappings);
         }
@@ -190,10 +190,10 @@ class ServiceMetrics {
 
             MetricsDetailKey that = (MetricsDetailKey) o;
 
-            if (userProviderId != that.userProviderId) return false;
+            if (hasUserMapping() && userProviderId != that.userProviderId) return false;
             if (mappings != null ? !mappings.equals(that.mappings) : that.mappings != null) return false;
             if (operation != null ? !operation.equals(that.operation) : that.operation != null) return false;
-            if (userId != null ? !userId.equals(that.userId) : that.userId != null) return false;
+            if (hasUserMapping() && (userId != null ? !userId.equals(that.userId) : that.userId != null)) return false;
 
             return true;
         }
@@ -201,10 +201,29 @@ class ServiceMetrics {
         public int hashCode() {
             int result;
             result = (operation != null ? operation.hashCode() : 0);
-            result = 31 * result + (int) (userProviderId ^ (userProviderId >>> 32));
-            result = 31 * result + (userId != null ? userId.hashCode() : 0);
+            result = 31 * result + (int) (hasUserMapping() ? userProviderId ^ (userProviderId >>> 32) : -1L ^ (-1L >>> 32));
+            result = 31 * result + (hasUserMapping() && userId != null ? userId.hashCode() : 0);
             result = 31 * result + (mappings != null ? mappings.hashCode() : 0);
             return result;
+        }
+
+        /**
+         * NOTE: Since saveMessageContextMapping only uses the MetricsDetailKeys user if there is a user mapping
+         * so do the equals/hashcode of this class.
+         * @see ServiceMetricsManagerImpl#saveMessageContextMapping
+         */
+        private boolean hasUserMapping() {
+            boolean hasUserMapping = false;
+
+            if ( mappings != null ) {
+                for ( MessageContextMapping mapping : mappings ) {
+                    if ( mapping.getMappingType() == MessageContextMapping.MappingType.AUTH_USER ) {
+                        hasUserMapping = true;
+                    }
+                }
+            }
+
+            return hasUserMapping;
         }
     }
 

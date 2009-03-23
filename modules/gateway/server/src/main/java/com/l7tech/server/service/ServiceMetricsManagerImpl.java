@@ -617,6 +617,11 @@ public class ServiceMetricsManagerImpl extends HibernateDaoSupport implements Se
         return filteredOids;
     }
 
+    /**
+     * NOTE: Since this method only uses the MetricsDetailKeys user if there is a user mapping
+     * so do the equals/hashcode of MetricsDetailKeys.
+     * @see com.l7tech.server.service.ServiceMetrics.MetricsDetailKey#hasUserMapping()
+     */
     private Long saveMessageContextMapping( final ServiceMetrics.MetricsDetailKey key ) {
         if (messageContextMappingManager == null) return null;
         

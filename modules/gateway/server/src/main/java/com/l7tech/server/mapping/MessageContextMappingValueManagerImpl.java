@@ -61,7 +61,10 @@ public class MessageContextMappingValueManagerImpl
                     if ( matches.size()==0 ) {
                         return null;
                     } else if ( matches.size()==1 ) {
-                        return matches.iterator().next();    
+                        MessageContextMappingValues values = matches.iterator().next();
+                        if ( values.matches( lookupValues ) ) {
+                            return values;
+                        }
                     } else {
                         for ( MessageContextMappingValues values : matches ) {
                             if ( values.matches( lookupValues ) ) {

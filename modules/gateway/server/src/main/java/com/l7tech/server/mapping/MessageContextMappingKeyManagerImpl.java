@@ -62,7 +62,10 @@ public class MessageContextMappingKeyManagerImpl
                     if ( matches.size()==0 ) {
                         return null;
                     } else if ( matches.size()==1 ) {
-                        return matches.iterator().next();
+                        MessageContextMappingKeys keys = matches.iterator().next();
+                        if ( keys.matches( lookupKeys ) ) {
+                            return keys;
+                        }
                     } else {
                         for ( MessageContextMappingKeys keys : matches ) {
                             if ( keys.matches( lookupKeys ) ) {
