@@ -15,7 +15,22 @@ import com.l7tech.server.ems.enterprise.JSONConstants;
  */
 public class EntityMonitoringPropertyValues implements JSON.Convertible {
 
+    public static enum EntityType {
+        SSG_CLUSTER("ssgCluster"), SSG_NODE("ssgNode");
+
+        private final String name;
+
+        private EntityType(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
     private String entityGuid;
+    private EntityType entityType;
     /**
      * The structure of propsMap:
      * Key   -  String: the property name, e.g., auditSize, logSize, ntpStatus, etc.
@@ -38,6 +53,14 @@ public class EntityMonitoringPropertyValues implements JSON.Convertible {
 
     public void setEntityGuid(String entityGuid) {
         this.entityGuid = entityGuid;
+    }
+
+    public EntityType getEntityType() {
+        return entityType;
+    }
+
+    public void setEntityType(EntityType entityType) {
+        this.entityType = entityType;
     }
 
     public Map<String, Object> getPropsMap() {

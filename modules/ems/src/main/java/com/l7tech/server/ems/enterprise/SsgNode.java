@@ -140,7 +140,7 @@ public class SsgNode extends NamedEntityImp implements JSON.Convertible, Compara
         throw new UnsupportedOperationException("Mapping from JSON not supported.");
     }
 
-    private String obtainHostName() {
+    public String obtainHostName() {
         try {
             InetAddress address = InetAddress.getByName(getIpAddress());
             return address.getHostName();

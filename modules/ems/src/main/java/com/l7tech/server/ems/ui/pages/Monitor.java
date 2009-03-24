@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.AuditContextUtils;
@@ -482,6 +483,7 @@ public class Monitor extends EsmStandardWebPage {
                             if (toFetchClusterStatuses || toFetchStatuses(ssgNode.getGuid())) {
                                 final EntityMonitoringPropertyValues statuses = monitoringService.getCurrentSsgNodePropertiesStatus(ssgNode);
                                 if (statuses != null) {
+                                    statuses.setEntityType(EntityMonitoringPropertyValues.EntityType.SSG_NODE);
                                     entitiesList.add(statuses);
                                 }
                             }
@@ -491,6 +493,7 @@ public class Monitor extends EsmStandardWebPage {
                         if (toFetchClusterStatuses) {
                             final EntityMonitoringPropertyValues statuses = monitoringService.getCurrentSsgClusterPropertyStatus(ssgCluster.getGuid());
                             if (statuses != null) {
+                                statuses.setEntityType(EntityMonitoringPropertyValues.EntityType.SSG_CLUSTER);
                                 entitiesList.add(statuses);
                             }
                         }
@@ -1251,36 +1254,49 @@ public class Monitor extends EsmStandardWebPage {
 
         // Audit a change if there is an alert state change from normal to alert.
         if (auditUponAlertState) {
-            auditEntityPropertyAlertStateChange(
-                true,
-                "State transition from normal to alert for an individual monitoring property of a cluster/node",
-                previousEntitiesList,
-                newEntitiesList);
+            auditEntityPropertyAlertStateChange(true, previousEntitiesList, newEntitiesList);
         }
         // Audit a change if there is an alert state change from alert to normal.
         if (auditUponNormalState) {
-            auditEntityPropertyAlertStateChange(
-                false,
-                "State transition from alert to normal for an individual monitoring property of a cluster/node",
-                previousEntitiesList,
-                newEntitiesList);
+            auditEntityPropertyAlertStateChange(false, previousEntitiesList, newEntitiesList);
         }
     }
 
     /**
      * Get AuditDetail objects and audit them if there is a change in alert state (e.g., normal to alert, or alert to normal)
      * @param checkNormalToAlert: the boolean flag indicating if checking the state transaction is from normal to alert or alert to normal.
-     * @param auditMessage: the audit message used in creating SystemAuditRecord object.
      * @param previousEntitiesList: the list storing the previous property values of entities (e.g., ssg cluster and ssg node)
      * @param newEntitiesList: the list storing the current property values of entities (e.g., ssg cluster and ssg node)
      */
     private void auditEntityPropertyAlertStateChange(boolean checkNormalToAlert,
-                                                     String auditMessage,
                                                      List<EntityMonitoringPropertyValues> previousEntitiesList,
                                                      List<EntityMonitoringPropertyValues> newEntitiesList) {
-        List<AuditDetail> auditDetailList = new ArrayList<AuditDetail>();
         for (EntityMonitoringPropertyValues newEntity: newEntitiesList) {
             String newGuid = newEntity.getEntityGuid();
+            EntityMonitoringPropertyValues.EntityType entityType = newEntity.getEntityType();
+            NamedEntityImp entity;
+            boolean isSsgCluster;
+            String host;
+            try {
+                if (entityType.equals(EntityMonitoringPropertyValues.EntityType.SSG_CLUSTER)) {
+                    entity = ssgClusterManager.findByGuid(newGuid);
+                    isSsgCluster = true;
+                    host = ((SsgCluster)entity).getSslHostName();
+                    if (host == null) host = "UNKNOWN";
+                } else if (entityType.equals(EntityMonitoringPropertyValues.EntityType.SSG_NODE)) {
+                    entity = ssgNodeManager.findByGuid(newGuid);
+                    isSsgCluster = false;
+                    host = ((SsgNode)entity).obtainHostName();
+                    if (host == null) host = "UNKNOWN";
+                } else {
+                    logger.warning("Invalid entity type, " + newEntity.getEntityType().getName());
+                    continue;
+                }
+            } catch (FindException e) {
+                logger.warning("Cannot find the entity with the GUID, " + newGuid);
+                continue;
+            }
+
             // Find the new (current) properties map
             Map<String, Object> newPropsMap = newEntity.getPropsMap();
             // Find the previous properties map
@@ -1303,42 +1319,51 @@ public class Monitor extends EsmStandardWebPage {
                 if (! newMonitored) continue;
 
                 boolean newAlert = newPropertyValues.isAlert();
+                StringBuilder auditMessage = new StringBuilder();
+                AuditDetail auditDetail = null;
                 if (checkNormalToAlert) {
                     if (! newAlert) continue;
 
                     // Precondition: newAlert has been true (i.e., "alert").
                     if (prevPropertyValues == null || !prevPropertyValues.isMonitored() || !prevPropertyValues.isAlert()) {
-                        auditDetailList.add(new AuditDetail(EsmMessages.AUDIT_NORMAL_TO_ALERT_MESSAGE, property));
+                        auditDetail = new AuditDetail(EsmMessages.AUDIT_NORMAL_TO_ALERT_MESSAGE, property);
+                        auditMessage.append("State transition from normal to alert for an individual monitoring property '");
                     }
                 } else { // check for "alert to normal"
                     if (newAlert) continue;
 
                     // Precondition: newAlert has been false (i.e., "normal")
                     if (prevPropertyValues != null && prevPropertyValues.isMonitored() && prevPropertyValues.isAlert()) {
-                        auditDetailList.add(new AuditDetail(EsmMessages.AUDIT_ALERT_TO_NORMAL_MESSAGE, property));
+                        auditDetail = new AuditDetail(EsmMessages.AUDIT_ALERT_TO_NORMAL_MESSAGE, property);
+                        auditMessage.append("State transition from alert to normal for an individual monitoring property '");
                     }
                 }
-            }
-        }
 
-        if (! auditDetailList.isEmpty()) {
-            AuditRecord auditRecord = new SystemAuditRecord(
-                checkNormalToAlert? Level.WARNING : Level.INFO,
-                "",
-                Component.ENTERPRISE_MANAGER,
-                auditMessage,
-                true,
-                0,
-                null,
-                null,
-                "Property Alert State Change",
-                ""
-            );
-            for (AuditDetail auditDetail: auditDetailList) {
-                auditContext.addDetail(auditDetail, this);
+                if (auditDetail != null) {
+                    auditMessage.append(property).append("' of SSG ").append(isSsgCluster? "cluster" : "node").append(" '").append(entity.getName()).append("' (").append(host).append(")");
+                    if (isSsgCluster) {
+                        auditMessage.append(".");
+                    } else {
+                        SsgCluster cluster = ((SsgNode)entity).getSsgCluster();
+                        auditMessage.append(" in SSG cluster '").append(cluster.getName()).append("' (").append(cluster.getSslHostName()).append(").");
+                    }
+                    AuditRecord auditRecord = new SystemAuditRecord(
+                        checkNormalToAlert? Level.WARNING : Level.INFO,
+                        "",
+                        Component.ENTERPRISE_MANAGER,
+                        auditMessage.toString(),
+                        true,
+                        0,
+                        null,
+                        null,
+                        "Property Alert State Change",
+                        ""
+                    );
+                    auditContext.addDetail(auditDetail, this);
+                    auditContext.setCurrentRecord(auditRecord);
+                    auditContext.flush();
+                }
             }
-            auditContext.setCurrentRecord(auditRecord);
-            auditContext.flush();
         }
     }
 
