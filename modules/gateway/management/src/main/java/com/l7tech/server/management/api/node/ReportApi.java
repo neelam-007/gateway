@@ -556,7 +556,7 @@ public interface ReportApi {
         /**
          * Get the filter value to use in a constraint in a sql query.
          *
-         * @param equalsOnly if true it specifies that the constrain will only be used in an = sql constraint, in which
+         * @param equalsOnly if true it specifies that the displayValue will only be used in an = sql constraint, in which
          *                   case the values _ and % should not be escaped so as to not stop these characters being matched literally in
          *                   a database record
          * @return String the value to use in a sql constraint
@@ -568,11 +568,9 @@ public interface ReportApi {
 
             boolean usingWildCard = isQueryUsingWildCard() && !equalsOnly;
 
-            String escapedString = SqlUtils.mySqlEscapeIllegalSqlChars(displayValue);
-
             StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < escapedString.length(); i++) {
-                char c = escapedString.charAt(i);
+            for (int i = 0; i < displayValue.length(); i++) {
+                char c = displayValue.charAt(i);
 
                 if (useEqualsOnly || !usingWildCard) {
                     sb.append(c);
