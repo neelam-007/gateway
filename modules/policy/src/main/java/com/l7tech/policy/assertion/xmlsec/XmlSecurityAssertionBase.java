@@ -31,21 +31,16 @@ public abstract class XmlSecurityAssertionBase extends XpathBasedAssertion imple
 
     @Override
     public void updateSoapVersion(SoapVersion soapVersion) {
-        if (!hasBeenUpdated) {
-            String originalValue = XpathExpression.soapBodyXpathValue().getExpression();
-            String originalValue12 = XpathExpression.soapBodyXpathValue().getExpression().replaceAll("soapenv:", "s12:");
-            String currentValue = getXpathExpression().getExpression();
-            if (originalValue.equals(currentValue) && soapVersion == SoapVersion.SOAP_1_2) {
-                getXpathExpression().setExpression(currentValue.replaceAll("soapenv:", "s12:"));
-                getXpathExpression().getNamespaces().put("s12", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
-                super.soapVersion = SoapVersion.SOAP_1_2;
-            } else if (originalValue12.equals(currentValue) && soapVersion == SoapVersion.SOAP_1_1) {
-                getXpathExpression().setExpression(currentValue.replaceAll("s12:", "soapenv:"));
-                getXpathExpression().getNamespaces().remove("s12");
-                super.soapVersion = SoapVersion.SOAP_1_1;
-            }
+        String originalValue = XpathExpression.soapBodyXpathValue().getExpression();
+        String originalValue12 = XpathExpression.soapBodyXpathValue().getExpression().replaceAll("soapenv:", "s12:");
+        String currentValue = getXpathExpression().getExpression();
+        if(originalValue.equals(currentValue) && soapVersion == SoapVersion.SOAP_1_2) {
+            getXpathExpression().setExpression(currentValue.replaceAll("soapenv:", "s12:"));
+            getXpathExpression().getNamespaces().put("s12", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
+        } else if(originalValue12.equals(currentValue) && soapVersion == SoapVersion.SOAP_1_1) {
+            getXpathExpression().setExpression(currentValue.replaceAll("s12:", "soapenv:"));
+            getXpathExpression().getNamespaces().remove("s12");
         }
-        hasBeenUpdated = true;
     }
 
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
