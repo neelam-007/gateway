@@ -155,7 +155,7 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
 
         final String nodeId = node.getGuid();
         final Level level = attempt.getStatus().equals(NotificationAttempt.StatusType.FAILED)? Level.WARNING : Level.INFO;
-        final String shortMessage = "Node " + node.getIpAddress() + (level.equals(Level.WARNING)? " failed to":" has") + " sent a notification";
+        final String shortMessage = "Node " + node.getIpAddress() + (level.equals(Level.WARNING)? " failed to send":" has sent") + " a notification";
         auditContext.setCurrentRecord(new SystemAuditRecord(level,
                 nodeId,
                 Component.ENTERPRISE_MANAGER,
