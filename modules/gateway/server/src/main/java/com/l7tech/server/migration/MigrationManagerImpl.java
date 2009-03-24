@@ -245,7 +245,7 @@ public class MigrationManagerImpl implements MigrationManager {
         } else if ( ! metadata.wasCopied(header) && ! entitiesFromTarget.containsKey(header)) {
             op = CREATE;
             targetHeader = header;
-        } else if (! overwriteExisting && EntityType.FOLDER != header.getType()) { // folders: don't map-to-existing, always update/overwrite
+        } else if (! overwriteExisting || EntityType.FOLDER == header.getType()) {
             op = MAP_EXISTING;
             targetHeader = metadata.wasCopied(header) ? getUpdatedHeader(metadata.getCopiedOrMapped(header)) : header;
         } else if (metadata.wasCopied(header) && entitiesFromTarget.containsKey(metadata.getCopied(header))) {
@@ -429,10 +429,27 @@ public class MigrationManagerImpl implements MigrationManager {
                 }
             }
         } else {
+            String targetFolderPath = resolvedTarget.getDescription();
             // map root folder to target folder
             metadata.addMappingOrCopy(metadata.getRootFolder(), resolvedTarget, false);
+            for(ExternalEntityHeader h : metadata.getAllHeaders()) {
+                if (EntityType.FOLDER == h.getType() && ! metadata.getRootFolder().equals(h))
+                    h.setDescription(targetFolderPath + h.getDescription());
+            }
+            // don't touch any folders outside the target
+            removeFolderMappingsOutsideTarget(metadata.getMappings().entrySet().iterator(), targetFolderPath);
+            removeFolderMappingsOutsideTarget(metadata.getCopies().entrySet().iterator(), targetFolderPath);
         }
         return errors;
+    }
+
+    private void removeFolderMappingsOutsideTarget(Iterator<Map.Entry<ExternalEntityHeader,ExternalEntityHeader>> iter, String targetFolderPath) {
+        Map.Entry<ExternalEntityHeader,ExternalEntityHeader> entry;
+        while (iter.hasNext()) {
+            entry = iter.next();
+            if (EntityType.FOLDER == entry.getValue().getType() && ! entry.getValue().getDescription().startsWith(targetFolderPath))
+                iter.remove();
+        }
     }
 
     private PropertyResolver getResolver(Entity sourceEntity, String propName) throws PropertyResolverException {

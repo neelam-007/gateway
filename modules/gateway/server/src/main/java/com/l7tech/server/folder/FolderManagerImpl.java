@@ -75,6 +75,44 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
     }
 
     @Override
+    public Folder findByHeader(EntityHeader header) throws FindException {
+        Folder result = super.findByHeader(header);
+        if (result != null) {
+            return result;
+        } else {
+            return pathLookup(header);
+        }
+    }
+
+    private Folder pathLookup(EntityHeader header) throws FindException {
+        String path = header == null ? null : header.getDescription();
+        if (path == null) return null;
+
+        Folder rootFolder = findRootFolder();
+        if ("/".equals(path))
+            return rootFolder;
+
+        List<Folder> matchingFolders;
+        Map<String,Object> lookupFields = new HashMap<String, Object>();
+
+        Folder parent = rootFolder;
+        String[] pathElements = path.split("/");
+        for(String pathElement : pathElements) {
+            if ("".equals(pathElement)) continue;
+            lookupFields.put("folder", parent);
+            lookupFields.put("name", pathElement);
+            matchingFolders = findMatching(Arrays.asList(lookupFields));
+            if (matchingFolders == null || matchingFolders.size() != 1) {
+                return null;
+            } else {
+                parent = matchingFolders.get(0);
+            }
+        }
+
+        return parent;
+    }
+
+    @Override
     public void update(Folder entity) throws UpdateException {
         try {
             // check for version conflict
