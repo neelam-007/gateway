@@ -48,7 +48,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -127,8 +127,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         executor.setName("executor");
         executor.setDaemon(true);
         executor.setMaxIdleTime(serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_IDLE_TIME, 60000));
-        executor.setMaxThreads(serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY, 200));
-        executor.setMinSpareThreads(serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS, 25));
+        final int poolSize = serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY, 200);
+        executor.setMaxThreads(poolSize);
+        executor.setMinSpareThreads(poolSize);
         embedded.addExecutor(executor);
         try {
             executor.start();
