@@ -26,6 +26,15 @@ public class FirewallUtils {
                                                                                 "firewall_rules");
 
     /**
+     * Initialize the firewall.
+     *
+     * <p>This should be called on startup before any connections are made.</p>
+     */
+    public static void initializeFirewall() {
+        runFirewallUpdater( "-", false );
+    }
+
+    /**
      * Write firewall rules to the given directory and update the live rules.
      *
      * @param rulesDirectory The directory to store the rules file

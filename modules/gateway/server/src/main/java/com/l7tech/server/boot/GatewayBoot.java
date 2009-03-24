@@ -5,6 +5,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.BootProcess;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.util.FirewallUtils;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.log.JdkLogConfig;
 import com.l7tech.util.BuildInfo;
@@ -134,6 +135,7 @@ public class GatewayBoot {
         boolean itworked = false;
         try {
             ServerConfig.getInstance().getLocalDirectoryProperty(ServerConfig.PARAM_LOG_DIRECTORY, true);
+            FirewallUtils.initializeFirewall();
             spawnDbWarner();
             createApplicationContext();
             String ipAddress = startBootProcess();
@@ -312,6 +314,7 @@ public class GatewayBoot {
         public void reset() throws SecurityException {
         }
 
+        @Override
         public void resetLogs() throws SecurityException {
             super.reset();
         }
