@@ -2,6 +2,7 @@ package com.l7tech.server.ems.monitoring;
 
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.AuditDetail;
+import com.l7tech.gateway.common.audit.AuditDetailMessage;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -130,9 +131,15 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
     }
 
     private void auditNotificationAttempt(SsgNode node, AuditContext auditContext, NotificationAttempt attempt) {
-        auditContext.addDetail(new AuditDetail(EsmMessages.NOTIFICATION_MESSAGE, attempt.getMessage()), this);
-        auditContext.addDetail(new AuditDetail(EsmMessages.NOTIFICATION_TIME, new Date(attempt.getTimestamp()).toString()), this);
-        auditContext.addDetail(new AuditDetail(EsmMessages.NOTIFICATION_STATUS, attempt.getStatus().name()), this);
+        SsgCluster cluster = node.getSsgCluster();
+        addSingleDetail(auditContext, EsmMessages.CLUSTER_NAME, cluster.getName());
+        addSingleDetail(auditContext, EsmMessages.CLUSTER_GUID, cluster.getGuid());
+        addSingleDetail(auditContext, EsmMessages.NODE_NAME, node.getName());
+        addSingleDetail(auditContext, EsmMessages.NODE_GUID, node.getGuid());
+        addSingleDetail(auditContext, EsmMessages.NODE_IP, node.getIpAddress());
+        addSingleDetail(auditContext, EsmMessages.NOTIFICATION_MESSAGE, attempt.getMessage());
+        addSingleDetail(auditContext, EsmMessages.NOTIFICATION_TIME, new Date(attempt.getTimestamp()).toString());
+        addSingleDetail(auditContext, EsmMessages.NOTIFICATION_STATUS, attempt.getStatus().name());
 
         final String nodeId = node.getGuid();
         final String shortMessage = "Node " + node.getIpAddress() + " has sent a notification";
@@ -149,6 +156,10 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
                 node.getIpAddress()));
 
         auditContext.flush();
+    }
+
+    private void addSingleDetail(AuditContext context, AuditDetailMessage msg, String arg) {
+        context.addDetail(new AuditDetail(msg, arg == null ? "<none>" : arg), this);
     }
 
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {

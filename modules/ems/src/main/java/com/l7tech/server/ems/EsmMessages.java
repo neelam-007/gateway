@@ -10,6 +10,12 @@ import java.util.logging.Level;
  */
 public class EsmMessages extends Messages {
 
+    public static final M CLUSTER_GUID                  = m(100100, Level.INFO, "Cluster GUID: {0}");
+    public static final M CLUSTER_NAME                  = m(100101, Level.INFO, "Cluster name: {0}");
+    public static final M NODE_GUID                     = m(100200, Level.INFO, "Node GUID: {0}");
+    public static final M NODE_NAME                     = m(100201, Level.INFO, "Node name: {0}");
+    public static final M NODE_IP                       = m(100202, Level.INFO, "Node IP: {0}");
+
     public static final M NOTIFICATION_STATUS           = m(100001, Level.INFO, "Notification status: {0}");
     public static final M NOTIFICATION_TIME             = m(100002, Level.INFO, "Notification time: {0}");
     public static final M NOTIFICATION_MESSAGE          = m(100003, Level.INFO, "Notification message: {0}");
