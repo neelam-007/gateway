@@ -39,13 +39,11 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
     public GatewayPoller( final PlatformTransactionManager transactionManager,
                           final Timer timer,
                           final SsgClusterManager ssgClusterManager,
-                          final SsgNodeManager ssgNodeManager,
                           final GatewayContextFactory gatewayContextFactory,
                           final UserPropertyManager userPropertyManager ) {
         this.transactionManager = transactionManager;
         this.timer = timer;
         this.ssgClusterManager = ssgClusterManager;
-        this.ssgNodeManager = ssgNodeManager;
         this.gatewayContextFactory = gatewayContextFactory;
         this.userPropertyManager = userPropertyManager;
         this.timerTask = new TimerTask(  ) {
@@ -115,7 +113,6 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
     private final PlatformTransactionManager transactionManager;
     private final Timer timer;
     private final SsgClusterManager ssgClusterManager;
-    private final SsgNodeManager ssgNodeManager;
     private final GatewayContextFactory gatewayContextFactory;
     private final UserPropertyManager userPropertyManager;
     private final TimerTask timerTask;
@@ -224,20 +221,19 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                                     Set<SsgNode> nodes = new HashSet<SsgNode>();
 
                                     for (GatewayApi.GatewayInfo newInfo: newInfoSet) {
-                                        SsgNode node = new SsgNode();
-                                        String nodeGuid = newInfo.getId();
-                                        if (ssgNodeManager.findByGuid(nodeGuid) != null) {
-                                            continue;
-                                        } else {
+                                        final String nodeGuid = newInfo.getId();
+                                        SsgNode node = cluster.getNode( nodeGuid );
+                                        if ( node == null ) {
+                                            node = new SsgNode();
                                             node.setGuid(nodeGuid);
+                                            node.setSsgCluster(cluster);
                                         }
-                                        node.setName(newInfo.getName());
-                                        node.setSoftwareVersion(newInfo.getSoftwareVersion());
-                                        node.setIpAddress(newInfo.getIpAddress());
-                                        node.setGatewayPort(newInfo.getGatewayPort());
-                                        node.setProcessControllerPort(newInfo.getProcessControllerPort());
+                                        node.setName( newInfo.getName() );
+                                        node.setSoftwareVersion( newInfo.getSoftwareVersion() );
+                                        node.setIpAddress( newInfo.getIpAddress() );
+                                        node.setGatewayPort( newInfo.getGatewayPort() );
+                                        node.setProcessControllerPort( newInfo.getProcessControllerPort() );
                                         refreshNodeStatus(node, port);
-                                        node.setSsgCluster(cluster);
                                         nodes.add(node);
                                     }
                                     cluster.getNodes().clear();

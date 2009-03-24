@@ -113,6 +113,28 @@ public class SsgCluster extends NamedEntityImp implements JSON.Convertible {
     }
 
     /**
+     * Get the node with the given identifier or null if not found.
+     *
+     * @param nodeGuid The GUID of the node to access.
+     * @return The node or null
+     */
+    public SsgNode getNode( final String nodeGuid ) {
+        SsgNode ssgNode = null;
+
+        Set<SsgNode> nodes = getNodes();
+        if ( nodes != null && nodeGuid != null ) {
+            for ( SsgNode node : nodes ) {
+                if ( nodeGuid.equals( node.getGuid() ) ) {
+                    ssgNode = node;
+                    break;
+                }
+            }
+        }
+
+        return ssgNode;
+    }
+
+    /**
      * Get the set of nodes that are currently operational.
      *
      * @return The set of operational SsgNodes.
