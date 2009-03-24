@@ -605,7 +605,14 @@ public class MigrationManagerImpl implements MigrationManager {
         } else {
             message += header.getType() +", " + (header.getName()==null? "" : header.getName()) + " (#"+header.getOid()+")\ndue to:\n";
         }
-        message += ExceptionUtils.getMessage(root);
+
+        String errMsg = ExceptionUtils.getMessage(root);
+        String causeMsg = (root == null || root.getCause() == null) ? "" : ExceptionUtils.getMessage(root.getCause());
+        message += errMsg;
+        if (errMsg == null || ! errMsg.equals(causeMsg)) {
+            message += " (" + causeMsg + ")";
+        }
+
         return message;
     }
 
