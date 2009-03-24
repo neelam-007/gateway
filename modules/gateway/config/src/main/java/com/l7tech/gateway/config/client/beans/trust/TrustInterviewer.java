@@ -79,7 +79,7 @@ public class TrustInterviewer {
             final MasterPasswordManager masterPasswordManager = new MasterPasswordManager( new DefaultMasterPasswordFinder( masterPasswordFile ) );
 
             final NewTrustedCertFactory trustedCertFactory = new NewTrustedCertFactory(1); // max=1, temporary fix for Bug #6979
-            Map<ConfiguredTrustedCert, String> inCertBeans = null;
+            final Map<ConfiguredTrustedCert, String> inCertBeans;
             KeyStore trustStore = null;
             if ( tsFile.exists() ) {
                 String pass = hostProps.getProperty(HOSTPROPERTIES_NODEMANAGEMENTTRUSTSTORE_PASSWORD);
@@ -107,6 +107,8 @@ public class TrustInterviewer {
                     logger.log(Level.WARNING, "Couldn't read certs from trust store", e);
                     throw new ExitErrorException(2, "Couldn't read certs from trust store");
                 }
+            } else {
+                inCertBeans = Collections.emptyMap();
             }
 
             trustedCertFactory.setConsumedInstances(inCertBeans.size());
