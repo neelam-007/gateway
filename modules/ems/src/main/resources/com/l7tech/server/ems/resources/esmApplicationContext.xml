@@ -46,8 +46,18 @@
         <property name="arguments">
             <list>
                 <ref local="creationDataSource"/>
+                <ref local="serverConfig"/>
+                <!--
+                  List of SQL script resources to run when database is created.
+                -->
                 <list>
                     <value>classpath:com/l7tech/server/ems/resources/db/audit.sql</value>
+                </list>
+                <!--
+                  List of SQL script resources to run when database already exists.
+                -->
+                <list>
+                    <value>file:var/db/update.sql</value>
                 </list>
             </list>
         </property>

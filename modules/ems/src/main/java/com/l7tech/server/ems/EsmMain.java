@@ -81,6 +81,7 @@ public class EsmMain {
                 logger.log(Level.SEVERE, msg, t);
                 System.err.println(msg);
                 t.printStackTrace(System.err);
+                resetLogs();
                 System.exit(1);
             }
 
@@ -94,15 +95,20 @@ public class EsmMain {
                 logger.log(Level.SEVERE, msg, t);
                 System.err.println(msg);
                 t.printStackTrace(System.err);
+                resetLogs();
                 System.exit(2);
             } finally {
                 exit.countDown();
             }
         } finally {
-            LogManager manager = LogManager.getLogManager();
-            if ( manager instanceof EsmLogManager ) {
-                ((EsmLogManager)manager).resetLogs();    
-            }
+            resetLogs();
+        }
+    }
+
+    private static void resetLogs() {
+        LogManager manager = LogManager.getLogManager();
+        if ( manager instanceof EsmLogManager ) {
+            ((EsmLogManager)manager).resetLogs();
         }
     }
 

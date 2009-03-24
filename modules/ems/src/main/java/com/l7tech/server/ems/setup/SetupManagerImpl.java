@@ -180,7 +180,10 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
      *
      * @param dataSource The datasource to test
      */
-    public static void testDataSource( final DataSource dataSource, final Resource[] scripts ) {
+    public static void testDataSource( final DataSource dataSource,
+                                       final ServerConfig serverConfig,
+                                       final Resource[] createScripts,
+                                       final Resource[] updateScripts ) {
         Connection connection = null;
 
         boolean created = true;
@@ -198,7 +201,9 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
             }
 
             if ( created ) {
-                runScripts( connection, scripts );
+                runScripts( connection, createScripts, false );
+            } else if ( serverConfig.getBooleanProperty("em.server.db.updates", false) ) {
+                runScripts( connection, updateScripts, serverConfig.getBooleanProperty("em.server.db.updatesDeleted", true) );
             }
         } catch ( SQLException se ) {
             throw new RuntimeException( "Could not connect to database.", se );
@@ -349,12 +354,15 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
     private final ClusterPropertyManager clusterPropertyManager;
     private SsgKeyStoreManager keyStoreManager;
 
-    private static void runScripts( final Connection connection, final Resource[] scripts ) throws SQLException {
+    private static void runScripts( final Connection connection,
+                                    final Resource[] scripts,
+                                    final boolean deleteOnComplete ) throws SQLException {
         for ( Resource scriptResource : scripts ) {
-            StreamTokenizer tokenizer;
+            if ( !scriptResource.exists() ) continue;
 
+            StreamTokenizer tokenizer;
             try {
-                logger.config("Running DB create script '"+scriptResource.getDescription()+"'.");
+                logger.config("Running DB script '"+scriptResource.getDescription()+"'.");
                 tokenizer = new StreamTokenizer( new InputStreamReader(scriptResource.getInputStream(), "UTF-8") );
                 tokenizer.eolIsSignificant(false);
                 tokenizer.commentChar('-');
@@ -387,6 +395,13 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
                     }
                 }
 
+                if ( deleteOnComplete && scriptResource.getFile()!=null ) {
+                    if ( scriptResource.getFile().delete() ) {
+                        logger.info( "Deleted DB script '"+scriptResource.getDescription()+"'." );
+                    } else {
+                        logger.warning( "Deletion failed for DB script '"+scriptResource.getDescription()+"'." );
+                    }
+                }
             } catch (IOException ioe) {
                 logger.log( Level.WARNING, "Error processing DB script.", ioe );
             }
