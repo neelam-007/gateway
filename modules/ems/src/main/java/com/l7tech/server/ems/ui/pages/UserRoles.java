@@ -118,7 +118,9 @@ public class UserRoles extends EsmStandardWebPage {
 
                     // Render the role management container
                     this.setEnabled(false);
-                    ajaxRequestTarget.addComponent(roleManagementContainer);
+                    ajaxRequestTarget.addComponent(this);
+                    ajaxRequestTarget.addComponent(assignedUsersRoleForm.get("panel.assignedUsers"));
+                    ajaxRequestTarget.addComponent(unassignedUsersRoleForm.get("panel.unassignedUsers"));
                 } catch (FindException e) {
                     logger.warning("Cannot find the user, " + userId);
                 } catch (UpdateException e) {
@@ -165,7 +167,9 @@ public class UserRoles extends EsmStandardWebPage {
 
                     // Render the role management container
                     this.setEnabled(false);
-                    ajaxRequestTarget.addComponent(roleManagementContainer);
+                    ajaxRequestTarget.addComponent(this);
+                    ajaxRequestTarget.addComponent(assignedUsersRoleForm.get("panel.assignedUsers"));
+                    ajaxRequestTarget.addComponent(unassignedUsersRoleForm.get("panel.unassignedUsers"));
                 } catch (FindException e) {
                     logger.log( Level.WARNING, "Error finding user '" + userId + "'.", e);
                 } catch (UpdateException e) {
@@ -322,7 +326,7 @@ public class UserRoles extends EsmStandardWebPage {
         columns.add(new PropertyColumn(new StringResourceModel("usertable.column.firstName", this, null), "firstName", "firstName"));
 
         String panelId = "panel." + (usersAssigned? "" : "un") + "assignedUsers";
-        return new YuiDataTable(panelId, columns, "login", true, newArrayList(new UserDataProvider("login", true, usersAssigned).iterator(0,1000)), hidden,
+        return (YuiDataTable) new YuiDataTable(panelId, columns, "login", true, newArrayList(new UserDataProvider("login", true, usersAssigned).iterator(0,1000)), hidden,
             false, "login", false, new Button[]{button}) {
             @Override
             @SuppressWarnings({"UnusedDeclaration"})
@@ -331,7 +335,7 @@ public class UserRoles extends EsmStandardWebPage {
                 button.setEnabled(enabled);
                 ajaxRequestTarget.addComponent(button);
             }
-        };
+        }.setOutputMarkupId(true);
     }
 
     private final class UserDataProvider extends SortableDataProvider {
