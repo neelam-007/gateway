@@ -2,6 +2,7 @@ package com.l7tech.server.ems.ui.pages;
 
 import com.l7tech.server.ems.enterprise.JSONException;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.SyspropUtil;
 import org.apache.wicket.IRequestTarget;
 import org.apache.wicket.Page;
 import org.apache.wicket.RequestCycle;
@@ -29,7 +30,6 @@ import java.util.logging.Logger;
  * </em>
  */
 public class JsonPostInteraction extends Panel {
-    private static final Logger logger = Logger.getLogger(JsonPostInteraction.class.getName());    
 
     //- PUBLIC
 
@@ -52,7 +52,7 @@ public class JsonPostInteraction extends Panel {
                 WebRequest webRequest = (WebRequest) RequestCycle.get().getRequest();
                 try {
                     ServletInputStream inputStream = webRequest.getHttpServletRequest().getInputStream();
-                    String input = new String(IOUtils.slurpStream(inputStream, 10000), "utf-8");
+                    String input = new String(IOUtils.slurpStream(inputStream, MAX_POST_SIZE), "utf-8");
                     provider.setData(input);
                     if ( logger.isLoggable(Level.FINEST) ) {
                         logger.log(Level.FINEST, "Received JSON data: " + input);
@@ -107,6 +107,9 @@ public class JsonPostInteraction extends Panel {
     }
 
     //- PRIVATE
+
+    private static final Logger logger = Logger.getLogger(JsonPostInteraction.class.getName());
+    private static final int MAX_POST_SIZE = SyspropUtil.getInteger(JsonPostInteraction.class.getName()+".maxSize", 128*1024);
 
     private final JsonDataProvider provider;
 }
