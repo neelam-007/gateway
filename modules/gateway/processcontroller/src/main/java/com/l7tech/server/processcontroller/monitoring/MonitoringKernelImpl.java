@@ -384,11 +384,9 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
     @Override
     public List<NotificationAttempt> getRecentNotificationAttempts(long sinceWhen) {
-        List<NotificationAttempt> result = new ArrayList<NotificationAttempt>();
-        Map<Long, NotificationState> nstates = currentNotificationStates;
-        for (Map.Entry<Long, NotificationState> entry : nstates.entrySet()) {
-            Long noid = entry.getKey();
-            NotificationState nstate = entry.getValue();
+        final List<NotificationAttempt> result = new ArrayList<NotificationAttempt>();
+        final Map<Long, NotificationState> nstates = currentNotificationStates;
+        for (NotificationState nstate : nstates.values()) {
             result.addAll(nstate.getNotificationAttempts(sinceWhen).values());
         }
         return result;
@@ -451,10 +449,12 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
                 final Map<MonitorableProperty, PropertyState<?>> pstates;
                 final Map<Long, TriggerState> tstates;
+                final Map<Long, NotificationState> nstates;
 
                 synchronized (MonitoringKernelImpl.this) {
                     pstates = currentPropertyStates;
                     tstates = currentTriggerStates;
+                    nstates = currentNotificationStates;
                 }
 
                 if (tstates == null || pstates == null) {
@@ -464,7 +464,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
                 final Map<MonitorableProperty, PropertyCondition> conditions = new HashMap<MonitorableProperty, PropertyCondition>();
                 for (Map.Entry<Long,TriggerState> entry : tstates.entrySet()) {
-                    final Long oid = entry.getKey();
+                    final Long triggerOid = entry.getKey();
                     final TriggerState tstate = entry.getValue();
                     if (!(tstate.trigger instanceof PropertyTrigger)) continue;
 
@@ -474,7 +474,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
                     final PropertyState<?> mstate = pstates.get(property);
                     if (mstate == null) {
-                        logger.warning("Couldn't find PropertyState for " + property + " (required by trigger #" + oid + "); skipping");
+                        logger.warning("Couldn't find PropertyState for " + property + " (required by trigger #" + triggerOid + "); skipping");
                         continue;
                     }
 
@@ -516,13 +516,17 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                         log = currentInOut == InOut.OUT;
                         notify = currentInOut == InOut.OUT;
                     } else if (prevTolerance.inOut != currentInOut) {
-                        // log & notify all state transitions
+                        // always log & notify all in<=>out transitions
                         log = true;
                         notify = true;
                     } else {
-                        // State unchanged since last time. Don't notify; log if enough time has elapsed
+                        // State unchanged since last time. log if enough time has elapsed.
                         log = prevTolerance.logged != null && now - prevTolerance.logged >= TOLERANCE_LOG_INTERVAL;
-                        notify = false;
+
+                        // Only notify if last attempt failed.
+                        final NotificationState nstate = nstates.get(triggerOid);
+                        final NotificationAttempt attempt = nstate == null ? null : nstate.getLastAttempt();
+                        notify = nstate == null || attempt == null || attempt.getStatus() == NotificationAttempt.StatusType.FAILED;
                     }
 
                     if (log) {
@@ -533,10 +537,10 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                     if (notify) {
                         PropertyCondition cond = conditions.get(property);
                         if (cond == null) {
-                            conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), currentInOut, when, Collections.singleton(oid), sampledValue));
+                            conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), currentInOut, when, Collections.singleton(triggerOid), sampledValue));
                         } else {
                             // Merge the previous condition with this one
-                            conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), currentInOut, cond.getTimestamp(), Sets.union(cond.getTriggerOids(), oid), cond.getValue()));
+                            conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), currentInOut, cond.getTimestamp(), Sets.union(cond.getTriggerOids(), triggerOid), cond.getValue()));
                         }
                     }
 

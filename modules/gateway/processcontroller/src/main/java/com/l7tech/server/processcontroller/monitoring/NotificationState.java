@@ -73,6 +73,12 @@ public class NotificationState {
         return true; // TODO rate-limiting
     }
 
+    public NotificationAttempt getLastAttempt() {
+        final Map.Entry<Long, NotificationAttempt> entry = attempts.lastEntry();
+        if (entry == null) return null;
+        return entry.getValue();
+    }
+
     public void failed(NotificationAttempt notificationAttempt) {
         attempts.put(notificationAttempt.getTimestamp(), notificationAttempt);
     }
