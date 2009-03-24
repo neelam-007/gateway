@@ -113,6 +113,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         this.systemMonitoringSetupSettingsManager = systemMonitoringSetupSettingsManager;
     }
 
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof PersistenceEvent) {
             PersistenceEvent pe = (PersistenceEvent) event;
@@ -170,6 +171,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
     // Schedule a one-shot task to tell the specified node to forget its monitoring configuration.
     private void onNodeDeleted(final SsgNode node) {
         timer.schedule(new TimerTask() {
+            @Override
             public void run() {
                 final SsgCluster cluster = node.getSsgCluster();
                 final String[] nodeInfo = { node.getIpAddress(), node.getName(), node.getGuid(), cluster.getName(), cluster.getGuid() };
@@ -222,8 +224,10 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
 
     private TimerTask makeConfigPusherTask() {
         return new TimerTask() {
+            @Override
             public void run() {
                 AuditContextUtils.doAsSystem(new Runnable() {
+                    @Override
                     public void run() {
                         pushAllConfig();
                     }
@@ -284,8 +288,9 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
     private boolean configureNode(SsgCluster cluster, SsgNode node, boolean notificationsDisabled, boolean needClusterMaster) {
         final String[] nodeInfo = { node.getIpAddress(), node.getName(), node.getGuid(), cluster.getName(), cluster.getGuid() };
         try {
-            logger.log(Level.INFO, "Pushing down monitoring configuration to " + NODEINFO, nodeInfo);
+            logger.log(Level.FINE, "Pushing down monitoring configuration to " + NODEINFO, nodeInfo);
             doConfigureNode(cluster, node, notificationsDisabled, needClusterMaster);
+            logger.log(Level.INFO, "Pushed down monitoring configuration to " + NODEINFO, nodeInfo);
             return true;
         } catch (IOException e) {
             logPush(Level.INFO, NOPUSH, nodeInfo, e, false);
@@ -459,9 +464,10 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
      * @param clusterName name of cluster, if known
      */
     void setClusterDirty(String clusterGuid, String clusterName) {
-        String name = clusterName == null ? "" : " (" + clusterName + ")";
-        logger.log(Level.INFO, "Marking cluster GUID " + clusterGuid + name + " as in need of a monitoring configuration pushdown");
-        cleanClusters.remove(clusterGuid);
+        if ( cleanClusters.remove(clusterGuid) != null ) {
+            String name = clusterName == null ? "" : " (" + clusterName + ")";
+            logger.log(Level.INFO, "Marking cluster GUID " + clusterGuid + name + " as in need of a monitoring configuration pushdown");
+        }
     }
 
     /**
