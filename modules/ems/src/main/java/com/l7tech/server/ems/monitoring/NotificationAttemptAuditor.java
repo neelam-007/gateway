@@ -49,6 +49,7 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
     private final GatewayContextFactory gatewayContextFactory;
     private final TimerTask notificationAuditorTask = makeNotificationAuditorTask();
     private ApplicationContext applicationContext;
+    private Map<String, List<NotificationAttempt>> lastAttempts = new HashMap<String, List<NotificationAttempt>>();
 
     public NotificationAttemptAuditor(Timer timer, PlatformTransactionManager transactionManager, SsgClusterManager ssgClusterManager, SsgNodeManager ssgNodeManager, GatewayContextFactory gatewayContextFactory) {
         this.timer = timer;
@@ -100,7 +101,7 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
                     long timeBeforeQuery = System.currentTimeMillis();
                     List<NotificationAttempt> attempts = nodeContext.getMonitoringApi().getRecentNotificationAttempts(node.getNotificationAuditTime());
                     long timeOfMostRecentNotification = auditNotificationAttempts(node, auditContext, attempts);
-                    node.setNotificationAuditTime(timeOfMostRecentNotification > 0 ? timeOfMostRecentNotification : timeBeforeQuery);
+                    node.setNotificationAuditTime(timeOfMostRecentNotification > 0 ? timeOfMostRecentNotification + 1 : timeBeforeQuery);
                     ssgNodeManager.update(node);
                 } catch (GatewayException e) {
                     logger.log(Level.INFO, "Unable to connect to process controller for node " + node.getIpAddress() + " to collect notifications: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -127,10 +128,21 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
                 mostRecentTime = time;
             auditNotificationAttempt(node, auditContext, attempt);
         }
+
+        lastAttempts.put(node.getGuid(), attempts);
         return mostRecentTime;
     }
 
     private void auditNotificationAttempt(SsgNode node, AuditContext auditContext, NotificationAttempt attempt) {
+        List<NotificationAttempt> attempts = lastAttempts.get(node.getGuid());
+        if (attempts != null && !attempts.isEmpty()) {
+            for (NotificationAttempt na: attempts) {
+                if (attempt.getTimestamp() == na.getTimestamp()) {
+                    return;
+                }
+            }
+        }
+
         SsgCluster cluster = node.getSsgCluster();
         addSingleDetail(auditContext, EsmMessages.CLUSTER_NAME, cluster.getName());
         addSingleDetail(auditContext, EsmMessages.CLUSTER_GUID, cluster.getGuid());
@@ -142,8 +154,8 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
         addSingleDetail(auditContext, EsmMessages.NOTIFICATION_STATUS, attempt.getStatus().name());
 
         final String nodeId = node.getGuid();
-        final String shortMessage = "Node " + node.getIpAddress() + " has sent a notification";
         final Level level = attempt.getStatus().equals(NotificationAttempt.StatusType.FAILED)? Level.WARNING : Level.INFO;
+        final String shortMessage = "Node " + node.getIpAddress() + (level.equals(Level.WARNING)? " failed to":" has") + " sent a notification";
         auditContext.setCurrentRecord(new SystemAuditRecord(level,
                 nodeId,
                 Component.ENTERPRISE_MANAGER,
