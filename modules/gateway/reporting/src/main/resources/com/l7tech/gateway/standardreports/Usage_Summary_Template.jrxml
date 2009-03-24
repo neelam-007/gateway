@@ -496,7 +496,7 @@ $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndS
                             <font/>
                         </textElement>
                         <textFieldExpression class="java.lang.String">
-                            <![CDATA[Utilities.getServiceDisplayStringNotTruncatedNoEscape($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
+                            <![CDATA[Utilities.getServiceDisplayStringTruncatedNoEscape($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
                     </textField>
                 </frame>
             </band>

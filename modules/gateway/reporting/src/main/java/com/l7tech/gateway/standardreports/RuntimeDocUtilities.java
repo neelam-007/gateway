@@ -10,6 +10,7 @@ import java.util.*;
 
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.util.TextUtils;
+import com.l7tech.util.Pair;
 
 public class RuntimeDocUtilities {
     static final String DEFAULT_CENTER_ALIGNED = "DefaultCenterAligned";
@@ -176,9 +177,7 @@ public class RuntimeDocUtilities {
         return sb.toString();
     }
 
-    private static void addPerfChartXml(JasperDocument jasperDoc, Map<String, String> displayMap) {
-        //Create all the text fields for the chart legend
-        int x = 0;
+    private static void addPerfChartXmlMapping(JasperDocument jasperDoc, Map<String, String> displayMap) {
         int y = 0;
         int vSpace = 2;
         int height = 18;
@@ -186,18 +185,47 @@ public class RuntimeDocUtilities {
         int index = 0;
 
         for (Map.Entry<String, String> me : displayMap.entrySet()) {
-            jasperDoc.addTextFieldToElement(JasperDocument.ElementName.CHART_LEGEND, x, y, frameWidth, height,
-                    "chartLegendKey" + (index + 1),
-                    "<b>" + me.getKey() + ":</b> " + Utilities.escapeHtmlCharacters(me.getValue()) + "<br>",
+            String displayValue = "<b>" + Utilities.escapeHtmlCharacters(me.getKey()) + ":</b> " +
+                    Utilities.escapeHtmlCharacters(me.getValue()) + "<br>";
+            jasperDoc.addTextFieldToElement(JasperDocument.ElementName.CHART_LEGEND, 0, y, frameWidth, height,
+                    "chartLegendKey" + (index + 1), displayValue,
                     LEFT_PADDED_HEADING_HTML, false, true, true, false);
 
             y += height + vSpace;
             index++;
         }
 
+        addPerfChartXml(jasperDoc, height, vSpace, displayMap.size());
+    }
+
+    private static void addPerfChartXmlNoMapping(JasperDocument jasperDoc, Map<String, Pair<String, String>> displayMap) {
+        //Create all the text fields for the chart legend
+        int y = 0;
+        int vSpace = 2;
+        int height = 18;
+        int frameWidth = FRAME_MIN_WIDTH;
+        int index = 0;
+
+        for (Map.Entry<String, Pair<String, String>> me : displayMap.entrySet()) {
+            Pair<String, String> serviceUriPair = me.getValue();
+            String displayValue = "<b>" + Utilities.escapeHtmlCharacters(me.getKey()) + ":</b> " +
+                    Utilities.escapeHtmlCharacters(serviceUriPair.getKey()) + " [" +
+                    Utilities.escapeHtmlCharacters(serviceUriPair.getValue()) + "]<br>";
+
+            jasperDoc.addTextFieldToElement(JasperDocument.ElementName.CHART_LEGEND, 0, y, frameWidth, height,
+                    "chartLegendKey" + (index + 1), displayValue,
+                    LEFT_PADDED_HEADING_HTML, false, true, true, false);
+
+            y += height + vSpace;
+            index++;
+        }
+
+        addPerfChartXml(jasperDoc, height, vSpace, displayMap.size());
+    }
+
+    private static void addPerfChartXml(JasperDocument jasperDoc, int height, int vSpace, int numMappingSets) {
         //Chart height is minimum 130, if there are more than 2 mapping value sets then increase it
         int chartHeight = 130;
-        int numMappingSets = displayMap.size();
         if (numMappingSets > 2) {
             chartHeight += 30 * (numMappingSets - 2);
         }
@@ -238,14 +266,14 @@ public class RuntimeDocUtilities {
      *                            instead of Warehouse [routing uri].....
      * @return a JasperDocument encapsulating a Document, which can be used as parameter to transform a template jrxml file
      */
-    public static JasperDocument getPerfStatAnyRuntimeDoc(LinkedHashMap<String, String> groupToMappingValue) {
+    public static JasperDocument getPerfStatAnyRuntimeDoc(LinkedHashMap<String, Pair<String, String>> groupToMappingValue) {
         JasperDocument jasperDoc = new JasperDocument();
 
         jasperDoc.addIntElement(JasperDocument.ElementName.IS_CONTEXT_MAPPING, 0);
         //the style sheet uses just this element to know whether to show the normal chart or the group chart
         //see the jrxml files which have two charts defined.
 
-        addPerfChartXml(jasperDoc, groupToMappingValue);
+        addPerfChartXmlNoMapping(jasperDoc, groupToMappingValue);
 
         return jasperDoc;
     }
@@ -279,7 +307,7 @@ public class RuntimeDocUtilities {
                 true, Utilities.MAPPING_KEY_MAX_SIZE, Utilities.USAGE_HEADING_VALUE_MAX_SIZE);
         LinkedHashMap<String, String> groupToLegendDisplayStringMap = getGroupToLegendDisplayStringMap(mappingValuesLegend);
 
-        addPerfChartXml(jasperDoc, groupToLegendDisplayStringMap);
+        addPerfChartXmlMapping(jasperDoc, groupToLegendDisplayStringMap);
 
         return jasperDoc;
     }

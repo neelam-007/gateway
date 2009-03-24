@@ -32,17 +32,14 @@ import javax.xml.parsers.ParserConfigurationException;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.TextUtils;
 import com.l7tech.common.io.ResourceMapEntityResolver;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.management.api.node.ReportApi;
-import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.engine.JasperFillManager;
-import net.sf.jasperreports.engine.JasperReport;
-import net.sf.jasperreports.engine.JasperCompileManager;
-import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JasperExportManager;
+import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.export.JRHtmlExporter;
 import net.sf.jasperreports.engine.export.JRHtmlExporterParameter;
+import net.sf.jasperreports.engine.export.JRPdfExporterParameter;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -135,6 +132,7 @@ public class ReportGenerator {
         byte[] report;
         if ("PDF".equals(type)) {
             try {
+//                handle.getJasperPrint().setProperty(JRPdfExporterParameter.PROPERTY_PDF_VERSION.toString(), JRPdfExporterParameter.PDF_VERSION_1_6.toString());
                 report = JasperExportManager.exportReportToPdf(handle.getJasperPrint());
             } catch (JRException jre) {
                 throw new ReportGenerationException("Error creating report output.", jre);
@@ -366,7 +364,6 @@ public class ReportGenerator {
             sqlAndParamsPair = Utilities.getNoMappingQuery(true, startTimeInPast, endTimeInPast, serivceIdsToOp.keySet(), resolution);
         }
 
-        LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
         LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
 
         if (isContextMapping && isUsingKeys) {
@@ -378,8 +375,6 @@ public class ReportGenerator {
             int index = 1;
             for (String s : mappingValuesLegend) {
                 String group = "Group " + index;
-                //System.out.println("Group: " + group+" s: " + s);
-                groupToDisplayString.put(group, s);
                 displayStringToGroup.put(s, group);
                 index++;
             }
@@ -403,20 +398,24 @@ public class ReportGenerator {
             }
 
         } else {
-            LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sqlAndParamsPair);
+            LinkedHashSet<Pair<String, String>> serviceValues = getServiceDisplayStrings(connection, sqlAndParamsPair);
+            LinkedHashMap<String, Pair<String, String>> groupToDisplayString = new LinkedHashMap<String, Pair<String, String>>();
             //We need to look up the mappingValues from both the group value and also the display string value
             int index = 1;
-            for (String s : serviceValues) {
-                String service = "Service " + index;
-                //System.out.println("Service: " + service+" s: " + s);
-                groupToDisplayString.put(service, s);
-                displayStringToGroup.put(s, service);
+            for (Pair<String, String> pair : serviceValues) {
+                String shortServiceName = "Service " + index;
+                String serviceTrunc = Utilities.getServiceStringTruncatedNoEscape(pair.getKey(), Utilities.SERVICE_DISPLAY_NAME_LENGTH);
+                String routingTrunc = Utilities.getRoutingUriStringTruncatedNoEscape(pair.getValue(), Utilities.ROUTING_URI_LENGTH);
+                groupToDisplayString.put(shortServiceName, new Pair<String, String>(serviceTrunc, routingTrunc));
+                //displayStringToGroup must not have truncated values
+                String displayName = Utilities.getServiceDisplayStringNotTruncatedNoEscape(pair.getKey(), pair.getValue());
+                displayStringToGroup.put(displayName, shortServiceName);
                 index++;
             }
+            reportParams.put(ReportApi.ReportParameters.MAPPING_GROUP_TO_DISPLAY_STRING, groupToDisplayString);
         }
 
         reportParams.put(ReportApi.ReportParameters.DISPLAY_STRING_TO_MAPPING_GROUP, displayStringToGroup);
-        reportParams.put(ReportApi.ReportParameters.MAPPING_GROUP_TO_DISPLAY_STRING, groupToDisplayString);
 
         //add required report scriptlets
         if (reportType == ReportApi.ReportType.PERFORMANCE_SUMMARY) {
@@ -449,7 +448,7 @@ public class ReportGenerator {
                 runtimeDocument = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilterPairs, distinctMappingSets);
             } else {
                 runtimeDocument =
-                        RuntimeDocUtilities.getPerfStatAnyRuntimeDoc((LinkedHashMap<String, String>)
+                        RuntimeDocUtilities.getPerfStatAnyRuntimeDoc((LinkedHashMap<String, Pair<String, String>>)
                                 reportParameters.get(ReportApi.ReportParameters.MAPPING_GROUP_TO_DISPLAY_STRING));
             }
             return runtimeDocument.getDocument();
@@ -620,10 +619,10 @@ public class ReportGenerator {
         return returnSet;
     }
 
-    private LinkedHashSet<String> getServiceDisplayStrings(Connection connection,
-                                                           Pair<String, List<Object>> sqlAndParamsPair)
+    private LinkedHashSet<Pair<String, String>> getServiceDisplayStrings(Connection connection,
+                                                                         Pair<String, List<Object>> sqlAndParamsPair)
             throws ReportGenerationException {
-        LinkedHashSet<String> set = new LinkedHashSet<String>();
+        LinkedHashSet<Pair<String, String>> set = new LinkedHashSet<Pair<String, String>>();
 
         PreparedStatementDataSource psds = null;
         try {
@@ -643,8 +642,7 @@ public class ReportGenerator {
                     }
                 });
 
-                String service = Utilities.getServiceDisplayStringNotTruncatedNoEscape(serviceName, routingUri);
-                set.add(service);
+                set.add(new Pair<String, String>(serviceName, routingUri));
             }
         } catch (SQLException ex) {
             throw new ReportGenerationException("Error generating service display values.", ex);

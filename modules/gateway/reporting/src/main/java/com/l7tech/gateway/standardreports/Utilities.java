@@ -19,6 +19,7 @@ import java.awt.*;
 
 import com.l7tech.util.TextUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.SqlUtils;
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 
@@ -50,6 +51,10 @@ public class Utilities {
     private static final long MONTH_32DAYS_IN_MILLISECONDS = 2764800000L;
     public static final Integer MAPPING_KEY_MAX_SIZE = 100;
     public static final Integer USAGE_HEADING_VALUE_MAX_SIZE = 30;
+    public static final int SERVICE_DISPLAY_NAME_LENGTH = 80;
+
+    private static final int OPERATION_STRING_MAX_SIZE = 50;
+    public static final int ROUTING_URI_LENGTH = OPERATION_STRING_MAX_SIZE;
 
     public static enum UNIT_OF_TIME {
         HOUR, DAY, WEEK, MONTH
@@ -655,7 +660,7 @@ public class Utilities {
         int i = 0;
         while (iter.hasNext()) {
             if (i != 0) sb.append(", ");
-            sb.append(escapeHtmlCharacters(iter.next().toString()));
+            sb.append(escapeHtmlCharacters(TextUtils.truncStringMiddleExact(iter.next().toString(), Utilities.SERVICE_DISPLAY_NAME_LENGTH)));
             i++;
         }
         return sb.toString();
@@ -691,8 +696,8 @@ public class Utilities {
      *         parameters to be added to the SQL. Each entry in List<Object> matches the index of a ? character in the sql
      *         <p/>
      *         <pre>
-     *                 AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                 </pre>
+     *                         AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                         </pre>
      *         Note operation is not included. It is a mapping key under the covers but it has special meaning. Notice how
      *         authenticated_user is returned. To the user and to business logic, authenticated user is a normal mapping key
      */
@@ -780,8 +785,8 @@ public class Utilities {
      *         parameters to be added to the SQL. Each entry in List<Object> matches the index of a ? character in the sql
      *         <p/>
      *         <pre>
-     *         SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
-     *         </pre>
+     *                 SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
+     *                 </pre>
      */
     public static Pair<String, List<Object>> getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                                          Map<String, Set<String>> serviceIdToOperations,
@@ -869,9 +874,9 @@ public class Utilities {
      *         <p/>
      *         The sql always returns the following fields:-
      *         <pre>
-     *         SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *         </pre>
+     *                 SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                 </pre>
      */
     public static Pair<String, List<Object>> getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                            Map<String, Set<String>> serviceIdToOperations,
@@ -978,9 +983,9 @@ public class Utilities {
      *         <p/>
      *         The sql always returns the following fields:-
      *         <pre>
-     *         SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *         </pre>
+     *                 SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                 </pre>
      */
     public static Pair<String, List<Object>> getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                            Long serviceId,
@@ -1284,15 +1289,15 @@ public class Utilities {
      *         <p/>
      *         If isMasterQuery is true, then the sql query has the following columns:
      *         <pre>
-     *          SERVICE_ID, SERVICE_NAME, ROUTING_URI and CONSTANT_GROUP
-     *          </pre>
+     *                  SERVICE_ID, SERVICE_NAME, ROUTING_URI and CONSTANT_GROUP
+     *                  </pre>
      *         If isMasterQuery is false, it has the following columns:-
      *         <pre>
-     *          SERVICE_ID | SERVICE_NAME | ROUTING_URI | ATTEMPTED | COMPLETED | AUTHORIZED | FRONT_SUM | BACK_SUM | THROUGHPUT
-     *          | POLICY_VIOLATIONS | ROUTING_FAILURES | FRTM | FRTMX | FRTA   | BRTM | BRTMX | BRTA   | AP     | CONSTANT_GROUP
-     *          | AUTHENTICATED_USER | SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 |
-     *          MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *          </pre>
+     *                  SERVICE_ID | SERVICE_NAME | ROUTING_URI | ATTEMPTED | COMPLETED | AUTHORIZED | FRONT_SUM | BACK_SUM | THROUGHPUT
+     *                  | POLICY_VIOLATIONS | ROUTING_FAILURES | FRTM | FRTMX | FRTA   | BRTM | BRTMX | BRTA   | AP     | CONSTANT_GROUP
+     *                  | AUTHENTICATED_USER | SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 |
+     *                  MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                  </pre>
      */
     public static Pair<String, List<Object>> getPerformanceStatisticsMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                                                   Map<String, Set<String>> serviceIdToOperations,
@@ -1378,6 +1383,28 @@ public class Utilities {
 
         logger.log(Level.FINER, "getPerformanceStatisticsMappingQuery: " + sb.toString());
         return new Pair<String, List<Object>>(sb.toString(), queryParams);
+    }
+
+    private static String logCompleteSql(String sql, List<Object> params) {
+
+        StringBuilder sb = new StringBuilder();
+        int paramIndex = 0;
+        for (int i = 0; i < sql.length(); i++) {
+            char c = sql.charAt(i);
+            if (c == '?') {
+                Object o = params.get(paramIndex);
+                paramIndex++;
+                if (o instanceof String) {
+                    sb.append("'").append(SqlUtils.mySqlEscapeIllegalSqlChars(o.toString())).append("'");
+                } else {
+                    sb.append(" ").append(o).append(" ");
+                }
+
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
     /**
@@ -2289,12 +2316,12 @@ public class Utilities {
         if (serviceName == null) throw new NullPointerException("serviceName must be non null");
         if (serviceName.equals("")) throw new IllegalArgumentException("serviceName must not be the emtpy string");
 
-        String serviceNameDisplay = TextUtils.truncStringMiddleExact(serviceName, 20);
+        String serviceNameDisplay = TextUtils.truncStringMiddleExact(serviceName, 18);
 
         if (serviceRoutingURI == null || serviceRoutingURI.equals(""))
             return "<font size=\"1\">" + escapeHtmlCharacters(serviceNameDisplay) + "</font>";
 
-        String displayRoutingURI = TextUtils.truncStringMiddleExact(serviceRoutingURI, 20);
+        String displayRoutingURI = TextUtils.truncStringMiddleExact(serviceRoutingURI, 18);
 
         return "<font size=\"1\">" + escapeHtmlCharacters(serviceNameDisplay) + "<br>" +
                 "[" + escapeHtmlCharacters(displayRoutingURI) + "]" + "</font>";
@@ -2337,6 +2364,28 @@ public class Utilities {
         return serviceName + "[" + serviceRoutingURI + "]";
     }
 
+    public static String getServiceDisplayStringTruncatedNoEscape(String serviceName, String serviceRoutingURI) {
+        if (serviceName == null) throw new NullPointerException("serviceName must be non null");
+        if (serviceName.equals("")) throw new IllegalArgumentException("serviceName must not be the emtpy string");
+
+        if (serviceRoutingURI == null || serviceRoutingURI.equals("")) return serviceName;
+
+        return TextUtils.truncStringMiddleExact(serviceName, Utilities.SERVICE_DISPLAY_NAME_LENGTH) +
+                "[" + TextUtils.truncStringMiddleExact(serviceRoutingURI, Utilities.ROUTING_URI_LENGTH) + "]";
+    }
+
+    public static String getServiceStringTruncatedNoEscape(String serviceName, int maxServiceNameLength) {
+        if (serviceName == null) throw new NullPointerException("serviceName must be non null");
+        if (serviceName.equals("")) throw new IllegalArgumentException("serviceName must not be the emtpy string");
+
+        return TextUtils.truncStringMiddleExact(serviceName, maxServiceNameLength);
+    }
+
+    public static String getRoutingUriStringTruncatedNoEscape(String routingUri, int maxRoutingUriLength) {
+        if (routingUri == null) return "";
+        return TextUtils.truncStringMiddleExact(routingUri, maxRoutingUriLength);
+    }
+
     /**
      * Get a display string representing the operation. If the operationName is too large it will be truncated in the
      * middle using TextUtils.truncStringMiddleExact.
@@ -2358,11 +2407,11 @@ public class Utilities {
      * See the chart definition within the jrxml files.<br>
      * The value returned is used as the Category value. Everytime this is called, a new category is being generated
      * within the chart.<br>
-     * Calls getServiceDisplayStringNotTruncated to get how the serviceName and routingURI are displayed as a string.
+     * Calls getServiceDisplayStringNotTruncatedNoEscape to get how the serviceName and routingURI are displayed as a string.
      * Uses that string to then look up the service identifier from displayStringToService, this is the value that will
      * be shown as the category value on a chart. e.g. Service1 or Service 1 etc...<br>
      * The data structure displayStringToService is created before the report is ran. The creation of this data
-     * structure must also use getServiceDisplayStringNotTruncated for creating key values. This ensures that the values
+     * structure must also use getServiceDisplayStringNotTruncatedNoEscape for creating key values. This ensures that the values
      * from the report passed to this function, when turned into a key, will <em>ALWAYS</em> match a key in
      * displayStringToService.
      * <br>
@@ -2652,10 +2701,10 @@ public class Utilities {
         int rowIndex = 0;
         int maxRows = sIdToOpMap.size();
         for (String s : serviceNames) {
-            sb.append(escapeHtmlCharacters(s));
+            sb.append(escapeHtmlCharacters(TextUtils.truncStringMiddleExact(s, Utilities.SERVICE_DISPLAY_NAME_LENGTH)));
             String operations = idToDisplayString.get(s);
             if (!operations.equals("")) {
-                sb.append(" -> ").append(operations);
+                sb.append(" -> ").append(escapeHtmlCharacters(TextUtils.truncStringMiddleExact(operations, OPERATION_STRING_MAX_SIZE)));
             } else {
                 //reports can handle a detail query with no ops supplied, implying all are selected
                 //not a feature yet in reporting UI. This handles that case

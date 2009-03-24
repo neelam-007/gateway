@@ -385,13 +385,13 @@ public class ReportApp {
         return returnSet;
     }
 
-    private LinkedHashSet<String> getServiceDisplayStrings(Connection connection,
-                                                           Pair<String, List<Object>> sqlAndParamsPair) throws Exception {
+    private LinkedHashSet<Pair<String, String>> getServiceDisplayStrings(Connection connection,
+                                                                         Pair<String, List<Object>> sqlAndParamsPair) throws Exception {
         try {
             PreparedStatementDataSource psds = new PreparedStatementDataSource(connection);
             psds.configure(sqlAndParamsPair.getKey(), sqlAndParamsPair.getValue());
 
-            LinkedHashSet<String> set = new LinkedHashSet<String>();
+            LinkedHashSet<Pair<String, String>> set = new LinkedHashSet<Pair<String, String>>();
             while (psds.next()) {
                 String serviceName = (String) psds.getFieldValue(new JRFieldAdapter() {
                     public String getName() {
@@ -405,8 +405,7 @@ public class ReportApp {
                     }
                 });
 
-                String service = Utilities.getServiceDisplayStringNotTruncatedNoEscape(serviceName, routingUri);
-                set.add(service);
+                set.add(new Pair<String, String>(serviceName, routingUri));
             }
             return set;
 
@@ -574,7 +573,6 @@ public class ReportApp {
                                           Pair<String, List<Object>> sqlAndParamsPair, LinkedHashMap<String, List<ReportApi.FilterPair>> keysToFilterPairs) throws Exception {
         Connection connection = getConnection(prop);
 
-        LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
         LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
 
         Document transformDoc = null;
@@ -587,21 +585,30 @@ public class ReportApp {
             for (String s : mappingValuesLegend) {
                 String group = "Group " + index;
                 //System.out.println("Group: " + group+" s: " + s);
-                groupToDisplayString.put(group, s);
+//                groupToDisplayString.put(group, s);
                 displayStringToGroup.put(s, group);
                 index++;
             }
 
             transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         } else {
-            LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sqlAndParamsPair);
+            LinkedHashSet<Pair<String, String>> serviceValues = getServiceDisplayStrings(connection, sqlAndParamsPair);
+            LinkedHashMap<String, Pair<String, String>> groupToDisplayString = new LinkedHashMap<String, Pair<String, String>>();
+
             //We need to look up the mappingValues from both the group value and also the display string value
             int index = 1;
-            for (String s : serviceValues) {
-                String service = "Service " + index;
-                //System.out.println("Service: " + service+" s: " + s);
-                groupToDisplayString.put(service, s);
-                displayStringToGroup.put(s, service);
+            for (Pair<String, String> pair : serviceValues) {
+                String shortServiceName = "Service " + index;
+                //System.out.println("Service: " + shortServiceName+" s: " + pair);
+//                groupToDisplayString.put(shortServiceName, TextUtils.truncStringMiddleExact(pair, 150));
+                //groupToDisplayString needs truncated values
+
+                String serviceTrunc = Utilities.getServiceStringTruncatedNoEscape(pair.getKey(), Utilities.SERVICE_DISPLAY_NAME_LENGTH);
+                String routingTrunc = Utilities.getRoutingUriStringTruncatedNoEscape(pair.getValue(), Utilities.ROUTING_URI_LENGTH);
+                groupToDisplayString.put(shortServiceName, new Pair<String, String>(serviceTrunc, routingTrunc));
+                //displayStringToGroup must not have truncated values
+                String displayName = Utilities.getServiceDisplayStringNotTruncatedNoEscape(pair.getKey(), pair.getValue());
+                displayStringToGroup.put(displayName, shortServiceName);
                 index++;
             }
             transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(groupToDisplayString).getDocument();
@@ -687,7 +694,6 @@ public class ReportApp {
 
         Connection connection = getConnection(prop);
         Document transformDoc = null;
-        LinkedHashMap<String, String> groupToDisplayString = new LinkedHashMap<String, String>();
         LinkedHashMap<String, String> displayStringToGroup = new LinkedHashMap<String, String>();
 
         if (isContextMapping && isUsingKeys) {
@@ -699,21 +705,29 @@ public class ReportApp {
             for (String s : mappingValuesLegend) {
                 String group = "Group " + index;
                 //System.out.println("Group: " + group+" s: " + s);
-                groupToDisplayString.put(group, s);
                 displayStringToGroup.put(s, group);
                 index++;
             }
 
             transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(keysToFilterPairs, distinctMappingSets).getDocument();
         } else {
-            LinkedHashSet<String> serviceValues = getServiceDisplayStrings(connection, sqlAndParamsPair);
+            LinkedHashSet<Pair<String, String>> serviceValues = getServiceDisplayStrings(connection, sqlAndParamsPair);
+            LinkedHashMap<String, Pair<String, String>> groupToDisplayString = new LinkedHashMap<String, Pair<String, String>>();
+
             //We need to look up the mappingValues from both the group value and also the display string value
             int index = 1;
-            for (String s : serviceValues) {
-                String service = "Service " + index;
-                //System.out.println("Service: " + service+" s: " + s);
-                groupToDisplayString.put(service, s);
-                displayStringToGroup.put(s, service);
+            for (Pair<String, String> pair : serviceValues) {
+                String shortServiceName = "Service " + index;
+                //System.out.println("Service: " + shortServiceName+" s: " + pair);
+//                groupToDisplayString.put(shortServiceName, TextUtils.truncStringMiddleExact(pair, 150));
+                //groupToDisplayString needs truncated values
+
+                String serviceTrunc = Utilities.getServiceStringTruncatedNoEscape(pair.getKey(), Utilities.SERVICE_DISPLAY_NAME_LENGTH);
+                String routingTrunc = Utilities.getRoutingUriStringTruncatedNoEscape(pair.getValue(), Utilities.ROUTING_URI_LENGTH);
+                groupToDisplayString.put(shortServiceName, new Pair<String, String>(serviceTrunc, routingTrunc));
+                //displayStringToGroup must not have truncated values
+                String displayName = Utilities.getServiceDisplayStringNotTruncatedNoEscape(pair.getKey(), pair.getValue());
+                displayStringToGroup.put(displayName, shortServiceName);
                 index++;
             }
             transformDoc = RuntimeDocUtilities.getPerfStatAnyRuntimeDoc(groupToDisplayString).getDocument();

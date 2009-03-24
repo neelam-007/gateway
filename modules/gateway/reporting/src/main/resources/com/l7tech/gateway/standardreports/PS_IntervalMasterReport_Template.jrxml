@@ -933,7 +933,7 @@ new Double(new Double((1 - (($V{AUTHORIZED_SUM_MAPPING}.doubleValue() - $V{COMPL
                             <font/>
                         </textElement>
                         <textFieldExpression class="java.lang.String">
-                            <![CDATA["Service: "+Utilities.getServiceDisplayStringNotTruncatedNoEscape($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
+                            <![CDATA["Service: "+Utilities.getServiceDisplayStringTruncatedNoEscape($F{SERVICE_NAME},$F{ROUTING_URI})]]></textFieldExpression>
                     </textField>
                 </frame>
                 <frame>
