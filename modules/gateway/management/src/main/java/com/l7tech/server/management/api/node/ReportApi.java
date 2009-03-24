@@ -559,6 +559,7 @@ public interface ReportApi {
          * @param equalsOnly if true it specifies that the displayValue will only be used in an = sql constraint, in which
          *                   case the values _ and % should not be escaped so as to not stop these characters being matched literally in
          *                   a database record
+         *                   //todo [Donal] equalsOnly is now redundant. Can be removed. It is always false. Needs a lot of testing so not doing right now
          * @return String the value to use in a sql constraint
          * @throws IllegalStateException if this method is called and isConstraintNotRequired returns true
          */

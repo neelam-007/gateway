@@ -1563,7 +1563,7 @@ new Double(new Double((1 - (($V{AUTHORIZED_SUM}.doubleValue() - $V{COMPLETED_SUM
                             <font/>
                         </textElement>
                         <textFieldExpression class="java.lang.String">
-                            <![CDATA["Operation: " + $F{SERVICE_OPERATION_VALUE}]]></textFieldExpression>
+                            <![CDATA["Operation: " + Utilities.getOperationDisplayString($F{SERVICE_OPERATION_VALUE}, Utilities.LONG_OPERATION_LENGTH)]]></textFieldExpression>
                     </textField>
                 </frame>
             </band>

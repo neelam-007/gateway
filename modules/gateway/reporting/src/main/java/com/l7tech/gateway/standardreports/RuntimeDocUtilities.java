@@ -23,7 +23,7 @@ public class RuntimeDocUtilities {
     static final int FIELD_HEIGHT = 18;
     static final int RIGHT_MARGIN_WIDTH = 15;
     static final int LEFT_MARGIN_WIDTH = RIGHT_MARGIN_WIDTH;
-    static final int DATA_COLUMN_WIDTH = 160;
+    static final int DATA_COLUMN_WIDTH = 180;
     static final int SUB_INTERVAL_STATIC_WIDTH = 113;
     static final int MAPPING_VALUE_FIELD_HEIGHT = 36;
     //service text field is 5 from left margin
@@ -392,8 +392,8 @@ public class RuntimeDocUtilities {
         xPos += JasperDocument.TOTAL_COLUMN_WIDTH;
 
         int docTotalWidth = xPos + LEFT_MARGIN_WIDTH + RIGHT_MARGIN_WIDTH;
-        int frameWidth = xPos;
         jasperDoc.addIntElement(JasperDocument.ElementName.PAGE_WIDTH, docTotalWidth);
+        int frameWidth = xPos;
         jasperDoc.addIntElement(JasperDocument.ElementName.COLUMN_WIDTH, frameWidth);
         jasperDoc.addIntElement(JasperDocument.ElementName.FRAME_WIDTH, frameWidth);
 

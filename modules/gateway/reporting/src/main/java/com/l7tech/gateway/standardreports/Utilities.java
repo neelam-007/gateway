@@ -50,10 +50,12 @@ public class Utilities {
     private static final long WEEK_IN_MILLISECONDS = 604800000L;
     private static final long MONTH_32DAYS_IN_MILLISECONDS = 2764800000L;
     public static final Integer MAPPING_KEY_MAX_SIZE = 100;
-    public static final Integer USAGE_HEADING_VALUE_MAX_SIZE = 30;
-    public static final int SERVICE_DISPLAY_NAME_LENGTH = 80;
+    private static final int SHORT_OPERATION_LENGTH = 20;
+    public static final int LONG_OPERATION_LENGTH = 60;
+    public static final Integer USAGE_HEADING_VALUE_MAX_SIZE = SHORT_OPERATION_LENGTH;
+    public static final int SERVICE_DISPLAY_NAME_LENGTH = 60;
 
-    private static final int OPERATION_STRING_MAX_SIZE = 50;
+    private static final int OPERATION_STRING_MAX_SIZE = 40;
     public static final int ROUTING_URI_LENGTH = OPERATION_STRING_MAX_SIZE;
 
     public static enum UNIT_OF_TIME {
@@ -696,8 +698,8 @@ public class Utilities {
      *         parameters to be added to the SQL. Each entry in List<Object> matches the index of a ? character in the sql
      *         <p/>
      *         <pre>
-     *                         AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                         </pre>
+     *                                 AUTHENTICATED_USER | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                                 </pre>
      *         Note operation is not included. It is a mapping key under the covers but it has special meaning. Notice how
      *         authenticated_user is returned. To the user and to business logic, authenticated user is a normal mapping key
      */
@@ -785,8 +787,8 @@ public class Utilities {
      *         parameters to be added to the SQL. Each entry in List<Object> matches the index of a ? character in the sql
      *         <p/>
      *         <pre>
-     *                 SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
-     *                 </pre>
+     *                         SERVICE_ID | SERVICE_NAME | ROUTING_URI | CONSTANT_GROUP | SERVICE_OPERATION_VALUE
+     *                         </pre>
      */
     public static Pair<String, List<Object>> getUsageMasterIntervalQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                                          Map<String, Set<String>> serviceIdToOperations,
@@ -874,9 +876,9 @@ public class Utilities {
      *         <p/>
      *         The sql always returns the following fields:-
      *         <pre>
-     *                 SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                 </pre>
+     *                         SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                         </pre>
      */
     public static Pair<String, List<Object>> getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                            Map<String, Set<String>> serviceIdToOperations,
@@ -983,9 +985,9 @@ public class Utilities {
      *         <p/>
      *         The sql always returns the following fields:-
      *         <pre>
-     *                 SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
-     *                 SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                 </pre>
+     *                         SERVICE_ID | SERVICE_NAME | ROUTING_URI | USAGE_SUM | CONSTANT_GROUP | AUTHENTICATED_USER |
+     *                         SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 | MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                         </pre>
      */
     public static Pair<String, List<Object>> getUsageQuery(Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                            Long serviceId,
@@ -1289,15 +1291,15 @@ public class Utilities {
      *         <p/>
      *         If isMasterQuery is true, then the sql query has the following columns:
      *         <pre>
-     *                  SERVICE_ID, SERVICE_NAME, ROUTING_URI and CONSTANT_GROUP
-     *                  </pre>
+     *                          SERVICE_ID, SERVICE_NAME, ROUTING_URI and CONSTANT_GROUP
+     *                          </pre>
      *         If isMasterQuery is false, it has the following columns:-
      *         <pre>
-     *                  SERVICE_ID | SERVICE_NAME | ROUTING_URI | ATTEMPTED | COMPLETED | AUTHORIZED | FRONT_SUM | BACK_SUM | THROUGHPUT
-     *                  | POLICY_VIOLATIONS | ROUTING_FAILURES | FRTM | FRTMX | FRTA   | BRTM | BRTMX | BRTA   | AP     | CONSTANT_GROUP
-     *                  | AUTHENTICATED_USER | SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 |
-     *                  MAPPING_VALUE_4 | MAPPING_VALUE_5
-     *                  </pre>
+     *                          SERVICE_ID | SERVICE_NAME | ROUTING_URI | ATTEMPTED | COMPLETED | AUTHORIZED | FRONT_SUM | BACK_SUM | THROUGHPUT
+     *                          | POLICY_VIOLATIONS | ROUTING_FAILURES | FRTM | FRTMX | FRTA   | BRTM | BRTMX | BRTA   | AP     | CONSTANT_GROUP
+     *                          | AUTHENTICATED_USER | SERVICE_OPERATION_VALUE | MAPPING_VALUE_1 | MAPPING_VALUE_2 | MAPPING_VALUE_3 |
+     *                          MAPPING_VALUE_4 | MAPPING_VALUE_5
+     *                          </pre>
      */
     public static Pair<String, List<Object>> getPerformanceStatisticsMappingQuery(boolean isMasterQuery, Long startTimeInclusiveMilli, Long endTimeInclusiveMilli,
                                                                                   Map<String, Set<String>> serviceIdToOperations,
@@ -2396,10 +2398,14 @@ public class Utilities {
      * @throws IllegalArgumentException if operation name is equal to the empty string
      */
     public static String getOperationDisplayString(String operationName) {
+        return getOperationDisplayString(operationName, SHORT_OPERATION_LENGTH);
+    }
+
+    public static String getOperationDisplayString(String operationName, int length) {
         if (operationName == null) throw new NullPointerException("operationName must be non null");
         if (operationName.equals("")) throw new IllegalArgumentException("operationName must not be the emtpy string");
 
-        return escapeHtmlCharacters(TextUtils.truncStringMiddleExact(operationName, 20));
+        return escapeHtmlCharacters(TextUtils.truncStringMiddleExact(operationName, length));
     }
 
     /**
