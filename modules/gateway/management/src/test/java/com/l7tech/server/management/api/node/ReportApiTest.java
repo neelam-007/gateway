@@ -176,10 +176,6 @@ public class ReportApiTest {
         filterValue = "Wildcard*With\'SingleQuote";
         fp = new ReportApi.FilterPair(filterValue);
 
-        expectedValue = "Wildcard%With\\'SingleQuote";
-        actualValue = fp.getFilterValue();
-        Assert.assertEquals("Filter value should equal: '" + expectedValue + "' it was: '" + actualValue + "'", expectedValue, actualValue);
-
         //Test that '%' is escaped when a wild card is used
         filterValue = "Wildcard*With%Percentage";
         fp = new ReportApi.FilterPair(filterValue);
@@ -204,15 +200,11 @@ public class ReportApiTest {
         String filterValue = "NoWildcardWith'SingleQuote";
         ReportApi.FilterPair fp = new ReportApi.FilterPair(filterValue);
 
-        String expectedValue = "NoWildcardWith\\'SingleQuote";
-        String actualValue = fp.getFilterValue();
-        Assert.assertEquals("Filter value should equal: '" + expectedValue + "' it was: '" + actualValue + "'", expectedValue, actualValue);
-
         filterValue = "NoWildcardWith_UnderScore";
         fp = new ReportApi.FilterPair(filterValue);
 
-        actualValue = fp.getFilterValue();
-        expectedValue = filterValue;
+        String actualValue = fp.getFilterValue();
+        String expectedValue = filterValue;
 
         Assert.assertEquals("Filter value should equal: '" + expectedValue + "' it was: '" + actualValue + "'", expectedValue, actualValue);
 
@@ -221,12 +213,6 @@ public class ReportApiTest {
         fp = new ReportApi.FilterPair(filterValue);
 
         expectedValue = filterValue;
-        actualValue = fp.getFilterValue();
-        Assert.assertEquals("Filter value should equal: '" + expectedValue + "' it was: '" + actualValue + "'", expectedValue, actualValue);
-
-        filterValue = "\\";
-        fp = new ReportApi.FilterPair(filterValue);
-        expectedValue = "\\\\";
         actualValue = fp.getFilterValue();
         Assert.assertEquals("Filter value should equal: '" + expectedValue + "' it was: '" + actualValue + "'", expectedValue, actualValue);
 
@@ -244,7 +230,7 @@ public class ReportApiTest {
         String filterValue = "'admin_user/%=like'1'*'";
         ReportApi.FilterPair fp = new ReportApi.FilterPair(filterValue, true);
 
-        String expectedValue = "\\'admin_user/%=like\\'1\\'*\\'";
+        String expectedValue = "'admin_user/%=like'1'*'";
         String actualValue = fp.getFilterValue();
 
         Assert.assertEquals("Filter value should equal: '" + expectedValue + "' it was: '" + actualValue + "'", expectedValue, actualValue);
