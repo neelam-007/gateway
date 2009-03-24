@@ -1532,6 +1532,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     }
 
                     Collection<GatewayApi.EntityInfo> folders = targetGatewayApi.getEntityInfo( Collections.singleton(com.l7tech.objectmodel.EntityType.FOLDER) );
+                    if (folders == null) throw new FindException("Empty list of folders retrieved from the target clusters (check gateway account permissions).");
                     ExternalEntityHeader targetFolderHeader = null;
                     for ( GatewayApi.EntityInfo info : folders ) {
                         if ( targetFolderId.equals( info.getId() ) ) {
