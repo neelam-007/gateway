@@ -4,10 +4,10 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.audit.AuditRecord;
 import com.l7tech.gateway.common.audit.SystemAuditRecord;
+import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.gateway.common.security.rbac.AttemptedDeleteSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedReadSpecific;
 import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.security.rbac.AttemptedDeleteAll;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.server.ServerConfig;
@@ -507,7 +507,8 @@ public class Monitor extends EsmStandardWebPage {
             jsonDataMap.put("entities", entitiesList);
 
             synchronized( previousPropValuesListSync ) {
-                auditEntityPropertyAlertStateChange(previousPropValuesList, entitiesList);
+                // Removed audit upon state transition per Bug 6995:
+                // auditEntityPropertyAlertStateChange(previousPropValuesList, entitiesList);
                 previousPropValuesList = entitiesList;
             }
 

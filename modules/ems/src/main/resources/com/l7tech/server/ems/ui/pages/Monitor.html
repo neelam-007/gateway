@@ -1728,10 +1728,12 @@
                                 <tr>
                                     <th class="top" rowspan="3">Audit:</th>
                                     <td>
-                                        <input id="auditUponAlertStateCheckBox" type="checkbox"/> <label for="auditUponAlertStateCheckBox">When an alert is triggered</label>
-                                        <br/>
-                                        <input id="auditUponNormalStateCheckBox" type="checkbox"/> <label for="auditUponNormalStateCheckBox">When an alert no longer applies</label>
-                                        <br/>
+                                        <div style="display: none;"> <!-- Removed audit upon state transition per Bug 6995 -->
+                                            <input id="auditUponAlertStateCheckBox" type="checkbox"/> <label for="auditUponAlertStateCheckBox">When an alert is triggered</label>
+                                            <br/>
+                                            <input id="auditUponNormalStateCheckBox" type="checkbox"/> <label for="auditUponNormalStateCheckBox">When an alert no longer applies</label>
+                                            <br/>
+                                        </div>
                                         <input id="auditUponNotificationCheckBox" type="checkbox"/> <label for="auditUponNormalStateCheckBox">When a notification is sent</label>
                                     </td>
                                 </tr>
