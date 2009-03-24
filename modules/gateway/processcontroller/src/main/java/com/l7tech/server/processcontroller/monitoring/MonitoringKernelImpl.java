@@ -432,12 +432,14 @@ public class MonitoringKernelImpl implements MonitoringKernel {
         private InOut inOut;
         private Long sinceWhen;
         private Long logged;
+        private Long notified;
 
         private Tolerance(Tolerance prevTolerance) {
             if (prevTolerance == null) return;
             this.inOut = prevTolerance.inOut;
             this.sinceWhen = prevTolerance.sinceWhen;
             this.logged = prevTolerance.logged;
+            this.notified = prevTolerance.notified;
         }
     }
 
@@ -524,9 +526,13 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                         log = prevTolerance.logged != null && now - prevTolerance.logged >= TOLERANCE_LOG_INTERVAL;
 
                         // Only notify if last attempt failed.
-                        final NotificationState nstate = nstates.get(triggerOid);
-                        final NotificationAttempt attempt = nstate == null ? null : nstate.getLastAttempt();
-                        notify = nstate == null || attempt == null || attempt.getStatus() == NotificationAttempt.StatusType.FAILED;
+                        if (prevTolerance.notified == null && prevTolerance.sinceWhen != null) {
+                            final NotificationState nstate = nstates.get(triggerOid);
+                            final NotificationAttempt attempt = nstate == null ? null : nstate.getLastAttempt();
+                            notify = nstate == null || attempt == null || attempt.getStatus() == NotificationAttempt.StatusType.FAILED;
+                        } else {
+                            notify = false;
+                        }
                     }
 
                     if (log) {
@@ -536,6 +542,7 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
                     if (notify) {
                         PropertyCondition cond = conditions.get(property);
+                        newTolerance.notified = now;
                         if (cond == null) {
                             conditions.put(property, new PropertyCondition(property, ptrigger.getComponentId(), currentInOut, when, Collections.singleton(triggerOid), sampledValue));
                         } else {
