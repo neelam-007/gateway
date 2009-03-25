@@ -42,6 +42,7 @@
         }
 
         function init() {
+            document.getElementById('loginPanel').style.display = '';
             loginButton = new YAHOO.widget.Button('submit', {
                 onclick : {fn : onLogin},
                 type : 'push'
@@ -52,7 +53,6 @@
     </script>
 </head>
 <body class="yui-skin-sam" onload="init();">
-<noscript><div class="javascriptWarning">This page requires JavaScript. Your browser either does not have JavaScript support or has disabled it.</div></noscript>
 <table width="100%">
     <tr>
         <td>
@@ -69,7 +69,16 @@
             <div class="divider"><img src="../images/spacer.png" alt="" /></div>
             <div class="content">
                 <div class="center">     <center>
-                    <table height="420" width="340">
+                    <noscript>
+                        <div class="javascriptWarning" style="margin: 50px;">
+                            Enterprise Service Manager requires JavaScript.
+                            <br/>
+                            Your browser either does not support JavaScript or it has been disabled.
+                            <br/>
+                            Please contact your system administrator.
+                        </div>
+                    </noscript>
+                    <table id="loginPanel" height="420" width="340" style="display: none;">
                         <tr>
                             <td>
                                 <div class="panel">
