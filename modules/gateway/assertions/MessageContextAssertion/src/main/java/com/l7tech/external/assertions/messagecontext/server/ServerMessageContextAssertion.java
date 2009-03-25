@@ -124,7 +124,8 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
      */
     private void processMappingValues(MessageContextMapping checkedMapping, PolicyEnforcementContext context) {
         String value = checkedMapping.getValue();
-        if (value == null || value.trim().equals("")) return;
+        if (value == null) return;
+        else value = value.trim();
 
         MessageContextMapping.MappingType mappingType = checkedMapping.getMappingType();
         if (mappingType == MessageContextMapping.MappingType.IP_ADDRESS) {
@@ -140,9 +141,12 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
         }
 
         // Check if the value is extreme long.
-        if (value != null && value.length() > 255) {
-            value = value.substring(0, 255);
-            auditor.logAndAudit(AssertionMessages.MCM_TOO_LONG_VALUE, checkedMapping.getKey());
+        if (value != null) {
+            value = value.trim();
+            if (value.length() > 255) {
+                value = value.substring(0, 255);
+                auditor.logAndAudit(AssertionMessages.MCM_TOO_LONG_VALUE, checkedMapping.getKey());
+            }
         }
 
         checkedMapping.setValue(value);

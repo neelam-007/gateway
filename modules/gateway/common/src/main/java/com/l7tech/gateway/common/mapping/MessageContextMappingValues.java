@@ -108,7 +108,7 @@ public class MessageContextMappingValues extends PersistentEntityImp {
     }
 
     public void setMapping1_value(String mapping1_value) {
-        this.mapping1_value = mapping1_value;
+        this.mapping1_value = mapping1_value != null? mapping1_value.trim() : null;
     }
 
     @Column(name="mapping2_value", length= MAX_VALUE_LENGTH)
@@ -117,7 +117,7 @@ public class MessageContextMappingValues extends PersistentEntityImp {
     }
 
     public void setMapping2_value(String mapping2_value) {
-        this.mapping2_value = mapping2_value;
+        this.mapping2_value = mapping2_value != null? mapping2_value.trim() : null;
     }
 
     @Column(name="mapping3_value", length= MAX_VALUE_LENGTH)
@@ -126,7 +126,7 @@ public class MessageContextMappingValues extends PersistentEntityImp {
     }
 
     public void setMapping3_value(String mapping3_value) {
-        this.mapping3_value = mapping3_value;
+        this.mapping3_value = mapping3_value != null? mapping3_value.trim() : null;
     }
 
     @Column(name="mapping4_value", length= MAX_VALUE_LENGTH)
@@ -135,7 +135,7 @@ public class MessageContextMappingValues extends PersistentEntityImp {
     }
 
     public void setMapping4_value(String mapping4_value) {
-        this.mapping4_value = mapping4_value;
+        this.mapping4_value = mapping4_value != null? mapping4_value.trim() : null;
     }
 
     @Column(name="mapping5_value", length= MAX_VALUE_LENGTH)
@@ -144,7 +144,7 @@ public class MessageContextMappingValues extends PersistentEntityImp {
     }
 
     public void setMapping5_value(String mapping5_value) {
-        this.mapping5_value = mapping5_value;
+        this.mapping5_value = mapping5_value != null? mapping5_value.trim() : null;
     }
 
     public String[] obtainValues() {
