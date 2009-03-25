@@ -29,6 +29,7 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,6 +43,7 @@ public class BootProcess
 {
     private static final Logger logger = Logger.getLogger(BootProcess.class.getName());
     private boolean wasStarted = false;
+    private final AtomicBoolean running = new AtomicBoolean(false);
 
     /**
      * Constructor for bean usage via subclassing.
@@ -51,6 +53,7 @@ public class BootProcess
 
     private void deleteOldAttachments(File attachmentDir) {
         File[] goners = attachmentDir.listFiles(new FileFilter() {
+            @Override
             public boolean accept(File pathname) {
                 String local = pathname.getName();
                 return local != null && local.startsWith("att") && local.endsWith(".part");
@@ -96,27 +99,33 @@ public class BootProcess
             component.start();
         }
 
+        running.set(true);
         getApplicationContext().publishEvent(new Started(this, Component.GW_SERVER, ipAddress));
         logger.info("Boot process complete.");
     }
 
     public void stop() throws LifecycleException {
-        getApplicationContext().publishEvent(new Stopping(this, Component.GW_SERVER, ipAddress));
+        if ( running.get() ) {
+            getApplicationContext().publishEvent(new Stopping(this, Component.GW_SERVER, ipAddress));
 
 
-        logger.info("Stopping server components");
+            logger.info("Stopping server components");
 
-        List<ServerComponentLifecycle> stnenopmocDerevocsid = new ArrayList<ServerComponentLifecycle>();
-        stnenopmocDerevocsid.addAll(getDiscoveredComponents());
-        Collections.reverse(stnenopmocDerevocsid);
+            List<ServerComponentLifecycle> stnenopmocDerevocsid = new ArrayList<ServerComponentLifecycle>();
+            stnenopmocDerevocsid.addAll(getDiscoveredComponents());
+            Collections.reverse(stnenopmocDerevocsid);
 
-        for (ServerComponentLifecycle component : stnenopmocDerevocsid) {
-            logger.info("Stopping discovered component " + component);
-            component.stop();
+            for (ServerComponentLifecycle component : stnenopmocDerevocsid) {
+                logger.info("Stopping discovered component " + component);
+                component.stop();
+            }
+
+            running.set(false);
+            getApplicationContext().publishEvent(new Stopped(this, Component.GW_SERVER, ipAddress));
+            logger.info("Stopped.");
+        } else {
+            logger.info("Stopped.");
         }
-
-        getApplicationContext().publishEvent(new Stopped(this, Component.GW_SERVER, ipAddress));
-        logger.info("Stopped.");
     }
 
     public void close() throws LifecycleException {
@@ -147,6 +156,7 @@ public class BootProcess
     /**
      * Invoked by a BeanFactory on destruction of a singleton.
      */
+    @Override
     public void destroy() {
         try {
             stop();

@@ -158,6 +158,17 @@ public class GatewayBoot {
         if (!running.get())
             return;
 
+        final int shutdownDelay = ServerConfig.getInstance().getIntProperty("ssg.shutdownDelay", 3);
+        logger.info("Starting shutdown.");
+        stopBootProcess();
+        try {
+            for ( int i=0; i<shutdownDelay; i++ ) {
+                logger.info("Continuing shutdown in " +(shutdownDelay-i)+ "s.");
+                Thread.sleep(1000);
+            }
+        } catch ( InterruptedException e ) {
+            logger.info("Continuing shutdown (interrupted).");                        
+        }
         applicationContext.close();
         running.set(false);
     }
@@ -232,6 +243,15 @@ public class GatewayBoot {
         BootProcess boot = (BootProcess)applicationContext.getBean("ssgBoot", BootProcess.class);
         boot.start();
         return boot.getIpAddress();
+    }
+
+    private void stopBootProcess() {
+        try {
+            BootProcess boot = (BootProcess)applicationContext.getBean("ssgBoot", BootProcess.class);
+            boot.stop();
+        } catch ( Exception e ) {
+            logger.log( Level.WARNING, "Error shutting down boot process '"+ExceptionUtils.getMessage(e)+"'.", e );
+        }
     }
 
     private void startListeners(String ipAddress) {
