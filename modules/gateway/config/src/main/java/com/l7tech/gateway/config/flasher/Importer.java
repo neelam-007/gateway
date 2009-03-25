@@ -506,7 +506,8 @@ class Importer extends ImportExportUtility {
                 while ((line = omitBufferedReader.readLine()) != null) {
                     if (!line.startsWith("#")) {//ignore comments
                         String tableName = line.trim();
-                        if (!omitTableList.contains(tableName)) {//no duplicates
+                        if (!"".equals(tableName) && !omitTableList.contains(tableName)) {//no duplicates and no empty table names
+                            logger.finest("Table '" + tableName + "' will be excluded.");
                             omitTableList.add(tableName);
                         }
                     }
