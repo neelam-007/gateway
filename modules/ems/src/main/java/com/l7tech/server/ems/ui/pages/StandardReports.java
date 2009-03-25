@@ -643,7 +643,7 @@ public class StandardReports extends EsmStandardWebPage {
                     // Creating cluster client and getting entity info are only for the validation purpose.
                     GatewayClusterClient clusterClient = gatewayClusterClientManager.getGatewayClusterClient(ssgClusterGuid, getUser());
                     clusterClient.getEntityInfo(Arrays.asList(EntityType.FOLDER));
-                } catch (GatewayNetworkException e) {
+                } catch (FailoverException e) {
                     warningMessage = "SSG Cluster Not Available";
                 } catch (GatewayNotMappedException e) {
                     warningMessage = "No Access Account";

@@ -10,6 +10,7 @@ import com.l7tech.server.ems.enterprise.SsgClusterManager;
 import com.l7tech.server.ems.gateway.GatewayContext;
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayException;
+import com.l7tech.server.ems.gateway.FailoverException;
 import com.l7tech.server.management.api.node.ReportApi;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -97,6 +98,8 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
                 throw new ReportException( "Cannot contact gateway '"+(host+":"+port)+"'.", ce );
             }
             throw sfe;
+        } catch ( FailoverException fo ) {
+            throw new ReportException("Cluster unavailable.", fo);
         } catch ( GatewayException ge ) {
             throw new ReportException( "Error submitting report generation to gateway '"+(host+":"+port)+"'.", ge );
         } catch ( ReportApi.ReportException re ) {
@@ -252,6 +255,8 @@ public class ReportServiceImpl implements InitializingBean, ReportService {
                         } else{
                             logger.log( Level.WARNING, "Error getting status for report '"+report.getSubmissionId()+"'.", sfe );
                         }
+                    } catch ( FailoverException fo ) {
+                        logger.log( Level.FINE, "Cluster unavailable: '" + host + "', " + ExceptionUtils.getMessage(fo), ExceptionUtils.getDebugException(fo));
                     }
 
                     try {

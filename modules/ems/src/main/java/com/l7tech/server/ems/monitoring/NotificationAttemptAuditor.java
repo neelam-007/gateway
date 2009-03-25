@@ -16,6 +16,7 @@ import com.l7tech.server.ems.enterprise.SsgNodeManager;
 import com.l7tech.server.ems.gateway.GatewayContextFactory;
 import com.l7tech.server.ems.gateway.GatewayException;
 import com.l7tech.server.ems.gateway.ProcessControllerContext;
+import com.l7tech.server.ems.gateway.FailoverException;
 import com.l7tech.server.management.api.monitoring.NotificationAttempt;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
@@ -111,6 +112,8 @@ public class NotificationAttemptAuditor implements InitializingBean, Application
                     if ( !ProcessControllerContext.isNetworkException(e) && !ProcessControllerContext.isConfigurationException(e) ) {
                         logger.log(Level.WARNING, "Unable to connect to process controller for node " + node.getIpAddress() + " to collect notifications: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     }
+                } catch (FailoverException fo) {
+                    logger.log(Level.WARNING, "Unable to connect to process controller for node " + node.getIpAddress() + " to collect notifications: " + ExceptionUtils.getMessage(fo), ExceptionUtils.getDebugException(fo));
                 }
             }
         });

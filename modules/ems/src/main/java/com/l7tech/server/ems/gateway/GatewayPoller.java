@@ -150,6 +150,8 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                                     } else {
                                         logger.log( Level.WARNING, "Gateway error when polling gateways '"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe) );
                                     }
+                                } catch (FailoverException fo) {
+                                    logger.log( Level.WARNING, "Gateway error when polling gateways '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
                                 }
                             }
                         }
@@ -213,6 +215,8 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                                         throw sfe;
                                     }
                                     skipStatusUpdate = true;
+                                } catch ( FailoverException fo ) {
+                                    logger.log( Level.FINE, "Gateway connection failed for gateway '"+host+":"+port+"'." );
                                 }
 
                                 // Periodically update SSG Nodes.
@@ -274,6 +278,8 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                                 } else{
                                     logger.log( Level.WARNING, "Gateway error when polling gateways '"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe) );
                                 }
+                            } catch ( FailoverException fo ) {
+                                logger.log( Level.WARNING, "Gateway error when polling gateways '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
                             } finally {
                                 if ( !skipStatusUpdate ) {
                                     // don't change any registration details, since the cluster is not
@@ -398,6 +404,8 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
             } else{
                 logger.log( Level.WARNING, "Gateway error when polling gateways", sfe );
             }
+        } catch ( FailoverException fo ) {
+            logger.log( Level.WARNING, "Gateway error when polling gateways", fo );
         } catch (GatewayException e) {
             logger.log( Level.WARNING, "Error when polling gateways", e );
         } catch (FindException fe) {
@@ -418,6 +426,8 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                     if ( !GatewayContext.isNetworkException(sfe2) ) {
                         logger.log( Level.FINE, "Error checking gateway status using gateway api for  '"+host+"'.", ExceptionUtils.getDebugException(sfe2)  );
                     }
+                } catch ( FailoverException fo2 ) {
+                    logger.log( Level.FINE, "Error checking gateway status using gateway api for  '"+host+"'.", ExceptionUtils.getDebugException(fo2)  );
                 }
 
             }
@@ -476,6 +486,8 @@ public class GatewayPoller implements InitializingBean, ApplicationListener {
                 if ( !GatewayContext.isNetworkException(sfe) && !GatewayContext.isConfigurationException(sfe)) {
                     logger.log( Level.WARNING, "Error fetching DB information for node '"+node.getName()+"', ip '"+node.getIpAddress()+"' message is '"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe) );
                 }
+            } catch ( FailoverException fo ) {
+                logger.log( Level.WARNING, "Error fetching DB information for node '"+node.getName()+"', ip '"+node.getIpAddress()+"' message is '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
             }
         }
 

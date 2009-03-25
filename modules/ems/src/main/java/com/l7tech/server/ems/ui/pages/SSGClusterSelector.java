@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ems.enterprise.*;
 import com.l7tech.server.ems.gateway.GatewayContext;
+import com.l7tech.server.ems.gateway.FailoverException;
 import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.user.UserPropertyManager;
 import org.apache.wicket.spring.injection.annot.SpringBean;
@@ -72,6 +73,8 @@ public class SSGClusterSelector extends EsmBaseWebPage {
                         logger.warning(e.toString());
                         return new JSONException(e);
                     }
+                } catch (FailoverException fo) {
+                    return new JSONException(fo);
                 } catch (FindException fe) {
                     logger.log( Level.WARNING, "Error loading enterprise folders.", fe );
                     return new JSONException(new Exception("Error loading folders.", fe));

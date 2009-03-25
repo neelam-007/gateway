@@ -40,7 +40,7 @@ public class SSGClusterContentSelector extends EsmBaseWebPage {
             public Object getData() {
                 try {
                     return buildSsgClusterContent();
-                } catch (GatewayNetworkException e) {
+                } catch (FailoverException e) {
                     return new JSONMessage("Cluster not available.");                        
                 } catch (GatewayNotMappedException e) {
                     return new JSONMessage("No access account.");

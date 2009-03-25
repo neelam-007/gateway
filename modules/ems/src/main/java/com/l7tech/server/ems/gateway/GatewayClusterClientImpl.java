@@ -242,7 +242,7 @@ class GatewayClusterClientImpl implements GatewayClusterClient {
             }
         }
 
-        throw new GatewayNetworkException("Unable to find any working cluster node to talk to: " + ExceptionUtils.getMessage(lastNetworkException), lastNetworkException);
+        throw new FailoverException("Unable to find any working cluster node to talk to: " + ExceptionUtils.getMessage(lastNetworkException), lastNetworkException);
     }
 
     private <R> R callWithFailover(GatewayContextUser<R> contextUser) throws Throwable {

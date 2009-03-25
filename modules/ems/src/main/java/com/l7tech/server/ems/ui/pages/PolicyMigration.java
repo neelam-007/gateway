@@ -135,10 +135,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                     }
                 } catch ( FindException fe ) {
                     logger.log( Level.WARNING, "Unexpected error when loading previous migration.", fe );
-                    String failureMessage = ExceptionUtils.getMessage(fe);
-                    YuiDialog resultDialog = new YuiDialog("dialog", "Error Loading Previous Migration", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
-                    dialogContainer.replace( resultDialog );
-                    ajaxRequestTarget.addComponent( dialogContainer );
+                    popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Migration", ExceptionUtils.getMessage(fe));
                 }
             }
         };
@@ -185,26 +182,16 @@ public class PolicyMigration extends EsmStandardWebPage {
                         updateDependencies( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel );
                         addDependencyOptions( dependenciesContainer, dependencyRefreshContainers, candidateModel, searchModel, mappingModel, dependencySummaryModel, true );
 
-                        YuiDialog resultDialog = new YuiDialog("dialog", "Loaded Previous Mappings", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), "Loaded " +(before-after)+ " previous mappings."), null);
-                        dialogContainer.replace( resultDialog );
-                        ajaxRequestTarget.addComponent( dialogContainer );
+                        popupCloseDialog(dialogContainer, ajaxRequestTarget, "Loaded Previous Mappings", "Loaded " +(before-after)+ " previous mappings.");
                         ajaxRequestTarget.addComponent( dependenciesContainer );
                     } else {
-                        YuiDialog resultDialog = new YuiDialog("dialog", "Previous Mappings Not Loaded", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), "No previous mappings were found."), null);
-                        dialogContainer.replace( resultDialog );
-                        ajaxRequestTarget.addComponent( dialogContainer );
+                        popupCloseDialog(dialogContainer, ajaxRequestTarget, "Previous Mappings Not Loaded", "No previous mappings were found.");
                     }
                 } catch ( FindException fe ) {
                     logger.log( Level.WARNING, "Unexpected error when loading previous mappings.", fe );
-                    String failureMessage = ExceptionUtils.getMessage(fe);
-                    YuiDialog resultDialog = new YuiDialog("dialog", "Error Loading Previous Mappings", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
-                    dialogContainer.replace( resultDialog );
-                    ajaxRequestTarget.addComponent( dialogContainer );
+                    popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", ExceptionUtils.getMessage(fe));
                 } catch ( GatewayException ge ) {
-                    String failureMessage = ExceptionUtils.getMessage(ge);
-                    YuiDialog resultDialog = new YuiDialog("dialog", "Error Loading Previous Mappings", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
-                    dialogContainer.replace( resultDialog );
-                    ajaxRequestTarget.addComponent( dialogContainer );
+                    popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", ExceptionUtils.getMessage(ge));
                 } catch ( SOAPFaultException e ) {
                     String failureMessage;
                     if ( GatewayContext.isNetworkException( e ) ) {
@@ -215,9 +202,9 @@ public class PolicyMigration extends EsmStandardWebPage {
                         failureMessage = "Unexpected error from cluster.";
                         logger.log( Level.WARNING, "Error loading previous mappings '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
                     }
-                    YuiDialog resultDialog = new YuiDialog("dialog", "Error Loading Previous Mappings", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
-                    dialogContainer.replace( resultDialog );
-                    ajaxRequestTarget.addComponent( dialogContainer );
+                    popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", failureMessage);
+                } catch (FailoverException fo) {
+                    popupCloseDialog(dialogContainer, ajaxRequestTarget, "Error Loading Previous Mappings", ExceptionUtils.getMessage(fo));
                 }
             }
         };
@@ -351,15 +338,9 @@ public class PolicyMigration extends EsmStandardWebPage {
                     target.addComponent( dialogContainer );
                 } catch ( FindException fe ) {
                     logger.log( Level.WARNING, "Unexpected error when processing selection.", fe );
-                    String failureMessage = ExceptionUtils.getMessage(fe);
-                    YuiDialog resultDialog = new YuiDialog("dialog", "Error Identifying Dependencies", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
-                    dialogContainer.replace( resultDialog );
-                    target.addComponent( dialogContainer );
+                    popupCloseDialog(dialogContainer, target, "Error Identifying Dependencies", ExceptionUtils.getMessage(fe));
                 } catch ( GatewayException ge ) {
-                    String failureMessage = ExceptionUtils.getMessage(ge);
-                    YuiDialog resultDialog = new YuiDialog("dialog", "Error Identifying Dependencies", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
-                    dialogContainer.replace( resultDialog );
-                    target.addComponent( dialogContainer );
+                    popupCloseDialog(dialogContainer, target, "Error Identifying Dependencies", ExceptionUtils.getMessage(ge));
                 } catch ( MigrationApi.MigrationException mfe ) {
                     String failureMessage = mfe.getMessage();
                     YuiDialog resultDialog;
@@ -380,9 +361,9 @@ public class PolicyMigration extends EsmStandardWebPage {
                         failureMessage = "Unexpected error from cluster.";
                         logger.log( Level.WARNING, "Error identifiying dependencies '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
                     }
-                    YuiDialog resultDialog = new YuiDialog("dialog", "Error Identifying Dependencies", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
-                    dialogContainer.replace( resultDialog );
-                    target.addComponent( dialogContainer );
+                    popupCloseDialog(dialogContainer, target, "Error Identifying Dependencies", failureMessage);
+                } catch (FailoverException fo) {
+                    popupCloseDialog(dialogContainer, target, "Error Identifying Dependencies", ExceptionUtils.getMessage(fo));
                 }
             }
             @Override
@@ -454,9 +435,9 @@ public class PolicyMigration extends EsmStandardWebPage {
                                                 failureMessage = "Unexpected error from cluster.";
                                                 logger.log( Level.WARNING, "Error processing selection '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
                                             }
-                                            YuiDialog resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
-                                            dialogContainer.replace( resultDialog );
-                                            target.addComponent( dialogContainer );
+                                            popupCloseDialog(dialogContainer, target, "Migration Error", failureMessage);
+                                        } catch (FailoverException fo) {
+                                            popupCloseDialog(dialogContainer, target, "Could not connect to cluster", ExceptionUtils.getMessage(fo));
                                         }
                                     } else {
                                         dialogContainer.replace( new EmptyPanel("dialog") );
@@ -469,20 +450,12 @@ public class PolicyMigration extends EsmStandardWebPage {
                             target.addComponent( dialogContainer );
                         }
                     } catch ( FindException fe ) {
-                        String failureMessage = ExceptionUtils.getMessage(fe);
-                        YuiDialog resultDialog = new YuiDialog("dialog", "Error Loading Previous Mappings", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
-                        dialogContainer.replace( resultDialog );
-                        target.addComponent( dialogContainer );
+                        popupCloseDialog(dialogContainer, target, "Error Loading Previous Mappings", ExceptionUtils.getMessage(fe));
                     } catch ( GatewayException ge ) {
                         String failureMessage = ExceptionUtils.getMessage(ge);
-                        YuiDialog resultDialog = new YuiDialog("dialog", "Error Loading Previous Mappings", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
-                        dialogContainer.replace( resultDialog );
-                        target.addComponent( dialogContainer );
+                        popupCloseDialog(dialogContainer, target, "Error Loading Previous Mappings", ExceptionUtils.getMessage(ge));
                     } catch (MigrationApi.MigrationException mae) {
-                        String failureMessage = ExceptionUtils.getMessage(mae);
-                        YuiDialog resultDialog = new YuiDialog("dialog", "Error Retrieving Dependencies", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
-                        dialogContainer.replace( resultDialog );
-                        target.addComponent( dialogContainer );
+                        popupCloseDialog(dialogContainer, target, "Error Retrieving Dependencies", ExceptionUtils.getMessage(mae));
                     } catch ( MigrationFailedException mfe ) {
                         String failureMessage = mfe.getMessage();
                         YuiDialog resultDialog;
@@ -504,9 +477,9 @@ public class PolicyMigration extends EsmStandardWebPage {
                         failureMessage = "Unexpected error from cluster.";
                         logger.log( Level.WARNING, "Error during migration '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
                     }
-                    YuiDialog resultDialog = new YuiDialog("dialog", "Migration Error", YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), failureMessage), null);
-                    dialogContainer.replace( resultDialog );
-                    target.addComponent( dialogContainer );
+                    popupCloseDialog(dialogContainer, target, "Migration Error", failureMessage);
+                } catch (FailoverException fo) {
+                    popupCloseDialog(dialogContainer, target, "Could not connect to cluster.", ExceptionUtils.getMessage(fo));
                 }
             }
             @Override
@@ -660,6 +633,12 @@ public class PolicyMigration extends EsmStandardWebPage {
         return same;
     }
 
+    private void popupCloseDialog(WebMarkupContainer container, AjaxRequestTarget requestTarget, String title, String label) {
+        YuiDialog resultDialog = new YuiDialog("dialog", title, YuiDialog.Style.CLOSE, new Label(YuiDialog.getContentId(), label), null);
+        container.replace( resultDialog );
+        requestTarget.addComponent( container );
+    }
+
     private static final class PreviousMigrationModel implements Comparable, Serializable {
         private final String label;
         private final long id;
@@ -787,6 +766,8 @@ public class PolicyMigration extends EsmStandardWebPage {
                         if ( !GatewayContext.isNetworkException(sfe) && !GatewayContext.isConfigurationException(sfe) ) {
                             logger.log( Level.WARNING, "Error processing selection '"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe));
                         }
+                    } catch ( FailoverException fo ) {
+                        logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
                     } catch ( GatewayException ge ) {
                         logger.log( Level.INFO, "Error processing selection '"+ExceptionUtils.getMessage(ge)+"'.", ExceptionUtils.getDebugException(ge) );
                     } catch ( FindException fe ) {
@@ -1265,6 +1246,8 @@ public class PolicyMigration extends EsmStandardWebPage {
             if ( !GatewayContext.isNetworkException( sfe ) && !GatewayContext.isConfigurationException( sfe ) ) {
                 logger.log( Level.WARNING, "Error while gettings dependency options'"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe));
             }
+        } catch ( FailoverException fo ) {
+            logger.log( Level.INFO, "Error while gettings dependency options '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
         }
 
         return deps;
@@ -1383,6 +1366,8 @@ public class PolicyMigration extends EsmStandardWebPage {
             if ( !GatewayContext.isNetworkException( sfe ) && !GatewayContext.isConfigurationException( sfe ) ) {
                 logger.log( Level.WARNING, "Error while reloading previous migrations'"+ExceptionUtils.getMessage(sfe)+"'.", ExceptionUtils.getDebugException(sfe));
             }
+        } catch ( FailoverException fo ) {
+            logger.log( Level.INFO, "Error while reloading previous migration '"+ExceptionUtils.getMessage(fo)+"'.", ExceptionUtils.getDebugException(fo) );
         }
     }
 
