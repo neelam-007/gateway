@@ -358,8 +358,11 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         if (rows.size() == 1) return rows.get(0);
 
         // Then try to find by providerId & login
+        final String login = user.getLogin();
+        if (login == null || login.length() == 0) return null; // Bug 7003, FIP users frequently have no login
+
         rows = simpleQuery(new Pair<String, Object>(PROVIDER_COLUMN, user.getProviderId()),
-                           new Pair<String, Object>(USER_LOGIN, user.getLogin()));
+                           new Pair<String, Object>(USER_LOGIN, login));
         if (rows.size() == 1) return rows.get(0);
         if (rows.size() > 1) throw new FindException("Found more than one cert for this user");
         return null;
