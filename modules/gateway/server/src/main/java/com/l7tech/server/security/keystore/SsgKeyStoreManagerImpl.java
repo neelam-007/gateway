@@ -29,6 +29,8 @@ import java.text.MessageFormat;
  * Currently there is no way to add or remove key finders -- the table is populated during DB creation (or upgrade)
  * and rows are never added or removed (although they do change: the databytes and version columns will change as
  * individual key entries are CRUDded).
+ * <p/>
+ * Keystore IDs of -1 and 0 have a special meaning and are reserved.
  */
 public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
     protected static final Logger logger = Logger.getLogger(SsgKeyStoreManagerImpl.class.getName());
@@ -137,11 +139,11 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
 
     @Transactional(readOnly = true)
     public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException {
-        boolean mustSearchAll = preferredKeystoreId == -1;
+        boolean mustSearchAll = preferredKeystoreId == -1 || preferredKeystoreId == 0;
 
         // First look in the preferred keystore
         SsgKeyFinder alreadySearched = null;
-        if (preferredKeystoreId != -1) {
+        if (!mustSearchAll) {
 
             try {
                 alreadySearched = findByPrimaryKey(preferredKeystoreId);

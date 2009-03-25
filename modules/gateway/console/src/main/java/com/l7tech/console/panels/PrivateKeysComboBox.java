@@ -139,20 +139,31 @@ public class PrivateKeysComboBox extends JComboBox {
      * @return index of selected key; or -1 if no match
      */
     public int select(final long keystoreId, final String keyAlias) {
-        if (keystoreId == -1 || keyAlias == null) {
+        if (keyAlias == null) {
             setSelectedIndex(0);
             return 0;
         }
 
+        // Try exact match first; check for legacy keystore match only if that fails
+        int idx = findIndex(keystoreId, keyAlias, false);
+        if (idx < 0) idx = findIndex(keystoreId, keyAlias, true);
+        setSelectedIndex(idx);
+        return idx;
+    }
+
+    private int findIndex(long keystoreId, String keyAlias, boolean matchLegacy) {
         for (int i = 0; i < getItemCount(); ++ i) {
             final PrivateKeyItem item = (PrivateKeyItem)getItemAt(i);
-            if (item.keystoreId == keystoreId && item.keyAlias.equalsIgnoreCase(keyAlias)) {
-                setSelectedIndex(i);
+            if (keystoreIdMatches(keystoreId, item.keystoreId, matchLegacy) && item.keyAlias.equalsIgnoreCase(keyAlias)) {
                 return i;
             }
         }
-        setSelectedIndex(-1);
         return -1;
+    }
+
+    private static boolean keystoreIdMatches(long wantId, long id, boolean matchLegacy) {
+        // Checks for wildcard keystore ID (-1), exact match with keystore ID, or (if matchLegacy) if the key used to be in the Software Static keystore (removed for 5.0)
+        return wantId == id || wantId == -1 || (matchLegacy && wantId == 0);
     }
 
     /**

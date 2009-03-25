@@ -150,17 +150,18 @@ public class AssertionKeyAliasEditor extends JDialog {
             if (keystores != null) {
                 java.util.List<ComboEntry> comboEntries = new ArrayList<ComboEntry>();
                 ComboEntry toSelect = null;
+                final long wantId = assertion.getNonDefaultKeystoreId();
                 for (KeystoreFileEntityHeader kfeh : keystores) {
                     for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(kfeh.getOid())) {
                         ComboEntry comboEntry = new ComboEntry(kfeh.getOid(), kfeh.getName(), entry.getAlias());
                         comboEntries.add(comboEntry);
-                        if (assertion.getNonDefaultKeystoreId() == kfeh.getOid() && entry.getAlias().equalsIgnoreCase(assertion.getKeyAlias()))
+                        if ((wantId == 0 || wantId == -1 || wantId == kfeh.getOid()) && entry.getAlias().equalsIgnoreCase(assertion.getKeyAlias()))
                             toSelect = comboEntry;
                     }
                 }
                 if (toSelect == null && !assertion.isUsesDefaultKeyStore()) {
                     // Alias is configured, but it doesn't exist on this Gateway (Bug #4143)
-                    toSelect = new ComboEntry(assertion.getNonDefaultKeystoreId(), "UNRECOGNIZED", assertion.getKeyAlias());
+                    toSelect = new ComboEntry(wantId, "UNRECOGNIZED", assertion.getKeyAlias());
                     comboEntries.add(0, toSelect);
                 }
                 aliasCombo.setModel(new DefaultComboBoxModel(comboEntries.toArray()));

@@ -46,6 +46,7 @@ public interface SsgKeyStoreManager {
      *
      * @param keyAlias  the alias of the key to find.  Required.
      * @param preferredKeystoreId  the ID of a keystore to look in first, or -1 to scan all key stores.
+     *                             For compatibility with systems ugpraded from pre-5.0, an ID of zero is treated like -1.
      * @return a SignerInfo instance containing a private key and cert chain.  Never null.
      * @throws ObjectNotFoundException if the requested alias could not be found in any keystore
      * @throws FindException if there is a problem reading key data from the DB.
