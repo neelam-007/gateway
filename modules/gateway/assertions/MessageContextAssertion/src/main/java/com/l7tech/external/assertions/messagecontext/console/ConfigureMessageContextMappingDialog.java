@@ -199,7 +199,6 @@ public class ConfigureMessageContextMappingDialog extends JDialog {
         boolean valueStatusLabelVisible;
         String keyStr = keyTextField.getText();
         String valueStr = valueTextField.getText();
-        String[] varables = Syntax.getReferencedNames(valueStr!=null?valueStr:"");
 
         if (keyStr == null || keyStr.trim().equals("")) {
             keyStatusLabel.setText(resources.getString("warning.empty.key"));
@@ -215,12 +214,19 @@ public class ConfigureMessageContextMappingDialog extends JDialog {
         }
 
         String warningMsg = null;
-        for (String name: varables) {
-            warningMsg = VariableMetadata.validateName(name);
-            if (warningMsg != null) {
-                valueStatusLabel.setText(warningMsg);
-                break;
+        String[] variables;
+        try {
+            variables = Syntax.getReferencedNames(valueStr!=null?valueStr:"");
+            for (String name: variables) {
+                warningMsg = VariableMetadata.validateName(name);
+                if (warningMsg != null) {
+                    valueStatusLabel.setText(warningMsg);
+                    break;
+                }
             }
+        } catch(IllegalArgumentException e) {
+            warningMsg = e.getMessage();
+            valueStatusLabel.setText(warningMsg);
         }
         valueStatusLabelVisible = (warningMsg != null);
         okButtonEnabled = okButtonEnabled && (warningMsg == null);
