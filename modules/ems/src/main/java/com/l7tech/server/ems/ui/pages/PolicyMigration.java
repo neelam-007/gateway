@@ -452,7 +452,6 @@ public class PolicyMigration extends EsmStandardWebPage {
                     } catch ( FindException fe ) {
                         popupCloseDialog(dialogContainer, target, "Error Loading Previous Mappings", ExceptionUtils.getMessage(fe));
                     } catch ( GatewayException ge ) {
-                        String failureMessage = ExceptionUtils.getMessage(ge);
                         popupCloseDialog(dialogContainer, target, "Error Loading Previous Mappings", ExceptionUtils.getMessage(ge));
                     } catch (MigrationApi.MigrationException mae) {
                         popupCloseDialog(dialogContainer, target, "Error Retrieving Dependencies", ExceptionUtils.getMessage(mae));
@@ -1725,18 +1724,17 @@ public class PolicyMigration extends EsmStandardWebPage {
         }
 
         @Override
-        @SuppressWarnings({"RedundantIfStatement"})
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
 
             DependencyKey that = (DependencyKey) o;
 
-            if (!clusterId.equals(that.clusterId)) return false;
-            if (!id.equals(that.id)) return false;
-            if (type != that.type) return false;
-            if (! version.equals(that.version)) return false;
+            if (clusterId != null ? !clusterId.equals(that.clusterId) : that.clusterId != null) return false;
+            if (id != null ? !id.equals(that.id) : that.id != null) return false;
             if (mappingKey != null ? !mappingKey.equals(that.mappingKey) : that.mappingKey != null) return false;
+            if (type != that.type) return false;
+            if (version != null ? !version.equals(that.version) : that.version != null) return false;
 
             return true;
         }
@@ -1744,11 +1742,12 @@ public class PolicyMigration extends EsmStandardWebPage {
         @Override
         public int hashCode() {
             int result;
-            result = clusterId.hashCode();
-            result = 31 * result + type.hashCode();
-            result = 31 * result + id.hashCode();
-            result = 31 * result + version.hashCode();
+            result = (clusterId != null ? clusterId.hashCode() : 0);
+            result = 31 * result + (type != null ? type.hashCode() : 0);
+            result = 31 * result + (id != null ? id.hashCode() : 0);
+            result = 31 * result + (version != null ? version.hashCode() : 0);
             result = 31 * result + (mappingKey != null ? mappingKey.hashCode() : 0);
+            result = 31 * result + (header != null ? header.hashCode() : 0);
             return result;
         }
 
