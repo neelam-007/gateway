@@ -1,5 +1,6 @@
 package com.l7tech.server.ems.ui.pages;
 
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -12,7 +13,6 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.ResolvingComparator;
 import com.l7tech.util.TimeUnit;
-import com.l7tech.identity.User;
 import org.apache.wicket.RequestCycle;
 import org.apache.wicket.ajax.AbstractDefaultAjaxBehavior;
 import org.apache.wicket.ajax.AjaxRequestTarget;
@@ -406,6 +406,7 @@ public class StandardReports extends EsmStandardWebPage {
                 settingsProps.put(JSONConstants.GROUPINGS, jsonDataMap.get(JSONConstants.GROUPINGS));
                 settingsProps.put(JSONConstants.SUMMARY_CHART, jsonDataMap.get(JSONConstants.SUMMARY_CHART));
                 settingsProps.put(JSONConstants.SUMMARY_REPORT, jsonDataMap.get(JSONConstants.SUMMARY_REPORT));
+                settingsProps.put(JSONConstants.IS_IGNORING_PAGINATION, jsonDataMap.get(JSONConstants.IS_IGNORING_PAGINATION));
                 settingsProps.put(JSONConstants.REPORT_NAME, jsonDataMap.get(JSONConstants.REPORT_NAME));
 
                 try {
