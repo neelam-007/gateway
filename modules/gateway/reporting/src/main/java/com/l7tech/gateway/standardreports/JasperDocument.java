@@ -431,8 +431,9 @@ public final class JasperDocument {
                 cDataSection = document.createCDATASection(longExpression.getVariableString());
                 break;
             case JAVA_STRING:
-                if (markedUpCData == null || markedUpCData.equals(""))
-                    throw new NullPointerException("markedUpCData cannot be null or empty when classType represents a String");
+                //markedupcdata can be the empty string
+                if (markedUpCData == null)
+                    throw new NullPointerException("markedUpCData cannot be null when classType represents a String");
                 cDataSection = document.createCDATASection("\"" + escapeJavaSringLiteralChars(markedUpCData) + "\"");
                 break;
             default:
