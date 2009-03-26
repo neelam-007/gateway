@@ -157,7 +157,7 @@ public class ApplicationLauncher {
     /**
      * Add Jars to the system classpath.
      *
-     * TODO [steve] Investigate better method of launching applications using a child ClassLoader
+     * TODO Investigate better method of launching applications using a child ClassLoader
      */
     private static void addURLs( final Collection<URL> jarUrls ) {
 		URLClassLoader classLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();

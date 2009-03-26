@@ -33,7 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
 
 /**
- * TODO [steve] re-enable role creation for standard reports (once viewing is role, not ownership, based)
+ * TODO re-enable role creation for standard reports (once viewing is role, not ownership, based)
  */
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class StandardReportManagerImpl  extends HibernateEntityManager<StandardReport, EntityHeader> implements StandardReportManager {

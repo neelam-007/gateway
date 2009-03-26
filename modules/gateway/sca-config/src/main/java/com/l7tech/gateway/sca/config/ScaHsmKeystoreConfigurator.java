@@ -5,7 +5,6 @@ import com.l7tech.common.io.ProcUtils;
 import com.l7tech.config.client.ConfigurationException;
 import com.l7tech.gateway.hsm.sca.ScaException;
 import com.l7tech.gateway.hsm.sca.ScaManager;
-import com.l7tech.gateway.config.manager.KeystoreActionsException;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 

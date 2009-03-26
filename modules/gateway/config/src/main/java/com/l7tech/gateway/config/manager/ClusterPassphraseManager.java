@@ -62,7 +62,6 @@ public class ClusterPassphraseManager {
 
         try {
             sk = decryptKey(sharedKeyB64, sharedKeyDecryptionKey);
-            //TODO [steve] need to validate this key (decrypt a keystore?)
         } catch (GeneralSecurityException gse) {
             logger.log(Level.INFO, "Unable to decrypt shared key (incorrect password?)", ExceptionUtils.getDebugException(gse));
         }
