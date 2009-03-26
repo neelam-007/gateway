@@ -6,11 +6,16 @@ import com.l7tech.util.CausedIOException;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.logging.LogManager;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Package private constants for logging.
  */
 class LogUtils {
+
+    private static final Logger logger = Logger.getLogger( LogUtils.class.getName() );
 
     static final String DEFAULT_FILE_PATTERN_TEMPLATE = "{1}_%g_%u.log";
     static final String DEFAULT_LOG_FORMAT_STANDARD = "%1$tb %1$te, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %5$d %3$s%n%2$s: %4$s%n";
@@ -56,5 +61,20 @@ class LogUtils {
         } catch (IllegalArgumentException iae) {
             throw new CausedIOException("Invalid log file pattern '" + filePatternTemplate + "'.");
         }
+    }
+
+    static int readLoggingThreshold( final String propertyName ) {
+        int level = 0;
+
+        String levelStr = LogManager.getLogManager().getProperty( propertyName );
+        if ( levelStr != null ) {
+            try {
+                level = Level.parse( levelStr ).intValue();
+            } catch ( IllegalArgumentException iae ) {
+                logger.warning( "Ignoring invalid logging level value '"+levelStr+"' for '"+propertyName+"'." );
+            }
+        }
+
+        return level;
     }
 }

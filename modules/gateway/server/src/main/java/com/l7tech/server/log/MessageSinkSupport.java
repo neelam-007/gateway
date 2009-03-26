@@ -18,10 +18,11 @@ abstract class MessageSinkSupport implements MessageSink {
 
     //- PUBLIC
 
+    @Override
     public void message( final MessageCategory category, final LogRecord record ) {        
         if ( record != null ) {
             if ( isCategoryEnabled( category ) &&
-                 record.getLevel().intValue() >= threshold ) {
+                 record.getLevel().intValue() >= getThreshold() ) {
                 processMessage( category, record );
             }
         }

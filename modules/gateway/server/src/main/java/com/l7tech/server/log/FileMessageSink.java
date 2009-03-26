@@ -43,6 +43,20 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
         handler.publish( record );
     }
 
+    /**
+     * Threshold can be overridden locally. 
+     */
+    @Override
+    int getThreshold() {
+        int level = LogUtils.readLoggingThreshold( "sink.level" );
+
+        if ( level == 0 ) {
+            level = getThreshold();
+        }
+
+        return level;
+    }
+
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(FileMessageSink.class.getName());
@@ -80,7 +94,7 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
             int limit = parseIntWithDefault( "log file limit for " + name, filelim, 1024 ) * 1024;
             int count = parseIntWithDefault( "log file count for " + name, filenum, 2 );
             boolean append = true;
-            String formatPattern = getFormatPattern(format);
+            String formatPattern = getFormatPattern(name, format);
             int level = getThreshold();
 
             return new LogFileConfiguration( filepat, limit, count, append, level, formatPattern );
@@ -111,18 +125,23 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
 
     /**
      * Get the format pattern for the given name.
+     *
+     * The format attern can be overridden either for all sinks or per sink.
      */
-    private String getFormatPattern( final String name ) {
+    private String getFormatPattern( final String name, final String formatName ) {
         String formatPattern;
 
         // see if customized in logging properties
-        formatPattern = LogManager.getLogManager().getProperty("sink.format." + name);
+        formatPattern = LogManager.getLogManager().getProperty("sink.format." + name + "." + formatName);
+        if ( formatPattern == null ) {
+            formatPattern = LogManager.getLogManager().getProperty("sink.format." + formatName);
+        }
 
         // use default if not set
         if ( formatPattern == null ) {
-            if ( SinkConfiguration.FILE_FORMAT_RAW.equals(name) ) {
+            if ( SinkConfiguration.FILE_FORMAT_RAW.equals(formatName) ) {
                 formatPattern = LogUtils.DEFAULT_LOG_FORMAT_RAW;
-            } else if ( SinkConfiguration.FILE_FORMAT_VERBOSE.equals(name) ) {
+            } else if ( SinkConfiguration.FILE_FORMAT_VERBOSE.equals(formatName) ) {
                 formatPattern = LogUtils.DEFAULT_LOG_FORMAT_VERBOSE;
             } else {
                 formatPattern = LogUtils.DEFAULT_LOG_FORMAT_STANDARD;

@@ -133,6 +133,7 @@ public class JdkLogConfig {
 
         ServerConfig serverConfig = ServerConfig.getInstance();
         File varDir = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_VAR_DIRECTORY, true);
+        int level = LogUtils.readLoggingThreshold( "sink.level" );
         File logConfig = new File( varDir, LogUtils.LOG_SER_FILE );
         if ( logConfig.exists() ) {
             ObjectInputStream in = null;
@@ -142,7 +143,11 @@ public class JdkLogConfig {
                 if ( object instanceof List ) {
                     for ( Object item : (List) object ) {
                         if ( item instanceof LogFileConfiguration ) {
-                            logFileConfigurations.add((LogFileConfiguration) item);
+                            LogFileConfiguration config = (LogFileConfiguration) item;
+                            if ( level != 0 ) {
+                                config = new LogFileConfiguration( config, level );
+                            }
+                            logFileConfigurations.add( config );
                         }
                     }
                 }
@@ -161,7 +166,7 @@ public class JdkLogConfig {
                         SyspropUtil.getInteger(PARAM_LOG_DEFAULT_LIMIT, DEFAULT_LIMIT),
                         SyspropUtil.getInteger(PARAM_LOG_DEFAULT_COUNT, DEFAULT_COUNT),
                         SyspropUtil.getBoolean(PARAM_LOG_DEFAULT_APPEND, DEFAULT_APPEND),
-                        Level.INFO.intValue(),
+                        level != 0 ? level : Level.INFO.intValue(),
                         LogUtils.DEFAULT_LOG_FORMAT_STANDARD) );
             } catch ( IOException ioe ) {
                 // don't log while initializing logging, could use system.err?

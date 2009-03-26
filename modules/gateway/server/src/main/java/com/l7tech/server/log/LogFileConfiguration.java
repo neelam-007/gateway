@@ -14,13 +14,22 @@ public class LogFileConfiguration implements Serializable {
 
     //- PUBLIC
 
-    public LogFileConfiguration( String filepat, int limit, int count, boolean append, int level, String formatPattern  ) {
+    public LogFileConfiguration( String filepat, int limit, int count, boolean append, int level, String formatPattern ) {
         this.filepat = filepat;
         this.limit = limit;
         this.count = count;
         this.append = append;
         this.level = level;
         this.formatPattern = formatPattern;        
+    }
+
+    public LogFileConfiguration( LogFileConfiguration config, int level ) {
+        this( config.getFilepat(),
+              config.getLimit(),
+              config.getCount(),
+              config.isAppend(),
+              level,
+              config.getFormatPattern() );
     }
 
     public FileHandler buildFileHandler() throws IOException {
