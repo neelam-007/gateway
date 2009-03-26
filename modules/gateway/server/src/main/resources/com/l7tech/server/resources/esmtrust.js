@@ -11,24 +11,23 @@ function readCookie(cookieName) {
 }
 
 function copyCookie() {
-    document.forms["esmtrustform"].elements["returncookie"].value = readCookie("returncookie");
+    if (document.forms["esmtrustform"])
+        document.forms["esmtrustform"].elements["returncookie"].value = readCookie("returncookie");
 }
 
 function init() {
-    if ( document.getElementById('esminfo').value == '' ) {
-        document.getElementById('esminforow').style.display="none";
-    } else if ( document.getElementById('esminfo').value == '-' ) {
-        document.getElementById('esminforow').style.display="none";
-        document.getElementById('esmidrow').style.display="none";
-        document.getElementById('esmpemrow').style.display="none";
-        document.getElementById('esmusernamerow').style.display="none";
+    if (!document.forms["esmtrustform"])
+        return;
+    if (document.getElementById('esminfo').value == '') {
+        document.getElementById('esminforow').style.display = "none";
+    } else if (document.getElementById('esminfo').value == '-') {
+        document.getElementById('esminforow').style.display = "none";
+        document.getElementById('esmidrow').style.display = "none";
+        document.getElementById('esmpemrow').style.display = "none";
+        document.getElementById('esmusernamerow').style.display = "none";
     } else {
-        document.getElementById('esmidrow').style.display="none";
-        document.getElementById('esmpemrow').style.display="none";
-        document.getElementById('esmusernamerow').style.display="none";
-    }
-
-    if ( document.getElementById('returnurl').value == '' ) {
-        document.getElementById('cancel').style.display="none";
+        document.getElementById('esmidrow').style.display = "none";
+        document.getElementById('esmpemrow').style.display = "none";
+        document.getElementById('esmusernamerow').style.display = "none";
     }
 }
