@@ -126,6 +126,7 @@ sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf
 # SSG config user files
 %defattr(0644,ssgconfig,ssgconfig,0700)
 /home/ssgconfig
+%attr(0750,ssgconfig,ssgconfig) /home/ssgconfig/.bash_profile
 
 # Appliance migration configuration
 %attr(0644,layer7,layer7) /opt/SecureSpan/Gateway/config/backup/cfg/backup_manifest
@@ -161,13 +162,10 @@ fi
 # GEN001880
 # Update the permissions on ssgconfig's initialization files
 if [ -e /home/ssgconfig/.bash_logout ]; then
-  chmod 740 /home/ssgconfig/.bash_logout
-fi
-if [ -e /home/ssgconfig/.bash_profile ]; then
-  chmod 750 /home/ssgconfig/.bash_profile
+  chmod 640 /home/ssgconfig/.bash_logout
 fi
 if [ -e /home/ssgconfig/.bashrc ]; then
-  chmod 740 /home/ssgconfig/.bashrc
+  chmod 640 /home/ssgconfig/.bashrc
 fi
 
 if egrep -q '^ssgconfig|^layer7|^gateway' /etc/sudoers; then

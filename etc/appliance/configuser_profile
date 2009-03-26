@@ -33,6 +33,7 @@ checkForEm() {
 }
 
 doLogout() {
+    clear
     exit
 }
 
