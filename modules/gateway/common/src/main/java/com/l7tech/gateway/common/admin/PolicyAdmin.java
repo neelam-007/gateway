@@ -179,7 +179,7 @@ public interface PolicyAdmin extends AliasAdmin<PolicyAlias> {
     @Secured(stereotype=SAVE_OR_UPDATE, relevantArg=0)
     SavePolicyWithFragmentsResult savePolicy(Policy policy, boolean activateAsWell, HashMap<String, Policy> fragments) throws PolicyAssertionException, SaveException;
 
-    @Secured(stereotype = FIND_HEADERS )
+    @Secured(stereotype = FIND_ENTITIES)
     Set<Policy> findUsages(long oid) throws FindException;
 
     /**
