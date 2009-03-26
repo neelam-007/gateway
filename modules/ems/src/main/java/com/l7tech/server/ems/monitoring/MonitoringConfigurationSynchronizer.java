@@ -391,7 +391,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         operator = setup.isTriggerEnabled() ? property.getSuggestedComparisonOperator() : ComparisonOperator.FALSE;
         triggerValue = value != null ? Long.toString(value) : property.getSuggestedComparisonValue();
 
-        long maxSamplingInterval = 5000L; // TODO is this the same value from monitoring.samplingInterval.lowerLimit in emconfig.properties that default to 2 sec?
+        long maxSamplingInterval = property.getSuggestedSamplingInterval();
 
         PropertyTrigger trigger = new PropertyTrigger(property, componentId, operator, triggerValue, maxSamplingInterval);
         trigger.setOid(setup.getOid());
