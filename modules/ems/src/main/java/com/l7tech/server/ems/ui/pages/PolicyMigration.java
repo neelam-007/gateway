@@ -1540,7 +1540,7 @@ public class PolicyMigration extends EsmStandardWebPage {
                                 ExternalEntityHeader source = item.getSourceHeader();
                                 ExternalEntityHeader target = item.getTargetHeader();
 
-                                if ( source != null && target != null && item.getOperation().modifiesTarget()) {
+                                if ( source != null && target != null && item.getOperation().modifiesTarget() && source.getMappedValue() == null) {
                                     migrationMappingRecordManager.persistMapping( sourceCluster.getGuid(), source, targetCluster.getGuid(), target, true );
                                 }
                             }
