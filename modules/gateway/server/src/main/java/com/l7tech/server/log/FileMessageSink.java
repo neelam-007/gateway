@@ -51,7 +51,7 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
         int level = LogUtils.readLoggingThreshold( "sink.level" );
 
         if ( level == 0 ) {
-            level = getThreshold();
+            level = super.getThreshold();
         }
 
         return level;
