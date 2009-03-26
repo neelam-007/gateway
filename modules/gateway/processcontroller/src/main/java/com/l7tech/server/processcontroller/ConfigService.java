@@ -30,6 +30,10 @@ public interface ConfigService {
     String HOSTPROPERTIES_NODEMANAGEMENT_TRUSTSTORE_PASSWORD = "host.controller.remoteNodeManagement.truststore.password";
     String HOSTPROPERTIES_TYPE = "host.type";
     String HOSTPROPERTIES_ID = "host.id";
+    String HOSTPROPERTIES_SAMPLER_TIMEOUT_SLOW_CONNECT= "host.sampler.timeout.slow.connect";
+    String HOSTPROPERTIES_SAMPLER_TIMEOUT_SLOW_READ = "host.sampler.timeout.slow.read";
+    String HOSTPROPERTIES_SAMPLER_TIMEOUT_FAST_CONNECT= "host.sampler.timeout.fast.connect";
+    String HOSTPROPERTIES_SAMPLER_TIMEOUT_FAST_READ = "host.sampler.timeout.fast.read";
 
     String DEFAULT_REMOTE_MANAGEMENT_TRUSTSTORE_FILENAME = "remoteNodeManagementTruststore.p12";
 
@@ -87,4 +91,13 @@ public interface ConfigService {
      * @return true if the SCA should be enabled on the default node.
      */
     boolean isUseSca();
+
+    /**
+     * Get an int value from node.properties.
+     * 
+     * @param propertyName name of the property to get.  Required.
+     * @param defaultValue default value to use if property is not configured.  Required.
+     * @return the property value (or default).
+     */
+    int getIntProperty(String propertyName, int defaultValue);
 }

@@ -52,6 +52,7 @@ public class ConfigServiceImpl implements ConfigService {
     private final File applianceLibexecDirectory;
     private final File javaBinary;
     private final boolean useSca; // TODO this should go through ScaFeature
+    private final Properties hostProps;
 
     private volatile boolean responsibleForClusterMonitoring;
     private volatile MonitoringConfiguration currentMonitoringConfiguration;
@@ -111,7 +112,8 @@ public class ConfigServiceImpl implements ConfigService {
             throw new IllegalStateException("Unsupported operating system"); // TODO muddle through?
         }
 
-        String jrePath = hostProps.getProperty(HOSTPROPERTIES_JRE);
+        this.hostProps = hostProps;
+        String jrePath = this.hostProps.getProperty(HOSTPROPERTIES_JRE);
         if (jrePath == null) jrePath = System.getProperty("java.home");
         final File javaBinary = new File(new File(jrePath), "bin" + SLASH + "java");
         if (!OSDetector.isWindows()) if (!javaBinary.exists() || !javaBinary.canExecute()) throw new IllegalStateException(javaBinary.getCanonicalPath() + " is not executable");
@@ -445,6 +447,18 @@ public class ConfigServiceImpl implements ConfigService {
     @Override
     public boolean isUseSca() {
         return useSca;
+    }
+
+    @Override
+    public int getIntProperty(String propertyName, int defaultValue) {
+        Object val = hostProps.get(propertyName);
+        if (val == null) return defaultValue;
+        try {
+            return Integer.parseInt(val.toString());
+        } catch (NumberFormatException nfe) {
+            logger.log(Level.WARNING, "Bad value for node property: " + propertyName + ": " + ExceptionUtils.getMessage(nfe));
+            return defaultValue;
+        }
     }
 
     @Override

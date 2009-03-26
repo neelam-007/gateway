@@ -655,9 +655,23 @@ public class ProcessController {
         }
     }
 
-    NodeApi getNodeApi(PCNodeConfig node) {
+    public NodeApi getNodeApi(PCNodeConfig node) {
+        final int connectTimeout = configService.getIntProperty(ConfigService.HOSTPROPERTIES_SAMPLER_TIMEOUT_FAST_CONNECT, NODEAPI_CONNECT_TIMEOUT);
+        final int receiveTimeout = configService.getIntProperty(ConfigService.HOSTPROPERTIES_SAMPLER_TIMEOUT_FAST_READ, NODEAPI_RECEIVE_TIMEOUT);
+        return getNodeApi(node, receiveTimeout, connectTimeout);
+    }
+
+    public NodeApi getNodeApi(PCNodeConfig node, int receiveTimeout, int connectTimeout) {
+        String name;
+        if (node == null) {
+            name = nodeStates.keySet().iterator().next();
+            node = (PCNodeConfig) configService.getHost().getNodes().get(name);
+        } else {
+            name = node.getName();
+        }
+
         String autoUrl = null;
-        final File portfile = new File(new File(getNodeDirectory(node.getName()), "var"), "processControllerPort");
+        final File portfile = new File(new File(getNodeDirectory(name), "var"), "processControllerPort");
         if (portfile.exists()) {
             logger.info("Getting API port from " + portfile.getAbsolutePath());
             try {
@@ -681,8 +695,8 @@ public class ProcessController {
         final HTTPConduit httpConduit = (HTTPConduit)c.getConduit();
 
         final HTTPClientPolicy clientPolicy = new HTTPClientPolicy();
-        clientPolicy.setConnectionTimeout(NODEAPI_CONNECT_TIMEOUT);
-        clientPolicy.setReceiveTimeout(NODEAPI_RECEIVE_TIMEOUT);
+        clientPolicy.setConnectionTimeout(connectTimeout);
+        clientPolicy.setReceiveTimeout(receiveTimeout);
         httpConduit.setClient(clientPolicy);
 
         httpConduit.setTlsClientParameters(new TLSClientParameters() {
