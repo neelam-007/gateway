@@ -152,22 +152,22 @@ else
 fi
 
 if grep -q ^ssgconfig: /etc/passwd; then
-    #user ssgconfig already exists, but needs it's group membership modified
-    usermod -G '' -g ssgconfig ssgconfig
+    #user ssgconfig already exists, but needs its group membership modified
+    usermod -G '' -g ssgconfig -s /home/ssgconfig/.bash_profile ssgconfig
 else
-    useradd -g ssgconfig ssgconfig
+    useradd -g ssgconfig -s /home/ssgconfig/.bash_profile ssgconfig
+fi
 
-    # GEN001880
-    # Update the permissions on ssgconfig's initialization files
-    if [ -e /home/ssgconfig/.bash_logout ]; then
-      chmod 740 /home/ssgconfig/.bash_logout
-    fi
-    if [ -e /home/ssgconfig/.bash_profile ]; then
-      chmod 740 /home/ssgconfig/.bash_profile
-    fi
-    if [ -e /home/ssgconfig/.bashrc ]; then
-      chmod 740 /home/ssgconfig/.bashrc
-    fi
+# GEN001880
+# Update the permissions on ssgconfig's initialization files
+if [ -e /home/ssgconfig/.bash_logout ]; then
+  chmod 740 /home/ssgconfig/.bash_logout
+fi
+if [ -e /home/ssgconfig/.bash_profile ]; then
+  chmod 750 /home/ssgconfig/.bash_profile
+fi
+if [ -e /home/ssgconfig/.bashrc ]; then
+  chmod 740 /home/ssgconfig/.bashrc
 fi
 
 if egrep -q '^ssgconfig|^layer7|^gateway' /etc/sudoers; then
