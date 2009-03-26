@@ -383,6 +383,9 @@ public class ReportGenerator {
                 UsageSummaryAndSubReportHelper helper = new UsageSummaryAndSubReportHelper();
                 LinkedHashMap<String, String> keyToColumnName = RuntimeDocUtilities.getKeyToColumnValues(distinctMappingSets);
                 helper.setKeyToColumnMap(keyToColumnName);
+                LinkedHashMap<Integer, String> groupIndexToGroup = Utilities.getGroupIndexToGroupString(mappingValuesLegend.size());
+                helper.setIndexToGroupMap(groupIndexToGroup);
+
                 reportParams.put(ReportApi.ReportParameters.REPORT_SCRIPTLET, helper);
             } else if (reportType == ReportApi.ReportType.USAGE_INTERVAL) {
                 UsageSummaryAndSubReportHelper summaryAndSubReportHelper = new UsageSummaryAndSubReportHelper();

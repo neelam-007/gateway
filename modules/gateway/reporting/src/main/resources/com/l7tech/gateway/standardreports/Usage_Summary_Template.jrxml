@@ -27,6 +27,14 @@
     <import value="com.l7tech.gateway.standardreports.*"/>
     <template><![CDATA[$P{TEMPLATE_FILE_ABSOLUTE}]]></template>
 
+    <subDataset name="ReportTotalDataSet">
+
+
+        <field name="name" class="java.lang.String"/>
+        <field name="value" class="java.lang.Long"/>
+
+    </subDataset>
+
 
     <parameter name="REPORT_TYPE" isForPrompting="false" class="java.lang.String">
         <defaultValueExpression><![CDATA["NA"]]></defaultValueExpression>
@@ -314,16 +322,16 @@ $P{resolution}.intValue(), $P{IS_DETAIL}.booleanValue())
                             </chartLegend>
                         </chart>
                         <categoryDataset>
-                            <dataset incrementType="Group" incrementGroup="MAPPINGS">
+                            <dataset>
+                                <datasetRun subDataset="ReportTotalDataSet">
+                                    <dataSourceExpression>
+                                        <![CDATA[((UsageSummaryAndSubReportHelper)$P{REPORT_SCRIPTLET}).getChartDataSource()]]></dataSourceExpression>
+                                </datasetRun>
                             </dataset>
                             <categorySeries>
                                 <seriesExpression><![CDATA["# Successful Requests"]]></seriesExpression>
-                                <categoryExpression><![CDATA[(Utilities.getCategoryMappingDisplayString($P{DISPLAY_STRING_TO_MAPPING_GROUP}
-							 ,$F{AUTHENTICATED_USER}, $P{KEYS_TO_LIST_FILTER_PAIRS},new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2},
-							 $F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4},$F{MAPPING_VALUE_5}}))]]></categoryExpression>
-                                <valueExpression><![CDATA[((UsageSummaryAndSubReportHelper)$P{REPORT_SCRIPTLET}).getUsageChartCategoryValue(
- $F{AUTHENTICATED_USER}, new String[]{$F{MAPPING_VALUE_1}, $F{MAPPING_VALUE_2}, 
-$F{MAPPING_VALUE_3}, $F{MAPPING_VALUE_4}, $F{MAPPING_VALUE_5}}, UsageSummaryAndSubReportHelper.COLUMN_MAPPING_TOTAL)]]></valueExpression>
+                                <categoryExpression><![CDATA[$F{name}]]></categoryExpression>
+                                <valueExpression><![CDATA[$F{value}]]></valueExpression>
                                 <itemHyperlink>
                                 </itemHyperlink>
                             </categorySeries>
