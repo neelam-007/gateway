@@ -47,8 +47,10 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
         MigrationMappingRecord result;
         if (valueMapping) {
             result = findByMapping(sourceCluster, sourceEntityHeader, targetCluster, null);
-        }
-        else {
+            if (result == null) { // try reverse lookup
+                result = MigrationMappingRecord.reverse(findByMapping(targetCluster, sourceEntityHeader, sourceCluster, null));
+            }
+        } else {
             result = findByMapping(sourceCluster, sourceEntityHeader, targetCluster, null, false);
             if (result == null) { // try reverse lookup
                 result = MigrationMappingRecord.reverse(findByMapping( targetCluster, null, sourceCluster, sourceEntityHeader, true));
@@ -253,7 +255,6 @@ public class MigrationMappingRecordManagerImpl extends HibernateEntityManager<Mi
             map.put("source.entityType", sourceEntityHeader.getType());
             // use mappingKey as id for value-mappings
             map.put("source.externalId", sourceEntityHeader.getMappingKey());
-            // source version not included in mapping lookup
         }
 
         if ( targetValue != null  ) {
