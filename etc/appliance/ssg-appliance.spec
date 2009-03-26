@@ -170,19 +170,9 @@ else
     fi
 fi
 
-if grep -q ^ssgconfig /etc/sudoers; then
-    #user already exists in the sudoers file but since the paths may have changed we'll remove everything and reset
-    perl -pi.bak -e 's/^(Defaults:)?ssgconfig.*$//gs' /etc/sudoers
-fi
-
-if grep -q ^layer7 /etc/sudoers; then
-    #user already exists in the sudoers file but since the paths may have changed we'll remove everything and reset
-    perl -pi.bak -e 's/^(Defaults:)?layer7.*$//gs' /etc/sudoers
-fi
-
-if grep -q ^gateway /etc/sudoers; then
-    #user already exists in the sudoers file but since the paths have changed we'll remove everything and reset
-    perl -pi.bak -e 's/^(Defaults:)?gateway.*$//gs' /etc/sudoers
+if egrep -q '^ssgconfig|^layer7|^gateway' /etc/sudoers; then
+    #users already exist in the sudoers file but since the paths may have changed we'll remove everything and reset
+    perl -pi.bak -e 's/^(Defaults:)?(ssgconfig|layer7|gateway)\s.*$//gs' /etc/sudoers
 fi
 
 # The ssgconfig user is allowed to reboot the system, even when not at the console
@@ -292,22 +282,9 @@ if [ "$1" = "0" ] ; then
     if grep -q ^pkcs11: /etc/group; then groupdel pkcs11; fi
     if grep -q ^ssgconfig: /etc/group; then groupdel ssgconfig; fi
 
-    SSGCONFIGENTRY=`grep ^ssgconfig /etc/sudoers`
-    if [ -n "${SSGCONFIGENTRY}" ]; then
-        #remove the sudoers entry for ssgconfig
-        perl -pi.bak -e 's/^(Defaults:)?ssgconfig.*$//gs' /etc/sudoers
-    fi
-
-    SSPANENTRY=`grep ^layer7 /etc/sudoers`
-    if [ -n "${SSPANENTRY}" ]; then
-        #remove the sudoers entry for layer7
-        perl -pi.bak -e 's/^(Defaults:)?layer7.*$//gs' /etc/sudoers
-    fi
-
-    GATEWAYENTRY=`grep ^gateway /etc/sudoers`
-    if [ -n "${GATEWAYENTRY}" ]; then
-        #remove the sudoers entry for gateway
-        perl -pi.bak -e 's/^(Defaults:)?gateway.*$//gs' /etc/sudoers
+    if egrep -q '^ssgconfig|^layer7|^gateway' /etc/sudoers; then
+        #remove our users from sudoers
+        perl -pi.bak -e 's/^(Defaults:)?(ssgconfig|layer7|gateway)\s.*$//gs' /etc/sudoers
     fi
 
     GETTYS=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
