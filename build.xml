@@ -2842,6 +2842,7 @@
                 <include name="update_firewall"/>
                 <include name="gateway_control"/>
                 <include name="hardware-stats.pl"/>
+                <include name="ssgconfig_launch"/>
             </fileset>
         </copy>
 

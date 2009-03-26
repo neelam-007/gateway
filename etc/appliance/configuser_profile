@@ -4,7 +4,7 @@ set -e
 trap doLogout INT
 
 SYSWIZARD="sudo -u layer7 /opt/SecureSpan/Appliance/config/systemconfig.sh"
-CONFWIZARD="sudo -u layer7 /opt/SecureSpan/Gateway/config/ssgconfig.sh"
+CONFWIZARD="sudo -u layer7 /opt/SecureSpan/Appliance/libexec/ssgconfig_launch"
 HSMCONFIG="sudo -u layer7 /opt/SecureSpan/Appliance/config/scahsmconfig.sh"
 EMCONFWIZARD="sudo -u layer7 /opt/SecureSpan/EnterpriseManager/config/emconfig.sh"
 MASTERKEYMANAGE="/opt/SecureSpan/Appliance/libexec/masterkey-manage.pl"

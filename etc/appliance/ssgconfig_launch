@@ -1,0 +1,4 @@
+#!/bin/sh
+. /opt/SecureSpan/Appliance/libexec/envclean
+
+/opt/SecureSpan/Gateway/config/ssgconfig.sh "${@}"
