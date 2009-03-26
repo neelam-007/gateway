@@ -12,6 +12,9 @@ import com.l7tech.util.Pair;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,7 +27,7 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
     private static final Logger logger = Logger.getLogger(PropertyState.class.getName());
 
     private final NavigableMap<Long, Pair<V, PropertySamplingException>> lastSamples;
-    private final TimerTask task;
+    private final Runnable task;
     private final long samplingInterval;
     private final PropertySampler<V> sampler;
 
@@ -32,6 +35,9 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
     private volatile Pair<Long, PropertySamplingException> lastFailure;
     private volatile Long lastLogged;
     private static final int REPEATED_FAILURE_LOG_INTERVAL = 5 * 60000;
+
+    private volatile Long cancelled = null;
+    private volatile ScheduledFuture<?> future = null;
 
     /**
      * Create a new PropertyState with no history
@@ -41,19 +47,19 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
         this.lastSamples = new ConcurrentSkipListMap<Long,Pair<V, PropertySamplingException>>();
         this.samplingInterval = samplingInterval;
         this.sampler = sampler;
-        this.task = new TimerTask() {
-            @Override
-            public boolean cancel() {
-                logger.info("Cancelling sampler for " + property);
-                return super.cancel();
-            }
-
+        this.task = new Runnable() {
             @Override
             public void run() {
+                if (cancelled != null) {
+                    long howlong = System.currentTimeMillis() - cancelled;
+                    logger.log(Level.INFO, String.format("%s sampler invoked %dms after cancellation--hopefully not for too much longer", monitorable, howlong));
+                    return;
+                }
+
                 final long now = System.currentTimeMillis();
                 try {
                     final V value = sampler.sample();
-                    logger.fine("Got property value: " + value); 
+                    logger.fine("Got property value: " + value);
                     addSample(value, now);
                 } catch (PropertySamplingException e) {
                     addFailure(e, now);
@@ -69,6 +75,11 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
                 }
             }
         };
+    }
+
+    public void cancel() {
+        logger.info("Cancelling sampler for " + monitorable);
+        cancelled = System.currentTimeMillis();
     }
 
     protected void addSample(V value, Long when) {
@@ -116,10 +127,14 @@ public class PropertyState<V extends Serializable & Comparable> extends MonitorS
 
     @Override
     public void close() {
-        task.cancel();
+        try {
+            cancel();
+        } finally {
+            future.cancel(true);
+        }
     }
 
-    void schedule(Timer samplerTimer) {
-        samplerTimer.schedule(task, 0, samplingInterval);
+    void schedule(ScheduledExecutorService samplerTimer) {
+        this.future = samplerTimer.scheduleWithFixedDelay(task, 0, samplingInterval, TimeUnit.MILLISECONDS);
     }
 }

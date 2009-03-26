@@ -34,8 +34,18 @@ public class MonitoringKernelImpl implements MonitoringKernel {
 
     private static final int MIN_SAMPLING_INTERVAL = 1000;
     private static final int TOLERANCE_LOG_INTERVAL = 60000;
+    private static final long NOTIFICATION_GC_TIME = 3600000;
 
-    private final Timer samplerTimer = new Timer("Monitoring System / Property Sampler", true);
+    private final ScheduledExecutorService samplerTimer = Executors.newScheduledThreadPool(6, new ThreadFactory() {
+        private final ThreadFactory defaultFactory = Executors.defaultThreadFactory();
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread t = defaultFactory.newThread(r);
+            t.setName("Monitoring System / Sampler Thread " + t.getName());
+            return t;
+        }
+    });
+
     private final Timer triggerCheckTimer = new Timer("Monitoring System / Trigger Condition Checker", true);
     private final TimerTask triggerCheckTask = new TriggerCheckTask();
     private final Thread notificationThread = new Thread(new NotificationRunner());
@@ -618,6 +628,8 @@ public class MonitoringKernelImpl implements MonitoringKernel {
                                 logger.log(Level.WARNING, "Couldn't get notifier for " + rule, e);
                                 continue;
                             }
+
+                            nstate.expireHistory(System.currentTimeMillis() - NOTIFICATION_GC_TIME);
 
                             if (got instanceof PropertyCondition) {
                                 final PropertyCondition pc = (PropertyCondition) got;
