@@ -50,8 +50,7 @@ public interface EntityCrud extends EntityFinder {
     @Override
     <ET extends Entity> ET find(Class<ET> clazz, Serializable pk) throws FindException;
 
-    // TODO [steve] new method sterotype for FIND_HEADER
-    //@Secured(stereotype=MethodStereotype.FIND_HEADERS)
+    @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     @Override
     EntityHeader findHeader(EntityType etype, Serializable pk) throws FindException;
 
