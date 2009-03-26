@@ -262,6 +262,9 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
         // Read this folders's folder ancestry
         role.addEntityFolderAncestryPermission(FOLDER, folder.getId());
 
+        // Read all service templates
+        role.addEntityPermission(READ, SERVICE_TEMPLATE, null);
+
         // Set role as entity-specific
         role.setEntityType(FOLDER);
         role.setEntityOid(folder.getOid());
