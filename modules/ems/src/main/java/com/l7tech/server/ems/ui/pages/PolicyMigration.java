@@ -1595,10 +1595,15 @@ public class PolicyMigration extends EsmStandardWebPage {
         for ( DependencyItem item : dependencies ) {
             ExternalEntityHeader header = item.asEntityHeader();
             DependencyKey sourceKey = new DependencyKey( request.clusterId, header);
-            Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
+            final Pair<DependencyKey,String> mapKey = new Pair<DependencyKey,String>( sourceKey, targetClusterId );
+            final Pair<ValueKey,String> valueKey = item.asEntityHeader().isValueMappable() ?
+                new Pair<ValueKey,String>(new ValueKey(request.clusterId, item.asEntityHeader()), targetClusterId):
+                null;
+
             boolean isNameMapped = mappings.dependencyMap.containsKey(mapKey);
-            if ( ( ! item.isOptional() && ! isNameMapped ) ||
-                 ( ! isNameMapped && header.getValueMapping() == REQUIRED && header.getMappedValue() == null) ) {
+            boolean isValueMapped = valueKey!=null && mappings.valueMap.containsKey(valueKey);
+            if ( ( ! item.isOptional() && ! isNameMapped && ! isValueMapped ) ||
+                 ( header.getValueMapping() == REQUIRED && ! isValueMapped ) ) {
                 count++;
             }
         }
@@ -1765,6 +1770,7 @@ public class PolicyMigration extends EsmStandardWebPage {
     private static final class DependencyItem implements Comparable, JSON.Convertible, Serializable {
         private ExternalEntityHeader entityHeader;
 
+        @SuppressWarnings({"FieldCanBeLocal", "UnusedDeclaration"})
         private String uid; // type:mappingKey
         private String id;
         private String type;
