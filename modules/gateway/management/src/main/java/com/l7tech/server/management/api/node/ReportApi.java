@@ -600,6 +600,8 @@ public interface ReportApi {
             if (isConstraintNotRequired())
                 throw new IllegalStateException("If a constraint is not required isQueryUsingWildCard() should not be called");
 
+            if (useEqualsOnly) return false;
+
             return displayValue.indexOf('*') != -1;
         }
 
