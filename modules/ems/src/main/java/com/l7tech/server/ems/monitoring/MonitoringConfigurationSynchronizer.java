@@ -253,7 +253,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
     }
 
     private void doPushAllConfig(boolean suspendBackoffTimers) throws FindException {
-        boolean notificationsDisabled = areNotificationsGloballyDisabled();
+        Map<String, Object> globalSettings = getGlobalSettings();
 
         Collection<SsgCluster> clusters = ssgClusterManager.findAll();
         for (SsgCluster cluster : clusters) {
@@ -261,7 +261,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
             if (clusterNeedsPushdown(clusterGuid, suspendBackoffTimers)) {
                 boolean success = false;
                 try {
-                    success = configureCluster(cluster, notificationsDisabled);
+                    success = configureCluster(cluster, globalSettings);
                 } finally {
                     onClusterPushdownAttempt(clusterGuid, cluster.getName(), success);
                 }
@@ -269,12 +269,12 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         }
     }
 
-    private boolean configureCluster(SsgCluster cluster, boolean notificationsDisabled) {
+    private boolean configureCluster(SsgCluster cluster, Map<String, Object> globalSettings) {
         boolean hugeSuccess = true;
         boolean needClusterMaster = true;
         Set<SsgNode> nodes = cluster.getNodes();
         for (SsgNode node : nodes) {
-            if (configureNode(cluster, node, notificationsDisabled, needClusterMaster))
+            if (configureNode(cluster, node, globalSettings, needClusterMaster))
                 needClusterMaster = false;
             else
                 hugeSuccess = false;
@@ -285,11 +285,11 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
     private static final String NOPUSH = "Unable to push down monitoring configuration to " + NODEINFO;
     private static final String NOPUSHNET = NOPUSH + " due to network error";
 
-    private boolean configureNode(SsgCluster cluster, SsgNode node, boolean notificationsDisabled, boolean needClusterMaster) {
+    private boolean configureNode(SsgCluster cluster, SsgNode node, Map<String, Object> globalSettings, boolean needClusterMaster) {
         final String[] nodeInfo = { node.getIpAddress(), node.getName(), node.getGuid(), cluster.getName(), cluster.getGuid() };
         try {
             logger.log(Level.FINE, "Pushing down monitoring configuration to " + NODEINFO, nodeInfo);
-            doConfigureNode(cluster, node, notificationsDisabled, needClusterMaster);
+            doConfigureNode(cluster, node, globalSettings, needClusterMaster);
             logger.log(Level.INFO, "Pushed down monitoring configuration to " + NODEINFO, nodeInfo);
             return true;
         } catch (IOException e) {
@@ -312,13 +312,13 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         logger.log(level, MessageFormat.format(baseTemplate, subst) + ": " + ExceptionUtils.getMessage(t), includeStack ? t : ExceptionUtils.getDebugException(t));
     }
 
-    private void doConfigureNode(SsgCluster cluster, SsgNode node, boolean notificationsDisabled, boolean needClusterMaster) throws GatewayException, IOException, FindException {
+    private void doConfigureNode(SsgCluster cluster, SsgNode node, Map<String, Object> globalSettings, boolean needClusterMaster) throws GatewayException, IOException, FindException {
         ProcessControllerContext ctx = gatewayContextFactory.createProcessControllerContext(node);
-        MonitoringConfiguration config = makeMonitoringConfiguration(cluster, node, notificationsDisabled, needClusterMaster);
+        MonitoringConfiguration config = makeMonitoringConfiguration(cluster, node, globalSettings, needClusterMaster);
         ctx.getMonitoringApi().pushMonitoringConfiguration(config);
     }
 
-    private MonitoringConfiguration makeMonitoringConfiguration(SsgCluster cluster, SsgNode node, boolean notificationsDisabled, boolean responsibleForClusterMonitoring) throws FindException {
+    private MonitoringConfiguration makeMonitoringConfiguration(SsgCluster cluster, SsgNode node, Map<String, Object> globalSettings, boolean responsibleForClusterMonitoring) throws FindException {
         MonitoringConfiguration config = new MonitoringConfiguration();
         config.setName(node.getName());
         config.setOid(node.getOid());
@@ -328,19 +328,19 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         SsgClusterNotificationSetup clusterSetup = ssgClusterNotificationSetupManager.findByEntityGuid(cluster.getGuid());
         Map<Long, NotificationRule> notRules = clusterSetup==null ?
                 Collections.<Long, NotificationRule>emptyMap() :
-                convertNotificationRules(notificationsDisabled, clusterSetup.getSystemNotificationRules());
+                convertNotificationRules(areNotificationsGloballyDisabled(globalSettings), clusterSetup.getSystemNotificationRules());
         config.setNotificationRules(new HashSet<NotificationRule>(notRules.values()));
 
         String componentId = cluster.getSslHostName();
 
         Collection<Trigger> clusterTriggers =
-                convertTriggers(notificationsDisabled,
+                convertTriggers(globalSettings,
                         notRules,
                         entityMonitoringPropertySetupManager.findByEntityGuid(cluster.getGuid()),
                         componentId);
 
         Collection<Trigger> hostTrigger =
-                convertTriggers(notificationsDisabled,
+                convertTriggers(globalSettings,
                         notRules,
                         entityMonitoringPropertySetupManager.findByEntityGuid(node.getGuid()),
                         componentId);
@@ -354,7 +354,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
     }
 
     // notificationRules is map of SystemMonitoringNotificationRule OID => NotificationRule instance
-    private Collection<Trigger> convertTriggers(boolean notificationsDisabled,
+    private Collection<Trigger> convertTriggers(Map<String, Object> globalSettings,
                                                 Map<Long, NotificationRule> notificationRules,
                                                 List<EntityMonitoringPropertySetup> setups,
                                                 String componentId)
@@ -362,7 +362,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         Collection<Trigger> ret = new ArrayList<Trigger>();
 
         for (EntityMonitoringPropertySetup setup : setups) {
-            Trigger trigger = convertTrigger(notificationsDisabled, notificationRules, setup, componentId);
+            Trigger trigger = convertTrigger(globalSettings, notificationRules, setup, componentId);
             if (trigger != null)
                 ret.add(trigger);
         }
@@ -370,7 +370,7 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         return ret;
     }
 
-    Trigger convertTrigger(boolean notificationsDisabled,
+    Trigger convertTrigger(Map<String, Object> globalSettings,
                            Map<Long, NotificationRule> notificationRules,
                            EntityMonitoringPropertySetup setup,
                            String componentId)
@@ -391,12 +391,13 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         operator = setup.isTriggerEnabled() ? property.getSuggestedComparisonOperator() : ComparisonOperator.FALSE;
         triggerValue = value != null ? Long.toString(value) : property.getSuggestedComparisonValue();
 
-        long maxSamplingInterval = property.getSuggestedSamplingInterval();
+        Long configuredInterval = getConfiguredSamplingInterval(globalSettings, property.getName());
+        long maxSamplingInterval = configuredInterval != null ? (configuredInterval*1000L) : property.getSuggestedSamplingInterval();
 
         PropertyTrigger trigger = new PropertyTrigger(property, componentId, operator, triggerValue, maxSamplingInterval);
         trigger.setOid(setup.getOid());
         trigger.setVersion(setup.getVersion());
-        trigger.setNotificationRules(lookupNotificationRules(notificationsDisabled, setup, notificationRules, propertyName));
+        trigger.setNotificationRules(lookupNotificationRules(areNotificationsGloballyDisabled(globalSettings), setup, notificationRules, propertyName));
         return trigger;
     }
 
@@ -433,16 +434,50 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         return rules;
     }
 
-    private boolean areNotificationsGloballyDisabled() {
+    private boolean areNotificationsGloballyDisabled(Map<String, Object> globalSettings) {
+        return Boolean.valueOf(String.valueOf(globalSettings.get(JSONConstants.SystemMonitoringSetup.DISABLE_ALL_NOTIFICATIONS)));
+    }
+
+    private static final Map<String, String> INTERVAL_NAME_BY_PROPERTY_NAME = Collections.unmodifiableMap(new HashMap<String, String>() {{
+        put("auditSize", ServerConfig.PARAM_MONITORING_INTERVAL_AUDITSIZE);
+        put("operatingStatus", ServerConfig.PARAM_MONITORING_INTERVAL_OPERATINGSTATUS);
+        put("logSize", ServerConfig.PARAM_MONITORING_INTERVAL_LOGSIZE);
+        put("diskUsage", ServerConfig.PARAM_MONITORING_INTERVAL_DISKUSAGE);
+        put("diskFree", ServerConfig.PARAM_MONITORING_INTERVAL_DISKFREE);
+        put("raidStatus", ServerConfig.PARAM_MONITORING_INTERVAL_RAIDSTATUS);
+        put("cpuTemp", ServerConfig.PARAM_MONITORING_INTERVAL_CPUTEMPERATURE);
+        put("cpuUsage", ServerConfig.PARAM_MONITORING_INTERVAL_CPUUSAGE);
+        put("swapUsage", ServerConfig.PARAM_MONITORING_INTERVAL_SWAPUSAGE);
+        put("ntpStatus", ServerConfig.PARAM_MONITORING_INTERVAL_NTPSTATUS);
+    }});
+
+    // Given a monitorable property name, find the property under which its sampling interval can be looked up in globalSettings.
+    private String getSamplingIntervalPropertyName(String propertyName) {
+        // Use real one, if known; otherwise try to guess.
+        String globalIntervalPropName = INTERVAL_NAME_BY_PROPERTY_NAME.get(propertyName);
+        return globalIntervalPropName != null ? globalIntervalPropName : "interval." + propertyName;
+    }
+
+    // returns configured interval in seconds (NOT milliseconds), or null if no configured interval found
+    private Long getConfiguredSamplingInterval(Map<String, Object> globalSettings, String propertyName) {
+        Object val = globalSettings.get(getSamplingIntervalPropertyName(propertyName));
+        if (val instanceof Number) {
+            Number number = (Number) val;
+            return number.longValue();
+        }
+        return null;
+    }
+
+    private Map<String, Object> getGlobalSettings(){
         try {
-            Map<String, Object> globalSettings = systemMonitoringSetupSettingsManager.findSetupSettings();
-            return Boolean.valueOf(String.valueOf(globalSettings.get(JSONConstants.SystemMonitoringSetup.DISABLE_ALL_NOTIFICATIONS)));
+            return systemMonitoringSetupSettingsManager.findSetupSettings();
         } catch (FindException e) {
             logger.log(Level.WARNING, "Unable to get monitoring settings: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return Collections.emptyMap();
         } catch (InvalidMonitoringSetupSettingException e) {
             logger.log(Level.WARNING, "Unable to get monitoring settings: " + ExceptionUtils.getMessage(e), e);
+            return Collections.emptyMap();
         }
-        return false;
     }
 
     /**

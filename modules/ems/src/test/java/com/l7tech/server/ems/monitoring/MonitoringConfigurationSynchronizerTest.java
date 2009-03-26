@@ -162,7 +162,7 @@ public class MonitoringConfigurationSynchronizerTest {
         MonitoringConfigurationSynchronizer mcs = makeAndStartMcs();
         EntityMonitoringPropertySetup setup = new EntityMonitoringPropertySetup(clusterA, BuiltinMonitorables.CPU_TEMPERATURE.getName());
         setup.setMonitoringEnabled(true);
-        Trigger trigger = mcs.convertTrigger(false, Collections.<Long, NotificationRule>emptyMap(), setup, clusterA.getSslHostName());
+        Trigger trigger = mcs.convertTrigger(Collections.<String, Object>emptyMap(), Collections.<Long, NotificationRule>emptyMap(), setup, clusterA.getSslHostName());
         assertNotNull(trigger);
         assertEquals(clusterA.getSslHostName(), trigger.getComponentId());
     }
