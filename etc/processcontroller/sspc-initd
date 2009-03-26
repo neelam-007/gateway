@@ -34,7 +34,7 @@ start() {
         daemon --check "${PID_FILE}" "${PC_SCRIPT}" "${PC_USER}" "/var/run/${PID_FILE}.pid"
         RETVAL=$?
         echo
-        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/sspc
+        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/ssg
         [ ! -f "${PC_FIREWALL_RULES}" ] || rm -f "${PC_FIREWALL_RULES}" &>/dev/null
         if [ -f "${PC_CONFIG}" ] ; then
             PC_ADDR=$(grep host.controller.sslIpAddress "${PC_CONFIG}" | sed 's/host.controller.sslIpAddress\s\{0,128\}=\s\{0,128\}//')
@@ -59,7 +59,7 @@ stop() {
         killproc "${PID_FILE}"
         RETVAL=$?
         echo
-        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/sspc
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/ssg
         [ $RETVAL -eq 0 ] && [ -x "${PC_FIREWALL_CONTROL}" ] && [ -f "${PC_FIREWALL_RULES}" ] && "${PC_FIREWALL_CONTROL}" "${PC_FIREWALL_RULES}" stop
         return $RETVAL
 }
