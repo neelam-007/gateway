@@ -1134,6 +1134,9 @@ public class PolicyMigration extends EsmStandardWebPage {
      * If the given item represents a value mapping with an array type it is expanded to
      * a collection of non-array value mappings.
      *
+     * <p>If the mappable values are null, they are filtered out, so the returned collection can
+     * be empty.</p>
+     *
      * @return  Collection containing either the exploded items, or the item parameter
      *          if it is not value-mappable, or it does not hold an array-type value, or the source mappable value is null.
      */
@@ -1143,7 +1146,9 @@ public class PolicyMigration extends EsmStandardWebPage {
         ExternalEntityHeader eeh = item == null ? null : item.asEntityHeader();
         if (eeh != null && eeh.isValueMappable()) {
             for(ExternalEntityHeader vmHeader : eeh.getValueMappableHeaders()) {
-                exploded.add(new DependencyItem(vmHeader));
+                if ( vmHeader.getDisplayValue() != null ) {
+                    exploded.add(new DependencyItem(vmHeader));
+                }
             }
         } else {
             exploded.add(item);
@@ -1723,6 +1728,7 @@ public class PolicyMigration extends EsmStandardWebPage {
             return "DependencyKey[clusterId='"+clusterId+"'; id='"+id+"'; type='"+type+"'; version='" + version +"']";
         }
 
+        @SuppressWarnings({"RedundantIfStatement"})
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -1946,7 +1952,7 @@ public class PolicyMigration extends EsmStandardWebPage {
          *
          * @param sourceClusterId The source cluster id for the mapping
          * @param targetClusterId The destination cluster id for the mapping
-         * @param eeh The ExternalEntityHeader to update.
+         * @param dep The ExternalEntityHeader to update.
          * @return The collection of values for persistence
          */
         public Collection<ExternalEntityHeader> updateMappedValues(final String sourceClusterId,
