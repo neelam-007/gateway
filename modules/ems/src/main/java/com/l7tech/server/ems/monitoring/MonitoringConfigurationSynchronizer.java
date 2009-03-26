@@ -392,9 +392,10 @@ public class MonitoringConfigurationSynchronizer implements ApplicationListener 
         triggerValue = value != null ? Long.toString(value) : property.getSuggestedComparisonValue();
 
         Long configuredInterval = getConfiguredSamplingInterval(globalSettings, property.getName());
-        long maxSamplingInterval = configuredInterval != null ? (configuredInterval*1000L) : property.getSuggestedSamplingInterval();
+        long samplingInterval = configuredInterval != null ? (configuredInterval*1000L) : property.getSuggestedSamplingInterval();
+        samplingInterval = Math.min(samplingInterval, 5000L);
 
-        PropertyTrigger trigger = new PropertyTrigger(property, componentId, operator, triggerValue, maxSamplingInterval);
+        PropertyTrigger trigger = new PropertyTrigger(property, componentId, operator, triggerValue, samplingInterval);
         trigger.setOid(setup.getOid());
         trigger.setVersion(setup.getVersion());
         trigger.setNotificationRules(lookupNotificationRules(areNotificationsGloballyDisabled(globalSettings), setup, notificationRules, propertyName));
