@@ -446,7 +446,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
             }
         };
         DialogDisplayer.showInputDialog(generateCSRButton, "CSR Subject (DN):",
-                                        "Please provide DN subject for CSR", JOptionPane.QUESTION_MESSAGE,
+                                        "Please provide subject DN for CSR", JOptionPane.QUESTION_MESSAGE,
                                         null, null, subject.getSubjectDN(), listener);
     }
 
