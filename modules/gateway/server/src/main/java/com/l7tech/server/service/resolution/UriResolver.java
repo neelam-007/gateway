@@ -291,10 +291,8 @@ public class UriResolver extends ServiceResolver<String> {
             this.uri = uri;
             if (uri.indexOf('*') > 0) {
                 this.pathPattern = uri.charAt(uri.length() - 1) == '*';
-                String tmp = uri.replace(".", "\\.");
-                tmp = tmp.replace("*", ".*");
-                tmp = tmp.replace("?", "\\?");
-                tmp = tmp.replace("$", "\\$");
+                // Quote all regex metacharacters, but allow modified asterix under controlled conditions
+                String tmp = Pattern.quote(uri).replace("*", "\\E.*\\Q");
                 pattern = Pattern.compile(tmp);
                 this.hasWildcards = true;
             } else {
