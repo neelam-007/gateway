@@ -1486,7 +1486,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     /**
-     * Initialize the workspace. Invoked on successfull login.
+     * Initialize the workspace. Invoked on successful login.
      */
     private void initalizeWorkspace() {
         DefaultTreeModel treeModel = new FilteredTreeModel(null);

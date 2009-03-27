@@ -662,7 +662,7 @@ public class LogonDialog extends JDialog {
 
             final SecurityProvider securityProvider = getCredentialManager();
 
-            // fla change: remember this url even if the login wont be successfull (requirement #729)
+            // fla change: remember this url even if the login wont be successful (requirement #729)
             serverUrlHistory.add(sHost);
 
             progressDialog = buildLogonInProgressDialog((Frame)getOwner(), sHost);

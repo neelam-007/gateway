@@ -442,7 +442,7 @@ doHsmMasterKeyBackup() {
             confirmedMessage "The master key backup did not succeed. See the error message above for details."
         else
             echo ""
-            confirmedMessage "The master key backup was successfull."
+            confirmedMessage "The master key backup was successful."
         fi
     fi
 }
