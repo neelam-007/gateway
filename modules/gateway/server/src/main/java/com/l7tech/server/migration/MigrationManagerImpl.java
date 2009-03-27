@@ -371,8 +371,8 @@ public class MigrationManagerImpl implements MigrationManager {
         if (entity == null)
             throw new MigrationApi.MigrationException("Entity not found in the bundle for header: " + header);
 
-        if (!enableServices && entity instanceof PublishedService)
-            ((PublishedService) entity).setDisabled(true);
+        if (entity instanceof PublishedService)
+            ((PublishedService) entity).setDisabled(!enableServices);
 
         checkServiceResolution(header, entity, bundle);
 
