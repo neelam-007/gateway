@@ -350,6 +350,7 @@ public class MigrationManagerImpl implements MigrationManager {
         if (entity instanceof PublishedService && onTarget instanceof PublishedService) {
             ((PublishedService)entity).getPolicy().setOid(((PublishedService)onTarget).getPolicy().getOid());
             ((PublishedService)entity).getPolicy().setVersion(((PublishedService)onTarget).getPolicy().getVersion());
+            ((PublishedService)entity).setDisabled(((PublishedService)onTarget).isDisabled());
         }
 
         checkServiceResolution(header, entity, bundle);
