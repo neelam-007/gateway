@@ -16,7 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * TODO [steve] Add a "nonce" value using EM user login, sessionid and cluster guid
+ * 
  */
 public class MappingFilter implements Filter {
 
