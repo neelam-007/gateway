@@ -244,7 +244,7 @@ fi
 
 %post
 if [ -d "/ssg/appliance" ] ; then
-    sh %{prefix}/bin/upgrade-appliance.sh 2>&1 >> %{prefix}/config/appliance-upgrade.log
+    sh %{prefix}/bin/upgrade-appliance.sh >> %{prefix}/config/appliance-upgrade.log 2>&1
 fi
 
 # After above item has executed, on first install only

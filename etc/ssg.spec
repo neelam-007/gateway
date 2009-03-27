@@ -120,7 +120,7 @@ fi
 
 %post
 if [ -d "/ssg" ] ; then
-   sh %{prefix}/runtime/bin/upgrade.sh 2>&1 >> %{prefix}/config/upgrade.log
+   sh %{prefix}/runtime/bin/upgrade.sh >> %{prefix}/config/upgrade.log 2>&1
 fi
 
 %preun
