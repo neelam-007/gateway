@@ -49,7 +49,7 @@ public class MigrationMappedEntity {
         this.externalId = externalId;
     }
 
-    @Column(name="entity_value", length=1024) //TODO increase if required
+    @Column(name="entity_value", length=4096)
     public String getEntityValue() {
         return entityValue;
     }
