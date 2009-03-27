@@ -15,6 +15,11 @@
     <script type="text/javascript" src="/yui/element/element-beta-min.js"></script>
     <script type="text/javascript" src="/yui/button/button-min.js"></script>
     <script type="text/javascript">
+        // Breaks out of any frame, such as Help page frameset.
+        if (window.top != window.self) {
+            window.top.location = window.location.href;
+        }
+
         function updateSubmitButton() {
             var username = document.getElementById('username').value;
             var password = document.getElementById('password').value;
