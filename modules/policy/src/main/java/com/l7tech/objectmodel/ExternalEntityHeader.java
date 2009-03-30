@@ -76,7 +76,8 @@ public class ExternalEntityHeader extends EntityHeader implements ValueMappable 
     }
 
     public String getDisplayNameWithScope() {
-        StringBuffer sb = new StringBuffer(getDisplayName());
+        String displayName = getDisplayName();
+        StringBuffer sb = new StringBuffer(displayName == null ? "" : displayName);
         if (extraProperties != null && extraProperties.containsKey("Scope Name"))
             sb.append(" [").append(extraProperties.get("Scope Name")).append("]");
         if (isValueMappable())
