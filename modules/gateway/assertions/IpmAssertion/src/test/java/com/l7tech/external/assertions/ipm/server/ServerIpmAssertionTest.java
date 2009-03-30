@@ -7,9 +7,8 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.IOUtils;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.*;
+import static org.junit.Assert.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -20,23 +19,10 @@ import java.io.InputStream;
 /**
  * Test the IpmAssertion.
  */
-public class ServerIpmAssertionTest extends TestCase {
+public class ServerIpmAssertionTest {
     static final String RESOURCE_DIR = "com/l7tech/external/assertions/ipm/resources/";
     static final String TEMPLATE_PAC_REPLY = "template-pac-reply.xml";
     static final String SOAP_PAC_REPLY = "soap-pac-reply.xml";
-
-    public ServerIpmAssertionTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(ServerIpmAssertionTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
 
     static String loadFile(String filename) throws IOException {
         InputStream is = ServerIpmAssertionTest.class.getClassLoader().getResourceAsStream(RESOURCE_DIR + filename);
@@ -44,6 +30,7 @@ public class ServerIpmAssertionTest extends TestCase {
         return new String(got);
     }
 
+    @Test
     public void testUnpackToVariable() throws Exception {
         String template = loadFile(TEMPLATE_PAC_REPLY);
         String requestStr = loadFile(SOAP_PAC_REPLY);
@@ -68,6 +55,7 @@ public class ServerIpmAssertionTest extends TestCase {
         XmlUtil.stringToDocument(ipmresult);
     }
     
+    @Test
     public void testUnpackToMessage() throws Exception {
         doUnpackToMessage();
     }

@@ -186,14 +186,18 @@ public class TemplateCompiler {
         element = (Element)element.cloneNode(false);
         element.removeAttribute("occurs");
         element.removeAttribute("pic");
+        BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
         try {
-            String elStr = XmlUtil.nodeToString(element);
+            XmlUtil.canonicalize(element, baos);
+            String elStr = baos.toString();
             elStr = elStr.replaceAll("\\<\\?.*\\?\\>", "");
             elStr = elStr.replaceAll("\\<\\/.*", "");
             if (elStr.startsWith("<?")) throw new RuntimeException("xml decl");
             addEmitConstant(indent, elStr);
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
+        } finally {
+            baos.close();
         }
     }
 

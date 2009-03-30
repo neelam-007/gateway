@@ -4,6 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import static com.l7tech.external.assertions.ipm.server.ServerIpmAssertionTest.*;
 import com.l7tech.external.assertions.ipm.server.resources.CompiledTemplate;
 import org.junit.Test;
+import static org.junit.Assert.*;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -44,7 +45,7 @@ public class TemplateCompilerTest {
 
     private static void checkExpandedString(String expandedStr, String extraSuffix) throws SAXException {
         assertTrue(expandedStr.length() > 0);
-        //log.info("Expansion result:\n" + expandedStr);
+        logger.info("Expansion result:\n" + expandedStr);
         XmlUtil.stringToDocument(expandedStr);
 
         checkExpandedStringEnding(expandedStr, extraSuffix);
