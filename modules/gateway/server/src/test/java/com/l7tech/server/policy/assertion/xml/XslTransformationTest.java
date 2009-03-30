@@ -59,7 +59,7 @@ public class XslTransformationTest {
             "    </soap:Header>\n" +
             "\n" +
             "    <soap:Body>\n" +
-            "        <listProducts xmlns=\"http://warehouse.acme.com/ws\"></listProducts>\n" +
+            "        <listProducts xmlns=\"http://warehouse.acme.com/ws\"/>\n" +
             "    </soap:Body>\n" +
             "    \n" +
             "</soap:Envelope>";
@@ -155,7 +155,7 @@ public class XslTransformationTest {
                 "    </soap:Header>\n" +
                 "\n" +
                 "    <soap:Body>\n" +
-                "        <listProducts xmlns=\"http://warehouse.acme.com/ws\"></listProducts>\n" +
+                "        <listProducts xmlns=\"http://warehouse.acme.com/ws\"/>\n" +
                 "    </soap:Body><!--SSG WAS HERE-->\n" +
                 "    \n" +
                 "</soap:Envelope>";
@@ -185,7 +185,7 @@ public class XslTransformationTest {
                 "\n" +
                 "    <Body xmlns=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
                 "            <accountid xmlns=\"http://warehouse.acme.com/accountns\">5643249816516813216</accountid>\n" +
-                "        <listProducts xmlns=\"http://warehouse.acme.com/ws\"></listProducts>\n" +
+                "        <listProducts xmlns=\"http://warehouse.acme.com/ws\"/>\n" +
                 "    </Body>\n" +
                 "    \n" +
                 "</soap:Envelope>";
