@@ -679,6 +679,12 @@ public class WssRoundTripTest {
 
     @Test
     @BugNumber(6851)
+    public void testOsdSignatureError_withDefault() throws Exception {
+        doTestOsdSignatureError(null);
+    }
+
+    @Test
+    @BugNumber(6851)
     @Ignore("Disabled because it fails with XSS4J")
     public void testOsdSignatureError_withXSS4J() throws Exception {
         doTestOsdSignatureError(true);
@@ -691,7 +697,7 @@ public class WssRoundTripTest {
     }
 
     @SuppressWarnings({"deprecation"})
-    private void doTestOsdSignatureError(boolean useXss4j) throws Exception {
+    private void doTestOsdSignatureError(Boolean useXss4j) throws Exception {
         try {
             XmlUtil.setSerializeWithXss4j(useXss4j);
             reallyDoTestOsdSignatureError();

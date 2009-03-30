@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 public class XmlUtil extends DomUtils {
     private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());
 
-    private static final boolean DEFAULT_SERIALIZE_WITH_XSS4J = SyspropUtil.getBoolean("com.l7tech.common.serializeWithXss4j", true);
+    private static final boolean DEFAULT_SERIALIZE_WITH_XSS4J = SyspropUtil.getBoolean("com.l7tech.common.serializeWithXss4j", false);
 
     public static final String XML_VERSION = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
     public static final String TEXT_XML = "text/xml";

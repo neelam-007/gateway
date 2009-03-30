@@ -320,23 +320,28 @@ public class XmlUtilTest {
 
     @Test
     @BugNumber(6851)
+    public void testSerializerTransparencyOfXmlElements_with_Default() throws Exception {
+        doTestSerializerTransparencyOfXmlElements(null);
+    }
+
+    @Test
+    @BugNumber(6851)
     @Ignore("Disabled because this serialization is not transparent when using XSS4J's W3CCanonicalizer2WC")
-    @SuppressWarnings({"deprecation"})
     public void testSerializerTransparencyOfXmlElements_with_XSS4J() throws Exception {
-        try {
-            XmlUtil.setSerializeWithXss4j(true);
-            assertTransparency("<a xml:a=\"a\"><a xml:a=\"a\"/></a>");
-        } finally {
-            XmlUtil.setSerializeWithXss4j(null);
-        }
+        doTestSerializerTransparencyOfXmlElements(true);
     }
 
     @Test
     @BugNumber(6851)
     @SuppressWarnings({"deprecation"})
     public void testSerializerTransparencyOfXmlElements_with_XMLSerializer() throws Exception {
+        doTestSerializerTransparencyOfXmlElements(false);
+    }
+
+    @SuppressWarnings({"deprecation"})
+    private void doTestSerializerTransparencyOfXmlElements(Boolean useXss4jSer) throws SAXException, IOException {
         try {
-            XmlUtil.setSerializeWithXss4j(false);
+            XmlUtil.setSerializeWithXss4j(useXss4jSer);
             assertTransparency("<a xml:a=\"a\"><a xml:a=\"a\"/></a>");
         } finally {
             XmlUtil.setSerializeWithXss4j(null);
