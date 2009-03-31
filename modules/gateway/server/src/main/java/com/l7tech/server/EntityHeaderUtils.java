@@ -69,7 +69,7 @@ public final class EntityHeaderUtils {
             return new FolderHeader((Folder)e);
         } else if (e instanceof FederatedUser) {
             FederatedUser user = (FederatedUser)e;
-            return new IdentityHeader(user.getProviderId(), user.getOid(), USER, user.getName(), null, user.getName(), user.getVersion());
+            return new IdentityHeader(user.getProviderId(), user.getOid(), USER, user.getLogin(), null, user.getName(), user.getVersion());
         } else if (e instanceof PersistentUser) {
             PersistentUser user = (PersistentUser)e;
             return new IdentityHeader(user.getProviderId(), user.getOid(), USER, user.getLogin(), null, user.getName(), user.getVersion());
@@ -133,7 +133,10 @@ public final class EntityHeaderUtils {
             externalEntityHeader.setProperty("SOAP", Boolean.toString(serviceHeader.isSoap()));
             externalEntityHeader.setProperty("Enabled", Boolean.toString(!serviceHeader.isDisabled()));
         } else if (header instanceof IdentityHeader) {
-            externalEntityHeader = new ExternalEntityHeader(((IdentityHeader)header).getProviderOid() + ":" + header.getStrId(), header);
+            IdentityHeader idHeader = (IdentityHeader) header;
+            externalEntityHeader = new ExternalEntityHeader(idHeader.getProviderOid() + ":" + header.getStrId(), header);
+            externalEntityHeader.setProperty("Display Name", (idHeader.getName() != null ? idHeader.getName() : "") +
+                                                             (idHeader.getCommonName() != null ? " (" + idHeader.getCommonName() + ")" : "") );
             externalEntityHeader.setProperty("Scope Type", EntityType.ID_PROVIDER_CONFIG.toString());
         } else if (header instanceof SsgKeyHeader) {
             externalEntityHeader = new ExternalEntityHeader(((SsgKeyHeader)header).getKeystoreId() + ":" + ((SsgKeyHeader)header).getAlias(), header);

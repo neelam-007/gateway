@@ -68,7 +68,7 @@ public class SpecificUser extends IdentityAssertion {
         EntityHeader[] headers = super.getEntitiesUsed();
         EntityHeader[] headers2 = new EntityHeader[headers.length + 1];
         System.arraycopy(headers, 0, headers2, 0, headers.length);
-        headers2[headers.length] = new IdentityHeader(super.getIdentityProviderOid(), userUid, EntityType.USER, userLogin, null, null, null);
+        headers2[headers.length] = new IdentityHeader(super.getIdentityProviderOid(), userUid, EntityType.USER, userLogin, null, userName, null);
         return headers2;
     }
 
