@@ -19,7 +19,8 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.policy.PolicyToolBar;
-import com.l7tech.console.tree.servicesAndPolicies.*;
+import com.l7tech.console.tree.servicesAndPolicies.AlterFilterAction;
+import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.Authorizer;
 import com.l7tech.gateway.common.InvalidLicenseException;
@@ -2274,19 +2275,11 @@ public class MainWindow extends JFrame implements SheetHolder {
         RootNode rootNode = (RootNode) tree.getModel().getRoot();
         NodeFilter filter = ((FilteredTreeModel) tree.getModel()).getFilter();
 
-        Enumeration nodes = rootNode.preorderEnumeration();
-        List<AbstractTreeNode> searchableNodes = new ArrayList<AbstractTreeNode>();
-        while (nodes.hasMoreElements()) {
-            AbstractTreeNode node = (AbstractTreeNode) nodes.nextElement();
-            if (!(node instanceof FolderNode)) {    //dont deal with folder nodes
-                //only deal with the service and policy nodes depending on the filter selection
-                if (((filter instanceof ServiceNodeFilter || filter == null) && node instanceof ServiceNode)
-                        || ((filter instanceof PolicyNodeFilter || filter == null) && node instanceof PolicyEntityNode)) {
-                    searchableNodes.add(node);
-                }
-            }
-        }
-        return searchableNodes;
+        List<AbstractTreeNode> ret = new ArrayList<AbstractTreeNode>();
+        if (rootNode.isSearchable(filter))
+            ret.add(rootNode);
+        rootNode.collectSearchableChildren(ret, filter);        
+        return ret;
     }
 
     private JLabel getFilterStatusLabel(){

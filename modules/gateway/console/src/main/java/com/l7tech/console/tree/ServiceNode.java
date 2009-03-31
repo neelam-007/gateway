@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.tree.servicesAndPolicies.ServiceNodeFilter;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -142,6 +143,7 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
                 opts.setShowMessages(false);
                 opts.setShowPortTypes(false);
                 WsdlTreeNode node = WsdlTreeNode.newInstance(wsdl, opts);
+                node.setChildrenCut(isCut());
                 children = null;
                 node.getChildCount();
                 //noinspection unchecked
@@ -156,6 +158,19 @@ public class ServiceNode extends EntityWithPolicyNode<PublishedService, ServiceH
               notify(Level.SEVERE, e,
                 "Error accessing service id=" + getEntityHeader().getOid());
         }
+    }
+
+    public void collectSearchableChildren(List<AbstractTreeNode> collect, NodeFilter filter) {
+        // Has no searchable children; override to avoid forcing a pointless WSDL download and parse (Bug #6936)
+    }
+
+    public boolean isSearchable(NodeFilter filter) {
+        return filter == null || filter instanceof ServiceNodeFilter;
+    }
+
+    public void setChildrenCut(boolean cut) {
+        if (hasLoadedChildren)
+            super.setChildrenCut(cut);
     }
 
     /**

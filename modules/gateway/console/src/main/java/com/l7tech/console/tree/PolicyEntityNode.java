@@ -5,6 +5,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.tree.servicesAndPolicies.PolicyNodeFilter;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.Policy;
@@ -17,6 +18,7 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.logging.Level;
 
 /** @author alex */
@@ -65,6 +67,14 @@ public class PolicyEntityNode extends EntityWithPolicyNode<Policy, PolicyHeader>
 
     public Policy getEntity() throws FindException {
         return getPolicy();
+    }
+
+    public void collectSearchableChildren(List<AbstractTreeNode> collect, NodeFilter filter) {
+        // No need to recurse any further
+    }
+
+    public boolean isSearchable(NodeFilter filter) {
+        return filter == null || filter instanceof PolicyNodeFilter;
     }
 
     @Override

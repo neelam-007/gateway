@@ -1,11 +1,11 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.gui.util.ImageCache;
-import com.l7tech.gui.util.Utilities;
 import com.l7tech.console.action.NodeAction;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.WeakPropertyChangeSupport;
+import com.l7tech.gui.util.ImageCache;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
@@ -49,6 +49,23 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
 
     public boolean isCut() {
         return isCut;
+    }
+
+    public void collectSearchableChildren(java.util.List<AbstractTreeNode> collect, NodeFilter filter) {
+        int kidCount = getChildCount(filter);
+        for (int i = 0; i < kidCount; ++i) {
+            TreeNode kid = getChildAt(i, filter);
+            if (kid instanceof AbstractTreeNode) {
+                AbstractTreeNode node = (AbstractTreeNode) kid;
+                if (node.isSearchable(filter))
+                    collect.add(node);
+                node.collectSearchableChildren(collect, filter);
+            }
+        }
+    }
+
+    public boolean isSearchable(NodeFilter filter) {
+        return false;
     }
 
     public void setChildrenCut(boolean cut){
