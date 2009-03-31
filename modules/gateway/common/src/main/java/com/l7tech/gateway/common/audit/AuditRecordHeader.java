@@ -108,7 +108,7 @@ public class AuditRecordHeader extends EntityHeader {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (signature != null ? signature.hashCode() : 0);
-        result = 31 * result + (signatureDigest != null ? signatureDigest.hashCode() : 0);
+        result = 31 * result + (signatureDigest != null ? Arrays.hashCode(signatureDigest) : 0);
         result = 31 * result + (nodeId != null ? nodeId.hashCode() : 0);
         result = 31 * result + (int) (timestamp ^ (timestamp >>> 32));
         result = 31 * result + (level != null ? level.hashCode() : 0);

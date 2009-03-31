@@ -696,12 +696,13 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
      * ADMID:4714/-/_/-/string(document('file:.../server.xml')/Server/@port)/-/_/-/ADMID:3017/-/_/-/Warehouse [524288]/-/_/-/601/-/_/-/Error in Assertion Processing
      */
     public static String getAuditDetails( long auditRecordId ) throws SQLException {
-        Connection connection = DriverManager.getConnection("jdbc:default:connection");
-
         StringBuilder details = new StringBuilder();
+
+        Connection connection = null;
         PreparedStatement statement = null;
         ResultSet results = null;
         try {
+            connection = DriverManager.getConnection("jdbc:default:connection");
             statement = connection.prepareStatement(  "select audit_detail.message_id, audit_detail_params.value from audit_detail left outer join audit_detail_params on audit_detail.objectid = audit_detail_params.audit_detail_oid where audit_detail.audit_oid = ?  order by audit_detail.ordinal, audit_detail_params.position" );
             statement.setLong( 1, auditRecordId );
             results = statement.executeQuery();
@@ -728,6 +729,7 @@ public class AuditExporterImpl extends HibernateDaoSupport implements AuditExpor
         } finally {
             ResourceUtils.closeQuietly(results);
             ResourceUtils.closeQuietly(statement);
+            ResourceUtils.closeQuietly(connection);
         }
 
         return details.toString();

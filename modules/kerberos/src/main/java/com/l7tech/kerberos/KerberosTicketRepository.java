@@ -234,7 +234,7 @@ public class KerberosTicketRepository {
     /**
      * Imposed limit on the cache such that it doesn't fill up the ssg memory
      */
-    private static final int CACHE_SIZE_LIMIT = 250;
+    private static final float CACHE_SIZE_LIMIT = 250;
 
     /**
      * Threshold to be reached that kicks off the cleanup task

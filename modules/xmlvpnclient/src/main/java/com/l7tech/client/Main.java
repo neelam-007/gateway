@@ -5,6 +5,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.kerberos.KerberosClient;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.Background;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgFinderImpl;
@@ -16,7 +17,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Properties;
 import java.util.TimerTask;
 import java.util.logging.Level;
@@ -89,18 +89,20 @@ public class Main {
         String propertiesPath = Ssg.PROXY_CONFIG + File.separator + "xvc-system.properties";
         File propsf = new File(propertiesPath);
         if (propsf.exists()) {
+            FileInputStream fis = null;
             try {
-                FileInputStream fis = new FileInputStream(propsf);
+                fis = new FileInputStream(propsf);
                 Properties props = new Properties();
-                props.load(fis);
-                fis.close();
-                if (props != null && props.size() > 0) {
-                    for (Object key : props.keySet()) {
+                props.load( fis );
+                if ( props.size() > 0 ) {
+                    for ( Object key : props.keySet() ) {
                         System.setProperty(key.toString(), props.getProperty(key.toString()));
                     }
                 }
             } catch (IOException e) {
                 log.log(Level.WARNING, "Error reading " + propertiesPath, e);
+            } finally {
+                ResourceUtils.closeQuietly( fis );
             }
         }
     }
