@@ -40,6 +40,7 @@
     <property name="module.compile.excludes" value=""/>
     <property name="module.jar.index" value="false"/>
     <property name="module.package.root" value="."/>
+    <property name="module.source.allow.properties" value="false"/>
 
     <!--
       Classpath for Idea form compiler
@@ -298,7 +299,19 @@
                 <resourcecount refid="module.invalid.source.filepath" when="greater" count="0" />
             </and>
         </condition>
-        <fail if="module.invalid.package">Invalid source found, this module should only have sources under : ${module.package.root}</fail>
+        <fail if="module.invalid.package">Invalid source found, this module should only have sources under : ${module.package.root}${line.separator}${toString:module.invalid.source.filepath}</fail>
+        <path id="module.properties.source.filepath">
+            <fileset dir="${src.main.java.dir}">
+                <include name="**/*.properties"/>
+            </fileset>
+        </path>                                                        
+        <condition property="module.invalid.properties">
+            <and>
+                <equals arg1="${module.source.allow.properties}" arg2="false"/>
+                <resourcecount refid="module.properties.source.filepath" when="greater" count="0" />
+            </and>
+        </condition>
+        <fail if="module.invalid.properties">Invalid source found, this module should not have properties files in the java source tree.${line.separator}${toString:module.properties.source.filepath}</fail>
     </target>
     <target name="compile-main-java" if="module.source.available" depends="compile-main-init">
         <module-javac srcdir="${src.main.java.dir}" destdir="${classes.main.dir}"/>
@@ -422,10 +435,11 @@
 
     <!--
     -->
-    <target name="package.dependencies" depends="init">
-        <mkdir dir="${deps.dir}"/>
-
+    <target name="package.dependencies.resolve" depends="init">
         <ivy-resolve conf="runtime"/>
+    </target>
+    <target name="package.dependencies" depends="package.dependencies.resolve" unless="module.package.dependencies.skip">
+        <mkdir dir="${deps.dir}"/>
         <ivy:retrieve pattern="${deps.dir}/[artifact]-[revision].[ext]"/>
     </target>
     <target name="package.classpath" if="module.main">

@@ -1,9 +1,10 @@
 <project name="layer7-skunkworks" default="compile">
-    <import file="../../etc/build/build-common.xml"/>
-
     <!-- dummy main so that the classpath is built -->
     <property name="module.main" value="com.l7tech.skunkworks"/>
     <property name="vendor.name" value="Layer 7 Technologies Inc."/>
+    <property name="module.source.allow.properties" value="true"/>
+
+    <import file="../../etc/build/build-common.xml"/>
 
     <target name="package.custom.post" depends="package.randomxmlgenerator, package.gclient, package.udditool"/>
 
