@@ -54,18 +54,33 @@ public class Folder extends NamedEntityImp implements HasFolder {
         this.parentFolder = folder.getFolder();
     }
 
+    /**
+     * @return true if this folder is an ancestor of the targetFolder, false otherwise
+     */
     public boolean isParentOf(Folder targetFolder) {
-        if (targetFolder == null)
-            return false;
+        return getNesting(targetFolder) > 0;
+    }
+
+    /**
+     * @return -1 if the current folder is not an ancestor of the maybeChild folder,
+     *          0 if the current folder is the same as the maybeChild folder, or
+     *          the nesting level between the maybeChild folder and the current folder, if the current folder is an ancestor of the maybeChild folder
+     */
+    public int getNesting(Folder maybeChild) {
+        if (maybeChild == null)
+            return -1;
+
+        if (_oid == maybeChild.getOid())
+            return 0;
 
         int nesting = 0;
-        Folder parent = targetFolder.getFolder();
+        Folder parent = maybeChild.getFolder();
         while(parent != null && nesting++ < MAX_NESTING_CHECK_LEVEL) {
             if (parent.getOid() == _oid)
-                return true;
+                return nesting;
             parent = parent.getFolder();
         }
-        return false;
+        return -1;
     }
 
     public String getPath() {

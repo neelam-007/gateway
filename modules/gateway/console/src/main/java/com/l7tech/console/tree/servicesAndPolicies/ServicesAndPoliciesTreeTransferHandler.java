@@ -124,7 +124,6 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                         if(transferNode instanceof FolderNode) {
                             FolderNode child = (FolderNode) transferNode;
                             Folder movedFolder = child.getFolder();
-                            movedFolder.reParent(newParentFolder);
                             try {
                                 Registry.getDefault().getFolderAdmin().moveEntityToFolder( newParentFolder, movedFolder );
 
@@ -250,11 +249,6 @@ public class ServicesAndPoliciesTreeTransferHandler extends TransferHandler {
                         }
                     }
                 }
-            } catch (InvalidParentFolderException e) {
-                if(tree != null){
-                    DialogDisplayer.showMessageDialog(tree, ExceptionUtils.getMessage(e), "Folder Error", JOptionPane.ERROR_MESSAGE, null);
-                }
-                return false;
             } catch (UpdateException e){
                 if(tree != null){
                     if (ExceptionUtils.causedBy(e, StaleUpdateException.class)) {

@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
  */
 public class FolderAdminImpl implements FolderAdmin {
     private static final int MAX_FOLDER_NAME_LENGTH = 128;
+    public static final String MAX_FOLDER_DEPTH_PROPERTY = "policyorganization.maxFolderDepth";
 
     private static final Pattern replaceRoleName =
             Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, ROLE_NAME_TYPE_SUFFIX));
@@ -74,7 +75,8 @@ public class FolderAdminImpl implements FolderAdmin {
         try {
             long oid;
             if (folder.getOid() == Folder.DEFAULT_OID) {
-                validateFolders( folder, new Functions.Binary<SaveException,String,Throwable>(){
+                final int maxDepth = ServerConfig.getInstance().getIntProperty(MAX_FOLDER_DEPTH_PROPERTY, 8);
+                validateFolders( folder, maxDepth, 1, new Functions.Binary<SaveException,String,Throwable>() {
                     @Override
                     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
                     public SaveException call(String s, Throwable throwable) {
@@ -118,54 +120,70 @@ public class FolderAdminImpl implements FolderAdmin {
     public void moveEntityToFolder( final Folder folder, final PersistentEntity entity ) throws UpdateException {
         if ( entity == null ) throw new UpdateException( "Entity is required." );
 
-        Folder targetFolder = folder;
-        if ( targetFolder == null ) {
-            try {
-                targetFolder = folderManager.findRootFolder();
-            } catch ( FindException fe ) {
-                throw new UpdateException( "Error finding root folder.", fe );
-            }
-
-            if ( targetFolder == null ) {
-                throw new UpdateException( "Error finding root folder." );                
-            }
+        Folder rootFolder;
+        try {
+            rootFolder = folderManager.findRootFolder();
+        } catch ( FindException fe ) {
+            throw new UpdateException( "Error finding root folder.", fe );
         }
 
+        Folder targetFolder = folder != null ? folder : rootFolder;
+
+        if(entity.getOid() == targetFolder.getOid())
+            throw new UpdateException("Parent folder cannot be the same as folder id", null);
+
         if ( entity instanceof Folder ) {
-            validateFolders( (Folder) entity, new Functions.Binary<UpdateException,String,Throwable>(){
-                @Override
-                @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-                public UpdateException call(String s, Throwable throwable) {
-                    return new UpdateException(s, throwable);
+            try {
+                if (((Folder)entity).isParentOf(targetFolder))
+                    throw new UpdateException("The destination folder is a subfolder of the source folder");
+                final int allowedDepthFromTarget = ServerConfig.getInstance().getIntProperty(MAX_FOLDER_DEPTH_PROPERTY, 8) - rootFolder.getNesting(targetFolder);
+                final int depthOfMovedEntity = rootFolder.getNesting(folderManager.findByPrimaryKey(entity.getOid()));
+                for(Folder maybeChild : folderManager.findAll()) {
+                    int relativeChildDepth = ((Folder) entity).getNesting(maybeChild);
+                    if (relativeChildDepth >= 0) // it's a child of the moved folder
+                        validateFolders(maybeChild, allowedDepthFromTarget,  depthOfMovedEntity, new Functions.Binary<UpdateException, String, Throwable>() {
+                            @Override
+                            @SuppressWarnings({"ThrowableInstanceNeverThrown"})
+                            public UpdateException call(String s, Throwable throwable) {
+                                return new UpdateException(s, throwable);
+                            }
+                        });
                 }
-            } );
+            } catch (FindException e) {
+                throw new UpdateException("Could not retrieve folder list.", e);
+            }
         }
 
         FolderedEntityManager manager = entityManagerMap.get( entity.getClass() );
         manager.updateFolder( entity, folder );
     }
 
-    private <T extends Throwable> void validateFolders( final Folder folder, final Functions.Binary<T,String,Throwable> exceptionBuilder ) throws T {
-        final int maxDepth = ServerConfig.getInstance().getIntProperty("policyorganization.maxFolderDepth",8);
-        final Folder pf = folder.getFolder();
-        final Long parentFolderId = pf == null ? null : pf.getOid();
+    /**
+     * Performs the following validations on the supplied Folder:
+     * <ul>
+     * <li> validates its parentFolderId points to an existing Folder </li>
+     * <li> ensures that the parent folder is not itself </li>
+     * <li> checks that the folder depth does not exceed a configured limit </li>
+     * </ul>
+     *
+     * @param folder               The folder to be validated
+     * @param targetMaxDepth       The maximum depth allowed where 
+     * @param referenceFolderDepth Depth of the of the folder being moved, or 1 for create/save operations.
+     * @param exceptionBuilder     Exception builder to be used on failure
+     * @throws T                   If the validation fails or if an error prevents it from completing
+     */
+    private <T extends Throwable> void validateFolders( final Folder folder, int targetMaxDepth, int referenceFolderDepth,
+                                                        final Functions.Binary<T,String,Throwable> exceptionBuilder ) throws T {
+        Long parentFolderId = folder.getFolder() != null ? folder.getFolder().getOid() : null;
         if (parentFolderId != null) {
             try {
-                Folder parentFolder = folderManager.findByPrimaryKey(parentFolderId);
-                long folderId = folder.getOid();
-                if (parentFolderId == folderId){
+                if ( parentFolderId == folder.getOid() )
                     throw exceptionBuilder.call("Parent folder cannot be the same as folder id", null);
-                }
 
-                //This will load all the folders parents
-                int levels = 0;
-                while (parentFolder != null){
-                    levels++;
-                    parentFolder = parentFolder.getFolder();
-                }
-                if (levels > maxDepth){
-                    throw exceptionBuilder.call("Folder hierarchy can only be "+maxDepth+" levels deep", null);
-                }
+                int allowedParentDepth = targetMaxDepth + referenceFolderDepth -1;
+                if( folderManager.findRootFolder().getNesting(folderManager.findByPrimaryKey(parentFolderId)) +1 > allowedParentDepth )
+                    throw exceptionBuilder.call("Target folder can accept a folder hierarchy at most " + targetMaxDepth + " levels deep", null);
+
             } catch (FindException e) {
                 throw exceptionBuilder.call("Could not find parent folder", e);
             }
