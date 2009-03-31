@@ -750,7 +750,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
     private class BridgeRoutingKeyStoreManager extends SsgKeyStoreManager {
 
         public boolean isClientCertUnlocked() throws KeyStoreCorruptException {
-            return true;
+            return getClientCertPrivateKey(null) != null;
         }
 
         public void deleteClientCert() throws IOException, KeyStoreException, KeyStoreCorruptException {
@@ -792,7 +792,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             return useClientCert ? signerInfo.getCertificateChain()[0] : null;
         }
 
-        public PrivateKey getClientCertPrivateKey(PasswordAuthentication passwordAuthentication) throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException {
+        public PrivateKey getClientCertPrivateKey(PasswordAuthentication passwordAuthentication) {
             return useClientCert ? signerInfo.getPrivate() : null;
         }
 

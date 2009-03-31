@@ -128,7 +128,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     }
 
     public void addPrivateKey(SignerInfo privateKey) {
-        if (privateKey != null) keys.add(new MyKey(privateKey));
+        if (privateKey != null && privateKey.getCertificate() != null) keys.add(new MyKey(privateKey));
     }
 
     public X509Certificate lookup(String thumbprint) {
