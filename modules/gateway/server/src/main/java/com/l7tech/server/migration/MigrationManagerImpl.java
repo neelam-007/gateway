@@ -431,8 +431,6 @@ public class MigrationManagerImpl implements MigrationManager {
             }
         } else {
             String targetFolderPath = resolvedTarget.getDescription();
-            // map root folder to target folder
-            metadata.addMappingOrCopy(metadata.getRootFolder(), resolvedTarget, false);
             for(ExternalEntityHeader h : metadata.getAllHeaders()) {
                 if (EntityType.FOLDER == h.getType() && ! metadata.getRootFolder().equals(h))
                     h.setDescription(targetFolderPath + h.getDescription());
@@ -440,15 +438,19 @@ public class MigrationManagerImpl implements MigrationManager {
             // don't touch any folders outside the target
             removeFolderMappingsOutsideTarget(metadata.getMappings().entrySet().iterator(), targetFolderPath);
             removeFolderMappingsOutsideTarget(metadata.getCopies().entrySet().iterator(), targetFolderPath);
+            // map root folder to target folder
+            metadata.addMappingOrCopy(metadata.getRootFolder(), resolvedTarget, false);
         }
         return errors;
     }
 
     private void removeFolderMappingsOutsideTarget(Iterator<Map.Entry<ExternalEntityHeader,ExternalEntityHeader>> iter, String targetFolderPath) {
-        Map.Entry<ExternalEntityHeader,ExternalEntityHeader> entry;
+        ExternalEntityHeader mappedTarget;
         while (iter.hasNext()) {
-            entry = iter.next();
-            if (EntityType.FOLDER == entry.getValue().getType() && ! entry.getValue().getDescription().startsWith(targetFolderPath))
+            mappedTarget = iter.next().getValue();
+            if ( EntityType.FOLDER != mappedTarget.getType() )
+                continue;
+            if ( !mappedTarget.getDescription().startsWith(targetFolderPath) || mappedTarget.getDescription().equals(targetFolderPath))
                 iter.remove();
         }
     }
