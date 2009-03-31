@@ -31,10 +31,7 @@ import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.*;
 
 public class EditRoleDialog extends JDialog {
     private Role role;
@@ -58,6 +55,7 @@ public class EditRoleDialog extends JDialog {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RbacGui");
 
     private final ActionListener permissionsListener = new ActionListener() {
+        @Override
         public void actionPerformed(ActionEvent e) {
             doPermissionAction(e);
         }
@@ -179,6 +177,7 @@ public class EditRoleDialog extends JDialog {
         RoleAssignmentListSelectionListener(EditRoleDialog dialog){
             this.dialog = dialog;                
         }
+        @Override
         public void valueChanged(ListSelectionEvent e) {
             dialog.enableAssignmentDeleteButton();
         }
@@ -208,18 +207,22 @@ public class EditRoleDialog extends JDialog {
             permissions.addAll(role.getPermissions());
         }
 
+        @Override
         public String getColumnName(int column) {
             return COL_NAMES[column];
         }
 
+        @Override
         public int getRowCount() {
             return permissions.size();
         }
 
+        @Override
         public int getColumnCount() {
             return 2;
         }
 
+        @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
             Permission perm = permissions.get(rowIndex);
             switch(columnIndex) {
@@ -270,6 +273,7 @@ public class EditRoleDialog extends JDialog {
 
     private void setupActionListeners() {
         ListSelectionListener listListener = new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 updateButtonStates();
             }
@@ -277,6 +281,7 @@ public class EditRoleDialog extends JDialog {
 
         roleName.getDocument().addDocumentListener(
                 new RunOnChangeListener(new Runnable() {
+                    @Override
                     public void run() {
                         updateButtonStates();
                     }
@@ -284,6 +289,7 @@ public class EditRoleDialog extends JDialog {
         );
 
         permissionsTable.addMouseListener(new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() >= 2 && shouldAllowEdits)
                     showEditPermissionDialog(getSelectedPermission());
@@ -293,12 +299,14 @@ public class EditRoleDialog extends JDialog {
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent e) {
                 onCancel();
             }
         });
 
         contentPane.registerKeyboardAction(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onCancel();
             }
@@ -307,12 +315,14 @@ public class EditRoleDialog extends JDialog {
 
     private void setupButtonListeners() {
         buttonOK.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                     onOK();
             }
         });
 
         buttonCancel.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onCancel();
             }
@@ -323,6 +333,7 @@ public class EditRoleDialog extends JDialog {
         removePermission.addActionListener(permissionsListener);
 
         addAssignment.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Options opts = new Options();
                 opts.setInitialProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
@@ -359,14 +370,20 @@ public class EditRoleDialog extends JDialog {
         });
 
         removeAssignment.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 Utilities.doWithConfirmation(
                     EditRoleDialog.this,
                     resources.getString("manageRoles.removeAssignmentTitle"), resources.getString("manageRoles.removeAssignmentMessage"), new Runnable() {
+                    @Override
                     public void run() {
-                        int [] selected = roleAssigneeTable.getSelectedRows();
-                        for (int o : selected) {
-                            int modelRow = Utilities.convertRowIndexToModel(roleAssigneeTable,o);
+                        int [] selectedRow = roleAssigneeTable.getSelectedRows();
+                        Integer [] selectedModel = new Integer[selectedRow.length];
+                        for (int i= 0; i< selectedRow.length; i++) {
+                            selectedModel[i] = Utilities.convertRowIndexToModel(roleAssigneeTable,selectedRow[i]);
+                        }
+                        Arrays.sort( selectedModel, Collections.reverseOrder() );
+                        for ( int modelRow : selectedModel ) {
                             roleAssignmentTableModel.removeRoleAssignment(modelRow);
                         }
                         updateButtonStates();
@@ -396,6 +413,7 @@ public class EditRoleDialog extends JDialog {
             if (p != null) tableModel.fireTableDataChanged();
         } else if (srcButton == removePermission) {
             Utilities.doWithConfirmation(EditRoleDialog.this, "Remove Permission", "Are you sure you want to remove this permission", new Runnable() {
+                @Override
                 public void run() {
                     tableModel.remove(perm);
                 }
