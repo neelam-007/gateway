@@ -228,6 +228,10 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         }
     }
 
+    public SsgKeyEntry lookupKeyByKeyAlias(String keyAlias, long preferredKeystoreId) throws FindException, KeyStoreException, IOException {
+        return keyAlias == null ? getSslInfo() : keyStoreManager.lookupKeyByKeyAlias(keyAlias, preferredKeystoreId);
+    }
+
     public void propertyChange(PropertyChangeEvent evt) {
         invalidateCachedCerts();
     }
