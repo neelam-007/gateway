@@ -13,6 +13,8 @@ import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.util.Functions;
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import java.io.Serializable;
 import java.util.*;
@@ -29,7 +31,7 @@ import java.util.*;
  * User: flascell<br/>
  * Date: Nov 6, 2007<br/>
  */
-public class LDAPQueryAssertion extends Assertion implements UsesVariables, SetsVariables, Serializable {
+public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesVariables, SetsVariables, Serializable {
     private String searchFilter;
     private QueryAttributeMapping[] queryMappings = new QueryAttributeMapping[0];
     private long ldapProviderOid;
@@ -98,6 +100,19 @@ public class LDAPQueryAssertion extends Assertion implements UsesVariables, Sets
 
     public void setLdapProviderOid(long ldapProviderOid) {
         this.ldapProviderOid = ldapProviderOid;
+    }
+
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.ASSERTION)
+    public EntityHeader[] getEntitiesUsed() {
+        return new EntityHeader[] { new EntityHeader(Long.toString(ldapProviderOid), EntityType.ID_PROVIDER_CONFIG, null, null) };
+    }
+
+    public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
+        if( oldEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) &&
+            oldEntityHeader.getOid() == ldapProviderOid &&
+            newEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
+            ldapProviderOid = newEntityHeader.getOid();
+        }
     }
 
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
