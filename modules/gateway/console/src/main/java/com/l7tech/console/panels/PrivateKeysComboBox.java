@@ -40,7 +40,7 @@ public class PrivateKeysComboBox extends JComboBox {
         }
     }
 
-    private static final PrivateKeyItem ITEM_DEFAULT_SSL = new PrivateKeyItem(-1, null, DEFAULT_PRIVATE_KEY) {
+    private static final PrivateKeyItem ITEM_DEFAULT_SSL = new PrivateKeyItem(-1, null, null) {
         public String toString() {
             return DEFAULT_PRIVATE_KEY;
         }
@@ -54,9 +54,9 @@ public class PrivateKeysComboBox extends JComboBox {
      */
     public static class PrivateKeyItemComparator implements Comparator<PrivateKeyItem> {
         public int compare(PrivateKeyItem pk1, PrivateKeyItem pk2) {
-            if (pk1.keyAlias.equals(DEFAULT_PRIVATE_KEY)) {
+            if (pk1.keyAlias == null) {
                 return -1;
-            } else if (pk2.keyAlias.equals(DEFAULT_PRIVATE_KEY)) {
+            } else if (pk2.keyAlias == null) {
                 return 1;
             } else {
                 return pk1.keyAlias.compareToIgnoreCase(pk2.keyAlias);
@@ -152,9 +152,11 @@ public class PrivateKeysComboBox extends JComboBox {
     }
 
     private int findIndex(long keystoreId, String keyAlias, boolean matchLegacy) {
+        if (keyAlias == null)
+            return getItemCount() > 0 && getItemAt(0) == ITEM_DEFAULT_SSL ? 0 : -1;
         for (int i = 0; i < getItemCount(); ++ i) {
             final PrivateKeyItem item = (PrivateKeyItem)getItemAt(i);
-            if (keystoreIdMatches(keystoreId, item.keystoreId, matchLegacy) && item.keyAlias.equalsIgnoreCase(keyAlias)) {
+            if (keystoreIdMatches(keystoreId, item.keystoreId, matchLegacy) && keyAlias.equalsIgnoreCase(item.keyAlias)) {
                 return i;
             }
         }

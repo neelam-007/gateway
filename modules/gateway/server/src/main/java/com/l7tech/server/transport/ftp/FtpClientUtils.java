@@ -5,8 +5,7 @@ import com.jscape.inet.ftp.FtpException;
 import com.jscape.inet.ftps.Ftps;
 import com.jscape.inet.ftps.FtpsCertificateVerifier;
 
-import com.l7tech.server.security.keystore.SsgKeyFinder;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.gateway.common.transport.ftp.*;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.audit.SystemMessages;
@@ -93,8 +92,8 @@ public class FtpClientUtils {
         return newFtpsClient(config, null, null);
     }
 
-    public static Ftps newFtpsClient(FtpClientConfig config, SsgKeyStoreManager keyStoreManager) throws FtpException {
-        return newFtpsClient(config, keyStoreManager, null);
+    public static Ftps newFtpsClient(FtpClientConfig config, DefaultKey keyFinder) throws FtpException {
+        return newFtpsClient(config, keyFinder, null);
     }
 
     public static Ftps newFtpsClient(FtpClientConfig config, X509TrustManager trustManager) throws FtpException {
@@ -104,7 +103,7 @@ public class FtpClientUtils {
     /**
      * Creates a new, connected FTPS client using the provided FTP configuration.
      */
-    public static Ftps newFtpsClient(FtpClientConfig config, SsgKeyStoreManager keyStoreManager, X509TrustManager trustManager) throws FtpException {
+    public static Ftps newFtpsClient(FtpClientConfig config, DefaultKey keyFinder, X509TrustManager trustManager) throws FtpException {
         if (FtpCredentialsSource.SPECIFIED != config.getCredentialsSource())
             throw new IllegalStateException("Cannot create FTP connection if crediantials are not specified.");
 
@@ -128,13 +127,12 @@ public class FtpClientUtils {
         }
 
         if (config.isUseClientCert()) {
-            if (config.getClientCertId() == -1 || config.getClientCertAlias() == null || keyStoreManager == null)
-                throw new IllegalArgumentException("Authentication with client certificate requested, but certificate id/alias/store not configured.");
+            if (keyFinder == null)
+                throw new IllegalArgumentException("Authentication with client certificate requested, but (default) key finder was not provided.");
 
             try {
                 // Retrieves the private key and cert.
-                final SsgKeyFinder keyFinder = keyStoreManager.findByPrimaryKey(config.getClientCertId());
-                final SsgKeyEntry keyEntry = keyFinder.getCertificateChain(config.getClientCertAlias());
+                final SsgKeyEntry keyEntry = keyFinder.lookupKeyByKeyAlias(config.getClientCertAlias(), config.getClientCertId());
                 final X509Certificate[] certChain = keyEntry.getCertificateChain();
                 final PrivateKey privateKey = keyEntry.getPrivateKey();
 
@@ -283,7 +281,7 @@ public class FtpClientUtils {
      *
      * @throws com.l7tech.gateway.common.transport.ftp.FtpTestException if connection test failed
      */
-    public static void testFtpsConnection(FtpClientConfig config, SsgKeyStoreManager keyStoreManager, X509TrustManager trustManager) throws FtpTestException {
+    public static void testFtpsConnection(FtpClientConfig config, DefaultKey keyFinder, X509TrustManager trustManager) throws FtpTestException {
         // provide our own debug if the client is not watching the logs
         ByteArrayOutputStream baos = null;
         if (config.getDebugStream() == null) {
@@ -293,7 +291,7 @@ public class FtpClientUtils {
 
         Ftps ftps = null;
         try {
-            ftps = newFtpsClient(config, keyStoreManager, trustManager);
+            ftps = newFtpsClient(config, keyFinder, trustManager);
         } catch (FtpException e) {
             throw new FtpTestException(e.getMessage(), baos != null ? baos.toString() : null);
         } finally {
@@ -310,7 +308,7 @@ public class FtpClientUtils {
     }
 
     public static void upload(FtpClientConfig config, InputStream is, String filename,
-                              SsgKeyStoreManager ssgKeyStore, X509TrustManager trustManager) throws FtpException {
+                              DefaultKey keyFinder, X509TrustManager trustManager) throws FtpException {
 
         if (FtpSecurity.FTP_UNSECURED == config.getSecurity()) {
             final Ftp ftp = FtpClientUtils.newFtpClient(config);
@@ -321,7 +319,7 @@ public class FtpClientUtils {
                 ftp.disconnect();
             }
         } else {
-            final Ftps ftps = FtpClientUtils.newFtpsClient(config, ssgKeyStore, trustManager);
+            final Ftps ftps = FtpClientUtils.newFtpsClient(config, keyFinder, trustManager);
 
             try {
                 ftps.upload(is, filename);
@@ -336,12 +334,12 @@ public class FtpClientUtils {
     }
 
     public static OutputStream getUploadOutputStream(FtpClientConfig config, String filename,
-                            SsgKeyStoreManager ssgKeyStore, X509TrustManager trustManager) throws FtpException {
+                            DefaultKey keyFinder, X509TrustManager trustManager) throws FtpException {
         if (FtpSecurity.FTP_UNSECURED == config.getSecurity()) {
             Ftp ftp = FtpClientUtils.newFtpClient(config);
             return ftp.getOutputStream(filename, 0, false);
         } else {
-            Ftps ftps = FtpClientUtils.newFtpsClient(config, ssgKeyStore, trustManager);
+            Ftps ftps = FtpClientUtils.newFtpsClient(config, keyFinder, trustManager);
             try {
             return ftps.getOutputStream(filename, 0, false);
             } catch (IOException e) {

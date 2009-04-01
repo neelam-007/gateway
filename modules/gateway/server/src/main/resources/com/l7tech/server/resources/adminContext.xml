@@ -265,7 +265,7 @@
     <!-- FTP admin servant -->
     <bean id="ftpAdmin" class="com.l7tech.server.transport.ftp.FtpAdminImpl">
         <constructor-arg ref="routingTrustManager"/>
-        <constructor-arg ref="ssgKeyStoreManager"/>
+        <constructor-arg ref="defaultKey"/>
     </bean>
 
     <!-- trusted cert admin servant -->

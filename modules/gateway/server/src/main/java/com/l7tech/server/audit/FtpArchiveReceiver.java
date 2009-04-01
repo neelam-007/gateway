@@ -18,7 +18,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
 import javax.net.ssl.X509TrustManager;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.transport.ftp.FtpClientUtils;
 import com.l7tech.server.ServerConfig;
@@ -48,7 +47,7 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
     private ClusterPropertyManager clusterPropertyManager;
     private AuditExporter auditExporter;
     private X509TrustManager trustManager;      // may be needed for ftps verification
-    private SsgKeyStoreManager ssgKeyStore;     // may be needed for ftp authentication
+    private DefaultKey keyFinder;               // may be needed for ftp authentication
     private X509Certificate sslCert;            // needed for exported zip xml signature
     private PrivateKey sslPrivateKey;           // needed for exported zip xml signature
 
@@ -63,8 +62,7 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
     private AuditExporter.ExportedInfo exportedInfo;
 
     public FtpArchiveReceiver(ServerConfig serverConfig, ClusterPropertyManager cpm, AuditExporter ae,
-                              X509TrustManager trustManager, SsgKeyStoreManager ssgKeyStore,
-                              DefaultKey defaultKey) {
+                              X509TrustManager trustManager, DefaultKey defaultKey) {
         if (serverConfig == null)
             throw new NullPointerException("ServerConfig parameter must not be null.");
         if (cpm == null)
@@ -73,8 +71,6 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
             throw new NullPointerException("AuditExporter parameter must not be null.");
         if (trustManager == null)
             throw new NullPointerException("TrustManager parameter must not be null.");
-        if (ssgKeyStore == null)
-            throw new NullPointerException("SsgKeyStore parameter must not be null.");
         if (defaultKey == null)
             throw new NullPointerException("SsgKeyStore parameter must not be null.");
 
@@ -82,7 +78,7 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
         this.clusterPropertyManager = cpm;
         this.auditExporter = ae;
         this.trustManager = trustManager;
-        this.ssgKeyStore = ssgKeyStore;
+        this.keyFinder = defaultKey;
 
         try {
             this.sslCert = defaultKey.getSslInfo().getCertificate();
@@ -166,7 +162,7 @@ public class FtpArchiveReceiver implements ArchiveReceiver, PropertyChangeListen
                 logger.fine("Creating new FTP audit archive zip upload stream...");
             try {
                 zipOut = auditExporter.newAuditExportOutputStream(
-                    FtpClientUtils.getUploadOutputStream(ftpConfig, newFileName(), ssgKeyStore, trustManager));
+                    FtpClientUtils.getUploadOutputStream(ftpConfig, newFileName(), keyFinder, trustManager));
                 startWatcherThread();
             } catch (FtpException e) {
                 logger.log(Level.WARNING, "Error creating output stream for audit export.", e);

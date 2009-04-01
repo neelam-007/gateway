@@ -8,7 +8,7 @@ import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpTestException;
 import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
 import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.DefaultKey;
 
 import javax.net.ssl.X509TrustManager;
 
@@ -18,12 +18,12 @@ import javax.net.ssl.X509TrustManager;
  */
 public class FtpAdminImpl implements FtpAdmin {
     private final X509TrustManager _x509TrustManager;
-    private final SsgKeyStoreManager _ssgKeyStoreManager;
+    private final DefaultKey _keyFinder;
 
     public FtpAdminImpl(X509TrustManager x509TrustManager,
-                        SsgKeyStoreManager ssgKeyStoreManager) {
+                        DefaultKey keyFinder) {
         _x509TrustManager = x509TrustManager;
-        _ssgKeyStoreManager = ssgKeyStoreManager;
+        _keyFinder = keyFinder;
     }
 
     /**
@@ -69,14 +69,14 @@ public class FtpAdminImpl implements FtpAdmin {
             trustManager = _x509TrustManager;
         }
 
-        SsgKeyStoreManager keyStoreManager = null;
+        DefaultKey keyFinder = null;
         if (useClientCert) {
             config.setUseClientCert(true).setClientCertId(clientCertKeystoreId).setClientCertAlias(clientCertKeyAlias);
-            keyStoreManager = _ssgKeyStoreManager;
+            keyFinder = _keyFinder;
         }
 
         if (isFtps)
-            FtpClientUtils.testFtpsConnection(config, keyStoreManager, trustManager);
+            FtpClientUtils.testFtpsConnection(config, keyFinder, trustManager);
         else
             FtpClientUtils.testFtpConnection(config);
     }

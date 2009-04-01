@@ -19,8 +19,8 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.ftp.FtpClientUtils;
+import com.l7tech.server.DefaultKey;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -41,13 +41,13 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
     private static final Logger _logger = Logger.getLogger(ServerFtpRoutingAssertion.class.getName());
     private final Auditor _auditor;
     private final X509TrustManager _trustManager;
-    private final SsgKeyStoreManager _ssgKeyStoreManager;
+    private final DefaultKey _keyFinder;
 
     public ServerFtpRoutingAssertion(FtpRoutingAssertion assertion, ApplicationContext applicationContext) {
         super(assertion, applicationContext, _logger);
         _auditor = new Auditor(this, applicationContext, _logger);
         _trustManager = (X509TrustManager)applicationContext.getBean("routingTrustManager", X509TrustManager.class);
-        _ssgKeyStoreManager = (SsgKeyStoreManager)applicationContext.getBean("ssgKeyStoreManager", SsgKeyStoreManager.class);
+        _keyFinder = (DefaultKey)applicationContext.getBean("defaultKey", DefaultKey.class);
 
     }
 
@@ -168,13 +168,13 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             trustManager = _trustManager;
         }
 
-        SsgKeyStoreManager keyStoreManager = null;
+        DefaultKey keyFinder = null;
         if (useClientCert) {
             config.setUseClientCert(true).setClientCertId(clientCertKeystoreId).setClientCertAlias(clientCertKeyAlias);
-            keyStoreManager = _ssgKeyStoreManager;
+            keyFinder = _keyFinder;
         }
 
-        FtpClientUtils.upload(config, is, fileName, keyStoreManager, trustManager);
+        FtpClientUtils.upload(config, is, fileName, keyFinder, trustManager);
     }
 
     private String expandVariables(PolicyEnforcementContext context, String pattern) {

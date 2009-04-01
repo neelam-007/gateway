@@ -696,7 +696,6 @@
       <constructor-arg ref="clusterPropertyManager"/>
       <constructor-arg ref="auditExporter"/>
       <constructor-arg ref="trustManager"/>
-      <constructor-arg ref="ssgKeyStoreManager"/>
       <constructor-arg ref="defaultKey"/>
     </bean>
 
