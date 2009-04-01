@@ -16,23 +16,20 @@ public class WSSecurityProcessorUtils {
     public static ProcessorResult getWssResults(final Message msg, final String what,
                                                 final SecurityTokenResolver securityTokenResolver, final Audit audit)
     {
-        final ProcessorResult wssResults;
         final SecurityKnob sk = (SecurityKnob)msg.getKnob(SecurityKnob.class);
-        if (sk != null) {
-            wssResults = sk.getProcessorResult();
-            if (wssResults == null && audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_NO_WSS, what);
+        final ProcessorResult existingWssResults;
+        if (sk != null && null != (existingWssResults = sk.getProcessorResult()))
+            return existingWssResults;
+        
+        try {
+            final WssProcessorImpl impl = new WssProcessorImpl(msg);
+            impl.setSecurityTokenResolver(securityTokenResolver);
+            ProcessorResult wssResults = impl.processMessage();
+            msg.getSecurityKnob().setProcessorResult(wssResults); // In case someone else needs it later
             return wssResults;
-        } else {
-            try {
-                final WssProcessorImpl impl = new WssProcessorImpl(msg);
-                impl.setSecurityTokenResolver(securityTokenResolver);
-                wssResults = impl.processMessage();
-                msg.getSecurityKnob().setProcessorResult(wssResults); // In case someone else needs it later
-                return wssResults;
-            } catch (Exception e) {
-                if (audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_BAD_WSS, new String[] { what, ExceptionUtils.getMessage(e) }, e);
-                return null;
-            }
+        } catch (Exception e) {
+            if (audit != null) audit.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_BAD_WSS, new String[] { what, ExceptionUtils.getMessage(e) }, e);
+            return null;
         }
     }
 }
