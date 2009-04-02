@@ -499,6 +499,7 @@ public class LogonDialog extends JDialog {
         JPanel buttonPanel = createButtonPanel(); // sets global loginButton
         contents.add(buttonPanel, constraints);
 
+        loginButton.setEnabled(isInputValid());
         getRootPane().setDefaultButton(loginButton);
     }
 
