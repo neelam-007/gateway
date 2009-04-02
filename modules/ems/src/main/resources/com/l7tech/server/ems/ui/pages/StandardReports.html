@@ -12,10 +12,11 @@
     <link rel="stylesheet" type="text/css" href="/css/l7.css" />
 
     <wicket:head>
-    <!-- Required YUI modules: button, calendar, connection, container, event, json, logger -->
+    <!-- Required YUI modules: animation, button, calendar, connection, container, event, json, logger -->
     <link rel="stylesheet" type="text/css" href="/yui/assets/skins/sam/skin.css">
     <script type="text/javascript" src="/yui/yahoo-dom-event/yahoo-dom-event.js"></script>
     <script type="text/javascript" src="/yui/element/element-beta-min.js"></script>
+    <script type="text/javascript" src="/yui/animation/animation-min.js"></script>
     <script type="text/javascript" src="/yui/button/button-min.js"></script>
     <script type="text/javascript" src="/yui/calendar/calendar-min.js"></script>
     <script type="text/javascript" src="/yui/connection/connection-min.js"></script>
@@ -79,6 +80,11 @@
         }
     </script>
     <script type="text/javascript">
+        var MIN_FRAME_HEIGHT = 150;
+        var MAX_FRAME_HEIGHT = 500;
+        var INCR_FRAME_HEIGHT = 50;
+        var DECR_FRAME_HEIGHT = - INCR_FRAME_HEIGHT;
+
         var loadSettingsButton;
         var saveSettingsButton;
         var deleteSettingsButton;
@@ -1910,11 +1916,23 @@
                                     <td width="100%">
                                         <div class="panel noMargin">
                                             <div class="panelToolbar">
-                                                Select by:
-                                                <input id="publishedServiceRadioButton" type="radio" name="selectionType" value="publishedService" onclick="onChangeEntitySelectionType();" checked/>
-                                                <label for="publishedServiceRadioButton">Published Service</label>
-                                                <input id="operationRadioButton" type="radio" name="selectionType" value="operation" onclick="onChangeEntitySelectionType();"/>
-                                                <label for="operationRadioButton">Operation</label>
+                                                <table width="100%">
+                                                    <tr>
+                                                        <td class="nowrap">
+                                                            Select by:
+                                                            <input id="publishedServiceRadioButton" type="radio" name="selectionType" value="publishedService" onclick="onChangeEntitySelectionType();" checked/>
+                                                            <label for="publishedServiceRadioButton">Published Service</label>
+                                                            <input id="operationRadioButton" type="radio" name="selectionType" value="operation" onclick="onChangeEntitySelectionType();"/>
+                                                            <label for="operationRadioButton">Operation</label>
+                                                        </td>
+                                                        <td class="right" width="100%">
+                                                            <img class="clickable" src="../images/taller.png" title="Make taller" alt=""
+                                                                 onclick="l7.Resize.changeHeight(['ssgClusterSelector', 'ssgClusterServiceContentSelector'], INCR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                                            <img class="clickable" src="../images/shorter.png" title="Make shorter" alt=""
+                                                                 onclick="l7.Resize.changeHeight(['ssgClusterSelector', 'ssgClusterServiceContentSelector'], DECR_FRAME_HEIGHT, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);" />
+                                                        </td>
+                                                    </tr>
+                                                </table>
                                             </div>
                                                 <table class="explorer" width="100%">
                                                     <tr>
