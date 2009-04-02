@@ -379,16 +379,10 @@
         function onChangeEntitySelectionType() {
             refreshSsgClusterContentSelector();
 
-            // Clears out all entity selections because they would now be the wrong type.
-            while (entitySelectionTableBody.rows.length > 0) {
-                entitySelectionTableBody.deleteRow(-1);
-            }
-            messageWhenNoEntitySelected.style.display = '';
-            updateSsgClustersWithSelectedEntities();
-            // and all groupings
-            while (groupingTableBody.rows.length > 0) {
-                groupingTableBody.deleteRow(-1);
-            }
+            // Clears out all entity selections because they would now be the wrong type,
+            deleteAllEntities();
+            // and all groupings.
+            deleteAllGroupings();
 
             // Updates the add button.
             var entityTypeText;
@@ -632,6 +626,14 @@
             onChangeSelectedEntities();
         }
 
+        function deleteAllEntities() {
+            while (entitySelectionTableBody.rows.length > 0) {
+                entitySelectionTableBody.deleteRow(-1);
+            }
+            messageWhenNoEntitySelected.style.display = '';
+            onChangeSelectedEntities();
+        }
+
         /**
          * @return {string} a l7.Constants.REPORT_TIME_PERIOD_TYPE value
          */
@@ -775,6 +777,12 @@
             }
 
             onChangeGroupings();
+        }
+
+        function deleteAllGroupings() {
+            while (groupingTableBody.rows.length > 0) {
+                groupingTableBody.deleteRow(-1);
+            }
         }
 
         /**
@@ -1935,7 +1943,7 @@
                                                 <table class="dataTable">
                                                     <thead>
                                                         <tr>
-                                                            <th><!-- deletion image button --></th>
+                                                            <th class="center"><img class="clickable" src="../images/delete.png" title="Remove All" onclick="deleteAllEntities();"/></th>
                                                             <th>SSG Cluster</th>
                                                             <th>Published Service</th>
                                                             <th width="100%">Operation</th>
@@ -2052,7 +2060,7 @@
                                                 <table class="dataTable">
                                                     <thead>
                                                         <tr>
-                                                            <th><!-- deletion image button --></th>
+                                                            <th class="center"><img class="clickable" src="../images/delete.png" title="Remove All" onclick="deleteAllGroupings();"/></th>
                                                             <th>SSG Cluster</th>
                                                             <th>Message Context Key</th>
                                                             <th width="100%">Key Value Filter <span class="note">(optional, wildcard * allowed)</span></th>
