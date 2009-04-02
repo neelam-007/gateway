@@ -1,0 +1,15 @@
+<mappings>
+	<mapping xmlns:tns="http://ns.l7tech.com/SecureSpan/admin/service/0.1">
+		<method name="findAllPublishedServices">
+            <return-type mappedName="out" />
+		</method>
+        <method name="findServiceByID">
+            <parameter index="0" mappedName="in0"/>
+            <return-type mappedName="out" />
+        </method>
+        <method name="resolveWsdlTarget">
+            <parameter index="0" mappedName="in0"/>
+            <return-type mappedName="out" />
+        </method>
+	</mapping>
+</mappings>
