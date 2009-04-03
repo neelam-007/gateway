@@ -178,7 +178,6 @@ public class MigrationManagerImpl implements MigrationManager {
         errors.addAll(validateBundle(bundle, entitiesFromTarget));
 
         if (!errors.isEmpty())
-            //logger.log(Level.WARNING, "Bundle validation errors: {0}.", errors);
             throw new MigrationApi.MigrationException(errors);
 
         Map<ExternalEntityHeader, MigratedItem> result = new HashMap<ExternalEntityHeader, MigratedItem>();
@@ -245,7 +244,7 @@ public class MigrationManagerImpl implements MigrationManager {
         } else if ( ! metadata.wasCopied(header) && ! entitiesFromTarget.containsKey(header)) {
             op = CREATE;
             targetHeader = header;
-        } else if (! overwriteExisting || EntityType.FOLDER == header.getType()) {
+        } else if (! overwriteExisting || ! bundle.hasValueForHeader(header) || EntityType.FOLDER == header.getType()) {
             op = MAP_EXISTING;
             targetHeader = metadata.wasCopied(header) ? getUpdatedHeader(metadata.getCopiedOrMapped(header)) : header;
         } else if (metadata.wasCopied(header) && entitiesFromTarget.containsKey(metadata.getCopied(header))) {
@@ -467,9 +466,8 @@ public class MigrationManagerImpl implements MigrationManager {
 
         // check that entity values are available for all headers, either in the bundle or already on the SSG
         for (ExternalEntityHeader header : metadata.getAllHeaders()) {
-            if ( ! bundle.hasItem(header) && ! entitiesFromTarget.containsKey(header) &&
-                 ! entitiesFromTarget.containsKey(metadata.getCopiedOrMapped(header)) &&
-                 ! (header.isValueMappable() && header.getMappedValue() != null) ) {
+            if ( ! bundle.hasValueForHeader(header) && ! entitiesFromTarget.containsKey(header) &&
+                 ! entitiesFromTarget.containsKey(metadata.getCopiedOrMapped(header)) ) {
                 errors.add("Entity not found for header: " + header);
             }
         }

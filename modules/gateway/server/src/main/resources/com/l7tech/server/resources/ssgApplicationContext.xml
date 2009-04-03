@@ -1378,6 +1378,7 @@
       <constructor-arg ref="serviceDocumentManager"/>
       <constructor-arg ref="clusterPropertyManager"/>
       <constructor-arg ref="schemaEntryManager"/>
+      <constructor-arg ref="serverConfig"/>
   </bean>
 
   <bean id="migrationManager" class="com.l7tech.server.migration.MigrationManagerImpl">

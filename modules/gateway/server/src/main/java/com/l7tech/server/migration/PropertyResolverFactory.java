@@ -16,6 +16,7 @@ import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SSGKEY;
 import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SERVER_VARIABLE;
 import static com.l7tech.objectmodel.migration.PropertyResolver.Type.SCHEMA_ENTRY;
 import com.l7tech.server.EntityFinder;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.communityschemas.SchemaEntryManager;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -34,16 +35,18 @@ public class PropertyResolverFactory {
     private ServiceDocumentManager serviceDocumentManager;
     private ClusterPropertyManager cpManager;
     private SchemaEntryManager schemaManager;
+    private ServerConfig serverConfig;
 
     private Map<PropertyResolver.Type, PropertyResolver> registry = new HashMap<PropertyResolver.Type, PropertyResolver>();
 
     public PropertyResolverFactory(EntityFinder entityFinder, ServiceDocumentManager serviceDocumentManager, SsgKeyStoreManager keyManager,
-                                   ClusterPropertyManager cpManager, SchemaEntryManager schemaManager) {
+                                   ClusterPropertyManager cpManager, SchemaEntryManager schemaManager, ServerConfig serverConfig) {
         this.entityFinder = entityFinder;
         this.keyManager = keyManager;
         this.serviceDocumentManager = serviceDocumentManager;
         this.cpManager = cpManager;
         this.schemaManager = schemaManager;
+        this.serverConfig = serverConfig;
         initRegistry();
     }
 
@@ -68,7 +71,7 @@ public class PropertyResolverFactory {
         addToRegistry(new UserGroupResolver(this, USERGROUP));
         addToRegistry(new ValueReferencePropertyResolver(this, VALUE_REFERENCE));
         addToRegistry(new SsgKeyResolver(this, SSGKEY, keyManager));
-        addToRegistry(new ServerVariablePropertyResolver(this, SERVER_VARIABLE, cpManager));
+        addToRegistry(new ServerVariablePropertyResolver(this, SERVER_VARIABLE, cpManager, serverConfig));
         addToRegistry(new SchemaEntryPropertyResolver(this, SCHEMA_ENTRY, schemaManager));
     }
 

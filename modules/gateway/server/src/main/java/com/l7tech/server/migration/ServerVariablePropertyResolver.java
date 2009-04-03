@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.*;
 import static com.l7tech.policy.variable.BuiltinVariables.PREFIX_CLUSTER_PROPERTY;
 import static com.l7tech.policy.variable.BuiltinVariables.PREFIX_GATEWAY_TIME;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 
 import java.util.Set;
@@ -23,10 +24,12 @@ public class ServerVariablePropertyResolver extends AbstractPropertyResolver {
     private static final Logger logger = Logger.getLogger(ServerVariablePropertyResolver.class.getName());
 
     ClusterPropertyManager manager;
+    private ServerConfig serverConfig;
 
-    public ServerVariablePropertyResolver(PropertyResolverFactory factory, Type type, ClusterPropertyManager manager) {
+    public ServerVariablePropertyResolver(PropertyResolverFactory factory, Type type, ClusterPropertyManager manager, ServerConfig serverConfig) {
         super(factory, type);
         this.manager = manager;
+        this.serverConfig = serverConfig;
     }
 
     public Map<ExternalEntityHeader, Set<MigrationDependency>> getDependencies(ExternalEntityHeader source, Object entity, Method property, String propertyName) throws PropertyResolverException {
@@ -50,7 +53,9 @@ public class ServerVariablePropertyResolver extends AbstractPropertyResolver {
                 String cpName = varName.substring(PREFIX_CLUSTER_PROPERTY.length()+1);
                 ExternalEntityHeader cpExternalHeader = new ExternalEntityHeader(cpName, EntityType.CLUSTER_PROPERTY, null, cpName, null, null);
                 try {
-                    cpExternalHeader.setValueMapping(valueMappingType, ExternalEntityHeader.ValueType.TEXT, manager.getProperty(cpName));
+                    cpExternalHeader.setValueMapping(
+                        serverConfig.getClusterPropertyNames().containsKey(cpName) ? MigrationMappingSelection.NONE : valueMappingType,
+                        ExternalEntityHeader.ValueType.TEXT, manager.getProperty(cpName) );
                 } catch (Exception e) {
                     throw new PropertyResolverException("Error loading cluster property: " + cpName, e);
                 }

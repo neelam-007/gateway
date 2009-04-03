@@ -70,8 +70,12 @@ public class MigrationBundle implements Serializable {
         this.exportedItems = exportedItems;
     }
 
+    public boolean hasValueForHeader(ExternalEntityHeader header) {
+        return hasExportedItem(header) ||
+               ( metadata.getAllHeaders().contains(header) && header.isValueMappable() && header.getMappedValue() != null);
+    }
 
-    public boolean hasItem(ExternalEntityHeader header) {
+    public boolean hasExportedItem(ExternalEntityHeader header) {
         return exportedItems.containsKey(header);
     }
 
@@ -92,7 +96,7 @@ public class MigrationBundle implements Serializable {
     }
 
     public Entity getExportedEntity(ExternalEntityHeader header) {
-        return hasItem(header) ? getExportedItem(header).getValue() : null;
+        return hasExportedItem(header) ? getExportedItem(header).getValue() : null;
     }
 
     public String serializeXml() {
