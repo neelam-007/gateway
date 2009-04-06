@@ -53,9 +53,12 @@ public class ServerVariablePropertyResolver extends AbstractPropertyResolver {
                 String cpName = varName.substring(PREFIX_CLUSTER_PROPERTY.length()+1);
                 ExternalEntityHeader cpExternalHeader = new ExternalEntityHeader(cpName, EntityType.CLUSTER_PROPERTY, null, cpName, null, null);
                 try {
+                    String cpValue = manager.getProperty(cpName);
+                    if (cpValue == null)
+                        cpValue = "";
                     cpExternalHeader.setValueMapping(
                         serverConfig.getClusterPropertyNames().containsKey(cpName) ? MigrationMappingSelection.NONE : valueMappingType,
-                        ExternalEntityHeader.ValueType.TEXT, manager.getProperty(cpName) );
+                        ExternalEntityHeader.ValueType.TEXT, cpValue );
                 } catch (Exception e) {
                     throw new PropertyResolverException("Error loading cluster property: " + cpName, e);
                 }
