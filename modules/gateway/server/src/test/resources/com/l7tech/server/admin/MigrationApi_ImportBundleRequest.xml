@@ -1,0 +1,16 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <ns2:ImportBundle xmlns:ns2="http://www.layer7tech.com/management/migration"
+                          xmlns:ns3="http://ns.l7tech.com/secureSpan/1.0/core">
+            <Bundle>
+                <metadata overwrite="false" migrateFolders="false" enableNewServices="false">
+                    <dependencies/>
+                    <mappings/>
+                    <copies/>
+                </metadata>
+                <exportedItems/>
+            </Bundle>
+            <DryRun>true</DryRun>
+        </ns2:ImportBundle>
+    </soap:Body>
+</soap:Envelope>

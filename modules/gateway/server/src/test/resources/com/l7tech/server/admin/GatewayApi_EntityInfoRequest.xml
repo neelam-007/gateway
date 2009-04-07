@@ -1,0 +1,8 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <ns2:GetEntityInfo xmlns:ns2="http://www.layer7tech.com/management/gateway">
+            <EntityTypes>POLICY</EntityTypes>
+            <EntityTypes>SERVICE</EntityTypes>
+        </ns2:GetEntityInfo>
+    </soap:Body>
+</soap:Envelope>

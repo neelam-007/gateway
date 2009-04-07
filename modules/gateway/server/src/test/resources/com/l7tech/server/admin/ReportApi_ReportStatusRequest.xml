@@ -1,0 +1,9 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <ns2:GetReportStatus xmlns:ns2="http://www.layer7tech.com/management/report"
+                             xmlns:ns3="http://www.layer7tech.com/management">
+            <SubmissionIdentifiers>a</SubmissionIdentifiers>
+            <SubmissionIdentifiers>b</SubmissionIdentifiers>
+        </ns2:GetReportStatus>
+    </soap:Body>
+</soap:Envelope>

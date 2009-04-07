@@ -1,0 +1,15 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <ns2:ExportBundle xmlns:ns2="http://www.layer7tech.com/management/migration"
+                          xmlns:ns3="http://ns.l7tech.com/secureSpan/1.0/core">
+            <ExternalEntityHeaders oid="-1" type="ANY">
+                <description></description>
+                <extraProperties/>
+            </ExternalEntityHeaders>
+            <ExternalEntityHeaders oid="-1" type="ANY">
+                <description></description>
+                <extraProperties/>
+            </ExternalEntityHeaders>
+        </ns2:ExportBundle>
+    </soap:Body>
+</soap:Envelope>

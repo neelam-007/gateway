@@ -1,0 +1,10 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <ns2:SubmitReport xmlns:ns2="http://www.layer7tech.com/management/report"
+                          xmlns:ns3="http://www.layer7tech.com/management">
+            <ReportSubmission/>
+            <ReportOutputTypes>PDF</ReportOutputTypes>
+            <ReportOutputTypes>HTML</ReportOutputTypes>
+        </ns2:SubmitReport>
+    </soap:Body>
+</soap:Envelope>

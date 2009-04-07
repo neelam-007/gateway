@@ -1,0 +1,6 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <ns2:GetGroupingKeys xmlns:ns2="http://www.layer7tech.com/management/report"
+                             xmlns:ns3="http://www.layer7tech.com/management"/>
+    </soap:Body>
+</soap:Envelope>

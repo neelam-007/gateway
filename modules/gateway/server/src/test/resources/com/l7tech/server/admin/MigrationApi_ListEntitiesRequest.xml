@@ -1,0 +1,8 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <ns2:ListEntities xmlns:ns2="http://www.layer7tech.com/management/migration"
+                          xmlns:ns3="http://ns.l7tech.com/secureSpan/1.0/core">
+            <EntityClass>com.l7tech.gateway.common.service.PublishedService</EntityClass>
+        </ns2:ListEntities>
+    </soap:Body>
+</soap:Envelope>
