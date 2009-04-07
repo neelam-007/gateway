@@ -1,0 +1,5 @@
+<project name="layer7-gateway-processcontroller" default="compile">
+    <property name="module.package.dependencies.skip" value="true"/>
+
+    <import file="../../../etc/build/build-common.xml"/>
+</project>

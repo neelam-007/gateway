@@ -79,40 +79,55 @@ shift
 export JAVA_OPTS="-Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl $JAVA_OPTS"
 
 # determine locations for SSG and for installer builds
-SSG_HOME="$(test -f ~/build.properties && grep "^deploy.dir" ~/build.properties | awk -F'=' '{print $NF}' | sed 's/ //g')"
-if [ -z "${SSG_HOME}" ] ; then SSG_HOME="$(dirname $0)/build"; fi
+DEPLOY_HOME="$(test -f ~/build.properties && grep "^dev.deploy.dir" ~/build.properties | awk -F'=' '{print $NF}' | sed 's/ //g')"
+if [ -z "${DEPLOY_HOME}" ] ; then
+  if [ "$(dirname $0)" == "." ] ; then 
+    DEPLOY_HOME="$(pwd)/build/deploy"
+  else 
+    DEPLOY_HOME="$(dirname $0)/build/deploy"
+  fi
+fi
+SSG_HOME="${DEPLOY_HOME}/Gateway"
+ESM_HOME="${DEPLOY_HOME}/EnterpriseManager"
+PC_HOME="${DEPLOY_HOME}/Appliance/controller"
 INSTALLER_HOME="$(test -f ~/build.properties && grep "^build.installer" ~/build.properties | awk -F'=' '{print $NF}' | sed 's/ //g')"
 if [ -z "${INSTALLER_HOME}" ] ; then INSTALLER_HOME="$(dirname $0)/build/installer"; fi
 
 
 case "$foo" in 
 	-?)
-		echo "Usage: run.sh (ssg|console|proxy|textproxy|<Main class>)"
+		echo "Usage: run.sh (gateway|console|bridge|textproxy|esm|<Main class>)"
 		;;
-	ssg)
-		# start tomcat?
-		$TOMCAT_HOME/bin/startup.sh stop $* 2>&1 > /dev/null 
-		exec $TOMCAT_HOME/bin/startup.sh start -security $* 
-		;;
-	console)
+	(console | manager | ssm)
 		exec ${INSTALLER_HOME}/Manager-*/Manager.sh $*
 		;;
-	manager)
-		exec ${INSTALLER_HOME}/Manager-*/Manager.sh $*
-		;;
-	gateway)
+	(gateway | ssg)
 		cd ${SSG_HOME}
 		exec $JAVA_HOME/bin/java $JAVA_OPTS \
 			-Djavax.xml.transform.TransformerFactory=org.apache.xalan.processor.TransformerFactoryImpl \
-			-Dcom.l7tech.server.home=${SSG_HOME} \
-			-Dcom.l7tech.server.runtime=${SSG_HOME} \
-			-jar Gateway.jar $*
+                        -Dcom.l7tech.server.home=${SSG_HOME}/node/default \
+			-jar runtime/Gateway.jar $*
+		;;
+	(enterprisemanager | esm)
+		cd ${ESM_HOME}
+		exec $JAVA_HOME/bin/java $JAVA_OPTS \
+                        -Dcom.l7tech.server.log.console=true \
+			-Dcom.l7tech.ems.outputDbScript=overwrite \
+			-Dcom.l7tech.ems.development=true \
+			-jar EnterpriseManager.jar $*
+		;;
+	(controller | pc | processcontroller)
+		cd ${PC_HOME}
+		exec $JAVA_HOME/bin/java $JAVA_OPTS \
+                        -Dcom.l7tech.server.log.console=true \
+			 -Dcom.l7tech.gateway.home=../../Gateway \
+			-jar Controller.jar
 		;;
 	textproxy)
 		target="com.l7tech.proxy.Main";
 		exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target} $*
 		;;
-	(bridge | client)
+	(bridge | client | xvc)
 		exec ${INSTALLER_HOME}/Client-*/Client.sh $*
 		;;
 	testagent)
@@ -120,8 +135,8 @@ case "$foo" in
 		exec $JAVA_HOME/bin/java $JAVA_OPTS ${target} $*
 		;;
 	configwizard)
-		target="com.l7tech.server.config.ConfigurationWizardLauncher";
-		exec $JAVA_HOME/bin/java $JAVA_OPTS ${target} $*
+		cd ${SSG_HOME}/config
+		exec $JAVA_HOME/bin/java -jar ConfigWizard.jar
 		;;
 	*)
 		exec $JAVA_HOME/bin/java $JAVA_OPTS $foo $*

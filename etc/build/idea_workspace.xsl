@@ -9,9 +9,14 @@
     <xsl:param name="idea.teamcity.password"></xsl:param>
     <xsl:param name="idea.teamcity.remember">true</xsl:param>
     <xsl:param name="idea.client.vmOptions">-Dcom.l7tech.util.buildVersion=5.0</xsl:param>
-    <xsl:param name="idea.gateway.vmOptions">-Dcom.l7tech.server.home="/ssg" -Dcom.l7tech.util.buildVersion=5.0</xsl:param>
+    <xsl:param name="idea.gateway.vmOptions">-Dcom.l7tech.server.home="build/deploy/Gateway" -Dcom.l7tech.util.buildVersion=5.0</xsl:param>
+    <xsl:param name="idea.controller.vmOptions">-Dcom.l7tech.util.buildVersion=5.0 -Dcom.l7tech.server.log.console=true -Dcom.l7tech.gateway.home=../../Gateway</xsl:param>
+    <xsl:param name="idea.configwiz.vmOptions">-Dcom.l7tech.util.buildVersion=5.0</xsl:param>
+    <xsl:param name="idea.pcconfig.vmOptions">-Dcom.l7tech.util.buildVersion=5.0 -Dcom.l7tech.server.controller.home=build/deploy/Appliance/controller</xsl:param>
     <xsl:param name="idea.manager.vmOptions">-Dcom.l7tech.util.buildVersion=5.0</xsl:param>
-    <xsl:param name="idea.ems.vmOptions">-Dcom.l7tech.util.buildVersion=1.0</xsl:param>
+    <xsl:param name="idea.esm.vmOptions">-Dcom.l7tech.util.buildVersion=1.0</xsl:param>
+    <xsl:param name="idea.controller.home">build/deploy/Appliance/controller</xsl:param>
+    <xsl:param name="idea.esm.home">build/deploy/EnterpriseManager</xsl:param>
 
     <!-- Global options -->
     <xsl:output method="xml" encoding="utf-8" indent="yes"/>
@@ -36,9 +41,9 @@
                 <configuration default="false" name="EnterpriseManagerServer" type="Application" factoryName="Application"
                                enabled="false" merge="false">
                     <option name="MAIN_CLASS_NAME" value="com.l7tech.server.ems.EsmMain"/>
-                    <option name="VM_PARAMETERS" value="{$idea.ems.vmOptions}"/>
+                    <option name="VM_PARAMETERS" value="{$idea.esm.vmOptions}"/>
                     <option name="PROGRAM_PARAMETERS" value=""/>
-                    <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$"/>
+                    <option name="WORKING_DIRECTORY" value="{$idea.esm.home}"/>
                     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false"/>
                     <option name="ALTERNATIVE_JRE_PATH" value=""/>
                     <option name="ENABLE_SWING_INSPECTOR" value="false"/>
@@ -64,6 +69,25 @@
                     <option name="ENV_VARIABLES"/>
                     <option name="PASS_PARENT_ENVS" value="true"/>
                     <module name="layer7-gateway-server"/>
+                    <envs/>
+                    <RunnerSettings RunnerId="Run"/>
+                    <ConfigurationWrapper RunnerId="Run"/>
+                    <method>
+                        <option name="Make" value="true"/>
+                    </method>
+                </configuration>
+                <configuration default="false" name="Process Controller" type="Application" factoryName="Application"
+                               enabled="false" merge="false">
+                    <option name="MAIN_CLASS_NAME" value="com.l7tech.server.processcontroller.ProcessControllerDaemon"/>
+                    <option name="VM_PARAMETERS" value="{$idea.controller.vmOptions}"/>
+                    <option name="PROGRAM_PARAMETERS" value=""/>
+                    <option name="WORKING_DIRECTORY" value="{$idea.controller.home}"/>
+                    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false"/>
+                    <option name="ALTERNATIVE_JRE_PATH" value=""/>
+                    <option name="ENABLE_SWING_INSPECTOR" value="false"/>
+                    <option name="ENV_VARIABLES"/>
+                    <option name="PASS_PARENT_ENVS" value="true"/>
+                    <module name="layer7-gateway-processcontroller"/>
                     <envs/>
                     <RunnerSettings RunnerId="Run"/>
                     <ConfigurationWrapper RunnerId="Run"/>
@@ -126,6 +150,40 @@
                         <option name="Make" value="true"/>
                     </method>
                 </configuration>
+                <configuration default="false" name="Gateway Configuration Client" type="Application"
+                               factoryName="Application" enabled="false" merge="false">
+                    <option name="MAIN_CLASS_NAME" value="com.l7tech.gateway.config.client.Main"/>
+                    <option name="VM_PARAMETERS" value="{$idea.configwiz.vmOptions}"/>
+                    <option name="PROGRAM_PARAMETERS" value=""/>
+                    <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$"/>
+                    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false"/>
+                    <option name="ALTERNATIVE_JRE_PATH" value=""/>
+                    <option name="ENABLE_SWING_INSPECTOR" value="false"/>
+                    <option name="ENV_VARIABLES"/>
+                    <option name="PASS_PARENT_ENVS" value="true"/>
+                    <module name="layer7-gateway-config"/>
+                    <envs/>
+                    <method>
+                        <option name="Make" value="true"/>
+                    </method>
+            </configuration>
+            <configuration default="false" name="PC Configuration Client" type="Application"
+                           factoryName="Application" enabled="false" merge="false">
+                <option name="MAIN_CLASS_NAME" value="com.l7tech.gateway.config.client.beans.trust.TrustInterviewer"/>
+                <option name="VM_PARAMETERS" value="{$idea.pcconfig.vmOptions}"/>
+                <option name="PROGRAM_PARAMETERS" value=""/>
+                <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$"/>
+                <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false"/>
+                <option name="ALTERNATIVE_JRE_PATH" value=""/>
+                <option name="ENABLE_SWING_INSPECTOR" value="false"/>
+                <option name="ENV_VARIABLES"/>
+                <option name="PASS_PARENT_ENVS" value="true"/>
+                <module name="layer7-gateway-config"/>
+                <envs/>
+                <method>
+                    <option name="Make" value="true"/>
+                </method>
+        </configuration>
         </xsl:copy>
     </xsl:template>
 

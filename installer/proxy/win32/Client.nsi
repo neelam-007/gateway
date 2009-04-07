@@ -35,18 +35,6 @@
   !define OUTPUT_DIR "."
 !endif
 
-!ifndef PACKAGE_REL
-  !define PACKAGE_REL "..\installer\Client-${MUI_VERSION}"
-!endif
-
-!ifndef PACKAGE_DIR
-  !define PACKAGE_DIR "${BUILD_DIR}\${PACKAGE_REL}"
-!endif
-
-!ifndef OUTPUT_DIR
-  !define OUTPUT_DIR "."
-!endif
-
 !include "MUI.nsh"
 
 ;--------------------------------
@@ -170,7 +158,7 @@ Section "SecureSpan XML VPN Client" SecCopyUI
   File "${MUI_PRODUCT}.bat"
   File "${MUI_PRODUCT} in Text Mode.bat"
   File "ssxvcconfig.bat"
-  File "${BUILD_DIR}\Client.jar"
+  File "${PACKAGE_DIR}\Client.jar"
   File /r "${J2RE_PATH}"
   Rename "$INSTDIR\${J2RE}" "$INSTDIR\jre"
   File "${BUILD_DIR}\..\installer\proxy\win32\SSXVCService.exe"

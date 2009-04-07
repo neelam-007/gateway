@@ -6,6 +6,7 @@ package com.l7tech.server.processcontroller;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.UncaughtExceptionLogger;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.beans.factory.BeanCreationException;
 
@@ -13,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
+import java.util.logging.ConsoleHandler;
 import java.net.BindException;
 
 /** @author alex */
@@ -98,6 +100,9 @@ public final class ProcessControllerDaemon {
         if ( logsDir.exists() && logsDir.canWrite() ) {
             JdkLoggerConfigurator.configure("com.l7tech.server.processcontroller", "com/l7tech/server/processcontroller/resources/logging.properties", "etc/conf/logging.properties", false, true);
         }
+        if ( SyspropUtil.getBoolean("com.l7tech.server.log.console") ) {
+            Logger.getLogger("").addHandler( new ConsoleHandler() );
+        }
     }
 
     private void start() throws IOException {
@@ -111,7 +116,7 @@ public final class ProcessControllerDaemon {
         processController.visitNodes(); // Detect states for any nodes that are already running
     }
 
-   /**
+    /**
      * This prevents JDK logging shutdown when the JUL shutdown hook is invoked.
      *
      * <p>The PC will reset the underlying manager when shutdown of components

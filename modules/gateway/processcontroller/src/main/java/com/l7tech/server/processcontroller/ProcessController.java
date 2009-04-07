@@ -416,10 +416,15 @@ public class ProcessController {
         logger.warning("Killing " + node.getName());
         File ssgPwd = getNodeDirectory(node.getName());
 
-        try {
-            ProcUtils.exec(ssgPwd, new File("/opt/SecureSpan/Appliance/libexec/gateway_control"), new String[]{"stop", "-force"}, null, false );
-        } catch ( IOException ioe ) {
-            logger.log(Level.WARNING, "Failed to kill node '"+node.getName()+"':\n" + ioe.getMessage() );
+        File gatewayShutdown = new File("/opt/SecureSpan/Appliance/libexec/gateway_control");
+        if ( gatewayShutdown.exists() ) {
+            try {
+                ProcUtils.exec(ssgPwd, gatewayShutdown, new String[]{"stop", "-force"}, null, false );
+            } catch ( IOException ioe ) {
+                logger.log(Level.WARNING, "Failed to kill node '"+node.getName()+"':\n" + ioe.getMessage() );
+            }
+        } else {
+            logger.warning("Gateway OS shutdown script not present, node '"+node.getName()+"' not stopped.");
         }
     }
 
@@ -562,16 +567,7 @@ public class ProcessController {
                 if (!(ssgPwd.exists() && ssgPwd.isDirectory())) throw new IllegalStateException("Node directory " + ssgPwd.getAbsolutePath() + " does not exist or is not a directory");
                 try {
                     // TODO make this less hard-coded (e.g. use the host profile)
-                    cmds = new LinkedList<String>(
-                        Arrays.asList(
-                            "/opt/SecureSpan/Appliance/libexec/gateway_control",
-                            "run",
-                            "-J-Dcom.l7tech.server.home=\"" + ssgPwd.getCanonicalPath() + "\"",
-                            "-J-Dcom.l7tech.server.processControllerPresent=true",
-                            "-J-Djava.util.logging.config.class=com.l7tech.server.log.JdkLogConfig",
-                            "-J-Dcom.l7tech.server.log.console=true"
-                        )
-                    );
+                    cmds = getGatewayLauncher( ssgPwd );
                     
                     if ( node.getClusterHostname() != null ) {
                         cmds.add("-J-Dcom.l7tech.server.defaultClusterHostname=\"" + node.getClusterHostname() + "\"");
@@ -602,6 +598,32 @@ public class ProcessController {
         processBuilder.directory(ssgPwd);
         processBuilders.put(node.getName(), processBuilder);
         return processBuilder;
+    }
+
+    private List<String> getGatewayLauncher( final File ssgPwd ) throws IOException {
+        List<String> commands = new LinkedList<String>();
+
+        String ssgHome = ssgPwd.getCanonicalPath();
+        String applianceLauncher = "/opt/SecureSpan/Appliance/libexec/gateway_control";
+        if ( new File(applianceLauncher).exists() ) {
+            commands.add( applianceLauncher );
+            commands.add( "run" );
+            addGatewaySystemProperties( commands, "-J-D", ssgHome );
+        } else {
+            commands.add( System.getProperty("java.home") + "/bin/java" );
+            addGatewaySystemProperties( commands, "-D", ssgHome );
+            commands.add( "-jar" );
+            commands.add( "../../runtime/Gateway.jar" );
+        }
+
+        return commands;
+    }
+
+    private void addGatewaySystemProperties( final List<String> commands, final String propPrefix, final String ssgHome ) {
+        commands.add( propPrefix + "com.l7tech.server.home=\"" + ssgHome + "\"" );
+        commands.add( propPrefix + "com.l7tech.server.processControllerPresent=true" );
+        commands.add( propPrefix + "java.util.logging.config.class=com.l7tech.server.log.JdkLogConfig" );
+        commands.add( propPrefix + "com.l7tech.server.log.console=true" );
     }
 
     private void collectArgs(List<String> cmds, Feature feature) {

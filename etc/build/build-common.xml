@@ -41,6 +41,7 @@
     <property name="module.jar.index" value="false"/>
     <property name="module.package.root" value="."/>
     <property name="module.source.allow.properties" value="false"/>
+    <property name="module.official.build" value="true"/> <!-- Remove for dev Jar versioning -->
 
     <!--
       Classpath for Idea form compiler

@@ -9,6 +9,7 @@ import com.l7tech.server.ServerConfig;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.LogManager;
+import java.util.logging.ConsoleHandler;
 import java.util.concurrent.CountDownLatch;
 import java.io.File;
 
@@ -34,6 +35,9 @@ public class EsmMain {
             // configure logging if the logs directory is found, else leave console output
             if ( new File("var/logs").exists() ) {
                 JdkLoggerConfigurator.configure("com.l7tech.server.ems", "com/l7tech/server/ems/resources/logging.properties", "etc/logging.properties", true, true);
+            }
+            if ( SyspropUtil.getBoolean("com.l7tech.server.log.console") ) {
+                Logger.getLogger("").addHandler( new ConsoleHandler() );
             }
 
             // create Logger after initializing logging framework

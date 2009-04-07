@@ -24,19 +24,7 @@
 !endif
 
 !ifndef PACKAGE_REL
-  !define PACKAGE_REL "..\installer\Client-${MUI_VERSION}"
-!endif
-
-!ifndef PACKAGE_DIR
-  !define PACKAGE_DIR "${BUILD_DIR}\${PACKAGE_REL}"
-!endif
-
-!ifndef OUTPUT_DIR
-  !define OUTPUT_DIR "."
-!endif
-
-!ifndef PACKAGE_REL
-  !define PACKAGE_REL "..\installer\Client-${MUI_VERSION}"
+  !define PACKAGE_REL "..\installer\Manager-${MUI_VERSION}"
 !endif
 
 !ifndef PACKAGE_DIR
@@ -156,7 +144,7 @@ Section "Policy Editor" SecCopyUI
   File "${MUI_PRODUCT}.exe"
   File "${MUI_PRODUCT}.ini"
   File "${MUI_PRODUCT}.bat"
-  File "${BUILD_DIR}\Manager.jar"
+  File "${PACKAGE_DIR}\Manager.jar"
   File /r "${J2RE_PATH}"
   Rename "$INSTDIR\${J2RE}" "$INSTDIR\jre"
   File "${PACKAGE_DIR}\logging.properties"
