@@ -31,7 +31,7 @@ public class AboutBox extends JDialog implements ActionListener {
     JLabel logoLabel =
       new JLabel(new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/" + LOGO_IMAGE)), JLabel.CENTER);
     JLabel resLabel = new JLabel("", JLabel.CENTER);
-    JLabel urlLabel = new JLabel("Home Page -- http://www.layer7tech.com", JLabel.CENTER);
+    JLabel urlLabel = new JLabel("http://www.layer7tech.com", JLabel.CENTER);
 
     JPanel infoPanel = new JPanel(new GridBagLayout());
     String product = "SecureSpan Manager";
