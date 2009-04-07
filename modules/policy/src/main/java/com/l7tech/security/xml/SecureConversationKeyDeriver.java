@@ -8,6 +8,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
+import java.util.*;
 
 /**
  * Implement mechanism described in WS-Secure Conversation to derive
@@ -20,7 +21,13 @@ import java.security.NoSuchAlgorithmException;
  */
 public class SecureConversationKeyDeriver {
     public static final String URI_ALG_PSHA1 = "http://docs.oasis-open.org/ws-sx/ws-secureconversation/200512/dk/p_sha1";
-    public static final String URI_ALG_PHSA1_2 = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk/p_sha1";
+    public static final String URI_ALG_PHSA1_2 = SoapConstants.ALGORITHM_PSHA;
+    public static final String URI_ALG_PHSA1_3 = SoapConstants.ALGORITHM_PSHA2;
+    private static final Collection<String> URI_ALG_PSHA1S = Collections.unmodifiableCollection(Arrays.asList(
+        URI_ALG_PSHA1,
+        URI_ALG_PHSA1_2,
+        URI_ALG_PHSA1_3
+    ));
     private static final String DEFAULT_DEFAULT_LABEL = "WS-SecureConversationWS-SecureConversation";
     private static final String DEFAULT_LABEL = nullAsNull(SyspropUtil.getString("com.l7tech.security.wssc.defaultLabel", DEFAULT_DEFAULT_LABEL));
     private static final boolean IGNORE_ALGORITHM_URI = SyspropUtil.getBoolean("com.l7tech.security.wssc.ignoreAlgorithmUri", false);
@@ -63,7 +70,7 @@ public class SecureConversationKeyDeriver {
             // check that default algorithm is in effect
             String algo = derivedKeyToken.getAttributeNS(namespaceURI, ALGO_ATTRNAME);
             if (algo==null || algo.length()==0) algo = derivedKeyToken.getAttribute(ALGO_ATTRNAME);
-            if (algo != null && algo.length() > 0 && (!algo.equals(URI_ALG_PSHA1) && !algo.equals(URI_ALG_PHSA1_2)))
+            if (algo != null && algo.length() > 0 && !URI_ALG_PSHA1S.contains(algo))
                 throw new NoSuchAlgorithmException("Unsupported DerivedKeyToken Algrithm: " + algo);
         }
 
