@@ -902,7 +902,8 @@ public class WssProcessorImpl implements WssProcessor {
                 logger.warning("Could not find referenced Kerberos security token '"+value+"'.");
             }
         } else {
-            logger.warning("Ignoring SecurityTokenReference ID=" + logId + " with ValueType of " + valueType);
+            if (logIfNothingFound)
+                logger.warning("Ignoring SecurityTokenReference ID=" + logId + " with ValueType of " + valueType);
         }
     }
 
