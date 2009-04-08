@@ -750,8 +750,8 @@
         <mkdir dir="${test.perf.regression.dir}"/>
     </target>
 
-    <target name="test.perf.run" description="Run performance test to generate a Japex test report." depends="clean.test, test.perf.init, package.client, package.manager, package.gateway">
-        <echo level="info">Running performance test.</echo>
+    <target name="test.perf.run" description="Run performance test to generate a Japex test report." depends="clean.test, test.perf.init">
+        <echo level="info">Building for performance test.</echo>
 
         <!-- Create build list for required 1.5 modules -->
         <ivy:buildlist root="layer7-skunkworks" reference="module-build-path-skunk" onMissingDescriptor="skip">
@@ -760,6 +760,7 @@
         <ivy-echo-build-plan refid="module-build-path-skunk" pathid="build-path-skunk-text"/>
         <modules target="publish-all-quick" buildpathref="module-build-path-skunk"/>
 
+        <echo level="info">Running performance test.</echo>
         <!-- Composes desired Japex report file name and final location. -->
         <tstamp>
             <format property="test.perf.report.suffix" pattern="yyyy'-'MM'-'dd'.'HHmm"/>
@@ -776,23 +777,8 @@
         <mkdir dir="${test.perf.tmp.dir}"/>
 
         <!-- classpath for the tested code -->
-        <!--
-          This is ugly due to the error that occurs when creating the cache path, which seems to be a failure to build the
-          full path (including transitive dependencies)
-
-          A cleaner approach may be to resolve all the dependencies of the skunkworks module when it is built.
-        -->
         <ivy:cachepath organisation="com.l7tech" module="layer7-skunkworks" inline="true" conf="default,test" pathid="japex.skunk.path"/>
-        <pathconvert property="japex.skunk.text" pathsep=":" dirsep="/" refid="japex.skunk.path"/>
-        <pathconvert property="japex.class.text" pathsep=":" dirsep="/">
-            <path>
-                <pathelement location="${japex.skunk.text}"/>
-                <fileset dir="${build.dir}/gateway">
-                    <include name="Gateway.jar"/>
-                </fileset>
-                <fileset dir="${build.dir}/gateway/lib"/>
-            </path>
-        </pathconvert>
+        <pathconvert property="japex.class.text" pathsep=":" dirsep="/" refid="japex.skunk.path"/>
         <echo>Japex test classpath:
             ${japex.class.text}
         </echo>
@@ -845,9 +831,9 @@
                     <include name="**/commons-lang-2.3.jar"/>
                     <include name="test/japex-1.1.jar"/>
                 </fileset>
-                <fileset dir="build/gateway">
-                    <include name="Gateway.jar"/>
-                    <include name="lib/layer7-*.jar"/>
+                <fileset dir="modules/gateway/server/build">
+                    <include name="layer7-gateway-server*.jar"/>
+                    <include name="dependency/layer7-*.jar"/>
                 </fileset>
             </classpath>
             <arg value="-note=You can change benchmark list in &lt;code>UneasyRooster/build.xml&lt;/code> Ant target &lt;code>test.perf.trend&lt;/code>."/>
@@ -880,9 +866,9 @@
                     <include name="**/commons-lang-2.3.jar"/>
                     <include name="test/japex-1.1.jar"/>
                 </fileset>
-                <fileset dir="build/gateway">
-                    <include name="Gateway.jar"/>
-                    <include name="lib/layer7-*.jar"/>
+                <fileset dir="modules/gateway/server/build">
+                    <include name="layer7-gateway-server*.jar"/>
+                    <include name="dependency/layer7-*.jar"/>
                 </fileset>
             </classpath>
             <jvmarg value="-Dmail.smtp.host=mail.l7tech.com"/>
