@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.Serializable;
 
 public abstract class NodePropertySampler<V extends Serializable> extends PropertySampler<V> {
-    protected NodeApi nodeApi;
     protected final ProcessController processController;
     protected final ConfigService configService;
 

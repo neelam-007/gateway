@@ -27,7 +27,7 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
     private final Process process;
     private final ProcessController processController;
 
-    private volatile NodeApi api;
+    private volatile ProcessController.HasApi api;
 
     StartingNodeState(ProcessController processController, PCNodeConfig node) throws IOException {
         super(node, NodeStateType.STARTING);
@@ -48,7 +48,7 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
 
     StartStatus getStatus() {
         long now = System.currentTimeMillis();
-        if (now - sinceWhen < ProcessController.NODE_START_TIME_MIN) {
+        if (now - sinceWhen < processController.getNodeStartTimeMin()) {
             logger.fine(node.getName() + " hasn't had enough time to start yet; not going to bother checking on it");
             return STARTING;
         }
@@ -64,15 +64,20 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
             logger.fine(node.getName() + " isn't dead yet!");
         }
 
-        final NodeApi api = processController.getNodeApi(node);
+        final ProcessController.HasApi api = processController.getNodeApi(node);
         try {
-            api.ping();
+            api.getApi(false).ping();
             this.api = api;
             outputDoneSignal.set(true); // We're live
             logger.info(node.getName() + " started successfully");
             return STARTED;
         } catch (Exception e) {
-            if (e instanceof SOAPFaultException) {
+            if ( processController.isDisabledApiException(e) ) {
+                logger.info(node.getName() + " started successfully, but node control is disabled.");
+                this.api = api;
+                outputDoneSignal.set(true); // We're live
+                return STARTED;
+            } else if (e instanceof SOAPFaultException) {
                 SOAPFaultException sfe = (SOAPFaultException)e;
                 if (NodeApi.NODE_NOT_CONFIGURED_FOR_PC.equals(sfe.getFault().getFaultString())) {
                     logger.warning(node.getName() + " is already running but has not been configured for use with the PC; will try again later");
@@ -92,7 +97,13 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
         }
     }
 
-    public NodeApi getApi() {
+    @Override
+    public NodeApi getApi( final boolean fast ) {
+        return api.getApi( fast );
+    }
+
+    @Override
+    public ProcessController.HasApi getApiHaver() {
         return api;
     }
 
@@ -134,6 +145,7 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
         }
     }
 
+    @Override
     public Process getProcess() {
         return process;
     }

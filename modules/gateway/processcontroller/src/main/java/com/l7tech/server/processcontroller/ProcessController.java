@@ -25,6 +25,7 @@ import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.apache.cxf.transports.http.configuration.HTTPClientPolicy;
+import org.springframework.beans.factory.InitializingBean;
 
 import javax.annotation.Resource;
 import javax.net.ssl.TrustManager;
@@ -43,28 +44,30 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /** @author alex */
-public class ProcessController {
+public class ProcessController implements InitializingBean {
     private static final Logger logger = Logger.getLogger(ProcessController.class.getName());
 
     @Resource
     private ConfigService configService;
 
     /** The maximum amount of time the PC should wait for a node to start */
-    private static final int NODE_START_TIME_MAX = 60000;
+    private int NODE_START_TIME_MAX = 60000;
     /** The amount of time the PC should wait for a node to start before beginning to test whether it's started yet */
-    static final int NODE_START_TIME_MIN = 5000;
+    private int NODE_START_TIME_MIN = 5000;
     /** The amount of time the PC should wait after a node has died before beginning to attempt to restart it */
-    private static final int UNSTARTABLE_NODE_RETRY_INTERVAL = 60 * 1000; // one minute
+    private int UNSTARTABLE_NODE_RETRY_INTERVAL = 60 * 1000; // one minute
     /** The amount of time the PC should wait after a supposedly running node has stopped responding to pings before killing and restarting it */
-    private static final int NODE_CRASH_DETECTION_TIME = 15000;
+    private int NODE_CRASH_DETECTION_TIME = 15000;
     /** The amount of time the PC should wait after asking a node to shutdown before killing it */
-    static final int DEFAULT_STOP_TIMEOUT = 10000;
+    private int DEFAULT_STOP_TIMEOUT = 10000;
     /** The amount of time the PC should wait between checks to see if someone else started the node */
-    static final int DEFAULT_STOPPED_TIMEOUT = 30000;
+    private int DEFAULT_STOPPED_TIMEOUT = 30000;
     /** The amount of time the PC should wait, during shutdown, after asking a node to shutdown before killing it */
-    private static final int NODE_SHUTDOWN_TIMEOUT = 5000;
+    private int NODE_SHUTDOWN_TIMEOUT = 5000;
     /** The amount of time the PC should wait for nodes to shutdown before exiting */
-    private static final int PC_SHUTDOWN_TIMEOUT = 15000;
+    private int PC_SHUTDOWN_TIMEOUT = 15000;
+    /** Should the PC ever kill an unresponsive running node? **/
+    private boolean PC_KILL_RUNNING_NODE = true;
 
     private final Map<String, NodeState> nodeStates = new ConcurrentHashMap<String, NodeState>();
     private final Map<String, ProcessBuilder> processBuilders = new HashMap<String, ProcessBuilder>();
@@ -72,19 +75,40 @@ public class ProcessController {
     private static final String LOG_TIMEOUT = "{0} still hasn''t started after {1}ms.  Killing it dead.";
 
     private volatile boolean daemon;
-    private static final int NODEAPI_CONNECT_TIMEOUT = 2000;
-    private static final int NODEAPI_RECEIVE_TIMEOUT = 2000;
+    private static final int NODEAPI_FAST_CONNECT_TIMEOUT = 2000;
+    private static final int NODEAPI_FAST_RECEIVE_TIMEOUT = 2000;
+    private static final int NODEAPI_CONNECT_TIMEOUT = 30000;
+    private static final int NODEAPI_RECEIVE_TIMEOUT = 60000;
+
+    public int getStopTimeout() {
+        return DEFAULT_STOP_TIMEOUT;
+    }
+
+    public int getNodeStartTimeMin() {
+        return NODE_START_TIME_MIN;
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        NODE_START_TIME_MAX = configService.getIntProperty( "host.controller.nodeStartTimeMax", NODE_START_TIME_MAX );
+        NODE_START_TIME_MIN = configService.getIntProperty( "host.controller.nodeStartTimeMin", NODE_START_TIME_MIN );
+        NODE_CRASH_DETECTION_TIME = configService.getIntProperty( "host.controller.crashDetectionTime", NODE_CRASH_DETECTION_TIME );
+        DEFAULT_STOP_TIMEOUT = configService.getIntProperty( "host.controller.nodeStopTimeout", DEFAULT_STOP_TIMEOUT );
+        NODE_SHUTDOWN_TIMEOUT = configService.getIntProperty( "host.controller.nodeShutdownTimeout", NODE_SHUTDOWN_TIMEOUT );
+        PC_SHUTDOWN_TIMEOUT = configService.getIntProperty( "host.controller.pcShutdownTimeout", PC_SHUTDOWN_TIMEOUT );
+        PC_KILL_RUNNING_NODE = configService.getBooleanProperty( "host.controller.pcRestartRunningNode", PC_KILL_RUNNING_NODE );
+    }
 
     public synchronized void stopNode(final String nodeName, final int timeout) {
         logger.info("Stopping " + nodeName);
         final NodeState state = nodeStates.get(nodeName);
         final Process process = state instanceof HasProcess ? ((HasProcess)state).getProcess() : null;
 
-        NodeApi api = state instanceof HasApi ? ((HasApi)state).getApi() : null;
+        HasApi api = state instanceof HasApi ? ((HasApi)state).getApiHaver() : null;
         if (api == null) api = getNodeApi(state.node);
 
         try {
-            api.shutdown();
+            api.getApi(false).shutdown();
             nodeStates.put(nodeName, new StoppingNodeState(state.node, process, api, timeout));
         } catch (Exception e) {
             nodeStates.put(nodeName, new StoppedNodeState(state.node, api, DEFAULT_STOPPED_TIMEOUT));
@@ -220,6 +244,10 @@ public class ProcessController {
         return result;
     }
 
+    public boolean isDisabledApiException( final Exception exception ) {
+        return ExceptionUtils.getMessage(exception).endsWith("This request cannot be accepted on this port.");
+    }
+
     private static abstract class NodeState {
         protected final PCNodeConfig node;
         protected final NodeStateType type;
@@ -244,19 +272,32 @@ public class ProcessController {
     }
 
     static interface HasApi {
-        NodeApi getApi();
+        /**
+         * Get the NodeApi
+         *
+         * @param fastTimeout True to get an API with fast timeouts.
+         * @return The NodeApi
+         */
+        NodeApi getApi( boolean fastTimeout );
+
+        /**
+         * Get the underlying HasApi.
+         *
+         * @return The wrapped HasApi, or this
+         */
+        HasApi getApiHaver();
     }
 
     private class RunningNodeState extends SimpleNodeState implements HasProcess, HasApi {
         /** May be null if the PC was started after the node; in such cases the PC cannot force-kill the node without
          * resorting to OS-level help */
         private final Process process;
-        private final NodeApi api;
+        private final HasApi hasApi;
 
-        public RunningNodeState(PCNodeConfig node, Process proc, NodeApi api) {
+        public RunningNodeState( PCNodeConfig node, Process proc, HasApi hasApi ) {
             super(node, RUNNING);
             this.process = proc;
-            this.api = api;
+            this.hasApi = hasApi;
         }
 
         @Override
@@ -265,8 +306,13 @@ public class ProcessController {
         }
 
         @Override
-        public NodeApi getApi() {
-            return api;
+        public NodeApi getApi( final boolean fastTimeout ) {
+            return hasApi.getApi( fastTimeout );
+        }
+
+        @Override
+        public HasApi getApiHaver() {
+            return hasApi;
         }
     }
 
@@ -274,13 +320,13 @@ public class ProcessController {
         /** May be null if the PC was started after the node; in such cases the PC cannot force-kill the node without
          * resorting to OS-level help */
         private final Process process;
-        private final NodeApi api;
+        private final HasApi hasApi;
         private final int timeout;
 
-        public StoppingNodeState(PCNodeConfig node, Process proc, NodeApi api, int timeout) {
+        public StoppingNodeState(PCNodeConfig node, Process proc, HasApi hasApi, int timeout) {
             super(node, STOPPING);
             this.process = proc;
-            this.api = api;
+            this.hasApi = hasApi;
             this.timeout = timeout;
         }
 
@@ -290,23 +336,28 @@ public class ProcessController {
         }
 
         @Override
-        public NodeApi getApi() {
-            return api;
+        public NodeApi getApi( boolean fastTimeout ) {
+            return hasApi.getApi( fastTimeout );
+        }
+
+        @Override
+        public HasApi getApiHaver() {
+            return hasApi;
         }
     }
 
     private class StoppedNodeState extends NodeState {
-        private final NodeApi api;
+        private final HasApi hasApi;
         private final int timeout;
 
-        public StoppedNodeState(PCNodeConfig node, NodeApi api, int timeout) {
+        public StoppedNodeState(PCNodeConfig node, HasApi hasApi, int timeout) {
             super(node, STOPPED);
-            this.api = api;
+            this.hasApi = hasApi;
             this.timeout = timeout;
         }
 
-        public NodeApi getApi() {
-            return api;
+        public HasApi getHasApi() {
+            return hasApi;
         }
     }
 
@@ -364,22 +415,22 @@ public class ProcessController {
             try {
                 final int status = state.process.exitValue();
                 logger.info(node.getName() + " exited with status " + status);
-                nodeStates.put(node.getName(), new StoppedNodeState(node, state.api, DEFAULT_STOPPED_TIMEOUT));
+                nodeStates.put(node.getName(), new StoppedNodeState(node, state.hasApi, DEFAULT_STOPPED_TIMEOUT));
             } catch (IllegalThreadStateException e) {
                 if (timedOut) {
                     logger.warning(node.getName() + " has taken " + howLong + "ms to shutdown; killing");
                     osKill(node);
-                    nodeStates.put(node.getName(), new StoppedNodeState(node, state.api, DEFAULT_STOPPED_TIMEOUT));
+                    nodeStates.put(node.getName(), new StoppedNodeState(node, state.hasApi, DEFAULT_STOPPED_TIMEOUT));
                 } else {
                     logger.fine(node.getName() + " still hasn't stopped after " + howLong + "ms; will wait up to " + state.timeout);
                 }
             }
-        } else if (state.api != null) {
+        } else if (state.hasApi != null) {
             try {
-                state.api.ping();
+                state.hasApi.getApi(false).ping();
             } catch (Exception e) {
                 if (ExceptionUtils.causedBy(e, ConnectException.class)) {
-                    nodeStates.put(node.getName(), new StoppedNodeState(node, state.api, DEFAULT_STOPPED_TIMEOUT));
+                    nodeStates.put(node.getName(), new StoppedNodeState(node, state.hasApi, DEFAULT_STOPPED_TIMEOUT));
                     logger.info(node.getName() + " stopped.");
                 } else {
                     logger.log(Level.FINE, "Error when checking node "+node.getName()+" status during shutdown '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
@@ -387,7 +438,7 @@ public class ProcessController {
             }
         } else if (timedOut) {
             osKill(node);
-            nodeStates.put(node.getName(), new StoppedNodeState(node, state.api, DEFAULT_STOPPED_TIMEOUT));
+            nodeStates.put(node.getName(), new StoppedNodeState(node, state.hasApi, DEFAULT_STOPPED_TIMEOUT));
         }
     }
 
@@ -396,11 +447,11 @@ public class ProcessController {
         final boolean timedOut = (howLong > state.timeout);
 
         if ( timedOut ) {
-            if (state.api != null) {
+            if (state.hasApi != null) {
                 try {
-                    state.api.ping();
+                    state.hasApi.getApi(false).ping();
                     logger.info(node.getName() + " start detected.");
-                    nodeStates.put(node.getName(), new RunningNodeState(node, null, state.api));
+                    nodeStates.put(node.getName(), new RunningNodeState(node, null, state.hasApi));
                 } catch (Exception e) {
                     if ( ExceptionUtils.causedBy(e, ConnectException.class) ) {
                         logger.fine("Node " + node.getName() + " is not running.");
@@ -439,28 +490,34 @@ public class ProcessController {
 
     private void handleRunningState(PCNodeConfig node, RunningNodeState state) {
         final long now = System.currentTimeMillis();
+        boolean running = false;
         if (state.process != null) {
             try {
                 int errorlevel = state.process.exitValue();
                 logger.log(Level.WARNING, "{0} crashed with exit code {1}!  Will restart.", new Object[] { node.getName(), errorlevel });
                 nodeStates.put(node.getName(), new SimpleNodeState(node, CRASHED));
             } catch (IllegalThreadStateException e) {
+                running = true;
                 logger.fine(node.getName() + " is still alive");
             }
         }
 
         try {
-            state.api.ping();
+            state.hasApi.getApi(false).ping();
             state.sinceWhen = now;
         } catch (Exception e) {
             final long howLong = now - state.sinceWhen;
-            if (howLong > NODE_CRASH_DETECTION_TIME) {
-                logger.log(Level.WARNING, MessageFormat.format("{0} is supposedly running but has not responded to a ping in {1}ms.  Killing and restarting.", node.getName(), howLong), filterException(e));
-                osKill(node);
+            if ( PC_KILL_RUNNING_NODE || !running ) {
+                if (howLong > NODE_CRASH_DETECTION_TIME) {
+                    logger.log(Level.WARNING, MessageFormat.format("{0} is supposedly running but has not responded to a ping in {1}ms.  Killing and restarting.", node.getName(), howLong), filterException(e));
+                    osKill(node);
 
-                nodeStates.put(node.getName(), new SimpleNodeState(node, CRASHED));
+                    nodeStates.put(node.getName(), new SimpleNodeState(node, CRASHED));
+                }  else {
+                    logger.log(Level.WARNING, MessageFormat.format("{0} is supposedly running but has not responded to a ping in {1}ms.  Will keep retrying up to {2} ms.", node.getName(), howLong, NODE_CRASH_DETECTION_TIME), filterException(e));
+                }
             } else {
-                logger.log(Level.WARNING, MessageFormat.format("{0} is supposedly running but has not responded to a ping in {1}ms.  Will keep retrying up to {2} ms.", node.getName(), howLong, NODE_CRASH_DETECTION_TIME), filterException(e));
+                logger.log(Level.WARNING, MessageFormat.format("{0} is supposedly running but has not responded to a ping in {1}ms.", node.getName(), howLong), filterException(e));
             }
         }
     }
@@ -474,7 +531,7 @@ public class ProcessController {
 
         if (status == StartingNodeState.STARTED) {
             logger.info(node.getName() + " started");
-            nodeStates.put(node.getName(), new RunningNodeState(node, state.getProcess(), state.getApi()));
+            nodeStates.put(node.getName(), new RunningNodeState(node, state.getProcess(), state.getApiHaver()));
         } else if (status == StartingNodeState.STARTING) {
             final long howLong = now - state.sinceWhen;
             if (howLong <= NODE_START_TIME_MAX) {
@@ -515,12 +572,12 @@ public class ProcessController {
     }
 
     private void handleUnknownState(PCNodeConfig node) {
-        final NodeApi api = getNodeApi(node);
+        final HasApi api = getNodeApi(node);
         try {
-            api.ping();
+            api.getApi(false).ping();
             if (daemon && !node.isEnabled()) {
                 logger.info("Stopping disabled node " + node.getName());
-                api.shutdown();
+                api.getApi(false).shutdown();
                 nodeStates.put(node.getName(), new StoppingNodeState(node, null, api, DEFAULT_STOP_TIMEOUT));
             } else {
                 logger.info(node.getName() + " is already running");
@@ -650,7 +707,7 @@ public class ProcessController {
         }
         if (state == null) throw new IllegalStateException("Unknown node " + nodeName);
         if (state instanceof HasApi) {
-            NodeApi napi = ((HasApi) state).getApi();
+            NodeApi napi = ((HasApi) state).getApi(true);
             if (napi == null) throw new TemporarilyUnavailableException(state.node.getName(), state.type);
             return callable.call(napi);
         } else {
@@ -677,10 +734,38 @@ public class ProcessController {
         }
     }
 
-    public NodeApi getNodeApi(PCNodeConfig node) {
-        final int connectTimeout = configService.getIntProperty(ConfigService.HOSTPROPERTIES_SAMPLER_TIMEOUT_FAST_CONNECT, NODEAPI_CONNECT_TIMEOUT);
-        final int receiveTimeout = configService.getIntProperty(ConfigService.HOSTPROPERTIES_SAMPLER_TIMEOUT_FAST_READ, NODEAPI_RECEIVE_TIMEOUT);
-        return getNodeApi(node, receiveTimeout, connectTimeout);
+    public HasApi getNodeApi( final PCNodeConfig node ) {
+        final int connectTimeout = configService.getIntProperty(ConfigService.HOSTPROPERTIES_SAMPLER_TIMEOUT_SLOW_CONNECT, NODEAPI_CONNECT_TIMEOUT);
+        final int receiveTimeout = configService.getIntProperty(ConfigService.HOSTPROPERTIES_SAMPLER_TIMEOUT_SLOW_READ, NODEAPI_RECEIVE_TIMEOUT);
+        final int fastConnectTimeout = configService.getIntProperty(ConfigService.HOSTPROPERTIES_SAMPLER_TIMEOUT_FAST_CONNECT, NODEAPI_FAST_CONNECT_TIMEOUT);
+        final int fastReceiveTimeout = configService.getIntProperty(ConfigService.HOSTPROPERTIES_SAMPLER_TIMEOUT_FAST_READ, NODEAPI_FAST_RECEIVE_TIMEOUT);
+
+        return new HasApi(){
+            private NodeApi fastApi;
+            private NodeApi api;
+
+            @Override
+            public NodeApi getApi( final boolean fastTimeout ) {
+                NodeApi api;
+                if ( fastTimeout ) {
+                    api = this.fastApi;
+                    if ( api == null ) {
+                        api = this.fastApi = getNodeApi( node, fastReceiveTimeout, fastConnectTimeout );
+                    }
+                } else {
+                    api = this.api;
+                    if ( api == null ) {
+                        api = this.api = getNodeApi( node, receiveTimeout, connectTimeout );
+                    }
+                }
+                return api;
+            }
+
+            @Override
+            public HasApi getApiHaver() {
+                return this;
+            }
+        };
     }
 
     public NodeApi getNodeApi(PCNodeConfig node, int receiveTimeout, int connectTimeout) {
@@ -785,12 +870,12 @@ public class ProcessController {
         }
     }
 
-    private static Exception filterException( final Exception thrown ) {
-        Exception showThrown;
+    private Exception filterException( final Exception thrown ) {
+        Exception showThrown = null;
 
         if ( isNetworkException(thrown) ) {
             showThrown = ExceptionUtils.getDebugException( thrown );    
-        } else {
+        } else if ( !isDisabledApiException(thrown) ) {
             showThrown = thrown;
         }
 

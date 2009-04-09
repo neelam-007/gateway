@@ -462,6 +462,23 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     @Override
+    public boolean getBooleanProperty(String propertyName, boolean defaultValue) {
+        boolean value = defaultValue;
+        String val = hostProps.getProperty(propertyName);
+        if ( val != null ) {
+            if ( "true".equalsIgnoreCase(val) ) {
+                value = true;
+            } else if ( "false".equalsIgnoreCase(val) ) {
+                value = false;
+            } else {
+                logger.warning("Ignoring invalid property value ('"+val+"') for '"+propertyName+"'.");
+            }
+        }
+
+        return value;
+    }
+
+    @Override
     public void pushMonitoringConfiguration(final MonitoringConfiguration config) {
         this.responsibleForClusterMonitoring = config != null && config.isResponsibleForClusterMonitoring();
         this.currentMonitoringConfiguration = config;

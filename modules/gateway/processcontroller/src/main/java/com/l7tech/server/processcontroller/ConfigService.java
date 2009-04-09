@@ -93,11 +93,20 @@ public interface ConfigService {
     boolean isUseSca();
 
     /**
-     * Get an int value from node.properties.
+     * Get an int value from host.properties.
      * 
      * @param propertyName name of the property to get.  Required.
      * @param defaultValue default value to use if property is not configured.  Required.
      * @return the property value (or default).
      */
     int getIntProperty(String propertyName, int defaultValue);
+
+    /**
+     * Get a boolean value from host.properties.
+     *
+     * @param propertyName name of the property to get. Required.
+     * @param defaultValue default value to use if property is not configured or is invalid. Required.
+     * @return The property value, or the default
+     */
+    boolean getBooleanProperty(String propertyName, boolean defaultValue);
 }

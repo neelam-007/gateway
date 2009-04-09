@@ -45,7 +45,7 @@ public final class ProcessControllerStandalone {
         if ("start".equalsIgnoreCase(verb)) {
             pc.startNode(args[arg++], true);
         } else if ("stop".equalsIgnoreCase(verb)) {
-            pc.stopNode(args[arg++], ProcessController.DEFAULT_STOP_TIMEOUT);
+            pc.stopNode(args[arg++], pc.getStopTimeout());
         } else if ("cli".equalsIgnoreCase(verb)) {
             
         } else {

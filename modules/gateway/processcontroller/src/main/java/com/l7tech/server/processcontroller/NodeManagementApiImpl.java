@@ -197,7 +197,7 @@ public class NodeManagementApiImpl implements NodeManagementApi {
                 throw new UpdateException("Error starting node '"+ExceptionUtils.getMessage(ioe)+"'.");
             }
         } else if ( !node.isEnabled() && NodeStateType.STOPPED != currentState ) {
-            processController.stopNode( nodeName, ProcessController.DEFAULT_STOP_TIMEOUT );
+            processController.stopNode( nodeName, processController.getStopTimeout() );
         }
 
     }
