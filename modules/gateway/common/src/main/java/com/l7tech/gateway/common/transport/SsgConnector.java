@@ -601,7 +601,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
             SsgConnector copy = new SsgConnector();
             BeanUtils.copyProperties(this, copy,
                                      BeanUtils.omitProperties(BeanUtils.getProperties(getClass()), "properties"));
-            copy.setProperties(new HashMap<String, String>(copy.getProperties()));
+            copy.setProperties(new HashMap<String, String>(getProperties()));
             copy.setReadOnly();
             return copy;
         } catch (InvocationTargetException e) {
