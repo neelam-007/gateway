@@ -67,7 +67,7 @@ public class ProcessController implements InitializingBean {
     /** The amount of time the PC should wait for nodes to shutdown before exiting */
     private int PC_SHUTDOWN_TIMEOUT = 15000;
     /** Should the PC ever kill an unresponsive running node? **/
-    private boolean PC_KILL_RUNNING_NODE = true;
+    private boolean KILL_RUNNING_NODE = true;
 
     private final Map<String, NodeState> nodeStates = new ConcurrentHashMap<String, NodeState>();
     private final Map<String, ProcessBuilder> processBuilders = new HashMap<String, ProcessBuilder>();
@@ -96,7 +96,7 @@ public class ProcessController implements InitializingBean {
         DEFAULT_STOP_TIMEOUT = configService.getIntProperty( "host.controller.nodeStopTimeout", DEFAULT_STOP_TIMEOUT );
         NODE_SHUTDOWN_TIMEOUT = configService.getIntProperty( "host.controller.nodeShutdownTimeout", NODE_SHUTDOWN_TIMEOUT );
         PC_SHUTDOWN_TIMEOUT = configService.getIntProperty( "host.controller.pcShutdownTimeout", PC_SHUTDOWN_TIMEOUT );
-        PC_KILL_RUNNING_NODE = configService.getBooleanProperty( "host.controller.pcRestartRunningNode", PC_KILL_RUNNING_NODE );
+        KILL_RUNNING_NODE = configService.getBooleanProperty( "host.controller.restartRunningNode", KILL_RUNNING_NODE);
     }
 
     public synchronized void stopNode(final String nodeName, final int timeout) {
@@ -507,7 +507,7 @@ public class ProcessController implements InitializingBean {
             state.sinceWhen = now;
         } catch (Exception e) {
             final long howLong = now - state.sinceWhen;
-            if ( PC_KILL_RUNNING_NODE || !running ) {
+            if ( KILL_RUNNING_NODE || !running ) {
                 if (howLong > NODE_CRASH_DETECTION_TIME) {
                     logger.log(Level.WARNING, MessageFormat.format("{0} is supposedly running but has not responded to a ping in {1}ms.  Killing and restarting.", node.getName(), howLong), filterException(e));
                     osKill(node);
