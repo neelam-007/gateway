@@ -5,13 +5,14 @@
  */
 package com.l7tech.server.cluster;
 
-import com.l7tech.util.UptimeMetrics;
+import com.l7tech.gateway.common.cluster.ServiceUsage;
+import com.l7tech.gateway.common.service.ServiceStatistics;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.util.UptimeMonitor;
-import com.l7tech.gateway.common.service.ServiceStatistics;
-import com.l7tech.gateway.common.cluster.ServiceUsage;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.UptimeMetrics;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,7 +67,7 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
             clusterInfoManager.updateSelfStatus(load);
         } catch (FileNotFoundException e) {
             String msg = "cannot get uptime metrics";
-            logger.log(Level.SEVERE, msg, e);
+            logger.log(Level.FINE, msg, ExceptionUtils.getDebugException(e));
         } catch (IllegalStateException e) {
             String msg = "cannot get uptime metrics";
             logger.log(Level.SEVERE, msg, e);
