@@ -37,9 +37,8 @@ if [ "$MCA" ] ; then
 	MCA_DRIVER_VERSION="`echo $MCA | cut -d ' ' -f 6`"
 	echo "Driver version is $MCA_DRIVER_VERSION"
 	MCA_DRIVER_MINOR_VERSION="`echo $MCA_DRIVER_VERSION | cut -f 3 -d '.'`"
-	if [ ! $MCA_DRIVER_MINOR_VERSION -ge 8 ] ; then
-		echo "ERROR - SSL Card has old firmware on it, update"
-		ERROR=1
+	if [ $MCA_DRIVER_MINOR_VERSION -lt 8 ] ; then
+		echo "ERROR - SSL Card has old firmware on it, update by running $0 scaupgrade"
 	fi
 else 
 	echo ""
@@ -54,7 +53,7 @@ service tarari stop ; service tarari start
 echo ""
 
 # Ensure the drivers load
-CPP=`cat /proc/driver/cpp | grep Driver`
+CPP=`cat /proc/cpp | grep Driver`
 if [ "$CPP" ] ; then
 	[ -e /opt/SecureSpan/Gateway/runtime/etc/profile.d/tarariopts.sh ] && source /opt/SecureSpan/Gateway/runtime/etc/profile.d/tarariopts.sh
 	echo ""
@@ -64,14 +63,14 @@ if [ "$CPP" ] ; then
 	
 	# Run through Tarari tests.
 	echo "Running Tarari XML card tests (may take a few minutes):"
-	TESTS=`/usr/local/Tarari/bin/cpp_manager_static -v -t all`
-	if [ "`echo $TESTS | grep PASSED`" ] ; then
+	TESTS=`/usr/local/Tarari/bin/cpp_manager -v -t all`
+	if [ "`echo $TESTS | grep "Success: All"`" ] ; then
 		echo "Passed"
 		echo ""
 	else 
 		echo "Failed!"
 		echo "Some Tarari XML card tests didn't pass, re-running in verbose mode:"
-		/usr/local/Tarari/bin/cpp_manager_static -v -t all
+		/usr/local/Tarari/bin/cpp_manager -v -t all
 		ERROR=1
 		echo ""
 	fi
@@ -93,7 +92,7 @@ echo ""
 # Tarari Serial Number
 #
 if [ -e "/usr/local/Tarari/bin/cpp_manager" ] ; then
-  echo "Tarari Card Serial Number =$(cat /proc/driver/cpp0 | grep "Serial Number"|cut -d = -f 2|cut -d ':' -f 2)"
+  echo "Tarari Card Serial Number =$(cat /proc/cpp0 | grep "Serial Number"|cut -d = -f 2|cut -d ':' -f 2)"
 else
   echo "ERROR cpp_manager not found. ERROR"
   ERROR=1
@@ -105,8 +104,8 @@ echo ""
 #
 TOTAL_MEM="$[$(cat /proc/meminfo |grep MemTotal|cut -d : -f 2|cut -d k -f 1)/1024]"
 echo "Memory Total = $TOTAL_MEM Megs"
-if [ $TOTAL_MEM -le 7500 ] ; then
-	echo "WARN: Memory is less than 8 gigabytes: $TOTAL_MEM"
+if [ $TOTAL_MEM -le 3500 ] ; then
+	echo "WARN: Memory is less than 4 gigabytes: $TOTAL_MEM"
 	echo ""
 	ERROR=1
 fi
@@ -287,7 +286,7 @@ customize)
         exit 1;
   fi
 
-  SCA_SSG_SOFTWARE="/ssg/appliance/libexec/masterkey-manage.pl"
+  SCA_SSG_SOFTWARE="/opt/SecureSpan/Appliance/libexec/masterkey-manage.pl"
   if [ -s ${SCA_SSG_SOFTWARE} ] ; then
         echo "The SSG SCA support software appears to be installed"
   else
@@ -328,8 +327,61 @@ fi
 
 ;;
 
+scaupgrade)
+echo "Updating SCA6000 to latest firmware"
+FIRMWARE_PATH="/opt/sun/sca6000/firmware/sca6000fw"
+RET=0
+if [ ! -e "$FIRMWARE_PATH" ] ; then
+	echo "WARNING - firmware update not found (SCA driver probably disabled)"
+	RET=1
+else
+	UPGRADE_REQUIRED=0
+
+	# re-run the check for MCA firmware version
+	MCA=`dmesg | grep mca | grep Firmware`
+	if [ "$MCA" ] ; then
+		echo "SSL Card loaded:"
+		echo $MCA
+		MCA_DRIVER_VERSION="`echo $MCA | cut -d ' ' -f 6`"
+		MCA_DRIVER_MINOR_VERSION="`echo $MCA_DRIVER_VERSION | cut -f 3 -d '.'`"
+		if [ "$MCA_DRIVER_MINOR_VERSION" -lt 8 ] ; then
+			echo "Upgrade is required (Minor = $MCA_DRIVER_MINOR_VERSION)."
+			UPGRADE_REQUIRED=1
+		fi
+	else 
+		echo "SSL Card NOT loaded, can't determine firmware version."
+	fi
+
+	if [ "$UPGRADE_REQUIRED" -eq 1 ] ; then 
+		echo "Upgrading... please ignore any errors or kernel dumps due to interrupts"
+		service sca start
+		# you can ignore errors here about '1 file already exists', this means that the service is already running
+		/opt/sun/sca6000/sbin/scadiag -z mca0
+		/opt/sun/sca6000/sbin/scadiag -u /opt/sun/sca6000/firmware/sca6000fw mca0
+		/opt/sun/sca6000/sbin/scadiag -r mca0
+		# TODO - check return codes - return ERROR
+	else
+		echo "Firmware is already upgraded or no card, no need to run upgrade."
+	fi
+fi
+
+;;
+
+all)
+echo "Setting the system back to factory defaults and then halting the server."
+rm /root/.bash_history
+$0 customize
+$0 preseal
+$0 scaupgrade
+$0 test
+# last thing to do before sealing is remove myself from the rc.local
+sed -i -e '/sealsys/d' /etc/rc.local
+sh $0 seal
+
+;;
+
 *)
-  echo $"Usage: $0 (preseal|test|seal|customize|update)"
+  echo $"Usage: $0 (preseal|test|seal|customize|update|scaupgrade|all)"
 
 esac
 
