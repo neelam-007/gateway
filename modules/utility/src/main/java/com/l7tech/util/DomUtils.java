@@ -204,7 +204,7 @@ public class DomUtils {
                 result = (Element)n;
             }
         }
-        if (mustBePresent && result == null) throw new MissingRequiredElementException(MessageFormat.format("Required element {{0}}{1} not found", nsuri, name));
+        if (mustBePresent && result == null) throw new MissingRequiredElementException(MessageFormat.format("Required element '{'{0}'}'{1} not found", nsuri, name));
         return result;
     }
 
