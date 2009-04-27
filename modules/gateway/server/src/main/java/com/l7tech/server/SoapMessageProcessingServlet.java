@@ -356,7 +356,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     auditor.logAndAudit(SystemMessages.SOCKET_TIMEOUT);
                     sendExceptionFault(context, e, hrequest, hresponse, status);
                 } else {
-                    logger.log(Level.SEVERE, e.getMessage(), e);
+                    logger.log(Level.SEVERE, ExceptionUtils.getMessage(e), e);
                     //? if (e instanceof Error) throw (Error)e;
                     sendExceptionFault(context, e, hrequest, hresponse, status);
                 }

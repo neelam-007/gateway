@@ -245,7 +245,7 @@ public class LogRecordRingBuffer implements PropertyChangeListener {
         final Object[] params = logRecord.getParameters();
         LogRecord processedLogRecord;
         String logMessage = logRecord.getMessage();
-        if ( logMessage.length() > messageSizeLimit ) {
+        if ( logMessage != null && logMessage.length() > messageSizeLimit ) {
             String message = logMessage;
             if( message != null && params!=null && params.length>0) {
                 try {
