@@ -862,7 +862,7 @@ public class SoapUtil extends SoapConstants {
         if (doc == null) {
             throw new IllegalArgumentException("The element does not have Owner Document.");
         }
-        return SoapUtil.getBodyElement(doc) !=null;
+        return SoapUtil.getBodyElement(doc)==element;
     }
 
 

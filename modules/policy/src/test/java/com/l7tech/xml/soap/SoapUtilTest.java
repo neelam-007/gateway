@@ -5,11 +5,17 @@ import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
 import com.l7tech.wsdl.Wsdl;
+import com.l7tech.util.DomUtils;
+import com.l7tech.util.Functions;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.ExceptionUtils;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.Element;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Operation;
@@ -104,6 +110,29 @@ public class SoapUtilTest extends TestCase {
         // TODO find a fast way to fix it so it fails on PIs hidden within the body as well
         doc = XmlUtil.stringToDocument(SOAP_MESSAGE_WITH_PROCESSING_INSTRUCTION_IN_BODY);
         assertTrue(SoapUtil.isSoapMessage(doc));
+    }
+
+    public void testIsSoapBody() throws Exception {
+        Document soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "PlaceOrder_cleartext.xml");
+        DomUtils.visitNodes(soapdoc.getDocumentElement(), new Functions.UnaryVoid<Node>(){
+            @Override
+            public void call(final Node node) {
+                if ( node.getNodeType() == Node.ELEMENT_NODE ) {
+                    Element element = (Element) node;
+                    boolean isBody = false;
+                    if ( "http://schemas.xmlsoap.org/soap/envelope/".equals(element.getNamespaceURI()) && element.getLocalName().equals("Body") &&
+                         element.getParentNode() != null && element.getParentNode().getParentNode() == node.getOwnerDocument() &&
+                         "http://schemas.xmlsoap.org/soap/envelope/".equals(element.getParentNode().getNamespaceURI()) && element.getParentNode().getLocalName().equals("Envelope") ) {
+                        isBody = true;
+                    }
+                    try {
+                        assertEquals( isBody + " " + element, isBody, SoapUtil.isBody(element) );
+                    } catch (InvalidDocumentFormatException e) {
+                        throw ExceptionUtils.wrap(e);
+                    }
+                }
+            }
+        });
     }
 
     public void testUuidFormat() throws Exception {
