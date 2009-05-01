@@ -1130,7 +1130,12 @@
                 <include name="stubdata*"/>
             </fileset>
         </delete>
-        <delete file="${src.root}/tools/com/l7tech/tools/JarChecker.class"/>
+        <delete>
+			<fileset dir="${src.root}/tools/com/l7tech/tools">
+                <include name="JarChecker*.class"/>
+                <include name="JarSignatureChecker*.class"/>
+            </fileset>
+        </delete>
         <property name="buildinfo.update" value="true"/>
     </target>
 
@@ -3266,5 +3271,16 @@
         </jar>
 
         <echo level="info">Output JAR ${build.guddi.jar} should be copied to lib/repository/com.l7tech.lib/ for use in build.</echo>
+    </target>
+
+
+    <!-- 
+      Target to check if any Jars have expired.
+    -->
+    <target name="check-jar-expiry">
+        <javac srcdir="tools" destdir="tools"/>
+        <java dir="." fork="false" classname="com.l7tech.tools.JarSignatureChecker" classpath="tools" failonerror="true">
+            <arg line="build"/>
+        </java>
     </target>
 </project>
