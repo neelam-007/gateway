@@ -8,8 +8,7 @@ import java.util.jar.Manifest;
 import java.util.jar.Attributes;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.Collection;
-import java.util.ArrayList;
+import java.util.*;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -90,23 +89,33 @@ public class ApplicationLauncher {
     private static final String ATTR_L7_JAR = "X-Layer7-Jar";
 
     private static String[] getManifestAttributes() throws IOException {
-        String jarName;
-        String className;
-        URL jarUrl = ApplicationLauncher.class.getClassLoader().getResource( RESOURCE_MANIFEST );
-        logger.log( Level.FINE, "Using Jar URL ''{0}''.", jarUrl);
+        String jarName = null;
+        String className = null;
+        List<URL> jarUrls = Collections.list(ApplicationLauncher.class.getClassLoader().getResources( RESOURCE_MANIFEST ));
 
-        if ( jarUrl != null ) {
-            JarURLConnection jarUrlConn = (JarURLConnection) jarUrl.openConnection();
-            JarFile jarFile = jarUrlConn.getJarFile();
+        for ( URL jarUrl : jarUrls ) {
+            logger.log( Level.FINE, "Trying Jar URL ''{0}''.", jarUrl);
 
-            jarName = getManifestAttribute( jarFile, ATTR_L7_JAR );
-            logger.log( Level.FINE, "Using application Jar file ''{0}''.", jarName );
+            JarFile jarFile = null;
+            try {
+                JarURLConnection jarUrlConn = (JarURLConnection) jarUrl.openConnection();
+                jarFile = jarUrlConn.getJarFile();
 
-            className = getManifestAttribute( jarFile, ATTR_L7_MAIN );
-            logger.log( Level.FINE, "Using application main class ''{0}''.", className );
+                jarName = getManifestAttribute( jarFile, ATTR_L7_JAR );
+                logger.log( Level.FINE, "Using application Jar file ''{0}''.", jarName );
 
-            jarFile.close();
-        } else {
+                className = getManifestAttribute( jarFile, ATTR_L7_MAIN );
+                logger.log( Level.FINE, "Using application main class ''{0}''.", className );
+
+                if (jarName != null || className != null  ) {
+                    break;    
+                }
+            } finally {
+                ResourceUtils.closeQuietly( jarFile );
+            }
+        }
+
+        if ( jarName == null || className == null  ) {
             throw new RuntimeException( "Could not access Jar Manifest." );
         }
 

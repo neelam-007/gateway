@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.ZipFile;
 import java.net.Socket;
 
 /**
@@ -165,6 +166,17 @@ public final class ResourceUtils {
             logger.log(Level.INFO, "IOException when closing Socket", e);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unexpected error when closing Socket", e);
+        }
+    }
+
+    public static void closeQuietly(ZipFile zipFile) {
+        if (zipFile == null) return;
+        try {
+            zipFile.close();
+        } catch (IOException e) {
+            logger.log(Level.INFO, "IOException when closing ZipFile", e);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unexpected error when closing ZipFile", e);
         }
     }
 
