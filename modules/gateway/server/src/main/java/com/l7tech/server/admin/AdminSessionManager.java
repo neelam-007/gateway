@@ -20,6 +20,7 @@ import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.security.rbac.RoleManagerIdentitySourceSupport;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.server.logon.LogonService;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
@@ -49,8 +50,9 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
 
     //- PUBLIC
 
-    public AdminSessionManager( final ServerConfig config ) {
+    public AdminSessionManager( final ServerConfig config, final LogonService logonService ) {
         this.serverConfig = config;
+        this.logonService = logonService;
 
         int cacheSize = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_SIZE, 100);
         int cacheMaxTime = config.getIntProperty(ServerConfig.PARAM_PRINCIPAL_SESSION_CACHE_MAX_TIME, 300000);
@@ -138,10 +140,11 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     public User authenticate( final LoginCredentials creds ) throws ObjectModelException, LoginException, FailAttemptsExceededException {
         // Try internal first (internal accounts with the same credentials should hide externals)
         Set<IdentityProvider> providers = getAdminIdentityProviders();
+        AuthenticationResult authResult = null;
         User user = null;
 
         boolean needsClientCert = false;
-        IdentityProvider providerFoundUser = null;  //temp provider container to know which provider first failed to authenticate
+        User providerFoundUser = null;  //temp provider container to know which provider first failed to authenticate
         for (IdentityProvider provider : providers) {
             try {
                 //exit loop if the user needs a client certificate to login
@@ -159,8 +162,15 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                     }
                 }
 
+                User currentUser = null;
                 try {
-                    AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
+                    currentUser = ((AuthenticatingIdentityProvider)provider).findUserByCredential( creds );
+                    if ( currentUser == null ) {
+                        continue;
+                    }
+
+                    logonService.hookPreLoginCheck( currentUser );
+                    authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
                     User authdUser = authResult == null ? null : authResult.getUser();
                     if ( authdUser != null ) {
                         //Validate the user , now authenticated so that we know all of their group roles
@@ -179,7 +189,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                     //we have found our first username with bad credentials, so we'll update the logon attempt
                     //on this particular one and not on preceeding ones
                     if ( providerFoundUser == null  ) {
-                        providerFoundUser = provider;
+                        providerFoundUser = currentUser;
                     }
                 }
             } catch (AuthenticationException e) {
@@ -190,11 +200,13 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
             }
         }
 
-        if (user == null) {
+        if (user != null) {
+            logonService.updateLogonAttempt( user, authResult );
+        } else {
             //if we have failed to authenticate this user from all provider, we'll need to update failed logon attempt
             //for the first provider that found user with the same username
             if (providerFoundUser != null) {
-                providerFoundUser.updateFailedLogonAttempt(creds);
+                logonService.updateLogonAttempt( providerFoundUser, null );
             }
             if (needsClientCert) {
                 throw new LoginRequireClientCertificateException();
@@ -425,6 +437,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     private static final long REAP_STALE_AGE = TimeUnit.DAYS.toMillis(1); // reap sessions after 24 hours of inactivity
 
     // spring components
+    private final ServerConfig serverConfig;
+    private final LogonService logonService;
     private IdentityProviderFactory identityProviderFactory;
     private PasswordEnforcerManager passwordEnforcerManager;
 
@@ -434,7 +448,6 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
     private final SecureRandom random = new SecureRandom();
     private final Object providerSync = new Object();
     private final GroupCache groupCache;
-    private final ServerConfig serverConfig;
 
     private Set<IdentityProvider> adminProviders;
 

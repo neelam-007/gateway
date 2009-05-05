@@ -33,6 +33,15 @@ public interface AuthenticatingIdentityProvider<UT extends User, GT extends Grou
     AuthenticationResult authenticate( LoginCredentials pc ) throws AuthenticationException;
 
     /**
+     * Find a user that matches the given credential.
+     * 
+     * @param lc The login credentials for the user.
+     * @return The user or null if no matching user is found.
+     * @throws FindException If an error occurs
+     */
+    UT findUserByCredential( LoginCredentials lc ) throws FindException;
+
+    /**
      * Lookup a certificate from this provider by issuer DN and serial number.
      *
      * @param issuer The certificiate issuers principal

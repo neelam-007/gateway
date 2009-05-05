@@ -23,32 +23,13 @@ public interface LogonService {
     public void updateLogonAttempt(final User user, final AuthenticationResult ar);
 
     /**
-     * Service of updating the logon attempt information made by a particular user.  It will update the last login
-     * timestamp when the updateWithTimestamp field is set to TRUE.
-     *
-     * @param user  The user that has attempted to login
-     * @param ar    Teh authentication result.
-     * @param updateWithTimestamp   TRUE if would like to update the login timestamp
-     */
-    public void updateLogonAttempt(final User user, final AuthenticationResult ar, final boolean updateWithTimestamp);
-
-    /**
      * A pre-login check to see if the user attempting to login has exceeded the number of failure attempts already.
      * It basically tries to stop the processes from going further.
      *
      * @param user  The user that is attempting to log onto the system.
-     * @param now   The login time.
      * @throws FailAttemptsExceededException
      */
-    public void hookPreLoginCheck(final User user, long now) throws FailAttemptsExceededException;
-
-    /**
-     * Update the fail count for the specified user with the current time.  This should be used for when we don't have
-     * an administrative account to perform the transactions.
-     *
-     * @param user  The user who's fail count will be reset back to zero.
-     */
-    public void resetLogonAttempt(final User user);
+    public void hookPreLoginCheck(final User user) throws FailAttemptsExceededException;
 
     /**
      * Resets the fail count for this particular user to be zero.  It does not change the last login time where as the

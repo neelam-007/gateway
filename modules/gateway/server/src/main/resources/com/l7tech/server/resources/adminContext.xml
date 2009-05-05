@@ -75,6 +75,7 @@
     <!-- admin session tracker -->
     <bean id="adminSessionManager" class="com.l7tech.server.admin.AdminSessionManager">
         <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="logonService"/>
         <property name="identityProviderFactory" ref="identityProviderFactory"/>
         <property name="roleManager" ref="roleManager"/>
         <property name="passwordEnforcerManager" ref="passwordEnforcerManager"/>

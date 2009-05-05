@@ -19,7 +19,6 @@ import com.l7tech.server.identity.ConfigurableIdentityProvider;
 import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.PersistentIdentityProviderImpl;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
-import com.l7tech.server.logon.LogonService;
 import com.l7tech.util.HexUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -50,33 +49,26 @@ public class InternalIdentityProviderImpl
     private CertificateAuthenticator certificateAuthenticator;
     private ApplicationContext springContext;
     private Auditor auditor;
-    private LogonService logonService;
 
     public InternalIdentityProviderImpl() {
     }
 
+    @Override
     public InternalUserManager getUserManager() {
         return userManager;
     }
 
+    @Override
     public InternalGroupManager getGroupManager() {
         return groupManager;
     }
 
-    public LogonService getLogonService() {
-        return logonService;
-    }
-
-    public void setLogonService(LogonService logonService) {
-        this.logonService = logonService;
-    }
-
+    @Override
     @Transactional(propagation=Propagation.REQUIRED, noRollbackFor=AuthenticationException.class)
     public AuthenticationResult authenticate( LoginCredentials pc )
             throws AuthenticationException
     {
         AuthenticationResult ar = null;
-        long now = System.currentTimeMillis();
         try {
             String login = pc.getLogin();
 
@@ -104,17 +96,21 @@ public class InternalIdentityProviderImpl
             if (format.isClientCert() || format == CredentialFormat.SAML) {
                 ar = certificateAuthenticator.authenticateX509Credentials(pc, dbUser, config.getCertificateValidationType(), auditor);
             } else {
-                logonService.hookPreLoginCheck(dbUser, now);
                 ar = autenticatePasswordCredentials(pc, dbUser);
             }
 
-            logonService.updateLogonAttempt(dbUser, ar);
             return ar;
         } finally {
             if (ar != null) {
                 springContext.publishEvent(new Authenticated(ar));
             }
         }
+    }
+
+    @Override
+    public InternalUser findUserByCredential(final LoginCredentials lc) throws FindException {
+        String login = lc.getLogin();
+        return userManager.findByLogin(login);
     }
 
     private AuthenticationResult autenticatePasswordCredentials(LoginCredentials pc, InternalUser dbUser)
@@ -148,48 +144,41 @@ public class InternalIdentityProviderImpl
         throw iae;
     }
 
+    @Override
     public IdentityProviderConfig getConfig() {
         return config;
     }
 
     // TODO: Make this customizable
+    @Override
     public String getAuthRealm() {
         return HttpDigest.REALM;
     }
 
+    @Override
     public void test(boolean quick) {
     }
 
+    @Override
     public void preSaveClientCert(InternalUser user, X509Certificate[] certChain ) throws ClientCertManager.VetoSave {
         // ClientCertManagerImp's default rules are OK
     }
 
+    @Override
     public void setUserManager(InternalUserManager userManager) {
         this.userManager = userManager;
     }
 
+    @Override
     public void setGroupManager(InternalGroupManager groupManager) {
         this.groupManager = groupManager;
-    }
-
-    public boolean updateFailedLogonAttempt(LoginCredentials lc) {
-        String login = lc.getLogin();
-
-        InternalUser dbUser;
-        try {
-            dbUser = userManager.findByLogin(login);
-            logonService.updateLogonAttempt(dbUser, null);
-        } catch (FindException e) {
-            return false;
-        }
-
-        return true;
     }
 
     public void setCertificateAuthenticator(CertificateAuthenticator certificateAuthenticator) {
         this.certificateAuthenticator = certificateAuthenticator;
     }
 
+    @Override
     public void setIdentityProviderConfig(IdentityProviderConfig configuration) throws InvalidIdProviderCfgException {
         this.config = configuration;
 
@@ -201,6 +190,7 @@ public class InternalIdentityProviderImpl
         if (groupManager != null) groupManager.configure( this );
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.springContext = applicationContext;
         this.auditor = new Auditor(this, applicationContext, logger);
@@ -243,6 +233,7 @@ public class InternalIdentityProviderImpl
         return expired;
     }
 
+    @Override
     public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException {
         String login = lc.getLogin();
         InternalUser dbUser;

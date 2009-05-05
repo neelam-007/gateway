@@ -17,6 +17,7 @@ import org.hibernate.Session;
 import org.hibernate.HibernateException;
 import org.hibernate.Criteria;
 import org.hibernate.ObjectDeletedException;
+import org.hibernate.LockMode;
 import org.hibernate.criterion.Restrictions;
 
 /**
@@ -29,25 +30,33 @@ public class LogonInfoManagerImpl extends HibernateEntityManager<LogonInfo, Enti
 
     private static final Logger logger = Logger.getLogger(LogonInfoManagerImpl.class.getName());
 
+    @Override
     public Class<LogonInfo> getImpClass() {
         return LogonInfo.class;
     }
 
+    @Override
     public Class<LogonInfo> getInterfaceClass() {
         return LogonInfo.class;
     }
 
+    @Override
     public String getTableName() {
         return "logon_info";
     }
 
-    public LogonInfo findByCompositeKey(final long providerId, final String login) throws FindException {
+    @Override
+    public LogonInfo findByCompositeKey(final long providerId, final String login, final boolean lock) throws FindException {
         try {
             return (LogonInfo) getHibernateTemplate().execute(new ReadOnlyHibernateCallback() {
+                @Override
                 protected Object doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
                     Criteria criteria = session.createCriteria(LogonInfo.class);
                     criteria.add(Restrictions.eq("providerId", providerId));
                     criteria.add(Restrictions.eq("login", login));
+                    if ( lock ) {
+                        criteria.setLockMode(LockMode.UPGRADE);
+                    }
                     return criteria.uniqueResult();
                 }
             });
@@ -65,7 +74,7 @@ public class LogonInfoManagerImpl extends HibernateEntityManager<LogonInfo, Enti
     public void delete(long providerId, String login) throws DeleteException {
         try {
             //check if record exists to delete
-            LogonInfo original = findByCompositeKey(providerId, login);
+            LogonInfo original = findByCompositeKey(providerId, login, true);
 
             //for backward compatibility, if there are no record exist then we dont need to
             //delete it because the record is not there

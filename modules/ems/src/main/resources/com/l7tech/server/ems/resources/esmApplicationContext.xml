@@ -357,9 +357,6 @@
         <property name="certificateAuthenticator"><null/></property>
         <property name="userManager" ref="internalUserManager"/>
         <property name="groupManager"><null/></property>
-        <property name="logonService">
-            <bean class="com.l7tech.server.ems.ui.EsmLogonService"/>
-        </property>
     </bean>
 
     <bean id="roleManager" class="com.l7tech.server.security.rbac.RoleManagerImpl" parent="hibernateBean">

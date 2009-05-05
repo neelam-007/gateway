@@ -231,6 +231,25 @@ public class ApplicationContextTest  {
         }
     }
 
+    /**
+     * Lazy proxies are on by default, but cause problems so ensure they are always disabled.
+     */
+    @Test
+    public void testPersistentEntityForLazyProxy() {
+        for ( EntityType type : EntityType.values() ) {
+            if ( IGNORE_ENTITY_TYPES.contains( type ) ) continue;
+
+            Class<? extends Entity> clazz = type.getEntityClass();
+            Assert.assertNotNull( "EntityType class must not be null.", clazz );
+
+            if ( clazz.getAnnotation(javax.persistence.Entity.class) != null ) {
+                Assert.assertNotNull( clazz + " should have Proxy annotation (with lazy=false)", clazz.getAnnotation(org.hibernate.annotations.Proxy.class) );
+                Assert.assertEquals( clazz + " should have Proxy annotation (with lazy=false)", false, clazz.getAnnotation(org.hibernate.annotations.Proxy.class).lazy() );
+            }
+        }
+
+    }
+
     @SuppressWarnings({"unchecked"})
     private void checkForImplementationAnnotation( final Class<? extends Annotation> annotation ) throws Exception {
         //

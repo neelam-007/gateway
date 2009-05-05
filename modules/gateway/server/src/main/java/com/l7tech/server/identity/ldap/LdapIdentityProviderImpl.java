@@ -25,7 +25,6 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.ConfigurableIdentityProvider;
 import com.l7tech.server.identity.DigestAuthenticator;
 import com.l7tech.server.identity.cert.CertificateAuthenticator;
-import com.l7tech.server.logon.LogonService;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.util.Background;
@@ -79,8 +78,6 @@ public class LdapIdentityProviderImpl
     private final AtomicLong rebuildTimerLength = new AtomicLong(DEFAULT_INDEX_REBUILD_INTERVAL);
     private final AtomicLong cleanupTimerLength = new AtomicLong(DEFAULT_CACHE_CLEANUP_INTERVAL);
     private static long cachedCertEntryLife = DEFAULT_CACHED_CERT_ENTRY_LIFE;
-
-    private LogonService logonService;
 
     private final ManagedTimer timer = new ManagedTimer("LDAP Certificate Cache Timer");
     private ManagedTimerTask rebuildTask;
@@ -448,14 +445,6 @@ public class LdapIdentityProviderImpl
         return groupManager;
     }
 
-    public LogonService getLogonService() {
-        return logonService;
-    }
-
-    public void setLogonService(LogonService logonService) {
-        this.logonService = logonService;
-    }
-
     /**
      * @return The ldap url that was last used to successfully connect to the ldap directory. May be null if
      *         previous attempt failed on all available urls.
@@ -535,32 +524,15 @@ public class LdapIdentityProviderImpl
     }
 
     @Override
-    public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
-        LdapUser realUser = null;
-        if (pc.getFormat() == CredentialFormat.KERBEROSTICKET) {
-            KerberosServiceTicket ticket = (KerberosServiceTicket) pc.getPayload();
-
-            Collection<IdentityHeader> headers;
-            try {
-                headers = search(ticket);
-                if (headers.size() > 1) {
-                    throw new AuthenticationException("Found multiple LDAP users for kerberos principal '" + ticket.getClientPrincipalName() + "'.");
-                }
-                else if (!headers.isEmpty()){
-                    for (IdentityHeader header : headers) {
-                        if (header.getType() == EntityType.USER) {
-                            realUser = userManager.findByPrimaryKey(header.getStrId());
-                        }
-                    }
-                    return new AuthenticationResult(realUser);
-                }
-            } catch (FindException e) {
+    public AuthenticationResult authenticate(final LoginCredentials pc) throws AuthenticationException {
+        LdapUser realUser;
+        try {
+            realUser = findUserByCredential( pc );
+        } catch (FindException e) {
+            if (pc.getFormat() == CredentialFormat.KERBEROSTICKET) {
+                KerberosServiceTicket ticket = (KerberosServiceTicket) pc.getPayload();
                 throw new AuthenticationException("Couldn't find LDAP user for kerberos principal '" + ticket.getClientPrincipalName() + "'.", e);
-            }
-        } else {
-            try {
-                realUser = userManager.findByLogin(pc.getLogin());
-            } catch (FindException e) {
+            } else {
                 throw new AuthenticationException("Couldn't authenticate credentials", e);
             }
         }
@@ -569,11 +541,11 @@ public class LdapIdentityProviderImpl
 
         final CredentialFormat format = pc.getFormat();
         if (format == CredentialFormat.CLEARTEXT) {
-            long now = System.currentTimeMillis();
-            logonService.hookPreLoginCheck(realUser, now);
             return authenticatePasswordCredentials(pc, realUser);
         } else if (format == CredentialFormat.DIGEST) {
             return DigestAuthenticator.authenticateDigestCredentials(pc, realUser);
+        } else if (format  == CredentialFormat.KERBEROSTICKET) {
+            return new AuthenticationResult( realUser );
         } else {
             if (format == CredentialFormat.CLIENTCERT || format == CredentialFormat.SAML) {
 
@@ -599,18 +571,43 @@ public class LdapIdentityProviderImpl
         }
     }
 
+    /**
+     * This provider does not support lookup of users by credential.
+     */
+    @Override
+    public LdapUser findUserByCredential( LoginCredentials pc ) throws FindException {
+        LdapUser user = null;
+
+        if (pc.getFormat() == CredentialFormat.KERBEROSTICKET) {
+            KerberosServiceTicket ticket = (KerberosServiceTicket) pc.getPayload();
+
+            Collection<IdentityHeader> headers;
+            headers = search(ticket);
+            if (headers.size() > 1) {
+                throw new FindException("Found multiple LDAP users for kerberos principal '" + ticket.getClientPrincipalName() + "'.");
+            }
+            else if (!headers.isEmpty()){
+                for (IdentityHeader header : headers) {
+                    if (header.getType() == EntityType.USER) {
+                        user = userManager.findByPrimaryKey(header.getStrId());
+                    }
+                }
+            }
+        } else {
+            user = userManager.findByLogin(pc.getLogin());
+        }
+
+        return user;
+    }
+
     private AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc, LdapUser realUser) throws BadCredentialsException {
         // basic authentication
         boolean res = userManager.authenticateBasic(realUser.getDn(), new String(pc.getCredentials()));
         if (res) {
             // success
-            AuthenticationResult ar = new AuthenticationResult(realUser);
-            logonService.updateLogonAttempt(realUser, ar);
-            return ar;
-            //return new AuthenticationResult(realUser);
+            return new AuthenticationResult(realUser);
         }
         logger.info("credentials did not authenticate for " + pc.getLogin());
-        //logonService.updateLogonAttempt(realUser, null);
         throw new BadCredentialsException("credentials did not authenticate");
     }
 
@@ -1203,19 +1200,6 @@ public class LdapIdentityProviderImpl
     @Override
     public void setGroupManager(LdapGroupManager groupManager) {
         this.groupManager = groupManager;
-    }
-
-    @Override
-    public boolean updateFailedLogonAttempt(LoginCredentials lc) {
-        LdapUser realUser;
-        try {
-            realUser = userManager.findByLogin(lc.getLogin());
-        } catch (FindException e) {
-            return false;
-        }
-
-        logonService.updateLogonAttempt(realUser, null);
-        return true;
     }
 
     @Override

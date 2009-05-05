@@ -8,6 +8,8 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.gateway.common.audit.SystemMessages;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 
 import javax.security.auth.Subject;
 import java.security.Principal;
@@ -28,6 +30,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationContext;
 import org.springframework.beans.BeansException;
+import org.springframework.dao.CannotAcquireLockException;
 
 /**
  * The logon service manager that will control the login activites that takes place in the SSM component.
@@ -37,18 +40,7 @@ import org.springframework.beans.BeansException;
  */
 public class SSMLogonService implements LogonService, PropertyChangeListener, ApplicationContextAware {
 
-    private static final Logger logger = Logger.getLogger(SSMLogonService.class.getName());
-
-    private PlatformTransactionManager transactionManager; // required for TransactionTemplate
-    private LogonInfoManager logonManager;
-    private ServerConfig serverConfig;
-    private Auditor auditor;
-
-    private int maxLoginAttempts;
-    private int maxLockoutTime;
-
-    private static final int DEFAULT_MAX_LOCKOUT_TIME_IN_SECS = 1200;
-    private static final int DEFAULT_MAX_LOGIN_ATTEMPTS_ALLOW = 5;
+    //- PUBLIC
 
     public SSMLogonService(PlatformTransactionManager transactionManager, LogonInfoManager logonManager, ServerConfig serverConfig) {
         if ( transactionManager == null ) throw new IllegalArgumentException("PlateformTransactionManager cannot be null.");
@@ -93,6 +85,7 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         this.serverConfig = serverConfig;
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
         String newValue = (String) evt.getNewValue();
@@ -120,13 +113,23 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         }
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.auditor = new Auditor(this, applicationContext, logger);
     }
 
-    public void hookPreLoginCheck(final User user, long now) throws FailAttemptsExceededException {
+    @Override
+    public void hookPreLoginCheck(final User user) throws FailAttemptsExceededException {
         try {
-            LogonInfo logonInfo = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin());
+            final long now = System.currentTimeMillis();
+
+            // We should get a lock, but this is not any more wrong than it
+            // was before we had support for locking.
+            //
+            // This means that the check is faster but theoretically exposes
+            // us to the possiblity of 100s of simultaneous login attempts
+            // being processed.
+            LogonInfo logonInfo = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin(), false);
 
             if (logonInfo == null) throw new FindException("No entry for '" + user.getLogin() + "'");
 
@@ -142,10 +145,10 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                     auditor.logAndAudit(SystemMessages.AUTH_USER_EXCEED_ATTEMPT, user.getLogin(), Integer.toString(logonInfo.getFailCount()), Integer.toString(this.maxLoginAttempts));
                     String msg = "Credentials login matches an internal user " + user.getLogin() + ", but access is denied because of number of failed attempts.";
                     logger.info(msg);
-                    updateLogonAttempt(user, null, false);
+                    doUpdateLogonAttempt(user, null);
                     throw new FailAttemptsExceededException(msg);
                 } else {
-                    resetLogonAttempt(user);
+                    doResetLogonAttempt(user);
                     logger.info("Reset the fail logon count for '" + user.getLogin() + "'");
                 }
             }
@@ -155,121 +158,17 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         }
     }
 
-    public void resetLogonAttempt(final User user) {
-        Set<Principal> principals = new HashSet<Principal>();
-        principals.add(user);
-        Subject subject = new Subject(true, principals, Collections.emptySet(), Collections.emptySet());
-        final String name = user.getLogin();
-        Subject.doAs(subject, new PrivilegedAction() {
-            public Object run() {
-                try {
-                    TransactionTemplate txn = new TransactionTemplate(transactionManager);
-                    txn.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
-                    txn.execute(new TransactionCallback() {
-                        public Object doInTransaction(TransactionStatus transactionStatus) {
-                            long now = System.currentTimeMillis();
-                            boolean newRecord = false;
-                            try {
-                                LogonInfo logonInfo = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin());
-
-                                //we gotta check if the log info is NULL because older accounts without the upgrade
-                                //wont have this record in place.  If NULL, we'll just instantiate a new one for it
-                                if (logonInfo == null) {
-                                    logonInfo = new LogonInfo(user.getProviderId(), user.getLogin());
-                                    newRecord = true;
-                                }
-
-                                logonInfo.resetFailCount(now);
-
-                                //update it or save it depending on whether the record existed
-                                if (newRecord) {
-                                    logonManager.save(logonInfo);
-                                } else {
-                                    logonManager.update(logonInfo);
-                                }
-                            } catch (Exception e) {
-                                transactionStatus.setRollbackOnly();
-                                logger.log(Level.INFO, "Failed to update logon attempt for '" + name + "'", e);
-                            }
-                            return null;
-                        }
-                    });
-                } catch (Exception e) {
-                    logger.log(Level.INFO, "Failed to update logon attempt for '" + name + "'", e);
-                }
-                return null;
-            }
-        });
-    }
-
-    public void updateLogonAttempt(final User user, final AuthenticationResult ar, final boolean useTimestamp) {
-        //based on the user id and the provider id, we'll update the logon information into the database accordingly
-        //to the authentication results.  We'll need to execute the transaction at system level because we won't have
-        //an admin account
-        Set<Principal> principals = new HashSet<Principal>();
-        principals.add(user);
-        Subject subject = new Subject(true, principals, Collections.emptySet(), Collections.emptySet());
-        final String name = user.getLogin();
-
-        Subject.doAs(subject, new PrivilegedAction() {
-            public Object run() {
-                try {
-                    //we'll need to create a new transaction to do the work for us because the parent transaction could
-                    //rollback if there are any exceptions thrown that may cause it to rollback.  In any case, even if
-                    //an exception has occurred, we still want to be able to update the logon attempt
-                    TransactionTemplate txn = new TransactionTemplate(transactionManager);
-                    txn.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
-                    txn.execute(new TransactionCallback() {
-                        public Object doInTransaction(TransactionStatus transactionStatus) {
-                            long now = System.currentTimeMillis();
-                            boolean newRecord = false;
-                            try {
-                                LogonInfo logonInfo = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin());
-
-                                //we gotta check if the log info is NULL because older accounts without the upgrade
-                                //wont have this record in place.  If NULL, we'll just instantiate a new one for it
-                                if (logonInfo == null) {
-                                    logonInfo = new LogonInfo(user.getProviderId(), user.getLogin());
-                                    newRecord = true;
-                                }
-
-                                //if the authentication result is NULL then the fail logon failed.
-                                if (ar != null) {
-                                    logonInfo.successfulLogonAttempt(now);
-                                } else {
-                                    logonInfo.failLogonAttempt(now);
-                                }
-
-                                //update it or save it depending on whether the record existed
-                                if (newRecord) {
-                                    logonManager.save(logonInfo);
-                                } else {
-                                    logonManager.update(logonInfo);
-                                }
-                            } catch (Exception e) {
-                                transactionStatus.setRollbackOnly();
-                                logger.log(Level.INFO, "Failed to update logon attempt for '" + name + "'", e);
-                            }
-                            return null;
-                        }
-                    });
-                } catch (Exception e) {
-                    logger.log(Level.INFO, "Failed to update logon attempt for '" + name + "'", e);
-                }
-                return null;
-            }
-        });
-    }
-
+    @Override
     public void updateLogonAttempt(User user, AuthenticationResult ar) {
-        updateLogonAttempt(user, ar, true);
+        doUpdateLogonAttempt(user, ar);
     }
 
+    @Override
     public void resetLogonFailCount(User user) throws FindException, UpdateException {
 
         if (user == null) return;
 
-        LogonInfo logonInfo = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin());
+        LogonInfo logonInfo = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin(), true);
         if (logonInfo != null) {
             logonInfo.setFailCount(0);
 
@@ -278,4 +177,103 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         }
 
     }
+
+    //- PRIVATE
+    private static final Logger logger = Logger.getLogger(SSMLogonService.class.getName());
+
+    private PlatformTransactionManager transactionManager; // required for TransactionTemplate
+    private LogonInfoManager logonManager;
+    private ServerConfig serverConfig;
+    private Auditor auditor;
+
+    private int maxLoginAttempts;
+    private int maxLockoutTime;
+
+    private static final int DEFAULT_MAX_LOCKOUT_TIME_IN_SECS = 1200;
+    private static final int DEFAULT_MAX_LOGIN_ATTEMPTS_ALLOW = 5;
+
+
+    private void doResetLogonAttempt(final User user) {
+        doLogonInfoUpdate( user, new Functions.UnaryVoid<LogonInfo>(){
+            @Override
+            public void call( final LogonInfo logonInfo ) {
+                final long now = System.currentTimeMillis();
+                logonInfo.resetFailCount(now);
+            }
+        } );
+    }
+
+    private void doUpdateLogonAttempt(final User user, final AuthenticationResult ar) {
+        doLogonInfoUpdate( user, new Functions.UnaryVoid<LogonInfo>(){
+            @Override
+            public void call( final LogonInfo logonInfo ) {
+                //if the authentication result is NULL then the fail logon failed.
+                final long now = System.currentTimeMillis();
+                if (ar != null) {
+                    logonInfo.successfulLogonAttempt(now);
+                } else {
+                    logonInfo.failLogonAttempt(now);
+                }
+            }
+        } );
+    }
+
+    private void doLogonInfoUpdate( final User user, final Functions.UnaryVoid<LogonInfo> callback ) {
+        //based on the user id and the provider id, we'll update the logon information.
+        //We'll need to execute the transaction at system level because we won't have
+        //an admin account
+        Set<Principal> principals = new HashSet<Principal>();
+        principals.add(user);
+        Subject subject = new Subject(true, principals, Collections.emptySet(), Collections.emptySet());
+        final String name = user.getLogin();
+
+        Subject.doAs(subject, new PrivilegedAction<Object>() {
+            @Override
+            public Object run() {
+                try {
+                    //we'll need to create a new transaction to do the work for us because the parent transaction could
+                    //rollback if there are any exceptions thrown that may cause it to rollback.  In any case, even if
+                    //an exception has occurred, we still want to be able to update the logon attempt
+                    TransactionTemplate txn = new TransactionTemplate(transactionManager);
+                    txn.setPropagationBehavior(TransactionTemplate.PROPAGATION_REQUIRES_NEW);
+                    txn.execute(new TransactionCallback() {
+                        @Override
+                        public Object doInTransaction(TransactionStatus transactionStatus) {
+                            boolean newRecord = false;
+                            try {
+                                LogonInfo logonInfo = logonManager.findByCompositeKey(user.getProviderId(), user.getLogin(), false);
+
+                                //we gotta check if the log info is NULL because older accounts without the upgrade
+                                //wont have this record in place.  If NULL, we'll just instantiate a new one for it
+                                if (logonInfo == null) {
+                                    logonInfo = new LogonInfo(user.getProviderId(), user.getLogin());
+                                    newRecord = true;
+                                }
+
+                                callback.call( logonInfo );
+
+                                //update it or save it depending on whether the record existed
+                                if (newRecord) {
+                                    logonManager.save(logonInfo);
+                                } else {
+                                    logonManager.update(logonInfo);
+                                }
+                            } catch (Exception e) {
+                                transactionStatus.setRollbackOnly();
+                                if ( ExceptionUtils.causedBy( e, CannotAcquireLockException.class ) ) {
+                                    logger.log(Level.WARNING, "Failed to update logon attempt for '" + name + "', could not acquire lock.", ExceptionUtils.getDebugException(e));
+                                } else {
+                                    logger.log(Level.WARNING, "Failed to update logon attempt for '" + name + "'", e);
+                                }
+                            }
+                            return null;
+                        }
+                    });
+                } catch (Exception e) {
+                    logger.log(Level.INFO, "Failed to update logon attempt for '" + name + "'", e);
+                }
+                return null;
+            }
+        });
+    }    
 }

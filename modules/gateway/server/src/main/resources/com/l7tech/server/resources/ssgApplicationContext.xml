@@ -278,7 +278,6 @@
         <property name="certificateAuthenticator" ref="certificateAuthenticator"/>
         <property name="userManager" ref="internalUserManager"/>
         <property name="groupManager" ref="internalGroupManager"/>
-        <property name="logonService" ref="logonService"/>
     </bean>
     <bean name="internalUserManager" class="com.l7tech.server.identity.internal.InternalUserManagerImpl" scope="prototype" parent="hibernateBean">
         <constructor-arg ref="roleManager"/>
@@ -324,7 +323,6 @@
         <property name="groupManager">
             <bean class="com.l7tech.server.identity.ldap.LdapGroupManagerImpl" scope="prototype"/>
         </property>
-        <property name="logonService" ref="logonService"/>
         <property name="configManager" ref="identityProviderConfigManager"/>
     </bean>
 

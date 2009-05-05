@@ -19,10 +19,11 @@ public interface LogonInfoManager extends EntityManager<LogonInfo, EntityHeader>
      *
      * @param providerId    The provider that handles the user
      * @param login         The login name
+     * @param lock          True to lock the object for update
      * @return              The LogonInfo object if found.
      * @throws FindException
      */
-    public LogonInfo findByCompositeKey(long providerId, String login) throws FindException;
+    public LogonInfo findByCompositeKey(long providerId, String login, boolean lock) throws FindException;
 
     /**
      * Updates the logon information object into the database.

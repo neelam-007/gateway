@@ -83,6 +83,13 @@ public class FederatedIdentityProviderImpl
     }
 
     /**
+     * This provider does not support lookup of users by credential. 
+     */
+    public FederatedUser findUserByCredential( LoginCredentials pc ) {
+        return null;
+    }
+
+    /**
      * Meaningless - no passwords in FIP anyway
      */
     public String getAuthRealm() {
@@ -177,10 +184,6 @@ public class FederatedIdentityProviderImpl
 
     public void setGroupManager(FederatedGroupManager groupManager) {
         this.groupManager = groupManager;
-    }
-
-    public boolean updateFailedLogonAttempt(LoginCredentials lc) {
-        return false;
     }
 
     public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException {

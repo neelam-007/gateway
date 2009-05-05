@@ -72,8 +72,6 @@ public interface IdentityProvider<UT extends User, GT extends Group, UMT extends
      */
     void validate(UT user) throws ValidationException;
 
-    boolean updateFailedLogonAttempt(LoginCredentials lc);
-
     /**
      * Checks if the user already has a  client certificate for the given provider.
      *

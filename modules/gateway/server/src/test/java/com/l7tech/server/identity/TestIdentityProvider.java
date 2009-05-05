@@ -89,6 +89,11 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
     }
 
     @Override
+    public User findUserByCredential(LoginCredentials lc) throws FindException {
+        return userman.findByLogin(lc.getLogin());
+    }
+
+    @Override
     public X509Certificate findCertByIssuerAndSerial( final X500Principal issuer, final BigInteger serial ) {
         return null;
     }
@@ -99,17 +104,12 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
     }
 
     @Override
-    public boolean updateFailedLogonAttempt(LoginCredentials lc) {
-        return false;
-    }
-
-    @Override
     public boolean hasClientCert(LoginCredentials lc) throws AuthenticationException {
         return false;  
     }
 
     @Override
-    public UserManager getUserManager() {
+    public UserManager<User> getUserManager() {
         return userman;
     }
 
