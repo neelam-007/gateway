@@ -135,6 +135,29 @@ public class SoapUtilTest extends TestCase {
         });
     }
 
+    public void testIsSoapHeader() throws Exception {
+        Document soapdoc = TestDocuments.getTestDocument(TestDocuments.DIR + "PlaceOrder_cleartext.xml");
+        DomUtils.visitNodes(soapdoc.getDocumentElement(), new Functions.UnaryVoid<Node>(){
+            @Override
+            public void call(final Node node) {
+                if ( node.getNodeType() == Node.ELEMENT_NODE ) {
+                    Element element = (Element) node;
+                    boolean isHeader = false;
+                    if ( "http://schemas.xmlsoap.org/soap/envelope/".equals(element.getNamespaceURI()) && element.getLocalName().equals("Header") &&
+                         element.getParentNode() != null && element.getParentNode().getParentNode() == node.getOwnerDocument() &&
+                         "http://schemas.xmlsoap.org/soap/envelope/".equals(element.getParentNode().getNamespaceURI()) && element.getParentNode().getLocalName().equals("Envelope") ) {
+                        isHeader = true;
+                    }
+                    try {
+                        assertEquals( isHeader + " " + element, isHeader, SoapUtil.isHeader(element) );
+                    } catch (InvalidDocumentFormatException e) {
+                        throw ExceptionUtils.wrap(e);
+                    }
+                }
+            }
+        });
+    }
+
     public void testUuidFormat() throws Exception {
         String id = SoapUtil.generateUniqueUri("prefix:", true);
         assertTrue(id.startsWith("prefix:"));

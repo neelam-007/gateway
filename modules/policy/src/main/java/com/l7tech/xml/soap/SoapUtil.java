@@ -865,6 +865,28 @@ public class SoapUtil extends SoapConstants {
         return SoapUtil.getBodyElement(doc)==element;
     }
 
+    /**
+     * Tests whether a given element is the SOAP Header element.
+     *
+     * @param node the element to test whether it is the SOAP Header element (may be null)
+     * @return true if SOAP Header, false otherwise
+     * @throws InvalidDocumentFormatException if the message containing
+     *         this element is not SOAP
+     */
+    public static boolean isHeader( final Node node ) throws InvalidDocumentFormatException {
+        boolean header = false;
+
+        if ( node instanceof Element ) { // ensures not null
+            final Document document = node.getOwnerDocument();
+            if ( document == null ) {
+                throw new IllegalArgumentException("The node does not have Owner Document.");
+            }
+
+            header = SoapUtil.getHeaderElement( document ) == node;
+        }
+
+        return header;
+    }
 
     /**
      * There is no built-in provision in jax-rpc for adding a DOM document object (that

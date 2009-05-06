@@ -51,7 +51,8 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
     private final SecurityTokenResolver securityTokenResolver;
     private final TrustedCertServices trustedCertServices;
 
-    public ServerNcesValidatorAssertion(NcesValidatorAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
+    public ServerNcesValidatorAssertion( final NcesValidatorAssertion assertion,
+                                         final ApplicationContext context ) throws PolicyAssertionException {
         super(assertion);
         this.auditor = new Auditor(this, context, logger);
         this.certValidationProcessor = (CertValidationProcessor)context.getBean("certValidationProcessor");
@@ -59,7 +60,8 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
         this.trustedCertServices = (TrustedCertServices)context.getBean("trustedCertServices");
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+    @Override
+    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
         final Message msg;
         try {
             msg = context.getTargetMessage(assertion);
@@ -106,15 +108,28 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
         SigningSecurityToken bodySigner = null;
 
         for (SignedElement signedElement : wssResult.getElementsThatWereSigned()) {
-            SigningSecurityToken sst = signedElement.getSigningSecurityToken();
-            Element el = signedElement.asElement();
-            if (saml != null && saml.asElement().isEqualNode(el)) samlSigner = sst;
-            if (DomUtils.elementInNamespace(el, SoapConstants.WSA_NAMESPACE_ARRAY) && SoapConstants.MESSAGEID_EL_NAME.equals(el.getLocalName())) messageIdSigner = sst;
-            if (DomUtils.elementInNamespace(el, SoapConstants.WSU_URIS_ARRAY) && SoapConstants.TIMESTAMP_EL_NAME.equals(el.getLocalName())) timestampSigner = sst;
-            try {
-                if ( SoapUtil.isBody(el)) bodySigner = sst;
-            } catch ( InvalidDocumentFormatException e) {
-                throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Can't find SOAP Body element", e);
+            final SigningSecurityToken sst = signedElement.getSigningSecurityToken();
+            final Element el = signedElement.asElement();
+            if ( saml != null && saml.asElement().isEqualNode(el) ) {
+                if ( samlSigner != null ) {
+                    auditor.logAndAudit(AssertionMessages.NCESVALID_NO_SAML, what);
+                    return AssertionStatus.BAD_REQUEST;
+                }
+                samlSigner = sst;
+            } else if ( isWsAddressingMessageID(el) ) {
+                if ( messageIdSigner != null ) {
+                    auditor.logAndAudit(AssertionMessages.NCESVALID_NO_MESSAGEID, what);
+                    return AssertionStatus.BAD_REQUEST;
+                }
+                messageIdSigner = sst;
+            } else if ( timestampSigner == null && wssResult.getTimestamp() != null && el == wssResult.getTimestamp().asElement() ) {
+                timestampSigner = sst;
+            } else if ( bodySigner==null ) {
+                try {
+                    if ( SoapUtil.isBody(el)) bodySigner = sst;
+                } catch ( InvalidDocumentFormatException e) {
+                    throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Can't find SOAP Body element", e);
+                }
             }
         }
 
@@ -170,6 +185,25 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
                 return AssertionStatus.FALSIFIED;
             }
         }
+    }
+
+    /**
+     * Check if the given element is a WS-Addressing MessageID 
+     */
+    private boolean isWsAddressingMessageID( final Element element ) {
+        boolean isMessageID = false;
+
+        try {
+            if ( DomUtils.elementInNamespace(element, SoapConstants.WSA_NAMESPACE_ARRAY) &&
+                 SoapConstants.MESSAGEID_EL_NAME.equals(element.getLocalName()) &&
+                 SoapUtil.isHeader(element.getParentNode() ) ) {
+                isMessageID = true;
+            }
+        } catch ( InvalidDocumentFormatException e) {
+            throw new AssertionStatusException(AssertionStatus.SERVER_ERROR, "Can't find SOAP Header element", e);
+        }
+
+        return isMessageID;
     }
 
     /**
