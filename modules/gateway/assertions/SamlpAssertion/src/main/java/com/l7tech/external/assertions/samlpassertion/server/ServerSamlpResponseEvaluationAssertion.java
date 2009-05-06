@@ -43,10 +43,7 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
 
     private final Auditor auditor;
     private final String[] variablesUsed;
-    private Map<String, Object> variablesMap;
-    private String variablePrefix;
-
-    private AbstractSamlpResponseEvaluator.ResponseBean responseValues;
+    private final String variablePrefix;
 
     /**
      * Constructor.
@@ -68,11 +65,12 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
     /**
      * @see AbstractServerAssertion#checkRequest(com.l7tech.server.message.PolicyEnforcementContext)
      */
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
         try {
             // initialize stuff
-            this.variablesMap = context.getVariableMap(variablesUsed, auditor);
+            final Map<String, Object> variablesMap = context.getVariableMap(variablesUsed, auditor);
 
             /*
              * 1) Determine where the target message is supposed to go
@@ -91,19 +89,19 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
             /*
              * 2) Call the configured evaluator
              */
-            evaluateMessage(msg);
+            final AbstractSamlpResponseEvaluator.ResponseBean responseValues = evaluateMessage(msg);
             // time to check message contents
-            checkResponseData();
+            checkResponseData( responseValues, variablesMap );
 
             // log for debugging
             if (logger.isLoggable(Level.FINER)) {
-                logger.finer(this.responseValues.toString());
+                logger.finer(responseValues.toString());
             }
 
             /*
              * 3) Set the values into the appropriate context variables
              */
-            populateContextVariables(context);
+            populateContextVariables(context, responseValues);
 
         } catch (SamlpResponseEvaluationException badResp) {
 //            auditor.logAndAudit(AssertionMessages.SAMLP_EVALUATOR_BAD_RESP, ExceptionUtils.getMessage(badResp));
@@ -120,10 +118,10 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
     }
 
 
-    private void evaluateMessage(Message msg) throws SamlpAssertionException {
+    private AbstractSamlpResponseEvaluator.ResponseBean evaluateMessage(Message msg) throws SamlpAssertionException {
 
         // check the message
-        Node samlpPayload = null;
+        Node samlpPayload;
         try {
             if (msg.isSoap()) {
                 samlpPayload = SoapUtil.getPayloadElement(msg.getXmlKnob().getDocumentReadOnly());
@@ -155,7 +153,7 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
                  evaluator = new com.l7tech.external.assertions.samlpassertion.server.v1.ResponseEvaluator(assertion);
             }
 
-            responseValues = evaluator.parseMessage(samlpPayload);
+            return evaluator.parseMessage(samlpPayload);
 
         } catch (SamlpAssertionException samex) {
             logger.log(Level.WARNING, "Failed to unmarshal response message: " + ExceptionUtils.getMessage(samex));
@@ -163,20 +161,21 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
         }
     }
 
-    protected void checkResponseData() throws SamlpResponseEvaluationException {
+    protected void checkResponseData( final AbstractSamlpResponseEvaluator.ResponseBean responseValues,
+                                      final Map<String,Object> variablesMap ) throws SamlpResponseEvaluationException {
 
         if (responseValues == null) {
             throw new SamlpResponseEvaluationException("Response message cannot be null");
         }
 
         if (assertion.getSamlVersion() == 2)
-            checkStatusCode(STATUSCODE_SAMLP2_SUCCESS);
+            checkStatusCode(STATUSCODE_SAMLP2_SUCCESS, responseValues);
         else
-            checkStatusCode(STATUSCODE_SAMLP_SUCCESS);
+            checkStatusCode(STATUSCODE_SAMLP_SUCCESS, responseValues);
 
         checkConformanceValues();
-        checkAuthzDecision();
-        checkAttributeValues();
+        checkAuthzDecision(responseValues);
+        checkAttributeValues(responseValues, variablesMap);
     }
 
     /**
@@ -188,7 +187,7 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
 
     }
 
-    private void checkStatusCode(String expectedValue) throws SamlpResponseEvaluationException {
+    private void checkStatusCode(final String expectedValue, final AbstractSamlpResponseEvaluator.ResponseBean responseValues) throws SamlpResponseEvaluationException {
 
         String error = null;
         // Status Code
@@ -205,7 +204,7 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
         }
     }
 
-    private void checkAuthzDecision() throws SamlpResponseEvaluationException {
+    private void checkAuthzDecision( final AbstractSamlpResponseEvaluator.ResponseBean responseValues ) throws SamlpResponseEvaluationException {
 
         // only check when configured
         if (assertion.getAuthorizationStatement() == null)
@@ -237,7 +236,8 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
         }
     }
 
-    private void checkAttributeValues() throws SamlpResponseEvaluationException {
+    private void checkAttributeValues( final AbstractSamlpResponseEvaluator.ResponseBean responseValues,
+                                       final Map<String,Object> variablesMap ) throws SamlpResponseEvaluationException {
 
         // only check when configured
         if (assertion.getAttributeStatement() == null)
@@ -252,7 +252,7 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
         for (SamlAttributeStatement.Attribute sas : assertion.getAttributeStatement().getAttributes()) {
 
             key = sas.getName();
-            if (theAttribs.containsKey(key) && matchAttribute(sas, theAttribs.get(key))) {
+            if (theAttribs.containsKey(key) && matchAttribute(sas, theAttribs.get(key), variablesMap)) {
                 passCount++;
             } else {
                 StringBuffer sb = new StringBuffer();
@@ -276,7 +276,9 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
     }
 
 
-    private boolean matchAttribute(SamlAttributeStatement.Attribute configAttr, ResponseAttributeData actual) {
+    private boolean matchAttribute( final SamlAttributeStatement.Attribute configAttr,
+                                    final ResponseAttributeData actual,
+                                    final Map<String,Object> variablesMap ) {
 
         boolean matches;
 
@@ -285,16 +287,16 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
             String nfValue = (configAttr.getNameFormat() == null ?
                     SamlConstants.ATTRIBUTE_NAME_FORMAT_UNSPECIFIED : configAttr.getNameFormat());
 
-            matches = checkVariableEquals(configAttr.getName(), actual.getName()) &&
-                        checkVariableEquals(nfValue, actual.getNamespaceOrFormat());
+            matches = checkVariableEquals(configAttr.getName(), actual.getName(), variablesMap) &&
+                        checkVariableEquals(nfValue, actual.getNamespaceOrFormat(), variablesMap);
 
             if (configAttr.getFriendlyName() != null && !configAttr.getFriendlyName().isEmpty()) {
-                matches &= checkVariableEquals(configAttr.getFriendlyName(), actual.getFriendlyName());
+                matches &= checkVariableEquals(configAttr.getFriendlyName(), actual.getFriendlyName(), variablesMap);
             }
         // Saml v1.1 check
         } else {
-            matches = checkVariableEquals(configAttr.getName(), actual.getName()) &&
-                        checkVariableEquals(configAttr.getNamespace(), actual.getNamespaceOrFormat());
+            matches = checkVariableEquals(configAttr.getName(), actual.getName(), variablesMap) &&
+                        checkVariableEquals(configAttr.getNamespace(), actual.getNamespaceOrFormat(), variablesMap);
         }
 
         // what about non-strings??
@@ -316,7 +318,8 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
         return matches;
     }
 
-    private void populateContextVariables(PolicyEnforcementContext pec)
+    private void populateContextVariables( final PolicyEnforcementContext pec,
+                                           final AbstractSamlpResponseEvaluator.ResponseBean responseValues )
         throws SamlpAssertionException
     {
         pec.setVariable(createVarName(VAR_STATUS), responseValues.getStatusCodes().get(0));
@@ -341,24 +344,16 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
         return sb.toString();
     }
 
-    protected String getVariableValue(String var) {
+    protected String getVariableValue(String var, Map<String,Object> variablesMap) {
         if (var != null)
             return ExpandVariables.process(var, variablesMap, auditor);
         return null;
     }
 
-    protected boolean checkVariableEquals(String valueWithVars, String actual) {
-        String fullVal = getVariableValue(valueWithVars);
+    protected boolean checkVariableEquals(String valueWithVars, String actual, Map<String,Object> variablesMap) {
+        String fullVal = getVariableValue(valueWithVars, variablesMap);
         if (fullVal != null)
             return fullVal.equals(actual);
         return false;
-    }
-
-    private String getResponseType() {
-        if (assertion.getAuthorizationStatement() != null)
-            return "Authorization";
-        else if (assertion.getAttributeStatement() != null)
-            return "Attribute";
-        return "Authentication";
     }
 }
