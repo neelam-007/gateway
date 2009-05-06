@@ -43,6 +43,7 @@ public final class TestDocuments {
     public static final String PLACEORDER_KEYS = DIR + "PlaceOrder_with_XmlRequestSecurity_keys.properties";
     public static final String BUG_763_MONSTER_POLICY = DIR + "bug763MonsterPolicy.xml";
     public static final String BUG_3736_STR_TRANSFORM_REQUEST = DIR + "bug3736-str-transform.xml";
+    public static final String BUG_7170_STR_TRANSFORM_X509DATA_REQUEST = DIR + "bug7170-str-transform-x509data.xml";
     public static final String BUG_3611_SIGNATURE_INCLUSIVE_NAMESPACES = DIR + "bug3611-signature-inclusive-namespaces.xml";
     public static final String WAREHOUSE_SECURED_POLICY = DIR + "WarehouseSecuredPolicy.xml";
     public static final String DOTNET_SIGNED_REQUEST = DIR + "dotNetSignedSoapRequest.xml";

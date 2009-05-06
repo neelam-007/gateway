@@ -1454,7 +1454,7 @@ public class WssProcessorImpl implements WssProcessor {
         return null;
     }
 
-    private X509IssuerSerialSecurityToken handleX509Data(final Element str) throws InvalidDocumentFormatException {
+    private X509IssuerSerialSecurityToken handleX509Data(final Element str) throws InvalidDocumentFormatException, GeneralSecurityException {
         final Element x509data = XmlUtil.findFirstChildElementByName(str, DsigUtil.DIGSIG_URI, "X509Data");
         if (x509data == null) return null;
 
@@ -1499,6 +1499,7 @@ public class WssProcessorImpl implements WssProcessor {
             logger.fine("Certificate found");
             final X509IssuerSerialSecurityToken issuerSerialSecurityToken = new X509IssuerSerialSecurityToken(x509data, certificate);
             securityTokens.add(issuerSerialSecurityToken);
+            strToTarget.put( str, X509BinarySecurityTokenImpl.createBinarySecurityToken(str.getOwnerDocument(), certificate, str.getPrefix(), str.getNamespaceURI()).asElement() );
             return issuerSerialSecurityToken;
         }
         return null;

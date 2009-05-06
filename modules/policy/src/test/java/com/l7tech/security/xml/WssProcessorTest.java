@@ -270,6 +270,20 @@ public class WssProcessorTest {
     }
 
     @Test
+    public void testBug7170StrTransformX509DataIsserSerial() throws Exception {
+        TestDocument result;
+        Document d = TestDocuments.getTestDocument(TestDocuments.BUG_7170_STR_TRANSFORM_X509DATA_REQUEST);
+
+        result = new TestDocument("Bug7170StrTransform", d,
+                                  TestDocuments.getWssInteropAliceKey(),
+                                  TestDocuments.getWssInteropAliceCert(),
+                                  null,
+                                  null,
+                                  null);
+        doTest(result);
+    }
+
+    @Test
     public void testBug3611SignatureInclusiveNamespaces() throws Exception {
         TestDocument result;
         Document d = TestDocuments.getTestDocument(TestDocuments.BUG_3611_SIGNATURE_INCLUSIVE_NAMESPACES);
