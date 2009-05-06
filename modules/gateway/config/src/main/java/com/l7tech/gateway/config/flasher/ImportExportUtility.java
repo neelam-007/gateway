@@ -284,9 +284,10 @@ public abstract class ImportExportUtility {
             throw new IOException("file is null");
         }
 
+        // non empty check allows the utility to work with backup servlet temporary files
         File file = new File(fileName);
-        if (failIfExists && file.exists()) {
-            throw new IOException("file '" + fileName + "' already exists");
+        if (failIfExists && file.exists() && file.length() > 0) { 
+            throw new IOException("file '" + fileName + "' already exists and is not empty");
         }
 
         if (!failIfExists && !file.exists()) {
