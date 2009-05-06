@@ -642,7 +642,14 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                              portStr + routinguri);
         }
 
-        rewriteReferences(svc.getId(), wsdlDoc, documents, req.getServletPath());  // use servlet path to skip any import name
+        String wsdlProxyUrl = req.getServletPath();  // use servlet path to skip any import name
+        try {
+            wsdlProxyUrl = new URI(req.getRequestURL().toString()).resolve(req.getServletPath()).toString();
+        } catch ( Exception e ) {
+            logger.warning("Unable to determine absolute URL for wsdl proxy '"+ExceptionUtils.getMessage(e)+"'.");            
+        }
+
+        rewriteReferences(svc.getId(), wsdlDoc, documents, wsdlProxyUrl);
         substituteSoapAddressURL(wsdlDoc, ssgurl);
         addSecurityPolicy(wsdlDoc, svc);
 
