@@ -42,6 +42,7 @@ public class MessageProcessingMessages extends Messages {
     public static final M MESSAGE_VAR_BAD_WSS         = m(3029, Level.INFO, "{0} WSS processing failed: {1}");    
     public static final M RESPONSE_IO_ERROR           = m(3030, Level.WARNING, "Response sent by the backend service generated an IOException: {0}.");
     public static final M CERT_KEY_USAGE              = m(3031, Level.WARNING, "Certificate key usage or extended key usage disallowed by key usage enforcement policy for activity: {0}");
+    public static final M ERROR_WSS_PROCESSING_INFO   = m(3032, Level.INFO, "Error in WSS processing of request: {0}");
 
     // Service resolver messages
     public static final M SR_HTTPURI_CACHEDFAIL      = m(3100, Level.FINE, "Using cached failure @\"{0}\"");
