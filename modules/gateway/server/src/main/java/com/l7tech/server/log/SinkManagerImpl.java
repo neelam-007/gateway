@@ -233,7 +233,7 @@ public class SinkManagerImpl
     private final DispatchingMessageSink dispatchingSink = new DispatchingMessageSink();
     private final MessageSink publishingSink = new DelegatingMessageSink(dispatchingSink);
     private final ServerConfig serverConfig;
-        private final SyslogManager syslogManager;
+    private final SyslogManager syslogManager;
     private final TrafficLogger trafficLogger;
     private ApplicationContext applicationContext;
 
@@ -413,7 +413,7 @@ public class SinkManagerImpl
                     if ( logger.isLoggable(Level.CONFIG) )
                         logger.log(Level.CONFIG, "Ignoring invalid log sink configuration ''{0}''.", sinkConfiguration.getName());
                 } else {
-                    MessageSinkSupport sink = buildSinkForConfiguration( sinkConfiguration, false );
+                    MessageSinkSupport sink = buildSinkForConfiguration( sinkConfiguration );
 
                     if ( sink != null ) {
                         if ( logger.isLoggable(Level.CONFIG) )
@@ -441,10 +441,14 @@ public class SinkManagerImpl
         File varDir = serverConfig.getLocalDirectoryProperty(ServerConfig.PARAM_VAR_DIRECTORY, true);
         File logConfig = new File( varDir, LogUtils.LOG_SER_FILE );
 
-        List<MessageSink> fileSinks = new ArrayList<MessageSink>();
+        List<FileMessageSink> fileSinks = new ArrayList<FileMessageSink>();
         for ( MessageSink sink : sinks ) {
             if ( sink instanceof FileMessageSink ) {
-                fileSinks.add( sink );                
+                FileMessageSink fileSink = (FileMessageSink) sink;
+                if ( fileSink.isCategoryEnabled( MessageCategory.AUDIT ) ||
+                     fileSink.isCategoryEnabled( MessageCategory.LOG ) ) {
+                    fileSinks.add( fileSink );
+                }
             }
         }
 
@@ -651,7 +655,7 @@ public class SinkManagerImpl
     /**
      * Build a MessageSink for the given configuration
      */
-    private MessageSinkSupport buildSinkForConfiguration( final SinkConfiguration configuration, boolean isTest ) {
+    private MessageSinkSupport buildSinkForConfiguration( final SinkConfiguration configuration ) {
         MessageSinkSupport sink = null;
         SinkConfiguration.SinkType type = configuration.getType();
 
