@@ -59,6 +59,10 @@
         <filter-name>wsdlFilter</filter-name>
         <filter-class>com.l7tech.server.WsdlFilter</filter-class>
         <init-param>
+            <param-name>passthroughPrefixes</param-name>
+            <param-value>/ssg/</param-value>
+        </init-param>
+        <init-param>
             <param-name>wsdl-forward-uri</param-name>
             <param-value>/ssg/wsdl?uri={0}</param-value>
         </init-param>
@@ -81,6 +85,11 @@
 
     <filter-mapping>
         <filter-name>connectionIdFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+    <filter-mapping>
+        <filter-name>wsdlFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
