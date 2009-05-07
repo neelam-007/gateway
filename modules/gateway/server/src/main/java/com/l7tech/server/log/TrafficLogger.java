@@ -83,6 +83,7 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
     /**
      *
      */
+    @Override
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
         if (auditor == null) {
             auditor = new Auditor(this, applicationContext, logger);
@@ -92,6 +93,7 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
     /**
      *
      */
+    @Override
     public void propertyChange(final PropertyChangeEvent evt) {
         logger.log(Level.CONFIG, "Property {0} changed; old value: ''{1}'', new value: ''{2}''",
                    new Object[] {evt.getPropertyName(), evt.getOldValue(), evt.getNewValue()});
@@ -104,7 +106,10 @@ public class TrafficLogger implements ApplicationContextAware, PropertyChangeLis
      * @param enabled True to enable traffic logging
      */
     public void setEnabled(final boolean enabled) {
-        this.enabled.set(enabled);
+        boolean wasEnabled = this.enabled.getAndSet(enabled);
+        if ( !wasEnabled && enabled ) {
+            updateSettings();
+        }
     }
 
     /**
