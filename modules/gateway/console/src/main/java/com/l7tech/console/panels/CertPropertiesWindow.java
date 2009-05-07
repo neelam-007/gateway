@@ -79,7 +79,7 @@ public class CertPropertiesWindow extends JDialog {
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertPropertiesWindow.class.getName());
 
-    private Dialog owner;
+    private Window owner;
 
     /**
      * Constructor
@@ -88,7 +88,7 @@ public class CertPropertiesWindow extends JDialog {
      * @param tc       The trusted certificate.
      * @param editable TRUE if the properties are editable
      */
-    public CertPropertiesWindow(Dialog owner, TrustedCert tc, boolean editable, Collection<RevocationCheckPolicy> policies) {
+    public CertPropertiesWindow(Window owner, TrustedCert tc, boolean editable, Collection<RevocationCheckPolicy> policies) {
         this(owner, tc, editable, true, policies);
     }
 
@@ -100,7 +100,7 @@ public class CertPropertiesWindow extends JDialog {
      * @param editable TRUE if the properties are editable
      * @param options  TRUE to display the options and validity tabs
      */
-    public CertPropertiesWindow(Dialog owner, TrustedCert tc, boolean editable, boolean options) {
+    public CertPropertiesWindow(Window owner, TrustedCert tc, boolean editable, boolean options) {
         this(owner, tc, editable, options, null);
     }
 
@@ -112,8 +112,8 @@ public class CertPropertiesWindow extends JDialog {
      * @param editable TRUE if the properties are editable
      * @param options  TRUE to display the options and validity tabs
      */
-    public CertPropertiesWindow(Dialog owner, TrustedCert tc, boolean editable, boolean options, Collection<RevocationCheckPolicy> policies) {
-        super(owner, resources.getString("cert.properties.dialog.title"), true);
+    public CertPropertiesWindow(Window owner, TrustedCert tc, boolean editable, boolean options, Collection<RevocationCheckPolicy> policies) {
+        super(owner, resources.getString("cert.properties.dialog.title"), CertPropertiesWindow.DEFAULT_MODALITY_TYPE);
         this.owner = owner;
         this.trustedCert = tc;
         this.revocationCheckPolicies = policies;

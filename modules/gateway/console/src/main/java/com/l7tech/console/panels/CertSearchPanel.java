@@ -68,7 +68,7 @@ public class CertSearchPanel extends JDialog {
      *
      * @param owner The parent component.
      */
-    public CertSearchPanel(JDialog owner) {
+    public CertSearchPanel(Window owner) {
         this(owner, false);
     }
 
@@ -77,8 +77,8 @@ public class CertSearchPanel extends JDialog {
      *
      * @param owner The parent component.
      */
-    public CertSearchPanel(JDialog owner, boolean keyRequired) {
-        super(owner, resources.getString(getPrefix(keyRequired) + "cert.search.dialog.title"), true);
+    public CertSearchPanel(Window owner, boolean keyRequired) {
+        super(owner, resources.getString(getPrefix(keyRequired) + "cert.search.dialog.title"), CertSearchPanel.DEFAULT_MODALITY_TYPE);
         this.keyRequired = keyRequired; 
         initialize();
         pack();

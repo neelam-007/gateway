@@ -295,15 +295,15 @@ public class TrustedCertsPanel extends JPanel {
     /**
      * Get the parent dialog for this component.
      */
-    private JDialog getJDialogParent() {
-        return (JDialog) SwingUtilities.getWindowAncestor( this );
+    private Window getWindowParent() {
+        return SwingUtilities.getWindowAncestor( this );
     }
 
     /**
      * Add a trusted cert to the list
      */
     private void onAdd() {
-        CertSearchPanel sp = new CertSearchPanel( getJDialogParent() );
+        CertSearchPanel sp = new CertSearchPanel( getWindowParent() );
         sp.addCertListener(new CertListener(){
             public void certSelected(CertEvent ce) {
                 addTrustedCert(ce.getCert());
@@ -336,7 +336,7 @@ public class TrustedCertsPanel extends JPanel {
     private void onProperties() {
         int row = trustedCertsTable.getSelectedRow();
         if (row >= 0) {
-            CertPropertiesWindow cpw = new CertPropertiesWindow(getJDialogParent(), certificates.get(row), false, getRevocationCheckPolicies());
+            CertPropertiesWindow cpw = new CertPropertiesWindow(getWindowParent(), certificates.get(row), false, getRevocationCheckPolicies());
             DialogDisplayer.display(cpw);
         }
     }
