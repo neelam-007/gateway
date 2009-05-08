@@ -716,6 +716,19 @@ public class DomUtils {
      * @param visitor a visitor to invoke on each immediate child element.  Required.
      */
     public static void visitNodes( Node node, Functions.UnaryVoid<Node> visitor ) {
+        visitNodes( node, visitor, false );
+    }
+
+    /**
+     * Invokes the specified visitor on all descendants of the specified node.
+     *
+     * <p>NOTE: This optionally visits siblings also.</p>
+     *
+     * @param node the element whose child elements to visit.  Required.
+     * @param visitor a visitor to invoke on each immediate child element.  Required.
+     * @param visitSiblings true to visit siblings of the given node
+     */
+    public static void visitNodes( Node node, Functions.UnaryVoid<Node> visitor, boolean visitSiblings ) {
         if ( node != null ) {
             visitor.call( node );
 
@@ -729,12 +742,16 @@ public class DomUtils {
             }
 
             // visit children
-            visitNodes( node.getFirstChild(), visitor );
+            visitNodes( node.getFirstChild(), visitor, true );
 
             // visit siblings
-            visitNodes( node.getNextSibling(), visitor );
+            if ( visitSiblings ) {
+                visitNodes( node.getNextSibling(), visitor, true );
+            }
         }
     }
+
+
 
     /**
      * Get the prefix for the given name "prefix:local"
