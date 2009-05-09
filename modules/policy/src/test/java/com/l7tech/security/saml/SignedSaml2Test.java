@@ -1,7 +1,6 @@
 package com.l7tech.security.saml;
 
 import com.l7tech.common.io.InetAddressUtil;
-import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
@@ -152,7 +151,7 @@ public class SignedSaml2Test extends TestCase {
         new WssDecoratorImpl().decorateMessage(new Message(request), req);
 
         // hack message so original signature refers to the saml token instead of the BST
-        Element security = SoapUtil.getSecurityElement(request, SecurityActor.L7ACTOR.getValue());
+        Element security = SoapUtil.getSecurityElementForL7(request);
         if (security == null) {
             security = SoapUtil.getSecurityElement(request);
         }
@@ -195,7 +194,7 @@ public class SignedSaml2Test extends TestCase {
         new WssDecoratorImpl().decorateMessage(new Message(request), req);
 
         // Hand-hack the decorated message, replacing the BST with the saml:assertion
-        Element security = SoapUtil.getSecurityElement(request, SecurityActor.L7ACTOR.getValue());
+        Element security = SoapUtil.getSecurityElementForL7(request);
         if (security == null) {
             security = SoapUtil.getSecurityElement(request);
         }

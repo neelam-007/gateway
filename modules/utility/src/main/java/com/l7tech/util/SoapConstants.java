@@ -68,6 +68,10 @@ public class SoapConstants {
     public static final String L7_MESSAGEID_PREFIX = "L7a";
     public static final String L7_SERVICEID_ELEMENT = "ServiceId";
     public static final String L7_POLICYVERSION_ELEMENT = "PolicyVersion";
+    public static final String L7_SOAP_ACTOR = "secure_span";
+    // This is a URI actor/role value, sent by default by version 4.6 SSBs and SSGs.  See Bug #5829
+    public static final String L7_SOAP_ACTOR_URI  = "http://www.layer7tech.com/ws/policy";
+    public static final String L7_SOAP_ACTORS = L7_SOAP_ACTOR + " " + L7_SOAP_ACTOR_URI;
     public static final List<String> SECURITY_URIS = new ArrayList<String>();
     static {
         SECURITY_URIS.add(SECURITY_NAMESPACE);

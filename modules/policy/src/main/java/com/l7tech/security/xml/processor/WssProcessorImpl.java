@@ -86,6 +86,7 @@ public class WssProcessorImpl implements WssProcessor {
     private Map<String,EncryptedKey> encryptedKeyById = new HashMap<String,EncryptedKey>();
     private Set<EncryptedKey> processedEncryptedKeys = null;
     private SecurityActor secHeaderActor;
+    private String secHeaderActorUri;
     private boolean documentModified = false;
     private boolean encryptionIgnored = false;
     private String lastKeyEncryptionAlgorithm = null;
@@ -213,14 +214,12 @@ public class WssProcessorImpl implements WssProcessor {
         String currentSoapNamespace = processedDocument.getDocumentElement().getNamespaceURI();
 
         // Resolve the relevent Security header
-        Element l7secheader = SoapUtil.getSecurityElement(processedDocument, SecurityActor.L7ACTOR.getValue());
-        if(l7secheader == null) l7secheader = SoapUtil.getSecurityElement(processedDocument, SecurityActor.L7ACTOR_URI.getValue());
-        Element noactorsecheader = SoapUtil.getSecurityElement(processedDocument);
+        Element l7secheader = SoapUtil.getSecurityElementForL7(processedDocument);
         if (l7secheader != null) {
             releventSecurityHeader = l7secheader;
             secHeaderActor = SecurityActor.L7ACTOR;
         } else {
-            releventSecurityHeader = noactorsecheader;
+            releventSecurityHeader = SoapUtil.getSecurityElement(processedDocument);
             if (releventSecurityHeader != null) {
                 secHeaderActor = SecurityActor.NOACTOR;
             }
@@ -233,6 +232,8 @@ public class WssProcessorImpl implements WssProcessor {
         if (releventSecurityHeader == null) {
             logger.finer("No relevent security header found.");
             return produceResult();
+        } else {
+            secHeaderActorUri = SoapUtil.getActorValue(releventSecurityHeader);
         }
 
         // Process elements one by one
@@ -713,6 +714,10 @@ public class WssProcessorImpl implements WssProcessor {
 
             public SecurityActor getProcessedActor() {
                 return secHeaderActor;
+            }
+
+            public String getProcessedActorUri() {
+                return secHeaderActorUri;
             }
 
             public List<String> getValidatedSignatureValues() {

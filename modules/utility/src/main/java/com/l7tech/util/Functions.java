@@ -26,6 +26,14 @@ public final class Functions {
         R call();
     }
 
+    /**
+     * A function that takes no arguments and returns no value, like Runnable, but with an Exception.
+     */
+    public interface NullaryVoidThrows<E extends Throwable> {
+        void call() throws E;
+    }
+
+
     /** A function that takes one argument and returns a value. */
     public interface Unary<R, P1> {
         R call(P1 p1);

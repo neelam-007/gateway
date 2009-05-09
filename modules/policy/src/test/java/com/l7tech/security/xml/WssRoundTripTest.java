@@ -412,7 +412,7 @@ public class WssRoundTripTest {
                                                       makeSecurityContextFinder(td.req.getSecureConversationSession()),
                                                       strr);
 
-        final Element processedSecurityHeader = SoapUtil.getSecurityElement(incomingSoapDocument, r.getProcessedActor().getValue());
+        final Element processedSecurityHeader = SoapUtil.getSecurityElement(incomingSoapDocument, r.getProcessedActorUri());
 
         log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(incomingSoapDocument));
 

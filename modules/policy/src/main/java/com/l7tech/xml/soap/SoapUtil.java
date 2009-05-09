@@ -506,6 +506,39 @@ public class SoapUtil extends SoapConstants {
         return null; // no security header for us
     }
 
+    /**
+     * Get the security header for a Layer 7 actor.
+     *
+     * <p>If there are multiple headers that target Layer 7 actors then this
+     * will find the header for the "preferred" actor, not the first matching
+     * security header in the message.</p>
+     *
+     * @param soapMsg The soap message to process (must not be null)
+     * @return The element or null if not found
+     * @throws InvalidDocumentFormatException If the document is not soap
+     */
+    public static Element getSecurityElementForL7( final Document soapMsg ) throws InvalidDocumentFormatException {
+        Element l7secheader = null;
+
+        if ( soapMsg == null || soapMsg.getDocumentElement()==null ) {
+            throw new InvalidDocumentFormatException( "Document missing or empty." );            
+        }
+
+        SoapVersion soapVersion = SoapVersion.namespaceToSoapVersion( soapMsg.getDocumentElement().getNamespaceURI() );
+        String actors = soapVersion == SoapVersion.SOAP_1_1 || soapVersion == SoapVersion.UNKNOWN ?
+                SyspropUtil.getString( "com.l7tech.xml.soap.actors", SoapUtil.L7_SOAP_ACTORS ) :
+                SyspropUtil.getString( "com.l7tech.xml.soap.roles", SoapUtil.L7_SOAP_ACTORS );
+
+        for ( String actor : actors.split("\\s{1,1024}") ) {
+           l7secheader = SoapUtil.getSecurityElement( soapMsg, actor );
+            if ( l7secheader != null ) {
+                break;
+            }
+        }
+
+        return l7secheader;
+    }
+
     public static void nukeActorAttribute(Element el) {
         String attrName = SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(el.getOwnerDocument().getDocumentElement().getNamespaceURI()) ? SoapUtil.ROLE_ATTR_NAME : SoapUtil.ACTOR_ATTR_NAME;
         el.removeAttribute(attrName);

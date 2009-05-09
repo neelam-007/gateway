@@ -339,7 +339,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         if (policySettings.defaultWSSRequirements == null) {
             policySettings.defaultWSSRequirements = new DecorationRequirements();
             if (ssg.isGeneric())
-                policySettings.defaultWSSRequirements.setSecurityHeaderActor(SecurityActor.NOACTOR.getValue());
+                policySettings.defaultWSSRequirements.setSecurityHeaderActor(null);
 
             final String overrideActor = ssg.getProperties().get(SsgRuntime.SSGPROP_DEFAULT_SECURITY_ACTOR);
             if (overrideActor != null)

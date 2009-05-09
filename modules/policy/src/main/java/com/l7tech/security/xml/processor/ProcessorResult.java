@@ -30,7 +30,20 @@ public interface ProcessorResult {
     WssTimestamp getTimestamp();
     String getSecurityNS();
     String getWSUNS();
+
+    /**
+     * Get the actor/role "type" of the security header that was processed.
+     *
+     * @return The actor or null if no security header was found.
+     */
     SecurityActor getProcessedActor();
+
+    /**
+     * Get the URI for the actor/role of security header that was processed.
+     *
+     * @return The actor URI or null if no actor was specified.
+     */
+    String getProcessedActorUri();
 
     /**
      * Get a list of all SignatureValue text nodes whose owning ds:Signature signatures were validated successfully.

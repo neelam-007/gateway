@@ -39,6 +39,7 @@ public final class TestDocuments {
     public static final String WSDL_RPC_LITERAL = DIR + "whitemesa_rpc-lit.wsdl";
     public static final String WSDL2SERVICES = DIR + "xmltoday-delayed-quotes-2services.wsdl";
     public static final String PLACEORDER_CLEARTEXT = DIR + "PlaceOrder_cleartext.xml";
+    public static final String PLACEORDER_CLEARTEXT_S12 = DIR + "PlaceOrder_cleartext_soap12.xml";
     public static final String PLACEORDER_WITH_MAJESTY = DIR + "PlaceOrder_with_XmlRequestSecurity.xml";
     public static final String PLACEORDER_KEYS = DIR + "PlaceOrder_with_XmlRequestSecurity_keys.properties";
     public static final String BUG_763_MONSTER_POLICY = DIR + "bug763MonsterPolicy.xml";

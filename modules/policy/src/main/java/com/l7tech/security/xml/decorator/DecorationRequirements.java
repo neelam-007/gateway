@@ -6,9 +6,9 @@ package com.l7tech.security.xml.decorator;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.util.NamespaceFactory;
+import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.saml.SamlAssertion;
 import org.w3c.dom.Element;
 
@@ -634,7 +634,7 @@ public class DecorationRequirements {
     private Date timestampCreatedDate = null;
     private int timestampTimeoutMillis = 0;
     private boolean securityHeaderReusable = false;
-    private String securityHeaderActor = SecurityActor.L7ACTOR.getValue();
+    private String securityHeaderActor = SoapConstants.L7_SOAP_ACTOR;
     private Boolean securityHeaderMustUnderstand = null;
     private boolean includeSamlTokenInSignature = false;
     private KeyInfoInclusionType keyInfoInclusionType = KeyInfoInclusionType.CERT;

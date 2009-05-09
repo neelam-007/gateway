@@ -293,6 +293,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
 
     private static final String SUFFIX_JNDI = ".jndi";
     private static final String SUFFIX_SYSPROP = ".systemProperty";
+    private static final String SUFFIX_GETSYSPROP = ".getSystemProperty";
     private static final String SUFFIX_SETSYSPROP = ".setSystemProperty";
     private static final String SUFFIX_DESC = ".description";
     private static final String SUFFIX_DEFAULT = ".default";
@@ -414,6 +415,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     /** @return the requested property, with no caching at this layer. */
     public String getPropertyUncached(String propName, boolean includeClusterProperties) {
         String sysPropProp = propName + SUFFIX_SYSPROP;
+        String getSysPropProp = propName + SUFFIX_GETSYSPROP;
         String setSysPropProp = propName + SUFFIX_SETSYSPROP;
         String jndiProp = propName + SUFFIX_JNDI;
         String dfltProp = propName + SUFFIX_DEFAULT;
@@ -421,6 +423,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         String clusterAgeProp = propName + SUFFIX_CLUSTER_AGE;
 
         String systemPropertyName = getServerConfigProperty(sysPropProp);
+        String isGetSystemProperty = getServerConfigProperty(getSysPropProp);
         String isSetSystemProperty = getServerConfigProperty(setSysPropProp);
         String jndiName = getServerConfigProperty(jndiProp);
         String defaultValue = getServerConfigProperty(dfltProp);
@@ -439,7 +442,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
             propLock.readLock().unlock();
         }
 
-        if ( systemPropertyName != null && systemPropertyName.length() > 0 ) {
+        if ( systemPropertyName != null && systemPropertyName.length() > 0 && !"false".equals(isGetSystemProperty) ) {
             logger.finest("Checking System property " + systemPropertyName);
             value = System.getProperty(systemPropertyName);
         }

@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.TestDocuments;
 import static com.l7tech.common.TestDocuments.PLACEORDER_CLEARTEXT;
+import static com.l7tech.common.TestDocuments.PLACEORDER_CLEARTEXT_S12;
 import static com.l7tech.common.TestDocuments.getTestDocument;
 import com.l7tech.common.io.RandomInputStream;
 import com.l7tech.common.io.XmlUtil;
@@ -15,7 +16,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import static com.l7tech.policy.assertion.RoutingAssertion.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
@@ -30,6 +30,8 @@ import static com.l7tech.server.policy.assertion.ThrowOption.SHOULD_THROW;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.SoapConstants;
+import com.l7tech.util.Functions;
 import com.l7tech.xml.soap.SoapUtil;
 import static org.junit.Assert.*;
 import org.junit.*;
@@ -48,8 +50,9 @@ import java.util.List;
  *
  */
 public class ServerRoutingAssertionTest {
-    private static final String VAL_NOACTOR = SecurityActor.NOACTOR.getValue();
-    private static final String VAL_SECURESPAN = SecurityActor.L7ACTOR.getValue();
+    private static final String VAL_NOACTOR = null;
+    private static final String VAL_SECURESPAN = SoapConstants.L7_SOAP_ACTOR;
+    private static boolean soap11 = true;
 
     @Test
     public void testIgnoreSecHeader() throws Exception {
@@ -151,6 +154,9 @@ public class ServerRoutingAssertionTest {
     @Test
     public void testHandleSanitize() throws Exception {
         assertOneSec(doHandle(SHOULD_NOT_THROW, CLEANUP_CURRENT_SECURITY_HEADER, null), null, false);
+        doSoap12( new Functions.NullaryVoidThrows<Exception>(){ @Override public void call() throws Exception {
+            assertOneSec(doHandle(SHOULD_NOT_THROW, CLEANUP_CURRENT_SECURITY_HEADER, null), null, false);
+        } } );
     }
 
     @Test
@@ -184,6 +190,9 @@ public class ServerRoutingAssertionTest {
     @Test
     public void testHandleRemove() throws Exception {
         assertNoSec(doHandle(SHOULD_NOT_THROW, REMOVE_CURRENT_SECURITY_HEADER, null));
+        doSoap12( new Functions.NullaryVoidThrows<Exception>(){ @Override public void call() throws Exception {
+            assertNoSec(doHandle(SHOULD_NOT_THROW, REMOVE_CURRENT_SECURITY_HEADER, null));
+        } } );
     }
 
     @Test
@@ -207,6 +216,15 @@ public class ServerRoutingAssertionTest {
     //
     // Non-test support methods below
     //
+
+    private void doSoap12( Functions.NullaryVoidThrows<Exception> callme ) throws Exception {
+        try {
+            soap11 = false;
+            callme.call();
+        } finally {
+            soap11 = true;
+        }
+    }
 
     private void assertNotXml(Message message) throws Exception {
         assertFalse("Must not be XML", message.isXml());
@@ -239,6 +257,8 @@ public class ServerRoutingAssertionTest {
         final String actval = SoapUtil.getActorValue(sec);
         if (expectedActor != null)
             assertEquals("actor value must match expected", expectedActor, actval);
+        else
+            assertNull("expected null actor", actval);
 
         final String mustval = SoapUtil.getMustUnderstandAttributeValue(sec);
         if (mustUnderstand) {
@@ -313,7 +333,10 @@ public class ServerRoutingAssertionTest {
     }
 
     private static Message makeMessage() throws IOException, SAXException {
-        return new Message(getTestDocument(PLACEORDER_CLEARTEXT));
+        if ( soap11 )
+            return new Message(getTestDocument(PLACEORDER_CLEARTEXT));
+        else
+            return new Message(getTestDocument(PLACEORDER_CLEARTEXT_S12));
     }
 
     private TestServerRoutingAssertion makeTestSra() {

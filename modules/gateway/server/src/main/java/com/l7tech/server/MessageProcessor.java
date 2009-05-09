@@ -50,6 +50,7 @@ import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.SoapFaultLevel;
@@ -392,8 +393,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                           reqSec.getProcessorResult().getProcessedActor() == SecurityActor.NOACTOR) {
                         // go find the l7 decoreq and adjust the actor
                         for (DecorationRequirements requirement : allrequirements) {
-                            if (SecurityActor.L7ACTOR.getValue().equals(requirement.getSecurityHeaderActor())) {
-                                requirement.setSecurityHeaderActor(SecurityActor.NOACTOR.getValue());
+                            if (SoapConstants.L7_SOAP_ACTOR.equals(requirement.getSecurityHeaderActor())) {
+                                requirement.setSecurityHeaderActor(null);
                             }
                         }
                     }

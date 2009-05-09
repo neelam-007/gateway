@@ -148,7 +148,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
         if (secHeaderHandlingOption == RoutingAssertion.CLEANUP_CURRENT_SECURITY_HEADER) {
             ProcessorResult pr = requestSec.getProcessorResult();
             if (pr != null)
-                cleanupProcessedSecurityHeader(message, pr.getProcessedActor());
+                cleanupProcessedSecurityHeader(message, pr.getProcessedActor(), pr.getProcessedActorUri());
             return;
         }
 
@@ -192,7 +192,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     }
 
     // returns false if message was not soap
-    private boolean cleanupProcessedSecurityHeader(Message message, SecurityActor processedActor) throws SAXException, IOException {
+    private boolean cleanupProcessedSecurityHeader(Message message, SecurityActor processedActor, String processedActorUri ) throws SAXException, IOException {
         Document doc = message.getXmlKnob().getDocumentReadOnly();
         if (!SoapUtil.isSoapMessageMaybe(doc))
             return false;
@@ -201,13 +201,13 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
             // leaving the processed security header for passthrough means that if the processed
             // actor was l7, we need to promote to default (unless there is a default present)
             if (processedActor == SecurityActor.L7ACTOR) {
-                Element defaultSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
+                Element defaultSecHeader = SoapUtil.getSecurityElement(doc, processedActorUri);
                 if (defaultSecHeader != null) {
                     Element noActorSecHeader = SoapUtil.getSecurityElement(doc);
                     if (noActorSecHeader == null || noActorSecHeader == defaultSecHeader) {
                         Document wdoc = message.getXmlKnob().getDocumentWritable();
                         assert wdoc == doc;
-                        SoapUtil.removeSoapAttr(defaultSecHeader, SoapConstants.ACTOR_ATTR_NAME);
+                        SoapUtil.nukeActorAttribute(defaultSecHeader);
                         SoapUtil.removeSoapAttr(defaultSecHeader, SoapConstants.MUSTUNDERSTAND_ATTR_NAME);
                     } else {
                         logger.info("we can't promote l7 sec header as no actor because " +
@@ -252,11 +252,9 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
 
     private Element findDefaultSecurityHeader(Document doc, ProcessorResult pr) throws InvalidDocumentFormatException {
         if (pr == null || pr.getProcessedActor() != SecurityActor.L7ACTOR)
-            return SoapUtil.getSecurityElement(doc);      
-        Element defaultSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
-        if (defaultSecHeader == null) // Try again looking for the v4.6 actor URI
-            defaultSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR_URI.getValue());
-        return defaultSecHeader;
+            return SoapUtil.getSecurityElement(doc);
+        else
+            return SoapUtil.getSecurityElementForL7(doc);
     }
 
     /**

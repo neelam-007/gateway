@@ -1089,15 +1089,11 @@ public class MessageProcessor {
         if (ssg.getRuntime().isReluctantToRemoveProcessedSecurityHeader()) {
             // the processed security header will be deleted iff. it was explicitly addressed to us
             if (processorResult.getProcessedActor() != null &&
-                (processorResult.getProcessedActor() == SecurityActor.L7ACTOR ||
-                processorResult.getProcessedActor() == SecurityActor.L7ACTOR_URI))
+                (processorResult.getProcessedActor() == SecurityActor.L7ACTOR ))
             {
                 XmlKnob xmlKnob = response.getXmlKnob();
                 Document doc = xmlKnob.getDocumentReadOnly();
-                Element eltodelete = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
-                if(eltodelete == null) {
-                    eltodelete = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR_URI.getValue());
-                }
+                Element eltodelete = SoapUtil.getSecurityElement(doc, processorResult.getProcessedActorUri());
                 if (eltodelete == null) {
                     log.warning("the security element was already deleted somehow?"); // should not happen
                 } else {
@@ -1108,15 +1104,10 @@ public class MessageProcessor {
             }
         } else {
             // always remove the processed security header
-            SecurityActor procActor = processorResult.getProcessedActor();
-            final Element del;
+            final String procActorUri = processorResult.getProcessedActorUri();
             final XmlKnob xmlKnob = response.getXmlKnob();
             Document doc = xmlKnob.getDocumentReadOnly();
-            if (procActor == null) {
-                del = SoapUtil.getSecurityElement(doc);
-            } else {
-                del = SoapUtil.getSecurityElement(doc, procActor.getValue());
-            }
+            final Element del = SoapUtil.getSecurityElement(doc, procActorUri);
 
             if (del != null) {
                 xmlKnob.getDocumentWritable(); // mark DOM as dirty

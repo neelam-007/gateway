@@ -54,6 +54,10 @@ public class ProcessorResultWrapper implements ProcessorResult {
         return delegate.getProcessedActor();
     }
 
+    public String getProcessedActorUri() {
+        return delegate.getProcessedActorUri();
+    }
+
     public List<String> getValidatedSignatureValues() {
         return delegate.getValidatedSignatureValues();
     }

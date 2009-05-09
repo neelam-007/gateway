@@ -524,7 +524,7 @@ public class WssProcessorTest {
 
         if (pr.getProcessedActor() != null &&
             pr.getProcessedActor() == SecurityActor.L7ACTOR) {
-            Element eltodelete = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
+            Element eltodelete = SoapUtil.getSecurityElement(doc, pr.getProcessedActorUri());
             eltodelete.getParentNode().removeChild(eltodelete);
         }
 
@@ -538,7 +538,7 @@ public class WssProcessorTest {
         Element sec = SoapUtil.getSecurityElement(gotDoc);
         assertNull(sec);
 
-        Element l7sec = SoapUtil.getSecurityElement(gotDoc, SecurityActor.L7ACTOR.getValue());
+        Element l7sec = SoapUtil.getSecurityElementForL7(gotDoc);
         assertNull(l7sec);
     }
 
