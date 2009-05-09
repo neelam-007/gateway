@@ -389,12 +389,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     // if the request was processed on the noactor sec header instead of the l7 sec actor, then
                     // the response's decoration requirements should map this (if applicable)
                     if (reqSec.getProcessorResult() != null &&
-                          reqSec.getProcessorResult().getProcessedActor() != null &&
-                          reqSec.getProcessorResult().getProcessedActor() == SecurityActor.NOACTOR) {
+                        reqSec.getProcessorResult().getProcessedActor() != null ) {
+                        String actorUri = reqSec.getProcessorResult().getProcessedActor()==SecurityActor.NOACTOR ?
+                                null :
+                                reqSec.getProcessorResult().getProcessedActorUri();
+
                         // go find the l7 decoreq and adjust the actor
                         for (DecorationRequirements requirement : allrequirements) {
                             if (SoapConstants.L7_SOAP_ACTOR.equals(requirement.getSecurityHeaderActor())) {
-                                requirement.setSecurityHeaderActor(null);
+                                requirement.setSecurityHeaderActor( actorUri );
                             }
                         }
                     }
