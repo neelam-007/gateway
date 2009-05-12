@@ -453,7 +453,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private void showSampleMessageDialog(SampleMessage sm, final Functions.UnaryVoid<SampleMessageDialog> result) {
         final SampleMessageDialog smd = new SampleMessageDialog(this, sm, false, namespaces);
         smd.pack();
-        Utilities.centerOnScreen(smd);
+        Utilities.centerOnParentWindow(smd);
         DialogDisplayer.display(smd, new Runnable() {
             @Override
             public void run() {

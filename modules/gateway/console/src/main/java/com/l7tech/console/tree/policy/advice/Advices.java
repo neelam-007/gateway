@@ -10,7 +10,6 @@ import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAsserti
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
 
 import java.util.*;
@@ -57,7 +56,7 @@ public class Advices {
 
             if (advices.isEmpty()) advices.add(new UnknownAssertionAdvice());
             
-            return advices.toArray(new Advice[0]);
+            return advices.toArray(new Advice[advices.size()]);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -76,8 +75,13 @@ public class Advices {
          * 
          * @param pc The policy change.
          */
+        @Override
         public void proceed(PolicyChange pc) {
         }
+    }
+
+    static Set<Class<? extends Assertion>> getAdviceAssertionClasses() {
+        return Collections.unmodifiableSet( advicesMap.keySet() );    
     }
 
     private static Collection<Class<? extends Advice>> ary(Class<? extends Advice> c) {
@@ -96,7 +100,6 @@ public class Advices {
                 put(RemoteIpRange.class, ary(AddRemoteIpRangeAssertionAdvice.class));
                 put(TimeRange.class, ary(AddTimeRangeAssertionAdvice.class));
                 put(RequestSwAAssertion.class, ary(AddRequestSwAAssertionAdvice.class));
-                put(RequestWssSaml.class, ary(AddRequestWssSamlAdvice.class));
                 put(WsTrustCredentialExchange.class, ary(AddWsTrustCredentialExchangeAdvice.class));
                 put(WsFederationPassiveTokenRequest.class, ary(AddWsFederationPassiveTokenRequestAdvice.class));
                 put(XpathCredentialSource.class, ary(AddXpathCredentialSourceAdvice.class));
@@ -119,6 +122,5 @@ public class Advices {
                 put(HtmlFormDataAssertion.class, ary(HtmlFormDataAssertionAdvice.class));
                 put(CodeInjectionProtectionAssertion.class, ary(CodeInjectionProtectionAssertionAdvice.class));
                 put(SimpleXpathAssertion.class, ary(AddXPathAssertionAdvice.class));
-                put(SamlIssuerAssertion.class, ary(AddSamlIssuerAssertionAdvice.class));
             }};
 }

@@ -8,7 +8,7 @@ import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.console.panels.ResponseWssTimestampDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.policy.ResponseWssTimestampPolicyNode;
+import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssTimestamp;
 
@@ -23,7 +23,7 @@ import java.awt.*;
 public class ResponseWssTimestampPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(ResponseWssTimestampPropertiesAction.class.getName());
 
-    public ResponseWssTimestampPropertiesAction(ResponseWssTimestampPolicyNode node) {
+    public ResponseWssTimestampPropertiesAction(AbstractTreeNode node) {
         super(node, ResponseWssTimestamp.class);
     }
 
@@ -67,6 +67,7 @@ public class ResponseWssTimestampPropertiesAction extends NodeAction {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
+            @Override
             public void run() {
                 if (dlg.wasOKed()) {
                     ResponseWssTimestamp newAss = dlg.getValue();

@@ -19,6 +19,7 @@ import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.logging.Logger;
+import java.io.*;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -30,14 +31,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     /**
      * default comparator for the child objects
      */
-    protected static final Comparator<TreeNode> DEFAULT_COMPARATOR = new Comparator<TreeNode>() {
-        public int compare(TreeNode o1, TreeNode o2) {
-            if (o1 instanceof Comparable && o2 instanceof Comparable) {
-                return ((Comparable)o1).compareTo(o2);
-            }
-            return 0; // no order - assume everything equal
-        }
-    };
+    protected static final Comparator<TreeNode> DEFAULT_COMPARATOR = new DefaultTreeNodeComparator();
 
     protected boolean hasLoadedChildren;
     private boolean isLoadingChildren = false;
@@ -131,6 +125,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
             this.cookieValue = cookieValue;
         }
 
+        @Override
         public Object getValue() {
             return cookieValue;
         }
@@ -160,11 +155,13 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * Returns the number of children <code>TreeNode</code>s the receiver
      * contains.
      */
+    @Override
     public int getChildCount() {
         checkInitChildren();
         return super.getChildCount();
     }
 
+    @Override
     public Enumeration children() {
         checkInitChildren();
         return super.children();
@@ -291,7 +288,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
                 list.add(action);
             }
         }
-        return list.toArray(new Action[]{});
+        return list.toArray(new Action[list.size()]);
     }
 
     protected JMenu getSortMenu(){
@@ -426,10 +423,9 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         ImageCache cache = ImageCache.getInstance();
         ClassLoader loader = iconClassLoader();
         String path = iconResource(open);
-        Image ret = loader == null
+        return loader == null
                ? cache.getIcon(path)
                : cache.getIcon(path, loader);
-        return ret;
     }
 
     /**
@@ -493,6 +489,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     /**
      * @return the string representation of this node
      */
+    @Override
     public String toString() {
         return "[" + this.getClass() + ", " + getName() + "]";
     }
@@ -567,4 +564,18 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         return null;
     }
 
+    private static class DefaultTreeNodeComparator implements Comparator<TreeNode>, Serializable {
+        @SuppressWarnings({"unchecked"})
+        @Override
+        public int compare(TreeNode o1, TreeNode o2) {
+            if (o1 instanceof Comparable && o2 instanceof Comparable) {
+                return ((Comparable)o1).compareTo(o2);
+            }
+            return 0; // no order - assume everything equal
+        }
+
+        private Object readResolve() {
+            return DEFAULT_COMPARATOR;
+        }
+    }
 }

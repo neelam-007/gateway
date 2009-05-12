@@ -190,6 +190,9 @@ public interface AssertionMetadata {
      * this assertion is added to a policy, the special string "auto" to enable the default advice (which
      * shows the property dialog, if one is configured), or the special string "none" to use no Advice for this
      * assertion.
+     * <p>
+     * Note that a single shared instance of the Advice class is created, not one per use.
+     * </p>
      * <p/>
      * Ignored if a valid POLICY_ADVICE_INSTANCE is provided.
      * <p/>

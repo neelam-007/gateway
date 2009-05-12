@@ -3,6 +3,9 @@ package com.l7tech.policy.assertion.xmlsec;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.util.Functions;
 
 /**
  * The <code>RequestWssSaml</code> assertion describes the common SAML constraints
@@ -34,7 +37,7 @@ public class RequestWssSaml extends SamlPolicyAssertion implements SecurityHeade
      */
     public static RequestWssSaml newHolderOfKey() {
         RequestWssSaml ass = new RequestWssSaml();
-        ass.setVersion(Integer.valueOf(0));
+        ass.setVersion(0);
         ass.setRequireHolderOfKeyWithMessageSignature(true);
         ass.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_HOLDER_OF_KEY});
         return ass;
@@ -47,7 +50,7 @@ public class RequestWssSaml extends SamlPolicyAssertion implements SecurityHeade
          */
     public static RequestWssSaml newSenderVouches() {
         RequestWssSaml ass = new RequestWssSaml();
-        ass.setVersion(Integer.valueOf(0));
+        ass.setVersion(0);
         ass.setRequireSenderVouchesWithMessageSignature(true);
         ass.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SENDER_VOUCHES});
         return ass;
@@ -110,10 +113,12 @@ public class RequestWssSaml extends SamlPolicyAssertion implements SecurityHeade
         this.checkAssertionValidity = checkAssertionValidity;
     }
 
+    @Override
     public XmlSecurityRecipientContext getRecipientContext() {
         return recipientContext;
     }
 
+    @Override
     public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
         if (recipientContext == null) recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
         this.recipientContext = recipientContext;
@@ -156,10 +161,37 @@ public class RequestWssSaml extends SamlPolicyAssertion implements SecurityHeade
      *
      * @return true
      */
+    @Override
     public boolean isCredentialSource() {
         return true;
     }
 
+     @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+
+        meta.put(AssertionMetadata.SHORT_NAME, "SAML Assertion");
+        meta.put(AssertionMetadata.DESCRIPTION, "Gateway checks for the SAML Statements Security properties");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlWithCert16.gif");
+        meta.put(AssertionMetadata.ASSERTION_FACTORY, new Functions.Unary<RequestWssSaml,RequestWssSaml>(){
+            @Override
+            public RequestWssSaml call( final RequestWssSaml requestWssSaml ) {
+                return RequestWssSaml.newHolderOfKey();
+            }
+        });
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddRequestWssSamlAdvice");
+        meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.EditRequestWssSamlAction");
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, RequestWssSaml>() {
+            @Override
+            public String call( final RequestWssSaml requestWssSaml ) {
+                return requestWssSaml.describe();
+            }
+        });
+
+        return meta;
+    }
+
+    @Override
     public Object clone() {
         RequestWssSaml assertion = (RequestWssSaml) super.clone();
 

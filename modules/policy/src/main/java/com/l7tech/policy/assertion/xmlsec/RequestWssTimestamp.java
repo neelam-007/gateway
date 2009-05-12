@@ -36,10 +36,12 @@ public class RequestWssTimestamp extends MessageTargetableAssertion implements S
         return timestamp;
     }
 
+    @Override
     public XmlSecurityRecipientContext getRecipientContext() {
         return recipientContext;
     }
 
+    @Override
     public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
         if (recipientContext == null) recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
         this.recipientContext = recipientContext;
@@ -69,6 +71,7 @@ public class RequestWssTimestamp extends MessageTargetableAssertion implements S
         this.timeUnit = timeUnit;
     }
 
+    @Override
     public String toString() {
         return super.toString() + " signatureRequired=" + signatureRequired;
     }
@@ -82,12 +85,15 @@ public class RequestWssTimestamp extends MessageTargetableAssertion implements S
         this.setOtherTargetMessageVariable(other.getOtherTargetMessageVariable());
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         meta.put(PALETTE_NODE_NAME, "Require Timestamp in Message");
+        meta.put(DESCRIPTION, "Require Timestamp in Message");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, RequestWssTimestamp>() {
+            @Override
             public String call(RequestWssTimestamp assertion) {
                 return MessageFormat.format("Require {0}Timestamp in {1}",
                                             assertion.isSignatureRequired() ? "signed " : "",

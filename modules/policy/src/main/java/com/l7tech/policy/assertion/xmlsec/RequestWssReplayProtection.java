@@ -22,21 +22,26 @@ public class RequestWssReplayProtection extends MessageTargetableAssertion imple
     public RequestWssReplayProtection() {
     }
 
+    @Override
     public XmlSecurityRecipientContext getRecipientContext() {
         return recipientContext;
     }
 
+    @Override
     public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
         if (recipientContext == null) recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
         this.recipientContext = recipientContext;
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
         meta.put(AssertionMetadata.SHORT_NAME, "WSS Replay Protection");
+        meta.put(AssertionMetadata.DESCRIPTION, "The message must contain a WSS signed timestamp; if a signed wsa:MessageID is also present the MessageID value will be asserted unique; otherwise the timestamp's Created date is used.");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, RequestWssReplayProtection>() {
+            @Override
             public String call(RequestWssReplayProtection assertion) {
                 return "WSS Replay Protection in " + assertion.getTargetName() + SecurityHeaderAddressableSupport.getActorSuffix(assertion);
             }

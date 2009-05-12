@@ -13,10 +13,10 @@ import java.awt.*;
  */
 public class ResponseWssTimestampDialog extends OkCancelDialog<ResponseWssTimestamp> {
     public ResponseWssTimestampDialog(Frame owner, boolean modal, ResponseWssTimestamp assertion, boolean readOnly) {
-        super(owner, "Response Timestamp Validity Period", modal, new ResponseWssTimestampPanel(assertion), readOnly);
+        super(owner, "Response Timestamp Properties", modal, new ResponseWssTimestampPanel(assertion), readOnly);
     }
 
     public ResponseWssTimestampDialog(Dialog owner, boolean modal, ResponseWssTimestamp assertion, boolean readOnly) {
-        super(owner, "Response Timestamp Validity Period", modal, new ResponseWssTimestampPanel(assertion), readOnly);
+        super(owner, "Response Timestamp Properties", modal, new ResponseWssTimestampPanel(assertion), readOnly);
     }
 }

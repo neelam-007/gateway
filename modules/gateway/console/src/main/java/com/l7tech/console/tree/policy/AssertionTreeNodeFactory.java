@@ -57,9 +57,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(HttpBasic.class, HttpBasicAuthAssertionTreeNode.class);
         assertionMap.put(HttpDigest.class, HttpDigestAuthAssertionTreeNode.class);
         assertionMap.put(HttpNegotiate.class, HttpNegotiateAuthAssertionTreeNode.class);
-        assertionMap.put(WssBasic.class, WssBasicAuthAssertionTreeNode.class);
-        assertionMap.put(EncryptedUsernameTokenAssertion.class, EncryptedUsernameTokenAssertionTreeNode.class);
-        assertionMap.put(RequestWssX509Cert.class, RequestWssX509CertTreeNode.class);
         assertionMap.put(CookieCredentialSourceAssertion.class, CookieCredentialSourceAssertionTreeNode.class);
 
         assertionMap.put(RoutingAssertion.class, HttpRoutingAssertionTreeNode.class);
@@ -78,8 +75,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(CustomAssertionHolder.class, CustomAssertionTreeNode.class);
         assertionMap.put(AuditAssertion.class, AuditAssertionPolicyNode.class);
         assertionMap.put(AuditDetailAssertion.class, AuditDetailAssertionTreeNode.class);
-        assertionMap.put(RequestWssSaml.class, RequestWssSamlTreeNode.class);
-        assertionMap.put(RequestWssSaml2.class, RequestWssSamlTreeNode.class);
         assertionMap.put(WsTrustCredentialExchange.class, WsTrustCredentialExchangeTreeNode.class);
         assertionMap.put(WsFederationPassiveTokenExchange.class, WsFederationPassiveTokenRequestTreeNode.class);
         assertionMap.put(WsFederationPassiveTokenRequest.class, WsFederationPassiveTokenRequestTreeNode.class);
@@ -93,8 +88,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(SqlAttackAssertion.class, SqlAttackAssertionTreeNode.class);
         assertionMap.put(OversizedTextAssertion.class, OversizedTextAssertionTreeNode.class);
         assertionMap.put(RequestSizeLimit.class, RequestSizeLimitTreeNode.class);
-        assertionMap.put(ResponseWssTimestamp.class, ResponseWssTimestampPolicyNode.class);
-        assertionMap.put(ResponseWssSecurityToken.class, ResponseWssSecurityTokenPolicyNode.class);
         assertionMap.put(WsiBspAssertion.class, WsiBspAssertionPolicyNode.class);
         assertionMap.put(WsiSamlAssertion.class, WsiSamlAssertionPolicyNode.class);
         assertionMap.put(FaultLevel.class, FaultLevelTreeNode.class);

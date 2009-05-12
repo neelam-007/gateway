@@ -236,6 +236,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
         DefaultAssertionMetadata meta = defaultMeta();
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.saml.SamlIssuerAssertionPropertiesEditor");
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddSamlIssuerAssertionAdvice");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, SamlIssuerAssertion>() {
             public String call(SamlIssuerAssertion sia) {
                 StringBuilder sb = new StringBuilder();

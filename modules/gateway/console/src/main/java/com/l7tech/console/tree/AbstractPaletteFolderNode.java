@@ -83,6 +83,26 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
         return nextIndex;
     }
 
+    protected int insertModularAssertionByType( int nextIndex,
+                                                Class<? extends Assertion> assertionClass ) {
+        AssertionFinder assFinder = TopComponents.getInstance().getAssertionRegistry();
+        Set<Assertion> bothHands = assFinder.getAssertions();
+        for (Assertion ass : bothHands) {
+            // Find variants
+            Assertion[] variants = (Assertion[])ass.meta().get(AssertionMetadata.VARIANT_PROTOTYPES);
+            if (variants == null || variants.length < 1) variants = new Assertion[] { ass };
+
+            for ( Assertion variant : variants ) {
+                if ( assertionClass.isInstance(variant) ) {
+                    // Add assertion to folder
+                    nextIndex = insertModularAssertion(variant, nextIndex);
+                }
+            }
+        }
+        return nextIndex;
+    }
+
+
     /**
      * Insert a palette node for the specified modular assertion into this folder, if possible.
      *

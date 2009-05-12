@@ -1,6 +1,11 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssSecurityToken;
 
 
 /**
@@ -23,14 +28,16 @@ public class XmlSecurityFolderNode extends AbstractPaletteFolderNode {
     /**
      * subclasses override this method
      */
+    @Override
     protected void doLoadChildren() {
         int index = 0;
-        insert(new RequestWssIntegrityNode(), index++);
-        insert(new RequestWssConfidentialityNode(), index++);
-        insert(new ResponseWssIntegrityNode(), index++);
-        insert(new ResponseWssConfidentialityNode(), index++);
-        insert(new ResponseWssTimestampPaletteNode(), index++);
-        insert(new ResponseWssSecurityTokenPaletteNode(), index++);
+        // Assertions are inserted by type for now until we have a way to define the
+        // desired ordering in metadata.
+        index = insertModularAssertionByType( index, RequestWssIntegrity.class );
+        index = insertModularAssertionByType( index, RequestWssConfidentiality.class );
+        index = insertModularAssertionByType( index, ResponseWssIntegrity.class );
+        index = insertModularAssertionByType( index, ResponseWssConfidentiality.class );
+        index = insertModularAssertionByType( index, ResponseWssSecurityToken.class );
         index = insertMatchingModularAssertions(index);
         insertMatchingCustomAssertions(index, Category.XML_SEC);
     }

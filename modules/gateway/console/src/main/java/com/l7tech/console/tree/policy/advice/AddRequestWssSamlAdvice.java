@@ -20,9 +20,10 @@ import java.awt.*;
  * <p/>
  */
 public class AddRequestWssSamlAdvice implements Advice {
-    boolean proceed = false;
 
+    @Override
     public void proceed(final PolicyChange pc) {
+        final boolean[] proceed = { false };
         Assertion[] assertions = pc.getEvent().getChildren();
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof RequestWssSaml)) {
             throw new IllegalArgumentException();
@@ -43,8 +44,9 @@ public class AddRequestWssSamlAdvice implements Advice {
 
         final Wizard w = new SamlPolicyAssertionWizard(assertion, f, p, false, false);
         w.addWizardListener(new WizardAdapter() {
+            @Override
             public void wizardFinished(WizardEvent e) {
-                proceed = true;
+                proceed[0] = true;
             }
         });
 
@@ -52,9 +54,10 @@ public class AddRequestWssSamlAdvice implements Advice {
         w.pack();
         Utilities.centerOnScreen(w);
         DialogDisplayer.display(w, new Runnable() {
+            @Override
             public void run() {
                 // check that user oked this dialog
-                if (proceed) {
+                if ( proceed[0] ) {
                     if (assertion.getVersion()==null ||
                         assertion.getVersion() ==1) {
                         pc.getNewChild().setUserObject(new RequestWssSaml(assertion));
