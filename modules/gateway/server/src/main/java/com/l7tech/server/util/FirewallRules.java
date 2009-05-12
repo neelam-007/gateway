@@ -91,11 +91,13 @@ public class FirewallRules {
                 ni = NetworkInterface.getByInetAddress(InetAddress.getByName(address));
             }
 
-            while ( ni.isVirtual() ) {
-                ni = ni.getParent();
-            }
+            if ( ni != null ) {
+                while ( ni.isVirtual() ) {
+                    ni = ni.getParent();
+                }
 
-            name = ni.getName();
+                name = ni.getName();
+            }
         } catch ( IOException ioe ) {
             logger.log( Level.FINE, "Unable to determine network interface for ip '"+address+"'." , ExceptionUtils.getDebugException(ioe));
         }
