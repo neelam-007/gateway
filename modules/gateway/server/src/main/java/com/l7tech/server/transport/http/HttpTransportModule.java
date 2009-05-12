@@ -123,13 +123,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         embedded = new Embedded();
 
         // Create the thread pool
-        executor = new StandardThreadExecutor();
-        executor.setName("executor");
-        executor.setDaemon(true);
-        executor.setMaxIdleTime(serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_IDLE_TIME, 60000));
         final int poolSize = serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY, 200);
-        executor.setMaxThreads(poolSize);
-        executor.setMinSpareThreads(poolSize);
+        executor = createExecutor( "executor", poolSize );
         embedded.addExecutor(executor);
         try {
             executor.start();
@@ -309,6 +304,21 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
     }
 
+    private StandardThreadExecutor createExecutor( final String name,
+                                                   final int size ) {
+        int poolSize = size;
+        if ( poolSize < 1 || poolSize > 100000 ) poolSize = 40;
+
+        StandardThreadExecutor executor = new StandardThreadExecutor();
+        executor.setName(name);
+        executor.setDaemon(true);
+        executor.setMaxIdleTime( serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_IDLE_TIME, 60000) );
+        executor.setMaxThreads(poolSize);
+        executor.setMinSpareThreads(poolSize);
+        executor.setNamePrefix("tomcat-exec-" + name + "-");
+        return executor;
+    }
+
     private void startServletEngine() throws LifecycleException {
         if (!running.compareAndSet(false, true)) {
             // Already started
@@ -357,8 +367,10 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         try {
             embedded.stop();
             running.set(false);
-            if (executor != null)
-                executor.stop();
+            for ( org.apache.catalina.Executor embeddedExecutor : embedded.findExecutors() ) {
+                if ( embeddedExecutor != null )
+                    embeddedExecutor.stop();                
+            }
         } catch (org.apache.catalina.LifecycleException e) {
             throw new LifecycleException(e);
         }
@@ -617,6 +629,17 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Exception while destroying connector for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e);
             }
+
+            org.apache.catalina.Executor connectorExecutor = embedded.getExecutor( executorName(entry.left) );
+            if ( connectorExecutor != null ) {
+                embedded.removeExecutor( connectorExecutor );
+                try {
+                    connectorExecutor.stop();
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Exception while destroying thread pool for port " + entry.left.getPort() + ": " + ExceptionUtils.getMessage(e), e);
+                }
+            }
+
         }
     }
 
@@ -785,11 +808,51 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
         ProtocolHandler ph = c.getProtocolHandler();
         if (ph instanceof Http11Protocol) {
-            ((Http11Protocol)ph).setExecutor(executor);
+            ((Http11Protocol)ph).setExecutor( createAndRegisterExecutorIfRequired( executorName(ssgConn), ssgConn ) );
         } else
             throw new ListenerException("Unable to start HTTPS listener on port " + c.getPort() + ": Unrecognized protocol handler: " + ph.getClass().getName());
 
         activateConnector(ssgConn, c);
+    }
+
+    /**
+     * Create a name for an executor associated with this connector.
+     *
+     * We'll use this name as a prefix for threads also, so make sure it is unique. 
+     */
+    private String executorName( final SsgConnector connector ) {
+        StringBuilder builder = new StringBuilder();
+        builder.append( "connector-" );
+        for ( char character : connector.getName().toLowerCase().toCharArray() ) {
+            if ( (character >= '0' && character <= '9') ||
+                 (character >= 'a' && character <= 'z') ) {
+                builder.append(character);                
+            }
+        }
+        builder.append( "-" );
+        builder.append( connector.getOid() );
+        builder.append( "-executor" );
+
+        return builder.toString();
+    }
+
+    private Executor createAndRegisterExecutorIfRequired( final String name, final SsgConnector connector ) throws ListenerException {
+        StandardThreadExecutor connectorExecutor = executor;
+
+        final String sizeStr = connector.getProperty( SsgConnector.PROP_THREAD_POOL_SIZE );
+        if ( sizeStr != null ) {
+            try {
+                connectorExecutor = createExecutor( name, Integer.parseInt(sizeStr) );
+                connectorExecutor.start();
+                embedded.addExecutor( connectorExecutor );
+            } catch ( NumberFormatException nfe ) {
+                logger.warning("Inoring invalid thread pool size '"+sizeStr+"' for connector '"+connector.getName()+"'.");            
+            } catch (org.apache.catalina.LifecycleException e) {
+                throw new ListenerException( "Unable to start HTTPS listener on port " + connector.getPort() + ": Unable to start thread pool '" + ExceptionUtils.getMessage(e) + "'.");
+            }
+        }
+
+        return connectorExecutor;
     }
 
     private void activateConnector(SsgConnector connector, Connector c) throws ListenerException {

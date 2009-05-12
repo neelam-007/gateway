@@ -24,13 +24,14 @@ public class DefaultHttpConnectors {
     private static final String PROP_INIT_LISTENER_ENDPOINTS = "com.l7tech.server.listener.initendpoints";
     private static final String PROP_INIT_LISTENER_CIPHERS = "com.l7tech.server.listener.initciphers";
     private static final String PROP_INIT_INTERNODE_CIPHERS = "com.l7tech.server.listener.initinternodeciphers";
+    private static final String PROP_INIT_INTERNODE_POOLSIZE = "com.l7tech.server.listener.initinternodepoolsize";
 
     static final String defaultEndpoints = SyspropUtil.getString(PROP_INIT_LISTENER_ENDPOINTS, "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS");
     static final String defaultListenerStrongCiphers = SyspropUtil.getString(PROP_INIT_LISTENER_CIPHERS,
             "SSL_RSA_WITH_RC4_128_MD5,SSL_RSA_WITH_RC4_128_SHA,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA," +
             "TLS_DHE_RSA_WITH_AES_256_CBC_SHA,SSL_RSA_WITH_3DES_EDE_CBC_SHA,SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA,SSL_RSA_WITH_DES_CBC_SHA,SSL_DHE_RSA_WITH_DES_CBC_SHA");
     static final String defaultInternodeStrongCiphers = SyspropUtil.getString(PROP_INIT_INTERNODE_CIPHERS, "TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA");
-
+    static final String defaultInternodePoolSize = SyspropUtil.getString(PROP_INIT_INTERNODE_POOLSIZE, "10");
 
     /**
      * Create connectors from server.xml if possible, or by creating some hardcoded defaults.
@@ -136,6 +137,8 @@ public class DefaultHttpConnectors {
         nodeHttps.setSecure(true);
         nodeHttps.setClientAuth(SsgConnector.CLIENT_AUTH_OPTIONAL);
         nodeHttps.putProperty(SsgConnector.PROP_CIPHERLIST, defaultInternodeStrongCiphers);
+        if ( !"0".equals(defaultInternodePoolSize) )
+            nodeHttps.putProperty(SsgConnector.PROP_THREAD_POOL_SIZE, defaultInternodePoolSize);
         return nodeHttps;
     }
 

@@ -57,6 +57,9 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     /** If specified, this is a specified interface IP address to bind the listen port.  Otherwise, it will bind INADDR_ANY. */
     public static final String PROP_BIND_ADDRESS = "bindAddress";
 
+    /** If specified, this is the size of the thread pool for the connector (Currently HTTP(S) only). */
+    public static final String PROP_THREAD_POOL_SIZE = "threadPoolSize";
+
     /** Recognized endpoint names. */
     public static enum Endpoint {
         /** Message processor. */
@@ -549,6 +552,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         }
     }
 
+    @Override
     public boolean isPortUsed(int port, boolean udp, InetAddress device) {
         if (udp)
             return false;
@@ -566,6 +570,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         return range != null && range.isPortUsed(port, udp, device);
     }
 
+    @Override
     public boolean isOverlapping(PortRange range) {
         if (range.isPortUsed(getPort(), false, getBindAddress()))
             return true;
@@ -573,6 +578,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         return ourRange != null && range.isOverlapping(ourRange);
     }
 
+    @Override
     @Transient
     public List<PortRange> getUsedPorts() {
         // Currently an SsgConnector can only use TCP ports
@@ -612,6 +618,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     }
 
     /** @noinspection RedundantIfStatement*/
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -632,6 +639,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (enabled ? 1 : 0);
@@ -646,6 +654,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
         return result;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("[SsgConnector ");
         sb.append(port);

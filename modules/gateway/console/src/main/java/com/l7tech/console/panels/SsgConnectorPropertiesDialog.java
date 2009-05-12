@@ -26,7 +26,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private static final boolean INCLUDE_ALL_CIPHERS = SyspropUtil.getBoolean("com.l7tech.console.connector.includeAllCiphers");
     private static final String DIALOG_TITLE = "Listen Port Properties";
     private static final int TAB_SSL = 1;
-    private static final int TAB_FTP = 2;
+    private static final int TAB_HTTP = 2;
+    private static final int TAB_FTP = 3;
+    private static final int DEFAULT_POOL_SIZE = 20;
 
     private static class ClientAuthType {
         private static final Map<Integer, ClientAuthType> bycode = new ConcurrentHashMap<Integer, ClientAuthType>();
@@ -37,6 +39,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             this.label = label;
             bycode.put(code, this);
         }
+        @Override
         public String toString() {
             return label;
         }
@@ -79,6 +82,9 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JButton editPropertyButton;
     private JButton removePropertyButton;
     private JList propertyList;
+    private JSpinner threadPoolSizeSpinner;
+    private JCheckBox usePrivateThreadPoolCheckBox;
+    private JLabel threadPoolSizeLabel;
 
     private SsgConnector connector;
     private boolean confirmed = false;
@@ -88,14 +94,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private List<String> toBeRemovedProperties = new ArrayList<String>();
     private boolean isCluster = false;
 
-    public SsgConnectorPropertiesDialog(Frame owner, SsgConnector connector, boolean isCluster) {
-        super(owner, DIALOG_TITLE);
-        this.isCluster = isCluster;
-        initialize(connector);
-    }
-
-    public SsgConnectorPropertiesDialog(Dialog owner, SsgConnector connector, boolean isCluster) {
-        super(owner, DIALOG_TITLE);
+    public SsgConnectorPropertiesDialog(Window owner, SsgConnector connector, boolean isCluster) {
+        super(owner, DIALOG_TITLE, SsgConnectorPropertiesDialog.DEFAULT_MODALITY_TYPE);
         this.isCluster = isCluster;
         initialize(connector);
     }
@@ -103,28 +103,31 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private void initialize(SsgConnector connector) {
         this.connector = connector;
         setContentPane(contentPane);
-        setModal(true);
         getRootPane().setDefaultButton(okButton);
 
         InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
         inputValidator.attachToButton(okButton, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onOk();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
             }
         });
 
         managePrivateKeysButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 final PrivateKeyManagerWindow pkmw = new PrivateKeyManagerWindow(TopComponents.getInstance().getTopParent());
                 pkmw.pack();
                 Utilities.centerOnScreen(pkmw);
                 DialogDisplayer.display(pkmw, new Runnable() {
+                    @Override
                     public void run() {
                         privateKeyComboBox.repopulate();
                     }
@@ -133,6 +136,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         });
 
         privateKeyComboBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 enableOrDisableEndpoints();
             }
@@ -146,6 +150,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }));
 
         protocolComboBox.addItemListener(new ItemListener() {
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 enableOrDisableTabs();
                 enableOrDisableEndpoints();
@@ -159,6 +164,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }));
 
         clientAuthComboBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 enableOrDisableEndpoints();
             }
@@ -166,6 +172,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         // Make sure user-initiated changes to checkbox state get recorded so we can restore them
         final ActionListener stateSaver = new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 JCheckBox source = (JCheckBox)e.getSource();
                 saveCheckBoxState(source);
@@ -178,12 +185,21 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         cbEnableNode.addActionListener(stateSaver);
         cbEnablePCAPI.addActionListener(stateSaver);
 
+        usePrivateThreadPoolCheckBox.addActionListener( new ActionListener(){
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                threadPoolSizeSpinner.setEnabled( usePrivateThreadPoolCheckBox.isSelected() && isHttpProto(getSelectedProtocol()) );
+                threadPoolSizeLabel.setEnabled( threadPoolSizeSpinner.isEnabled() );
+            }
+        } );
+
         initializeInterfaceComboBox();
 
         initializeCipherSuiteControls();
 
         propertyList.setModel(propertyListModel);
         propertyList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 //noinspection unchecked
@@ -194,16 +210,19 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
         propertyList.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableOrDisablePropertyButtons();
             }
         });
         addPropertyButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 editProperty(null);
             }
         });
         editPropertyButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 //noinspection unchecked
                 Pair<String, String> property = (Pair<String, String>)propertyList.getSelectedValue();
@@ -212,6 +231,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
         removePropertyButton.addActionListener(new ActionListener() {
+            @Override
             @SuppressWarnings({"unchecked"})
             public void actionPerformed(ActionEvent e) {
                 // Check if the removing list contains the property name.  If so, don't add the property name.
@@ -232,6 +252,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
 
+        threadPoolSizeSpinner.setModel( new SpinnerNumberModel( DEFAULT_POOL_SIZE, 1, 10000, 1 ) );
+
         inputValidator.constrainTextFieldToBeNonEmpty("Name", nameField, null);
         inputValidator.validateWhenDocumentChanges(nameField);
         inputValidator.constrainTextFieldToNumberRange("Port", portField, 1025, 65535);
@@ -239,6 +261,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         inputValidator.constrainTextFieldToNumberRange("Port Range Start", portRangeStartField, 0, 65535);
         inputValidator.constrainTextFieldToNumberRange("Port Range Count", portRangeCountField, 1, 65535);
         inputValidator.constrainTextField(portRangeCountField, new InputValidator.ComponentValidationRule(portRangeCountField) {
+            @Override
             public String getValidationError() {
                 int start;
                 try {
@@ -258,6 +281,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
         inputValidator.addRule(new InputValidator.ComponentValidationRule(privateKeyComboBox) {
+            @Override
             public String getValidationError() {
                 if (!privateKeyComboBox.isEnabled())
                     return null;
@@ -267,6 +291,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
         inputValidator.addRule(new InputValidator.ComponentValidationRule(cipherSuiteList) {
+            @Override
             public String getValidationError() {
                 if (!cipherSuiteList.isEnabled())
                     return null;
@@ -276,6 +301,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
         inputValidator.addRule(new InputValidator.ComponentValidationRule(cbEnableMessageInput) {
+            @Override
             public String getValidationError() {
                 boolean disabled = !enabledCheckBox.isSelected();
                 if (disabled ||
@@ -307,6 +333,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
             /** @noinspection unchecked*/
+            @Override
             public void run() {
                 if (dlg.isConfirmed()) {
                     final Pair<String, String> property = dlg.getData();
@@ -339,6 +366,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         if(isCluster) {
             interfaceComboBox.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent evt) {
                     if(!INTERFACE_ANY.equals(interfaceComboBox.getSelectedItem())) {
                         JOptionPane.showMessageDialog(SsgConnectorPropertiesDialog.this,
@@ -364,10 +392,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             return entries;
         }
 
+        @Override
         public int getSize() {
             return entries.size();
         }
 
+        @Override
         public Object getElementAt(int index) {
             return getEntryAt(index);
         }
@@ -468,7 +498,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         public CipherSuiteListModel(String[] allCiphers, Set<String> defaultCiphers) {
             super(new ArrayList<JCheckBox>());
-            this.allCiphers = (String[])ArrayUtils.copy(allCiphers);
+            this.allCiphers = ArrayUtils.copy(allCiphers);
             this.defaultCiphers = new LinkedHashSet<String>(defaultCiphers);
         }
 
@@ -541,6 +571,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
      * @noinspection SerializableNonStaticInnerClassWithoutSerialVersionUID,CloneableClassInSecureContext,NonStaticInnerClassInSecureContext
      */
     private class CipherSuiteListSelectionModel extends DefaultListSelectionModel {
+        @Override
         public void setSelectionInterval(int index0, int index1) {
             super.setSelectionInterval(index0, index1);
             cipherSuiteListModel.arm(index0);
@@ -551,6 +582,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
      * A cell renderer for lists whose list items are actually components.
      */
     private static class ComponentListCellRenderer extends DefaultListCellRenderer {
+        @Override
         public Component getListCellRendererComponent(JList list, Object valueObj, int index, boolean isSelected, boolean cellHasFocus) {
             Component value = (Component)valueObj;
             Component supe = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
@@ -612,10 +644,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         cipherSuiteList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         cipherSuiteList.setCellRenderer(new ComponentListCellRenderer());
         cipherSuiteList.addMouseListener(new MouseAdapter() {
+            @Override
             public void mouseExited(MouseEvent e) {
                 cipherSuiteListModel.disarm();
             }
 
+            @Override
             public void mousePressed(MouseEvent e) {
                 int selectedIndex = cipherSuiteList.locationToIndex(e.getPoint());
                 if (selectedIndex < 0) return;
@@ -623,6 +657,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                 cipherSuiteListModel.arm(selectedIndex);
             }
 
+            @Override
             public void mouseReleased(MouseEvent e) {
                 int selectedIndex = cipherSuiteList.locationToIndex(e.getPoint());
                 if (selectedIndex < 0) return;
@@ -633,24 +668,28 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         cipherSuiteList.getInputMap().put(KeyStroke.getKeyStroke(' '), "toggleCheckBox");
         //noinspection CloneableClassInSecureContext
         cipherSuiteList.getActionMap().put("toggleCheckBox", new AbstractAction("toggleCheckBox") {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 int selectedIndex = cipherSuiteList.getSelectedIndex();
                 cipherSuiteListModel.toggle(selectedIndex);
             }
         });
         cipherSuiteList.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableOrDisableCipherSuiteButtons();
             }
         });
 
         defaultCipherListButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cipherSuiteListModel.setDefaultCipherList();
             }
         });
 
         moveUpButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 int index = cipherSuiteList.getSelectedIndex();
                 if (index < 1) return;
@@ -662,6 +701,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         });
 
         moveDownButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 int index = cipherSuiteList.getSelectedIndex();
                 if (index < 0 || index >= cipherSuiteListModel.getSize() - 1) return;
@@ -685,6 +725,10 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         return SCHEME_FTP.equals(protocol) || SCHEME_FTPS.equals(protocol);
     }
 
+    private static boolean isHttpProto(String protocol) {
+        return SCHEME_HTTP.equals(protocol) || SCHEME_HTTPS.equals(protocol);
+    }
+
     private void enableOrDisableComponents() {
         enableOrDisableTabs();
         enableOrDisableEndpoints();
@@ -702,11 +746,18 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         String proto = getSelectedProtocol();
         boolean isSsl = isSslProto(proto);
         boolean isFtp = isFtpProto(proto);
+        boolean isHttp = isHttpProto(proto);
 
         tabbedPane.setEnabledAt(TAB_SSL, isSsl);
+        tabbedPane.setEnabledAt(TAB_HTTP, isHttp);
+        usePrivateThreadPoolCheckBox.setEnabled(isHttp);
+        threadPoolSizeSpinner.setEnabled(isHttp && usePrivateThreadPoolCheckBox.isSelected());
+        threadPoolSizeLabel.setEnabled( threadPoolSizeSpinner.isEnabled() );
+
         tabbedPane.setEnabledAt(TAB_FTP, isFtp);
         portRangeStartField.setEnabled(isFtp);  // disable controls InputValidator will ignore them when not relevant
         portRangeCountField.setEnabled(isFtp);
+
         if (!isSsl) cipherSuiteList.clearSelection();
         cipherSuiteList.setEnabled(isSsl);
         moveUpButton.setEnabled(isSsl);
@@ -854,6 +905,22 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         setEndpointList(connector.getEndpoints());
 
+        // HTTP-specific properties
+        usePrivateThreadPoolCheckBox.setSelected( false );
+        threadPoolSizeSpinner.setValue( DEFAULT_POOL_SIZE );
+        String size = connector.getProperty(SsgConnector.PROP_THREAD_POOL_SIZE);
+        if ( size != null ) {
+            try {
+                Integer poolSize = Integer.parseInt( size );
+                usePrivateThreadPoolCheckBox.setSelected( true );
+                threadPoolSizeSpinner.setValue( poolSize );
+                threadPoolSizeSpinner.setEnabled( isHttpProto(getSelectedProtocol()) );
+                threadPoolSizeLabel.setEnabled( threadPoolSizeSpinner.isEnabled() );
+            } catch ( NumberFormatException nfe ) {
+                logger.warning("Ignoring invalid pool size value '"+size+"'.");
+            }
+        }
+
         // FTP-specific properties
         String prs = connector.getProperty(SsgConnector.PROP_PORT_RANGE_START);
         portRangeStartField.setText(prs == null ? "" : prs);
@@ -873,6 +940,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         propNames.remove(SsgConnector.PROP_CIPHERLIST);
         propNames.remove(SsgConnector.PROP_PORT_RANGE_COUNT);
         propNames.remove(SsgConnector.PROP_PORT_RANGE_START);
+        propNames.remove(SsgConnector.PROP_THREAD_POOL_SIZE);
         propertyListModel.removeAllElements();
         for (String propName : propNames) {
             final String value = connector.getProperty(propName);
@@ -895,6 +963,14 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         String bindAddress = (String)interfaceComboBox.getSelectedItem();
         connector.putProperty(SsgConnector.PROP_BIND_ADDRESS, INTERFACE_ANY.equals(bindAddress) ? null : bindAddress);
         connector.setEndpoints(getEndpointList());
+
+        // HTTP-specific properties
+        boolean isHttp = isHttpProto(proto);
+        if ( isHttp && usePrivateThreadPoolCheckBox.isSelected()  ) {
+            connector.putProperty(SsgConnector.PROP_THREAD_POOL_SIZE, threadPoolSizeSpinner.getValue().toString() );              
+        } else {
+            connector.putProperty(SsgConnector.PROP_THREAD_POOL_SIZE, null);
+        }
 
         // FTP-specific properties
         boolean isFtp = isFtpProto(proto);
@@ -931,6 +1007,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             connector.putProperty(prop.left, prop.right);
     }
 
+    @Override
     public void setVisible(boolean b) {
         if (b && !isVisible()) confirmed = false;
         super.setVisible(b);
