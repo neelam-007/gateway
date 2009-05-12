@@ -24,19 +24,7 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(XpathBasedAssertionPropertiesAction.class.getName());
 
     public static XpathBasedAssertionPropertiesAction actionForNode(XpathBasedAssertionTreeNode node) {
-        if (node instanceof RequestWssConfidentialityTreeNode) {
-            RequestWssConfidentialityTreeNode n = (RequestWssConfidentialityTreeNode)node;
-            return new RequestConfidentialityPropertiesAction(n);
-        } else if (node instanceof RequestWssIntegrityTreeNode) {
-            RequestWssIntegrityTreeNode n = (RequestWssIntegrityTreeNode)node;
-            return new RequestIntegrityPropertiesAction(n);
-        } else if (node instanceof ResponseWssConfidentialityTreeNode) {
-            ResponseWssConfidentialityTreeNode n = (ResponseWssConfidentialityTreeNode)node;
-            return new ResponseConfidentialityPropertiesAction(n);
-        } else if (node instanceof ResponseWssIntegrityTreeNode) {
-            ResponseWssIntegrityTreeNode n = (ResponseWssIntegrityTreeNode)node;
-            return new ResponseIntegrityPropertiesAction(n);
-        } else if (node instanceof RequestXpathPolicyTreeNode) {
+        if (node instanceof RequestXpathPolicyTreeNode) {
             RequestXpathPolicyTreeNode n = (RequestXpathPolicyTreeNode)node;
             return new RequestXpathPropertiesAction(n);
         } else if (node instanceof ResponseXpathPolicyTreeNode) {

@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.policy.validator.RequestWssConfidentialityValidator;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.security.xml.XencUtil;
+import com.l7tech.util.Functions;
 
 import java.util.List;
 /**
@@ -74,9 +75,27 @@ public class RequestWssConfidentiality extends XmlSecurityAssertionBase {
         this.xencKeyAlgorithm = keyEncryptionAlgorithm;
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
+        meta.put(AssertionMetadata.SHORT_NAME, "Encrypt Request Element");
+        meta.put(AssertionMetadata.DESCRIPTION, "Requestor must encrypt an element of the SOAP request");
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
+        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, RequestWssConfidentiality>() {
+            @Override
+            public String call( final RequestWssConfidentiality requestWssConfidentiality ) {
+                StringBuilder name = new StringBuilder("Encrypt request element ");                
+                if (requestWssConfidentiality.getXpathExpression() == null) {
+                    name .append("[XPath expression not set]");
+                } else {
+                    name.append(requestWssConfidentiality.getXpathExpression().getExpression());
+                }
+                name.append(SecurityHeaderAddressableSupport.getActorSuffix(requestWssConfidentiality));
+                return name.toString();
+            }
+        });
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, RequestWssConfidentialityValidator.class.getName());
 
         return meta;

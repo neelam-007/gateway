@@ -31,24 +31,6 @@ public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode<
     }
 
     /**
-     * Get the set of actions associated with this node.
-     * This may be used e.g. in constructing a context menu.
-     *
-     * @return actions appropriate to the node
-     */
-    public Action[] getActions() {
-        java.util.List<Action> list = new ArrayList<Action>();
-        if (assertion instanceof PrivateKeyable) {
-            list.add(new EditKeyAliasForAssertion(this));
-        }
-        if (assertion instanceof SecurityHeaderAddressable) {
-            list.add(new EditXmlSecurityRecipientContextAction(this));
-        }
-        list.addAll(Arrays.asList(super.getActions()));
-        return list.toArray(new Action[]{});
-    }
-
-    /**
        * Gets the default action for this node.
        *
        * @return <code>null</code> indicating there should be none default action
@@ -63,6 +45,6 @@ public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode<
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/xmlencryption.gif";
+        return "com/l7tech/console/resources/xmlsignature.gif";
     }
 }

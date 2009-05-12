@@ -34,6 +34,7 @@ import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.ResponseXpathAssertion;
 import com.l7tech.policy.assertion.SimpleXpathAssertion;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
@@ -92,7 +93,7 @@ import java.util.logging.Logger;
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class XpathBasedAssertionPropertiesDialog extends JDialog {
+public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEditorSupport<XpathBasedAssertion> {
     static final Logger log = Logger.getLogger(XpathBasedAssertionPropertiesDialog.class.getName());
     private JPanel mainPanel;
     private JPanel messageViewerPanel;
@@ -104,7 +105,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private JLabel descriptionLabel;
     private JPanel xmlMsgSrcPanel;
     private JComboBox xmlMsgSrcComboBox;
-    private XpathBasedAssertionTreeNode node;
     private XpathBasedAssertion assertion;
     private ServiceNode serviceNode;
     private EntityWithPolicyNode policyNode;
@@ -149,6 +149,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private JButton editSampleButton;
     private JLabel varPrefixStatusLabel;
     private final boolean showHardwareAccelStatus;
+    private boolean wasOk = false;
 
     private static final String NON_SOAP_NAME = "<Non-SOAP service>";
     private static final WsdlTreeNode NON_SOAP_NODE = new WsdlTreeNode(NON_SOAP_NAME, new WsdlTreeNode.Options()) {
@@ -189,26 +190,56 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
      * @param modal is this modal dialog or not
      * @param n     the xml security node
      */
-    public XpathBasedAssertionPropertiesDialog(final Frame owner,
+    public XpathBasedAssertionPropertiesDialog(final Window owner,
                                                final boolean modal,
                                                final XpathBasedAssertionTreeNode n,
                                                final ActionListener okListener,
                                                final boolean showHardwareAccelStatus,
                                                final boolean readOnly) {
-        super(owner, modal);
+        super(owner, "", modal ? XpathBasedAssertionPropertiesDialog.DEFAULT_MODALITY_TYPE : ModalityType.MODELESS);
         if (n == null) {
             throw new IllegalArgumentException();
         }
         this.showHardwareAccelStatus = showHardwareAccelStatus;
-        construct(n, okListener, readOnly);
+        construct(n.asAssertion(), okListener, readOnly);
+    }
+
+    public XpathBasedAssertionPropertiesDialog( final Window owner, final XpathBasedAssertion assertion ) {
+        super( owner, "" );
+        this.assertion = assertion;
+        this.showHardwareAccelStatus = shouldShowHardwareAccelStatus(assertion);
     }
 
 
-    private void construct(final XpathBasedAssertionTreeNode n, final ActionListener okListener, final boolean readOnly) {
-        node = n;
+    @Override
+    public XpathBasedAssertion getData(final XpathBasedAssertion assertion) {
+        return this.assertion;
+    }
+
+    @Override
+    public void setData(final XpathBasedAssertion assertion) {
+        this.assertion = assertion;
+    }
+
+    @Override
+    public boolean isConfirmed() {
+        return wasOk;
+    }
+
+    @Override
+    public JDialog getDialog() {
+        construct( assertion, null, isReadOnly() );
+        return super.getDialog();
+    }
+
+    private boolean shouldShowHardwareAccelStatus(XpathBasedAssertion xpathBasedAssertion) {
+        return xpathBasedAssertion instanceof RequestXpathAssertion || xpathBasedAssertion instanceof ResponseXpathAssertion;
+    }    
+
+    private void construct(final XpathBasedAssertion assertion, final ActionListener okListener, final boolean readOnly) {
         okActionListener = okListener;
 
-        assertion = node.asAssertion();
+        this.assertion = assertion;
         if (assertion.getXpathExpression() != null) {
             //noinspection unchecked
             namespaces = assertion.getXpathExpression().getNamespaces();
@@ -217,10 +248,11 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
         isEncryption = assertion instanceof RequestWssConfidentiality ||
                 assertion instanceof ResponseWssConfidentiality;
-        serviceNode = AssertionTreeNode.getServiceNode(node);
-        if (serviceNode == null) {
-            policyNode = AssertionTreeNode.getPolicyNode(node);
-            if (policyNode == null) {
+        final EntityWithPolicyNode ewpn = TopComponents.getInstance().getPolicyEditorPanel().getPolicyNode();
+        serviceNode = ewpn instanceof ServiceNode ? (ServiceNode) ewpn : null;
+        if ( serviceNode == null ) {
+            policyNode = ewpn;
+            if ( policyNode == null ) {
                 throw new IllegalStateException("Unable to determine the PolicyEntityNode for " + assertion);
             }
         }
@@ -572,6 +604,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 }
                 collectResponseSignatureConfig();
                 XpathBasedAssertionPropertiesDialog.this.dispose();
+                wasOk = true;
                 if (okActionListener != null) okActionListener.actionPerformed(e);
             }
         });
@@ -899,9 +932,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
      * @return whether we are editing the request
      */
     private boolean isEditingRequest() {
-        return (node instanceof RequestWssIntegrityTreeNode ||
-          node instanceof RequestWssConfidentialityTreeNode ||
-          node instanceof RequestXpathPolicyTreeNode);
+        return Assertion.isRequest( assertion );
     }
 
     private final

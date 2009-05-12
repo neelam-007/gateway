@@ -38,9 +38,5 @@ public class ResponseXpathPolicyTreeNode extends XpathBasedAssertionTreeNode {
     }
 
 
-    protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/xmlsignature.gif";
-    }
-
     private ResponseXpathAssertion _assertion;
 }

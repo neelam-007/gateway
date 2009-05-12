@@ -28,9 +28,5 @@ public class RequestXpathPolicyTreeNode extends XpathBasedAssertionTreeNode {
         return sb.toString();
     }
 
-    protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/xmlsignature.gif";
-    }
-
     private RequestXpathAssertion _assertion;
 }

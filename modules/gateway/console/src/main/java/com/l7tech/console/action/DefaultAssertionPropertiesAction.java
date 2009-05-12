@@ -72,7 +72,7 @@ public class DefaultAssertionPropertiesAction
         if (Boolean.TRUE.equals(ass.meta().get(AssertionMetadata.PROPERTIES_EDITOR_SUPPRESS_SHEET_DISPLAY)))
             DialogDisplayer.suppressSheetDisplay(dlg);
         dlg.pack();
-        Utilities.centerOnScreen(dlg);
+        Utilities.centerOnParentWindow(dlg);
         Frame f = TopComponents.getInstance().getTopParent();
         DialogDisplayer.display(dlg, f, new Runnable() {
             public void run() {

@@ -3,8 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.JDialog;
-import java.awt.Frame;
-import java.awt.Dialog;
+import java.awt.*;
 
 /**
  * Support class for AssertionPropertiesEditor implementations.
@@ -23,9 +22,18 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
         super( owner, title, modal );
     }
 
-    protected AssertionPropertiesEditorSupport() {        
+    public AssertionPropertiesEditorSupport( Window owner, String title ) {
+        super( owner, title, AssertionPropertiesEditorSupport.DEFAULT_MODALITY_TYPE );
     }
 
+    public AssertionPropertiesEditorSupport( Window owner, String title, ModalityType modalityType ) {
+        super( owner, title, modalityType );
+    }
+
+    protected AssertionPropertiesEditorSupport() {
+    }
+
+    @Override
     public Object getParameter( final String name ) {
         Object value = null;
 
@@ -36,12 +44,14 @@ public abstract class AssertionPropertiesEditorSupport<AT extends Assertion> ext
         return value;
     }
 
+    @Override
     public void setParameter( final String name, Object value ) {
         if ( PARAM_READONLY.equals( name ) && value instanceof Boolean ) {
             readOnly = (Boolean) value;          
         }
     }
 
+    @Override
     public JDialog getDialog() {
         return this;
     }
