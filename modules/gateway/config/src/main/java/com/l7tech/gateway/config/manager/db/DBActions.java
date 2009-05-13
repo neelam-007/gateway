@@ -30,7 +30,7 @@ import java.net.UnknownHostException;
 public class DBActions {
     private static final Logger logger = Logger.getLogger(DBActions.class.getName());
     private static final String EOL_CHAR = System.getProperty("line.separator");
-    private static final String DEFAULT_DB_URL = "jdbc:mysql://{0}:{1}/{2}?autoReconnect=false&characterEncoding=UTF8&characterSetResults=UTF8&socketTimeout=120000&connectTimeout=10000";
+    private static final String DEFAULT_DB_URL = "jdbc:mysql://{0}:{1}/{2}?autoReconnect=false&characterEncoding=UTF8&characterSetResults=UTF8&socketTimeout=600000&connectTimeout=10000";
     private static final String DB_VERSION_UNKNOWN = "Unknown";
 
     public static final String MYSQL_CLASS_NOT_FOUND_MSG = "Could not locate the mysql driver in the classpath. Please check your classpath and rerun the wizard";
@@ -1056,7 +1056,7 @@ public class DBActions {
             if (upgradeResult.getStatus() != StatusType.SUCCESS) {
                 return new DBActionsResult(StatusType.CANNOT_UPGRADE, upgradeResult.getErrorMessage(), null);
             } else {
-                if (ui != null) ui.showSuccess("The test database \"" + testDatabaseConfig.getName() + "\" was upgraded successfully.");
+                if (ui != null) ui.showSuccess("The test database \"" + testDatabaseConfig.getName() + "\" was upgraded successfully." + EOL_CHAR);
                 logger.info(testDatabaseConfig.getName() + " was upgraded successfully.");
                 return new DBActionsResult(StatusType.SUCCESS);
             }
