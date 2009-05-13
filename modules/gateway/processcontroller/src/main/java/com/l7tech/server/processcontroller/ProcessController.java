@@ -597,11 +597,15 @@ public class ProcessController implements InitializingBean {
 
             // TODO what about other kinds of node-is-still-running? We want to avoid spinning helplessly on stuff like "address already in use".
             logger.log(Level.FINE, node.getName() + " isn't running", e);
-            try {
-                StartingNodeState startingState = new StartingNodeState(this, node);
-                nodeStates.put(node.getName(), startingState);
-            } catch (IOException e1) {
-                logger.log(Level.WARNING, "Unable to start " + node + "; will retry", e1);
+            if ( node.isEnabled() ) {
+                try {
+                    StartingNodeState startingState = new StartingNodeState(this, node);
+                    nodeStates.put(node.getName(), startingState);
+                } catch (IOException e1) {
+                    logger.log(Level.WARNING, "Unable to start " + node + "; will retry", e1);
+                }
+            } else {
+                nodeStates.put(node.getName(), new StoppedNodeState(node, api, DEFAULT_STOPPED_TIMEOUT));
             }
         }
     }

@@ -15,6 +15,7 @@ import com.l7tech.config.client.ConfigurationClient;
 import com.l7tech.config.client.InvalidConfigurationStateException;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.management.api.node.NodeManagementApi;
 import com.l7tech.server.management.NodeStateType;
 import com.l7tech.objectmodel.FindException;
@@ -133,8 +134,14 @@ public class Main {
 
         try {
             if ( command.equals("start") ) {
-                nodeManagementApiFactory.getManagementService().startNode("default");
-                System.out.println("Start requested.");
+                try {
+                    nodeManagementApiFactory.getManagementService().startNode("default");
+                    System.out.println("Start requested.");
+                } catch (NodeManagementApi.StartupException se) {
+                    logger.log( Level.WARNING, "Error during node start '"+ExceptionUtils.getMessage(se)+"'.", ExceptionUtils.getDebugException(se) );
+                    System.out.println("Node start failed due to '"+ExceptionUtils.getMessage(se)+"'.");
+                    return 75;
+                }
                 return 0;
             } else if ( command.equals("stop") ) {
                 nodeManagementApiFactory.getManagementService().stopNode("default", 20000);
