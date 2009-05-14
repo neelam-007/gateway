@@ -326,6 +326,28 @@
         <property name="configManager" ref="identityProviderConfigManager"/>
     </bean>
 
+    <!--
+      LDAP classloader pointcut is on any bean annotated with @LdapClassLoaderRequired.
+    -->
+    <bean id="ldapClassLoaderPointcut" class="com.l7tech.server.util.AnnotationPointcut">
+        <constructor-arg index="0">
+            <list>
+                <value>com.l7tech.server.identity.ldap.LdapClassLoaderRequired</value>
+            </list>
+        </constructor-arg>
+        <constructor-arg index="1"><list/></constructor-arg>
+        <constructor-arg index="2" value="false"/>
+        <constructor-arg index="3" value="30100"/> <!-- inside transaction -->
+    </bean>
+
+    <bean id="ldapClassLoaderAdvice" class="com.l7tech.server.identity.ldap.LdapClassLoaderMethodInterceptor">
+    </bean>
+
+    <bean id="ldapClassLoaderAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
+        <property name="pointcut" ref="ldapClassLoaderPointcut"/>
+        <property name="advice" ref="ldapClassLoaderAdvice"/>
+    </bean>
+
     <!-- server side Cluster ID manager -->
     <bean id="clusterIDManager" class="com.l7tech.server.cluster.ClusterIDManager">
         <property name="sessionFactory" ref="sessionFactory"/>

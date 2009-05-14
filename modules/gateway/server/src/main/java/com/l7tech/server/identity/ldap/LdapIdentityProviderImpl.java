@@ -31,6 +31,7 @@ import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.Functions;
 import com.sun.jndi.ldap.LdapURL;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
@@ -64,6 +65,7 @@ import java.util.logging.Logger;
  * Date: Jan 21, 2004<br/>
  */
 @SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
+@LdapClassLoaderRequired
 public class LdapIdentityProviderImpl
         implements LdapIdentityProvider, InitializingBean, DisposableBean, ApplicationContextAware, ConfigurableIdentityProvider, PropertyChangeListener
 {
@@ -233,7 +235,7 @@ public class LdapIdentityProviderImpl
                             newIndexInterval));
                     ldapProvRef.rescheduleIndexRebuildTask();
                 } else {
-                    ldapProvRef.rebuildCertIndex();
+                    ldapProvRef.doRebuildCertIndex();
                 }
             }
         }
@@ -342,6 +344,19 @@ public class LdapIdentityProviderImpl
             } finally {
                 cacheLock.writeLock().unlock();
             }
+        }
+    }
+
+    private void doRebuildCertIndex() {
+        try {
+            doWithLDAPContextClassLoader( new Functions.NullaryVoidThrows<NamingException>() {
+                @Override
+                public void call() throws NamingException {
+                    rebuildCertIndex();
+                }
+            } );
+        } catch (NamingException e) {
+            logger.log(Level.WARNING, "Error while recreating ldap user certificate index for LDAP Provider '" + config.getName() + "': " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));            
         }
     }
 
@@ -852,6 +867,9 @@ public class LdapIdentityProviderImpl
             // dont throw here, we still want to return what we got
         } catch (javax.naming.AuthenticationException ae) {
             throw new FindException("LDAP search error: Authentication failed.", ae);
+        } catch (PartialResultException pre) {
+            logger.log(Level.WARNING, "LDAP search error, partial result.", pre);
+            // don't throw, return the partial result
         } catch (NamingException e) {
             throw new FindException("LDAP search error with filter " + filter, e);
         } finally {
@@ -970,67 +988,60 @@ public class LdapIdentityProviderImpl
 
     @Override
     public DirContext getBrowseContext() throws NamingException {
-        final ClassLoader originalContextClassLoader = Thread.currentThread().getContextClassLoader();
-        try {
-            Thread.currentThread().setContextClassLoader( LdapSslCustomizerSupport.getSSLSocketFactoryClassLoader() );
+        String ldapurl = getLastWorkingLdapUrl();
+        if (ldapurl == null) {
+            ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+        }
+        while (ldapurl != null) {
+            UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
+            // fla note: this is weird. new BrowseContext objects are created at every operation so they
+            // should not cross threads.
+            env.put("java.naming.ldap.version", "3");
+            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+            // when getting javax.naming.CommunicationException at
+            env.put(Context.PROVIDER_URL, ldapurl);
+            env.put("com.sun.jndi.ldap.connect.pool", "true");
+            env.put("com.sun.jndi.ldap.connect.timeout", Long.toString(ldapConnectionTimeout));
+            env.put("com.sun.jndi.ldap.read.timeout", Long.toString(ldapReadTimeout));
+            env.put( Context.REFERRAL, "follow" );
+            String dn = config.getBindDN();
+            if (dn != null && dn.length() > 0) {
+                String pass = config.getBindPasswd();
+                env.put(Context.SECURITY_AUTHENTICATION, "simple");
+                env.put(Context.SECURITY_PRINCIPAL, dn);
+                env.put(Context.SECURITY_CREDENTIALS, pass);
+            }
 
-            String ldapurl = getLastWorkingLdapUrl();
-            if (ldapurl == null) {
+            try {
+                LdapURL url = new LdapURL(ldapurl);
+                if (url.useSsl()) {
+                    env.put("java.naming.ldap.factory.socket", LdapSslCustomizerSupport.getSSLSocketFactoryClassname( config.isClientAuthEnabled(), config.getKeystoreId(), config.getKeyAlias() ) );
+                    env.put(Context.SECURITY_PROTOCOL, "ssl");
+                }
+            } catch (NamingException e) {
+                logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+                continue;
+            } catch (IllegalArgumentException e) {
+                logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+                continue;
+            }
+
+            env.lock();
+
+            try {
+                // Create the initial directory context.
+                return new InitialDirContext(env);
+            } catch (CommunicationException e) {
+                logger.log(Level.WARNING, "Could not establish context using LDAP URL " + ldapurl + ". " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+            } catch (RuntimeException e) {
+                logger.log(Level.WARNING, "Could not establish context using LDAP URL " + ldapurl + ". " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
             }
-            while (ldapurl != null) {
-                UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
-                // fla note: this is weird. new BrowseContext objects are created at every operation so they
-                // should not cross threads.
-                env.put("java.naming.ldap.version", "3");
-                env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-                // when getting javax.naming.CommunicationException at
-                env.put(Context.PROVIDER_URL, ldapurl);
-                env.put("com.sun.jndi.ldap.connect.pool", "true");
-                env.put("com.sun.jndi.ldap.connect.timeout", Long.toString(ldapConnectionTimeout));
-                env.put("com.sun.jndi.ldap.read.timeout", Long.toString(ldapReadTimeout));
-                env.put( Context.REFERRAL, "follow" );
-                String dn = config.getBindDN();
-                if (dn != null && dn.length() > 0) {
-                    String pass = config.getBindPasswd();
-                    env.put(Context.SECURITY_AUTHENTICATION, "simple");
-                    env.put(Context.SECURITY_PRINCIPAL, dn);
-                    env.put(Context.SECURITY_CREDENTIALS, pass);
-                }
-
-                try {
-                    LdapURL url = new LdapURL(ldapurl);
-                    if (url.useSsl()) {
-                        env.put("java.naming.ldap.factory.socket", LdapSslCustomizerSupport.getSSLSocketFactoryClassname( config.isClientAuthEnabled(), config.getKeystoreId(), config.getKeyAlias() ) );
-                        env.put(Context.SECURITY_PROTOCOL, "ssl");
-                    }
-                } catch (NamingException e) {
-                    logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
-                    continue;
-                } catch (IllegalArgumentException e) {
-                    logger.log(Level.WARNING, "Malformed LDAP URL " + ldapurl + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
-                    continue;
-                }
-
-                env.lock();
-
-                try {
-                    // Create the initial directory context.
-                    return new InitialDirContext(env);
-                } catch (CommunicationException e) {
-                    logger.log(Level.WARNING, "Could not establish context using LDAP URL " + ldapurl + ". " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
-                } catch (RuntimeException e) {
-                    logger.log(Level.WARNING, "Could not establish context using LDAP URL " + ldapurl + ". " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
-                }
-            }
-            throw new CommunicationException("Could not establish context on any of the ldap urls.");
-        } finally {
-            Thread.currentThread().setContextClassLoader( originalContextClassLoader );            
         }
+        throw new CommunicationException("Could not establish context on any of the ldap urls.");
     }
 
     @Override
@@ -1256,6 +1267,19 @@ public class LdapIdentityProviderImpl
             if (task != null) {
                 task.cancel();
             }
+        }
+    }
+
+    /**
+     * Invoke the given callback with the context classloader that loads SSL socket factories. 
+     */
+    private void doWithLDAPContextClassLoader( final Functions.NullaryVoidThrows<NamingException> callback ) throws NamingException {
+        final ClassLoader originalContextClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader( LdapSslCustomizerSupport.getSSLSocketFactoryClassLoader() );
+            callback.call();
+        } finally {
+            Thread.currentThread().setContextClassLoader( originalContextClassLoader );
         }
     }
 

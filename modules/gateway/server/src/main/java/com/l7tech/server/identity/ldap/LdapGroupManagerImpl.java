@@ -26,6 +26,7 @@ import java.util.logging.Logger;
  * Date: Jan 21, 2004<br/>
  * $Id$<br/>
  */
+@LdapClassLoaderRequired
 public class LdapGroupManagerImpl implements LdapGroupManager {
 
     public LdapGroupManagerImpl() {

@@ -25,6 +25,7 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Jan 21, 2004<br/>
  */
+@LdapClassLoaderRequired
 public class LdapUserManagerImpl implements LdapUserManager {
     
     public LdapUserManagerImpl() {
