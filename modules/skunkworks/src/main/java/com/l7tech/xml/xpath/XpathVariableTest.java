@@ -38,6 +38,31 @@ public class XpathVariableTest {
     }
 
     @Test
+    public void testVarWithUnderscores() throws Exception {
+        doTestExpr("/*[local-name() = $var_with_underscores]", "var_with_underscores");
+    }
+
+    @Test
+    public void testVarWithLeadingUnderscore() throws Exception {
+        doTestExpr("/*[local-name() = $_leadingUnderscore]", "_leadingUnderscore");
+    }
+
+    @Test
+    public void testVarWithDash() throws Exception {
+        doTestExpr("/*[local-name() = $var-with-dashes]", "var-with-dashes");
+    }
+
+    @Test
+    public void testVarEndingInDash() throws Exception {
+        doTestExpr("/*[local-name() = $varendsindash-]", "varendsindash-");
+    }
+
+    @Test
+    public void testCaseSensitivity() throws Exception {
+        doTestExpr("/*[local-name() = $AbcDefG]", "aBcdeFg");
+    }
+
+    @Test
     public void testWithinNodeName() throws Exception {
         // Currently this is expected to fail.
         // Should we find a way to make this work safely in the future we will update this test.
@@ -214,7 +239,7 @@ public class XpathVariableTest {
             public Object getVariableValue(String ns, String prefix, String localName) throws UnresolvableException {
                 assertTrue(ns == null || ns.length() == 0);
                 assertTrue(prefix == null || prefix.length() == 0);
-                assertEquals(varname, localName);
+                assertTrue(varname.equalsIgnoreCase(localName));
                 return varvalue;
             }
         });
