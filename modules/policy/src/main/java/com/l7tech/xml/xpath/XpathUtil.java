@@ -151,23 +151,6 @@ public class XpathUtil {
     }
 
     /**
-     * Use Jaxen to immediately compile and evaluate the specified XPath against the root of the specified document, using
-     * the specified namespace map and variable finder, and returning a list of Node instances selected by the expression. 
-     *
-     * @param targetDocument the document against which to evaluate the XPath.  Required.
-     * @param expression     the expression to compile and evaluate.  Required.
-     * @param namespaceMap   the namespace map to use.  May be null if the expression uses no namespace prefixes.
-     * @param variableFinder the variable finder to use to look up variable values.  May be null if the expression uses no XPath variables.
-     * @return A list of zero or more Element instances that were selected by the expression.
-     * @throws JaxenException if the expression cannot be compiled, or if it returned a result that contained anything other than DOM Element instances.
-     */
-    public static List<Element> compileAndSelectElements(Document targetDocument, String expression, Map<String, String> namespaceMap, XpathVariableFinder variableFinder) throws JaxenException {
-        DOMXPath dx = compile(expression, namespaceMap, variableFinder);
-        List nodes = dx.selectNodes(targetDocument);
-        return ensureAllResultsAreElements(nodes);
-    }
-
-    /**
      * Scan the specified list and, if it is empty or all its members are DOM Element instances, return it as a list of Element.
      *
      * @param list the List to examine.  If null, this method will return an empty list.

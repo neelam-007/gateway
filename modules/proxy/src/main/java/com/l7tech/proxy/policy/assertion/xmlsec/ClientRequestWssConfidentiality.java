@@ -6,13 +6,11 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.xml.xpath.XpathUtil;
 import org.jaxen.JaxenException;
-import org.w3c.dom.Element;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -35,14 +33,11 @@ import java.util.logging.Logger;
  * Date: Aug 26, 2003<br/>
  * $Id$
  */
-public class ClientRequestWssConfidentiality extends ClientAssertion {
+public class ClientRequestWssConfidentiality extends ClientDomXpathBasedAssertion<RequestWssConfidentiality> {
     private static final Logger log = Logger.getLogger(ClientRequestWssConfidentiality.class.getName());
 
     public ClientRequestWssConfidentiality(RequestWssConfidentiality data) {
-        this.requestWssConfidentiality = data;
-        if (data == null) {
-            throw new IllegalArgumentException("security elements is null");
-        }
+        super(data);
     }
 
     /**
@@ -58,29 +53,29 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
         final Ssg ssg = context.getSsg();
         final X509Certificate serverCert = ssg.getServerCertificateAlways();
 
-        final XpathExpression xpathExpression = requestWssConfidentiality.getXpathExpression();
+        final XpathExpression xpathExpression = data.getXpathExpression();
         try {
             final Document message = context.getRequest().getXmlKnob().getDocumentReadOnly();
-            List<Element> elements = XpathUtil.compileAndSelectElements(message, xpathExpression.getExpression(), xpathExpression.getNamespaces(), null);
+            List<Element> elements = getCompiledXpath().rawSelectElements(message, null);
             if (elements == null || elements.size() < 1) {
                 log.info("ClientRequestWssConfidentiality: No elements matched xpath expression \"" +
                          xpathExpression.getExpression() + "\".  " +
                          "Assertion therefore fails.");
                 return AssertionStatus.FALSIFIED;
             }
-            DecorationRequirements wssReqs = context.getWssRequirements(requestWssConfidentiality);
-            if (serverCert != null && requestWssConfidentiality.getRecipientContext().localRecipient())
+            DecorationRequirements wssReqs = context.getWssRequirements(data);
+            if (serverCert != null && data.getRecipientContext().localRecipient())
                     wssReqs.setRecipientCertificate(serverCert);
             wssReqs.getElementsToEncrypt().addAll(elements);
-            if (requestWssConfidentiality.getXEncAlgorithm() !=null) {
-                wssReqs.setEncryptionAlgorithm(requestWssConfidentiality.getXEncAlgorithm());
-                if (requestWssConfidentiality.getKeyEncryptionAlgorithm() != null) {
-                    wssReqs.setKeyEncryptionAlgorithm(requestWssConfidentiality.getKeyEncryptionAlgorithm());
+            if (data.getXEncAlgorithm() !=null) {
+                wssReqs.setEncryptionAlgorithm(data.getXEncAlgorithm());
+                if (data.getKeyEncryptionAlgorithm() != null) {
+                    wssReqs.setKeyEncryptionAlgorithm(data.getKeyEncryptionAlgorithm());
                 }
             }
             return AssertionStatus.NONE;
         } catch (JaxenException e) {
-            throw new PolicyAssertionException(requestWssConfidentiality, "ClientRequestWssConfidentiality: " +
+            throw new PolicyAssertionException(data, "ClientRequestWssConfidentiality: " +
                                                                           "Unable to execute xpath expression \"" +
                                                                           xpathExpression.getExpression() + "\"", e);
         }
@@ -93,14 +88,12 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
 
     public String getName() {
         String str = "";
-        if (requestWssConfidentiality != null && requestWssConfidentiality.getXpathExpression() != null)
-            str = " matching XPath expression \"" + requestWssConfidentiality.getXpathExpression().getExpression() + '"';
+        if (data != null && data.getXpathExpression() != null)
+            str = " matching XPath expression \"" + data.getXpathExpression().getExpression() + '"';
         return "Request WSS Confidentiality - encrypt elements" + str;
     }
 
     public String iconResource(boolean open) {
         return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
-
-    protected RequestWssConfidentiality requestWssConfidentiality;
 }

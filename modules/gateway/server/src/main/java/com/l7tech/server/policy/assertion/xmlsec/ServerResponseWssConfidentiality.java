@@ -18,8 +18,7 @@ import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.xml.xpath.XpathUtil;
+import com.l7tech.xml.xpath.DeferredFailureDomCompiledXpathHolder;
 import org.jaxen.JaxenException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -48,11 +47,13 @@ import java.util.logging.Logger;
 public class ServerResponseWssConfidentiality extends AbstractServerAssertion<ResponseWssConfidentiality> implements ServerAssertion {
     private final Auditor auditor;
     private final X509Certificate recipientContextCert;
+    private final DeferredFailureDomCompiledXpathHolder compiledXpath;
 
     public ServerResponseWssConfidentiality(ResponseWssConfidentiality data, ApplicationContext ctx) throws IOException {
         super(data);
         responseWssConfidentiality = data;
         this.auditor = new Auditor(this, ctx, logger);
+        this.compiledXpath = new DeferredFailureDomCompiledXpathHolder(assertion.getXpathExpression());
 
         X509Certificate rccert = null;
         if (!responseWssConfidentiality.getRecipientContext().localRecipient()) {
@@ -213,10 +214,9 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
         try {
             soapmsg = context.getResponse().getXmlKnob().getDocumentReadOnly();
 
-            final XpathExpression xpath = responseWssConfidentiality.getXpathExpression();
             final List selectedElements;
             try {
-                selectedElements = XpathUtil.compileAndSelectElements(soapmsg, xpath.getExpression(), xpath.getNamespaces(),
+                selectedElements = compiledXpath.getCompiledXpath().rawSelectElements(soapmsg,
                         new PolicyEnforcementContextXpathVariableFinder(context));
             } catch (JaxenException e) {
                 // this is thrown when there is an error in the expression

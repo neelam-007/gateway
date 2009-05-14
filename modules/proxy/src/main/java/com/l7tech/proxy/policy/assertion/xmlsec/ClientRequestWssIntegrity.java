@@ -5,10 +5,8 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.xml.xpath.XpathUtil;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -33,14 +31,11 @@ import java.util.logging.Logger;
  * Date: Aug 26, 2003<br/>
  * $Id$
  */
-public class ClientRequestWssIntegrity extends ClientAssertion {
+public class ClientRequestWssIntegrity extends ClientDomXpathBasedAssertion<RequestWssIntegrity> {
     private static final Logger log = Logger.getLogger(ClientRequestWssIntegrity.class.getName());
 
     public ClientRequestWssIntegrity(RequestWssIntegrity data) {
-        this.requestWssIntegrity = data;
-        if (data == null) {
-            throw new IllegalArgumentException("security elements is null");
-        }
+        super(data);
     }
 
     /**
@@ -53,10 +48,10 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
             throws OperationCanceledException, BadCredentialsException,
                    GeneralSecurityException, IOException, KeyStoreCorruptException, HttpChallengeRequiredException,
                    PolicyRetryableException, ClientCertificateException, PolicyAssertionException, SAXException {
-        final XpathExpression xpathExpression = requestWssIntegrity.getXpathExpression();
+        final XpathExpression xpathExpression = data.getXpathExpression();
         try {
             final Document message = context.getRequest().getXmlKnob().getDocumentReadOnly();
-            List<Element> elements = XpathUtil.compileAndSelectElements(message, xpathExpression.getExpression(), xpathExpression.getNamespaces(), null);
+            List<Element> elements = getCompiledXpath().rawSelectElements(message, null);
             if (elements == null || elements.size() < 1) {
                 log.info("ClientRequestWssIntegrity: No elements matched xpath expression \"" +
                          xpathExpression.getExpression() + "\".  " +
@@ -66,11 +61,11 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
 
             // get the client cert and private key
             // We must have credentials to get the private key
-            DecorationRequirements wssReqs = context.getWssRequirements(requestWssIntegrity);
+            DecorationRequirements wssReqs = context.getWssRequirements(data);
             wssReqs.getElementsToSign().addAll(elements);
             return AssertionStatus.NONE;
         } catch (JaxenException e) {
-            throw new PolicyAssertionException(requestWssIntegrity, "ClientRequestWssIntegrity: " +
+            throw new PolicyAssertionException(data, "ClientRequestWssIntegrity: " +
                                                                     "Unable to execute xpath expression \"" +
                                                                     xpathExpression.getExpression() + "\"", e);
         }
@@ -83,14 +78,12 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
 
     public String getName() {
         String str = "";
-        if (requestWssIntegrity != null && requestWssIntegrity.getXpathExpression() != null)
-            str = " matching XPath expression \"" + requestWssIntegrity.getXpathExpression().getExpression() + '"';
+        if (data != null && data.getXpathExpression() != null)
+            str = " matching XPath expression \"" + data.getXpathExpression().getExpression() + '"';
         return "Request WSS Integrity - sign elements" + str;
     }
 
     public String iconResource(boolean open) {
         return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
-
-    protected RequestWssIntegrity requestWssIntegrity;
 }

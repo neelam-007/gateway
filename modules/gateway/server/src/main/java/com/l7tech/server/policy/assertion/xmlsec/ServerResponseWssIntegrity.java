@@ -1,12 +1,11 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.xml.xpath.XpathUtil;
-import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
+import com.l7tech.xml.xpath.DeferredFailureDomCompiledXpathHolder;
 import org.jaxen.JaxenException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -31,10 +30,12 @@ import java.util.logging.Logger;
 public class ServerResponseWssIntegrity extends ServerResponseWssSignature {
     private static final Logger logger = Logger.getLogger(ServerResponseWssIntegrity.class.getName());
     private final ResponseWssIntegrity assertion;
+    private final DeferredFailureDomCompiledXpathHolder compiledXpath;
 
     public ServerResponseWssIntegrity(ResponseWssIntegrity assertion, ApplicationContext ctx) throws IOException {
         super(assertion, ctx, logger);
         this.assertion = assertion;
+        this.compiledXpath = new DeferredFailureDomCompiledXpathHolder(assertion.getXpathExpression());
     }
 
     /**
@@ -45,9 +46,8 @@ public class ServerResponseWssIntegrity extends ServerResponseWssSignature {
             throws PolicyAssertionException
     {
         List selectedElements;
-        final XpathExpression xpath = assertion.getXpathExpression();
         try {
-            selectedElements = XpathUtil.compileAndSelectElements(soapmsg, xpath.getExpression(), xpath.getNamespaces(),
+            selectedElements = compiledXpath.getCompiledXpath().rawSelectElements(soapmsg,
                     new PolicyEnforcementContextXpathVariableFinder(context));
         } catch (JaxenException e) {
             // this is thrown when there is an error in the expression

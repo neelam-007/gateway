@@ -21,6 +21,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
+import org.jaxen.JaxenException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -31,7 +32,7 @@ import java.util.logging.Logger;
 /**
  * Verifies that a specific element of the soap response was signed by the ssg.
  */
-public class ClientResponseWssIntegrity extends ClientResponseWssOperation<ResponseWssIntegrity> {
+public class ClientResponseWssIntegrity extends ClientDomXpathBasedAssertion<ResponseWssIntegrity> {
     private static final Logger log = Logger.getLogger(ClientResponseWssIntegrity.class.getName());
 
     public ClientResponseWssIntegrity(ResponseWssIntegrity data) throws InvalidXpathException {
@@ -117,6 +118,8 @@ public class ClientResponseWssIntegrity extends ClientResponseWssOperation<Respo
                                                         wereSigned,
                                                         "signed");
         } catch (ProcessorException e) {
+            throw new PolicyAssertionException(data, e);
+        } catch (JaxenException e) {
             throw new PolicyAssertionException(data, e);
         }
         switch (result.getResultCode()) {

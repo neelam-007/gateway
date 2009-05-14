@@ -14,6 +14,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.xpath.XpathExpression;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import org.jaxen.JaxenException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -29,7 +30,7 @@ import java.util.logging.Logger;
  * Date: Aug 26, 2003<br/>
  * $Id$
  */
-public class ClientResponseWssConfidentiality extends ClientResponseWssOperation<ResponseWssConfidentiality> {
+public class ClientResponseWssConfidentiality extends ClientDomXpathBasedAssertion<ResponseWssConfidentiality> {
     private static final Logger log = Logger.getLogger(ClientResponseWssConfidentiality.class.getName());
 
     public ClientResponseWssConfidentiality(ResponseWssConfidentiality data) {
@@ -86,6 +87,8 @@ public class ClientResponseWssConfidentiality extends ClientResponseWssOperation
                                                         elementsThatWereEncrypted,
                                                         "encrypted");
         } catch (ProcessorException e) {
+            throw new PolicyAssertionException(data, e);
+        } catch (JaxenException e) {
             throw new PolicyAssertionException(data, e);
         }
         switch (result.getResultCode()) {

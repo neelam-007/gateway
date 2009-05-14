@@ -16,7 +16,6 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.xml.xpath.XpathUtil;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -56,7 +55,7 @@ public class ClientResponseXpathAssertion extends ClientXpathAssertion {
         final XpathExpression xpath = getXpathExpression();
         final Document document = context.getResponse().getXmlKnob().getDocumentReadOnly();
         try {
-            List<Element> nodes = XpathUtil.compileAndSelectElements(document, xpath.getExpression(), xpath.getNamespaces(), null);
+            List<Element> nodes = getCompiledXpath().rawSelectElements(document, null);
             if (nodes == null || nodes.size() < 1) {
                 log.info("XPath expression did not match any nodes in response; assertion fails.");
                 return AssertionStatus.FALSIFIED;

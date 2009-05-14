@@ -11,7 +11,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.xml.xpath.XpathUtil;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -38,7 +37,7 @@ public class ClientRequestXpathAssertion extends ClientXpathAssertion {
         // Match the Original _undecorated_ document always, so operation-specific paths are deterministic
         final Document document = context.getRequest().getXmlKnob().getOriginalDocument();
         try {
-            List<Element> nodes = XpathUtil.compileAndSelectElements(document, xpathExpression.getExpression(), xpathExpression.getNamespaces(), null);
+            List<Element> nodes = getCompiledXpath().rawSelectElements(document, null);
             if (nodes == null || nodes.size() < 1) {
                 log.info("XPath expression did not match any nodes in request; assertion fails.");
                 return AssertionStatus.FALSIFIED;
