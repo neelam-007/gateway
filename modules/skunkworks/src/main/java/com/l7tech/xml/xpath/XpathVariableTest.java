@@ -33,6 +33,11 @@ public class XpathVariableTest {
     }
 
     @Test
+    public void testVarWithDots() throws Exception {
+        doTestExpr("/*[local-name() = $var.with.dots]", "var.with.dots");
+    }
+
+    @Test
     public void testWithinNodeName() throws Exception {
         // Currently this is expected to fail.
         // Should we find a way to make this work safely in the future we will update this test.
@@ -195,8 +200,12 @@ public class XpathVariableTest {
     }
 
     private void doTestExpr(String expr) throws JaxenException {
+        doTestExpr(expr, "nodename");
+    }
+
+    private void doTestExpr(String expr, String varname) throws JaxenException {
         DOMXPath dx = newDx(expr);
-        setVariableContext(dx, "nodename", "test");
+        setVariableContext(dx, varname, "test");
         checkResult(dx.evaluate(testdoc), "test");
     }
 
