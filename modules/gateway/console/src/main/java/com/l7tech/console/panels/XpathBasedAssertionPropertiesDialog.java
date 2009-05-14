@@ -4,7 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.tree.EntityWithPolicyNode;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.policy.*;
+import com.l7tech.console.tree.policy.XpathBasedAssertionTreeNode;
 import com.l7tech.console.tree.wsdl.BindingOperationTreeNode;
 import com.l7tech.console.tree.wsdl.BindingTreeNode;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
@@ -30,11 +30,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.assertion.RequestXpathAssertion;
-import com.l7tech.policy.assertion.ResponseXpathAssertion;
-import com.l7tech.policy.assertion.SimpleXpathAssertion;
-import com.l7tech.policy.assertion.XpathBasedAssertion;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
@@ -50,16 +46,15 @@ import com.l7tech.util.DomUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.wsdl.Wsdl;
-import com.l7tech.xml.XpathEvaluator;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.xml.xpath.FastXpath;
 import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathUtil;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.jaxen.JaxenException;
-import org.jaxen.NamespaceContext;
 import org.jaxen.XPathSyntaxException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -119,7 +114,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private ActionListener okActionListener;
     private boolean isEncryption;
     private boolean haveTarari;
-    private XpathEvaluator testEvaluator;
+    private org.w3c.dom.Document testEvaluator;
     private JButton namespaceButton;
     private JLabel hardwareAccelStatusLabel;
     private JPanel speedIndicatorPanel;
@@ -299,7 +294,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                         initializeBlankMessage(soapMessages[0]);
                     for (SoapMessageGenerator.Message soapRequest : soapMessages) {
                         //noinspection unchecked
-                        requiredNamespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
+                        requiredNamespaces.putAll(XpathUtil.getNamespaces(soapRequest.getSOAPMessage()));
                     }
                     requiredNamespaces.put("L7p",WspConstants.L7_POLICY_NS);
                     requiredNamespaces.put("wsp",WspConstants.WSP_POLICY_NS);
@@ -664,19 +659,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         }
 
         // initialize the test evaluator
-        try {
-            testEvaluator = XpathEvaluator.newEvaluator(XmlUtil.stringToDocument("<blah xmlns=\"http://bzzt.com\"/>"),
-                                                        new NamespaceContext(){
-                                                            @Override
-                                                            public String translateNamespacePrefixToUri(String prefix) {
-                                                                return namespaces.get(prefix);
-                                                            }
-                                                        });
-        } catch (Exception e) {
-            final String msg = "cannot setup test evaluator";
-            log.log(Level.WARNING, msg, e);
-            throw new RuntimeException(msg, e);
-        }
+        testEvaluator = XmlUtil.stringAsDocument("<blah xmlns=\"http://bzzt.com\"/>");
         TextComponentPauseListenerManager.registerPauseListener(messageViewerToolBar.getxpathField(), xpathFieldPauseListener, 700);
 
         String description = null;
@@ -1221,7 +1204,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             return new XpathFeedBack(-1, xpath, "The path " + xpath + " is not valid for XML encryption", null);
         }
         try {
-            testEvaluator.evaluate(xpath);
+            // TODO simulate appropriate context variables being in scope.  Difficult problem: what data types to use for each?!
+            XpathUtil.compileAndEvaluate(testEvaluator, xpath, namespaces, null);
             XpathFeedBack feedback = new XpathFeedBack(-1, xpath, null, null);
             feedback.hardwareAccelFeedback = getHardwareAccelFeedBack(nsMap, xpath);
             return feedback;
@@ -1247,7 +1231,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         try {
             FastXpath fastXpath = TarariXpathConverter.convertToFastXpath(nsMap, xpath);
             convertedXpath = fastXpath.getExpression();
-            testEvaluator.evaluate(convertedXpath);
+            // TODO simulate appropriate context variables being in scope.  Difficult problem: what data types to use for each?!
+            XpathUtil.compileAndEvaluate(testEvaluator, convertedXpath, namespaces, null);
             hardwareFeedback = null;
         } catch (ParseException e) {
             hardwareFeedback = new XpathFeedBack(e.getErrorOffset(), convertedXpath, e.getMessage(), e.getMessage());

@@ -1,16 +1,16 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.security.token.ParsedElement;
-import com.l7tech.security.token.EncryptedElement;
-import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
+import com.l7tech.security.token.EncryptedElement;
+import com.l7tech.security.token.ParsedElement;
+import com.l7tech.security.xml.processor.ProcessorResult;
 import org.springframework.context.ApplicationContext;
 
-import java.util.logging.Logger;
-import java.util.Collection;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Enforces that a specific element in a request is encrypted.
@@ -20,7 +20,7 @@ import java.util.Collections;
  * User: flascell<br/>
  * Date: July 14, 2004<br/>
  */
-public class ServerRequestWssConfidentiality extends ServerRequestWssOperation {
+public class ServerRequestWssConfidentiality extends ServerRequestWssOperation<RequestWssConfidentiality> {
     private static final Logger logger = Logger.getLogger(ServerRequestWssConfidentiality.class.getName());
 
     public ServerRequestWssConfidentiality(RequestWssConfidentiality data, ApplicationContext springContext) {

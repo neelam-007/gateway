@@ -5,6 +5,7 @@
 
 package com.l7tech.xml.xpath;
 
+import javax.xml.xpath.XPathExpressionException;
 import java.util.Map;
 
 /**
@@ -19,6 +20,7 @@ public abstract class CompiledXpath {
 
     private final String expression;
     private final Map nsmap;
+    private final boolean mightUseVariables;
 
     /**
      * Initialize the CompiledXpath superclass.
@@ -30,6 +32,13 @@ public abstract class CompiledXpath {
         if (expression == null) throw new NullPointerException();
         this.expression = expression;
         this.nsmap = nsmap;
+        boolean vars;
+        try {
+            vars = XpathUtil.usesXpathVariables(expression);
+        } catch (XPathExpressionException e) {
+            vars = true;
+        }
+        this.mightUseVariables = vars;
     }
 
     /** @return the generic xpath expression string.  Never null. */
@@ -40,6 +49,11 @@ public abstract class CompiledXpath {
     /** @return the namespace map, or null if no qualified names are used in the expression. */
     protected Map getNamespaceMap() {
         return nsmap;
+    }
+
+    /** @return true if this compiled xpath might use any XPath variables. */
+    public boolean usesVariables() {
+        return mightUseVariables;
     }
 
     /** A utility expression that is always true. */

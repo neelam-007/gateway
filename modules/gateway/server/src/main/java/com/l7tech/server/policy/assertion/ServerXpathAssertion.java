@@ -8,13 +8,6 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.xml.ElementCursor;
-import com.l7tech.xml.DomElementCursor;
-import com.l7tech.xml.xpath.CompiledXpath;
-import com.l7tech.xml.xpath.XpathResult;
-import com.l7tech.xml.xpath.XpathResultIterator;
-import com.l7tech.xml.xpath.XpathResultNodeSet;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.ResponseXpathAssertion;
@@ -22,9 +15,14 @@ import com.l7tech.policy.assertion.SimpleXpathAssertion;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.xml.DomElementCursor;
+import com.l7tech.xml.ElementCursor;
+import com.l7tech.xml.xpath.*;
 import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Node;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.xml.xpath.XPathExpressionException;
@@ -42,7 +40,7 @@ import java.util.logging.Logger;
  *  <li><a href="http://sarek.l7tech.com/mediawiki/index.php?title=XML_Variables">XML Variables</a> (4.3)
  * </ul>
  */
-public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
+public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> extends ServerXpathBasedAssertion<AT> {
     private static final Logger logger = Logger.getLogger(ServerXpathAssertion.class.getName());
     private final boolean req; // true = operate on request; false = operate on response
     private final String vfound;
@@ -51,8 +49,9 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
     private final String vmultipleResults;
     private final String velement;
     private final String vmultipleElements;
+    private final boolean xpathContainsVariables;
 
-    public ServerXpathAssertion(SimpleXpathAssertion assertion, ApplicationContext springContext, boolean isReq) {
+    public ServerXpathAssertion(AT assertion, ApplicationContext springContext, boolean isReq) {
         super(assertion, springContext);
         this.req = isReq;
 
@@ -63,6 +62,7 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
         vcount = varsUsed.contains(assertion.countVariable()) ? assertion.countVariable() : null;
         velement = varsUsed.contains(assertion.elementVariable()) ? assertion.elementVariable() : null;
         vmultipleElements = varsUsed.contains(assertion.multipleElementsVariable()) ? assertion.multipleElementsVariable() : null;
+        xpathContainsVariables = getCompiledXpath() == null || getCompiledXpath().usesVariables();
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
@@ -119,8 +119,8 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
                 return AssertionStatus.NOT_APPLICABLE;
             }
 
-            if( vmultipleElements != null ) {
-                // Use a cursor backed by DOM so we can have Element results
+            if( vmultipleElements != null || xpathContainsVariables ) {
+                // Use a cursor backed by DOM so we can have Element results and/or XPath variables
                 auditor.logAndAudit(AssertionMessages.XPATH_NOT_ACCELERATED);
                 cursor = new DomElementCursor(message.getXmlKnob().getDocumentReadOnly());
             } else {
@@ -139,7 +139,8 @@ public abstract class ServerXpathAssertion extends ServerXpathBasedAssertion {
 
         XpathResult xpathResult = null;
         try {
-            xpathResult = cursor.getXpathResult(compiledXpath, velement != null);
+            XpathVariableFinder variableFinder = xpathContainsVariables ? new PolicyEnforcementContextXpathVariableFinder(context) : null;
+            xpathResult = cursor.getXpathResult(compiledXpath, variableFinder, velement != null);
         } catch (XPathExpressionException e) {
             // Log it, but treat it as null
             if (logger.isLoggable(Level.WARNING))

@@ -98,7 +98,7 @@ public class BridgeWsdlProxyTest {
     
     public static List<ElementCursor> matchNodes(ElementCursor cursor, CompiledXpath xpath) throws XPathExpressionException {
         cursor.moveToRoot();
-        XpathResult result = cursor.getXpathResult(xpath, true);
+        XpathResult result = cursor.getXpathResult(xpath, null, true);
         if (!result.matches()) return Collections.emptyList();
         XpathResultNodeSet ns = result.getNodeSet();
         if (ns.isEmpty()) return Collections.emptyList();

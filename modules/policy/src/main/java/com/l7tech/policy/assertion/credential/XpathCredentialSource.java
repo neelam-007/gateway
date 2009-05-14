@@ -1,8 +1,16 @@
 package com.l7tech.policy.assertion.credential;
 
-import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathUtil;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Gathers credentials based on XPath expressions pointing to the login and password.
@@ -46,4 +54,15 @@ public class XpathCredentialSource extends XpathBasedAssertion {
         this.removePasswordElement = removePasswordElement;
     }
 
+    @Override
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    public String[] getVariablesUsed() {
+        List<String> vars = Arrays.asList(super.getVariablesUsed());
+        if (passwordExpression != null) {
+            String passexpr = passwordExpression.getExpression();
+            if (passexpr != null)
+                vars.addAll(XpathUtil.getUnprefixedVariablesUsedInXpath(passexpr));
+        }
+        return vars.toArray(new String[vars.size()]);
+    }
 }

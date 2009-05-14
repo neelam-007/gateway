@@ -5,7 +5,7 @@ import com.l7tech.wsdl.BindingOperationInfo;
 import com.l7tech.wsdl.MimePartInfo;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.wsdl.Wsdl;
-import com.l7tech.xml.XpathEvaluator;
+import com.l7tech.xml.xpath.XpathUtil;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
@@ -197,7 +197,7 @@ public class AddRequestSwAAssertionAdvice implements Advice {
                 }
 
                 logger.finest("Xpath for the operation " + "\"" + soapRequest.getOperation() + "\" is " + xpathExpression);
-                swaAssertion.getNamespaceMap().putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
+                swaAssertion.getNamespaceMap().putAll(XpathUtil.getNamespaces(soapRequest.getSOAPMessage()));
             }
         } catch (SOAPException e) {
             logger.log(Level.WARNING, "Caught SAXException when retrieving xml document from the generated request", e);

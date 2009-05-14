@@ -16,8 +16,10 @@ import com.l7tech.security.xml.processor.*;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
-import org.junit.*;
+import com.l7tech.xml.xpath.DomCompiledXpath;
+import com.l7tech.xml.xpath.XpathExpression;
 import static org.junit.Assert.*;
+import org.junit.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -114,7 +116,8 @@ public class WssRoundTripTest {
         if (td.req.isSignUsernameToken()) {
             Map<String, String> ns = new HashMap<String, String>();
             ns.put("wsse", SoapUtil.SECURITY_NAMESPACE);
-            ProcessorResultUtil.SearchResult foo = ProcessorResultUtil.searchInResult(log, doc1, "//wsse:UsernameToken", ns, false, r.getElementsThatWereSigned(), "signed");
+            ProcessorResultUtil.SearchResult foo = ProcessorResultUtil.searchInResult(log, doc1, 
+                    new DomCompiledXpath(new XpathExpression("//wsse:UsernameToken", ns)), null, false, r.getElementsThatWereSigned(), "signed");
             if (securityTokenResolver == null)
                 assertEquals(foo.getResultCode(), ProcessorResultUtil.FALSIFIED);
             else
@@ -430,9 +433,8 @@ public class WssRoundTripTest {
         if (td.req.isSignUsernameToken()) {
             Map<String, String> ns = new HashMap<String, String>();
             ns.put("wsse", SoapUtil.SECURITY_NAMESPACE);
-            ProcessorResultUtil.SearchResult foo = ProcessorResultUtil.searchInResult(
-                    log, incomingSoapDocument,
-                    "//wsse:UsernameToken", ns, false, r.getElementsThatWereSigned(), "signed");
+            ProcessorResultUtil.SearchResult foo = ProcessorResultUtil.searchInResult(log, incomingSoapDocument,
+                    new DomCompiledXpath(new XpathExpression("//wsse:UsernameToken", ns)), null, false, r.getElementsThatWereSigned(), "signed");
             assertEquals(foo.getResultCode(), ProcessorResultUtil.NO_ERROR);
         }
 

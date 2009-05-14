@@ -5,13 +5,14 @@
 
 package com.l7tech.xml;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.TooManyChildElementsException;
 import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.util.TooManyChildElementsException;
+import com.l7tech.xml.tarari.TarariMessageContext;
 import com.l7tech.xml.xpath.CompiledXpath;
 import com.l7tech.xml.xpath.XpathResult;
-import com.l7tech.common.io.XmlUtil;
-import com.l7tech.xml.tarari.TarariMessageContext;
+import com.l7tech.xml.xpath.XpathVariableFinder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -347,23 +348,25 @@ public abstract class ElementCursor {
      * a new XpathResult instance.
      *
      * @param compiledXpath the compiled XPath to run against this cursor.  Must not be null.
+     * @param variableFinder a callback to invoke to determine the values of any XPath variables, or null to disable XPath variables.
      * @param requireCursor true if any nodeset result must be navigable using an ElementCursor. Disables fastxpath for this result.
      * @return the results of running this XPath against this cursor at its current position.  Never null.
      * @throws XPathExpressionException if the match failed and no result could be produced.
      */
-    public abstract XpathResult getXpathResult(CompiledXpath compiledXpath, boolean requireCursor) throws XPathExpressionException;
+    public abstract XpathResult getXpathResult(CompiledXpath compiledXpath, XpathVariableFinder variableFinder, boolean requireCursor) throws XPathExpressionException;
 
     /**
      * Run the specified already-compiled XPath expression against this cursor at its current position and return
-     * a new XpathResult instance. Equivalent to calling {@link #getXpathResult(com.l7tech.xml.xpath.CompiledXpath, boolean)} with
-     * the second argument <code>false</code>.
+     * a new XpathResult instance. Equivalent to calling {@link #getXpathResult(com.l7tech.xml.xpath.CompiledXpath, XpathVariableFinder, boolean)} with
+     * the second argument <code>null</code> and 
+     * the third argument <code>false</code>.
      *
      * @param compiledXpath the compiled XPath to run against this cursor.  Must not be null.
      * @return the results of running this XPath against this cursor at its current position.  Never null.
      * @throws XPathExpressionException if the match failed and no result could be produced.
      */
     public XpathResult getXpathResult(CompiledXpath compiledXpath) throws XPathExpressionException {
-        return getXpathResult(compiledXpath, false);
+        return getXpathResult(compiledXpath, null, false);
     }
 
     /**
@@ -382,7 +385,7 @@ public abstract class ElementCursor {
      */
     public boolean matches(CompiledXpath compiledXpath) throws XPathExpressionException {
         if (compiledXpath == null) throw new IllegalArgumentException("compiledXpath must be provided");
-        XpathResult result = getXpathResult(compiledXpath, false);
+        XpathResult result = getXpathResult(compiledXpath, null, false);
         return result != null && result.matches();
     }
 

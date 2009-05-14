@@ -8,14 +8,15 @@ package com.l7tech.security.xml.processor;
 
 import com.l7tech.security.token.ParsedElement;
 import com.l7tech.util.DomUtils;
-import com.l7tech.xml.XpathEvaluator;
+import com.l7tech.xml.xpath.DomCompiledXpath;
+import com.l7tech.xml.xpath.XpathVariableFinder;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -34,8 +35,8 @@ public class ProcessorResultUtil {
      *
      * @param logger     Logger to use for logging activity.  May not be null.
      * @param doc        The document to inspect, such as an undecorated soap message.  May not be null.
-     * @param xpath      The xpath expression to match against this document.  May not be null or invalid.
-     * @param namespaces The map of namespace prefixes to URIs to use when interpreting xpath.  May not be null.
+     * @param xpath      The already-compiled xpath expression to match against this document, including all namespace information.  Required.
+     * @param variableFinder  A variable finder to use to find values for any XPath variables. May be null if xpath.usesVariables() is false. 
      * @param allowIfEmpty If true, matching elements are allowed to not exist in elementsFoundByProcessor if they are empty
      *                     (that is, they have no non-attribute child nodes of any kind.)
      * @param elementsFoundByProcessor List of approved "operated-on" elements.  Elements matching xpath must be in this
@@ -47,17 +48,16 @@ public class ProcessorResultUtil {
      */
     public static SearchResult searchInResult(Logger logger,
                                               Document doc,
-                                              final String xpath,
-                                              final Map namespaces,
+                                              final DomCompiledXpath xpath,
+                                              final XpathVariableFinder variableFinder,
                                               final boolean allowIfEmpty,
                                               final ParsedElement[] elementsFoundByProcessor,
                                               String pastTenseOperationName)
             throws ProcessorException
     {
-        XpathEvaluator evaluator = XpathEvaluator.newEvaluator(doc, namespaces);
-        List selectedNodes = null;
+        List<Element> selectedNodes;
         try {
-            selectedNodes = evaluator.select(xpath);
+            selectedNodes = xpath.rawSelectElements(doc, variableFinder);
         } catch (JaxenException e) {
             // this is thrown when there is an error in the expression
             // this is therefore a bad policy

@@ -11,6 +11,7 @@ import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.xml.xpath.CompiledXpath;
 import com.l7tech.xml.xpath.DomCompiledXpath;
 import com.l7tech.xml.xpath.XpathResult;
+import com.l7tech.xml.xpath.XpathVariableFinder;
 import com.l7tech.common.io.XmlUtil;
 import org.w3c.dom.*;
 
@@ -258,7 +259,7 @@ public class DomElementCursor extends ElementCursor {
         return cur;
     }
 
-    public XpathResult getXpathResult(CompiledXpath compiledXpath, boolean unused) throws XPathExpressionException {
+    public XpathResult getXpathResult(CompiledXpath compiledXpath, XpathVariableFinder variableFinder, boolean unused) throws XPathExpressionException {
         if (compiledXpath == CompiledXpath.ALWAYS_TRUE)
             return XpathResult.RESULT_TRUE;
         if (compiledXpath == CompiledXpath.ALWAYS_FALSE)
@@ -266,7 +267,7 @@ public class DomElementCursor extends ElementCursor {
 
         if (compiledXpath instanceof DomCompiledXpath) {
             DomCompiledXpath domCompiledXpath = (DomCompiledXpath)compiledXpath;
-            return domCompiledXpath.getXpathResult(this);
+            return domCompiledXpath.getXpathResult(this, variableFinder);
         }
 
         // This can't happen -- currently there are only two impls, TarariCompiledXpath and DomCompiledXpath,

@@ -5,15 +5,16 @@
 
 package com.l7tech.xml.xpath;
 
-import com.l7tech.xml.DomElementCursor;
-import com.l7tech.xml.InvalidXpathException;
-import com.l7tech.xml.ElementCursor;
 import com.l7tech.common.io.XmlUtil;
-
+import com.l7tech.xml.DomElementCursor;
+import com.l7tech.xml.ElementCursor;
+import com.l7tech.xml.InvalidXpathException;
+import org.jaxen.FunctionContext;
 import org.jaxen.JaxenException;
 import org.jaxen.XPathFunctionContext;
-import org.jaxen.FunctionContext;
 import org.jaxen.dom.DOMXPath;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import javax.xml.xpath.XPathExpressionException;
@@ -21,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 /**
@@ -54,7 +56,7 @@ public class DomCompiledXpath extends CompiledXpath {
      * @param xp the expression to compile.  Must not be null.
      * @throws InvalidXpathException if the expression is invalid or uses an undeclared namespace prefix.
      */
-    protected DomCompiledXpath(CompilableXpath xp) throws InvalidXpathException {
+    public DomCompiledXpath(CompilableXpath xp) throws InvalidXpathException {
         super(xp.getExpressionForJaxen(), xp.getNamespaces());
         domXpath = makeJaxenXpath();
     }
@@ -96,15 +98,19 @@ public class DomCompiledXpath extends CompiledXpath {
             DOMXPath domXpath = new DOMXPath(expression);
             domXpath.setFunctionContext(XPATH_FUNCTIONS); // no JAXEN extensions
 
+            // Stupidly, Jaxen bakes the variable context into the DOMXPath, so we'll have to rendezvous
+            // with a thread-local variable finder to pick up the appropriate values later.
+            domXpath.setVariableContext(new XpathVariableFinderVariableContext(null));
+
             if (namespaceMap != null) {
-                for (Iterator i = namespaceMap.keySet().iterator(); i.hasNext();) {
-                    String key = (String)i.next();
-                    String uri = (String)namespaceMap.get(key);
+                for (Object o : namespaceMap.keySet()) {
+                    String key = (String) o;
+                    String uri = (String) namespaceMap.get(key);
                     domXpath.addNamespace(key, uri);
                 }
             }
 
-            // fail fast for expressions that are syntactically valid but use incorrect
+            // fail early for expressions that are syntactically valid but that use incorrect
             // namespace prefixes or functions
             domXpath.evaluate(XmlUtil.stringAsDocument("<test xmlns=\"http://test.com/testing\"/>"));
 
@@ -118,10 +124,52 @@ public class DomCompiledXpath extends CompiledXpath {
      * Run a software-only XPath.
      *
      * @param cursor   the DOM cursor on which to run the xpath.  Must not be null.
+     * @param variableFinder
      * @return a new XpathResult instance.  Never null.
      * @throws XPathExpressionException if lazy compilation of the XPath reveals it to be invalid.
      */
-    public XpathResult getXpathResult(DomElementCursor cursor) throws XPathExpressionException {
+    public XpathResult getXpathResult(final DomElementCursor cursor, XpathVariableFinder variableFinder) throws XPathExpressionException {
+        if (variableFinder == null)
+            return getXpathResult(cursor);
+        try {
+            return XpathVariableContext.doWithVariableFinder(variableFinder, new Callable<XpathResult>() {
+                public XpathResult call() throws Exception {
+                    return getXpathResult(cursor);
+                }
+            });
+        } catch (XPathExpressionException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new XPathExpressionException(e);
+        }
+    }
+
+    /**
+     * A low-level utility method that returns a list of DOM Elements selected by evaluating this compiled XPath
+     * against the root of the specified target document.
+     *
+     * @param targetDocument  the document to select against.  Required.
+     * @param variableFinder  the XpathVariableFinder to use during the selection.  Required if {@link #usesVariables()} is true.
+     * @return a List of zero or more DOM Element instances matched by this compiled XPath.  May be empty but never null.
+     * @throws JaxenException if an exception occurred while matching.
+     */
+    public List<Element> rawSelectElements(final Document targetDocument, XpathVariableFinder variableFinder) throws JaxenException {
+        try {
+            return XpathVariableContext.doWithVariableFinder(variableFinder, new Callable<List<Element>>() {
+                public List<Element> call() throws Exception {
+                    DOMXPath dx = getDomXpath();
+                    List nodes = dx.selectNodes(targetDocument);
+                    return XpathUtil.ensureAllResultsAreElements(nodes);
+                }
+            });
+        } catch (JaxenException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new JaxenException(e);
+        }
+    }
+
+    private XpathResult getXpathResult(DomElementCursor cursor) throws XPathExpressionException {
         final DOMXPath xp;
 
         final List result;
@@ -282,4 +330,5 @@ public class DomCompiledXpath extends CompiledXpath {
             }
         };
     }
+
 }

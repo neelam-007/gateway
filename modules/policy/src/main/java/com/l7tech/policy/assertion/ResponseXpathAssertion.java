@@ -6,13 +6,16 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.util.SoapConstants;
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.policy.assertion.annotation.ProcessesResponse;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
+import com.l7tech.policy.assertion.annotation.ProcessesResponse;
+import com.l7tech.util.SoapConstants;
+import com.l7tech.xml.xpath.XpathExpression;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Data for an assertion that verifies whether a response matches a specified
@@ -23,11 +26,7 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
  *  <li><a href="http://sarek.l7tech.com/mediawiki/index.php?title=XML_Variables">XML Variables</a> (4.3)
  * </ul>
  *
- * @see com.l7tech.server.policy.assertion.ServerResponseXpathAssertion
- * @see com.l7tech.proxy.policy.assertion.ClientResponseXpathAssertion
  * @author alex
- *
- * @version $Revision$
  */
 @ProcessesResponse
 public class ResponseXpathAssertion extends SimpleXpathAssertion implements UsesVariables {
@@ -71,8 +70,12 @@ public class ResponseXpathAssertion extends SimpleXpathAssertion implements Uses
         xmlMsgSrc = src;
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return xmlMsgSrc == null ? new String[0] : new String[]{xmlMsgSrc};
+        List<String> used = Arrays.asList(super.getVariablesUsed());
+        if (xmlMsgSrc != null)
+            used.add(xmlMsgSrc);
+        return used.toArray(new String[used.size()]);
     }
 }

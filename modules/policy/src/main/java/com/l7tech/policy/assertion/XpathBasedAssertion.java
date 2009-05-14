@@ -6,21 +6,28 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.xml.soap.SoapVersion;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.util.SoapConstants;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
+import com.l7tech.util.SoapConstants;
+import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapVersion;
+import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathUtil;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 import javax.xml.soap.SOAPConstants;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 /**
  * Base class for XML security assertions whose primary configurable feature is an Xpath expression.
  */
 @RequiresXML()
-public abstract class XpathBasedAssertion extends Assertion implements AssertionServiceChangeListener {
+public abstract class XpathBasedAssertion extends Assertion implements AssertionServiceChangeListener, UsesVariables {
+
     protected XpathExpression xpathExpression;
     protected SoapVersion soapVersion = SoapVersion.SOAP_1_1;
 
@@ -40,6 +47,18 @@ public abstract class XpathBasedAssertion extends Assertion implements Assertion
         Map nsmap = new HashMap();
         nsmap.put( SoapConstants.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_ENVELOPE);
         return nsmap;
+    }
+
+    @Override
+    @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
+    public String[] getVariablesUsed() {
+        if (xpathExpression == null)
+            return new String[0];
+        String expr = xpathExpression.getExpression();
+        if (expr == null)
+            return new String[0];
+        List<String> varlist = XpathUtil.getUnprefixedVariablesUsedInXpath(expr);
+        return varlist.toArray(new String[varlist.size()]);
     }
 
     public String toString() {

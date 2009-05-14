@@ -1,18 +1,17 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
-import com.l7tech.security.xml.processor.ProcessorException;
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.xml.processor.ProcessorResultUtil;
-import com.l7tech.security.token.EncryptedElement;
-import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.security.token.EncryptedElement;
+import com.l7tech.security.xml.processor.ProcessorException;
+import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.xml.xpath.XpathExpression;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -30,14 +29,11 @@ import java.util.logging.Logger;
  * Date: Aug 26, 2003<br/>
  * $Id$
  */
-public class ClientResponseWssConfidentiality extends ClientAssertion {
+public class ClientResponseWssConfidentiality extends ClientResponseWssOperation<ResponseWssConfidentiality> {
     private static final Logger log = Logger.getLogger(ClientResponseWssConfidentiality.class.getName());
 
     public ClientResponseWssConfidentiality(ResponseWssConfidentiality data) {
-        this.data = data;
-        if (data == null) {
-            throw new IllegalArgumentException("security elements is null");
-        }
+        super(data);
     }
 
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
@@ -84,8 +80,8 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
             }
             result = ProcessorResultUtil.searchInResult(log,
                                                         soapmsg,
-                                                        data.getXpathExpression().getExpression(),
-                                                        data.getXpathExpression().getNamespaces(),
+                                                        getCompiledXpath(),
+                                                        null,
                                                         true,
                                                         elementsThatWereEncrypted,
                                                         "encrypted");
@@ -125,6 +121,4 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
     public String iconResource(boolean open) {
         return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
-
-    private ResponseWssConfidentiality data;
 }

@@ -18,7 +18,7 @@ import org.springframework.context.ApplicationContext;
  * @author alex
  * @version $Revision$
  */
-public class ServerResponseXpathAssertion extends ServerXpathAssertion {
+public class ServerResponseXpathAssertion extends ServerXpathAssertion<SimpleXpathAssertion> {
     public ServerResponseXpathAssertion(SimpleXpathAssertion data, ApplicationContext springContext) {
         super(data, springContext, false);
     }

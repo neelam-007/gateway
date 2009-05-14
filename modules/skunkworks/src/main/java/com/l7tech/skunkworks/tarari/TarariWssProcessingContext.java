@@ -88,7 +88,7 @@ class TarariWssProcessingContext {
         ElementCursor ec = msg.getXmlKnob().getElementCursor();
         XpathResult elementsWithIds;
         try {
-            elementsWithIds = ec.getXpathResult(XpathHolder.findAllElementsWithIds, true);
+            elementsWithIds = ec.getXpathResult(XpathHolder.findAllElementsWithIds, null, true);
         } catch (XPathExpressionException e) {
             throw new RuntimeException(e);
         }

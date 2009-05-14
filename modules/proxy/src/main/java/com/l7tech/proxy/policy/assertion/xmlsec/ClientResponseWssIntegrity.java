@@ -1,44 +1,41 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.message.Message;
-import com.l7tech.message.XmlKnob;
 import com.l7tech.message.SecurityKnob;
-import com.l7tech.security.token.SignedElement;
-import com.l7tech.security.xml.processor.ProcessorException;
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.security.xml.processor.ProcessorResultUtil;
-import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
+import com.l7tech.security.token.SignedElement;
+import com.l7tech.security.xml.processor.ProcessorException;
+import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.processor.ProcessorResultUtil;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.InvalidXpathException;
+import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.xpath.XpathExpression;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 /**
  * Verifies that a specific element of the soap response was signed by the ssg.
  */
-public class ClientResponseWssIntegrity extends ClientAssertion {
+public class ClientResponseWssIntegrity extends ClientResponseWssOperation<ResponseWssIntegrity> {
     private static final Logger log = Logger.getLogger(ClientResponseWssIntegrity.class.getName());
 
-    public ClientResponseWssIntegrity(ResponseWssIntegrity data) {
-        this.data = data;
-        if (data == null) {
-            throw new IllegalArgumentException("security elements is null");
-        }
+    public ClientResponseWssIntegrity(ResponseWssIntegrity data) throws InvalidXpathException {
+        super(data);
     }
 
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
@@ -114,8 +111,8 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
         try {
             result = ProcessorResultUtil.searchInResult(log,
                                                         soapmsg,
-                                                        data.getXpathExpression().getExpression(),
-                                                        data.getXpathExpression().getNamespaces(),
+                                                        getCompiledXpath(),
+                                                        null,
                                                         false,
                                                         wereSigned,
                                                         "signed");
@@ -152,7 +149,4 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
     public String iconResource(boolean open) {
         return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
-
-
-    private ResponseWssIntegrity data;
 }

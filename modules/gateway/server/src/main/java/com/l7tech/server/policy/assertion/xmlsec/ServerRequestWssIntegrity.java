@@ -1,21 +1,21 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.security.token.ParsedElement;
-import com.l7tech.security.token.SigningSecurityToken;
-import com.l7tech.security.token.SignedElement;
-import com.l7tech.security.token.SecurityToken;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.util.CausedIOException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.security.token.ParsedElement;
+import com.l7tech.security.token.SecurityToken;
+import com.l7tech.security.token.SignedElement;
+import com.l7tech.security.token.SigningSecurityToken;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.util.CausedIOException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -34,12 +34,11 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: July 14, 2004<br/>
  */
-public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
+public class ServerRequestWssIntegrity extends ServerRequestWssOperation<RequestWssIntegrity> {
     private static final Logger logger = Logger.getLogger(ServerRequestWssIntegrity.class.getName());
-    private final RequestWssIntegrity data;
+
     public ServerRequestWssIntegrity(RequestWssIntegrity data, ApplicationContext springContext) {
         super(logger, data, springContext);
-        this.data = data;
     }
 
     protected String getPastTenseOperationName() {

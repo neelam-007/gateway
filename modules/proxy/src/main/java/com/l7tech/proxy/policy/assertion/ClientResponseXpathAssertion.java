@@ -6,8 +6,6 @@
 
 package com.l7tech.proxy.policy.assertion;
 
-import com.l7tech.xml.XpathEvaluator;
-import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -17,7 +15,11 @@ import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
+import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathUtil;
 import org.jaxen.JaxenException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -51,11 +53,10 @@ public class ClientResponseXpathAssertion extends ClientXpathAssertion {
             log.info("Response is not XML; response XPath is therefore not applicable");
             return AssertionStatus.NOT_APPLICABLE;
         }
-        final XpathExpression xpathExpression = getXpathExpression();
-        final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getResponse().getXmlKnob().getDocumentReadOnly(),
-                                                                xpathExpression.getNamespaces());
+        final XpathExpression xpath = getXpathExpression();
+        final Document document = context.getResponse().getXmlKnob().getDocumentReadOnly();
         try {
-            List nodes = eval.select(xpathExpression.getExpression());
+            List<Element> nodes = XpathUtil.compileAndSelectElements(document, xpath.getExpression(), xpath.getNamespaces(), null);
             if (nodes == null || nodes.size() < 1) {
                 log.info("XPath expression did not match any nodes in response; assertion fails.");
                 return AssertionStatus.FALSIFIED;
@@ -66,7 +67,7 @@ public class ClientResponseXpathAssertion extends ClientXpathAssertion {
         } catch (JaxenException e) {
             log.warning("Invalid expath expression: " + e.getMessage());
             throw new PolicyAssertionException(xpathBasedAssertion, "Unable to execute xpath expression \"" +
-                                               xpathExpression.getExpression() + "\"", e);
+                                               xpath.getExpression() + "\"", e);
         }
     }
 }

@@ -17,7 +17,7 @@ import org.springframework.context.ApplicationContext;
  * @see com.l7tech.policy.assertion.RequestXpathAssertion
  * @see com.l7tech.proxy.policy.assertion.ClientRequestXpathAssertion
  */
-public class ServerRequestXpathAssertion extends ServerXpathAssertion {
+public class ServerRequestXpathAssertion extends ServerXpathAssertion<RequestXpathAssertion> {
     public ServerRequestXpathAssertion(RequestXpathAssertion data, ApplicationContext springContext) {
         super(data, springContext, true);
     }

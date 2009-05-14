@@ -10,6 +10,7 @@ import com.l7tech.util.ArrayUtils;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.xpath.CompiledXpath;
 import com.l7tech.xml.xpath.XpathResult;
+import com.l7tech.xml.xpath.XpathVariableFinder;
 import com.tarari.io.Encoding;
 import com.tarari.xml.XmlResult;
 import com.tarari.xml.NodeType;
@@ -302,7 +303,7 @@ class TarariElementCursor extends ElementCursor {
         }
     }
 
-    public XpathResult getXpathResult(CompiledXpath compiledXpath, boolean requireCursor) throws XPathExpressionException {
+    public XpathResult getXpathResult(CompiledXpath compiledXpath, XpathVariableFinder ignored, boolean requireCursor) throws XPathExpressionException {
         if (compiledXpath == CompiledXpath.ALWAYS_TRUE)
             return XpathResult.RESULT_TRUE;
         if (compiledXpath == CompiledXpath.ALWAYS_FALSE)

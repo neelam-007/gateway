@@ -2,29 +2,33 @@ package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.message.XmlKnob;
-import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import org.jaxen.JaxenException;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
+import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathVariableContext;
+import com.l7tech.xml.xpath.XpathVariableFinderVariableContext;
 import org.jaxen.FunctionContext;
+import org.jaxen.JaxenException;
 import org.jaxen.XPathFunctionContext;
 import org.jaxen.dom.DOMXPath;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 /**
@@ -51,6 +55,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
             } else {
                 loginXpath = new DOMXPath(loginExpr.getExpression());
                 loginXpath.setFunctionContext(XPATH_FUNCTIONS);
+                loginXpath.setVariableContext(new XpathVariableFinderVariableContext(null)); // uses thread-local rendezvous
                 for (Iterator i = loginExpr.getNamespaces().keySet().iterator(); i.hasNext();) {
                     String prefix = (String) i.next();
                     String uri = (String)loginExpr.getNamespaces().get(prefix);
@@ -70,6 +75,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
             } else {
                 passwordXpath = new DOMXPath(passwordExpr.getExpression());
                 passwordXpath.setFunctionContext(XPATH_FUNCTIONS);
+                passwordXpath.setVariableContext(new XpathVariableFinderVariableContext(null)); // uses thread-local rendezvous
                 for (Iterator i = passwordExpr.getNamespaces().keySet().iterator(); i.hasNext();) {
                     String prefix = (String) i.next();
                     String uri = (String)passwordExpr.getNamespaces().get(prefix);
@@ -81,7 +87,24 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
         }
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        try {
+            return XpathVariableContext.doWithVariableFinder(new PolicyEnforcementContextXpathVariableFinder(context),
+                    new Callable<AssertionStatus>() {
+                        public AssertionStatus call() throws Exception {
+                            return doCheckRequest(context);
+                        }
+                    });
+        } catch (IOException e) {
+            throw e;
+        } catch (PolicyAssertionException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new PolicyAssertionException(assertion, e);
+        }
+    }
+
+    private AssertionStatus doCheckRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         XmlKnob requestXml = null;
         if (context.getRequest().isXml())
             requestXml = (XmlKnob) context.getRequest().getKnob(XmlKnob.class);

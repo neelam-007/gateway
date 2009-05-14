@@ -1,10 +1,12 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.xml.XpathEvaluator;
+import com.l7tech.xml.xpath.XpathUtil;
+import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import org.jaxen.JaxenException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -43,11 +45,10 @@ public class ServerResponseWssIntegrity extends ServerResponseWssSignature {
             throws PolicyAssertionException
     {
         List selectedElements;
-        XpathEvaluator evaluator =
-                XpathEvaluator.newEvaluator(soapmsg,
-                                            assertion.getXpathExpression().getNamespaces());
+        final XpathExpression xpath = assertion.getXpathExpression();
         try {
-            selectedElements = evaluator.selectElements(assertion.getXpathExpression().getExpression());
+            selectedElements = XpathUtil.compileAndSelectElements(soapmsg, xpath.getExpression(), xpath.getNamespaces(),
+                    new PolicyEnforcementContextXpathVariableFinder(context));
         } catch (JaxenException e) {
             // this is thrown when there is an error in the expression
             // this is therefore a bad policy

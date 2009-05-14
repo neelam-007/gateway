@@ -1,24 +1,25 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.audit.Auditor;
-import com.l7tech.kerberos.KerberosServiceTicket;
-import com.l7tech.security.token.*;
-import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.util.CausedIOException;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.XpathEvaluator;
-import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.security.token.*;
+import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
+import com.l7tech.util.CausedIOException;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.InvalidDocumentFormatException;
+import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathUtil;
 import org.jaxen.JaxenException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -213,11 +214,10 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
             soapmsg = context.getResponse().getXmlKnob().getDocumentReadOnly();
 
             final XpathExpression xpath = responseWssConfidentiality.getXpathExpression();
-            XpathEvaluator evaluator = XpathEvaluator.newEvaluator(soapmsg,
-                                                                   xpath.getNamespaces());
             final List selectedElements;
             try {
-                selectedElements = evaluator.selectElements(xpath.getExpression());
+                selectedElements = XpathUtil.compileAndSelectElements(soapmsg, xpath.getExpression(), xpath.getNamespaces(),
+                        new PolicyEnforcementContextXpathVariableFinder(context));
             } catch (JaxenException e) {
                 // this is thrown when there is an error in the expression
                 // this is therefore a bad policy

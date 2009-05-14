@@ -17,7 +17,10 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.xml.InvalidXpathException;
+import com.l7tech.xml.xpath.DomCompiledXpath;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -28,15 +31,37 @@ import java.util.logging.Logger;
 /**
  * Code shared between ServerRequestWssConfidentiality and ServerRequestWssIntegrity.
  */
-public abstract class ServerRequestWssOperation extends AbstractServerAssertion implements ServerAssertion {
+public abstract class ServerRequestWssOperation<AT extends XpathBasedAssertion> extends AbstractServerAssertion<AT> implements ServerAssertion {
     private Logger logger;
     protected final Auditor auditor;
 
-    protected ServerRequestWssOperation(Logger logger, XpathBasedAssertion data, ApplicationContext springContext) {
+    private final DomCompiledXpath compiledXpath;
+    private final InvalidXpathException compileFailure;
+
+    protected ServerRequestWssOperation(Logger logger, AT data, ApplicationContext springContext) {
         super(data);
         this.logger = logger;
         this.data = data;
         auditor = new Auditor(this, springContext, logger);
+        DomCompiledXpath xp;
+        InvalidXpathException fail;
+        try {
+            xp = new DomCompiledXpath(data.getXpathExpression());
+            fail = null;
+        } catch (InvalidXpathException e) {
+            xp = null;
+            fail = e;
+        }
+        this.compiledXpath = xp;
+        this.compileFailure = fail;
+    }
+
+    protected DomCompiledXpath getCompiledXpath() throws PolicyAssertionException {
+        if (compileFailure != null)
+            throw new PolicyAssertionException(data, compileFailure);
+        if (compiledXpath == null)
+            throw new PolicyAssertionException(data, "No CompiledXpath"); // can't happen
+        return compiledXpath;
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -84,8 +109,8 @@ public abstract class ServerRequestWssOperation extends AbstractServerAssertion 
         try {
             result = ProcessorResultUtil.searchInResult(logger,
                                                         soapmsg,
-                                                        data.getXpathExpression().getExpression(),
-                                                        data.getXpathExpression().getNamespaces(),
+                                                        getCompiledXpath(),
+                                                        new PolicyEnforcementContextXpathVariableFinder(context),
                                                         isAllowIfEmpty(),
                                                         elements,
                                                         getPastTenseOperationName());

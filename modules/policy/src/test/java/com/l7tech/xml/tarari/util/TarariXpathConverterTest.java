@@ -5,35 +5,19 @@
 
 package com.l7tech.xml.tarari.util;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import com.l7tech.test.BugNumber;
+import static org.junit.Assert.*;
+import org.junit.*;
 
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
-
-import com.l7tech.xml.tarari.util.TarariXpathConverter;
 
 /**
  * Test case for TarariXpathConverter.
  */
-public class TarariXpathConverterTest extends TestCase {
-    private static Logger log = Logger.getLogger(TarariXpathConverterTest.class.getName());
-
-    public TarariXpathConverterTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(TarariXpathConverterTest.class);
-    }
-
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+public class TarariXpathConverterTest {
+    @Test
     public void testNestedPredicate() throws Exception {
         Map m = new HashMap();
         m.put("s", "urn:s");
@@ -52,6 +36,7 @@ public class TarariXpathConverterTest extends TestCase {
         }
     }
 
+    @Test
     public void testAttributePredicate() throws Exception {
         Map m = new HashMap();
         m.put("s", "urn:s");
@@ -74,6 +59,7 @@ public class TarariXpathConverterTest extends TestCase {
 
     }
 
+    @Test
     public void testSimple() throws Exception {
         Map m = new HashMap();
         m.put("s", "urn:s");
@@ -93,6 +79,7 @@ public class TarariXpathConverterTest extends TestCase {
         assertEquals("/*[local-name() = \"Envelope\"  and namespace-uri() =\"urn:s\" ]/*[local-name() = \"Body\"  and namespace-uri() =\"urn:s\" ]", got);
     }
 
+    @Test
     public void testConverter() throws Exception {
         {
             Map smallMap = new HashMap();
@@ -139,53 +126,42 @@ public class TarariXpathConverterTest extends TestCase {
         }
     }
 
+    @Test(expected = ParseException.class)
     public void testIntegers() throws Exception {
         Map m = new HashMap();
         String gave;
         String got;
 
-        try {
-            gave = "/foo[3=3]";
-            got = TarariXpathConverter.convertToTarariXpath(m, gave);
-            fail("Expected exception was not thrown.  got=" + got);
+        gave = "/foo[3=3]";
+        got = TarariXpathConverter.convertToTarariXpath(m, gave);
 
-            // If this worked, it would pass through unchanged:
-            //assertEquals(gave, got);
-            // Note that there is no reason this coudn't work with Tarari -- that this fails is a bug in xparser.g
-            // TODO fix this bug
-        } catch (ParseException e) {
-            // Ok
-        }
+        // If this worked, it would pass through unchanged:
+        //assertEquals(gave, got);
+        // Note that there is no reason this coudn't work with Tarari -- that this fails is a bug in xparser.g
+        // TODO fix this bug
     }
 
+    @Test(expected = ParseException.class)
+    public void testSimpleVariableReference() throws Exception {
+        TarariXpathConverter.convertToTarariXpath(new HashMap(), "$foo");
+    }
+
+    @Test(expected = ParseException.class)
+    public void testPredicateVariableReference() throws Exception {
+        TarariXpathConverter.convertToTarariXpath(new HashMap(), "/*[local-name() = $foo]");
+    }
+
+    @Test(expected = ParseException.class)
     public void testRelativeXpath() throws Exception {
-        Map m = new HashMap();
-        String gave;
-        String got;
-
-        try {
-            gave = "foo/bar";
-            got = TarariXpathConverter.convertToTarariXpath(m, gave);
-            fail("Expected exception was not thrown.  got=" + got);
-        } catch (ParseException e) {
-            // Ok
-        }
+        TarariXpathConverter.convertToTarariXpath(new HashMap(), "foo/bar");
     }
 
+    @Test(expected = ParseException.class)
     public void testNonRootDescendantOrSelfXpath() throws Exception {
-        Map m = new HashMap();
-        String gave;
-        String got;
-
-        try {
-            gave = "/foo//bar";
-            got = TarariXpathConverter.convertToTarariXpath(m, gave);
-            fail("Expected exception was not thrown.  got=" + got);
-        } catch (ParseException e) {
-            // Ok
-        }
+        TarariXpathConverter.convertToTarariXpath(new HashMap(), "/foo//bar");
     }
 
+    @Test
     public void testBadSyntax() throws Exception {
         Map m = new HashMap();
         String gave;
@@ -207,6 +183,7 @@ public class TarariXpathConverterTest extends TestCase {
         }
     }
 
+    @Test
     public void testUndeclaredPrefix() throws Exception {
         Map smallMap = new HashMap();
         smallMap.put("asdf", "http://junk.com/emp");
@@ -218,6 +195,8 @@ public class TarariXpathConverterTest extends TestCase {
         assertEquals("Undeclared prefix should pass-through as literal match", gave, got);
     }
 
+    @Test
+    @BugNumber(1711)
     public void testDashInPrefixBug1711() throws Exception {
         Map map = new HashMap();
         map.put("SOAP-ENV", "http://blah");
@@ -236,18 +215,14 @@ public class TarariXpathConverterTest extends TestCase {
         got = TarariXpathConverter.convertToTarariXpath(map, gave);
         assertEquals("Undeclared namespaces with dashes should pass through unchanged", gave, got);                
     }
-    
+
+    @Test(expected = ParseException.class)
     public void testAlexBofaBug() throws Exception {
         Map map = new HashMap();
         map.put("soapenv", "http://blah/soapenv");
         map.put("api", "http://blah/api");
         map.put("osa", "http://blah/osa");
         String gave="/soapenv:Envelope/soapenv:Body/api:RetrieveTransactionHistoryV001/api:osaRequestHeader/osa:rulesBag/osa:sets/osa:set[osa:name=\"routingRules\"]/osa:attributes/osa:attribute/osa:value";
-        try {
-            String got = TarariXpathConverter.convertToTarariXpath(map, gave);
-            fail("Invalid xpath was not detected");
-        } catch (ParseException e) {
-            // Ok
-        }
+        TarariXpathConverter.convertToTarariXpath(map, gave);
     }
 }

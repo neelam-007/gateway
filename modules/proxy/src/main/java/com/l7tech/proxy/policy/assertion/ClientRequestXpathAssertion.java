@@ -6,13 +6,15 @@
 
 package com.l7tech.proxy.policy.assertion;
 
-import com.l7tech.xml.XpathEvaluator;
-import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.proxy.message.PolicyApplicationContext;
+import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathUtil;
 import org.jaxen.JaxenException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -34,10 +36,9 @@ public class ClientRequestXpathAssertion extends ClientXpathAssertion {
     public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException, SAXException, IOException {
         final XpathExpression xpathExpression = getXpathExpression();
         // Match the Original _undecorated_ document always, so operation-specific paths are deterministic
-        final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getRequest().getXmlKnob().getOriginalDocument(),
-                                                                xpathExpression.getNamespaces());
+        final Document document = context.getRequest().getXmlKnob().getOriginalDocument();
         try {
-            List nodes = eval.select(xpathExpression.getExpression());
+            List<Element> nodes = XpathUtil.compileAndSelectElements(document, xpathExpression.getExpression(), xpathExpression.getNamespaces(), null);
             if (nodes == null || nodes.size() < 1) {
                 log.info("XPath expression did not match any nodes in request; assertion fails.");
                 return AssertionStatus.FALSIFIED;

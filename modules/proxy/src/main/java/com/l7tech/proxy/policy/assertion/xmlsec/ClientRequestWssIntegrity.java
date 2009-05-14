@@ -7,9 +7,11 @@ import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
-import com.l7tech.xml.XpathEvaluator;
 import com.l7tech.xml.xpath.XpathExpression;
+import com.l7tech.xml.xpath.XpathUtil;
 import org.jaxen.JaxenException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -52,10 +54,9 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
                    GeneralSecurityException, IOException, KeyStoreCorruptException, HttpChallengeRequiredException,
                    PolicyRetryableException, ClientCertificateException, PolicyAssertionException, SAXException {
         final XpathExpression xpathExpression = requestWssIntegrity.getXpathExpression();
-        final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getRequest().getXmlKnob().getDocumentReadOnly(),
-                                                                xpathExpression.getNamespaces());
         try {
-            List elements = eval.selectElements(xpathExpression.getExpression());
+            final Document message = context.getRequest().getXmlKnob().getDocumentReadOnly();
+            List<Element> elements = XpathUtil.compileAndSelectElements(message, xpathExpression.getExpression(), xpathExpression.getNamespaces(), null);
             if (elements == null || elements.size() < 1) {
                 log.info("ClientRequestWssIntegrity: No elements matched xpath expression \"" +
                          xpathExpression.getExpression() + "\".  " +
