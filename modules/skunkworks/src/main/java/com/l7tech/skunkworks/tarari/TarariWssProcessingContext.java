@@ -8,7 +8,6 @@ import com.ibm.xml.dsig.SignatureMethod;
 import com.l7tech.message.Message;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.security.xml.processor.MemoizedRsaSha1SignatureMethod;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.ElementCursor;
@@ -304,8 +303,7 @@ class TarariWssProcessingContext {
         protected Object initialValue() {
             try {
                 AlgorithmFactory af = new AlgorithmFactory(JceProvider.getAsymmetricJceProvider().getName());
-                SignatureMethod wrapped = af.getSignatureMethod(SignatureMethod.RSA,  null);
-                return new MemoizedRsaSha1SignatureMethod(wrapped);
+                return af.getSignatureMethod(SignatureMethod.RSA, null);
             } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException(e); // can't happen
             } catch (NoSuchProviderException e) {

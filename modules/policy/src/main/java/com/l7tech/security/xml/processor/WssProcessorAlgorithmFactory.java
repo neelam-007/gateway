@@ -1,20 +1,17 @@
 package com.l7tech.security.xml.processor;
 
-import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.ibm.xml.dsig.Canonicalizer;
 import com.ibm.xml.dsig.Transform;
-import com.ibm.xml.dsig.SignatureMethod;
 import com.ibm.xml.dsig.transform.FixedExclusiveC11r;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.security.xml.STRTransform;
+import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.l7tech.security.xml.AttachmentCompleteTransform;
 import com.l7tech.security.xml.AttachmentContentTransform;
-
+import com.l7tech.security.xml.STRTransform;
+import com.l7tech.util.SoapConstants;
 import org.w3c.dom.Node;
 
-import java.util.Map;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
+import java.util.Map;
 
 /**
  * An XSS4J AlgorithmFactory that adds some additonal features:
@@ -22,7 +19,6 @@ import java.security.NoSuchProviderException;
  * <li>Exclusive canonicalization (xml-exc-c14n) now supports a non-empty PrefixList attribute
  * <li>The XSLT, XPATH, and xmldsig-filter2 transforms are disallowed
  * <li>The STR-Transform is supported (if a lookup map is provided)
- * <li>RSA signature checking is cached using {@link com.l7tech.security.xml.processor.MemoizedRsaSha1SignatureMethod}.
  * </ul>
  *
  */
@@ -73,22 +69,4 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     public boolean isSawEnvelopedTransform() {
         return sawEnvelopedTransform;
     }
-
-    public SignatureMethod getSignatureMethod(String alg, Object param) throws NoSuchAlgorithmException, NoSuchProviderException {
-        final SignatureMethod sm = super.getSignatureMethod(alg, param);
-        if (SignatureMethod.RSA.equals(alg) && MemoizedRsaSha1SignatureMethod.isEnabled()) {
-            // Wrap with memoized version
-            return new MemoizedRsaSha1SignatureMethod(sm);
-        }
-        return sm;
-    }
-
-    public void releaseSignatureMethod(SignatureMethod sm) {
-        if (sm instanceof MemoizedRsaSha1SignatureMethod) {
-            MemoizedRsaSha1SignatureMethod msm = (MemoizedRsaSha1SignatureMethod)sm;
-            super.releaseSignatureMethod(msm.getDelegate());
-        } else
-            super.releaseSignatureMethod(sm);
-    }
-
 }
