@@ -172,8 +172,12 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable, Focus
             int keyCode = e.getKeyCode();
             if (keyCode == KeyEvent.VK_DELETE) {
                 if (!node.canDelete()) return;
-                if (node instanceof ServiceNode) {
+                if (node instanceof ServiceNodeAlias) {
+                    new DeleteServiceAliasAction((ServiceNodeAlias)node).actionPerformed(null);
+                } else if (node instanceof ServiceNode) {
                     new DeleteServiceAction((ServiceNode)node).actionPerformed(null);
+                } else if (node instanceof PolicyEntityNodeAlias) {
+                    new DeletePolicyAliasAction((PolicyEntityNodeAlias)node).actionPerformed(null);
                 } else if (node instanceof EntityWithPolicyNode) {
                     new DeletePolicyAction((PolicyEntityNode)node).actionPerformed(null);
                 } else if (node instanceof FolderNode) {
