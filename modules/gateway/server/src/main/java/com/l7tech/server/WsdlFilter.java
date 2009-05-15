@@ -74,7 +74,7 @@ public class WsdlFilter implements Filter {
             if(HttpConstants.METHOD_GET.equals(httpServletRequest.getMethod()) &&
                !isPassThrough(httpServletRequest.getRequestURI() )) {
                 String qs = httpServletRequest.getQueryString();
-                if(qs!=null && QUERYSTRING_WSDL.equalsIgnoreCase(qs)) {
+                if( qs!=null && (QUERYSTRING_WSDL.equalsIgnoreCase(qs) || qs.toLowerCase().startsWith(QUERYSTRING_WSDL_PLUS))) {
                     // Initialize processing context
                     String forwardUri = null;
                     try {
@@ -108,6 +108,7 @@ public class WsdlFilter implements Filter {
 
     private static final Logger logger = Logger.getLogger(WsdlFilter.class.getName());
     private static final String QUERYSTRING_WSDL = "wsdl";
+    private static final String QUERYSTRING_WSDL_PLUS = "wsdl&";
     public static final String PARAM_PASSTHROUGH_PREFIXES = "passthroughPrefixes";
     public static final String DEFAULT_PASSTHROUGH_PREFIXES = "/ssg/";
     private static final String PARAM_FORWARD_URI = "wsdl-forward-uri";
