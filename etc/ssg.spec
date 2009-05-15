@@ -28,11 +28,8 @@ rm -fr %{buildroot}
 %build
 
 %files
-# Root owned OS components
-
 # Main tree, owned by root
 %defattr(0644,root,root,0755)
-%dir /opt/SecureSpan
 %dir /opt/SecureSpan/Gateway
 
 # Group writable config files
@@ -114,13 +111,13 @@ else
 fi
 
 # Chown any files that have been left behind by a previous installation
-[ ! -d %{prefix}/config ] || chown -R layer7.layer7 %{prefix}/config
-[ ! -d %{prefix}/node/default/etc/conf ] || chown -R layer7.gateway %{prefix}/node/default/etc/conf
-[ ! -d %{prefix}/node/default/var ] || chown -R gateway.gateway %{prefix}/node/default/var
+[ ! -d "${RPM_INSTALL_PREFIX0}/config" ] || chown -R layer7.layer7 "${RPM_INSTALL_PREFIX0}/config"
+[ ! -d "${RPM_INSTALL_PREFIX0}/node/default/etc/conf" ] || chown -R layer7.gateway "${RPM_INSTALL_PREFIX0}/node/default/etc/conf"
+[ ! -d "${RPM_INSTALL_PREFIX0}/node/default/var" ] || chown -R gateway.gateway "${RPM_INSTALL_PREFIX0}/node/default/var"
 
 %post
 if [ -d "/ssg" ] ; then
-   sh %{prefix}/runtime/bin/upgrade.sh >> %{prefix}/config/upgrade.log 2>&1
+   sh "${RPM_INSTALL_PREFIX0}/runtime/bin/upgrade.sh" >> "${RPM_INSTALL_PREFIX0}/config/upgrade.log" 2>&1
 fi
 
 %preun
