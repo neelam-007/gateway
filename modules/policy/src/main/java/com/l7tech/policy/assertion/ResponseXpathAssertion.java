@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.annotation.ProcessesResponse;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.xpath.XpathExpression;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -73,7 +74,7 @@ public class ResponseXpathAssertion extends SimpleXpathAssertion implements Uses
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        List<String> used = Arrays.asList(super.getVariablesUsed());
+        List<String> used = new ArrayList<String>(Arrays.asList(super.getVariablesUsed()));
         if (xmlMsgSrc != null)
             used.add(xmlMsgSrc);
         return used.toArray(new String[used.size()]);
