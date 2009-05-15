@@ -5,6 +5,7 @@ import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.ResourceUtils;
 
 import javax.naming.ldap.LdapName;
 import javax.naming.NamingEnumeration;
@@ -250,18 +251,21 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
     private boolean isMemberOfGroupByOu(User user, String dn) throws NamingException {
         LdapIdentityProvider identityProvider = getIdentityProvider();
 
-        LdapName userDN = new LdapName(user.getId());
+        final LdapName userDN = new LdapName(user.getId());
         if(userDN.startsWith(new LdapName(dn))) {
             return true;
         }
 
-        SearchControls sc = new SearchControls();
+        final SearchControls sc = new SearchControls();
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
 
-        String filter = identityProvider.groupSearchFilterWithParam("*");
-        DirContext context = identityProvider.getBrowseContext();
-        NamingEnumeration answer = context.search(dn, filter, sc);
+        final String filter = identityProvider.groupSearchFilterWithParam("*");
+        DirContext context = null;
+        NamingEnumeration answer = null;
         try {
+            context = identityProvider.getBrowseContext();
+            answer = context.search(dn, filter, sc);
+
             while (answer.hasMore()) {
                 String entitydn;
                 SearchResult sr = (SearchResult)answer.next();
@@ -278,8 +282,10 @@ public class LdapGroupManagerImpl implements LdapGroupManager {
             logger.log(Level.FINE, "the search results exceeded the maximum. adding a " +
                                    "EntityType.MAXED_OUT_SEARCH_RESULT to the results",
                                    e);
+        } finally {
+            ResourceUtils.closeQuietly( answer );
+            ResourceUtils.closeQuietly( context );            
         }
-        answer.close();
 
         return false;
     }
