@@ -123,8 +123,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         embedded = new Embedded();
 
         // Create the thread pool
-        final int poolSize = serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY, 200);
-        executor = createExecutor( "executor", poolSize );
+        final int maxSize = serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY, 200);
+        final int coreSize = serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MIN_SPARE_THREADS, maxSize / 2);
+        executor = createExecutor( "executor", coreSize, maxSize );
         embedded.addExecutor(executor);
         try {
             executor.start();
@@ -305,16 +306,22 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     private StandardThreadExecutor createExecutor( final String name,
-                                                   final int size ) {
-        int poolSize = size;
-        if ( poolSize < 1 || poolSize > 100000 ) poolSize = 40;
+                                                   int coreSize,
+                                                   int maxSize)
+    {
+        if ( maxSize < 1 || maxSize > 100000 ) maxSize = 40;
+        if ( coreSize < 0 && coreSize > -1000 ) coreSize = maxSize / Math.abs(coreSize);
+        if ( coreSize < 1 )
+            coreSize = 1;
+        else if ( coreSize > maxSize )
+            coreSize = maxSize;
 
         StandardThreadExecutor executor = new StandardThreadExecutor();
         executor.setName(name);
         executor.setDaemon(true);
         executor.setMaxIdleTime( serverConfig.getIntProperty(ServerConfig.PARAM_IO_HTTP_POOL_MAX_IDLE_TIME, 60000) );
-        executor.setMaxThreads(poolSize);
-        executor.setMinSpareThreads(poolSize);
+        executor.setMaxThreads(maxSize);
+        executor.setMinSpareThreads(coreSize);
         executor.setNamePrefix("tomcat-exec-" + name + "-");
         return executor;
     }
@@ -842,7 +849,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         final String sizeStr = connector.getProperty( SsgConnector.PROP_THREAD_POOL_SIZE );
         if ( sizeStr != null ) {
             try {
-                connectorExecutor = createExecutor( name, Integer.parseInt(sizeStr) );
+                final int size = Integer.parseInt(sizeStr);
+                connectorExecutor = createExecutor( name, size, size );
                 connectorExecutor.start();
                 embedded.addExecutor( connectorExecutor );
             } catch ( NumberFormatException nfe ) {
