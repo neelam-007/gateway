@@ -29,7 +29,7 @@ public class RoleAssignmentTableModel  extends AbstractTableModel {
     private List<RoleAssignment> roleAssignments = new ArrayList<RoleAssignment>();
     private Map<RoleAssignment, IdentityHolder> roleAssignmentToIdentityHolder = new HashMap<RoleAssignment, IdentityHolder>();
     public final static String IDENTITY_PROVIDER = "Identity Provider";
-    public final static String USER_GROUPS = "User / Groups";
+    public final static String USER_GROUPS = "User / Group";
     
     private String columnNames [] = new String[]{IDENTITY_PROVIDER, USER_GROUPS};
     private static final Logger logger = Logger.getLogger(RoleAssignmentTableModel.class.getName());

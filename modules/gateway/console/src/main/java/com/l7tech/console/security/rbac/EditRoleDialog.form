@@ -212,7 +212,7 @@
               <splitpane position="right"/>
             </constraints>
             <properties/>
-            <border type="none" title="User Assignments"/>
+            <border type="none" title="Role Assignments"/>
             <children>
               <scrollpane id="3a8fd">
                 <constraints>
