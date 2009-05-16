@@ -1147,10 +1147,15 @@
                 <bean class="com.l7tech.server.util.ClusterNodeSsgConnectorActivationListener">
                     <constructor-arg ref="serverConfig"/>
                 </bean>
-                <bean class="com.l7tech.server.PcApiConnectorActivationListener"/>
+                <ref bean="pcApiConnectorListener"/>
             </set>
         </constructor-arg>
     </bean>
+    <!--
+      Top level bean since we want to get application events.
+    -->
+    <bean id="pcApiConnectorListener" class="com.l7tech.server.PcApiConnectorActivationListener"/>
+
 
     <bean id="policyCache" class="com.l7tech.server.policy.PolicyCacheImpl">
         <constructor-arg ref="transactionManager"/>

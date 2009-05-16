@@ -66,11 +66,14 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
 
         final ProcessController.HasApi api = processController.getNodeApi(node);
         try {
-            api.getApi(false).ping();
-            this.api = api;
-            outputDoneSignal.set(true); // We're live
-            logger.info(node.getName() + " started successfully");
-            return STARTED;
+            NodeApi nodeApi = api.getApi(false);
+            if ( nodeApi != null ) {
+                nodeApi.ping();
+                this.api = api;
+                outputDoneSignal.set(true); // We're live
+                logger.info(node.getName() + " started successfully");
+                return STARTED;
+            }
         } catch (Exception e) {
             if ( processController.isDisabledApiException(e) ) {
                 logger.info(node.getName() + " started successfully, but node control is disabled.");
@@ -93,13 +96,14 @@ class StartingNodeState extends ProcessController.SimpleNodeState implements Pro
             } else {
                 logger.log(Level.WARNING, node.getName() + " may still be starting, but API is throwing unexpected exceptions", e);
             }
-            return STARTING;
         }
+
+        return STARTING;
     }
 
     @Override
     public NodeApi getApi( final boolean fast ) {
-        return api.getApi( fast );
+        return api==null ?  null : api.getApi( fast );
     }
 
     @Override

@@ -107,41 +107,52 @@ public class ProcessController implements InitializingBean {
         HasApi api = state instanceof HasApi ? ((HasApi)state).getApiHaver() : null;
         if (api == null) api = getNodeApi(state.node);
 
+        boolean kill = false;
+        Exception killException = null;
         try {
-            api.getApi(false).shutdown();
-            nodeStates.put(nodeName, new StoppingNodeState(state.node, process, api, timeout));
+            NodeApi nodeApi = api.getApi(false);
+            if ( nodeApi != null ) {
+                nodeApi.shutdown();
+                nodeStates.put(nodeName, new StoppingNodeState(state.node, process, api, timeout));
+            } else {
+                logger.warning("Unable to contact node, killing process.");
+                kill = true;
+            }
         } catch (Exception e) {
+            kill = true;
+            killException = e;
+        }
+
+        if ( kill ) {
             nodeStates.put(nodeName, new StoppedNodeState(state.node, api, DEFAULT_STOPPED_TIMEOUT));
             boolean dead = false;
+            String action = "killing process";
             if ( process != null ) {
                 try {
                     process.exitValue();
                     // if we get here it is dead
                     dead = true;
-                    if ( isNetworkException(e) ) {
-                        logger.warning("Unable to contact node; assuming it crashed.");
-                    } else {
-                        logger.log(Level.WARNING, "Unable to contact node, but not for any expected reason. Assuming it's crashed.", e);
-                    }
+                    action = "Assuming it's crashed";
                 } catch (IllegalThreadStateException itse) {
                     // is alive, so will be killed below
                 }
             }
 
-            if ( !dead ) {
-                // TODO do an OS shutdown and put into shutting down state ...
-                if ( isNetworkException(e) ) {
-                    logger.warning("Unable to contact node; killing process.");
+            if ( killException != null ) {
+                if ( isNetworkException(killException) ) {
+                    logger.warning("Unable to contact node; "+action+".");
                 } else {
-                    logger.log(Level.WARNING, "Unable to contact node, but not for any expected reason.  killing process.", e);
+                    logger.log(Level.WARNING, "Unable to contact node, but not for any expected reason. "+action+".", killException);
                 }
+            }
+
+            if ( !dead ) {
                 osKill(state.node);
             }
         }
     }
 
     Process spawnProcess(PCNodeConfig node) throws IOException {
-        // TODO Should the OS helper be doing this (once we have one)?
         ProcessBuilder builder = getProcessBuilder(node);
         if (builder == null) throw new IllegalStateException("Don't know how to start " + node.getName());
         return builder.start();
@@ -297,7 +308,7 @@ public class ProcessController implements InitializingBean {
         public RunningNodeState( PCNodeConfig node, Process proc, HasApi hasApi ) {
             super(node, RUNNING);
             this.process = proc;
-            this.hasApi = hasApi;
+            this.hasApi = hasApi == null ? null : hasApi.getApiHaver();
         }
 
         @Override
@@ -307,7 +318,7 @@ public class ProcessController implements InitializingBean {
 
         @Override
         public NodeApi getApi( final boolean fastTimeout ) {
-            return hasApi.getApi( fastTimeout );
+            return hasApi==null ? null : hasApi.getApi( fastTimeout );
         }
 
         @Override
@@ -326,7 +337,7 @@ public class ProcessController implements InitializingBean {
         public StoppingNodeState(PCNodeConfig node, Process proc, HasApi hasApi, int timeout) {
             super(node, STOPPING);
             this.process = proc;
-            this.hasApi = hasApi;
+            this.hasApi = hasApi == null ? null : hasApi.getApiHaver();
             this.timeout = timeout;
         }
 
@@ -337,7 +348,7 @@ public class ProcessController implements InitializingBean {
 
         @Override
         public NodeApi getApi( boolean fastTimeout ) {
-            return hasApi.getApi( fastTimeout );
+            return hasApi==null ? null : hasApi.getApi( fastTimeout );
         }
 
         @Override
@@ -346,17 +357,23 @@ public class ProcessController implements InitializingBean {
         }
     }
 
-    private class StoppedNodeState extends NodeState {
+    private class StoppedNodeState extends NodeState implements HasApi {
         private final HasApi hasApi;
         private final int timeout;
 
         public StoppedNodeState(PCNodeConfig node, HasApi hasApi, int timeout) {
             super(node, STOPPED);
-            this.hasApi = hasApi;
+            this.hasApi = hasApi == null ? null : hasApi.getApiHaver();
             this.timeout = timeout;
         }
 
-        public HasApi getHasApi() {
+        @Override
+        public NodeApi getApi(boolean fastTimeout) {
+            return hasApi==null ? null : hasApi.getApi(fastTimeout);  
+        }
+
+        @Override
+        public HasApi getApiHaver() {
             return hasApi;
         }
     }
@@ -364,8 +381,6 @@ public class ProcessController implements InitializingBean {
     synchronized void visitNodes() {
         final Collection<NodeConfig> nodeConfigs = configService.getHost().getNodes().values();
         if (nodeConfigs.isEmpty()) return;
-
-        // TODO when do we notice if a node has been deleted or disabled?
 
         for (NodeConfig _node : nodeConfigs) {
             final PCNodeConfig node = (PCNodeConfig)_node;
@@ -395,7 +410,6 @@ public class ProcessController implements InitializingBean {
                     handleUnknownState(node);
                     break;
                 case STOPPING:
-                    // TODO wait for shutdown of the process... Kill the process if it hasn't died after the timeout
                     handleStoppingState(node, (StoppingNodeState)state);
                     break;
                 case STOPPED:
@@ -415,22 +429,22 @@ public class ProcessController implements InitializingBean {
             try {
                 final int status = state.process.exitValue();
                 logger.info(node.getName() + " exited with status " + status);
-                nodeStates.put(node.getName(), new StoppedNodeState(node, state.hasApi, DEFAULT_STOPPED_TIMEOUT));
+                nodeStates.put(node.getName(), new StoppedNodeState(node, state, DEFAULT_STOPPED_TIMEOUT));
             } catch (IllegalThreadStateException e) {
                 if (timedOut) {
                     logger.warning(node.getName() + " has taken " + howLong + "ms to shutdown; killing");
                     osKill(node);
-                    nodeStates.put(node.getName(), new StoppedNodeState(node, state.hasApi, DEFAULT_STOPPED_TIMEOUT));
+                    nodeStates.put(node.getName(), new StoppedNodeState(node, state, DEFAULT_STOPPED_TIMEOUT));
                 } else {
                     logger.fine(node.getName() + " still hasn't stopped after " + howLong + "ms; will wait up to " + state.timeout);
                 }
             }
-        } else if (state.hasApi != null) {
+        } else if (state.getApi(false) != null) {
             try {
-                state.hasApi.getApi(false).ping();
+                state.getApi(false).ping();
             } catch (Exception e) {
                 if (ExceptionUtils.causedBy(e, ConnectException.class)) {
-                    nodeStates.put(node.getName(), new StoppedNodeState(node, state.hasApi, DEFAULT_STOPPED_TIMEOUT));
+                    nodeStates.put(node.getName(), new StoppedNodeState(node, state, DEFAULT_STOPPED_TIMEOUT));
                     logger.info(node.getName() + " stopped.");
                 } else {
                     logger.log(Level.FINE, "Error when checking node "+node.getName()+" status during shutdown '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
@@ -438,7 +452,7 @@ public class ProcessController implements InitializingBean {
             }
         } else if (timedOut) {
             osKill(node);
-            nodeStates.put(node.getName(), new StoppedNodeState(node, state.hasApi, DEFAULT_STOPPED_TIMEOUT));
+            nodeStates.put(node.getName(), new StoppedNodeState(node, state, DEFAULT_STOPPED_TIMEOUT));
         }
     }
 
@@ -447,11 +461,11 @@ public class ProcessController implements InitializingBean {
         final boolean timedOut = (howLong > state.timeout);
 
         if ( timedOut ) {
-            if (state.hasApi != null) {
+            if (state.getApi(false) != null ) {
                 try {
-                    state.hasApi.getApi(false).ping();
+                    state.getApi(false).ping();
                     logger.info(node.getName() + " start detected.");
-                    nodeStates.put(node.getName(), new RunningNodeState(node, null, state.hasApi));
+                    nodeStates.put(node.getName(), new RunningNodeState(node, null, state));
                 } catch (Exception e) {
                     if ( ExceptionUtils.causedBy(e, ConnectException.class) ) {
                         logger.fine("Node " + node.getName() + " is not running.");
@@ -488,7 +502,7 @@ public class ProcessController implements InitializingBean {
         return ssgPwd;
     }
 
-    private void handleRunningState(PCNodeConfig node, RunningNodeState state) {
+    private void handleRunningState( final PCNodeConfig node, final RunningNodeState state ) {
         final long now = System.currentTimeMillis();
         boolean running = false;
         if (state.process != null) {
@@ -503,8 +517,11 @@ public class ProcessController implements InitializingBean {
         }
 
         try {
-            state.hasApi.getApi(false).ping();
-            state.sinceWhen = now;
+            NodeApi nodeApi = state.getApi(false);
+            if ( nodeApi != null ) {
+                nodeApi.ping();
+                state.sinceWhen = now;
+            }
         } catch (Exception e) {
             final long howLong = now - state.sinceWhen;
             if ( KILL_RUNNING_NODE || !running ) {
@@ -541,16 +558,24 @@ public class ProcessController implements InitializingBean {
             }
 
             // Timed out!
-            logger.log(Level.WARNING, LOG_TIMEOUT, new Object[] { node.getName(), NODE_START_TIME_MAX });
-            osKill(node);
+            final ProcessController.HasApi api = getNodeApi(node);
+            if ( api != null && api.getApi(false) != null ) {
+                // We are expecting the API to work, so kill and restart
+                logger.log(Level.WARNING, LOG_TIMEOUT, new Object[] { node.getName(), NODE_START_TIME_MAX });
+                osKill(node);
 
-            final Pair<byte[], byte[]> byteses = state.finishOutput();
+                final Pair<byte[], byte[]> byteses = state.finishOutput();
 
-            logger.warning(node.getName() + " wouldn't start after " + howLong + "ms; copying its output:");
-            spew("STDERR", byteses.left);
-            spew("STDOUT", byteses.right);
+                logger.warning(node.getName() + " wouldn't start after " + howLong + "ms; copying its output:");
+                spew("STDERR", byteses.left);
+                spew("STDOUT", byteses.right);
 
-            nodeStates.put(node.getName(), new SimpleNodeState(node, WONT_START));
+                nodeStates.put(node.getName(), new SimpleNodeState(node, WONT_START));
+            } else {
+                // We aren't expecting the API to work, so assume node is started
+                logger.log(Level.INFO, "{0} still hasn''t started after {1}ms.  Assuming running.", new Object[] { node.getName(), NODE_START_TIME_MAX });
+                nodeStates.put(node.getName(), new RunningNodeState(node, state.getProcess(), api));
+            }
         } else if (status instanceof StartingNodeState.Died) {
             final StartingNodeState.Died died = (StartingNodeState.Died)status;
             if ( died.exitValue == 33 ) {
@@ -572,16 +597,25 @@ public class ProcessController implements InitializingBean {
     }
 
     private void handleUnknownState(PCNodeConfig node) {
+        boolean startIfEnabled = false;
         final HasApi api = getNodeApi(node);
         try {
-            api.getApi(false).ping();
-            if (daemon && !node.isEnabled()) {
-                logger.info("Stopping disabled node " + node.getName());
-                api.getApi(false).shutdown();
-                nodeStates.put(node.getName(), new StoppingNodeState(node, null, api, DEFAULT_STOP_TIMEOUT));
+            NodeApi nodeApi = api.getApi(false);
+            if ( nodeApi != null ) {
+                nodeApi.ping();
+
+                if (daemon && !node.isEnabled()) {
+                    logger.info("Stopping disabled node " + node.getName());
+                    nodeApi.shutdown();
+                    nodeStates.put(node.getName(), new StoppingNodeState(node, null, api, DEFAULT_STOP_TIMEOUT));
+                } else {
+                    logger.info(node.getName() + " is already running");
+                    nodeStates.put(node.getName(), new RunningNodeState(node, null, api));
+                }
             } else {
-                logger.info(node.getName() + " is already running");
-                nodeStates.put(node.getName(), new RunningNodeState(node, null, api));
+                logger.info("Unable to determine node state for '" + node.getName() + "', will (re)start.");
+                osKill( node );
+                startIfEnabled = true;
             }
         } catch (Exception e) {
             if (daemon && e instanceof SOAPFaultException) {
@@ -597,6 +631,10 @@ public class ProcessController implements InitializingBean {
 
             // TODO what about other kinds of node-is-still-running? We want to avoid spinning helplessly on stuff like "address already in use".
             logger.log(Level.FINE, node.getName() + " isn't running", e);
+            startIfEnabled = true;
+        }
+
+        if ( startIfEnabled ) {
             if ( node.isEnabled() ) {
                 try {
                     StartingNodeState startingState = new StartingNodeState(this, node);
@@ -638,7 +676,7 @@ public class ProcessController implements InitializingBean {
                         cmds.add("-J-Dcom.l7tech.server.sca.enable=true");
                     }
 
-                    for (HostFeature hf : node.getHost().getFeatures()) {  // TODO needs more scala.Seq#filter
+                    for (HostFeature hf : node.getHost().getFeatures()) {
                         collectArgs(cmds, hf);
                     }
 
@@ -784,12 +822,17 @@ public class ProcessController implements InitializingBean {
         String autoUrl = null;
         final File portfile = new File(new File(getNodeDirectory(name), "var"), "processControllerPort");
         if (portfile.exists()) {
-            logger.info("Getting API port from " + portfile.getAbsolutePath());
-            try {
-                int port = Integer.valueOf(new String(IOUtils.slurpFile(portfile), "UTF-8"));
-                autoUrl = String.format("https://localhost:%d/ssg/services/processControllerNodeApi", port);
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Couldn't read API port file; will try default port", e);
+            if ( portfile.length()==0 ) {
+                logger.info("Empty API port from '" + portfile.getAbsolutePath() + "' API is disabled.");
+                return null;
+            } else {
+                logger.info("Getting API port from " + portfile.getAbsolutePath());
+                try {
+                    int port = Integer.valueOf(new String(IOUtils.slurpFile(portfile), "UTF-8"));
+                    autoUrl = String.format("https://localhost:%d/ssg/services/processControllerNodeApi", port);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "Couldn't read API port file; will try default port", e);
+                }
             }
         } else {
             logger.log(Level.INFO, "{0} does not exist yet, will try default port", portfile.getAbsolutePath());
