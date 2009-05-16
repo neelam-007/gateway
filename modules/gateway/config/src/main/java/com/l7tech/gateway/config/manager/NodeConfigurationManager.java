@@ -325,8 +325,22 @@ public class NodeConfigurationManager {
         }
 
         if ( dbconfig.getDatabaseAdminUsername() != null && dbconfig.getDatabaseAdminPassword() != null) {
+            DatabaseConfig testConfig = dbconfig;
             try {
-                ResourceUtils.closeQuietly( dbActions.getConnection( dbconfig, true ) );
+                // If the host is localhost then use that when connecting
+                if ( NetworkInterface.getByInetAddress(InetAddress.getByName(dbconfig.getHost())) != null ) {
+                    DatabaseConfig localConfig = new DatabaseConfig(dbconfig);
+                    localConfig.setHost("localhost");
+                    testConfig = localConfig;
+                }
+            } catch ( UnknownHostException uhe ) {
+                logger.warning("Could not resolve host '"+dbconfig.getHost()+"' when testing database connection.");
+            } catch (SocketException e) {
+                logger.warning("Error checking for localhost when testing database connection for '"+dbconfig.getHost()+"', error was '"+ExceptionUtils.getMessage(e)+"'.");
+            }
+
+            try {
+                ResourceUtils.closeQuietly( dbActions.getConnection( testConfig, true ) );
             } catch ( Exception e ) {
                 ok = false;
             }

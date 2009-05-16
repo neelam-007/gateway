@@ -19,6 +19,8 @@ import java.util.*;
 import java.util.logging.Level;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 
 /**
  * ConfigurationBeanProvider for process controller / node configuration.
@@ -181,11 +183,17 @@ public class NodeDeleteConfigurationBeanProvider extends NodeConfigurationBeanPr
             InetAddress dbAddr = InetAddress.getByName( dbHost );
             if ( dbAddr.isLoopbackAddress() ) {
                 nodeHostsDb = true;
+            } else if ( nodeAddr.isLoopbackAddress() ) {
+                if ( NetworkInterface.getByInetAddress(dbAddr) != null ) {
+                    nodeHostsDb = true;
+                }
             } else if ( nodeAddr.getCanonicalHostName().equals(dbAddr.getCanonicalHostName()) ) {
                 nodeHostsDb = true;
             }
         } catch ( UnknownHostException e ) {
             logger.warning( "Unknown host when checking if node hosts primary database '"+ExceptionUtils.getMessage(e)+"'." );
+        } catch ( SocketException e ) {
+            logger.log( Level.WARNING, "Error when checking if node hosts primary database '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e) );
         }
 
         return nodeHostsDb;
