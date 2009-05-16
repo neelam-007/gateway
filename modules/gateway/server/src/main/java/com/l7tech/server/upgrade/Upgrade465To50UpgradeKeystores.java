@@ -195,11 +195,11 @@ public class Upgrade465To50UpgradeKeystores implements UpgradeTask {
                     CertUtils.asX509CertificateArray(caKeyStore.getCertificateChain(keystoreInfo.caAlias)),
                     (PrivateKey)caKeyStore.getKey(keystoreInfo.caAlias, keystoreInfo.caPassphrase ) );
 
-            if ( !keyStore.storePrivateKeyEntry( sslKey, false ).get() ) {
+            if ( !keyStore.storePrivateKeyEntry(null, sslKey, false ).get() ) {
                 throw new FatalUpgradeException("Unable to import SSL key.");
             }
 
-            if ( !keyStore.storePrivateKeyEntry( caKey, false ).get() ){
+            if ( !keyStore.storePrivateKeyEntry(null, caKey, false ).get() ){
                 throw new FatalUpgradeException("Unable to import CA key.");
             }
 

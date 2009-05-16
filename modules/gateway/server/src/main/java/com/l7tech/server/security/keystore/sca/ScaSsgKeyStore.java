@@ -161,17 +161,8 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
         return new char[0];  // unused by PKCS#11
     }
 
-    /**
-     * Load the keystore from the database, mutate it, and save it back, all atomically.
-     *
-     * @param mutator  a Runnable that will mutate the current {@link #keystore}, which will be guaranteed
-     *                 to be up-to-date and non-null when the runnable is invoked.
-     * @throws KeyStoreException if the runnable throws a RuntimeException or if any other problem occurs during
-     *                           the process
-     * @return the value returned by the mutator
-     */
     @Override
-    protected <OUT> Future<OUT> mutateKeystore(final Callable<OUT> mutator) throws KeyStoreException {
+    protected <OUT> Future<OUT> mutateKeystore(final Runnable transactionCallback, final Callable<OUT> mutator) throws KeyStoreException {
         return submitMutation(AdminInfo.find(false).wrapCallable(new Callable<OUT>() {
             public OUT call() throws Exception {
 
@@ -180,6 +171,8 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
                     synchronized (ScaSsgKeyStore.this) {
                         KeystoreFile updated = kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
                             public byte[] call(byte[] bytes) {
+                                if (transactionCallback != null)
+                                    transactionCallback.run();
                                 try {
                                     keystore = bytesToKeyStore(bytes);
                                     lastLoaded = System.currentTimeMillis();

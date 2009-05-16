@@ -7,29 +7,36 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
-import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
+import com.l7tech.server.event.AdminInfo;
+import com.l7tech.server.event.EntityChangeSet;
+import com.l7tech.server.event.admin.Created;
+import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.KeyExportedEvent;
+import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.identity.cert.RevocationCheckPolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
+import com.l7tech.util.CallableRunnable;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SslCertificateSniffer;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 
@@ -40,7 +47,10 @@ import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -309,7 +319,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             if (isKeyActive(store, keyAlias))
                 throw new DeleteException("Key '" + keyAlias + "' is in use by the connector for current admin connection");
 
-            Future<Boolean> result = store.deletePrivateKeyEntry(keyAlias);
+            Future<Boolean> result = store.deletePrivateKeyEntry(auditAfterDelete(store, keyAlias), keyAlias);
             // Force it to be synchronous (Bug #3852)
             result.get();
 
@@ -348,7 +358,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         if (expiryDays < 1)
             throw new IllegalArgumentException("expiryDays must be positive");
 
-        return registerJob(keystore.generateKeyPair(alias, new X500Principal(dn), keybits, expiryDays, makeCaCert), X509Certificate.class);
+        return registerJob(keystore.generateKeyPair(auditAfterCreate(keystore, alias, "generated"),
+                alias, new X500Principal(dn), keybits, expiryDays, makeCaCert), X509Certificate.class);
     }
 
     public byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException {
@@ -448,7 +459,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             throw new UpdateException("error: keystore ID " + keystoreId + " is read-only");
 
         try {
-            Future<Boolean> future = keystore.replaceCertificateChain(alias, safeChain);
+            Future<Boolean> future = keystore.replaceCertificateChain(auditAfterUpdate(keystore, alias, "certificateChain", "replaced"), alias, safeChain);
             // Force it to be synchronous (Bug #3852)
             future.get();
         } catch (Exception e) {
@@ -492,7 +503,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             });
             SsgKeyEntry entry = new SsgKeyEntry(keystoreId, alias, safeChain, rsaPrivateKey);
 
-            Future<Boolean> result = keystore.storePrivateKeyEntry(entry, false);
+            Future<Boolean> result = keystore.storePrivateKeyEntry(auditAfterCreate(keystore, alias, "imported"), entry, false);
             // Force it to be synchronous (Bug #3924)
             result.get();
         } catch (NoSuchAlgorithmException e) {
@@ -547,6 +558,28 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         X509Certificate cert = entry.getCertificate();
         if (cert == null) return null;
         return cert.getSubjectDN().getName();
+    }
+
+    private Runnable auditAfterCreate(SsgKeyStore keystore, String alias, String note) {
+        return publisher(new Created<SsgKeyEntry>(SsgKeyEntry.createDummyEntityForAuditing(keystore.getOid(), alias), note));
+    }
+
+    private Runnable auditAfterUpdate(SsgKeyStore keystore, String alias, String property, String note) {
+        EntityChangeSet changeset = new EntityChangeSet(new String[] {property}, new Object[] {new Object()}, new Object[] {new Object()});
+        return publisher(new Updated<SsgKeyEntry>(SsgKeyEntry.createDummyEntityForAuditing(keystore.getOid(), alias), changeset, note));
+    }
+
+    private Runnable auditAfterDelete(SsgKeyStore keystore, String alias) {
+        return publisher(new Deleted<SsgKeyEntry>(SsgKeyEntry.createDummyEntityForAuditing(keystore.getOid(), alias)));
+    }
+
+    private Runnable publisher(final ApplicationEvent event) {
+        return new CallableRunnable<Object>(AdminInfo.find(true).wrapCallable(new Callable<Object>() {
+            public Object call() throws Exception {
+                applicationEventPublisher.publishEvent(event);
+                return null;
+            }
+        }));
     }
 
     private TrustedCertManager getManager() {

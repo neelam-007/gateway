@@ -1,6 +1,5 @@
 package com.l7tech.server.security.keystore.software;
 
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.event.AdminInfo;
@@ -8,8 +7,10 @@ import com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore;
 import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.KeystoreFileManager;
 import com.l7tech.server.security.keystore.SsgKeyStore;
+import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -144,7 +145,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
         }
     }
 
-    protected <OUT> Future<OUT> mutateKeystore(final Callable<OUT> mutator) throws KeyStoreException {
+    protected <OUT> Future<OUT> mutateKeystore(final Runnable transactionCallback, final Callable<OUT> mutator) throws KeyStoreException {
         return submitMutation(AdminInfo.find(false).wrapCallable(new Callable<OUT>() {
             public OUT call() throws Exception {
                 final Object[] out = new Object[] { null };
@@ -153,6 +154,9 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
                         KeystoreFile updated = kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
                             public byte[] call(byte[] bytes) {
                                 try {
+                                    if (transactionCallback != null)
+                                        transactionCallback.run();
+
                                     cachedKeystore = bytesToKeyStore(bytes);
                                     lastLoaded = System.currentTimeMillis();
                                     out[0] = mutator.call();

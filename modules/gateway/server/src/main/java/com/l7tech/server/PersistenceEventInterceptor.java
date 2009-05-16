@@ -96,7 +96,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
 
     private AdminEvent setsys(Object entity, AdminEvent event) {
         if (AuditContextUtils.isSystem() || noAuditClassNames.contains(entity.getClass().getName())) {
-            event.setSystem(true);
+            event.setAuditIgnore(true);
         }
         return event;
     }

@@ -16,6 +16,7 @@ import com.l7tech.util.Pair;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.net.ssl.KeyManager;
@@ -141,7 +142,7 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     private void generateKeyPair(SsgKeyStore sks, String alias) throws IOException {
         X500Principal dn = findDefaultSslKeyDn();
         try {
-            Future<X509Certificate> job = sks.generateKeyPair(alias, dn, 1024, 365 * 10, false);
+            Future<X509Certificate> job = sks.generateKeyPair(null, alias, dn, 1024, 365 * 10, false);
             job.get();
         } catch (GeneralSecurityException e) {
             throw new IOException("Unable to create initial default SSL key: " + ExceptionUtils.getMessage(e), e);

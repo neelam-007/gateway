@@ -41,6 +41,31 @@ public class SsgKeyEntry extends SignerInfo implements NamedEntity, Serializable
     }
 
     /**
+     * Create an SsgKeyEntry with just a keystore ID and alias, for auditing purposes.
+     *
+     * @param keystoreId        ID of the keystore to which this entry belongs
+     * @param alias  the alias for this SsgKeyEntry.  Required.
+     */
+    private SsgKeyEntry(long keystoreId, String alias) {
+        super(null, null);
+        if (alias == null)
+            throw new IllegalArgumentException("alias is required for auditing purposes");
+        this.keystoreId = keystoreId;
+        this.alias = alias;
+    }
+
+    /**
+     * Create a key entry to serve as a dummy entity for admin auditing purposes.
+     *
+     * @param keystoreId        ID of the keystore to which this entry belongs
+     * @param alias  the alias for this SsgKeyEntry.  Required.
+     * @return a new KeyEntry.  never null.
+     */
+    public static SsgKeyEntry createDummyEntityForAuditing(long keystoreId, String alias) {
+        return new SsgKeyEntry(keystoreId, alias);
+    }
+
+    /**
      * @return the ID of this entry, or null if it's not yet assigned.
      *         This ID is the keystoreId converted to a string, followed by a colon, followed by the alias.
      */

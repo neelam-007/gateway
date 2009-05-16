@@ -170,7 +170,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         return this;
     }
 
-    public synchronized Future<Boolean> storePrivateKeyEntry(final SsgKeyEntry entry, final boolean overwriteExisting) throws KeyStoreException {
+    public synchronized Future<Boolean> storePrivateKeyEntry(Runnable transactionCallback, final SsgKeyEntry entry, final boolean overwriteExisting) throws KeyStoreException {
         if (entry == null) throw new NullPointerException("entry must not be null");
         if (entry.getAlias() == null) throw new NullPointerException("entry's alias must not be null");
         if (entry.getAlias().length() < 1) throw new IllegalArgumentException("entry's alias must not be empty");
@@ -182,7 +182,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             throw new IllegalArgumentException("entry's private key must be present", e);
         }
 
-        return mutateKeystore(new Callable<Boolean>() {
+        return mutateKeystore(transactionCallback, new Callable<Boolean>() {
             public Boolean call() throws KeyStoreException {
                 storePrivateKeyEntryImpl(entry, overwriteExisting);
                 return Boolean.TRUE;
@@ -190,8 +190,8 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
-    public synchronized Future<Boolean> deletePrivateKeyEntry(final String keyAlias) throws KeyStoreException {
-        return mutateKeystore(new Callable<Boolean>() {
+    public synchronized Future<Boolean> deletePrivateKeyEntry(Runnable transactionCallback, final String keyAlias) throws KeyStoreException {
+        return mutateKeystore(transactionCallback, new Callable<Boolean>() {
             public Boolean call() throws KeyStoreException {
                 keyStore().deleteEntry(keyAlias);
                 return Boolean.TRUE;
@@ -199,10 +199,10 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
-    public synchronized Future<X509Certificate> generateKeyPair(final String alias, final X500Principal dn, final int keybits, final int expiryDays, final boolean makeCaCert)
+    public synchronized Future<X509Certificate> generateKeyPair(Runnable transactionCallback, final String alias, final X500Principal dn, final int keybits, final int expiryDays, final boolean makeCaCert)
             throws GeneralSecurityException
     {
-        return mutateKeystore(new Callable<X509Certificate>() {
+        return mutateKeystore(transactionCallback, new Callable<X509Certificate>() {
             public X509Certificate call() throws GeneralSecurityException, DuplicateAliasException {
                 KeyStore keystore = keyStore();
                 if (keystore.containsAlias(alias))
@@ -219,10 +219,10 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
-    public synchronized Future<Boolean> replaceCertificateChain(final String alias, final X509Certificate[] chain) throws InvalidKeyException, KeyStoreException {
+    public synchronized Future<Boolean> replaceCertificateChain(Runnable transactionCallback, final String alias, final X509Certificate[] chain) throws InvalidKeyException, KeyStoreException {
         if (chain == null || chain.length < 1 || chain[0] == null)
             throw new IllegalArgumentException("Cert chain must contain at least one cert.");
-        return mutateKeystore(new Callable<Boolean>() {
+        return mutateKeystore(transactionCallback, new Callable<Boolean>() {
             public Boolean call() throws GeneralSecurityException, AliasNotFoundException {
                 KeyStore keystore = keyStore();
                 if (!keystore.isKeyEntry(alias))
@@ -322,11 +322,12 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
      * will not necessarily occur before this call returns -- it may be scheduled for later execution.  The returned
      * Future will show Done when the mutation eventually completes.
      *
+     * @param transactionCallback Optional callback to invoke inside the transaction, or null.
+     *                            Can be used for more detailed auditing.
      * @param mutator  a Runnable that will mutate the current keystore, which will be guaranteed
-     *                 to be up-to-date and non-null when the runnable is invoked.
-     * @throws java.security.KeyStoreException if the runnable throws a RuntimeException or if any other problem occurs during
+     *                 to be up-to-date and non-null when the runnable is invoked. @throws java.security.KeyStoreException if the runnable throws a RuntimeException or if any other problem occurs during
      *                           the process
      * @return the value returned by the mutator
      */
-    protected abstract <OUT> Future<OUT> mutateKeystore(Callable<OUT> mutator) throws KeyStoreException;
+    protected abstract <OUT> Future<OUT> mutateKeystore(Runnable transactionCallback, Callable<OUT> mutator) throws KeyStoreException;
 }

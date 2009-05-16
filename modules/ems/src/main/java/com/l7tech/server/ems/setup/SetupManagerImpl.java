@@ -122,7 +122,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
             String alias = findUnusedAlias();
             SsgKeyStore sks = findFirstMutableKeystore();
             SsgKeyEntry entry = new SsgKeyEntry( sks.getOid(), alias, certificateChain, key );
-            sks.storePrivateKeyEntry( entry, false );
+            sks.storePrivateKeyEntry(null, entry, false );
             return alias;
         } catch ( KeyStoreException kse ) {
             throw new SetupException( "Error during keystore configuration.", kse );
@@ -432,7 +432,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
                                  final RsaKeySize rsaKeySize) throws IOException {
         X500Principal dn = new X500Principal("cn=" + hostname);
         try {
-            Future<X509Certificate> job = sks.generateKeyPair(alias, dn, rsaKeySize.getKeySize(), 365 * 10, false);
+            Future<X509Certificate> job = sks.generateKeyPair(null, alias, dn, rsaKeySize.getKeySize(), 365 * 10, false);
             job.get();
         } catch (GeneralSecurityException e) {
             throw new IOException("Unable to create initial default SSL key: " + ExceptionUtils.getMessage(e), e);
@@ -528,7 +528,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
                         long keystoreId = entry.getKeystoreId();
                         SsgKeyFinder finder = keyStoreManager.findByPrimaryKey( keystoreId );
                         if ( finder.isMutable() ) {
-                            if ( finder.getKeyStore().deletePrivateKeyEntry( currentAlias ).get() ) {
+                            if ( finder.getKeyStore().deletePrivateKeyEntry(null, currentAlias ).get() ) {
                                 logger.config("Deleted old private key entry for alias '"+currentAlias+"'.");
                             } else {
                                 logger.config("Deletion of old private key entry for alias '"+currentAlias+"' failed.");

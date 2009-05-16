@@ -17,7 +17,6 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public abstract class AdminEvent extends ApplicationEvent {
-    private boolean system;
     private boolean auditIgnore;
 
     public AdminEvent(Object source) {
@@ -40,23 +39,6 @@ public abstract class AdminEvent extends ApplicationEvent {
     protected String note;
 
     /**
-     * Set this as a "system" event.  Events flagged as system events do not get audited.
-     * The PersistenceEventInterceptor sets this flag on certain events to suppress excess auditing.
-     *
-     * @param system true if this event should not result in an audit record.
-     */
-    public void setSystem(boolean system) {
-        this.system = system;
-    }
-
-    /**
-     * @return true if the event should nto result in an audit record.
-     */
-    public boolean isSystem() {
-        return system;
-    }
-
-    /**
      * @return true if the audit listener should ignore this event.
      */
     public boolean isAuditIgnore() {
@@ -64,6 +46,9 @@ public abstract class AdminEvent extends ApplicationEvent {
     }
 
     /**
+     * Set this as a "system" event.  Events flagged as system events do not get audited.
+     * The PersistenceEventInterceptor sets this flag on certain events to suppress excess auditing.
+     *
      * @param auditIgnore  true if the audit listener should ignore this event.
      */
     public void setAuditIgnore(boolean auditIgnore) {
