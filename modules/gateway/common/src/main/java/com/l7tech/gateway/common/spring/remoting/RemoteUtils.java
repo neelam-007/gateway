@@ -48,13 +48,15 @@ public class RemoteUtils {
      */
     public static <OUT> OUT callWithConnectionInfo(String host, HttpServletRequest request, Callable<OUT> callable) throws Exception {
         if (host == null && request != null) host = request.getRemoteAddr();
+        String oldHost = clientHost.get();
+        HttpServletRequest oldRequest = servletRequest.get();
         clientHost.set(host);
         servletRequest.set(request);
         try {
             return callable.call();
         } finally {
-            clientHost.set(null);
-            servletRequest.set(null);
+            clientHost.set(oldHost);
+            servletRequest.set(oldRequest);
         }
     }
 
