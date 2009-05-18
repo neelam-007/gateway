@@ -33,7 +33,14 @@ Set Up the SSG Administrative HTTPS Listener
 At any time type "quit" to quit.
 Press "&lt;" to go to the previous step.
 
-This step lets you create the administrative listener.</prompt>
+This step lets you configure the administrative listener.
+
+Configuration of the administrative listener is optional. If you choose
+not to configure the administrative listener, then the following
+defaults will be used:
+
+ - Administrative Listener IP Address : * (all)
+ - Administrative Listener Port       : 8443</prompt>
     </optionGroup>
 
     <!--
