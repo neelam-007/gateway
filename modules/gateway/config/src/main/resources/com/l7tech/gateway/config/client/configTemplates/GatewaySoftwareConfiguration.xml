@@ -22,7 +22,7 @@ Set Up the SSG Java VM
 At any time type "quit" to quit.
 Press "&lt;" to go to the previous step.
 
-This step lets you create or set up a connection to the SSG database.</prompt>
+This step lets you configure options for the Java Virtual Machine.</prompt>
     </optionGroup>
     <optionGroup id="admin-listener" required="false">
         <description>Administrative HTTPS Listener</description>
