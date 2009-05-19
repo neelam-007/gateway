@@ -169,7 +169,13 @@ public class AddRequestSwAAssertionAdvice implements Advice {
                 Iterator soapBodyElements = soapBody.getChildElements();
 
                 // get the first element
-                Object operation = soapBodyElements.next();
+                Object operation;
+                try {
+                    operation = soapBodyElements.next();
+                } catch (NoSuchElementException e) {
+                    logger.fine("There is no SOAP body elements specified in the WSDL message.  An empty SOAP body will be generated.");
+                    continue;
+                }
                 if (!(operation instanceof SOAPElement))
                     throw new RuntimeException("operation must be an instance of SOAPBodyElement class");
 
