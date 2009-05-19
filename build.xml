@@ -1212,7 +1212,7 @@
             depends="package.gateway.all, package.manager, package.client, package.installclients, package.installgateway.work"/>
 
 
-    <target name="package.gateway.all" depends="package.configwiz.all, package.ssgflasher, package.gateway, package.modules, pack.manager, package.api, package.em, package.em.config"/>
+    <target name="package.gateway.all" depends="package.configwiz.all, package.ssgflasher, package.gateway, package.modules, pack.manager, package.api, package.em, package.em.config, package.ssgbackup.zip"/>
 
     <!--
       Build the windows installers without any dependencies.
@@ -1531,7 +1531,7 @@
     <!--
       Package the SSG if it looks like something changed
     -->
-    <target name="package.gateway.ifrequired" depends="package.gateway.checkrequired, package.gateway, package.readversion, pack.manager, package.modules, package.configwiz, package.ssgflasher, package.em, package.em.config" unless="package.gateway.notrequired">
+    <target name="package.gateway.ifrequired" depends="package.gateway.checkrequired, package.gateway, package.readversion, pack.manager, package.modules, package.configwiz, package.ssgflasher, package.em, package.em.config, package.ssgbackup.zip" unless="package.gateway.notrequired">
     </target>
 
     <!--
@@ -2081,6 +2081,63 @@
         <echo level="info">Enterprise Manager RPM build completed.</echo>
     </target>
 
+    <target name="clean.ssgbackup.zip" description="Clean the ${build.dir}/gatewayconfig/SSGBackup.zip file">
+       <delete file="${build.dir}/gatewayconfig/SSGBackup.zip" />        
+    </target>
+
+    <!--
+        Create a zip file self containing the gateway config module with all of it's dependencies
+    -->
+    <target name="package.ssgbackup.zip" unless="ssg.only" depends="clean.ssgbackup.zip, package.jars"
+            description="Create the standalone zip file SSGBackup.zip for backup">
+
+        <!--If the SSGbackup.zip already exists from a previous run, then delete it-->
+        <!--<delete file="${build.dir}/gatewayconfig/SSGBackup.zip" />-->
+        
+        <mkdir dir="${build.dir}/gatewayconfig"/>
+        <mkdir dir="${build.dir}/gatewayconfig/lib"/>
+
+        <copy todir="${build.dir}/gatewayconfig/lib">
+            <fileset dir="modules/gateway/config/build/dependency">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
+
+        <ivy:retrieve inline="true" organisation="com.l7tech" module="layer7-gateway-config" conf="default" pattern="${build.dir}/gatewayconfig/lib/[artifact]-[revision].[ext]"/>
+
+        <copy todir="${build.dir}/gatewayconfig">
+            <fileset dir="${src.root}/etc">
+                <include name="ssgbackup_noninstall.sh" />
+                <include name="backupgatewaylogging.properties"/>
+                <include name="backuputilitylogging.properties"/>
+            </fileset>
+        </copy>
+
+        <move file="${build.dir}/gatewayconfig/ssgbackup_noninstall.sh" tofile="${build.dir}/gatewayconfig/ssgbackup.sh" />
+        
+        <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-gateway-config" showprogress="false" conf="default" log="quiet"/>
+        <ivy:findrevision organisation="com.l7tech" module="layer7-gateway-config" revision="latest.integration" property="module.gateway.config.version"/>
+        
+        <jar jarfile="${build.dir}/gatewayconfig/SSGBackupOnlyUtility.jar">
+            <manifest>
+                <attribute name="Class-Path" value="lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
+                <attribute name="Main-Class" value="com.l7tech.gateway.config.flasher.FlashUtilityLauncher"/>
+            </manifest>
+        </jar>
+
+        <zip destfile="${build.dir}/gatewayconfig/SSGBackup.zip" basedir="${build.dir}/gatewayconfig" />
+
+        <!--Only leave the SSGBackup.zip artifact, remove everything else which was used to create it-->
+        <delete dir="${build.dir}/gatewayconfig/lib">
+            <include name="*.jar" />
+        </delete>
+        <delete dir="${build.dir}/gatewayconfig/lib" />
+        <delete dir="${build.dir}/gatewayconfig" >
+            <exclude name="SSGBackup.zip" />
+        </delete>
+
+    </target>
+    
     <!-- Package the ssg flasher utility -->
     <target name="package.ssgflasher" unless="ssg.only" depends="package.jars">
         <mkdir dir="${build.dir}/backup"/>
@@ -2567,6 +2624,9 @@
             </fileset>
             <fileset dir="${build.dir}/modules-optional">
                 <include name="*.aar"/>
+            </fileset>
+            <fileset dir="${build.dir}/gatewayconfig">
+                <include name="SSGBackup.zip" />
             </fileset>
         </move>
     </target>

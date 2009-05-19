@@ -14,14 +14,9 @@ import java.net.ConnectException;
 import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.InvalidArgumentException;
 import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.FatalException;
 import com.l7tech.gateway.config.manager.db.DBActions;
-import com.l7tech.gateway.config.client.beans.NodeManagementApiFactory;
 import com.l7tech.server.management.config.node.DatabaseConfig;
-import com.l7tech.server.management.api.node.NodeManagementApi;
-import com.l7tech.server.management.NodeStateType;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.objectmodel.FindException;
 
 /**
  * Base class for the import / export utility.
@@ -36,8 +31,6 @@ public abstract class ImportExportUtility {
 
     public static final CommandLineOption SKIP_PRE_PROCESS = new CommandLineOption("-skipPreProcess", "skips pre-processing", false, true);
     public static final CommandLineOption[] SKIP_OPTIONS = {SKIP_PRE_PROCESS};
-
-    private static final String pcUrl = "https://127.0.0.1:8765/services/nodeManagementApi";
 
     /**
      * @return  The list of all possible options for the provided utility.
@@ -221,7 +214,7 @@ public abstract class ImportExportUtility {
                         logger.info("Option '" + argument + "' is ignored.");
                         index++;
                     } else if (!optionIsValuePath(argument, getIgnoredOptions())) {
-                        if (index+1 < args.length && ARGUMENT_TYPE.VALUE.equals(determineArgumentType(args[index+1]))) {                            
+                        if (index+1 < args.length && ARGUMENT_TYPE.VALUE.equals(determineArgumentType(args[index+1]))) {
                             index = index + 2;
                         } else {
                             //we dont care, just continue to process
@@ -286,7 +279,7 @@ public abstract class ImportExportUtility {
 
         // non empty check allows the utility to work with backup servlet temporary files
         File file = new File(fileName);
-        if (failIfExists && file.exists() && file.length() > 0) { 
+        if (failIfExists && file.exists() && file.length() > 0) {
             throw new IOException("file '" + fileName + "' already exists and is not empty");
         }
 
@@ -359,48 +352,5 @@ public abstract class ImportExportUtility {
             ResourceUtils.closeQuietly(c);
         }
         return false;
-    }
-
-    /**
-     * Uses the process controller to determine if the local gateway is running.  If it fails to communicate with the
-     * process controller it will assume that the gateway is not running.
-     * <b>NOTE:</b> Software gateway version will NOT have process controller.  So, be sure to know when to use this method.
-     *
-     * @return  TRUE if gatway is running, otherwise FALSE.
-     */
-    public boolean isLocalNodeRunning() {
-        boolean isRunning = false;
-        System.setProperty("org.apache.cxf.nofastinfoset", "true");
-        try {
-            NodeManagementApiFactory nodeManagementApiFactory = new NodeManagementApiFactory( pcUrl );
-            NodeManagementApi nodeManagementApi = nodeManagementApiFactory.getManagementService();
-
-            Collection<NodeManagementApi.NodeHeader> nodes = nodeManagementApi.listNodes();
-            if (nodes != null) {
-                if (nodes.size() > 1) {
-                    logger.info("More than one node on host, will need to determine status of all nodes in the local host.");
-                }
-                for (NodeManagementApi.NodeHeader node : nodes) {
-                    if (!NodeStateType.STOPPED.equals(node.getState())) {
-                        isRunning = true;
-                        break;
-                    }
-                }
-            } else {
-                isRunning = false;
-            }
-        } catch (FindException fe) {
-            //cannot find nodes
-            isRunning = true;
-        } catch (Exception e) {
-            if (ExceptionUtils.causedBy(e, ConnectException.class)) {
-                //failed to connect to PC, assume local node is not running
-                isRunning = false;
-            } else {
-                isRunning = true;
-            }
-        }
-
-        return isRunning;
     }
 }

@@ -1,27 +1,26 @@
 package com.l7tech.gateway.config.flasher;
 
-import com.l7tech.util.*;
-import com.l7tech.gateway.config.manager.db.DBActions;
+import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.FatalException;
+import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.InvalidArgumentException;
 import com.l7tech.gateway.config.manager.ClusterPassphraseManager;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
+import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.server.management.config.node.DatabaseConfig;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import com.l7tech.util.*;
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.lang.StringUtils;
 import org.xml.sax.SAXException;
 
 import java.io.*;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-
-import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.InvalidArgumentException;
-import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.FatalException;
 
 /**
  * The utility that imports an SSG image
@@ -50,7 +49,7 @@ class Importer extends ImportExportUtility {
             "overwrite os level config files",
             false, true);
     public static final CommandLineOption CREATE_NEW_DB = new CommandLineOption("-newdb" ,"create new database");
-    public static final CommandLineOption OMIT_TABLES = new CommandLineOption("-migrate", "migrate from environment to environment using exclusion table file");
+    public static final CommandLineOption MIGRATE = new CommandLineOption("-migrate", "migrate from environment to environment using the file exclusion and table exclusion configuration files", false, true);
 
     public static final CommandLineOption CONFIG_ONLY = new CommandLineOption("-config", "only restore configuration files, no database restore", false, true);
     public static final CommandLineOption CLUSTER_PASSPHRASE = new CommandLineOption("-cp", "the cluster passphrase for the (resulting) database");
@@ -59,18 +58,23 @@ class Importer extends ImportExportUtility {
 
     public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, MAPPING_PATH, DB_HOST_NAME, DB_NAME, DB_PASSWD, DB_USER,
             OS_OVERWRITE, CONFIG_ONLY, CLUSTER_PASSPHRASE, GATEWAY_DB_USERNAME, GATEWAY_DB_PASSWORD,
-            CREATE_NEW_DB, OMIT_TABLES};
+            CREATE_NEW_DB, MIGRATE};
 
     public static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
             new CommandLineOption("-p", "Ignored parameter for partition", true, false),
             new CommandLineOption("-mode", "Ignored parameter for mode type", true, false) };
 
 
-    private static final String CONFIG_PATH = Exporter.FLASHER_CHILD_DIR;
+    private static final String CONFIG_PATH = Exporter.NODE_CONF_DIR;
     private static final String[] CONFIG_FILES = new String[]{
             "ssglog.properties",
             "system.properties",
     };
+
+    private List<String> omitFiles = new ArrayList<String>();
+
+    private static final String EXCLUDE_TABLES_PATH = "cfg/exclude_tables";
+    private static final String EXCLUDE_FILES_PATH = "cfg/exclude_files";
 
     private String tempDirectory;
     private MappingUtil.CorrespondanceMap mapping = null;
@@ -84,10 +88,14 @@ class Importer extends ImportExportUtility {
     private String dbName;
     private String suppliedClusterPassphrase;
     private boolean newDatabaseCreated = false;
-    private boolean omitTables = false;
+    private boolean migrate = false;
+
+    private File excludeTables;
+    private File excludeFiles;
 
     // do the import
-    public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, FlashUtilityLauncher.FatalException, IOException {
+    public void doIt(Map<String, String> arguments, final File flasherHome) throws FlashUtilityLauncher.InvalidArgumentException, FlashUtilityLauncher.FatalException, IOException {
+        
         String inputpathval = FlashUtilityLauncher.getAbsolutePath(arguments.get(IMAGE_PATH.name));
         if (inputpathval == null) {
             logger.info("Error, no image provided for import");
@@ -111,7 +119,14 @@ class Importer extends ImportExportUtility {
                 throw new IOException("the file " + inputpathval + " does not appear to be a valid SSG flash image");
             }
 
-            omitTables = arguments.containsKey(OMIT_TABLES.name);
+            migrate = arguments.containsKey(MIGRATE.name);
+
+            //if migrate option was chosen
+            if(migrate){
+                excludeTables = new File(flasherHome, EXCLUDE_TABLES_PATH);
+                excludeFiles = new File(flasherHome, EXCLUDE_FILES_PATH);
+                omitFiles = getOmitFileNames();
+            }
 
             boolean configOnly = false;
             //check if we are only importing config
@@ -325,7 +340,7 @@ class Importer extends ImportExportUtility {
                 // load database dump
                 logger.info("loading database dump");
                 try {
-                    loadDumpFromExplodedImage(arguments.get(OMIT_TABLES.name));
+                    loadDumpFromExplodedImage(/*arguments.get(MIGRATE.name)*/);
                 } catch (SQLException e) {
                     throw new IOException("Error loading database.", e);
                 }
@@ -403,14 +418,14 @@ class Importer extends ImportExportUtility {
         }
     }
 
-    private void doLoadDump(Connection c, /*String dumpFilePath,*/ String msg, String omitTablesFileName) throws IOException, SQLException {
+    private void doLoadDump(Connection c, String msg/*, String omitTablesFileName*/) throws IOException, SQLException {
         System.out.print(msg + " [please wait] ..");
 
         String mainDumpFilePath = tempDirectory + File.separator + DBDumpUtil.MAIN_BACKUP_FILENAME;
 
         List<String> omitTablesList = null;
-        if (omitTables) {
-            omitTablesList = getOmitTableNames(omitTablesFileName);
+        if (migrate) {
+            omitTablesList = getOmitTableNames(/*omitTablesFileName*/);
         }
 
         FileReader mainFileReader = new FileReader(mainDumpFilePath);
@@ -423,7 +438,7 @@ class Importer extends ImportExportUtility {
                 //always test importing the main backup
                 while ((tmp = mainBackupReader.readLine()) != null) {
                     if (tmp.endsWith(";")) {
-                        if (omitTables && affectsOmitTables(tmp, omitTablesList)) {
+                        if (migrate && affectsOmitTables(tmp, omitTablesList)) {
                             logger.finest("SQL statement: '" + tmp + "' was not executed.");
                         } else {
                             stmt.executeUpdate(tmp.substring(0, tmp.length() - 1));
@@ -481,25 +496,54 @@ class Importer extends ImportExportUtility {
         return false;
     }
 
-    /**
-     * Reads the list of table names within the file.
-     *
-     * @param omitFileName  The file name with full path
-     * @return  The list of table names found in the file.
-     * @throws IOException
-     */
-    private List<String> getOmitTableNames(String omitFileName) throws IOException {
-        List<String> omitTableList = new ArrayList<String>();
-
-        if (omitFileName == null) return omitTableList;
+    private List<String> getOmitFileNames() throws IOException {
+        List<String> omitFilesList = new ArrayList<String>();
 
         FileReader omitFileReader = null;
         BufferedReader omitBufferedReader = null;
-        File file = null;
+
         try {
-            file = new File(omitFileName);
-            if (file.isFile() && file.exists()) {
-                omitFileReader = new FileReader(file);
+            if (excludeFiles.isFile() && excludeFiles.exists()) {
+                omitFileReader = new FileReader(excludeFiles);
+                omitBufferedReader = new BufferedReader(omitFileReader);
+
+                String line;
+                while ((line = omitBufferedReader.readLine()) != null) {
+                    if (!line.startsWith("#")) {//ignore comments
+                        String fileName = line.trim();
+                        if (!"".equals(fileName) && !omitFilesList.contains(fileName)) {//no duplicates and no empty table names
+                            logger.finest("File '" + fileName + "' will be excluded.");
+                            omitFilesList.add(fileName);
+                        }
+                    }
+                }
+            }
+        } finally {
+            ResourceUtils.closeQuietly(omitBufferedReader);
+            ResourceUtils.closeQuietly(omitFileReader);
+        }
+
+        return omitFilesList;
+    }
+
+    /**
+     * Reads the list of table names within the file.
+     *
+     * @return  The list of table names found in the file.
+     * @throws IOException
+     */
+    private List<String> getOmitTableNames(/*String omitFileName*/) throws IOException {
+        List<String> omitTableList = new ArrayList<String>();
+
+//        if (omitFileName == null) return omitTableList;
+
+        FileReader omitFileReader = null;
+        BufferedReader omitBufferedReader = null;
+//        File file = excludeTables;
+        try {
+//            file = new File(omitFileName);
+            if (excludeTables.isFile() && excludeTables.exists()) {
+                omitFileReader = new FileReader(excludeTables);
                 omitBufferedReader = new BufferedReader(omitFileReader);
 
                 String line;
@@ -521,7 +565,7 @@ class Importer extends ImportExportUtility {
         return omitTableList;
     }
 
-    private void loadDumpFromExplodedImage(String omitFile) throws IOException, SQLException, FlashUtilityLauncher.InvalidArgumentException, FlashUtilityLauncher.FatalException {
+    private void loadDumpFromExplodedImage(/*String omitFile*/) throws IOException, SQLException, FlashUtilityLauncher.InvalidArgumentException, FlashUtilityLauncher.FatalException {
         // create temporary database copy to test the import
         System.out.print("Creating copy of target database for testing import ..");
         String testdbname = "TstDB_" + System.currentTimeMillis();
@@ -542,7 +586,7 @@ class Importer extends ImportExportUtility {
             String msg = "Loading image on temporary database";
             Connection c = dba.getConnection(targetConfig, true, false);
             try {
-                doLoadDump(c, msg, omitFile);
+                doLoadDump(c, msg/*, omitFile*/);
 
                 //if not a new DB, verify the supplied cluster passphrase is correct
                 if (!newDatabaseCreated) {
@@ -575,7 +619,7 @@ class Importer extends ImportExportUtility {
         String msg = "Loading image on target database";
         Connection c = getConnection();
         try {
-            doLoadDump(c, msg, omitFile);
+            doLoadDump(c, msg/*, omitFile*/);
         } finally {
             ResourceUtils.closeQuietly( c );
         }
@@ -585,7 +629,9 @@ class Importer extends ImportExportUtility {
         System.out.print("Cloning SecureSpan Gateway settings ..");
 
         for (String file : CONFIG_FILES) {
-            restoreConfigFile(CONFIG_PATH + file);
+            if (!omitFiles.contains(file)) {
+                restoreConfigFile(CONFIG_PATH + file);
+            }
         }
 
         System.out.println(". DONE");
@@ -815,10 +861,10 @@ class Importer extends ImportExportUtility {
             }
         }
 
-        //check if wan to ignore tables upon import
-        if (args.containsKey(OMIT_TABLES.name)) {
-            verifyFileExistence(args.get(OMIT_TABLES.name), false);
-        }
+//        //check if wan to ignore tables upon import
+//        if (args.containsKey(MIGRATE.name)) {
+//            verifyFileExistence(args.get(MIGRATE.name), false);
+//        }
 
         //if config option is specified, then we need to check that we have proper information to populate node.properties
         if (args.containsKey(CONFIG_ONLY.name)) {

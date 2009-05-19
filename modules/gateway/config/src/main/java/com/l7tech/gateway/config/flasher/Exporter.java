@@ -53,7 +53,7 @@ public class Exporter extends ImportExportUtility {
     public static final String SRCPARTNMFILENAME = "sourcepartitionname";
     public static final String OMP_DAT_FILE = "omp.dat";
     public static final String NODE_PROPERTIES_FILE = "node.properties";
-    public static final String FLASHER_CHILD_DIR = "../../node/default/etc/conf/";
+    public static final String NODE_CONF_DIR = "node/default/etc/conf/";
 
     private static final String[] CONFIG_FILES = new String[]{
         "ssglog.properties",
@@ -65,7 +65,7 @@ public class Exporter extends ImportExportUtility {
     private boolean mappingEnabled = false;
 
     /** Home directory of the Flasher; <code>null</code> if the JVM was launched from there already. */
-    private File flasherHome;
+    private File ssgHome;
 
     /** Stream for verbose output; <code>null</code> for no verbose output. */
     private PrintStream stdout;
@@ -74,13 +74,16 @@ public class Exporter extends ImportExportUtility {
     private PrintStream stderr;
 
     /**
-     * @param flasherHome   home directory of the Flasher; use <code>null</code>
-     *                      if the JVM was launched from there already
+     * @param ssgHome   home directory where the SSG is installed. /opt/SecureSpan/Gateway by default. Cannot be null
      * @param stdout        stream for verbose output; <code>null</code> for no verbose output
      * @param stderr        stream for error output; <code>null</code> for no error output
      */
-    public Exporter(final File flasherHome, final PrintStream stdout, final PrintStream stderr) {
-        this.flasherHome = flasherHome;
+    public Exporter(final File ssgHome, final PrintStream stdout, final PrintStream stderr) {
+        if(ssgHome == null) throw new NullPointerException("ssgHome cannot be null");
+        if(!ssgHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
+        if(!ssgHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
+        
+        this.ssgHome = ssgHome;
         this.stdout = stdout;
         this.stderr = stderr;
     }
@@ -106,7 +109,7 @@ public class Exporter extends ImportExportUtility {
 
     // do the export
     public void doIt(Map<String, String> arguments) throws FlashUtilityLauncher.InvalidArgumentException, IOException {
-        // check that we can write output at located asked for
+        // check that we can write output at location asked for
         String outputpathval = FlashUtilityLauncher.getAbsolutePath(arguments.get(IMAGE_PATH.name));
         if (outputpathval == null) {
             logger.info("no target image path specified");
@@ -134,7 +137,7 @@ public class Exporter extends ImportExportUtility {
             verifyFileExistence(arguments.get(MAPPING_PATH.name), true);
         }
 
-        File confDir = new File(flasherHome, FLASHER_CHILD_DIR);
+        File confDir = new File(ssgHome, NODE_CONF_DIR);
         tmpDirectory = createTmpDirectory();
 
         try {
@@ -208,7 +211,7 @@ public class Exporter extends ImportExportUtility {
             //restore OS files if this is an appliance
             if (new File("/opt/SecureSpan/Appliance").exists()) {
                 // copy system config files
-                OSConfigManager.saveOSConfigFiles(tmpDirectory, flasherHome);
+                OSConfigManager.saveOSConfigFiles(tmpDirectory, ssgHome);
             } else {
                 logger.info("OS configuration files can only be restored on an appliance.  This option will be ignored.");
             }
@@ -342,7 +345,7 @@ public class Exporter extends ImportExportUtility {
         }
 
         //check if node.properties file exists
-        File configDir = new File(flasherHome, FLASHER_CHILD_DIR);
+        File configDir = new File(ssgHome, NODE_CONF_DIR);
         File nodePropsFile = new File(configDir, NODE_PROPERTIES_FILE);
         NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodePropsFile, true);
         DatabaseConfig config = nodeConfig.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );

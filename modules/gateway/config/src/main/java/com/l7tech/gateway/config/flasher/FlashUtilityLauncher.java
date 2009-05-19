@@ -47,10 +47,10 @@ public class FlashUtilityLauncher {
                 Importer importer = new Importer();
                 passedArgs = importer.getParameters(args);
                 importer.preProcess(passedArgs);
-                importer.doIt(passedArgs);
+                importer.doIt(passedArgs, null);
                 System.out.println("\nImport completed with no errors.");
             } else if (args[0].toLowerCase().equals("export")) {
-                Exporter exporter = new Exporter(null, System.out, System.err);
+                Exporter exporter = new Exporter(new File("/opt/SecureSpan/Gateway"), System.out, System.err);
                 passedArgs = exporter.getParameters(args);
                 exporter.preProcess(passedArgs);
                 exporter.doIt(passedArgs);
