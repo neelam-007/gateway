@@ -30,33 +30,18 @@ public class CancelableOperationDialog extends JDialog {
     private boolean needsPack = true;
 
     public static CancelableOperationDialog newCancelableOperationDialog(Component component, String title, String message) {
-        CancelableOperationDialog dialog;
-
         Window window = SwingUtilities.getWindowAncestor(component);
-        if (window instanceof Dialog) {
-            dialog = new CancelableOperationDialog((Dialog)window, title, message);
-        }
-        else {
-            dialog = new CancelableOperationDialog((Frame)window, title, message);
-        }
-
-        return dialog;
+        return new CancelableOperationDialog(window, title, message);
     }
 
-    public CancelableOperationDialog(Frame owner, String title, String message, JProgressBar progressBar) {
-        super(owner, title, true);
+    public CancelableOperationDialog(Window owner, String title, String message, JProgressBar progressBar) {
+        super(owner, title, CancelableOperationDialog.DEFAULT_MODALITY_TYPE);
         messageLabel.setText(message);
         this.progressBar = progressBar;
     }
 
-    public CancelableOperationDialog(Dialog parent, String title, String message) {
-        super(parent, title, true);
-        messageLabel.setText(message);
-        this.progressBar = null;
-    }
-
-    public CancelableOperationDialog(Frame parent, String title, String message) {
-        super(parent, title, true);
+    public CancelableOperationDialog(Window parent, String title, String message) {
+        super(parent, title, CancelableOperationDialog.DEFAULT_MODALITY_TYPE);
         messageLabel.setText(message);
         this.progressBar = null;
     }
@@ -74,6 +59,7 @@ public class CancelableOperationDialog extends JDialog {
                                      new Insets(15, 25, 15, 25), 0, 0));
         JButton cancelButton = new JButton("Cancel");
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 wasCancel = true;
                 CancelableOperationDialog.this.dispose();
@@ -119,6 +105,7 @@ public class CancelableOperationDialog extends JDialog {
             needsPack=true;
     }
 
+    @Override
     public void setVisible(boolean b) {
         if (b) {
             maybeInit();
@@ -165,6 +152,7 @@ public class CancelableOperationDialog extends JDialog {
             throws InterruptedException, InvocationTargetException
     {
         final DialogFactoryShower factory = new DialogFactoryShower(new Functions.Nullary<JDialog>() {
+            @Override
             public JDialog call() {
                 final JProgressBar progressBar = new JProgressBar();
                 progressBar.setIndeterminate(true);

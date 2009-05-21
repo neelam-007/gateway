@@ -8,6 +8,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 
 /**
  * Utility listener that runs the given Runnable whenever it receives a change event.
@@ -15,7 +17,7 @@ import javax.swing.event.ChangeListener;
  * @author $Author$
  * @version $Revision$
  */
-public class RunOnChangeListener implements ActionListener, ChangeListener, DocumentListener, ItemListener {
+public class RunOnChangeListener implements ActionListener, ChangeListener, DocumentListener, ItemListener, ListSelectionListener {
 
     //- PUBLIC
 
@@ -30,6 +32,7 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
     /**
      * @see ActionListener
      */
+    @Override
     public void actionPerformed(ActionEvent e) {
         runnable.run();
     }
@@ -37,6 +40,7 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
     /**
      * @see ChangeListener
      */
+    @Override
     public void stateChanged(ChangeEvent e) {
         runnable.run();
     }
@@ -44,6 +48,7 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
     /**
      * @see DocumentListener
      */
+    @Override
     public void changedUpdate(DocumentEvent e) {
         runnable.run();
     }
@@ -51,6 +56,7 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
     /**
      * @see DocumentListener
      */
+    @Override
     public void insertUpdate(DocumentEvent e) {
         runnable.run();
     }
@@ -58,6 +64,7 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
     /**
      * @see DocumentListener
      */
+    @Override
     public void removeUpdate(DocumentEvent e) {
         runnable.run();
     }
@@ -65,7 +72,16 @@ public class RunOnChangeListener implements ActionListener, ChangeListener, Docu
     /**
      * @see ItemListener
      */
+    @Override
     public void itemStateChanged(ItemEvent e) {
+        runnable.run();
+    }
+
+    /**
+     * @see ListSelectionListener
+     */
+    @Override
+    public void valueChanged(ListSelectionEvent e) {
         runnable.run();
     }
 

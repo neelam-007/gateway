@@ -5,6 +5,7 @@ import com.l7tech.util.IOUtils;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.Functions;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -48,235 +49,39 @@ public class GuiCertUtil {
      * @throws AccessControlException if this process is running with a restrictive security manager that
      *                                appears to prevent use of JFileChooser
      */
-    public static ImportedData importCertificate(Window parent, boolean privateKeyRequired, CallbackHandler callbackHandler)
-            throws AccessControlException
-    {
-        X509Certificate[] certificateChain = null;
-        PrivateKey privateKey = null;
-
-        assertParentIsFrameOrDialog(parent);
-
-        final JFileChooser fc = FileChooserUtil.createJFileChooser();
-        fc.setFileHidingEnabled(false);
-        FileFilter pemFilter = buildFilter(new String[] {".pem"}, "(*.pem) PEM/BASE64 X.509 certificates.");
-        FileFilter cerFilter = buildFilter(new String[] {".cer"}, "(*.cer) DER encoded X.509 certificates.");
-        FileFilter p12Filter = buildFilter(new String[] {".p12", ".pfx"}, "(*.p12, *.pfx) PKCS 12 key store.");
-
-        if (privateKeyRequired) {
-            fc.setDialogTitle("Load Private Key");
-            fc.addChoosableFileFilter(p12Filter);
-        } else {
-            fc.setDialogTitle("Load Certificate");
-            fc.addChoosableFileFilter(pemFilter);
-            fc.addChoosableFileFilter(cerFilter);
-            fc.addChoosableFileFilter(p12Filter);
-        }
-
-        fc.setDialogType(JFileChooser.OPEN_DIALOG);
-        fc.setMultiSelectionEnabled(false);
-
-        boolean done = false;
-        while (!done) {
-            int r = fc.showDialog(parent, "Load");
-
-            if (r == JFileChooser.APPROVE_OPTION) {
-                File file = fc.getSelectedFile();
-                if (file!=null) {
-                    //
-                    // Can't check parent is writable due to JDK bug (see bug 2349 for info)
-                    //
-                    if ((!file.exists() && file.getParentFile()!=null /*&& file.getParentFile().canWrite()*/) ||
-                        (file.isFile() && file.canRead())) {
-                        String selectedFileName = file.getName();
-
-                        FileFilter selectedFilter = fc.getFileFilter();
-                        if (selectedFilter != pemFilter &&
-                            selectedFilter != cerFilter &&
-                            selectedFilter != p12Filter) { // detect from extension
-                            if (selectedFileName.endsWith(".pem") ||
-                                selectedFileName.endsWith(".txt")) {
-                                selectedFilter = pemFilter;
-                            } else if (selectedFileName.endsWith(".cer") ||
-                                     selectedFileName.endsWith(".der")) {
-                                selectedFilter = cerFilter;
-                            } else if (selectedFileName.endsWith(".p12") || selectedFileName.endsWith(".pfx")) {
-                                selectedFilter = p12Filter;
-                            }
-                        }
-
-
-                        byte[] fileBytes = null;
-                        InputStream in = null;
-                        try {
-                            in = new FileInputStream(file);
-                            fileBytes = IOUtils.slurpStream(in, 1024*64);
-                        } catch (IOException ioe) {
-                            JOptionPane.showMessageDialog(parent, "Error reading file", "Could not read certificate.", JOptionPane.ERROR_MESSAGE);
-                            logger.log(Level.WARNING, "Error reading certificate data", ioe);
-                            continue;
-                        } finally {
-                            ResourceUtils.closeQuietly(in);
-                        }
-
-                        try {
-                            if (selectedFilter == pemFilter) {
-                                String fileData = new String(fileBytes, "UTF-8");
-                                certificateChain = new X509Certificate[] { CertUtils.decodeFromPEM(fileData) };
-                                if (privateKeyRequired || fileData.indexOf(" PRIVATE KEY-----")>0) {
-                                    try {
-                                        privateKey = CertUtils.decodeKeyFromPEM(fileData);
-                                    }
-                                    catch(IOException ioe) {
-                                        if (privateKeyRequired) throw ioe;
-                                    }
-                                }
-                            }
-                            else if (selectedFilter == cerFilter) {
-                                certificateChain = new X509Certificate[] { CertUtils.decodeCert(fileBytes) };
-                                if (privateKeyRequired)
-                                    throw new CausedIOException("Certificate files cannot contain private keys");
-                            }
-                            else if (selectedFilter == p12Filter) {
-                                try {
-                                    KeyStore keyStore = KeyStore.getInstance("PKCS12");
-
-                                    //javax.crypto.BadPaddingException
-                                    boolean loaded = false;
-                                    char[] password = new char[]{' '}; // don't pass null initially or integrity check is skipped;
-                                    while (!loaded) {
-                                        try {
-                                            keyStore.load(new ByteArrayInputStream(fileBytes), password);
-                                            loaded = true;
-                                        }
-                                        catch(IOException ioe) {
-                                            if (callbackHandler != null &&
-                                                ExceptionUtils.causedBy(ioe, javax.crypto.BadPaddingException.class)) {
-                                                PasswordCallback passwordCallback = new PasswordCallback("Keystore password", false);
-                                                Callback[] callbacks = new Callback[]{passwordCallback};
-                                                callbackHandler.handle(callbacks);
-                                                password = passwordCallback.getPassword(); // if null IOException thrown on next load
-                                            }
-                                            else {
-                                                throw ioe;
-                                            }
-                                        }
-                                    }
-
-                                    List aliases = Collections.list(keyStore.aliases());
-                                    if (aliases.size() > 1 || aliases.isEmpty())
-                                        throw new CausedIOException("PKCS12 has unsupported number of entries (must be 1)");
-
-                                    String alias = (String) aliases.get(0);
-                                    if (!keyStore.isKeyEntry(alias))
-                                        throw new CausedIOException("PKCS12 entry '"+alias+"' is not a key.");
-
-                                    Key key = null;
-                                    while (key == null) {
-                                        try {
-                                            key = keyStore.getKey(alias, password);
-                                            break;
-                                        }
-                                        catch(UnrecoverableKeyException uke) {
-                                            if (callbackHandler != null && password != null) {
-                                                PasswordCallback passwordCallback = new PasswordCallback("Key password", false);
-                                                Callback[] callbacks = new Callback[]{passwordCallback};
-                                                callbackHandler.handle(callbacks);
-                                                password = passwordCallback.getPassword();
-                                                passwordCallback.clearPassword();
-                                            }
-                                            else {
-                                                throw new CausedIOException("Invalid password for key entry.");
-                                            }
-                                        }
-                                    }
-                                    if (null == key)
-                                        throw new IOException("PKCS12 entry '"+alias+"' does not contain a key.");
-                                    if (!(key instanceof PrivateKey))
-                                        throw new IOException("PKCS12 entry '"+alias+"' key is not a private key.");
-
-                                    Certificate[] chain = keyStore.getCertificateChain(alias);
-                                    if (chain==null || chain.length==0)
-                                        throw new CausedIOException("PKCS12 entry '"+alias+"' missing does not contain a certificate chain.");
-
-                                    List<X509Certificate> got = new ArrayList<X509Certificate>();
-                                    for (Certificate cert : chain) {
-                                        if (cert == null)
-                                            throw new IOException("PKCS12 entry '" + alias + "' contains a null certificate in its certificate chain.");
-                                        if (!(cert instanceof X509Certificate))
-                                            throw new IOException("PKCS12 entry '" + alias + "' certificate chain contains a non-X.509 certificate.");
-                                        got.add((X509Certificate)cert);
-                                    }
-
-                                    certificateChain = got.toArray(new X509Certificate[got.size()]);
-                                    privateKey = (PrivateKey) key;
-                                }
-                                catch (KeyStoreException ke) {
-                                    throw new CausedIOException("Keystore error", ke);
-                                }
-                                catch (NoSuchAlgorithmException nsae) { // from keystore load
-                                    throw new CausedIOException("Keystore error", nsae);
-                                }
-                                catch (UnsupportedCallbackException uce) { // from callback handler
-                                    throw new CausedIOException("Password error", uce);
-                                }
-                            }
-
-                            done = true;
-                        }
-                        catch(IOException ioe) {
-                            if (callbackHandler!=null &&
-                                    ioe instanceof CausedIOException &&
-                                    "Invalid password for key entry.".equals(ioe.getMessage())) {
-                                logger.log(Level.INFO, "No password supplied, open cancelled.");
-                                done = true;
-                                continue;
-                            }
-                            else {
-                                JOptionPane.showMessageDialog(parent, "Error reading file", "Could not read certificate.", JOptionPane.ERROR_MESSAGE);
-                                logger.log(Level.WARNING, "Error reading certificate data. " + ExceptionUtils.getMessage(ioe));
-                                continue;
-                            }
-                        }
-                        catch(CertificateException ce) {
-                            JOptionPane.showMessageDialog(parent, "Error decoding file", "Could not decode certificate.", JOptionPane.ERROR_MESSAGE);
-                            logger.log(Level.WARNING, "Error reading certificate data", ce);
-                            continue;
-                        }
-                    }
-                    else {
-                        logger.log(Level.WARNING, "Cannot read selected certificate file");
-                        JOptionPane.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE, "Cannot read selected file.\n " + file.getAbsolutePath(), JOptionPane.ERROR_MESSAGE);
-                    }
-                }
+    public static ImportedData importCertificate( final Window parent,
+                                                  final boolean privateKeyRequired,
+                                                  final CallbackHandler callbackHandler ) throws AccessControlException {
+        final ImportedData[] importedDataHolder = new ImportedData[1];
+        doImport( parent, privateKeyRequired, callbackHandler, 1, new Functions.Unary<Boolean,ImportedData>(){
+            @Override
+            public Boolean call( final ImportedData importedData ) {
+                importedDataHolder[0] = importedData;
+                return true;
             }
-            else {
-                done = true;
-            }
-        }
-
-        // create result data
-        ImportedData id = null;
-        if (certificateChain != null && certificateChain.length > 0) {
-            final X509Certificate[] idCertificateChain = certificateChain;
-            final PrivateKey idPrivateKey = privateKey;
-            id = new ImportedData() {
-                public X509Certificate getCertificate() {
-                    return getCertificateChain()[0];
-                }
-
-                public X509Certificate[] getCertificateChain() {
-                    return idCertificateChain;
-                }
-
-                public PrivateKey getPrivateKey() {
-                    return idPrivateKey;
-                }
-            };
-        }
-
-        return id;
+        } );
+        return importedDataHolder[0];
     }
 
+    /**
+     * Import one or more certificates from a file (PEM, CER/ASN.1, PKS12).
+     *
+     * <p>Read an X509 Certificate from a file, optionally requiring a private
+     * key.</p>
+     *
+     * @param parent The parent Frame or Dialog for the "load" dialog.
+     * @param privateKeyRequired True if a private key is required.
+     * @param callbackHandler handler for any TextOutputCallback and PasswordCallbacks (may be null)
+     * @param importCallback callback to perform import of each ImportedData item.
+     * @throws AccessControlException if this process is running with a restrictive security manager that
+     *                                appears to prevent use of JFileChooser
+     */
+    public static void importCertificates( final Window parent,
+                                           final boolean privateKeyRequired,
+                                           final CallbackHandler callbackHandler,
+                                           final Functions.Unary<Boolean,ImportedData> importCallback ) throws AccessControlException {
+        doImport( parent, privateKeyRequired, callbackHandler, 100000, importCallback );
+    }
 
     /**
      * Export a certificate to file.
@@ -290,8 +95,6 @@ public class GuiCertUtil {
      *                                appears to prevent use of JFileChooser
      */
     public static void exportCertificate(Window parent, X509Certificate certificate) {
-        assertParentIsFrameOrDialog(parent);
-
         final JFileChooser fc = FileChooserUtil.createJFileChooser();
         fc.setDialogTitle("Save certificate as ...");
         fc.setDialogType(JFileChooser.SAVE_DIALOG);
@@ -393,8 +196,260 @@ public class GuiCertUtil {
 
     private static final String SAVE_DIALOG_ERROR_TITLE = "Error saving certificate";
 
+    /**
+     * NOTE: For backwards compatibility a maximumImportedItems size of 1 means there
+     * must only be one alias in the keystore.
+     */
+    private static void doImport( final Window parent,
+                                  final boolean privateKeyRequired,
+                                  final CallbackHandler callbackHandler,
+                                  final int maximumImportedItems,
+                                  final Functions.Unary<Boolean, ImportedData> importCallback ) {
+        final JFileChooser fc = FileChooserUtil.createJFileChooser();
+        fc.setFileHidingEnabled(false);
+        FileFilter pemFilter = buildFilter(new String[] {".pem"}, "(*.pem) PEM/BASE64 X.509 certificates.");
+        FileFilter cerFilter = buildFilter(new String[] {".cer"}, "(*.cer) DER encoded X.509 certificates.");
+        FileFilter p12Filter = buildFilter(new String[] {".p12", ".pfx"}, "(*.p12, *.pfx) PKCS 12 key store.");
+
+        if (privateKeyRequired) {
+            fc.setDialogTitle("Load Private Key");
+            fc.addChoosableFileFilter(p12Filter);
+        } else {
+            fc.setDialogTitle("Load Certificate");
+            fc.addChoosableFileFilter(pemFilter);
+            fc.addChoosableFileFilter(cerFilter);
+            fc.addChoosableFileFilter(p12Filter);
+        }
+
+        fc.setDialogType(JFileChooser.OPEN_DIALOG);
+        fc.setMultiSelectionEnabled(false);
+
+        boolean done = false;
+        while (!done) {
+            int r = fc.showDialog(parent, "Load");
+
+            if (r == JFileChooser.APPROVE_OPTION) {
+                File file = fc.getSelectedFile();
+                if (file!=null) {
+                    //
+                    // Can't check parent is writable due to JDK bug (see bug 2349 for info)
+                    //
+                    if ((!file.exists() && file.getParentFile()!=null /*&& file.getParentFile().canWrite()*/) ||
+                        (file.isFile() && file.canRead())) {
+                        String selectedFileName = file.getName();
+
+                        FileFilter selectedFilter = fc.getFileFilter();
+                        if (selectedFilter != pemFilter &&
+                            selectedFilter != cerFilter &&
+                            selectedFilter != p12Filter) { // detect from extension
+                            if (selectedFileName.endsWith(".pem") ||
+                                selectedFileName.endsWith(".txt")) {
+                                selectedFilter = pemFilter;
+                            } else if (selectedFileName.endsWith(".cer") ||
+                                     selectedFileName.endsWith(".der")) {
+                                selectedFilter = cerFilter;
+                            } else if (selectedFileName.endsWith(".p12") || selectedFileName.endsWith(".pfx")) {
+                                selectedFilter = p12Filter;
+                            }
+                        }
+
+
+                        byte[] fileBytes = null;
+                        InputStream in = null;
+                        try {
+                            in = new FileInputStream(file);
+                            fileBytes = IOUtils.slurpStream(in, 1024*1024);
+                        } catch (IOException ioe) {
+                            JOptionPane.showMessageDialog(parent, "Error reading file", "Could not read file for import.", JOptionPane.ERROR_MESSAGE);
+                            logger.log(Level.WARNING, "Error reading certificate data", ioe);
+                            continue;
+                        } finally {
+                            ResourceUtils.closeQuietly(in);
+                        }
+
+                        try {
+                            if (selectedFilter == pemFilter) {
+                                String fileData = new String(fileBytes, "UTF-8");
+                                X509Certificate[] certificateChain = new X509Certificate[] { CertUtils.decodeFromPEM(fileData) };
+                                PrivateKey privateKey = null;
+                                if (privateKeyRequired || fileData.indexOf(" PRIVATE KEY-----")>0) {
+                                    try {
+                                        privateKey = CertUtils.decodeKeyFromPEM(fileData);
+                                    }
+                                    catch(IOException ioe) {
+                                        if (privateKeyRequired) throw ioe;
+                                    }
+                                }
+                                importData( certificateChain, privateKey, importCallback );
+                            }
+                            else if (selectedFilter == cerFilter) {
+                                X509Certificate[] certificateChain = new X509Certificate[] { CertUtils.decodeCert(fileBytes) };
+                                if (privateKeyRequired)
+                                    throw new CausedIOException("Certificate files cannot contain private keys");
+                                importData( certificateChain, null, importCallback );
+                            }
+                            else if (selectedFilter == p12Filter) {
+                                try {
+                                    KeyStore keyStore = KeyStore.getInstance("PKCS12");
+
+                                    //javax.crypto.BadPaddingException
+                                    boolean loaded = false;
+                                    char[] password = new char[]{' '}; // don't pass null initially or integrity check is skipped;
+                                    while (!loaded) {
+                                        try {
+                                            keyStore.load(new ByteArrayInputStream(fileBytes), password);
+                                            loaded = true;
+                                        }
+                                        catch(IOException ioe) {
+                                            if (callbackHandler != null &&
+                                                ExceptionUtils.causedBy(ioe, javax.crypto.BadPaddingException.class)) {
+                                                PasswordCallback passwordCallback = new PasswordCallback("Keystore password", false);
+                                                Callback[] callbacks = new Callback[]{passwordCallback};
+                                                callbackHandler.handle(callbacks);
+                                                password = passwordCallback.getPassword(); // if null IOException thrown on next load
+                                            }
+                                            else {
+                                                throw ioe;
+                                            }
+                                        }
+                                    }
+
+                                    List<String> aliases = Collections.list(keyStore.aliases());
+                                    if ( aliases.isEmpty() )
+                                        throw new CausedIOException("PKCS12 keystore is empty");
+                                    else if ( aliases.size() > 1 && maximumImportedItems==1 )
+                                        throw new CausedIOException("PKCS12 has unsupported number of entries (must be 1)"); // for backwards compatible behaviour
+
+                                    int importedCount = 0;
+                                    for ( String alias : aliases ) {
+                                        if ( maximumImportedItems > 0 && importedCount >= maximumImportedItems ) break;
+
+                                        if ( privateKeyRequired && !keyStore.isKeyEntry(alias) )
+                                            throw new CausedIOException("PKCS12 entry '"+alias+"' is not a key.");
+
+                                        Key key = null;
+                                        while (key == null) {
+                                            try {
+                                                key = keyStore.getKey(alias, password);
+                                                break;
+                                            }
+                                            catch(UnrecoverableKeyException uke) {
+                                                if (callbackHandler != null && password != null) {
+                                                    PasswordCallback passwordCallback = new PasswordCallback("Key password", false);
+                                                    Callback[] callbacks = new Callback[]{passwordCallback};
+                                                    callbackHandler.handle(callbacks);
+                                                    password = passwordCallback.getPassword();
+                                                    passwordCallback.clearPassword();
+                                                }
+                                                else {
+                                                    throw new CausedIOException("Invalid password for key entry.");
+                                                }
+                                            }
+                                        }
+                                        if ( privateKeyRequired && null == key )
+                                            throw new IOException("PKCS12 entry '"+alias+"' does not contain a key.");
+                                        if ( privateKeyRequired && !(key instanceof PrivateKey))
+                                            throw new IOException("PKCS12 entry '"+alias+"' key is not a private key.");
+
+                                        Certificate[] chain = keyStore.getCertificateChain(alias);
+                                        if ( chain==null || chain.length==0 ) {
+                                            if ( maximumImportedItems != 1 ) continue;
+                                            throw new CausedIOException("PKCS12 entry '"+alias+"' missing does not contain a certificate chain.");
+                                        }
+                                        List<X509Certificate> got = new ArrayList<X509Certificate>();
+                                        for (Certificate cert : chain) {
+                                            if (cert == null)
+                                                throw new IOException("PKCS12 entry '" + alias + "' contains a null certificate in its certificate chain.");
+                                            if (!(cert instanceof X509Certificate))
+                                                throw new IOException("PKCS12 entry '" + alias + "' certificate chain contains a non-X.509 certificate.");
+                                            got.add((X509Certificate)cert);
+                                        }
+
+                                        X509Certificate[] certificateChain = got.toArray(new X509Certificate[got.size()]);
+                                        PrivateKey privateKey = (PrivateKey) key;
+
+                                        if ( !importData( certificateChain, privateKey, importCallback ) )
+                                            break;
+                                        importedCount++;
+                                    }
+                                }
+                                catch (KeyStoreException ke) {
+                                    throw new CausedIOException("Keystore error", ke);
+                                }
+                                catch (NoSuchAlgorithmException nsae) { // from keystore load
+                                    throw new CausedIOException("Keystore error", nsae);
+                                }
+                                catch (UnsupportedCallbackException uce) { // from callback handler
+                                    throw new CausedIOException("Password error", uce);
+                                }
+                            }
+
+                            done = true;
+                        }
+                        catch(IOException ioe) {
+                            if (callbackHandler!=null &&
+                                    ioe instanceof CausedIOException &&
+                                    "Invalid password for key entry.".equals(ioe.getMessage())) {
+                                logger.log(Level.INFO, "No password supplied, open cancelled.");
+                                done = true;
+                                continue;
+                            }
+                            else {
+                                JOptionPane.showMessageDialog(parent, "Error reading file", "Could not read certificate.", JOptionPane.ERROR_MESSAGE);
+                                logger.log(Level.WARNING, "Error reading certificate data. " + ExceptionUtils.getMessage(ioe));
+                                continue;
+                            }
+                        }
+                        catch(CertificateException ce) {
+                            JOptionPane.showMessageDialog(parent, "Error decoding file", "Could not decode certificate.", JOptionPane.ERROR_MESSAGE);
+                            logger.log(Level.WARNING, "Error reading certificate data", ce);
+                            continue;
+                        }
+                    }
+                    else {
+                        logger.log(Level.WARNING, "Cannot read selected certificate file");
+                        JOptionPane.showMessageDialog(parent, SAVE_DIALOG_ERROR_TITLE, "Cannot read selected file.\n " + file.getAbsolutePath(), JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+            else {
+                done = true;
+            }
+        }
+    }
+
+    private static boolean importData( final X509Certificate[] certificateChain,
+                                       final PrivateKey privateKey,
+                                       final Functions.Unary<Boolean, ImportedData> importCallback) {
+        boolean continueImporting = true;
+
+        if ( certificateChain != null && certificateChain.length > 0) {
+            final ImportedData id = new ImportedData() {
+                @Override
+                public X509Certificate getCertificate() {
+                    return getCertificateChain()[0];
+                }
+
+                @Override
+                public X509Certificate[] getCertificateChain() {
+                    return certificateChain;
+                }
+
+                @Override
+                public PrivateKey getPrivateKey() {
+                    return privateKey;
+                }
+            };
+
+            continueImporting = importCallback.call(id);
+        }
+
+        return continueImporting;
+    }
+
     private static FileFilter buildFilter(final String[] extensions, final String description) {
         return new FileFilter() {
+            @Override
             public boolean accept(File f) {
                 if(f.isDirectory()) {
                     return true;
@@ -408,18 +463,10 @@ public class GuiCertUtil {
                     return false;
                 }
             }
+            @Override
             public String getDescription() {
                 return description;
             }
         };
-    }
-
-    private static void assertParentIsFrameOrDialog(Window parent) {
-        if (parent !=null) {
-            if (!(parent instanceof Dialog) &&
-                !(parent instanceof Frame)) {
-                throw new IllegalArgumentException("parent must be a Dialog or Frame.");
-            }
-        }
     }
 }

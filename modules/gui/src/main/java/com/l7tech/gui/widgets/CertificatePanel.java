@@ -27,6 +27,7 @@ public class CertificatePanel extends JPanel {
     private X509Certificate cert;
     private JPanel cp;
     private boolean certBorderEnabled = true;
+    private boolean displayKeyInfo = true;
 
     /**
      * Create a new CertificatePanel
@@ -43,11 +44,18 @@ public class CertificatePanel extends JPanel {
         setCertBorderEnabled(certBorderEnabled);
     }
 
-    public CertificatePanel(X509Certificate cert)
+    public CertificatePanel( final X509Certificate cert )
+            throws CertificateEncodingException, NoSuchAlgorithmException
+    {
+        this( cert, true );
+    }
+
+    public CertificatePanel( final X509Certificate cert, final boolean displayKeyInfo )
             throws CertificateEncodingException, NoSuchAlgorithmException
     {
         this();
         this.cert = cert;
+        this.displayKeyInfo = displayKeyInfo;
         loadCertificateInfo();
     }
 
@@ -69,7 +77,7 @@ public class CertificatePanel extends JPanel {
     }
 
     private void loadCertificateInfo() throws CertificateEncodingException, NoSuchAlgorithmException {
-        List<Pair<String,String>> props = CertUtils.getCertProperties(cert);
+        List<Pair<String,String>> props = CertUtils.getCertProperties(cert,displayKeyInfo);
         int y = 0;
         cp.removeAll();
         for (Pair<String, String> pair : props) {
@@ -84,7 +92,7 @@ public class CertificatePanel extends JPanel {
             c.gridx = 1;
             cp.add(value, c);
         }
-        cp.add(Box.createGlue(), new GridBagConstraints(0, y++, 1, 1, 1.0, 1.0,
+        cp.add(Box.createGlue(), new GridBagConstraints(0, y, 1, 1, 1.0, 1.0,
                                                         GridBagConstraints.NORTHWEST,
                                                         GridBagConstraints.BOTH,
                                                         new Insets(0, 0, 0, 0), 0, 0));

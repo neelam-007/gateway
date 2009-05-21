@@ -725,6 +725,20 @@ public class CertUtils {
      * @throws CertificateEncodingException if the cert could not be decoded
      */
     public static List<Pair<String, String>> getCertProperties(X509Certificate cert)
+            throws CertificateEncodingException {
+        return getCertProperties( cert, true );
+    }
+
+    /**
+     * Obtain structured information about a certificate in an easy-to-display tabular format.
+     *
+     * @param cert The certificate to analyze
+     * @param includeKeyInfo true to include key information
+     * @return a List of Pairs of {"Label", "Value"}
+     * @throws CertificateEncodingException if the cert could not be decoded
+     */
+    public static List<Pair<String, String>> getCertProperties( final X509Certificate cert,
+                                                                final boolean includeKeyInfo )
       throws CertificateEncodingException {
         List<Pair<String, String>> l = new ArrayList<Pair<String, String>>();
         if (cert == null) return l;
@@ -748,7 +762,7 @@ public class CertUtils {
         }
 
         PublicKey publicKey = cert.getPublicKey();
-        if (publicKey != null) {
+        if (includeKeyInfo && publicKey != null) {
             l.add(new Pair<String, String>(CERT_PROP_KEY_TYPE, nullNa(publicKey.getAlgorithm())));
 
             if (publicKey instanceof RSAPublicKey) {
@@ -1178,6 +1192,7 @@ public class CertUtils {
             this.alias = alias;
         }
 
+        @Override
         public String selectAlias(String[] options) throws AliasNotFoundException {
             for (String option : options) {
                 if (alias.equalsIgnoreCase(option))
@@ -1212,6 +1227,7 @@ public class CertUtils {
          * @throws FileNotFoundException if the file does not exist or otherwise cannot be opened for reading
          * @throws Exception declared but not thrown by this method.  May be thrown by a subclass.
          */
+        @Override
         public InputStream call() throws Exception {
             return new FileInputStream(file);
         }

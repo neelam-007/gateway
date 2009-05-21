@@ -5,6 +5,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.GuiCertUtil;
+import com.l7tech.gui.util.GuiPasswordCallbackHandler;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
@@ -16,6 +18,9 @@ import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.*;
+import com.l7tech.util.Functions;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.common.io.CertUtils;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -23,13 +28,14 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.Collection;
+import java.util.*;
+import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * This class is the main window of the trusted certificate manager
@@ -41,6 +47,7 @@ public class CertManagerWindow extends JDialog {
 
     private JPanel mainPanel;
     private JButton addButton;
+    private JButton importButton;
     private JButton removeButton;
     private JButton propertiesButton;
     private JButton closeButton;
@@ -91,12 +98,14 @@ public class CertManagerWindow extends JDialog {
         trustedCertTable.hideColumn(TrustedCertTableSorter.CERT_TABLE_ISSUER_NAME_COLUMN_INDEX);
 
         trustedCertTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableOrDisableButtons();
             }
         });
 
         closeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 dispose();
             }
@@ -109,19 +118,29 @@ public class CertManagerWindow extends JDialog {
         expiredCertCautionLabel.setVisible(false);
 
         certificateValidationButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 showCertificateValidation();
             }
         });
 
         addButton.addActionListener( new NewTrustedCertificateAction(new CertListener(){
+            @Override
             public void certSelected(CertEvent ce) {
                 // reload all certs from server
                 loadTrustedCerts();
             }
         }, "Add"));
 
+        importButton.addActionListener( new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                importTrustedCerts();
+            }
+        } );
+
         propertiesButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 int sr = trustedCertTable.getSelectedRow();
                 TrustedCert tc = (TrustedCert)trustedCertTable.getTableSorter().getData(sr);
@@ -148,6 +167,7 @@ public class CertManagerWindow extends JDialog {
         Utilities.setDoubleClickAction(trustedCertTable, propertiesButton);
 
         removeButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 int sr = trustedCertTable.getSelectedRow();
 
@@ -190,6 +210,175 @@ public class CertManagerWindow extends JDialog {
         pack();
         enableOrDisableButtons();
         Utilities.setEscKeyStrokeDisposes(this);
+    }
+
+    /**
+     * Import certificates from a PKCS#12 keystore.
+     */
+    private void importTrustedCerts() {
+        final java.util.List<X509Certificate[]> certificateChains = new ArrayList<X509Certificate[]>();
+        GuiCertUtil.importCertificates( this, false, new GuiPasswordCallbackHandler(this),  new Functions.Unary<Boolean,GuiCertUtil.ImportedData>(){
+            @Override
+            public Boolean call( final GuiCertUtil.ImportedData importedData ) {
+                certificateChains.add( importedData.getCertificateChain() );
+                return true;
+            }
+        } );
+
+        // If there are no certificates then a warning should already have been displayed
+        if ( certificateChains.size() > 0 ) {
+            final CertificateImportDialog dialog = new CertificateImportDialog( this, certificateChains );
+            DialogDisplayer.display( dialog, new Runnable() {
+                @Override
+                public void run() {
+                    if ( dialog.wasOk() ) {
+                        final JProgressBar progressBar = new JProgressBar();
+                        progressBar.setIndeterminate(true);
+                        final CancelableOperationDialog cancelDialog =
+                                new CancelableOperationDialog( CertManagerWindow.this, 
+                                                               resources.getString("importing.title"),
+                                                               resources.getString("importing.label"),
+                                                               progressBar);
+                        cancelDialog.pack();
+                        cancelDialog.setModal(true);
+                        Utilities.centerOnParentWindow(cancelDialog);
+
+                        final Collection<String> duplicateCerts = new LinkedHashSet<String>();
+                        final Collection<String> errorCerts = new LinkedHashSet<String>();
+                        Callable<Boolean> callable = new Callable<Boolean>() {
+                            @Override
+                            public Boolean call() throws Exception {
+                                final boolean importAsTrustAnchor = dialog.isImportAsTrustAnchor();
+                                final boolean importChain = dialog.isImportChain();
+                                final Collection<X509Certificate[]> certificates = dialog.getCertificateChains();
+                                importCertificates(importAsTrustAnchor, importChain, certificates, duplicateCerts, errorCerts );
+                                return Boolean.TRUE;
+                            }
+                        };
+
+                        try {
+                            Utilities.doWithDelayedCancelDialog( callable, cancelDialog, 500L );
+                        } catch (InterruptedException e) {
+                            logger.finer("Import operation interrupted (cancelled)");
+                        } catch (InvocationTargetException e) {
+                            // we have handled any expected exceptions elsewhere
+                            if ( cancelDialog.wasCancelled() ) {
+                                logger.log( Level.WARNING, "Error during (cancelled) certificate import.", e );
+                            } else {
+                                throw ExceptionUtils.wrap( e.getTargetException() );
+                            }
+                        }
+
+                        if ( !cancelDialog.wasCancelled() ) {
+                            handleImportResult( duplicateCerts, errorCerts );                            
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    private void importCertificates( final boolean importAsTrustAnchor,
+                                     final boolean importChain,
+                                     final Collection<X509Certificate[]> certificates,
+                                     final Collection<String> duplicateCerts,
+                                     final Collection<String> errorCerts ) {
+        for ( X509Certificate[] certificateChain : certificates ) {
+            if ( Thread.interrupted() ) break;
+
+            if ( importChain ) {
+                List<X509Certificate> reverseCertificateChain = Arrays.asList(certificateChain);
+                Collections.reverse( reverseCertificateChain );
+                boolean first = true;
+                Collection<String> targetCertDupe = Collections.emptyList(); // we only care if the last is a dupe
+                for ( X509Certificate certificate : reverseCertificateChain ) {
+                    targetCertDupe = new ArrayList<String>();
+                    boolean isTrustAnchor = false;
+                    if ( first ) {
+                        isTrustAnchor =  importAsTrustAnchor;
+                        first = false;
+                    }
+                    saveCert( certificate, isTrustAnchor, targetCertDupe, errorCerts );
+                }
+                duplicateCerts.addAll( targetCertDupe );
+            } else {
+                saveCert( certificateChain[0], importAsTrustAnchor, duplicateCerts, errorCerts );
+            }
+        }
+    }
+
+    private void handleImportResult( final Collection<String> duplicateCerts,
+                                     final Collection<String> errorCerts ) {
+        if ( !duplicateCerts.isEmpty() || !errorCerts.isEmpty() ) {
+            StringBuilder errorMessage = new StringBuilder();
+
+            errorMessage.append( resources.getString("error.header") );
+            errorMessage.append( "\n\n  " );
+            if ( !duplicateCerts.isEmpty() ) {
+                errorMessage.append( resources.getString("error.duplicates") );
+                for ( String certDn : duplicateCerts ) {
+                    errorMessage.append( "\n" );
+                    errorMessage.append( "    " );
+                    errorMessage.append( certDn );
+                }
+                errorMessage.append( "\n\n  " );
+            }
+            if ( !errorCerts.isEmpty() ) {
+                errorMessage.append( resources.getString("error.failures") );
+                for ( String certDn : errorCerts ) {
+                    errorMessage.append( "\n" );
+                    errorMessage.append( "    " );
+                    errorMessage.append( certDn );
+                }
+                errorMessage.append( "\n" );
+            }
+
+            final JTextArea textArea = new JTextArea();
+            textArea.setEditable( false );
+            textArea.setText( errorMessage.toString() );
+            final JScrollPane scrollPane = new JScrollPane(textArea);
+            scrollPane.setPreferredSize(new Dimension(400, 200));
+            DialogDisplayer.showMessageDialog(this, scrollPane, "Certificate Import Failures", JOptionPane.WARNING_MESSAGE, new Runnable(){
+                @Override
+                public void run() {
+                    // reload all certs from server
+                    loadTrustedCerts();
+                }
+            });
+        } else {
+            // reload all certs from server
+            loadTrustedCerts();
+        }
+    }
+
+    private void saveCert( final X509Certificate certificate,
+                           final boolean isTrustAnchor,
+                           final Collection<String> duplicateCerts,
+                           final Collection<String> errorCerts ) {
+
+        TrustedCert cert = new TrustedCert();
+        String name = CertUtils.extractFirstCommonNameFromCertificate( certificate );
+        if ( name == null ) {
+            name = certificate.getSubjectX500Principal().getName().trim();   
+        } else {
+            name = name.trim();
+        }
+        cert.setName( name );
+        cert.setCertificate( certificate );
+        cert.setTrustAnchor( isTrustAnchor );
+
+        try {
+            getTrustedCertAdmin().saveCert( cert );
+        } catch ( DuplicateObjectException doe ) {
+            duplicateCerts.add( certificate.getSubjectX500Principal().getName() );
+        } catch ( ObjectModelException e) {
+            errorCerts.add( certificate.getSubjectX500Principal().getName() );
+            logger.log( Level.WARNING, "Certificate import failed", e);
+        } catch ( VersionException e) {
+            // doesn't happen for new certs
+            errorCerts.add( certificate.getSubjectX500Principal().getName() );
+            logger.log( Level.WARNING, "Certificate import failed", e);
+        }
     }
 
     /**
@@ -254,12 +443,14 @@ public class CertManagerWindow extends JDialog {
             propsEnabled = true;
         }
         addButton.setEnabled(flags.canCreateSome());
+        importButton.setEnabled(flags.canCreateSome());
         removeButton.setEnabled(flags.canDeleteSome() && removeEnabled);
         propertiesButton.setEnabled(propsEnabled); // Child dialog should be read-only if !canUpdateAny
     }
 
     private void showCertificateValidation() {
         DialogDisplayer.display(new ManageCertificateValidationDialog(this), new Runnable() {
+            @Override
             public void run() {
                 // invalidate cache policies in case there are any new ones                
                 revocationCheckPolicies = null;

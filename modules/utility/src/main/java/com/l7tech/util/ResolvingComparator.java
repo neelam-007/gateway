@@ -9,11 +9,11 @@ import java.util.Comparator;
  *
  * @author Steve Jones
  */
-public class ResolvingComparator<RT extends Comparable> implements Comparator {
+public class ResolvingComparator<KT,RT extends Comparable<RT>> implements Comparator<KT> {
 
     //- PUBLIC
 
-    public ResolvingComparator(Resolver<Object, RT> resolver, boolean reverse) {
+    public ResolvingComparator(Resolver<KT, RT> resolver, boolean reverse) {
         this.resolver = resolver;
         this.reverse = reverse;
     }
@@ -23,17 +23,18 @@ public class ResolvingComparator<RT extends Comparable> implements Comparator {
      * zero, or a positive integer as the first argument is less than, equal
      * to, or greater than the second.<p>
      */
-    public int compare(Object o1, Object o2) {
+    @Override
+    public int compare( final KT o1, final KT o2) {
         if (o1 == null || o2 == null) throw new IllegalArgumentException("Cannot compare null!");
 
-        Comparable c1 = resolver.resolve(o1);
-        Comparable c2 = resolver.resolve(o2);
+        RT c1 = resolver.resolve(o1);
+        RT c2 = resolver.resolve(o2);
 
         return c1.compareTo(c2) * (reverse ? -1 : 1);
     }
 
     //- PRIVATE
 
-    private final Resolver<Object, RT> resolver;
+    private final Resolver<KT, RT> resolver;
     private final boolean reverse;
 }
