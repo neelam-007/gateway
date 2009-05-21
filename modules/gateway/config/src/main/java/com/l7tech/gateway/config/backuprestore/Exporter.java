@@ -1,4 +1,4 @@
-package com.l7tech.gateway.config.flasher;
+package com.l7tech.gateway.config.backuprestore;
 
 import com.l7tech.util.*;
 import com.l7tech.server.management.config.node.NodeConfig;
@@ -16,8 +16,8 @@ import java.sql.SQLException;
 
 import org.xml.sax.SAXException;
 
-import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.InvalidArgumentException;
-import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.FatalException;
+import com.l7tech.gateway.config.backuprestore.FlashUtilityLauncher.InvalidArgumentException;
+import com.l7tech.gateway.config.backuprestore.FlashUtilityLauncher.FatalException;
 
 /**
  * The utility that exports an SSG image file.

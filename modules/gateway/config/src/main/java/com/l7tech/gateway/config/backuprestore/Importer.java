@@ -1,7 +1,7 @@
-package com.l7tech.gateway.config.flasher;
+package com.l7tech.gateway.config.backuprestore;
 
-import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.FatalException;
-import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.InvalidArgumentException;
+import com.l7tech.gateway.config.backuprestore.FlashUtilityLauncher.FatalException;
+import com.l7tech.gateway.config.backuprestore.FlashUtilityLauncher.InvalidArgumentException;
 import com.l7tech.gateway.config.manager.ClusterPassphraseManager;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.gateway.config.manager.db.DBActions;

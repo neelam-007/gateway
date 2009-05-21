@@ -1,4 +1,4 @@
-package com.l7tech.gateway.config.flasher;
+package com.l7tech.gateway.config.backuprestore;
 
 import com.l7tech.util.SyspropUtil;
 
@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 public class FlashUtilityLauncher {
     public static final String EOL_CHAR = System.getProperty("line.separator");
     /** System property used as base directory for all relative paths. */
-    private static final String BASE_DIR_PROPERTY = "com.l7tech.server.flasher.basedir";
+    private static final String BASE_DIR_PROPERTY = "com.l7tech.server.backuprestore.basedir";
     private static final String LOGCONFIG_NAME = "backuputilitylogging.properties";
     private static final String SSGBACKUP_SH = "ssgbackup.sh";
     private static final String SSGRESTORE_SH = "ssgrestore.sh";

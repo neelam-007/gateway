@@ -1,4 +1,4 @@
-package com.l7tech.gateway.config.flasher;
+package com.l7tech.gateway.config.backuprestore;
 
 import java.util.*;
 import java.util.logging.Logger;
@@ -9,10 +9,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.ResultSet;
-import java.net.ConnectException;
 
-import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.InvalidArgumentException;
-import com.l7tech.gateway.config.flasher.FlashUtilityLauncher.FatalException;
+import com.l7tech.gateway.config.backuprestore.FlashUtilityLauncher.InvalidArgumentException;
+import com.l7tech.gateway.config.backuprestore.FlashUtilityLauncher.FatalException;
 import com.l7tech.gateway.config.manager.db.DBActions;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.util.BuildInfo;

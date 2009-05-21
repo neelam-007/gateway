@@ -1,4 +1,4 @@
-package com.l7tech.gateway.config.flasher;
+package com.l7tech.gateway.config.backuprestore;
 
 /**
  * A command line option passed to the flash utility

@@ -1,4 +1,4 @@
-package com.l7tech.gateway.config.flasher;
+package com.l7tech.gateway.config.backuprestore;
 
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.ResourceUtils;

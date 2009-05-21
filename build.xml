@@ -2121,7 +2121,7 @@
         <jar jarfile="${build.dir}/gatewayconfig/SSGBackupOnlyUtility.jar">
             <manifest>
                 <attribute name="Class-Path" value="lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
-                <attribute name="Main-Class" value="com.l7tech.gateway.config.flasher.FlashUtilityLauncher"/>
+                <attribute name="Main-Class" value="com.l7tech.gateway.config.backuprestoreestore.FlashUtilityLauncher"/>
             </manifest>
         </jar>
 
@@ -2138,7 +2138,7 @@
 
     </target>
     
-    <!-- Package the ssg flasher utility -->
+    <!-- Package the ssg backuprestore utility -->
     <target name="package.ssgflasher" unless="ssg.only" depends="package.jars">
         <mkdir dir="${build.dir}/backup"/>
         <mkdir dir="${build.dir}/backup/lib"/>
@@ -2165,7 +2165,7 @@
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
                 <attribute name="Class-Path" value="../../runtime/lib/layer7-utility-${module.utility.version}.jar"/>
                 <attribute name="X-Layer7-Jar" value="../../runtime/lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
-                <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.flasher.FlashUtilityLauncher"/>
+                <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.backuprestoreestore.FlashUtilityLauncher"/>
             </manifest>
         </jar>
 
@@ -2716,7 +2716,7 @@
             <mkdir dir="@{dir}/${install.src.app.bin}" />
             <mkdir dir="@{dir}/${install.src.app.etc}" />
             <mkdir dir="@{dir}/${install.src.app.firewall}" />
-            <mkdir dir="@{dir}/${install.src.app.flasher.cfg}"/>
+            <mkdir dir="@{dir}/${install.src.app.backuprestore.cfg}"/>
             <mkdir dir="@{dir}/${install.src.app.libexec}"/>
             <mkdir dir="@{dir}/${install.src.app.ssgconfig}"/>
             <mkdir dir="@{dir}/${install.src.app.ssgprofile}"/>
@@ -2783,7 +2783,7 @@
             </copy>
 
             <!-- Appliance SSG configuration extras -->
-            <copy file="${src.root}/etc/backup_manifest" todir="@{dir}/${install.src.app.flasher.cfg}"/>
+            <copy file="${src.root}/etc/backup_manifest" todir="@{dir}/${install.src.app.backuprestore.cfg}"/>
             <copy file="${src.root}/etc/appliance/appliancedefs.sh" todir="@{dir}/${install.src.app.ssgprofile}"/>
         </sequential>
     </macrodef>
@@ -2843,8 +2843,8 @@
             <mkdir dir="@{dir}/${install.src.ssg.conf}"/>
             <mkdir dir="@{dir}/${install.src.ssg.configwizard}"/>
             <mkdir dir="@{dir}/${install.src.ssg.etc}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.flasher}"/>
-            <mkdir dir="@{dir}/${install.src.ssg.flasher.cfg}"/>
+            <mkdir dir="@{dir}/${install.src.ssg.backuprestore}"/>
+            <mkdir dir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
             <mkdir dir="@{dir}/${install.src.ssg.help}"/>
             <mkdir dir="@{dir}/${install.src.ssg.lib}"/>
             <mkdir dir="@{dir}/${install.src.ssg.libext}"/>
@@ -2867,8 +2867,8 @@
                 </fileset>
             </copy>
 
-            <!--copy the ssg flasher -->
-            <copy todir="@{dir}/${install.src.ssg.flasher}">
+            <!--copy the ssg backuprestore -->
+            <copy todir="@{dir}/${install.src.ssg.backuprestore}">
                 <fileset dir="${build.dir}/backup">
                     <include name="**/*"/>
                 </fileset>
@@ -2959,10 +2959,10 @@
                 <fileset dir="${build.dir}/managerapplet/lib"/>
             </copy>
 
-            <copy file="${src.root}/etc/backup_tables_audit" todir="@{dir}/${install.src.ssg.flasher.cfg}"/>
-            <copy file="${src.root}/etc/exclude_tables" todir="@{dir}/${install.src.ssg.flasher.cfg}"/>
-            <!--<copy file="${src.root}/etc/backup_tables_excluded" todir="@{dir}/${install.src.ssg.flasher.cfg}"/>-->
-            <!--<copy file="${src.root}/etc/backup_tables_mapping_excluded" todir="@{dir}/${install.src.ssg.flasher.cfg}"/>-->
+            <copy file="${src.root}/etc/backup_tables_audit" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
+            <copy file="${src.root}/etc/exclude_tables" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
+            <!--<copy file="${src.root}/etc/backup_tables_excluded" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>-->
+            <!--<copy file="${src.root}/etc/backup_tables_mapping_excluded" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>-->
         </sequential>
     </macrodef>
 
