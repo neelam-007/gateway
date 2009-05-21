@@ -6,6 +6,7 @@ package com.l7tech.proxy.message;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.kerberos.KerberosClient;
 import com.l7tech.kerberos.KerberosException;
 import com.l7tech.kerberos.KerberosServiceTicket;
@@ -29,10 +30,14 @@ import com.l7tech.security.socket.LocalTcpPeerIdentifierFactory;
 import com.l7tech.security.token.HasUsername;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.token.SigningSecurityToken;
+import com.l7tech.security.token.X509SigningSecurityToken;
+import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.SecurityContextToken;
+import com.l7tech.security.token.EncryptedKey;
 import com.l7tech.security.wstrust.TokenServiceClient;
 import com.l7tech.security.wstrust.WsTrustConfig;
 import com.l7tech.security.wstrust.WsTrustConfigFactory;
-import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ExceptionUtils;
@@ -449,6 +454,7 @@ public class PolicyApplicationContext extends ProcessingContext {
      *
      * @deprecated Agent code should use getCredentialsForTrustedSsg() or getFederatedCredentials() instead.
      */
+    @Override
     public LoginCredentials getLastCredentials() {
         throw new UnsupportedOperationException();
     }
@@ -510,6 +516,43 @@ public class PolicyApplicationContext extends ProcessingContext {
             throw new UnsupportedOperationException("Not permitted to send real password to Federated Gateway.");
         return getPasswordAuthentication();
     }
+
+    /**
+     * Validate that the given token is trusted.
+     *
+     * @param signingToken The token to check.
+     * @return True if trusted.
+     */
+    public boolean isTrustedSigningToken( final SigningSecurityToken signingToken ) {
+        boolean trusted = false;
+
+        if ( signingToken instanceof X509SigningSecurityToken ) {
+            X509SigningSecurityToken x509Token = (X509SigningSecurityToken) signingToken;
+            X509Certificate serverCertificate = getSsg().getServerCertificate();
+            if ( serverCertificate != null && CertUtils.certsAreEqual( serverCertificate, x509Token.getMessageSigningCertificate() ) ) {
+                trusted = true;
+            }
+        } else if ( signingToken instanceof KerberosSecurityToken ) {
+            KerberosSecurityToken kerberosToken = (KerberosSecurityToken) signingToken;
+            KerberosServiceTicket ticket = getKerberosServiceTicketId()==null ? null : getExistingKerberosServiceTicket();
+            if ( ticket != null && ticket.getGSSAPReqTicket() == kerberosToken.getTicket() ) {
+                trusted = true;
+            }
+        } else if ( signingToken instanceof SecurityContextToken ) {
+            // This token is validated by the client assertion
+            trusted = true;
+        } else if ( signingToken instanceof EncryptedKey ) {  // EncryptedUsernameToken
+            EncryptedKey encryptedKeyToken = (EncryptedKey) signingToken;
+            if ( encryptedKeyToken.getEncryptedKeySHA1().equals( getEncryptedKeySha1() ) ) {
+                trusted = true;
+            }
+        } else {
+            logger.warning("Unexpected signing token type '"+signingToken.getClass().getName()+"'.");
+        }
+
+        return trusted;
+    }
+
 
     /**
      * Ensure that a client certificate is available for the current request.  Will apply for one
@@ -934,6 +977,7 @@ public class PolicyApplicationContext extends ProcessingContext {
             // get ticket
             KerberosClient client = new KerberosClient();
             client.setCallbackHandler(new CallbackHandler(){
+                @Override
                 public void handle(Callback[] callbacks) {
                     if(!flags[flagCanceled]) {
                         try {

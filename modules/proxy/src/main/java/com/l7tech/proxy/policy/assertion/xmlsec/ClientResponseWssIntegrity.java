@@ -1,7 +1,6 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.message.Message;
-import com.l7tech.message.SecurityKnob;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -10,6 +9,7 @@ import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.security.token.SignedElement;
+import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorResultUtil;
@@ -28,6 +28,7 @@ import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.*;
 
 /**
  * Verifies that a specific element of the soap response was signed by the ssg.
@@ -35,10 +36,12 @@ import java.util.logging.Logger;
 public class ClientResponseWssIntegrity extends ClientDomXpathBasedAssertion<ResponseWssIntegrity> {
     private static final Logger log = Logger.getLogger(ClientResponseWssIntegrity.class.getName());
 
+
     public ClientResponseWssIntegrity(ResponseWssIntegrity data) throws InvalidXpathException {
         super(data);
     }
 
+    @Override
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws GeneralSecurityException,
             OperationCanceledException, BadCredentialsException,
@@ -46,6 +49,7 @@ public class ClientResponseWssIntegrity extends ClientDomXpathBasedAssertion<Res
     {
         if (data.getRecipientContext().localRecipient()) {
             context.getPendingDecorations().put(this, new ClientDecorator() {
+                @Override
                 public AssertionStatus decorateRequest(PolicyApplicationContext context) throws InvalidDocumentFormatException, IOException, SAXException {
                     log.log(Level.FINER, "Expecting a signed reply; will be sure to include L7a:MessageID");
                     context.prepareWsaMessageId(false, null, null);
@@ -61,6 +65,7 @@ public class ClientResponseWssIntegrity extends ClientDomXpathBasedAssertion<Res
      *
      * @param context
      */
+    @Override
     public AssertionStatus unDecorateReply(PolicyApplicationContext context)
             throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, InvalidDocumentFormatException, PolicyAssertionException
     {
@@ -75,7 +80,6 @@ public class ClientResponseWssIntegrity extends ClientDomXpathBasedAssertion<Res
             return AssertionStatus.NOT_APPLICABLE;
         }
         final XmlKnob responseXml = response.getXmlKnob();
-        final SecurityKnob responseSec = response.getSecurityKnob();
         Document soapmsg = responseXml.getDocumentReadOnly();
         ProcessorResult wssRes = ClientResponseWssConfidentiality.getOrCreateWssResults(response);
         if (wssRes == null) {
@@ -108,7 +112,21 @@ public class ClientResponseWssIntegrity extends ClientDomXpathBasedAssertion<Res
             context.setMessageId(null);
         }
 
-        ProcessorResultUtil.SearchResult result = null;
+        final Map<String, String> props = context.getSsg().getProperties();
+        final boolean requireSingleToken = !"false".equalsIgnoreCase(props.get("response.security.validateSingleSignature"));
+        final boolean validateSigner = !"false".equalsIgnoreCase(props.get("response.security.validateSigningToken"));
+        SigningSecurityToken signingToken = null;
+        if ( wereSigned != null ) {
+            for ( SignedElement signedElement : wereSigned ) {
+                if ( signingToken == null ) {
+                    signingToken = signedElement.getSigningSecurityToken();
+                } else if ( requireSingleToken && signingToken != signedElement.getSigningSecurityToken() ){
+                    throw new ResponseValidationException("Response included multiple signing tokens.");
+                }
+            }
+        }
+
+        ProcessorResultUtil.SearchResult result;
         try {
             result = ProcessorResultUtil.searchInResult(log,
                                                         soapmsg,
@@ -124,7 +142,7 @@ public class ClientResponseWssIntegrity extends ClientDomXpathBasedAssertion<Res
         }
         switch (result.getResultCode()) {
             case ProcessorResultUtil.NO_ERROR:
-                return AssertionStatus.NONE;
+                return validateSigner( context, signingToken, validateSigner );
             case ProcessorResultUtil.FALSIFIED:
                 return AssertionStatus.FALSIFIED;
             default:
@@ -132,15 +150,28 @@ public class ClientResponseWssIntegrity extends ClientDomXpathBasedAssertion<Res
         }
     }
 
+    private AssertionStatus validateSigner( final PolicyApplicationContext context,
+                                            final SigningSecurityToken signingToken,
+                                            final boolean validate ) {
+        AssertionStatus status = AssertionStatus.FALSIFIED;
+
+        if ( !validate || context.isTrustedSigningToken( signingToken ) ) {
+            status = AssertionStatus.NONE;    
+        }
+
+        return status;
+    }
+
     private boolean wasElementSigned(ProcessorResult wssResults, Node node) {
         SignedElement[] toto = wssResults.getElementsThatWereSigned();
-        for (int j = 0; j < toto.length; j++) {
-            if (toto[j].asElement() == node)
+        for (SignedElement aToto : toto) {
+            if (aToto.asElement() == node)
                 return true;
         }
         return false;
     }
 
+    @Override
     public String getName() {
         String str = "";
         XpathExpression xpe = data.getXpathExpression();
@@ -149,6 +180,7 @@ public class ClientResponseWssIntegrity extends ClientDomXpathBasedAssertion<Res
         return "Response WSS Integrity: sign elements" + str;
     }
 
+    @Override
     public String iconResource(boolean open) {
         return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
