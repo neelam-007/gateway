@@ -25,17 +25,17 @@ public class PropertyPanel extends JPanel {
     public PropertyPanel() {
         setLayout(new BorderLayout());
 
-        binding.addButton.addActionListener(new ActionListener() {
+        addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 edit(null, null);
             }
         });
 
-        binding.editButton.addActionListener(new ActionListener() {
+        editButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int row = binding.propertiesTable.getSelectionModel().getMinSelectionIndex();
+                int row = propertiesTable.getSelectionModel().getMinSelectionIndex();
                 if (row < 0) return;
 
                 final Pair<String, String> p = getRow(row);
@@ -44,10 +44,10 @@ public class PropertyPanel extends JPanel {
             }
         });
 
-        binding.removeButton.addActionListener(new ActionListener() {
+        removeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                int row = binding.propertiesTable.getSelectionModel().getMinSelectionIndex();
+                int row = propertiesTable.getSelectionModel().getMinSelectionIndex();
                 if (row < 0) return;
                 properties.remove(getRow(row).left);
                 tableModel.fireTableDataChanged();
@@ -55,7 +55,7 @@ public class PropertyPanel extends JPanel {
             }
         });
 
-        binding.propertiesTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+        propertiesTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 enableButtons();
@@ -63,14 +63,14 @@ public class PropertyPanel extends JPanel {
         });
 
         enableButtons();
-        binding.propertiesTable.getTableHeader().setReorderingAllowed(false);
-        binding.propertiesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        binding.propertiesTable.setModel(tableModel);
-        add(binding.mainPanel, BorderLayout.CENTER);
+        propertiesTable.getTableHeader().setReorderingAllowed(false);
+        propertiesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        propertiesTable.setModel(tableModel);
+        add(mainPanel, BorderLayout.CENTER);
     }
 
     public void setTitle( final String title ) {
-        Border border = binding.propertiesPanel.getBorder();
+        Border border = propertiesPanel.getBorder();
         if ( border instanceof TitledBorder ) {
             TitledBorder titledBorder = (TitledBorder) border;
             titledBorder.setTitle( title );
@@ -89,20 +89,14 @@ public class PropertyPanel extends JPanel {
         this.properties = newprops;
     }
 
-    public static final class UiBinding {
-        private JTable propertiesTable;
-        private JButton addButton;
-        private JButton removeButton;
-        private JButton editButton;
-        private JPanel mainPanel;
-        private JPanel propertiesPanel;
-    }
-
     //- PRIVATE
 
-    // This allows this component to be used outside of this module by
-    // hiding the fact that it is an IDEA form component.
-    private UiBinding binding = new UiBinding();
+    private JTable propertiesTable;
+    private JButton addButton;
+    private JButton removeButton;
+    private JButton editButton;
+    private JPanel mainPanel;
+    private JPanel propertiesPanel;
 
     private Map<String, String> properties = new LinkedHashMap<String, String>();
     private String propertyEditTitle = "Edit Property";
@@ -150,7 +144,7 @@ public class PropertyPanel extends JPanel {
     };
 
     private void edit( final String name, final String value ) {
-        final PropertyEditDialog dlg = new PropertyEditDialog(SwingUtilities.getWindowAncestor(binding.mainPanel), propertyEditTitle, name, value);
+        final PropertyEditDialog dlg = new PropertyEditDialog(SwingUtilities.getWindowAncestor(mainPanel), propertyEditTitle, name, value);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
@@ -167,8 +161,8 @@ public class PropertyPanel extends JPanel {
     }
 
     private void enableButtons() {
-        int sel = binding.propertiesTable.getSelectionModel().getLeadSelectionIndex();
-        binding.editButton.setEnabled(sel >= 0);
-        binding.removeButton.setEnabled(sel >= 0);
+        int sel = propertiesTable.getSelectionModel().getLeadSelectionIndex();
+        editButton.setEnabled(sel >= 0);
+        removeButton.setEnabled(sel >= 0);
     }
 }

@@ -18,6 +18,7 @@ class BridgePolicyPanel extends JPanel {
     private JPanel rootPanel;
     private JCheckBox cbHeaderPassthrough;
     private JCheckBox cbUseSsl;
+    private JPanel propertyPanelHolder;
     private PropertyPanel propertyPanel;
 
     public BridgePolicyPanel(final boolean allowUseSsl) {
@@ -29,8 +30,12 @@ class BridgePolicyPanel extends JPanel {
             cbUseSsl.setVisible(false);
         }
 
+        propertyPanel = new PropertyPanel();
         propertyPanel.setTitle("Additional Properties");
         propertyPanel.setPropertyEditTitle("Client Policy Property");
+
+        propertyPanelHolder.setLayout(new BorderLayout());
+        propertyPanelHolder.add(propertyPanel, BorderLayout.CENTER);
 
         add(rootPanel, BorderLayout.CENTER);
     }
@@ -57,9 +62,5 @@ class BridgePolicyPanel extends JPanel {
 
     void setProperties(Map<String, String> newprops) {
         propertyPanel.setProperties(newprops);
-    }
-
-    private void createUIComponents() {
-        propertyPanel = new PropertyPanel();
     }
 }

@@ -62,6 +62,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
     private SquigglyTextField httpPortTextField;
     private SquigglyTextField httpsPortTextField;
     private JScrollPane certScrollPane;
+    private JPanel propertyPanelHolder;
     private PropertyPanel propertyPanel;
 
     private final BridgeRoutingAssertion assertion; // live copy of assertion -- do not write to it until Ok pressed
@@ -184,8 +185,12 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
                 };
         policyXmlText.addMouseListener(Utilities.createContextMenuMouseListener(policyXmlText, cmf));
 
+        propertyPanel = new PropertyPanel();
         propertyPanel.setTitle("Additional Properties");
         propertyPanel.setPropertyEditTitle("Client Policy Property");
+
+        propertyPanelHolder.setLayout(new BorderLayout());
+        propertyPanelHolder.add(propertyPanel, BorderLayout.CENTER);
 
         copyModelToView();
         updateEnableStates();
@@ -385,9 +390,5 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
 
         }
         return true;
-    }
-
-    private void createUIComponents() {
-        propertyPanel = new PropertyPanel();
-    }    
+    } 
 }
