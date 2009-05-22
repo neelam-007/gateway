@@ -61,10 +61,12 @@ public class ServerCacheLookupAssertion extends AbstractServerAssertion<CacheLoo
             ContentTypeHeader ctype;
             if (varname == null) {
                 message = assertion.isUseRequest() ? context.getRequest() : context.getResponse();
-                ctype = message.getMimeKnob().getOuterContentType(); // TODO use cached mime type
+                //ctype = message.getMimeKnob().getOuterContentType(); // TODO use cached mime type
+                ctype = ContentTypeHeader.XML_DEFAULT;
             } else {
                 message = new Message();
-                ctype = context.getRequest().getMimeKnob().getOuterContentType(); // TODO use cached mime type
+                //ctype = context.getRequest().getMimeKnob().getOuterContentType(); // TODO use cached mime type
+                ctype = ContentTypeHeader.XML_DEFAULT;
             }
 
             // TODO use proper hybrid stash manager, making arrangements to have it closed when context is closed,
