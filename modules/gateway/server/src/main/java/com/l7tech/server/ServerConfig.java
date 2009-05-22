@@ -167,6 +167,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_PRINCIPAL_SESSION_CACHE_MAX_PRINCIPAL_GROUPS = "principalSessionCacheMaxPrincipalGroups";
     
     public static final String PARAM_JMS_LISTENER_THREAD_LIMIT = "jmsListenerThreadLimit";
+    public static final String PARAM_JMS_MESSAGE_MAX_BYTES = "ioJmsMessageMaxBytes";
 
     public static final String PARAM_PROCESS_CONTROLLER_PRESENT = "processControllerPresent";
     public static final String PARAM_PROCESS_CONTROLLER_PORT = "processControllerPort";

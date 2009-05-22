@@ -50,7 +50,6 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
     protected static final int MIN_OOPS_SLEEP = 10 * 1000; // 10 seconds
     protected static final int MAX_OOPS_SLEEP = TimeUnit.DAYS.getMultiplier(); // 24 hours
     protected static final int OOPS_AUDIT = 15 * 60 * 1000; // 15 mins;
-    protected static final int DEFAULT_MAX_SIZE = 5242880;
 
     /** The amount of time the thread sleeps when the MAXIMUM_OOPSES limit is reached */
     private final AtomicInteger oopsSleep = new AtomicInteger(DEFAULT_OOPS_SLEEP);
@@ -270,32 +269,10 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
 
     public void propertyChange(PropertyChangeEvent evt)
     {
-
         if (PROPERTY_ERROR_SLEEP.equals(evt.getPropertyName())) {
-
             String stringValue = (String) evt.getNewValue();
             setErrorSleepTime(stringValue);
-
-        } else if (PROPERTY_MAX_SIZE.equals(evt.getPropertyName())) {
-
-            String stringValue = (String) evt.getNewValue();
-            int newMaxSize = DEFAULT_MAX_SIZE;
-
-            try {
-                newMaxSize = Integer.parseInt( stringValue );
-            } catch (NumberFormatException nfe) {
-                _logger.log(Level.WARNING, "Ignoring invalid JMS message max size ''{0}'' (using default).", stringValue);
-            }
-
-            if ( newMaxSize < 0 ) {
-                _logger.log(Level.WARNING, "Ignoring invalid JMS message max size ''{0}'' (using 0).", stringValue);
-                newMaxSize = 0;
-            }
-
-            _logger.log(Level.CONFIG, "Updated JMS message max size to {0}.", newMaxSize);
-            _endpointCfg.setMessageMaxSize(newMaxSize);
         }
-        
     }
 
     protected void fireConnected() {

@@ -13,7 +13,6 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.naming.Context;
 import javax.naming.NamingException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * POJO specifying one inbound Jms endpoint configured for the gateway.
@@ -34,8 +33,6 @@ public class JmsEndpointConfig {
     private final ApplicationContext appContext;
     /** String denoting the display name for an endpoint instance */
     private final String displayName;
-    /** Maximum Jms message size allowed */
-    private final AtomicInteger maxMessageSize = new AtomicInteger(AbstractJmsEndpointListener.DEFAULT_MAX_SIZE);
 
     /**
      * Constructor.
@@ -123,14 +120,6 @@ public class JmsEndpointConfig {
     }
 
     /**
-     * Returns the max message size.
-     * @return int value
-     */
-    public int getMaxMessageSize() {
-        return maxMessageSize.intValue();
-    }
-
-    /**
      * Returns the endpoing display name.
      *
      * @return String for the endpoint display name
@@ -149,13 +138,5 @@ public class JmsEndpointConfig {
         if (transactional == null)
             transactional = (this.endpoint.getAcknowledgementType() == JmsAcknowledgementType.ON_COMPLETION);
         return transactional;
-    }
-
-    /**
-     * Sets the max message size property.
-      * @param newValue the new value to set
-     */
-    public void setMessageMaxSize(int newValue) {
-        maxMessageSize.set(newValue);
     }
 }

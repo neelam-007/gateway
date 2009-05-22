@@ -12,6 +12,7 @@ import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.event.FaultProcessed;
@@ -32,6 +33,7 @@ import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.xml.sax.SAXException;
+import static com.l7tech.server.ServerConfig.PARAM_JMS_MESSAGE_MAX_BYTES;
 
 import javax.jms.*;
 import javax.jms.Queue;
@@ -59,6 +61,8 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
     private StashManagerFactory stashManagerFactory;
     private MessageProducer responseProducer;
     private final ApplicationEventPublisher messageProcessingEventChannel;
+    private final ServerConfig serverConfig;
+
 
     public JmsRequestHandlerImpl(ApplicationContext ctx) {
 
@@ -69,6 +73,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         messageProcessor = (MessageProcessor) ctx.getBean("messageProcessor", MessageProcessor.class);
         auditContext = (AuditContext) ctx.getBean("auditContext", AuditContext.class);
         soapFaultManager = (SoapFaultManager)ctx.getBean("soapFaultManager", SoapFaultManager.class);
+        serverConfig = (ServerConfig)ctx.getBean("serverConfig", ServerConfig.class);
         clusterPropertyCache = (ClusterPropertyCache)ctx.getBean("clusterPropertyCache", ClusterPropertyCache.class);
         stashManagerFactory = (StashManagerFactory) ctx.getBean("stashManagerFactory", StashManagerFactory.class);
         messageProcessingEventChannel = (ApplicationEventPublisher) ctx.getBean("messageProcessingEventChannel", EventChannel.class);
@@ -121,7 +126,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                 }
 
                 // enforce size restriction
-                int sizeLimit = endpointCfg.getMaxMessageSize();
+                int sizeLimit = serverConfig.getIntProperty(PARAM_JMS_MESSAGE_MAX_BYTES, 5242880);
                 if ( sizeLimit > 0 && size > sizeLimit ) {
                     messageTooLarge = true;
                 }
