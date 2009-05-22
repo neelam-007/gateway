@@ -62,7 +62,7 @@ checkRunningLocalGateway
 
 # This must be run as layer7
 if [ $UID -eq 0 ]; then
-    # invoke flasher as layer7
+    # invoke backup as layer7
     su layer7 -c "${SSG_JAVA_HOME}/bin/java -Xmx256m \
         -Dcom.l7tech.server.home=${SSG_HOME} \
         -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \

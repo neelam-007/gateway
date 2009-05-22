@@ -26,7 +26,7 @@ SSGNODE="default"
 
 # This must be run as layer7
 if [ $UID -eq 0 ]; then
-    # invoke flasher as layer7
+    # invoke backup as layer7
     su layer7 -c "${SSG_JAVA_HOME}/bin/java -Xmx256m \
         -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
         -jar ${REL_BASE_DIR}/SSGBackupOnlyUtility.jar export $*"
