@@ -53,10 +53,10 @@ public class CacheAssertionTest extends TestCase {
         junit.textui.TestRunner.run( suite() );
     }
 
-    public void testFeatureNames() throws Exception {
-        assertEquals( "assertion:CacheStorage", new CacheStorageAssertion().getFeatureSetName() );
-        assertEquals( "assertion:CacheLookup", new CacheLookupAssertion().getFeatureSetName() );
-    }
+//    public void testFeatureNames() throws Exception {
+//        assertEquals( "assertion:CacheStorage", new CacheStorageAssertion().getFeatureSetName() );
+//        assertEquals( "assertion:CacheLookup", new CacheLookupAssertion().getFeatureSetName() );
+//    }
 
     static String messageBodyToString( Message msg ) throws IOException, NoSuchPartException {
         final InputStream is = msg.getMimeKnob().getEntireMessageBodyAsInputStream();
