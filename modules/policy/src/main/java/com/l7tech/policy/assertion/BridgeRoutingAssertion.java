@@ -12,18 +12,33 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 
+import java.util.*;
 
 /**
  * Represents a routing assertion that provides the full functionality of the SecureSpan Bridge.
  */
 @RequiresSOAP()
 public class BridgeRoutingAssertion extends HttpRoutingAssertion implements UsesEntities {
+
+    //- PUBLIC
+
     public BridgeRoutingAssertion(String protectedServiceUrl, String login, String password, String realm, int maxConnections) {
         super(protectedServiceUrl, login, password, realm, maxConnections);
     }
 
     public BridgeRoutingAssertion() {
         this(null, null, null, null, -1);
+    }
+
+    /** Configure this BRA using the settings from the specified BRA. */
+    public void copyFrom( final BridgeRoutingAssertion source ) {
+        super.copyFrom(source);
+        this.setPolicyXml(source.getPolicyXml());
+        this.setServerCertificateOid(source.getServerCertificateOid());
+        this.setUseSslByDefault(source.isUseSslByDefault());
+        this.setHttpPort(source.getHttpPort());
+        this.setHttpsPort(source.getHttpsPort());
+        this.setClientPolicyProperties(source.getClientPolicyProperties());
     }
 
     /** @return the hardcoded policy XML for this Bridge instance, or null if policies will be discovered automatically (only works with SSGs). */
@@ -34,13 +49,6 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
     /** @param policyXml the hardcoded policy for this Bridge instance, or null to discover policies automatically (only wokrs with SSGs). */
     public void setPolicyXml(String policyXml) {
         this.policyXml = policyXml;
-    }
-
-    /** Configure this BRA using the settings from the specified BRA. */
-    public void copyFrom(BridgeRoutingAssertion source) {
-        super.copyFrom(source);
-        this.setPolicyXml(source.getPolicyXml());
-        this.setServerCertificateOid(source.getServerCertificateOid());
     }
 
     /**
@@ -129,13 +137,15 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
         this.httpsPort = httpsPort;
     }
 
-    protected String policyXml = null;
-    protected Long serverCertificateOid = null;
-    protected String serverCertificateName = null;
-    protected boolean useSslByDefault = true;
-    protected int httpPort = 0;
-    protected int httpsPort = 0;
+    public Map<String, String> getClientPolicyProperties() {
+        return clientPolicyProperties;
+    }
 
+    public void setClientPolicyProperties( final Map<String, String> properties) {
+        this.clientPolicyProperties = properties;
+    }
+
+    @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
         if (serverCertificateOid != null) {
@@ -145,6 +155,7 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
         }
     }
 
+    @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         if(oldEntityHeader.getType().equals(EntityType.TRUSTED_CERT) && serverCertificateOid != null &&
                 oldEntityHeader.getOid() == serverCertificateOid && newEntityHeader.getType().equals(EntityType.TRUSTED_CERT))
@@ -153,4 +164,15 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
             serverCertificateName = newEntityHeader.getName();
         }
     }
+
+    //- PRIVATE
+
+    private Map<String,String> clientPolicyProperties = new LinkedHashMap<String,String>();
+    private String policyXml = null;
+    private Long serverCertificateOid = null;
+    private String serverCertificateName = null;
+    private boolean useSslByDefault = true;
+    private int httpPort = 0;
+    private int httpsPort = 0;
+
 }

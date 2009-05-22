@@ -124,6 +124,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
         ssg = newSSG(url.getHost());
         ssg.getRuntime().setCachedServerCert(null);
+        ssg.setProperties(assertion.getClientPolicyProperties());
 
         useClientCert = initCredentials();
 

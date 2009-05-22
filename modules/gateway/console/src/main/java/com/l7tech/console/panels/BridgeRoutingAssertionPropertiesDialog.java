@@ -5,6 +5,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.NumberField;
 import com.l7tech.gui.widgets.SquigglyTextField;
+import com.l7tech.gui.widgets.PropertyPanel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
@@ -61,6 +62,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
     private SquigglyTextField httpPortTextField;
     private SquigglyTextField httpsPortTextField;
     private JScrollPane certScrollPane;
+    private PropertyPanel propertyPanel;
 
     private final BridgeRoutingAssertion assertion; // live copy of assertion -- do not write to it until Ok pressed
     private BridgeRoutingAssertion lastRoutingProperties = null; // copy last confirmed by HTTP dialog; all except policy XML is up-to-date
@@ -182,6 +184,9 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
                 };
         policyXmlText.addMouseListener(Utilities.createContextMenuMouseListener(policyXmlText, cmf));
 
+        propertyPanel.setTitle("Additional Properties");
+        propertyPanel.setPropertyEditTitle("Client Policy Property");
+
         copyModelToView();
         updateEnableStates();
     }
@@ -261,6 +266,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
 
         useSslByDefaultCheckBox.setSelected(assertion.isUseSslByDefault());
 
+        propertyPanel.setProperties( new LinkedHashMap<String,String>(assertion.getClientPolicyProperties()) );
 
         Long certOid = assertion.getServerCertificateOid();
         if (certOid != null) {
@@ -297,6 +303,8 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         }
 
         assertion.setUseSslByDefault(useSslByDefaultCheckBox.isSelected());
+
+        assertion.setClientPolicyProperties( propertyPanel.getProperties() );
 
         if (rbServerCertManual.isSelected()) {
             assertion.setServerCertificateOid(serverCert.getOid());
@@ -378,4 +386,8 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         }
         return true;
     }
+
+    private void createUIComponents() {
+        propertyPanel = new PropertyPanel();
+    }    
 }

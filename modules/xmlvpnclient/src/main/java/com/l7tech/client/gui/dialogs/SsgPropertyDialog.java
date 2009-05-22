@@ -108,7 +108,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     private BridgePolicyPanel getBridgePolicyPane() {
         if (bridgePolicyPane == null) {
-            bridgePolicyPane = new BridgePolicyPanel(this, !ssg.isGeneric());
+            bridgePolicyPane = new BridgePolicyPanel(!ssg.isGeneric());
         }
         return bridgePolicyPane;
     }

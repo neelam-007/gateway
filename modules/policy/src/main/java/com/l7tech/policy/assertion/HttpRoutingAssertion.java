@@ -49,6 +49,10 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     @Deprecated 
     public static final String VAR_SERVICE_URL = "service.url";
 
+    // WARNING
+    // WARNING : If you add properties, update the copyFrom method
+    // WARNING
+
     protected String protectedServiceUrl;
     protected String login;
     protected String password;
@@ -82,6 +86,14 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
     protected String krbConfiguredAccount;
     protected String krbConfiguredPassword;
 
+    protected boolean usesDefaultKeyStore = true;
+    protected long nonDefaultKeystoreId;
+    protected String keyId;
+
+    // WARNING
+    // WARNING : If you add properties, update the copyFrom method
+    // WARNING
+
     public HttpRoutingAssertion() {
         this(null, null, null, null);
     }
@@ -93,6 +105,40 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
 
     public HttpRoutingAssertion(String protectedServiceUrl, String login, String password, String realm) {
         this(protectedServiceUrl, login, password, realm, DEFAULT_MAX_CONNECTIONS_PER_HOST);
+    }
+
+    /** Subclasses can choose to offer this functionality by adding a public method that chains to this one. */
+    protected void copyFrom(HttpRoutingAssertion source) {
+        super.copyFrom(source);
+        this.setCustomIpAddresses(source.getCustomIpAddresses());
+        this.setFailoverStrategyName(source.getFailoverStrategyName());
+        this.setFailOnErrorStatus(source.isFailOnErrorStatus());
+        this.setFollowRedirects(source.isFollowRedirects());
+        this.setLogin(source.getLogin());
+        this.setMaxConnections(source.getMaxConnections());
+        this.setPassword(source.getPassword());
+        this.setProtectedServiceUrl(source.getProtectedServiceUrl());
+        this.setPassthroughHttpAuthentication(source.isPassthroughHttpAuthentication());
+        this.setRealm(source.getRealm());
+        this.setUserAgent(source.getUserAgent());
+        this.setTaiCredentialChaining(source.isTaiCredentialChaining());
+        this.setNtlmHost(source.getNtlmHost());
+        this.setConnectionTimeout(source.getConnectionTimeout());
+        this.setTimeout(source.getTimeout());
+        this.setRequestMsgSrc(source.getRequestMsgSrc());
+        this.setRequestHeaderRules(source.getRequestHeaderRules());
+        this.setRequestParamRules(source.getRequestParamRules());
+        this.setResponseMsgDest(source.getResponseMsgDest());
+        this.setResponseHeaderRules(source.getResponseHeaderRules());
+        this.setKrbConfiguredAccount(source.getKrbConfiguredAccount());
+        this.setKrbConfiguredPassword(source.getKrbConfiguredPassword());
+        this.setKrbDelegatedAuthentication(source.isKrbDelegatedAuthentication());
+        this.setKrbUseGatewayKeytab(source.isKrbUseGatewayKeytab());
+        this.setGzipEncodeDownstream(source.isGzipEncodeDownstream());
+        this.setCustomURLs(source.getCustomURLs());
+        this.setKeyAlias(source.getKeyAlias());
+        this.setUsesDefaultKeyStore(source.isUsesDefaultKeyStore());
+        this.setNonDefaultKeystoreId(source.getNonDefaultKeystoreId());
     }
 
     /**
@@ -306,36 +352,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.failoverStrategyName = failoverStrategyName;
     }
 
-    /** Subclasses can choose to offer this functionality by adding a public method that chains to this one. */
-    protected void copyFrom(HttpRoutingAssertion source) {
-        super.copyFrom(source);
-        this.setCustomIpAddresses(source.getCustomIpAddresses());
-        this.setFailoverStrategyName(source.getFailoverStrategyName());
-        this.setFailOnErrorStatus(source.isFailOnErrorStatus());
-        this.setFollowRedirects(source.isFollowRedirects());
-        this.setLogin(source.getLogin());
-        this.setMaxConnections(source.getMaxConnections());
-        this.setPassword(source.getPassword());
-        this.setProtectedServiceUrl(source.getProtectedServiceUrl());
-        this.setPassthroughHttpAuthentication(source.isPassthroughHttpAuthentication());
-        this.setRealm(source.getRealm());
-        this.setUserAgent(source.getUserAgent());
-        this.setTaiCredentialChaining(source.isTaiCredentialChaining());
-        this.setNtlmHost(source.getNtlmHost());
-        this.setConnectionTimeout(source.getConnectionTimeout());
-        this.setTimeout(source.getTimeout());
-        this.setRequestMsgSrc(source.getRequestMsgSrc());
-        this.setRequestHeaderRules(source.getRequestHeaderRules());
-        this.setRequestParamRules(source.getRequestParamRules());
-        this.setResponseMsgDest(source.getResponseMsgDest());
-        this.setResponseHeaderRules(source.getResponseHeaderRules());
-        this.setKrbConfiguredAccount(source.getKrbConfiguredAccount());
-        this.setKrbConfiguredPassword(source.getKrbConfiguredPassword());
-        this.setKrbDelegatedAuthentication(source.isKrbDelegatedAuthentication());
-        this.setGzipEncodeDownstream(source.isGzipEncodeDownstream());
-        this.setCustomURLs(source.getCustomURLs());
-    }
-
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         StringBuffer tmp = new StringBuffer();
@@ -362,6 +379,7 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         return Syntax.getReferencedNames(tmp.toString());
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         final List<VariableMetadata> vars = new ArrayList<VariableMetadata>();
         vars.add(new VariableMetadata(VAR_ROUTING_LATENCY, false, false, VAR_ROUTING_LATENCY, false));
@@ -389,31 +407,33 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.ntlmHost = ntlmHost;
     }
 
-    protected boolean usesDefaultKeyStore = true;
-    protected long nonDefaultKeystoreId;
-    protected String keyId;
-
+    @Override
     public boolean isUsesDefaultKeyStore() {
         return usesDefaultKeyStore;
     }
 
+    @Override
     public void setUsesDefaultKeyStore(boolean usesDefault) {
         this.usesDefaultKeyStore = usesDefault;
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.SSGKEY)
     public long getNonDefaultKeystoreId() {
         return nonDefaultKeystoreId;
     }
 
+    @Override
     public void setNonDefaultKeystoreId(long nonDefaultId) {
         this.nonDefaultKeystoreId = nonDefaultId;
     }
 
+    @Override
     public String getKeyAlias() {
         return keyId;
     }
 
+    @Override
     public void setKeyAlias(String keyid) {
         this.keyId = keyid;
     }
