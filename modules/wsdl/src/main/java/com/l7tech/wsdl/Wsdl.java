@@ -1489,13 +1489,25 @@ public class Wsdl implements Serializable {
      * for reach definition
      */
     private void collectElements(ElementCollector collector, Definition def) {
-        collector.collect(def);
-        //noinspection unchecked
-        final Map<String, List<Import>> imports = def.getImports();
-        for (List<Import> importList : imports.values()) {
-            for (Import importDef : importList) {
-                if (importDef.getDefinition() != null) {
-                    collectElements(collector, importDef.getDefinition());
+        collectElements( collector, def, new HashSet<Definition>() );
+    }
+
+    /**
+     * Traverses all the imported definitions and invokes collect on the collector
+     * for reach definition
+     */
+    private void collectElements(ElementCollector collector, Definition def, HashSet<Definition> seenDefinitions) {
+        if ( !seenDefinitions.contains(def) ) {
+            collector.collect(def);
+            seenDefinitions.add(def);
+
+            //noinspection unchecked
+            final Map<String, List<Import>> imports = def.getImports();
+            for (List<Import> importList : imports.values()) {
+                for (Import importDef : importList) {
+                    if (importDef.getDefinition() != null) {
+                        collectElements(collector, importDef.getDefinition(), seenDefinitions);
+                    }
                 }
             }
         }

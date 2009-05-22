@@ -206,7 +206,7 @@ public class PublishedService extends NamedEntityImp implements HasFolder {
                 WsdlStrategy strategy = wsdlStrategy;
                 if (strategy == null)
                     strategy = new DefaultWsdlStrategy();
-                _parsedWsdl = strategy.parseWsdl(this, getBaseURI(), cachedWsdl);
+                _parsedWsdl = strategy.parseWsdl(this, getWsdlUrl(), cachedWsdl);
             }
         }
         return _parsedWsdl;

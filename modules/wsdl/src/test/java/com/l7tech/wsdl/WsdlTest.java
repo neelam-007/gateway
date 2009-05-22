@@ -15,6 +15,8 @@ import java.net.URL;
 import java.util.logging.Logger;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Class WsdlTest tests the {@link Wsdl}
@@ -220,6 +222,77 @@ public class WsdlTest extends TestCase {
         }
     }
 
+    /**
+     * Test WSDLs with circular imports.
+     * 
+     * @throws Exception on test at errors
+     */
+    public void testWsdlsWithCircularImports() throws Exception {
+        // Step 1: load the resources from the classpath and put them in a CachedDocumentResolver with appropriate urls
+        Map<String, String> urisToResources = new HashMap<String, String>();
+
+        // Resource A
+        String resourceToReadA = TestDocuments.BUG6944_WSDLS_WITH_CIRCULAR_IMPORTS_A_IMPORTS_B;
+        InputStream inA = WsdlTest.class.getClassLoader().getResourceAsStream(resourceToReadA);
+        String contentA = readContentFromInputStream(inA);
+        String baseUriA =  resourceToReadA.replace(TestDocuments.DIR, "");
+        urisToResources.put(baseUriA, contentA);
+
+        // Resource B
+        String resourceToReadB = TestDocuments.BUG6944_WSDLS_WITH_CIRCULAR_IMPORTS_B_IMPORTS_A;
+        InputStream inB = WsdlTest.class.getClassLoader().getResourceAsStream(resourceToReadB);
+        String contentB = readContentFromInputStream(inB);
+        String baseUriB =  resourceToReadB.replace(TestDocuments.DIR, "");
+        urisToResources.put(baseUriB, contentB);
+
+        // Step 2: Create two WSDLs
+        // WSDL A
+        Wsdl wsdlA = Wsdl.newInstance(Wsdl.getWSDLFactory(false), Wsdl.getWSDLLocator(baseUriA, urisToResources, log));
+        wsdlA.setShowBindings(Wsdl.SOAP_BINDINGS);
+
+        // WSDL B
+        Wsdl wsdlB = Wsdl.newInstance(Wsdl.getWSDLFactory(false), Wsdl.getWSDLLocator(baseUriB, urisToResources, log));
+        wsdlB.setShowBindings(Wsdl.SOAP_BINDINGS);
+
+        // Step 3: Test WSDLs with circular imports
+        try {
+            wsdlA.getTypes();
+            wsdlA.getMessages();
+            wsdlA.getPortTypes();
+            wsdlA.getBindings();
+            wsdlA.getServices();
+
+            wsdlB.getTypes();
+            wsdlB.getMessages();
+            wsdlB.getPortTypes();
+            wsdlB.getBindings();
+            wsdlB.getServices();
+        } catch (StackOverflowError err) {
+            fail("WSDLs with circular imports has been handled, so Stack Overflow Error should not happen here.");
+        }
+    }
+
+    private String readContentFromInputStream(InputStream is) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+
+        String line;
+        try {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line + "\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return sb.toString();
+    }
 
     /**
      * Test <code>AbstractLocatorTest</code> main.
