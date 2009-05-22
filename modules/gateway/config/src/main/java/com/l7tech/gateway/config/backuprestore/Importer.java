@@ -1,7 +1,7 @@
 package com.l7tech.gateway.config.backuprestore;
 
-import com.l7tech.gateway.config.backuprestore.FlashUtilityLauncher.FatalException;
-import com.l7tech.gateway.config.backuprestore.FlashUtilityLauncher.InvalidArgumentException;
+import com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.FatalException;
+import com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException;
 import com.l7tech.gateway.config.manager.ClusterPassphraseManager;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.gateway.config.manager.db.DBActions;
@@ -31,7 +31,7 @@ import java.util.zip.ZipInputStream;
  * User: flascell<br/>
  * Date: Nov 8, 2006<br/>
  */
-class Importer extends ImportExportUtility {
+class Importer{
 
     private static final Logger logger = Logger.getLogger(Importer.class.getName());
     // importer options
@@ -94,22 +94,22 @@ class Importer extends ImportExportUtility {
     private File excludeFiles;
 
     // do the import
-    public void doIt(Map<String, String> arguments, final File flasherHome) throws FlashUtilityLauncher.InvalidArgumentException, FlashUtilityLauncher.FatalException, IOException {
-        
-        String inputpathval = FlashUtilityLauncher.getAbsolutePath(arguments.get(IMAGE_PATH.name));
+    public void doIt(Map<String, String> arguments, final File flasherHome) throws InvalidProgramArgumentException, BackupRestoreLauncher.FatalException, IOException {
+
+        String inputpathval = ImportExportUtilities.getAbsolutePath(arguments.get(IMAGE_PATH.name));
         if (inputpathval == null) {
             logger.info("Error, no image provided for import");
-            throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + IMAGE_PATH.name + ", required for importing image");
+            throw new InvalidProgramArgumentException("missing option " + IMAGE_PATH.name + ", required for importing image");
         }
 
         suppliedClusterPassphrase = arguments.get(CLUSTER_PASSPHRASE.name);
         if (suppliedClusterPassphrase == null) {
             logger.info("Error, no cluster passphrase provided for import");
-            throw new FlashUtilityLauncher.InvalidArgumentException("missing option " + CLUSTER_PASSPHRASE.name + ".");
+            throw new BackupRestoreLauncher.InvalidProgramArgumentException("missing option " + CLUSTER_PASSPHRASE.name + ".");
         }
 
         // uncompress image to temp folder, look for Exporter.DBDUMP_FILENAME
-        tempDirectory = Exporter.createTmpDirectory();
+        tempDirectory = ImportExportUtilities.createTmpDirectory();
         logger.info("Uncompressing image to temporary directory " + tempDirectory);
         try {
             System.out.println("Reading SecureSpan image file " + inputpathval);
@@ -153,7 +153,7 @@ class Importer extends ImportExportUtility {
             rootDBUsername = arguments.get(DB_USER.name);
             rootDBPasswd = arguments.get(DB_PASSWD.name);
             if (rootDBUsername == null && !configOnly) {
-                throw new FlashUtilityLauncher.InvalidArgumentException("Please provide options: " + DB_USER.name +
+                throw new BackupRestoreLauncher.InvalidProgramArgumentException("Please provide options: " + DB_USER.name +
                         " and " + DB_PASSWD.name);
             }
             if (rootDBPasswd == null) rootDBPasswd = ""; // totally legit
@@ -165,7 +165,7 @@ class Importer extends ImportExportUtility {
             // Replace database host name and database name in URL by those from command line options.
             dbHost = arguments.get(DB_HOST_NAME.name);
             if (dbHost == null) {
-                throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option: " + DB_HOST_NAME.name);
+                throw new InvalidProgramArgumentException("Please provide option: " + DB_HOST_NAME.name);
             } else if (dbHost.indexOf(':') > 0) {
                 dbHost = dbHost.split(":", 2)[0];
                 dbPort = dbHost.split(":", 2)[1];
@@ -176,9 +176,9 @@ class Importer extends ImportExportUtility {
             boolean isCreateNewDatabase = false;
             dbName = arguments.get(DB_NAME.name);
             if (!arguments.containsKey(DB_NAME.name) && !arguments.containsKey(CREATE_NEW_DB.name)) {
-                throw new FlashUtilityLauncher.InvalidArgumentException("Please provide option either: " + DB_NAME.name + " or " + CREATE_NEW_DB.name);
+                throw new InvalidProgramArgumentException("Please provide option either: " + DB_NAME.name + " or " + CREATE_NEW_DB.name);
             } else if (arguments.containsKey(DB_NAME.name) && arguments.containsKey(CREATE_NEW_DB.name)) {
-                throw new InvalidArgumentException("either specify " + DB_NAME.name + " or " + CREATE_NEW_DB.name);
+                throw new BackupRestoreLauncher.InvalidProgramArgumentException("either specify " + DB_NAME.name + " or " + CREATE_NEW_DB.name);
             } else {
                 if (arguments.containsKey(CREATE_NEW_DB.name)) {
                     isCreateNewDatabase = true;
@@ -220,7 +220,7 @@ class Importer extends ImportExportUtility {
                     }
 
                     if (!isCreateNewDatabase && !dbName.equals(nodeConfig.getString("node.db.config.main.name"))) {
-                        throw new InvalidArgumentException("provided database name does not match with database name in node.properties file.  If you " +
+                        throw new InvalidProgramArgumentException("provided database name does not match with database name in node.properties file.  If you " +
                                 "wish to create a new database, use the " + CREATE_NEW_DB.name + " option");
                     }
                 } else {
@@ -233,7 +233,7 @@ class Importer extends ImportExportUtility {
                 //no database gateway user defined
                 if (databaseUser == null) {
                     logger.info("No database gateway username defined.  Was not found in node.properties and not found in options");
-                    throw new FlashUtilityLauncher.InvalidArgumentException("Please provide options: " + GATEWAY_DB_USERNAME.name +
+                    throw new InvalidProgramArgumentException("Please provide options: " + GATEWAY_DB_USERNAME.name +
                             " and " + GATEWAY_DB_PASSWORD.name);
                 }
 
@@ -255,7 +255,7 @@ class Importer extends ImportExportUtility {
                     dbHost = "localhost";
                 } else if ( SyspropUtil.getBoolean("com.l7tech.config.backup.localDbOnly", true) ) {
                     // We will not modifiy a non-local database
-                    throw new FlashUtilityLauncher.FatalException( "Database host \""+dbHost+"\" is a remote database. Database restore requires a local database." );
+                    throw new BackupRestoreLauncher.FatalException( "Database host \""+dbHost+"\" is a remote database. Database restore requires a local database." );
                 }
 
                 //boolean newDatabaseCreated = false;
@@ -309,7 +309,7 @@ class Importer extends ImportExportUtility {
                 }
 
                 // load mapping if requested
-                String mappingPath = FlashUtilityLauncher.getAbsolutePath(arguments.get(MAPPING_PATH.name));
+                String mappingPath = ImportExportUtilities.getAbsolutePath(arguments.get(MAPPING_PATH.name));
                 if (mappingPath != null) {
                     if (!cleanRestore) {
                         logger.info("loading mapping file " + mappingPath);
@@ -317,7 +317,7 @@ class Importer extends ImportExportUtility {
                         try {
                             mapping = MappingUtil.loadMapping(mappingPath);
                         } catch (SAXException e) {
-                            throw new FlashUtilityLauncher.FatalException("Problem loading " + MAPPING_PATH.name + ". Invalid Format. " + e.getMessage());
+                            throw new BackupRestoreLauncher.FatalException("Problem loading " + MAPPING_PATH.name + ". Invalid Format. " + e.getMessage());
                         }
                         System.out.println(". DONE");
                     } else {
@@ -331,7 +331,7 @@ class Importer extends ImportExportUtility {
                     try {
                         saveExistingLicense();
                     } catch (SQLException e) {
-                        throw new FlashUtilityLauncher.FatalException("Error saving existing license from database " + e.getMessage());
+                        throw new BackupRestoreLauncher.FatalException("Error saving existing license from database " + e.getMessage());
                     }
                 } else {
                     logger.info("not trying to save license because new database");
@@ -353,7 +353,7 @@ class Importer extends ImportExportUtility {
                         MappingUtil.applyMappingChangesToDB(config, mapping);
                     } catch (SQLException e) {
                         logger.log(Level.WARNING, "error mapping target", e);
-                        throw new FlashUtilityLauncher.FatalException("error mapping staging values " + e.getMessage());
+                        throw new BackupRestoreLauncher.FatalException("error mapping staging values " + e.getMessage());
                     }
                 }
 
@@ -474,7 +474,7 @@ class Importer extends ImportExportUtility {
      * Compares the SQL statement and see if it will CREATE/DROP/INSERT any of the tables contained
      * in the provided omit table list.
      *
-     * @param sqlStatement  SQL statement to compare             
+     * @param sqlStatement  SQL statement to compare
      * @param omitTableNames    list of omit tables to compare with
      * @return
      */
@@ -565,7 +565,7 @@ class Importer extends ImportExportUtility {
         return omitTableList;
     }
 
-    private void loadDumpFromExplodedImage(/*String omitFile*/) throws IOException, SQLException, FlashUtilityLauncher.InvalidArgumentException, FlashUtilityLauncher.FatalException {
+    private void loadDumpFromExplodedImage(/*String omitFile*/) throws IOException, SQLException, InvalidProgramArgumentException, BackupRestoreLauncher.FatalException {
         // create temporary database copy to test the import
         System.out.print("Creating copy of target database for testing import ..");
         String testdbname = "TstDB_" + System.currentTimeMillis();
@@ -592,7 +592,7 @@ class Importer extends ImportExportUtility {
                 if (!newDatabaseCreated) {
                     ClusterPassphraseManager cpm = new ClusterPassphraseManager(targetConfig);
                     if (cpm.getDecryptedSharedKey(suppliedClusterPassphrase) == null) {
-                        throw new FlashUtilityLauncher.FatalException("Incorrect cluster passphrase.");
+                        throw new BackupRestoreLauncher.FatalException("Incorrect cluster passphrase.");
                     }
                 }
             } finally {
@@ -807,37 +807,29 @@ class Importer extends ImportExportUtility {
         }
     }
 
-    @Override
-    public List<CommandLineOption> getIgnoredOptions() {
+    public static List<CommandLineOption> getIgnoredOptions() {
         return Arrays.asList(ALL_IGNORED_OPTIONS);
     }
 
-    @Override
     public List<CommandLineOption> getValidOptions() {
         return Arrays.asList(ALLOPTIONS);
     }
 
-    @Override
-    public String getUtilityType() {
-        return "import";
-    }
-
-    @Override
-    public void preProcess(Map<String, String> args) throws InvalidArgumentException, IOException, FatalException {
+    public void preProcess(Map<String, String> args) throws BackupRestoreLauncher.InvalidProgramArgumentException, IOException, FatalException {
         //skip the whole pre-processing
-        if (args.containsKey(SKIP_PRE_PROCESS.name)) {
+        if (args.containsKey(ImportExportUtilities.SKIP_PRE_PROCESS.name)) {
             return;
         }
 
         //image file to import
         if (!args.containsKey(IMAGE_PATH.name)) {
-            throw new InvalidArgumentException("missing option " + IMAGE_PATH.name + ", required for importing image");
+            throw new InvalidProgramArgumentException("missing option " + IMAGE_PATH.name + ", required for importing image");
         } else {
-            verifyFileExistence(args.get(IMAGE_PATH.name), false);  //check if file exists
+            ImportExportUtilities.verifyFileExistence(args.get(IMAGE_PATH.name), false);  //check if file exists
 
             //unzip the file to check for version and mandatory files, we should always remove the files afterwards
             try {
-                tempDirectory = Exporter.createTmpDirectory();
+                tempDirectory = ImportExportUtilities.createTmpDirectory();
                 unzipToDir(args.get(IMAGE_PATH.name), tempDirectory, false);
 
                 //check for version
@@ -846,9 +838,9 @@ class Importer extends ImportExportUtility {
                     byte[] buf = new byte[512];
                     int read = fis.read(buf);
                     String imageVersion = new String(buf, 0, read);
-                    verifyDatabaseVersion(imageVersion);    //check database version is correct
+                    ImportExportUtilities.throwIfDbVersionDoesNotMatchSSG(imageVersion);    //check database version is correct
                 } catch (FileNotFoundException fnfe) {
-                    throw new InvalidArgumentException("version file not found in image file");
+                    throw new BackupRestoreLauncher.InvalidProgramArgumentException("version file not found in image file");
                 }
 
                 //check for mandatory back up file exists in the zip file
@@ -869,53 +861,53 @@ class Importer extends ImportExportUtility {
         //if config option is specified, then we need to check that we have proper information to populate node.properties
         if (args.containsKey(CONFIG_ONLY.name)) {
             if (args.containsKey(CREATE_NEW_DB.name)) {
-                throw new InvalidArgumentException("cannot use options " + CONFIG_ONLY.name + " and " + CREATE_NEW_DB.name + " together.");
+                throw new InvalidProgramArgumentException("cannot use options " + CONFIG_ONLY.name + " and " + CREATE_NEW_DB.name + " together.");
             }
 
             if (!args.containsKey(DB_HOST_NAME.name)) {
-                throw new InvalidArgumentException("missing option " + DB_HOST_NAME.name);
+                throw new InvalidProgramArgumentException("missing option " + DB_HOST_NAME.name);
             }
 
             if (!args.containsKey(DB_NAME.name)) {
-                throw new InvalidArgumentException("missing option " + DB_NAME.name);
+                throw new InvalidProgramArgumentException("missing option " + DB_NAME.name);
             }
 
             if (!args.containsKey(GATEWAY_DB_USERNAME.name)) {
-                throw new InvalidArgumentException("missing option " + GATEWAY_DB_USERNAME.name);
+                throw new InvalidProgramArgumentException("missing option " + GATEWAY_DB_USERNAME.name);
             }
 
             if (!args.containsKey(GATEWAY_DB_PASSWORD.name)) {
-                throw new InvalidArgumentException("missing option " + GATEWAY_DB_PASSWORD.name);
+                throw new InvalidProgramArgumentException("missing option " + GATEWAY_DB_PASSWORD.name);
             }
 
             if (!args.containsKey(CLUSTER_PASSPHRASE.name)) {
-                throw new InvalidArgumentException("missing option " + CLUSTER_PASSPHRASE.name);
+                throw new InvalidProgramArgumentException("missing option " + CLUSTER_PASSPHRASE.name);
             }
         }
 
         //cluster password required
         if (!args.containsKey(CLUSTER_PASSPHRASE.name)) {
-            throw new InvalidArgumentException("missing option " + CLUSTER_PASSPHRASE.name);
+            throw new BackupRestoreLauncher.InvalidProgramArgumentException("missing option " + CLUSTER_PASSPHRASE.name);
         }
 
         //root admin username/password, host, database name required
         if (!args.containsKey(DB_HOST_NAME.name)) {
-            throw new InvalidArgumentException("missing option " + DB_HOST_NAME.name);
+            throw new BackupRestoreLauncher.InvalidProgramArgumentException("missing option " + DB_HOST_NAME.name);
         }
 
         if (!args.containsKey(DB_NAME.name) && !args.containsKey(CREATE_NEW_DB.name)) {
-            throw new InvalidArgumentException("missing option " + DB_NAME.name + " or " + CREATE_NEW_DB.name);
+            throw new BackupRestoreLauncher.InvalidProgramArgumentException("missing option " + DB_NAME.name + " or " + CREATE_NEW_DB.name);
         } else if (args.containsKey(DB_NAME.name) && args.containsKey(CREATE_NEW_DB.name)) {
-            throw new InvalidArgumentException("either specify " + DB_NAME.name + " or " + CREATE_NEW_DB.name);
+            throw new InvalidProgramArgumentException("either specify " + DB_NAME.name + " or " + CREATE_NEW_DB.name);
         }
 
         if (!args.containsKey(DB_USER.name) && !args.containsKey(CONFIG_ONLY.name)) {
-            throw new InvalidArgumentException("missing option " + DB_USER.name);
+            throw new InvalidProgramArgumentException("missing option " + DB_USER.name);
         }
 
         //check permission and file existence for mapping option
         if (args.containsKey(MAPPING_PATH.name)) {
-            verifyFileExistence(args.get(MAPPING_PATH.name), false);    //check file exists
+            ImportExportUtilities.verifyFileExistence(args.get(MAPPING_PATH.name), false);    //check file exists
             try {
                 //try to parse through the mapping to see if formatted to what we are expecting
                 mapping = MappingUtil.loadMapping(args.get(MAPPING_PATH.name));
@@ -973,7 +965,7 @@ class Importer extends ImportExportUtility {
             } else {
                 //node.properties file does not exists, and no gateway username defined, we need to ask for this
                 if (gatewayUsername == null) {
-                    throw new InvalidArgumentException("Please provide options: " + GATEWAY_DB_USERNAME.name +
+                    throw new BackupRestoreLauncher.InvalidProgramArgumentException("Please provide options: " + GATEWAY_DB_USERNAME.name +
                             " and " + GATEWAY_DB_PASSWORD.name);
                 }
             }
@@ -981,10 +973,10 @@ class Importer extends ImportExportUtility {
             //test root user conneciton
             if (args.containsKey(DB_NAME.name)) {
                 //test gateway user connection
-                verifyDatabaseConnection(new DatabaseConfig(host, port, args.get(DB_NAME.name), gatewayUsername, gatewayPassword), false);
+                ImportExportUtilities.verifyDatabaseConnection(new DatabaseConfig(host, port, args.get(DB_NAME.name), gatewayUsername, gatewayPassword), false);
 
                 //if the database alerady exists, check if all gateway have been shut down
-                if (!args.containsKey(CONFIG_ONLY.name) && verifyDatabaseExists(host, args.get(DB_NAME.name), port, rootUsername, rootPassword)) {
+                if (!args.containsKey(CONFIG_ONLY.name) && ImportExportUtilities.verifyDatabaseExists(host, args.get(DB_NAME.name), port, rootUsername, rootPassword)) {
                     //database doesnt exists check if gateway are shut down
 
                     List<String> runningSsg = getRunningSSG(false, new DatabaseConfig(host, port, args.get(DB_NAME.name), rootUsername, rootPassword), 10000);
@@ -1001,7 +993,7 @@ class Importer extends ImportExportUtility {
                 }
             } else if (args.containsKey(CREATE_NEW_DB.name)) {
                 //check if the database exists already
-                if (verifyDatabaseExists(host, args.get(CREATE_NEW_DB.name), port, gatewayUsername, gatewayPassword)) {
+                if (ImportExportUtilities.verifyDatabaseExists(host, args.get(CREATE_NEW_DB.name), port, gatewayUsername, gatewayPassword)) {
                     throw new FatalException("The database " + args.get(CREATE_NEW_DB.name) + " already exists");
                 }
             }
@@ -1013,5 +1005,21 @@ class Importer extends ImportExportUtility {
         } catch (InterruptedException ie) {
             throw new FatalException("database error: " + ExceptionUtils.getMessage(ie));
         }
+    }
+
+    /**
+     * Get the usage for the Importer utility. Usage information is written to the StringBuilder output
+     * @param output StringBuilder to write the usage information to
+     */
+    public static void getImporterUsage(StringBuilder output) {
+        int largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(ALLOPTIONS);
+        for (CommandLineOption option : ALLOPTIONS) {
+            output.append("\t")
+                    .append(option.name)
+                    .append(ImportExportUtilities.createSpace(largestNameStringSize-option.name.length() + 1))
+                    .append(option.description)
+                    .append(BackupRestoreLauncher.EOL_CHAR);
+        }
+        output.append(BackupRestoreLauncher.EOL_CHAR);
     }
 }

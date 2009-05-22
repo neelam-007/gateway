@@ -19,6 +19,8 @@ if [ -x /opt/SecureSpan/Gateway/runtime/etc/profile ]; then
     exit 1
 fi
 
+SSGNODE="default"
+
 # This will set the location of the jdk into SSG_JAVA_HOME.
 . /opt/SecureSpan/Gateway/runtime/etc/profile
 
@@ -26,15 +28,15 @@ fi
 if [ $UID -eq 0 ]; then
     # invoke flasher as layer7
     su layer7 -c "${SSG_JAVA_HOME}/bin/java -Xmx256m \
-        -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} \
+        -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
         -jar ${REL_BASE_DIR}/SSGBackupOnlyUtility.jar export $*"
 elif [ "$USER" == "layer7" ]; then
     ${SSG_JAVA_HOME}/bin/java -Xmx256m \
-        -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} \
+        -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
         -jar ${REL_BASE_DIR}/SSGBackupOnlyUtility.jar export $*
 elif [ "$USER" == "gateway" ]; then
     ${SSG_JAVA_HOME}/bin/java -Xmx256m \
-        -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} \
+        -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
         -Djava.util.logging.config.file=backupgatewaylogging.properties \
         -jar ${REL_BASE_DIR}/SSGBackupOnlyUtility.jar export $*
 else

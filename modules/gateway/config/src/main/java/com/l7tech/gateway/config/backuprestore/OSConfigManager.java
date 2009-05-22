@@ -1,6 +1,7 @@
 package com.l7tech.gateway.config.backuprestore;
 
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.ResourceUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,8 +13,8 @@ import java.util.logging.Logger;
 
 /**
  * Encapsulates import and export of os level system config files.
- * Which os level files are exported/imported is controlled by the hidden config file
- * grandmaster_flash.
+ * Which os level files are exported/imported is controlled by the config file
+ * backup_manifest.
  *
  * <p/>
  * <p/>
@@ -24,23 +25,30 @@ import java.util.logging.Logger;
  */
 class OSConfigManager {
     private static final Logger logger = Logger.getLogger(OSConfigManager.class.getName());
-    private static final String SETTINGS_PATH = "cfg/backup_manifest";
+    private static final String BACKUP_MANIFEST = "config/backup/cfg/backup_manifest";
     private static final String SYSTMP_PATH = "configfiles";
-    private static final String SUBDIR = "os";
-    private final File tmpDirPath;
-    private File flasherHome;
+    private final File pathToBackupFolder;
+    private static File backUpManifest;
+
+    private OSConfigManager(String path) {
+        pathToBackupFolder = new File(path);
+    }
 
     /**
-     * stored os level config files into temp directory. which files to store is controlled by the hidden
-     * config file grandmaster_flash
+     * stored os level config files into temp directory. which files to store is controlled by the config file
+     * backup_manifest
      * @param destination the name of the temp directory where the image source is being stored before compression
-     * @param flasherHome home directory of the Flasher; use <code>null</code> if the JVM was already launched from there
+     * @param ssgHome home directory of the Flasher; use <code>null</code> if the JVM was already launched from there
      * @throws IOException if something does not work
+     * @throws IllegalStateException if the backup_manifest file is not found or is a directory
      */
-    public static void saveOSConfigFiles(String destination, File flasherHome) throws IOException {
+    public static void saveOSConfigFiles(String destination, File ssgHome) throws IOException {
+        backUpManifest = new File(ssgHome, BACKUP_MANIFEST);
+        if (!backUpManifest.exists()) throw new IllegalStateException("backup_manifest does not exist");
+        if (backUpManifest.isDirectory()) throw new IllegalStateException("backup_manifest is a directory");
+
         OSConfigManager me = new OSConfigManager(destination);
-        me.flasherHome = flasherHome;
-        me.doSave();
+        me.copyOSFilesToBackupFolder();
     }
 
     /**
@@ -58,31 +66,28 @@ class OSConfigManager {
         me.doLoadToRealTarget();
     }
 
-    private void doSave() throws IOException {
-        File settingsPath = new File(flasherHome, SETTINGS_PATH);
-        if (settingsPath.isFile()) {
-            FileReader fr = new FileReader(settingsPath);
-            BufferedReader grandmasterreader = new BufferedReader(fr);
-            String tmp;
-            try {
-                while((tmp = grandmasterreader.readLine()) != null) {
-                    if (!tmp.startsWith("#")) {
-                        File osconfigfile = new File(tmp);
-                        if ( osconfigfile.isFile() ) {
-                            logger.info("Saving " + osconfigfile.getPath());
-                            File target = new File(new File(tmpDirPath, SUBDIR), osconfigfile.getPath());
-                            FileUtils.ensurePath(target.getParentFile());
-                            FileUtils.copyFile(osconfigfile, target);
-                        } else {
-                            logger.info("os config file " + osconfigfile.getPath() + " does not exist on this " +
-                                        "system and will not be included in image");
-                        }
+    private void copyOSFilesToBackupFolder() throws IOException {
+        FileReader fr = new FileReader(backUpManifest);
+        BufferedReader bufferedReader = new BufferedReader(fr);
+        String fileToCopy;
+        try {
+            while((fileToCopy = bufferedReader.readLine()) != null) {
+                if (!fileToCopy.startsWith("#")) {
+                    File osConfigFileToCopy = new File(fileToCopy);
+                    if ( osConfigFileToCopy.isFile() ) {
+                        logger.info("Saving " + osConfigFileToCopy.getPath());
+                        File target = new File(new File(pathToBackupFolder.getAbsolutePath()), osConfigFileToCopy.getPath());
+                        FileUtils.ensurePath(target.getParentFile());
+                        FileUtils.copyFile(osConfigFileToCopy, target);
+                    } else {
+                        logger.info("os config file " + osConfigFileToCopy.getPath() + " does not exist on this " +
+                                    "system and will not be included in image");
                     }
                 }
-            } finally {
-                grandmasterreader.close();
-                fr.close();
             }
+        } finally {
+            ResourceUtils.closeQuietly(bufferedReader);
+            ResourceUtils.closeQuietly(fr);
         }
     }
 
@@ -119,7 +124,7 @@ class OSConfigManager {
     }
 
     private void doLoadToTmpTarget() throws IOException {
-        final String osfilesroot = new File(tmpDirPath, SUBDIR).getAbsolutePath();
+        final String osfilesroot = pathToBackupFolder.getAbsolutePath();
         List<String> listofosfiles = listDir(osfilesroot);
         boolean systemfileoverwritten = false;
         for (String osfiletorestore : listofosfiles) {
@@ -166,9 +171,5 @@ class OSConfigManager {
             }
             return output;
         } else return null;
-    }
-
-    private OSConfigManager(String path) {
-        tmpDirPath = new File(path);
     }
 }

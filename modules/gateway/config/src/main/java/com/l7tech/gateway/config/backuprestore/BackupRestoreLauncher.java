@@ -19,16 +19,14 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Nov 8, 2006<br/>
  */
-public class FlashUtilityLauncher {
+public class BackupRestoreLauncher {
     public static final String EOL_CHAR = System.getProperty("line.separator");
-    /** System property used as base directory for all relative paths. */
-    private static final String BASE_DIR_PROPERTY = "com.l7tech.server.backuprestore.basedir";
     private static final String LOGCONFIG_NAME = "backuputilitylogging.properties";
     private static final String SSGBACKUP_SH = "ssgbackup.sh";
     private static final String SSGRESTORE_SH = "ssgrestore.sh";
     private static final String IMPORT_TYPE = "import";
     private static final String EXPORT_TYPE = "export";
-    private static final Logger logger = Logger.getLogger(FlashUtilityLauncher.class.getName());
+    private static final Logger logger = Logger.getLogger(BackupRestoreLauncher.class.getName());
     private static ArrayList<CommandLineOption> allRuntimeOptions = null;
     private static int argparseri = 0;
 
@@ -45,15 +43,14 @@ public class FlashUtilityLauncher {
             Map<String, String> passedArgs;
             if (args[0].toLowerCase().equals("import")) {
                 Importer importer = new Importer();
-                passedArgs = importer.getParameters(args);
+                passedArgs = ImportExportUtilities.getParameters(
+                        args, Arrays.asList(Importer.ALLOPTIONS), Importer.getIgnoredOptions());
                 importer.preProcess(passedArgs);
                 importer.doIt(passedArgs, null);
                 System.out.println("\nImport completed with no errors.");
             } else if (args[0].toLowerCase().equals("export")) {
-                Exporter exporter = new Exporter(new File("/opt/SecureSpan/Gateway"), System.out, System.err);
-                passedArgs = exporter.getParameters(args);
-                exporter.preProcess(passedArgs);
-                exporter.doIt(passedArgs);
+                Exporter exporter = new Exporter(new File("/opt/SecureSpan/Gateway"), System.out);
+                exporter.createBackupImage(args);
                 System.out.println("\nExport of SecureSpan Gateway image completed with no errors.");
             } else if (args[0].toLowerCase().equals("cfgdeamon")) {
                 OSConfigManager.restoreOSConfigFilesForReal();
@@ -65,10 +62,10 @@ public class FlashUtilityLauncher {
                 return;
             }
             logger.info("Operation complete without errors");
-        } catch (InvalidArgumentException e) {
+        } catch (InvalidProgramArgumentException e) {
             String message = "Invalid argument due to '" + e.getMessage() + "'.";
             System.out.println(message);
-            logger.log(Level.INFO, message);            
+            logger.log(Level.INFO, message);
             System.out.println(getUsage(args[0]));
             System.exit(1);
         } catch (IOException e) {
@@ -78,6 +75,12 @@ public class FlashUtilityLauncher {
             System.exit(1);
         } catch (FatalException e) {
             String message = "Import failed due to '" + e.getMessage() + "'.";
+            System.out.println(message);
+            logger.log(Level.WARNING, message);
+            System.exit(1);
+        } catch (Exception e) {
+            //this catches all runtime Exceptions which can be thrown for Null pointers, Illegal States and Unsupported Ops
+            String message = "Import / Export failed due to '" + e.getMessage() + "'.";
             System.out.println(message);
             logger.log(Level.WARNING, message);
             System.exit(1);
@@ -115,7 +118,7 @@ public class FlashUtilityLauncher {
      * @return  The string containing the usages
      */
     private static String getUsage(final String utilityType) {
-        StringBuffer output = new StringBuffer();
+        StringBuilder output = new StringBuilder();
 
         //determine what is the utility type
         if (utilityType == null || "".equals(utilityType)) {
@@ -124,106 +127,34 @@ public class FlashUtilityLauncher {
             //otherwise the ssgbackup.sh will always use export and ssgrestore.sh will always use import
             output.append("usage: [import | export] [OPTIONS]").append(EOL_CHAR);
             output.append("\tIMPORT OPTIONS:").append(EOL_CHAR);
-            int largestNameStringSize = getLargestNameStringSize(Arrays.asList(Importer.ALLOPTIONS));
-            for (CommandLineOption option : Importer.ALLOPTIONS) {
-                output.append("\t")
-                        .append(option.name)
-                        .append(createSpace(largestNameStringSize-option.name.length() + 1))
-                        .append(option.description)
-                        .append(EOL_CHAR);
-            }
-            output.append(EOL_CHAR);
+            Importer.getImporterUsage(output);
             output.append("\tEXPORT OPTIONS:").append(EOL_CHAR);
-            largestNameStringSize = getLargestNameStringSize(Arrays.asList(Exporter.ALLOPTIONS));
-            for (CommandLineOption option : Exporter.ALLOPTIONS) {
-                output.append("\t")
-                        .append(option.name)
-                        .append(createSpace(largestNameStringSize-option.name.length() + 1))
-                        .append(option.description)
-                        .append(EOL_CHAR);
-            }
+            Exporter.getExporterUsage(output);
         } else if (utilityType.equals(IMPORT_TYPE)) {
             output.append("usage: " + SSGRESTORE_SH + " [OPTIONS]").append(EOL_CHAR);
             output.append("\tOPTIONS:").append(EOL_CHAR);
-            int largestNameStringSize = getLargestNameStringSize(Arrays.asList(Importer.ALLOPTIONS));
-            for (CommandLineOption option : Importer.ALLOPTIONS) {
-                output.append("\t")
-                        .append(option.name)
-                        .append(createSpace(largestNameStringSize-option.name.length() + 1))
-                        .append(option.description)
-                        .append(EOL_CHAR);
-            }
+            Importer.getImporterUsage(output);
         } else if (utilityType.equals(EXPORT_TYPE)) {
             output.append("usage: " + SSGBACKUP_SH + " [OPTIONS]").append(EOL_CHAR);
             output.append("\tOPTIONS:").append(EOL_CHAR);
-            int largestNameStringSize = getLargestNameStringSize(Arrays.asList(Importer.ALLOPTIONS));
-            for (CommandLineOption option : Exporter.ALLOPTIONS) {
-                output.append("\t")
-                        .append(option.name)
-                        .append(createSpace(largestNameStringSize-option.name.length() + 1))
-                        .append(option.description)
-                        .append(EOL_CHAR);
-            }
+            Exporter.getExporterUsage(output);
         }
         return output.toString();
     }
 
-    /**
-     * Traverses the list of options and determine the length of the longest option name.
-     *
-     * @param options   The list of options
-     * @return          The length of the longest option name
-     */
-    private static int getLargestNameStringSize(final List<CommandLineOption> options) {
-        int largestStringSize = 0;
-        for (CommandLineOption option : options) {
-            if (option.name != null && option.name.length() > largestStringSize) {
-                largestStringSize = option.name.length();
-            }
-        }
-        return largestStringSize;
-    }
 
     /**
-     * Creates the padding spaces string
-     *
-     * @param space The number of spaces to create
-     * @return  The space string
+     * This class represents ane exception when a required program parameter is missing or has an invalid value.
+     * An invalid value includes when a program parameter value has a value representing a file, and the file
+     * does not exist or cannot be written to
      */
-    private static String createSpace(int space) {
-        StringBuffer spaces = new StringBuffer();
-        for (int i=0; i <= space; i++) {
-            spaces.append(" ");
-        }
-        return spaces.toString();
+    public static class InvalidProgramArgumentException extends Exception{
+        public InvalidProgramArgumentException(String reason) {super(reason);}
     }
 
-    public static class InvalidArgumentException extends Exception {
-        public InvalidArgumentException(String reason) {super(reason);}
-    }
-
+    //todo [Donal] are these exceptions needed?
     public static class FatalException extends Exception {
         public FatalException(String reason) {super(reason);}
     }
 
-    /**
-     * @param path  either a relative path or an absolute path
-     * @return if <code>path</code> is absolute, it is simply returned;
-     *         if <code>path</code> is relative, it is resolved by prefixing it with the directory specified by the system property {@link #BASE_DIR_PROPERTY};
-     *         if <code>path</code> is null, returns null
-     * @throws RuntimeException if the system property {@link #BASE_DIR_PROPERTY} is not set when it is needed
-     */
-    public static String getAbsolutePath(final String path) {
-        if (path == null) return null;
-
-        if (new File(path).isAbsolute()) {
-            return path;
-        }
-
-        final String baseDir = System.getProperty(BASE_DIR_PROPERTY);
-        if (baseDir == null) {
-            throw new RuntimeException("System property \"" + BASE_DIR_PROPERTY + "\" not set.");
-        }
-        return baseDir + File.separator + path;
-    }
 }

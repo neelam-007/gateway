@@ -54,6 +54,11 @@ public final class Functions {
         R call(P1 p1, P2 p2);
     }
 
+    /** A function that takes two arguments and returns a value, and may throw one type of exception.  */
+    public interface BinaryThrows<R, P1, P2, E extends Throwable> {
+        R call(P1 p1, P2 p2) throws E;
+    }
+
     /** A function that takes two arguments and returns void. */
     public interface BinaryVoid<P1, P2> {
         void call(P1 p1, P2 p2);

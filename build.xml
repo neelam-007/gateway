@@ -2121,7 +2121,7 @@
         <jar jarfile="${build.dir}/gatewayconfig/SSGBackupOnlyUtility.jar">
             <manifest>
                 <attribute name="Class-Path" value="lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
-                <attribute name="Main-Class" value="com.l7tech.gateway.config.backuprestoreestore.FlashUtilityLauncher"/>
+                <attribute name="Main-Class" value="com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher"/>
             </manifest>
         </jar>
 
@@ -2137,7 +2137,7 @@
         </delete>
 
     </target>
-    
+
     <!-- Package the ssg backuprestore utility -->
     <target name="package.ssgflasher" unless="ssg.only" depends="package.jars">
         <mkdir dir="${build.dir}/backup"/>
@@ -2165,7 +2165,7 @@
                 <attribute name="Main-Class" value="com.l7tech.util.ApplicationLauncher"/>
                 <attribute name="Class-Path" value="../../runtime/lib/layer7-utility-${module.utility.version}.jar"/>
                 <attribute name="X-Layer7-Jar" value="../../runtime/lib/layer7-gateway-config-${module.gateway.config.version}.jar"/>
-                <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.backuprestoreestore.FlashUtilityLauncher"/>
+                <attribute name="X-Layer7-Main-Class" value="com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher"/>
             </manifest>
         </jar>
 
@@ -2282,7 +2282,7 @@
             </manifest>
         </jar>
     </target>
-    
+
     <!--
       Package the SCA config tool (JAR)
     -->
@@ -2410,7 +2410,7 @@
     </target>
 
     <target name="detect.custom.assertion.sample" depends="prepare">
-        <available property="custom.assertion.sample.present" file="${src.root}/CustomAssertionSample" type="dir"/>    
+        <available property="custom.assertion.sample.present" file="${src.root}/CustomAssertionSample" type="dir"/>
     </target>
 
     <target name="zip.api.customassertion" depends="package.api,detect.custom.assertion.sample" if="custom.assertion.sample.present">
@@ -2559,7 +2559,7 @@
                 password="${my.database.password}"
                 pingstmt="${my.database.pingstmt}"/>
     </target>
-  
+
     <!--
         Hibernate properties token replacement target.
         This should be done ONLY for non distribution builds.
@@ -2574,7 +2574,7 @@
     </target>
 
     <!--
-      Test compilation target 
+      Test compilation target
     -->
     <target name="compile-tests" depends="publish-all-modules-quick"/>
 
@@ -2636,7 +2636,7 @@
             depends="ssg-install-full-init,INTERNAL-ssg-install,package.solaris.tar,package.tarari.tar"/>
 
     <!--
-      Set the standard options for an official build. 
+      Set the standard options for an official build.
     -->
     <target name="ssg-install-full-init">
         <property name="ssg.install.enabled" value="true"/>
@@ -2644,7 +2644,7 @@
         <property name="makerpm" value="true"/>
         <property name="makensis" value="true"/>
         <property name="module.obfuscate" value="true"/>
-        <property name="module.official.build" value="true"/>        
+        <property name="module.official.build" value="true"/>
         <property name="pack200" value="true"/>
     </target>
 
@@ -2689,7 +2689,7 @@
         <fail unless="jdk.exists" message="Couldn't find ${install.jdk.tar.gz}! Check your install.properties file!"/>
     </target>
 
-    <!--                                                                                                   
+    <!--
       Full install main work
     -->
     <target name="INTERNAL-ssg-install-main" if="ssg.install.enabled">

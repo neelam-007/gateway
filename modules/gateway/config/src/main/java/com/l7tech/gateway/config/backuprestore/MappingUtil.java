@@ -2,6 +2,7 @@ package com.l7tech.gateway.config.backuprestore;
 
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.TooManyChildElementsException;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.gateway.config.manager.db.DBActions;
@@ -82,18 +83,18 @@ class MappingUtil {
         }
     }
 
-    public static CorrespondanceMap loadMapping(String mappingFilePath) throws FlashUtilityLauncher.InvalidArgumentException, IOException, SAXException {
+    public static CorrespondanceMap loadMapping(String mappingFilePath) throws IOException, SAXException {
         // load mapping file, validate it and build two maps (one for backends, and one for global variables)
         FileInputStream fis = new FileInputStream(mappingFilePath);
         Document mappingDoc = XmlUtil.parse(fis);
         Element simEl = mappingDoc.getDocumentElement();
         if (!simEl.getLocalName().equals(IMPORTMAPPINGELNAME)) {
             logger.info("Error, provided mapping file is not valid as the root element is not " + IMPORTMAPPINGELNAME);
-            throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " is not a valid mapping file");
+            throw new IllegalArgumentException(mappingFilePath + " is not a valid mapping file");
         }
         if (!simEl.getNamespaceURI().equals(STAGINGMAPPINGNS)) {
             logger.info("Error, provided mapping file is not valid as the root element is not of namespace " + STAGINGMAPPINGNS);
-            throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " is not a valid mapping file");
+            throw new IllegalArgumentException(mappingFilePath + " is not a valid mapping file");
         }
         CorrespondanceMap output = new CorrespondanceMap();
         try {
@@ -109,7 +110,7 @@ class MappingUtil {
                 }
                 if (source == null || target == null) {
                     logger.info("Error, an element " + IPMAPELNAME + " does not contain expected attributes");
-                    throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " has invalid values for ipmap element");
+                    throw new IllegalArgumentException(mappingFilePath + " has invalid values for ipmap element");
                 }
                 output.backendIPMapping.put(source, target);
             }
@@ -121,7 +122,7 @@ class MappingUtil {
                 String target = varmapel.getAttribute(TARGETVALUEATTRNAME);
                 if (name == null || target == null) {
                     logger.info("Error, an element " + VARMAPELNAME + " does not contain expected attributes");
-                    throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " has invalid values for varmap element");
+                    throw new IllegalArgumentException(mappingFilePath + " has invalid values for varmap element");
                 }
 
                 //only map non-hidden hidden cluster properties
@@ -131,36 +132,42 @@ class MappingUtil {
             }
         } catch (TooManyChildElementsException e) {
             logger.log(Level.INFO, "error loading mapping file", e);
-            throw new FlashUtilityLauncher.InvalidArgumentException(mappingFilePath + " is not a valid mapping file. " + e.getMessage());
+            throw new IllegalArgumentException(mappingFilePath + " is not a valid mapping file. " + e.getMessage());
         }
         return output;
     }
 
     public static void produceTemplateMappingFileFromDB(DatabaseConfig config, String outputTemplatePath) throws SQLException, SAXException, IOException {
-        Connection c = new DBActions().getConnection(config, false);
+        Connection conn = null;
         Set<String> ipaddressesInRoutingAssertions = new HashSet<String>();
         HashMap<String, String> mapOfClusterProperties = new HashMap<String, String>();
         try {
+            conn = new DBActions().getConnection(config, false);
             // go through the cluster properties
-            Statement s = c.createStatement();
-            ResultSet rs = s.executeQuery("select propkey, propvalue from cluster_properties;");
-            while (rs.next()) {
-                String value = rs.getString(2);
-                String key = rs.getString(1);
+            Statement statement = null;
+            ResultSet resultSet = null;
+            try{
+                statement = conn.createStatement();
+                resultSet = statement.executeQuery("select propkey, propvalue from cluster_properties;");
+                while (resultSet.next()) {
+                    String value = resultSet.getString(2);
+                    String key = resultSet.getString(1);
 
-                //only map non-hidden cluster property
-                if (!isHiddenClusterProperty(key, value)) {
-                    mapOfClusterProperties.put(key, value);
+                    //only map non-hidden cluster property
+                    if (!isHiddenClusterProperty(key, value)) {
+                        mapOfClusterProperties.put(key, value);
+                    }
                 }
+            }finally{
+                ResourceUtils.closeQuietly(resultSet);
+                ResourceUtils.closeQuietly(statement);
             }
-            rs.close();
-            s.close();
             // go through the policies
-            ipaddressesInRoutingAssertions.addAll(getRoutingIpAddressesFromPolicies(c, "published_service", "policy_xml"));  // column exists if upgraded from 4.2
-            ipaddressesInRoutingAssertions.addAll(getRoutingIpAddressesFromPolicies(c, "policy", "xml"));
-            ipaddressesInRoutingAssertions.addAll(getRoutingIpAddressesFromPolicies(c, "policy_version", "xml"));
+            ipaddressesInRoutingAssertions.addAll(getRoutingIpAddressesFromPolicies(conn, "published_service", "policy_xml"));  // column exists if upgraded from 4.2
+            ipaddressesInRoutingAssertions.addAll(getRoutingIpAddressesFromPolicies(conn, "policy", "xml"));
+            ipaddressesInRoutingAssertions.addAll(getRoutingIpAddressesFromPolicies(conn, "policy_version", "xml"));
         } finally {
-            c.close();
+            ResourceUtils.closeQuietly(conn);
         }
         Document outputdoc = XmlUtil.createEmptyDocument(IMPORTMAPPINGELNAME, NS_PREFIX,
                                                          STAGINGMAPPINGNS);

@@ -51,7 +51,7 @@ cd ${RESTORE_HOME}
 if [ "$1" == "cfgdeamon" ]; then
     ${SSG_JAVA_HOME}/bin/java \
         -Dcom.l7tech.server.home=${SSG_HOME} \
-        -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} \
+        -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
         -jar ${RESTORE_HOME}/SSGBackupUtility.jar cfgdeamon
     chown layer7.layer7 *.log
     chmod 644 *.log
@@ -65,12 +65,12 @@ if [ $UID -eq 0 ]; then
     # invoke flasher as layer7
     su layer7 -c "${SSG_JAVA_HOME}/bin/java -Xmx256m \
         -Dcom.l7tech.server.home=${SSG_HOME} \
-        -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} \
+        -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
         -jar ${RESTORE_HOME}/SSGBackupUtility.jar import $*"
 elif [ "$USER" == "layer7" ]; then
     ${SSG_JAVA_HOME}/bin/java -Xmx256m \
         -Dcom.l7tech.server.home=${SSG_HOME} \
-        -Dcom.l7tech.server.flasher.basedir=${REL_BASE_DIR} \
+        -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
         -jar ${RESTORE_HOME}/SSGBackupUtility.jar import $*
 else
     echo "Must be layer7 to invoke ssgrestore.sh"
