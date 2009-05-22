@@ -194,15 +194,12 @@ public class BuildInfo {
     private static String productName = "Layer 7 SecureSpan Suite";
 
     private static String getPackageImplementationVersion() {
-        if (true) {
-            return "5.0.0";
-        }
         String version = "0";
 
-        if (packageInfo != null) {
+        if ( packageInfo != null ) {
             String packageVersion = packageInfo.getImplementationVersion();
-            if (packageVersion != null) {
-                version = packageVersion;
+            if ( packageVersion != null ) {
+                version = packageVersion;                
             } else {
                 version = SyspropUtil.getString(BUILD_VERSION_FALLBACK_PROPERTY, version);
             }

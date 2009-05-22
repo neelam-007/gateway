@@ -75,8 +75,7 @@
         <copy file="${property.files.dest}/report.properties" todir="./com/l7tech/skunkworks/standardreports/test" />
         <java classname="${class.name}" fork="true">
 			<arg value="run"/>
-            <jvmarg value="-Djava.util.logging.config.file=../../../../../../../../../modules/skunkworks/src/main/java/com/l7tech/skunkworks/standardreports/logging.properties"></jvmarg>
-            <classpath refid="classpath"/>
+			<classpath refid="classpath"/>
 		</java>
 	</target>
 
