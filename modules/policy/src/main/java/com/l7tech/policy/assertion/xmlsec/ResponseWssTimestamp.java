@@ -3,9 +3,11 @@
  */
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.PrivateKeyable;
+import com.l7tech.policy.assertion.PrivateKeyableSupport;
 import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_NAME;
 import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_ICON;
 import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_FOLDERS;
@@ -25,7 +27,7 @@ import com.l7tech.util.Functions;
  */
 @ProcessesResponse
 @RequiresSOAP(wss=true)
-public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig {
+public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig, PrivateKeyable {
 
     /**
      * The recommended expiry time to use when creating response wss timestamps;
@@ -55,6 +57,7 @@ public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
 
     private boolean signatureRequired = true;
+    private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
 
     public void copyFrom(ResponseWssTimestamp other) {
         this.expiryMillis = other.expiryMillis;
@@ -62,6 +65,7 @@ public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig
         this.keyReference = other.keyReference;
         this.recipientContext = other.recipientContext;
         this.signatureRequired = other.signatureRequired;
+        this.privatekeyableSupport.copyFrom( other.privatekeyableSupport );
     }
 
     /**
@@ -135,6 +139,36 @@ public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig
     @Override
     public void setProtectTokens(boolean protectTokens) {
         this.protectTokens = protectTokens;
+    }
+
+    @Override
+    public String getKeyAlias() {
+        return privatekeyableSupport.getKeyAlias();
+    }
+
+    @Override
+    public void setKeyAlias(String keyAlias) {
+        privatekeyableSupport.setKeyAlias(keyAlias);
+    }
+
+    @Override
+    public long getNonDefaultKeystoreId() {
+        return privatekeyableSupport.getNonDefaultKeystoreId();
+    }
+
+    @Override
+    public void setNonDefaultKeystoreId(long nonDefaultKeystoreId) {
+        privatekeyableSupport.setNonDefaultKeystoreId(nonDefaultKeystoreId);
+    }
+
+    @Override
+    public boolean isUsesDefaultKeyStore() {
+        return privatekeyableSupport.isUsesDefaultKeyStore();
+    }
+
+    @Override
+    public void setUsesDefaultKeyStore(boolean usesDefaultKeyStore) {
+        privatekeyableSupport.setUsesDefaultKeyStore(usesDefaultKeyStore);
     }
 
     @Override

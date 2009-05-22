@@ -5,6 +5,8 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.PrivateKeyable;
+import com.l7tech.policy.assertion.PrivateKeyableSupport;
 import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_NAME;
 import static com.l7tech.policy.assertion.AssertionMetadata.DESCRIPTION;
 import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_ICON;
@@ -21,7 +23,7 @@ import com.l7tech.util.Functions;
  */
 @ProcessesResponse
 @RequiresSOAP
-public class ResponseWssSecurityToken extends Assertion implements ResponseWssConfig {
+public class ResponseWssSecurityToken extends Assertion implements ResponseWssConfig, PrivateKeyable {
     public static final SecurityTokenType[] SUPPORTED_TOKEN_TYPES = new SecurityTokenType[] { SecurityTokenType.WSS_USERNAME };
 
     private String keyReference = KeyReference.BST.getName();
@@ -29,6 +31,7 @@ public class ResponseWssSecurityToken extends Assertion implements ResponseWssCo
     private SecurityTokenType tokenType = SecurityTokenType.WSS_USERNAME;
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private boolean includePassword;
+    private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
 
     public SecurityTokenType getTokenType() {
         return tokenType;
@@ -77,12 +80,43 @@ public class ResponseWssSecurityToken extends Assertion implements ResponseWssCo
         this.protectTokens = protectTokens;
     }
 
+    @Override
+    public String getKeyAlias() {
+        return privatekeyableSupport.getKeyAlias();
+    }
+
+    @Override
+    public void setKeyAlias(String keyAlias) {
+        privatekeyableSupport.setKeyAlias(keyAlias);
+    }
+
+    @Override
+    public long getNonDefaultKeystoreId() {
+        return privatekeyableSupport.getNonDefaultKeystoreId();
+    }
+
+    @Override
+    public void setNonDefaultKeystoreId(long nonDefaultKeystoreId) {
+        privatekeyableSupport.setNonDefaultKeystoreId(nonDefaultKeystoreId);
+    }
+
+    @Override
+    public boolean isUsesDefaultKeyStore() {
+        return privatekeyableSupport.isUsesDefaultKeyStore();
+    }
+
+    @Override
+    public void setUsesDefaultKeyStore(boolean usesDefaultKeyStore) {
+        privatekeyableSupport.setUsesDefaultKeyStore(usesDefaultKeyStore);
+    }
+
     public void copyFrom(ResponseWssSecurityToken other) {
         this.keyReference = other.keyReference;
         this.tokenType = other.tokenType;
         this.recipientContext = other.recipientContext;
         this.includePassword = other.includePassword;
         this.protectTokens = other.protectTokens;
+        this.privatekeyableSupport.copyFrom( other.privatekeyableSupport );
     }
 
    @Override
