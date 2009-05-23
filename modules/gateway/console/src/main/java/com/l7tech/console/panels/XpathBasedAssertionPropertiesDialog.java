@@ -56,9 +56,7 @@ import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.jaxen.JaxenException;
 import org.jaxen.XPathSyntaxException;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -565,6 +563,10 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 // then save it in assertion
                 JTextField xpathTextField = messageViewerToolBar.getxpathField();
                 String xpath = xpathTextField.getText();
+
+                // Before finishing OK, update namespaces from the message viewer panel.
+                updateNamespaces();
+
                 XpathFeedBack res = getFeedBackMessage(namespaces, xpathTextField);
                 if (res != null && !res.valid()) {
                     if (xpath == null || xpath.equals("")) {
@@ -1314,5 +1316,67 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         public String getVariableName() { return _variableName; }
         @Override
         public String toString() { return _displayName; }
+    }
+
+    /**
+     * Update the variable, namespaces after user chooses an XPath from the messageviewer panel.
+     */
+    private void updateNamespaces() {
+        try {
+            String inputXmlNotAUrl = messageViewer.getContent();
+            org.w3c.dom.Document doc = XmlUtil.stringToDocument(inputXmlNotAUrl);
+
+            Map<String, String> prefixMap = getPrefixesMap(doc);
+            HashSet<String> keys = new HashSet<String>(prefixMap.size() + namespaces.size());
+            keys.addAll(namespaces.keySet());
+            keys.addAll(prefixMap.keySet());
+
+            for(String key : keys) {
+                if(namespaces.containsKey(key) && !prefixMap.containsKey(key)) {
+                    //noinspection UnnecessaryContinue
+                    continue;
+                } else if(!namespaces.containsKey(key) && prefixMap.containsKey(key)) {
+                    namespaces.put(key, prefixMap.get(key));
+                } else if(namespaces.containsKey(key) && prefixMap.containsKey(key)) {
+                    if(!namespaces.get(key).equals(prefixMap.get(key))) {
+                        JOptionPane.showMessageDialog(this,
+                            "The prefix \"" + key + "\" does not match the prefix in the namespace table.",
+                            "Invalid Prefix",
+                            JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                "The XML is not valid: " + e.toString(),
+                "Invalid XML",
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private Map<String, String> getPrefixesMap(org.w3c.dom.Document doc) {
+        Map<String, String> prefixesMap = new HashMap<String, String>();
+        addPrefixesToMap(doc.getDocumentElement(), prefixesMap);
+
+        return prefixesMap;
+    }
+
+    private void addPrefixesToMap(Element element, Map<String, String> prefixesMap) {
+        NamedNodeMap attributes = element.getAttributes();
+        for(int i = 0; i < attributes.getLength(); i++) {
+            Attr attribute = (Attr)attributes.item(i);
+            if(attribute.getName().startsWith("xmlns:")) {
+                prefixesMap.put(attribute.getName().substring(6), attribute.getValue());
+            }
+        }
+
+        NodeList children = element.getChildNodes();
+        for(int i = 0; i < children.getLength(); i++) {
+            if(children.item(i) instanceof Element) {
+                Element child = (Element)children.item(i);
+                addPrefixesToMap(child, prefixesMap);
+            }
+        }
     }
 }
