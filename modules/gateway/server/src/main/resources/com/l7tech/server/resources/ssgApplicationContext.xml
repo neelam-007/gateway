@@ -782,7 +782,7 @@
         <constructor-arg ref="serviceCache"/>
         <constructor-arg ref="policyCache"/>
         <constructor-arg ref="wssDecorator"/>
-        <constructor-arg ref="userSecurityTokenResolver"/>
+        <constructor-arg ref="securityTokenResolver"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="serviceMetricsServices"/>
         <constructor-arg ref="auditContext"/>
@@ -796,14 +796,14 @@
         <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="policyFactory"/>
         <constructor-arg ref="policyFilterManager"/>
-        <constructor-arg ref="userSecurityTokenResolver"/>
+        <constructor-arg ref="securityTokenResolver"/>
         <constructor-arg ref="policyPathBuilderFactory"/>
     </bean>
     <!-- server side token service -->
     <bean id="tokenService" class="com.l7tech.server.TokenServiceImpl">
         <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="policyFactory"/>
-        <constructor-arg ref="userSecurityTokenResolver"/>
+        <constructor-arg ref="securityTokenResolver"/>
     </bean>
 
     <bean id="auditContext" class="com.l7tech.server.audit.ThreadLocalAuditContext">
@@ -907,16 +907,28 @@
         </property>
     </bean>
 
-    <bean id="securityTokenResolver" class="com.l7tech.server.TrustedAndUserCertificateResolver">
-        <constructor-arg ref="clientCertManager"/>
-        <constructor-arg ref="trustedCertManager"/>
-        <constructor-arg ref="serverConfig"/>
-        <constructor-arg ref="ssgKeyStoreManager"/>
+    <bean id="trustedSecurityTokenResolver" class="com.l7tech.server.TrustedCertificateResolver">
+        <constructor-arg index="0" ref="trustedCertManager"/>
+        <constructor-arg index="1" ref="serverConfig"/>
+        <constructor-arg index="2" ref="ssgKeyStoreManager"/>
     </bean>
 
-    <bean id="userSecurityTokenResolver" class="com.l7tech.server.IdentityProviderDelegatingSecurityTokenResolver">
-        <constructor-arg ref="identityProviderFactory"/>
-        <constructor-arg ref="securityTokenResolver"/>
+    <bean id="identityProviderSecurityTokenResolver" class="com.l7tech.server.IdentityProviderSecurityTokenResolver">
+        <constructor-arg index="0" ref="identityProviderFactory"/>
+    </bean>
+
+    <bean id="userSecurityTokenResolver" class="com.l7tech.server.UserCertificateResolver">
+        <constructor-arg index="0" ref="clientCertManager"/>
+    </bean>
+
+    <bean id="securityTokenResolver" class="com.l7tech.server.DelegatingSecurityTokenResolver">
+        <constructor-arg index="0">
+            <list>
+                <ref local="trustedSecurityTokenResolver"/>
+                <ref local="identityProviderSecurityTokenResolver"/>
+                <ref local="userSecurityTokenResolver"/>
+            </list>
+        </constructor-arg>
     </bean>
 
     <bean id="licenseManager" class="com.l7tech.server.GatewayLicenseManager" depends-on="systemAuditListener">

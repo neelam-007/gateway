@@ -24,31 +24,17 @@ import java.util.logging.Logger;
  * <p>If the users certificate is not found then the resolution request is passed on to a delegate.</p>
  */
 @SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
-public class IdentityProviderDelegatingSecurityTokenResolver implements SecurityTokenResolver, InitializingBean {
+public class IdentityProviderSecurityTokenResolver extends SecurityTokenResolverSupport implements SecurityTokenResolver, InitializingBean {
 
     //- PUBLIC
 
-    public IdentityProviderDelegatingSecurityTokenResolver( final IdentityProviderFactory identityProviderFactory,
-                                                            final SecurityTokenResolver resolver ) {
+    public IdentityProviderSecurityTokenResolver( final IdentityProviderFactory identityProviderFactory  ) {
         if (identityProviderFactory == null) throw new IllegalArgumentException("IdentityProviderFactory is required");
-        if (resolver == null) throw new IllegalArgumentException("SecurityTokenResolver is required");
-        
+
         this.identityProviderFactory = identityProviderFactory;
-        this.delegate = resolver;
     }
 
-    public X509Certificate lookup(String thumbprint) {
-        return delegate.lookup(thumbprint);
-    }
-
-    public X509Certificate lookupBySki(String ski) {
-        return delegate.lookupBySki(ski);
-    }
-
-    public X509Certificate lookupByKeyName(String keyName) {
-        return delegate.lookupByKeyName(keyName);
-    }
-
+    @Override
     public X509Certificate lookupByIssuerAndSerial(X500Principal issuer, BigInteger serial) {
         X509Certificate certificate = null;
 
@@ -64,57 +50,26 @@ public class IdentityProviderDelegatingSecurityTokenResolver implements Security
             if ( certificate != null ) break;            
         }
 
-        if ( certificate == null ) {
-            certificate = delegate.lookupByIssuerAndSerial(issuer, serial);
-        }
-
         return certificate;
     }
 
-    public SignerInfo lookupPrivateKeyByCert(X509Certificate cert) {
-        return delegate.lookupPrivateKeyByCert(cert);
-    }
-
-    public SignerInfo lookupPrivateKeyByX509Thumbprint(String thumbprint) {
-        return delegate.lookupPrivateKeyByX509Thumbprint(thumbprint);
-    }
-
-    public SignerInfo lookupPrivateKeyBySki(String ski) {
-        return delegate.lookupPrivateKeyBySki(ski);
-    }
-
-    public SignerInfo lookupPrivateKeyByKeyName(String keyName) {
-        return delegate.lookupPrivateKeyByKeyName(keyName);
-    }
-
-    public byte[] getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
-        return delegate.getSecretKeyByEncryptedKeySha1(encryptedKeySha1);
-    }
-
-    public void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, byte[] secretKey) {
-        delegate.putSecretKeyByEncryptedKeySha1(encryptedKeySha1, secretKey);
-    }
-
-    public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
-        return delegate.getKerberosTokenBySha1(kerberosSha1);
-    }
-
+    @Override
     public void afterPropertiesSet() throws Exception {
         initiateLDAPGetters();
     }
 
     //- PRIVATE
 
-    private static final Logger logger = Logger.getLogger(IdentityProviderDelegatingSecurityTokenResolver.class.getName());
+    private static final Logger logger = Logger.getLogger(IdentityProviderSecurityTokenResolver.class.getName());
 
     private final IdentityProviderFactory identityProviderFactory;
-    private final SecurityTokenResolver delegate;
     private volatile Collection<AuthenticatingIdentityProvider> providers = Collections.emptyList();
 
     private synchronized void initiateLDAPGetters() {
         buildAuthenticatingProviderList();
 
         Background.scheduleRepeated(new TimerTask() {
+            @Override
             public void run() {
                 buildAuthenticatingProviderList();
             }

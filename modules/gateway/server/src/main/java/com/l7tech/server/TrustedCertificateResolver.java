@@ -5,7 +5,6 @@ package com.l7tech.server;
 
 import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.cert.TrustedCertManager;
@@ -39,10 +38,9 @@ import java.util.logging.Logger;
 /**
  * Looks up any certificate known to the SSG by a variety of search criteria.
  */
-public class TrustedAndUserCertificateResolver implements SecurityTokenResolver, ApplicationListener {
-    private static final Logger logger = Logger.getLogger(TrustedAndUserCertificateResolver.class.getName());
+public class TrustedCertificateResolver implements SecurityTokenResolver, ApplicationListener {
+    private static final Logger logger = Logger.getLogger(TrustedCertificateResolver.class.getName());
     private final TrustedCertManager trustedCertManager;
-    private final ClientCertManager clientCertManager;
 
     private final Cache encryptedKeyCache;
     private final AtomicBoolean encryptedKeyCacheEnabled = new AtomicBoolean();
@@ -54,18 +52,15 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
     /**
      * Construct the Gateway's security token resolver.
      *
-     * @param clientCertManager      required
      * @param trustedCertManager     required
      * @param serverConfig           required
      * @param keyStoreManager     private key sources.  required
      */
-    public TrustedAndUserCertificateResolver(ClientCertManager clientCertManager,
-                                             TrustedCertManager trustedCertManager,
-                                             final ServerConfig serverConfig,
-                                             SsgKeyStoreManager keyStoreManager)
+    public TrustedCertificateResolver( final TrustedCertManager trustedCertManager,
+                                       final ServerConfig serverConfig,
+                                       final SsgKeyStoreManager keyStoreManager )
     {
         this.trustedCertManager = trustedCertManager;
-        this.clientCertManager = clientCertManager;
         this.keyStoreManager = keyStoreManager;
 
         final int checkPeriod = 10181;
@@ -78,6 +73,7 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
                                                            WhirlycacheFactory.POLICY_LFU);
 
         Background.scheduleRepeated(new TimerTask() {
+            @Override
             public void run() {
                 int csize = serverConfig.getIntPropertyCached(ServerConfig.PARAM_EPHEMERAL_KEY_CACHE_MAX_ENTRIES, defaultSize, checkPeriod - 1);
                 boolean newval = csize > 0;
@@ -88,6 +84,7 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
         }, checkPeriod, checkPeriod);
     }
 
+    @Override
     public X509Certificate lookup(String thumbprint) {
         try {
             SignerInfo si = lookupPrivateKeyByX509Thumbprint(thumbprint);
@@ -97,16 +94,13 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
             if (got != null && got.size() >= 1)
                 return got.get(0).getCertificate();
 
-            got = clientCertManager.findByThumbprint(thumbprint);
-            if (got != null && got.size() >= 1)
-                return got.get(0).getCertificate();
-
             return null;
         } catch (FindException e) {
             throw new RuntimeException(e); // very bad place
         }
     }
 
+    @Override
     public X509Certificate lookupBySki(String ski) {
         try {
             SignerInfo si = lookupPrivateKeyBySki(ski);
@@ -116,16 +110,13 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
             if (got != null && got.size() >= 1)
                 return got.get(0).getCertificate();
 
-            got = clientCertManager.findBySki(ski);
-            if (got != null && got.size() >= 1)
-                return got.get(0).getCertificate();
-
             return null;
         } catch (FindException e) {
             throw new RuntimeException(e); // very bad place
         }
     }
 
+    @Override
     public X509Certificate lookupByKeyName(String keyName) {
         // TODO Implement this using a lookup by cert DN if we decide to bother supporting this feature here
 
@@ -135,13 +126,11 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
         return null;
     }
 
+    @Override
     public X509Certificate lookupByIssuerAndSerial( final X500Principal issuer, final BigInteger serial ) {
         try {
             List<? extends X509Entity> got = trustedCertManager.findByIssuerAndSerial(issuer, serial);
             if (got != null && got.size() >= 1) return got.get(0).getCertificate();
-
-            got = clientCertManager.findByIssuerAndSerial(issuer, serial);
-            if (got != null && got.size() > 1) return got.get(0).getCertificate();
 
             return null;
         } catch (FindException e) {
@@ -196,27 +185,33 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
         return keyCache = new SimpleSecurityTokenResolver(null, infos.toArray(new SignerInfo[infos.size()]));
     }
 
+    @Override
     public SignerInfo lookupPrivateKeyByCert(X509Certificate cert) {
         return getKeyCache().lookupPrivateKeyByCert(cert);
     }
 
+    @Override
     public SignerInfo lookupPrivateKeyByX509Thumbprint(String thumbprint) {
         return getKeyCache().lookupPrivateKeyByX509Thumbprint(thumbprint);
     }
 
+    @Override
     public SignerInfo lookupPrivateKeyBySki(String ski) {
         return getKeyCache().lookupPrivateKeyBySki(ski);
     }
 
+    @Override
     public SignerInfo lookupPrivateKeyByKeyName(String keyName) {
         return getKeyCache().lookupPrivateKeyByKeyName(keyName);
     }
 
+    @Override
     public byte[] getSecretKeyByEncryptedKeySha1(String encryptedKeySha1) {
         if (!encryptedKeyCacheEnabled.get()) return null;
         return (byte[])encryptedKeyCache.retrieve(encryptedKeySha1);
     }
 
+    @Override
     public void putSecretKeyByEncryptedKeySha1(String encryptedKeySha1, byte[] secretKey) {
         if (encryptedKeyCacheEnabled.get()) encryptedKeyCache.store(encryptedKeySha1, secretKey);
     }
@@ -226,10 +221,12 @@ public class TrustedAndUserCertificateResolver implements SecurityTokenResolver,
      *
      * @return currently always returns null
      */
+    @Override
     public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
         return null;
     }
 
+    @Override
     public void onApplicationEvent(ApplicationEvent applicationEvent) {
         if (applicationEvent instanceof EntityInvalidationEvent) {
             EntityInvalidationEvent event = (EntityInvalidationEvent)applicationEvent;
