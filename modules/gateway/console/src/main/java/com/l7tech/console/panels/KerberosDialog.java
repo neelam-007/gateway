@@ -100,6 +100,7 @@ public class KerberosDialog extends JDialog {
         uploadKeytab.setText(label);
 
         initData();
+        if (validKeytab) testConfiguration();
 
         pack();
         Utilities.centerOnScreen(this);
