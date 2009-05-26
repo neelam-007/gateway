@@ -326,7 +326,7 @@
 
     <bean id="clusterPropertyCache" class="com.l7tech.server.cluster.ClusterPropertyCache">
         <property name="clusterPropertyManager" ref="clusterPropertyManager"/>
-        <property name="clusterPropertyListener" ref="serverConfig"/>
+        <property name="serverConfig" ref="serverConfig"/>
     </bean>
 
     <bean id="licenseManager" class="com.l7tech.server.ems.EsmLicenseManager">

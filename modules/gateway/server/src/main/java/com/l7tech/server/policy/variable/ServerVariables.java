@@ -401,8 +401,9 @@ public class ServerVariables {
                     name = name.substring(BuiltinVariables.PREFIX_CLUSTER_PROPERTY.length() + 1);
                     // TODO make this cache timeout configurable
                     ClusterProperty cp = context.getClusterPropertyCache().getCachedEntityByName(name, 30000);
-                    if (cp == null || cp.isHiddenProperty()) return null;
-                    return cp.getValue();
+                    if (cp != null && cp.isHiddenProperty()) return null;
+                    return cp != null && cp.getValue() != null ? cp.getValue() :
+                                 context.getClusterPropertyCache().getPropertyValueWithDefaultFallback(name);
                 } else {
                     logger.severe("cannot get ClusterPropertyCache through context");
                     return null;

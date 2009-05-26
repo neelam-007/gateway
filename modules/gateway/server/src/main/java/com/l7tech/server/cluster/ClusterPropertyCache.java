@@ -20,6 +20,7 @@ import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 
 import com.l7tech.server.event.EntityInvalidationEvent;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ImmutableClusterProperty;
@@ -77,21 +78,22 @@ public class ClusterPropertyCache implements ApplicationListener {
 
 
     /**
-     * Set the cluster property listener.
+     * Set the server config.
      *
-     * @param clusterPropertyListener The listener to use
+     * @param serverConfig The listener to be used for default values and as property listener
      * @throws IllegalArgumentException if the given listener is null
      * @throws IllegalStateException if the listener is already set.
      */
-    public void setClusterPropertyListener(final ClusterPropertyListener clusterPropertyListener) {
+    public void setServerConfig(final ServerConfig serverConfig) {
         synchronized (propLock) {
-            if (clusterPropertyListener == null)
-                throw new IllegalArgumentException("clusterPropertyListener must not be null");
-            if (this.clusterPropertyListener != null)
-                throw new IllegalStateException("clusterPropertyListener already set!");
+            if (serverConfig == null)
+                throw new IllegalArgumentException("serverConfig must not be null");
+            if (this.serverConfig != null)
+                throw new IllegalStateException("serverConfig already set!");
 
-            this.clusterPropertyListener = clusterPropertyListener;
+            this.serverConfig = serverConfig;
         }
+        this.defaultValues = serverConfig.getClusterPropertyDefaults();
     }
 
     public void onApplicationEvent(ApplicationEvent event) {
@@ -102,7 +104,7 @@ public class ClusterPropertyCache implements ApplicationListener {
                 ClusterPropertyListener cpl;
                 synchronized (propLock) {
                     cpm = clusterPropertyManager;
-                    cpl = clusterPropertyListener;
+                    cpl = serverConfig;
                 }
                 if (cpm == null) {
                     logger.warning("Received entity invalidation event but cluster property manager is not set!");
@@ -187,6 +189,12 @@ public class ClusterPropertyCache implements ApplicationListener {
         return value;
     }
 
+    @ManagedOperation(description="Get Property Value With Default Fallback")
+    public String getPropertyValueWithDefaultFallback( final String name ) {
+        String value = getPropertyValue(name);
+        return (value != null || defaultValues == null) ? value : defaultValues.get(name);
+    }
+
     /**
      *
      */
@@ -209,7 +217,8 @@ public class ClusterPropertyCache implements ApplicationListener {
     private final AtomicReference<Map<String,ClusterProperty>> clusterPropertyCacheRef = new AtomicReference<Map<String,ClusterProperty>>();
     private final Object propLock = new Object();
     private ClusterPropertyManager clusterPropertyManager;
-    private ClusterPropertyListener clusterPropertyListener;
+    private ServerConfig serverConfig;
+    private Map<String, String> defaultValues;
 
     private void fireChanged(final ClusterPropertyListener cpl, final ClusterProperty classic, final ClusterProperty updated) {
         if (cpl != null) {
