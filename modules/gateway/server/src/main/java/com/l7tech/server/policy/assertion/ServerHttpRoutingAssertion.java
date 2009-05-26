@@ -222,10 +222,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_FAILOVER_FROM_TO,
                             failedService, failoverService);
                 URL url;
+                String failoverServiceExpanded = failoverService.indexOf("${") > -1 ?
+                    ExpandVariables.process(failoverService, context.getVariableMap(varNames, auditor), auditor) : failoverService;
                 if (customURLList) {
-                    url = new URL(failoverService.indexOf("${") > -1 ? ExpandVariables.process(failoverService, context.getVariableMap(varNames, auditor), auditor) : failoverService);
+                    url = new URL(failoverServiceExpanded);
                 } else {
-                    url = new URL(u.getProtocol(), failoverService, u.getPort(), u.getFile());
+                    url = new URL(u.getProtocol(), failoverServiceExpanded, u.getPort(), u.getFile());
                 }
                 AssertionStatus result = tryUrl(context, getRequestMessage(context), url);
                 if (result == AssertionStatus.NONE) {
