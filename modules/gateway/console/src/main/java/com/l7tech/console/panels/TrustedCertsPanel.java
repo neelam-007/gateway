@@ -303,16 +303,28 @@ public class TrustedCertsPanel extends JPanel {
      * Add a trusted cert to the list
      */
     private void onAdd() {
+        final List<TrustedCert> certs = new ArrayList<TrustedCert>();
         CertSearchPanel sp = new CertSearchPanel( getWindowParent() );
         sp.addCertListener(new CertListener(){
             public void certSelected(CertEvent ce) {
-                addTrustedCert(ce.getCert());
-                enableOrDisableControls();
+                certs.add(ce.getCert());
             }
         });
         sp.pack();
         Utilities.centerOnScreen(sp);
-        DialogDisplayer.display(sp);
+        DialogDisplayer.display(sp, new Runnable() {
+            public void run() {
+                int totalSize = certificates.size() + certs.size();
+                if (maximumItems > 0 && totalSize > maximumItems) {
+                    listener.notifyMaximum();
+                } else {
+                    for (TrustedCert cert: certs) {
+                        addTrustedCert(cert);
+                        enableOrDisableControls();
+                    }
+                }
+            }
+        });
     }
 
     /**
