@@ -201,7 +201,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     }
 
     public void setEnabled(boolean enabled) {
-        if ( isLocked() ) throw new IllegalStateException("readonly");
+        checkLocked();
         this.enabled = enabled;
     }
 
@@ -221,7 +221,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param port a TCP port from 1-65535.
      */
     public void setPort(int port) {
-        if ( isLocked() ) throw new IllegalStateException("readonly");
+        checkLocked();
         this.port = port;
     }
 
@@ -241,7 +241,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param scheme a scheme.  currently must be one of "http" or "https".
      */
     public void setScheme(String scheme) {
-        if ( isLocked() ) throw new IllegalStateException("readonly");
+        checkLocked();
         this.scheme = scheme;
     }
 
@@ -265,7 +265,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param secure the secure flag.
      */
     public void setSecure(boolean secure) {
-        if ( isLocked() ) throw new IllegalStateException("readonly");
+        checkLocked();
         this.secure = secure;
     }
 
@@ -287,7 +287,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *         {@link #CLIENT_AUTH_OPTIONAL}.
      */
     public void setClientAuth(int clientAuth) {
-        if ( isLocked() ) throw new IllegalStateException("readonly");
+        checkLocked();
         this.clientAuth = clientAuth;
     }
 
@@ -321,7 +321,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      *        {@link #keyAlias}, or null if one is not configured.
      */
     public void setKeystoreOid(Long keystoreOid) {
-        if ( isLocked() ) throw new IllegalStateException("readonly");
+        checkLocked();
         this.keystoreOid = keystoreOid;
     }
 
@@ -346,7 +346,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param keyAlias the private key alias, or null if one is not to be used.
      */
     public void setKeyAlias(String keyAlias) {
-        if ( isLocked() ) throw new IllegalStateException("readonly");
+        checkLocked();
         this.keyAlias = keyAlias;
     }
 
@@ -377,7 +377,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param value the value to set it to, or null to remove the property
      */
     public void putProperty(String key, String value) {
-        if ( isLocked() ) throw new IllegalStateException("readonly");
+        checkLocked();
 
         if (PROP_BIND_ADDRESS.equals(key)) {
             inetAddressSet = false;
@@ -392,7 +392,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param propertyName the property name whose property will be removed from the list.
      */
     public void removeProperty(String propertyName) {
-        if ( isLocked() ) throw new IllegalStateException("readonly");
+        checkLocked();
 
         properties.remove(propertyName);
     }
@@ -415,7 +415,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param endpoints endpoint names to enable, ie "MESSAGE_INPUT,ADMIN_REMOTE,CSRHANDLER".
      */
     public void setEndpoints(String endpoints) {
-        if ( isLocked() ) throw new IllegalStateException("readonly");
+        checkLocked();
 
         this.endpoints = endpoints;
         endpointSet = null;
@@ -512,7 +512,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      * @param properties the properties set to use
      */
     protected void setProperties(Map<String,String> properties) {
-        if ( isLocked() ) throw new IllegalStateException("readonly");
+        checkLocked();
 
         inetAddressSet = false;
         inetAddress = null;

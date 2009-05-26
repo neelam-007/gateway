@@ -150,10 +150,6 @@ public class Policy extends NamedEntityImp implements HasFolder {
         this.soap = soap;
     }
 
-    private void checkLocked() {
-        if ( isLocked() ) throw new IllegalStateException("Cannot update locked policy");
-    }
-
     /**
      * Disable this policy.
      * Currently this will replace the policy XML with a version that always fails.

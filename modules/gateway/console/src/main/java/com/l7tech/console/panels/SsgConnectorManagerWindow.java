@@ -38,6 +38,7 @@ public class SsgConnectorManagerWindow extends JDialog {
     private JButton propertiesButton;
     private JScrollPane mainScrollPane;
     private JLabel conflictLabel;
+    private JButton interfacesButton;
     private ConnectorTable connectorTable;
 
     private PermissionFlags flags;
@@ -109,6 +110,8 @@ public class SsgConnectorManagerWindow extends JDialog {
                 doRemove();
             }
         });
+
+        // TODO wire up interfaces button
 
         conflictLabel.setText(" ");
 

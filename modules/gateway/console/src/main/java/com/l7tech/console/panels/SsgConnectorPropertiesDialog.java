@@ -1,14 +1,17 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.transport.InterfaceTag;
+import static com.l7tech.gateway.common.transport.SsgConnector.*;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.SquigglyTextField;
-import com.l7tech.gateway.common.transport.SsgConnector;
-import static com.l7tech.gateway.common.transport.SsgConnector.*;
 import com.l7tech.util.*;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -20,6 +23,8 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.text.ParseException;
 
 public class SsgConnectorPropertiesDialog extends JDialog {
     private static final Logger logger = Logger.getLogger(SsgConnectorPropertiesDialog.class.getName());
@@ -85,6 +90,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JSpinner threadPoolSizeSpinner;
     private JCheckBox usePrivateThreadPoolCheckBox;
     private JLabel threadPoolSizeLabel;
+    private JButton manageButton;
 
     private SsgConnector connector;
     private boolean confirmed = false;
@@ -252,6 +258,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
 
+        // TODO wire up "manage interfaces" button
+
         threadPoolSizeSpinner.setModel( new SpinnerNumberModel( DEFAULT_POOL_SIZE, 1, 10000, 1 ) );
 
         inputValidator.constrainTextFieldToBeNonEmpty("Name", nameField, null);
@@ -356,6 +364,24 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         List<String> entries = new ArrayList<String>();
 
         entries.add(INTERFACE_ANY);
+
+        try {
+            ClusterProperty tagProp = Registry.getDefault().getClusterStatusAdmin().findPropertyByName(InterfaceTag.PROPERTY_NAME);
+            if (tagProp != null) {
+                Set<InterfaceTag> tags = InterfaceTag.parseMultiple(tagProp.getValue());
+                for (InterfaceTag tag : tags)
+                    entries.add(tag.getName());
+            }
+        } catch (FindException e) {
+            if (logger.isLoggable(Level.INFO))
+                logger.log(Level.INFO, "FindException looking up cluster property " + InterfaceTag.PROPERTY_NAME + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            /* FALLTHROUGH and do without */
+        } catch (ParseException e) {
+            if (logger.isLoggable(Level.WARNING))
+                logger.log(Level.WARNING, "Bad value for cluster property " + InterfaceTag.PROPERTY_NAME + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            /* FALLTHROUGH and do without */
+        }
+
         InetAddress[] addrs = Registry.getDefault().getTransportAdmin().getAvailableBindAddresses();
         for (InetAddress addr : addrs) {
             entries.add(addr.getHostAddress());
@@ -368,9 +394,10 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             interfaceComboBox.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent evt) {
-                    if(!INTERFACE_ANY.equals(interfaceComboBox.getSelectedItem())) {
+                    final Object item = interfaceComboBox.getSelectedItem();
+                    if(item != null && item.toString().matches("^\\d.*")) {
                         JOptionPane.showMessageDialog(SsgConnectorPropertiesDialog.this,
-                                "Using an interface other than \"" + INTERFACE_ANY + "\" with a cluster can have unexpected effects.",
+                                "With a cluster, using an interface identified by a raw IP address can have unexpected effects.",
                                 "Possible Input Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }

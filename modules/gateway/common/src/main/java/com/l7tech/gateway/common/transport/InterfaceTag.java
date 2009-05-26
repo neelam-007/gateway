@@ -1,0 +1,111 @@
+package com.l7tech.gateway.common.transport;
+
+import com.l7tech.util.TextUtils;
+
+import java.text.ParseException;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * Represents zero or more named sets of IP address patterns.
+ */
+public class InterfaceTag {
+    /** Conventional name of a property that might contain an interface tag set in string format. */
+    public static final String PROPERTY_NAME = "interfaceTags";
+
+    /** Pattern that matches a single InterfaceTag in String format. */
+    private static final Pattern SINGLE_PAT = Pattern.compile("([a-zA-Z_][a-zA-Z_0-9]*)\\(([0-9.,/]*)\\)");
+
+    private String name;
+    private Set<String> ipPatterns; // TODO use a more appropriate class for this than String
+
+    InterfaceTag(String name, Set<String> ipPatterns) {
+        if (name == null || ipPatterns == null) throw new NullPointerException();
+        if (name.trim().length() < 1) throw new IllegalArgumentException("empty name");
+        this.name = name;
+        this.ipPatterns = ipPatterns;
+    }
+
+    /**
+     * Parse a single InterfaceTag out of string format.
+     * This will fail unless the passed-in CharSequence contains exactly one InterfaceTag
+     * with no preamble or unused trailing characters.
+     *
+     * @param in a String format InterfaceTag, ie "foo()" or "bar(255.10" or "blat(20)" or "mumble(127,30.33.55,24.33.8.0/24)",  Required.
+     * @return the parsed tag.  Never null.
+     * @throws ParseException if the input is not a valid interface tag.
+     */
+    public static InterfaceTag parseSingle(CharSequence in) throws ParseException {
+        Matcher matcher = SINGLE_PAT.matcher(in);
+        if (!matcher.matches())
+            throw new ParseException("Invalid InterfaceTag format", 0);
+        String name = matcher.group(1);
+        String patString = matcher.group(2);
+        String[] patArray = "".equals(patString) ? new String[0] : patString.split("\\,");
+        return new InterfaceTag(name, new LinkedHashSet<String>(Arrays.asList(patArray)));
+    }
+
+    /**
+     * Parse a semicolon-delimited list of InterfaceTags out of String format.
+     * This will fail unless the input String contains exactly zero or more InterfaceTags
+     * in String format with no extraneous leading or trailing characters.
+     *
+     * @param in zero or more String format InterfaceTags, ie "" or "foo();bar(127.0.0.1);mumble(127.0.0.1,30.33.55,24.33.8.0/24)".  Required.
+     * @return
+     * @throws ParseException
+     */
+    public static Set<InterfaceTag> parseMultiple(String in) throws ParseException {
+        String[] tagStrings = in.split("\\;");
+        Set<InterfaceTag> ret = new LinkedHashSet<InterfaceTag>();
+        for (String tagString : tagStrings)
+            ret.add(parseSingle(tagString));
+        return ret;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Set<String> getIpPatterns() {
+        return ipPatterns;
+    }
+
+    public void setIpPatterns(Set<String> ipPatterns) {
+        this.ipPatterns = ipPatterns;
+    }
+
+    public String toString() {
+        return name + "(" + TextUtils.join(",", ipPatterns) + ")";
+    }
+
+    public static String toString(Set<InterfaceTag> tags) {
+        return TextUtils.join(";", tags).toString();
+    }
+
+    @SuppressWarnings({"RedundantIfStatement"})
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        InterfaceTag that = (InterfaceTag) o;
+
+        if (!ipPatterns.equals(that.ipPatterns)) return false;
+        if (!name.equals(that.name)) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result;
+        result = name.hashCode();
+        result = 31 * result + ipPatterns.hashCode();
+        return result;
+    }
+}

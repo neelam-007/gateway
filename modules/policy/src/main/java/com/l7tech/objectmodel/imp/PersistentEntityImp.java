@@ -50,7 +50,7 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
 
     @Deprecated // only for XML, likely to throw NFE
     public void setId(String id) {
-        if ( isLocked() ) throw new IllegalStateException("Cannot update locked entity");
+        checkLocked();
         if (id == null || id.length() == 0) {
             setOid(DEFAULT_OID);
         } else {
@@ -59,7 +59,7 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
     }
 
     public void setOid( long oid ) {
-        if ( isLocked() ) throw new IllegalStateException("Cannot update locked entity");
+        checkLocked();
         _oid = oid;
         _oidObject = oid;
     }
@@ -71,7 +71,7 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
     }
 
     public void setVersion(int version) {
-        if ( isLocked() ) throw new IllegalStateException("Cannot update locked entity");
+        checkLocked();
         _version = version;
     }
 
@@ -100,6 +100,13 @@ public abstract class PersistentEntityImp implements PersistentEntity, Serializa
     @Transient
     protected boolean isLocked() {
         return _locked;
+    }
+
+    /**
+     * Throws IllegalStateException if {@link #isLocked}.
+     */
+    protected void checkLocked() {
+        if ( isLocked() ) throw new IllegalStateException("Cannot update locked entity");
     }
 
     protected int _version;
