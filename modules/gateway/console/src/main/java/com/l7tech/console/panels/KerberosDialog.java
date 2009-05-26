@@ -49,15 +49,6 @@ public class KerberosDialog extends JDialog {
         init();
     }
 
-    @Override
-    public void setVisible( final boolean visible ) {
-        if ( visible && validKeytab ) {
-            testConfiguration();
-        }
-
-        super.setVisible( visible );
-    }
-
     //- PRIVATE
 
     private JPanel mainPanel;
