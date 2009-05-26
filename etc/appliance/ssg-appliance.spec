@@ -71,18 +71,9 @@ sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf
 
 # SecureSpan JDK
 %dir /opt/SecureSpan/JDK
-/opt/SecureSpan/JDK/COPYRIGHT
-/opt/SecureSpan/JDK/LICENSE
-/opt/SecureSpan/JDK/README.html
-/opt/SecureSpan/JDK/THIRDPARTYLICENSEREADME.txt
 %attr(0755,root,root) /opt/SecureSpan/JDK/bin
 /opt/SecureSpan/JDK/include
 %dir /opt/SecureSpan/JDK/jre
-/opt/SecureSpan/JDK/jre/COPYRIGHT
-/opt/SecureSpan/JDK/jre/LICENSE
-/opt/SecureSpan/JDK/jre/README
-/opt/SecureSpan/JDK/jre/THIRDPARTYLICENSEREADME.txt
-/opt/SecureSpan/JDK/jre/Welcome.html
 %attr(0755,root,root) /opt/SecureSpan/JDK/jre/bin
 /opt/SecureSpan/JDK/jre/lib
 /opt/SecureSpan/JDK/lib
