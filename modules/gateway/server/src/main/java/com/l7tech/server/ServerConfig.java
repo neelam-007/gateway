@@ -1090,7 +1090,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
                 if(propKey.endsWith(keySuffix)) {
                     keyValueToMappedValue.put(
                             propVal,
-                            _properties.getProperty(propKey.substring(0, propKey.length()-keySuffix.length()) + valueSuffix));
+                            getServerConfigProperty(propKey.substring(0, propKey.length()-keySuffix.length()) + valueSuffix));
                 }
             }
         }
