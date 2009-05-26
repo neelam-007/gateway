@@ -293,14 +293,16 @@ public class ImportExportUtilities {
     }
 
     /**
-     * Verify file existence.  If the flag 'failIfExists' is true, then basically it'll fail if the file does exists.
+     * Check if a file existence OR check that a file Does not exist.
+     *
+     * If the flag 'failIfExists' is true, then it'll fail if the file does exists.
      * If the flag 'failIfExists' is false, then it'll fail if the file does not exists.
      *
-     * @param fileName  The file name to verify for existence
+     * @param fileName  The file name to check for existence
      * @param failIfExists  TRUE = throw if file exists, FALSE = throw if file doesnt not exists
-     * @throws IOException
+     * @throws IllegalArgumentException if the existence condition expressed by failIfExists fails
      */
-    public static void verifyFileExistence(String fileName, boolean failIfExists) throws IOException {
+    public static void checkFileExistence(String fileName, boolean failIfExists){
         if (fileName == null) {
             throw new NullPointerException("fileName cannot be null");
         }
@@ -308,11 +310,11 @@ public class ImportExportUtilities {
         // non empty check allows the utility to work with backup servlet temporary files
         File file = new File(fileName);
         if (failIfExists && file.exists() && file.length() > 0) {
-            throw new IOException("file '" + fileName + "' already exists and is not empty");
+            throw new IllegalArgumentException("file '" + fileName + "' already exists and is not empty");
         }
 
         if (!failIfExists && !file.exists()) {
-            throw new IOException("file '" + fileName + "' does not exists");
+            throw new IllegalArgumentException("file '" + fileName + "' does not exists");
         }
     }
 
@@ -385,9 +387,8 @@ public class ImportExportUtilities {
         return false;
     }
 
-    //todo [Donal] Should createTmpDirectory be moved into FileUtils?
     public static String createTmpDirectory() throws IOException {
-        File tmp = File.createTempFile("ssgflash", "tmp");
+        File tmp = File.createTempFile("ssg_backup_restore", "tmp");
         tmp.delete();
         tmp.mkdir();
         logger.info("created temporary directory at " + tmp.getPath());
@@ -400,7 +401,7 @@ public class ImportExportUtilities {
      * @param options   The list of options
      * @return          The length of the longest option name
      */
-    public static int getLargestNameStringSize(final CommandLineOption [] options) {
+    public static int getLargestNameStringSize(final List<CommandLineOption> options) {
         int largestStringSize = 0;
         for (CommandLineOption option : options) {
             if (option.name != null && option.name.length() > largestStringSize) {

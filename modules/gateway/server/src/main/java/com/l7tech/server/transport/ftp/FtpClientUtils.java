@@ -10,7 +10,9 @@ import com.l7tech.gateway.common.transport.ftp.*;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.gateway.common.transport.ftp.FtpUtils;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -30,6 +32,8 @@ import java.text.MessageFormat;
 
 /**
  * Utility class for building Ftp/Ftps clients in the connected state, ready to use for file transfers.
+ *
+ * Non Ftps functionality is provided by com.l7tech.gateway.common.transport.ftp.FtpUtils
  *
  * @author jbufu
  */
@@ -52,42 +56,6 @@ public class FtpClientUtils {
         return FtpClientConfigImpl.newFtpConfig(host);
     }
 
-    /**
-     * Creates a new, connected FTP client connected to the specified hostname.
-     */
-    public static Ftp newFtpClient(String host) throws FtpException {
-        return newFtpClient(FtpClientConfigImpl.newFtpConfig(host));
-    }
-    
-    /**
-     * Creates a new, connected FTP client using the provided FTP configuration.
-     */
-    public static Ftp newFtpClient(FtpClientConfig config) throws FtpException {
-        if (FtpCredentialsSource.SPECIFIED != config.getCredentialsSource())
-            throw new IllegalStateException("Cannot create FTP connection if crediantials are not specified.");
-
-        final Ftp ftp = new Ftp(config.getHost(), config.getUser(), config.getPass(), config.getPort());
-        if (config.getDebugStream() != null) {
-            ftp.setDebugStream(config.getDebugStream());
-            ftp.setDebug(true);
-        }
-        ftp.setTimeout(config.getTimeout());
-        ftpConnect(ftp);
-
-        String directory = config.getDirectory();
-        try {
-            if (directory != null && config.getDirectory().length() != 0) {
-                ftp.setDir(config.getDirectory());
-            }
-            ftp.setAuto(false);
-            ftp.setBinary();
-        } catch (FtpException e) {
-            ftp.disconnect();   // Closes connection before letting exception bubble up.
-            throw e;
-        }
-        return ftp;
-    }
-
     public static Ftps newFtpsClient(FtpClientConfig config) throws FtpException {
         return newFtpsClient(config, null, null);
     }
@@ -105,7 +73,7 @@ public class FtpClientUtils {
      */
     public static Ftps newFtpsClient(FtpClientConfig config, DefaultKey keyFinder, X509TrustManager trustManager) throws FtpException {
         if (FtpCredentialsSource.SPECIFIED != config.getCredentialsSource())
-            throw new IllegalStateException("Cannot create FTP connection if crediantials are not specified.");
+            throw new IllegalStateException("Cannot create FTP connection if credentials are not specified.");
 
         if (FtpSecurity.FTP_UNSECURED == config.getSecurity())
             throw new NullPointerException("Cannot generate FTPS connection for the configured FTP configuration.");
@@ -210,26 +178,6 @@ public class FtpClientUtils {
     }
 
     /**
-     * Wrapper method to call {@link Ftp#connect} that throws a better exception.
-     *
-     * The problem with calling {@link Ftp#connect} directly is that when the
-     * host is unavailable, it throws an exception with a message containing
-     * just the host name with no description. This wrapper replaces that with a
-     * clearer message.
-     */
-    private static void ftpConnect(Ftp ftp) throws FtpException {
-        try {
-            ftp.connect();
-        } catch (FtpException e) {
-            final Exception cause = e.getException();
-            if (cause instanceof UnknownHostException) {
-                e = new FtpException("Unknown host: " + ftp.getHostname(), cause);
-            }
-            throw e;
-        }
-    }
-
-    /**
      * Wrapper method to call {@link Ftps#connect} that throws a better exception.
      *
      * The problem with calling {@link Ftps#connect} directly is that when the
@@ -246,33 +194,6 @@ public class FtpClientUtils {
                 e = new FtpException("Unknown host: " + ftps.getHostname(), cause);
             }
             throw e;
-        }
-    }
-
-    /**
-     * Tests connection to FTP server and tries "cd" into remote directory.
-     *
-     * @throws com.l7tech.gateway.common.transport.ftp.FtpTestException if connection test failed
-     */
-    public static void testFtpConnection(FtpClientConfig config) throws FtpTestException {
-        // provide our own debug if the client is not watching the logs
-        ByteArrayOutputStream baos = null;
-        if (config.getDebugStream() == null) {
-            baos = new ByteArrayOutputStream();
-            config.setDebugStream(new PrintStream(baos));
-        }
-
-        Ftp ftp = null;
-        try {
-            ftp = newFtpClient(config);
-        } catch (FtpException e) {
-            throw new FtpTestException(e.getMessage(), baos != null ? baos.toString() : null);
-        } finally {
-            if (ftp != null) ftp.disconnect();
-            if (baos != null) {
-                config.getDebugStream().close();
-                config.setDebugStream(null);
-            }
         }
     }
 
@@ -311,13 +232,7 @@ public class FtpClientUtils {
                               DefaultKey keyFinder, X509TrustManager trustManager) throws FtpException {
 
         if (FtpSecurity.FTP_UNSECURED == config.getSecurity()) {
-            final Ftp ftp = FtpClientUtils.newFtpClient(config);
-
-            try {
-                ftp.upload(is, filename);
-            } finally {
-                ftp.disconnect();
-            }
+            FtpUtils.upload(config, is, filename);
         } else {
             final Ftps ftps = FtpClientUtils.newFtpsClient(config, keyFinder, trustManager);
 
@@ -336,7 +251,7 @@ public class FtpClientUtils {
     public static OutputStream getUploadOutputStream(FtpClientConfig config, String filename,
                             DefaultKey keyFinder, X509TrustManager trustManager) throws FtpException {
         if (FtpSecurity.FTP_UNSECURED == config.getSecurity()) {
-            Ftp ftp = FtpClientUtils.newFtpClient(config);
+            Ftp ftp = FtpUtils.newFtpClient(config);
             return ftp.getOutputStream(filename, 0, false);
         } else {
             Ftps ftps = FtpClientUtils.newFtpsClient(config, keyFinder, trustManager);

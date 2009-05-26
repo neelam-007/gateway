@@ -825,7 +825,7 @@ class Importer{
         if (!args.containsKey(IMAGE_PATH.name)) {
             throw new InvalidProgramArgumentException("missing option " + IMAGE_PATH.name + ", required for importing image");
         } else {
-            ImportExportUtilities.verifyFileExistence(args.get(IMAGE_PATH.name), false);  //check if file exists
+            ImportExportUtilities.checkFileExistence(args.get(IMAGE_PATH.name), false);  //check if file exists
 
             //unzip the file to check for version and mandatory files, we should always remove the files afterwards
             try {
@@ -855,7 +855,7 @@ class Importer{
 
 //        //check if wan to ignore tables upon import
 //        if (args.containsKey(MIGRATE.name)) {
-//            verifyFileExistence(args.get(MIGRATE.name), false);
+//            checkFileExistence(args.get(MIGRATE.name), false);
 //        }
 
         //if config option is specified, then we need to check that we have proper information to populate node.properties
@@ -907,7 +907,7 @@ class Importer{
 
         //check permission and file existence for mapping option
         if (args.containsKey(MAPPING_PATH.name)) {
-            ImportExportUtilities.verifyFileExistence(args.get(MAPPING_PATH.name), false);    //check file exists
+            ImportExportUtilities.checkFileExistence(args.get(MAPPING_PATH.name), false);    //check file exists
             try {
                 //try to parse through the mapping to see if formatted to what we are expecting
                 mapping = MappingUtil.loadMapping(args.get(MAPPING_PATH.name));
@@ -1012,7 +1012,7 @@ class Importer{
      * @param output StringBuilder to write the usage information to
      */
     public static void getImporterUsage(StringBuilder output) {
-        int largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(ALLOPTIONS);
+        int largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(Arrays.asList(ALLOPTIONS));
         for (CommandLineOption option : ALLOPTIONS) {
             output.append("\t")
                     .append(option.name)

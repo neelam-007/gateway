@@ -6,6 +6,10 @@ import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.server.management.config.node.DatabaseType;
 import com.l7tech.gateway.config.manager.NodeConfigurationManager;
 import com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException;
+import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
+import com.l7tech.gateway.common.transport.ftp.FtpClientConfigImpl;
+import com.l7tech.gateway.common.transport.ftp.FtpUtils;
+import com.jscape.inet.ftp.FtpException;
 
 import java.io.*;
 import java.util.*;
@@ -14,10 +18,9 @@ import java.util.logging.Level;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import java.sql.SQLException;
-import java.net.NetworkInterface;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.net.SocketException;
+import java.net.*;
+import java.text.SimpleDateFormat;
+
 import org.xml.sax.SAXException;
 
 
@@ -50,9 +53,26 @@ public class Exporter{
     public static final CommandLineOption MAPPING_PATH = new CommandLineOption("-it",
                                                                                "path of the output mapping template file",
                                                                                true, false);
-    public static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, MAPPING_PATH};
 
-    public static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
+    public static final CommandLineOption FTP_HOST =
+            new CommandLineOption("-ftp_host",
+                                    "[Optional] host to ftp backup image to: "+
+                                    "host.domain.com:port",
+                                     false, false);
+
+    public static final CommandLineOption FTP_USER = new CommandLineOption("-ftp_user",
+                                                                               "[Optional] ftp username",
+                                                                               false, false);
+
+    public static final CommandLineOption FTP_PASS = new CommandLineOption("-ftp_pass",
+                                                                                   "[Optional] ftp password",
+                                                                                   false, false);
+
+    private static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, MAPPING_PATH};
+
+    private static final CommandLineOption[] ALL_FTP_OPTIONS = {FTP_HOST, FTP_USER, FTP_PASS};
+
+    private static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
             new CommandLineOption("-p", "Ignored parameter for partition", true, false) };
 
     public static final String VERSIONFILENAME = "version";
@@ -96,6 +116,8 @@ public class Exporter{
      * my.cnf makes up part of a databsae backup. This is the current known path to this file
      */
     private static final String PATH_TO_MY_CNF = "/etc/my.cnf";
+    private static final String UNIQUE_TIMESTAMP = "yyyyMMddHHmmss";
+    private static final String FTP_PROTOCOL = "ftp://";
 
     /**
      * @param ssgHome   home directory where the SSG is installed. Should equal /opt/SecureSpan/Gateway. Cannot be null
@@ -126,15 +148,23 @@ public class Exporter{
      * correctly configured SSG node
      */
     public void createBackupImage(String [] args)
-            throws InvalidProgramArgumentException, IOException{
+            throws InvalidProgramArgumentException, IOException, BackupRestoreLauncher.FatalException {
 
-        Map<String, String> programFlagsAndValues = ImportExportUtilities.getParameters(args, Arrays.asList(ALLOPTIONS),
+        List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
+        validArgList.addAll(Arrays.asList(ALLOPTIONS));
+        validArgList.addAll(Arrays.asList(ALL_FTP_OPTIONS));
+        Map<String, String> programFlagsAndValues = ImportExportUtilities.getParameters(args, validArgList,
                 Arrays.asList(ALL_IGNORED_OPTIONS));
 
-        validateProgramParameters(programFlagsAndValues);
-        // check that we can write output at location asked for
-        String pathToImageFile = ImportExportUtilities.getAbsolutePath(programFlagsAndValues.get(IMAGE_PATH.name));
-        String absolutePathToImageFile = validateImageFile(pathToImageFile);
+        boolean usingFtp = checkAndValidateFtpParams(programFlagsAndValues);
+        validateProgramParameters(programFlagsAndValues, !usingFtp);
+        //We only want to validate the image file when we are not using ftp
+        String pathToImageFile = programFlagsAndValues.get(IMAGE_PATH.name);
+        if(!usingFtp){
+            // check that we can write output at location asked for
+            pathToImageFile = ImportExportUtilities.getAbsolutePath(pathToImageFile);
+            validateImageFile(pathToImageFile);
+        }
 
         //check that node.properties exists
         File nodePropsFile = new File(confDir, NODE_PROPERTIES_FILE);
@@ -146,7 +176,7 @@ public class Exporter{
         //were doing this here as if it's requested, then we need to be able to create it
         if(programFlagsAndValues.get(MAPPING_PATH.name) != null) {
             //fail if file exists
-            ImportExportUtilities.verifyFileExistence(programFlagsAndValues.get(MAPPING_PATH.name), true);
+            ImportExportUtilities.checkFileExistence(programFlagsAndValues.get(MAPPING_PATH.name), true);
         }
 
         String tmpDirectory = null;
@@ -159,7 +189,8 @@ public class Exporter{
             }
 
             String mappingFile = programFlagsAndValues.get(MAPPING_PATH.name);
-            performBackupSteps(includeAudits, mappingFile, absolutePathToImageFile, tmpDirectory);
+            FtpClientConfig ftpConfig = getFtpConfig(programFlagsAndValues);
+            performBackupSteps(includeAudits, mappingFile, pathToImageFile, tmpDirectory, ftpConfig);
         } finally {
             if(tmpDirectory != null){
                 logger.info("cleaning up temp files at " + tmpDirectory);
@@ -170,17 +201,76 @@ public class Exporter{
     }
 
     /**
+     * Extract ftp parameters from the programParams and create and return an FtpClientConfig. If no -ftp_* parameters
+     * were passed into createBackupImage, then this will return null
+     * @param programParams The parameters passed into createBackupImage
+     * @return a FtpClientConfig object if ftp params were supplied, null otherwise
+     * @throws InvalidProgramArgumentException if any required ftp parameter is missing
+     */
+    public FtpClientConfig getFtpConfig(Map<String, String> programParams) throws InvalidProgramArgumentException {
+        String ftpHost = programParams.get(FTP_HOST.name);
+        if(ftpHost == null) return null;
+        if(!ftpHost.startsWith(FTP_PROTOCOL)) ftpHost = FTP_PROTOCOL+ftpHost;
+        //as ftp host was supplied, validate all required ftp params exist
+        checkAndValidateFtpParams(programParams);
+
+        String ftpUser = programParams.get(FTP_USER.name);
+        String ftpPass = programParams.get(FTP_PASS.name);
+        if(ftpUser == null || ftpPass == null) throw new NullPointerException("ftp_user and ftp_pass must be non null");
+
+        URL url;
+        try {
+            url = new URL(ftpHost);
+        } catch (MalformedURLException e) {
+            //won't happen due to above check
+            throw new InvalidProgramArgumentException(e.getMessage());
+        }
+
+        FtpClientConfig ftpConfig = FtpClientConfigImpl.newFtpConfig(url.getHost());
+        ftpConfig.setPort(url.getPort());
+        ftpConfig.setUser(ftpUser);
+        ftpConfig.setPass(ftpPass);
+
+        String imageName = programParams.get(IMAGE_PATH.name);
+        String dirPart = getDirPart(imageName);
+        if(dirPart != null){
+            ftpConfig.setDirectory(dirPart);
+        }
+        return ftpConfig;
+    }
+
+    private String getDirPart(String imageName){
+        int lastIndex = imageName.lastIndexOf("/");
+        if(lastIndex == -1) lastIndex = imageName.lastIndexOf("\\");
+        if(lastIndex != -1){
+            return imageName.substring(0, lastIndex);
+        }
+        return null;
+    }
+
+    private String getFilePart(String imageName){
+        int lastIndex = imageName.lastIndexOf("/");
+        if(lastIndex == -1) lastIndex = imageName.lastIndexOf("\\");
+        if(lastIndex == -1){
+            return imageName;
+        }
+        return imageName.substring(lastIndex + 1, imageName.length());
+    }
+
+    /**
      * Backs up each required component and places it into the tmpOutputDirectory directory, in the correct folder.
      * This method orchestrates the calls to the various addXXXToBackupFolder methods
      * @param includeAudits boolean true if audits are to be backed up, false if not
      * @param mappingFile path (optional) and name of the mapping file to be created. if not required pass <code>null</code>
-     * @param pathToImageZip String representing the path (optional) and name of the image zip file to create
+     * @param pathToImageZip String representing the path (optional) and name of the image zip file to create. If
+     * the image is going to be ftp'd then any path information is relative to the ftp server
      * @param tmpOutputDirectory String the temporary directory created to host the back up of each component before
      * the image zip file is created
+     * @param ftpConfig FtpClientConfig if ftp is required, Pass <code>null</code> when ftp is not required
      * @throws IOException for any IO Exception when backing up the components or when creating the zip file
      */
-    private void performBackupSteps(boolean includeAudits, String mappingFile, String pathToImageZip, String tmpOutputDirectory)
-            throws IOException{
+    private void performBackupSteps(boolean includeAudits, String mappingFile, String pathToImageZip, String tmpOutputDirectory, FtpClientConfig ftpConfig)
+            throws IOException, BackupRestoreLauncher.FatalException {
 
         // record version of this image
         backUpVersion(tmpOutputDirectory);
@@ -212,8 +302,68 @@ public class Exporter{
 
         backUpComponentMA(tmpOutputDirectory);
 
-        // zip the temp directory into the requested image file (pathToImageZip)
-        createImageZip(pathToImageZip, tmpOutputDirectory);
+        //when we are using ftp, we need to store the image file somewhere locally
+        //not using the same temp directory as the image data as it causes recursive problems when zipping
+        if(ftpConfig != null){
+            String newTmpDir = null;
+            try{
+                newTmpDir = ImportExportUtilities.createTmpDirectory();
+                //What is just the file name? We will use just the file name, and create the zip in the tmp directory
+                String zipFileName = getFilePart(pathToImageZip);
+                zipFileName = newTmpDir+File.separator+zipFileName;                
+                createImageZip(zipFileName, tmpOutputDirectory);
+                ftpImage(zipFileName, pathToImageZip, ftpConfig);
+            }finally{
+                if(newTmpDir != null){
+                    logger.info("cleaning up temp files at " + newTmpDir);
+                    if (stdout != null) stdout.println("Cleaning temporary files at " + newTmpDir);
+                    FileUtils.deleteDir(new File(newTmpDir));
+                }
+            }
+        }else{
+            createImageZip(pathToImageZip, tmpOutputDirectory);
+        }
+    }
+
+    /**
+     * Ftp a local image zip file to a ftp server
+     * @param localZipFile The local image zip file. This String includes the path and the file name. Cannot be null
+     * @param destPathAndFileName The file name including path info if required, of where the file should be uploaded
+     * to on the ftp server. The filename will have a timestamp in the format "yyyyMMddHHmmss_" prepended to the
+     * front of the file name 
+     * @param ftpConfig the configuration for the ftp server to upload the localZipFile to
+     * @throws BackupRestoreLauncher.FatalException if any ftp exception occurs
+     * @throws FileNotFoundException if the localZipFile cannot be found
+     * @throws NullPointerException if any parameter is null. All are required
+     * @throws IllegalArgumentException if any String param is the emtpy string
+     */
+    public void ftpImage(String localZipFile, String destPathAndFileName, FtpClientConfig ftpConfig)
+            throws BackupRestoreLauncher.FatalException, FileNotFoundException {
+        if(localZipFile == null) throw new NullPointerException("localZipFile cannot be null");
+        if(localZipFile.equals("")) throw new IllegalArgumentException("localZipFile cannot equal the empty string");
+        if(destPathAndFileName == null) throw new NullPointerException("destPathAndFileName cannot be null");
+        if(destPathAndFileName.equals("")) throw new IllegalArgumentException("destPathAndFileName cannot equal the empty string");
+        if(ftpConfig == null) throw new NullPointerException("ftpConfig cannot be null");
+
+        InputStream is = null;
+        try {
+            is = new FileInputStream(new File(localZipFile));
+            if (stdout != null)
+                stdout.println("Ftp file '" + localZipFile+"' to host '" + ftpConfig.getHost()+"' into directory '"
+                        + destPathAndFileName+"'");
+
+            String filePart = getFilePart(destPathAndFileName);
+            SimpleDateFormat dateFormat = new SimpleDateFormat(UNIQUE_TIMESTAMP);
+            //timezone not really needed as we don't modify the calendar with add() operations
+            Calendar cal = Calendar.getInstance();
+            String uniqueStart = dateFormat.format(cal.getTime());
+
+            FtpUtils.upload(ftpConfig, is, uniqueStart+"_"+filePart, true);
+        } catch (FtpException e) {
+            throw new BackupRestoreLauncher.FatalException(e.getMessage());
+        } finally{
+            ResourceUtils.closeQuietly(is);
+        }
     }
 
     /**
@@ -259,7 +409,6 @@ public class Exporter{
         try {
             //Create the database folder
             File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.AUDITS.getDirName());
-
             //never include audits with the main db dump
             DBDumpUtil.auditDump(ssgHome, config, dir.getAbsolutePath(), stdout);
         } catch (SQLException e) {
@@ -591,22 +740,20 @@ public class Exporter{
     /**
      * Validate that the image file exists and that we can write to it
      * @param pathToImageFile String representing the relative or absolute path to the image file. Cannot be nul
-     * @return a string representing the absolute path to the image file
      * @throws IOException if we cannot write to the pathToImageFile file
      */
-    private String validateImageFile(String pathToImageFile) throws IOException {
+    private void validateImageFile(String pathToImageFile) throws IOException {
         if (pathToImageFile == null) {
             logger.info("No target image path specified");
             throw new NullPointerException("pathToImageFile cannot be null");
         } else {
             //fail if file exists
-            ImportExportUtilities.verifyFileExistence(pathToImageFile, true);
+            ImportExportUtilities.checkFileExistence(pathToImageFile, true);
         }
 
         if (!testCanWriteSilently(pathToImageFile)) {
             throw new IOException("Cannot write image to " + pathToImageFile);
         }
-        return pathToImageFile;
     }
 
     /**
@@ -653,28 +800,28 @@ public class Exporter{
      * Validate all program arguments. This method will validate all required params are met, and that any which expect
      * a value recieve it
      * @param args The name value pair map of each argument to it's value, if a vaule exists
+     * @param validateImageExistence if true, check that the iamge file exists and that we can write to it
      * @throws IOException for arguments which are files, they are checked to see if the exist, which may cause an IOException
      * @throws BackupRestoreLauncher.InvalidProgramArgumentException
      */
-    private void validateProgramParameters(Map<String, String> args) throws IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
-        //skip the whole pre-processing
-        if (args.containsKey(ImportExportUtilities.SKIP_PRE_PROCESS.name)) {
-            return;
-        }
-
+    private void validateProgramParameters(Map<String, String> args, boolean validateImageExistence)
+            throws IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
         //image option must be specified
         if (!args.containsKey(IMAGE_PATH.name)) {
             throw new InvalidProgramArgumentException("missing option " + IMAGE_PATH.name + ", required for exporting image");
-        } else {
-            ImportExportUtilities.verifyFileExistence(args.get(IMAGE_PATH.name), true);   //test that the file is a new file
+        } else if(validateImageExistence){
+            ImportExportUtilities.checkFileExistence(args.get(IMAGE_PATH.name), true);   //test that the file is a new file
             ImportExportUtilities.verifyCanWriteFile(args.get(IMAGE_PATH.name));  //test if we can create the file
         }
 
         //check condition for mapping file
         if (args.containsKey(MAPPING_PATH.name)) {
-            ImportExportUtilities.verifyFileExistence(args.get(MAPPING_PATH.name), true); //test that the file is a new file
+            ImportExportUtilities.checkFileExistence(args.get(MAPPING_PATH.name), true); //test that the file is a new file
             ImportExportUtilities.verifyCanWriteFile(args.get(MAPPING_PATH.name));    //test if we can create the file
         }
+
+        //check if ftp requested
+        checkAndValidateFtpParams(args);
 
         //check if node.properties file exists
         File configDir = new File(ssgHome, NODE_CONF_DIR);
@@ -691,7 +838,44 @@ public class Exporter{
         config.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())) );
 
         //check if we can connect to the database
-        ImportExportUtilities.verifyDatabaseConnection(config, false);
+        //we only need to do this if the db is local, as otherwise a db connection is not required to perform the backup
+        if(isDbLocal(config.getHost())){
+            ImportExportUtilities.verifyDatabaseConnection(config, false);    
+        }
+
+    }
+
+    /**
+     * Validae the ftp program parameters. If any ftp param is supplied, then they all must. This method enforces that
+     * constraint. If all ftp params are supplied then true is returned, otherwise false
+     * @param allParams map of program parameters
+     * @return true if ftp parameters were supplied and they all exist. False if NO ftp params were supplied
+     * @throws InvalidProgramArgumentException if an incomplete set of ftp parameters were supplied, or if the ftp
+     * host name is invalid
+     */
+    public boolean checkAndValidateFtpParams(Map<String, String> allParams) throws InvalidProgramArgumentException {
+        //check if ftp requested
+        for(Map.Entry<String, String> entry: allParams.entrySet()){
+            if(entry.getKey().startsWith("-ftp")){
+                //make sure they are all there
+                for(CommandLineOption clo: ALL_FTP_OPTIONS){
+                    if(!allParams.containsKey(clo.name)) throw new InvalidProgramArgumentException("Missing argument: " + clo.name);
+                    if(clo == FTP_HOST){
+                        String hostName = allParams.get(FTP_HOST.name);
+                        try {
+                            if(!hostName.startsWith(FTP_PROTOCOL)) hostName = FTP_PROTOCOL +hostName;
+                            URL url = new URL(hostName);
+                            if(url.getPort() == -1)
+                                throw new InvalidProgramArgumentException("-ftp_host value requires a port number");
+                        } catch (MalformedURLException e) {
+                            throw new InvalidProgramArgumentException(e.getMessage());
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -699,14 +883,21 @@ public class Exporter{
      * @param output StringBuilder to write the usage information to
      */
     public static void getExporterUsage(StringBuilder output) {
+
+        List<CommandLineOption> allOptList = new ArrayList<CommandLineOption>();
+        allOptList.addAll(Arrays.asList(ALLOPTIONS));
+        allOptList.addAll(Arrays.asList(ALL_FTP_OPTIONS));
+
         int largestNameStringSize;
-        largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(ALLOPTIONS);
-        for (CommandLineOption option : ALLOPTIONS) {
+        largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(allOptList);
+        for (CommandLineOption option : allOptList) {
             output.append("\t")
                     .append(option.name)
                     .append(ImportExportUtilities.createSpace(largestNameStringSize-option.name.length() + 1))
                     .append(option.description)
                     .append(BackupRestoreLauncher.EOL_CHAR);
         }
+
+        output.append("FTP options are optional. If FTP is requested, then all ftp parameters must be supplied");
     }
 }

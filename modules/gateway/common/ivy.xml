@@ -38,5 +38,6 @@
         <dependency org="org.springframework" name="spring-web" rev="2.5.6" force="true" conf="optional"/>
 
         <dependency org="junit" name="junit" rev="4.4" force="true" conf="test"/>
+        <dependency org="com.jscape" name="sftp" rev="7.0.2" force="true" conf="core"/>
     </dependencies>
 </ivy-module>

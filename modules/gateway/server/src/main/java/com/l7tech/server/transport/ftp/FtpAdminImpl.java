@@ -4,10 +4,7 @@
 
 package com.l7tech.server.transport.ftp;
 
-import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
-import com.l7tech.gateway.common.transport.ftp.FtpTestException;
-import com.l7tech.gateway.common.transport.ftp.FtpClientConfig;
-import com.l7tech.gateway.common.transport.ftp.FtpSecurity;
+import com.l7tech.gateway.common.transport.ftp.*;
 import com.l7tech.server.DefaultKey;
 
 import javax.net.ssl.X509TrustManager;
@@ -78,6 +75,6 @@ public class FtpAdminImpl implements FtpAdmin {
         if (isFtps)
             FtpClientUtils.testFtpsConnection(config, keyFinder, trustManager);
         else
-            FtpClientUtils.testFtpConnection(config);
+            FtpUtils.testFtpConnection(config);
     }
 }
