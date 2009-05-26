@@ -103,9 +103,12 @@ public class RequestWssTimestamp extends MessageTargetableAssertion implements S
         });
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.RequestWssTimestampDialog");
 
-        // Ensure that new assertions created for policy purposes have the correct default maxExpiryMilliseconds
-        // (which differs from the fields default value when deserialized from policy XML that doesn't set it explicitly)
-        meta.put(VARIANT_PROTOTYPES, new RequestWssTimestamp[] { newInstance() });
+        meta.put(ASSERTION_FACTORY, new Functions.Unary<RequestWssTimestamp,RequestWssTimestamp>(){
+            @Override
+            public RequestWssTimestamp call(final RequestWssTimestamp requestWssTimestamp) {
+                return newInstance();
+            }
+        });
 
         return meta;
     }
