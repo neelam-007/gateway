@@ -33,6 +33,11 @@ public class SecureHttpClient extends HttpClient {
 
     //- PUBLIC
 
+    public static final String PROP_MAX_CONNECTIONS = "com.l7tech.gateway.remoting.maxConnections";
+    public static final String PROP_MAX_HOSTCONNECTIONS = "com.l7tech.gateway.remoting.maxConnectionsPerHost";
+    public static final String PROP_CONNECTION_TIMEOUT = "com.l7tech.gateway.remoting.connectionTimeout";
+    public static final String PROP_READ_TIMEOUT = "com.l7tech.gateway.remoting.readTimeout";    
+
     public SecureHttpClient() {
         this( getDefaultKeyManagers() );
     }
@@ -46,10 +51,10 @@ public class SecureHttpClient extends HttpClient {
                 (MultiThreadedHttpConnectionManager) getHttpConnectionManager();
 
         HttpConnectionManagerParams params = connectionManager.getParams();
-        params.setMaxTotalConnections(20);
-        params.setMaxConnectionsPerHost(HostConfiguration.ANY_HOST_CONFIGURATION, 20);
-        params.setConnectionTimeout(30000);
-        params.setSoTimeout(60000);
+        params.setMaxTotalConnections( SyspropUtil.getInteger(PROP_MAX_CONNECTIONS, 20) );
+        params.setMaxConnectionsPerHost(HostConfiguration.ANY_HOST_CONFIGURATION, SyspropUtil.getInteger(PROP_MAX_HOSTCONNECTIONS, 20));
+        params.setConnectionTimeout( SyspropUtil.getInteger(PROP_CONNECTION_TIMEOUT, 30000) );
+        params.setSoTimeout( SyspropUtil.getInteger(PROP_READ_TIMEOUT, 60000) );
 
         updateHostConfiguration();
         getParams().setBooleanParameter("http.protocol.expect-continue", Boolean.TRUE);
@@ -115,26 +120,32 @@ public class SecureHttpClient extends HttpClient {
         X509KeyManager manager = keyManager;
         if (manager == null) {
             manager = new X509KeyManager() {
+                @Override
                 public String[] getClientAliases(String string, Principal[] principals) {
                     return new String[0];
                 }
 
+                @Override
                 public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
                     return null;
                 }
 
+                @Override
                 public String[] getServerAliases(String string, Principal[] principals) {
                     return new String[0];
                 }
 
+                @Override
                 public String chooseServerAlias(String string, Principal[] principals, Socket socket) {
                     return null;
                 }
 
+                @Override
                 public X509Certificate[] getCertificateChain(String string) {
                     return new X509Certificate[0];
                 }
 
+                @Override
                 public PrivateKey getPrivateKey(String string) {
                     return null;
                 }
@@ -168,10 +179,12 @@ public class SecureHttpClient extends HttpClient {
          * An X509 Trust manager that trusts everything.
          */
         return new X509TrustManager() {
+            @Override
             public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
                 throw new CertificateException("This trust manager is for server checks only.");
             }
 
+            @Override
             public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
                 SSLTrustFailureHandler sslTrustFailureHandler = currentTrustFailureHandler;
 
@@ -193,6 +206,7 @@ public class SecureHttpClient extends HttpClient {
                 }
             }
 
+            @Override
             public X509Certificate[] getAcceptedIssuers() {
                 return wrapme.getAcceptedIssuers();
             }
@@ -201,18 +215,22 @@ public class SecureHttpClient extends HttpClient {
 
     private Protocol getProtocol(final SSLSocketFactory sockFac) {
         return new Protocol("https", (ProtocolSocketFactory) new SecureProtocolSocketFactory() {
+            @Override
             public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException {
                 return sockFac.createSocket(socket, host, port, autoClose);
             }
 
+            @Override
             public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException {
                 return sockFac.createSocket(host, port, clientAddress, clientPort);
             }
 
+            @Override
             public Socket createSocket(String host, int port) throws IOException {
                 return sockFac.createSocket(host, port);
             }
 
+            @Override
             public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort, HttpConnectionParams httpConnectionParams) throws IOException {
                 Socket socket = sockFac.createSocket();
                 int connectTimeout = httpConnectionParams.getConnectionTimeout();
