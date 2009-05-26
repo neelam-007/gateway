@@ -211,29 +211,29 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if (failoverStrategy == null)
                 return tryUrl(context, getRequestMessage(context), u);
 
-            String failedHost = null;
+            String failedService = null;
             for (int tries = 0; tries < maxFailoverAttempts; tries++) {
-                String host = failoverStrategy.selectService();
-                if (host == null) {
+                String failoverService = failoverStrategy.selectService();
+                if (failoverService == null) {
                     // strategy says it's time to give up
                     break;
                 }
-                if (failedHost != null)
+                if (failedService != null)
                     auditor.logAndAudit(AssertionMessages.HTTPROUTE_FAILOVER_FROM_TO,
-                            failedHost, host);
+                            failedService, failoverService);
                 URL url;
                 if (customURLList) {
-                    url = new URL(host);
+                    url = new URL(failoverService.indexOf("${") > -1 ? ExpandVariables.process(failoverService, context.getVariableMap(varNames, auditor), auditor) : failoverService);
                 } else {
-                    url = new URL(u.getProtocol(), host, u.getPort(), u.getFile());
+                    url = new URL(u.getProtocol(), failoverService, u.getPort(), u.getFile());
                 }
                 AssertionStatus result = tryUrl(context, getRequestMessage(context), url);
                 if (result == AssertionStatus.NONE) {
-                    failoverStrategy.reportSuccess(host);
+                    failoverStrategy.reportSuccess(failoverService);
                     return result;
                 }
-                failedHost = host;
-                failoverStrategy.reportFailure(host);
+                failedService = failoverService;
+                failoverStrategy.reportFailure(failoverService);
             }
 
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_TOO_MANY_ATTEMPTS);
@@ -410,6 +410,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         public InputStream zippedIS;
         public long zippedContentLength;
     }
+
     private GZipOutput clearToGZipInputStream(final InputStream in) {
         //logger.info("Compression #1");
         logger.fine("compressing input stream for downstream target");

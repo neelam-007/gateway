@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
 
 /**
  *
@@ -363,6 +364,8 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         if (!StringUtils.isEmpty(realm)) tmp.append(realm);
         if (!StringUtils.isEmpty(krbConfiguredAccount)) tmp.append(krbConfiguredAccount);
         if (!StringUtils.isEmpty(krbConfiguredPassword)) tmp.append(krbConfiguredPassword);
+        if (customURLs != null) tmp.append(Arrays.toString(customURLs));
+        if (customIpAddresses != null) tmp.append(Arrays.toString(customIpAddresses));
 
         if (requestMsgSrc != null) tmp.append(Syntax.SYNTAX_PREFIX).append(requestMsgSrc).append(Syntax.SYNTAX_SUFFIX);
 
