@@ -96,7 +96,7 @@ public class Exporter{
 
     /** Home directory of the SSG installation. This will always be /opt/SecureSpan/Gateway however maintaining
      * the ability for this to be theoritically installed into other directories*/
-    private File ssgHome;
+    private final File ssgHome;
 
     /** Stream for verbose output; <code>null</code> for no verbose output. */
     private PrintStream stdout;
@@ -147,13 +147,13 @@ public class Exporter{
      * @throws IllegalStateException if node.properties is not found. This must exist as we only back up a
      * correctly configured SSG node
      */
-    public void createBackupImage(String [] args)
+    public void createBackupImage(final String [] args)
             throws InvalidProgramArgumentException, IOException, BackupRestoreLauncher.FatalException {
 
-        List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
+        final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
         validArgList.addAll(Arrays.asList(ALLOPTIONS));
         validArgList.addAll(Arrays.asList(ALL_FTP_OPTIONS));
-        Map<String, String> programFlagsAndValues = ImportExportUtilities.getParameters(args, validArgList,
+        final Map<String, String> programFlagsAndValues = ImportExportUtilities.getParameters(args, validArgList,
                 Arrays.asList(ALL_IGNORED_OPTIONS));
 
         boolean usingFtp = checkAndValidateFtpParams(programFlagsAndValues);
@@ -167,7 +167,7 @@ public class Exporter{
         }
 
         //check that node.properties exists
-        File nodePropsFile = new File(confDir, NODE_PROPERTIES_FILE);
+        final File nodePropsFile = new File(confDir, NODE_PROPERTIES_FILE);
         if ( !nodePropsFile.exists() ) {
             throw new IllegalStateException("node.properties must exist in " + nodePropsFile.getAbsolutePath());
         }
@@ -182,14 +182,14 @@ public class Exporter{
         String tmpDirectory = null;
         try {
             tmpDirectory = ImportExportUtilities.createTmpDirectory();
-            String auditval = programFlagsAndValues.get(AUDIT.name);
+            final String auditval = programFlagsAndValues.get(AUDIT.name);
             boolean includeAudits = false;
             if (auditval != null && !auditval.toLowerCase().equals("no") && !auditval.toLowerCase().equals("false")) {
                 includeAudits = true;
             }
 
-            String mappingFile = programFlagsAndValues.get(MAPPING_PATH.name);
-            FtpClientConfig ftpConfig = getFtpConfig(programFlagsAndValues);
+            final String mappingFile = programFlagsAndValues.get(MAPPING_PATH.name);
+            final FtpClientConfig ftpConfig = getFtpConfig(programFlagsAndValues);
             performBackupSteps(includeAudits, mappingFile, pathToImageFile, tmpDirectory, ftpConfig);
         } finally {
             if(tmpDirectory != null){
@@ -207,15 +207,15 @@ public class Exporter{
      * @return a FtpClientConfig object if ftp params were supplied, null otherwise
      * @throws InvalidProgramArgumentException if any required ftp parameter is missing
      */
-    public FtpClientConfig getFtpConfig(Map<String, String> programParams) throws InvalidProgramArgumentException {
+    public FtpClientConfig getFtpConfig(final Map<String, String> programParams) throws InvalidProgramArgumentException {
         String ftpHost = programParams.get(FTP_HOST.name);
         if(ftpHost == null) return null;
         if(!ftpHost.startsWith(FTP_PROTOCOL)) ftpHost = FTP_PROTOCOL+ftpHost;
         //as ftp host was supplied, validate all required ftp params exist
         checkAndValidateFtpParams(programParams);
 
-        String ftpUser = programParams.get(FTP_USER.name);
-        String ftpPass = programParams.get(FTP_PASS.name);
+        final String ftpUser = programParams.get(FTP_USER.name);
+        final String ftpPass = programParams.get(FTP_PASS.name);
         if(ftpUser == null || ftpPass == null) throw new NullPointerException("ftp_user and ftp_pass must be non null");
 
         URL url;
@@ -226,20 +226,29 @@ public class Exporter{
             throw new InvalidProgramArgumentException(e.getMessage());
         }
 
-        FtpClientConfig ftpConfig = FtpClientConfigImpl.newFtpConfig(url.getHost());
+        final FtpClientConfig ftpConfig = FtpClientConfigImpl.newFtpConfig(url.getHost());
         ftpConfig.setPort(url.getPort());
         ftpConfig.setUser(ftpUser);
         ftpConfig.setPass(ftpPass);
 
-        String imageName = programParams.get(IMAGE_PATH.name);
-        String dirPart = getDirPart(imageName);
+        final String imageName = programParams.get(IMAGE_PATH.name);
+        final String dirPart = getDirPart(imageName);
         if(dirPart != null){
             ftpConfig.setDirectory(dirPart);
         }
         return ftpConfig;
     }
 
-    private String getDirPart(String imageName){
+    /**
+     * Get the directory part of a path and filename string e.g. /home/layer7/temp/image1.zip
+     * The path information is optional
+     * @param imageName The String name to extract the path information from
+     * @return The path information not including the final / or \, null if no path information in the imageName
+     * @throws NullPointerException if imageName is null 
+     */
+    private String getDirPart(final String imageName){
+        if(imageName == null) throw new NullPointerException("imageName cannot be null");
+        
         int lastIndex = imageName.lastIndexOf("/");
         if(lastIndex == -1) lastIndex = imageName.lastIndexOf("\\");
         if(lastIndex != -1){
@@ -248,7 +257,16 @@ public class Exporter{
         return null;
     }
 
-    private String getFilePart(String imageName){
+    /**
+     * Get the file part of a path and filename string e.g. /home/layer7/temp/image1.zip
+     * The path information is optional
+     * @param imageName The String name to extract the file name information from
+     * @return The file name, never null
+     * @throws NullPointerException if imageName is null
+     */
+    private String getFilePart(final String imageName){
+        if(imageName == null) throw new NullPointerException("imageName cannot be null");
+
         int lastIndex = imageName.lastIndexOf("/");
         if(lastIndex == -1) lastIndex = imageName.lastIndexOf("\\");
         if(lastIndex == -1){
@@ -269,17 +287,18 @@ public class Exporter{
      * @param ftpConfig FtpClientConfig if ftp is required, Pass <code>null</code> when ftp is not required
      * @throws IOException for any IO Exception when backing up the components or when creating the zip file
      */
-    private void performBackupSteps(boolean includeAudits, String mappingFile, String pathToImageZip, String tmpOutputDirectory, FtpClientConfig ftpConfig)
+    private void performBackupSteps(final boolean includeAudits, final String mappingFile, final String pathToImageZip,
+                                    final String tmpOutputDirectory, final FtpClientConfig ftpConfig)
             throws IOException, BackupRestoreLauncher.FatalException {
 
         // record version of this image
         backUpVersion(tmpOutputDirectory);
 
         //Back up the database
-        File nodePropsFile = new File(confDir, NODE_PROPERTIES_FILE);
-        File ompFile = new File(confDir, OMP_DAT_FILE);
+        final File nodePropsFile = new File(confDir, NODE_PROPERTIES_FILE);
+        final File ompFile = new File(confDir, OMP_DAT_FILE);
         // Read database connection settings
-        DatabaseConfig config = getNodeConfig(nodePropsFile, ompFile);
+        final DatabaseConfig config = getNodeConfig(nodePropsFile, ompFile);
 
         //Backup database info if the db is local
         if(isDbLocal(config.getHost())){
@@ -337,7 +356,7 @@ public class Exporter{
      * @throws NullPointerException if any parameter is null. All are required
      * @throws IllegalArgumentException if any String param is the emtpy string
      */
-    public void ftpImage(String localZipFile, String destPathAndFileName, FtpClientConfig ftpConfig)
+    public void ftpImage(final String localZipFile, final String destPathAndFileName, final FtpClientConfig ftpConfig)
             throws BackupRestoreLauncher.FatalException, FileNotFoundException {
         if(localZipFile == null) throw new NullPointerException("localZipFile cannot be null");
         if(localZipFile.equals("")) throw new IllegalArgumentException("localZipFile cannot equal the empty string");
@@ -352,11 +371,11 @@ public class Exporter{
                 stdout.println("Ftp file '" + localZipFile+"' to host '" + ftpConfig.getHost()+"' into directory '"
                         + destPathAndFileName+"'");
 
-            String filePart = getFilePart(destPathAndFileName);
-            SimpleDateFormat dateFormat = new SimpleDateFormat(UNIQUE_TIMESTAMP);
+            final String filePart = getFilePart(destPathAndFileName);
+            final SimpleDateFormat dateFormat = new SimpleDateFormat(UNIQUE_TIMESTAMP);
             //timezone not really needed as we don't modify the calendar with add() operations
-            Calendar cal = Calendar.getInstance();
-            String uniqueStart = dateFormat.format(cal.getTime());
+            final Calendar cal = Calendar.getInstance();
+            final String uniqueStart = dateFormat.format(cal.getTime());
 
             FtpUtils.upload(ftpConfig, is, uniqueStart+"_"+filePart, true);
         } catch (FtpException e) {
@@ -371,9 +390,9 @@ public class Exporter{
      * @param host String name of the host to check if it is local or not
      * @return true if host is local. False otherwise. False if any exception occurs when looking up the host.
      */
-    public boolean isDbLocal(String host) {
+    public boolean isDbLocal(final String host) {
         try{
-            NetworkInterface networkInterface = NetworkInterface.getByInetAddress( InetAddress.getByName(host) );
+            final NetworkInterface networkInterface = NetworkInterface.getByInetAddress( InetAddress.getByName(host) );
             if ( networkInterface != null ) return true;
         } catch (UnknownHostException e) {
             logger.log(Level.WARNING,  "Could not look up database host: " + e.getMessage());
@@ -401,14 +420,14 @@ public class Exporter{
      * @param config DatabaseConfig object used for connecting to the database
      * @throws IOException if any exception occurs writing the database back up files
      */
-    public void backUpComponentAudits(String tmpOutputDirectory, DatabaseConfig config) throws IOException {
+    public void backUpComponentAudits(final String tmpOutputDirectory, final DatabaseConfig config) throws IOException {
         if(!isDbLocal(config.getHost())){
             logger.log(Level.WARNING, "Cannot backup database as it is not local");
             throw new IllegalStateException("Cannot back up database as it is not local");
         }
         try {
             //Create the database folder
-            File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.AUDITS.getDirName());
+            final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.AUDITS.getDirName());
             //never include audits with the main db dump
             DBDumpUtil.auditDump(ssgHome, config, dir.getAbsolutePath(), stdout);
         } catch (SQLException e) {
@@ -434,17 +453,18 @@ public class Exporter{
      * @param config DatabaseConfig object used for connecting to the database
      * @throws IOException if any exception occurs writing the database back up files
      */
-    public void backUpComponentMainDb(String mappingFile, String tmpOutputDirectory, DatabaseConfig config) throws IOException {
-        File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.MAINDB.getDirName());
+    public void backUpComponentMainDb(final String mappingFile, final String tmpOutputDirectory,
+                                      final DatabaseConfig config) throws IOException {
+        final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.MAINDB.getDirName());
         addDatabaseToBackupFolder(dir, config);
         // produce template mapping if necessary
         if(mappingFile != null){
-            String mappingFileName = ImportExportUtilities.getAbsolutePath(mappingFile);
+            final String mappingFileName = ImportExportUtilities.getAbsolutePath(mappingFile);
             createMappingFile(mappingFileName, config);
         }
 
         //add my.cnf
-        File file = new File(PATH_TO_MY_CNF);
+        final File file = new File(PATH_TO_MY_CNF);
         if ( file.exists() && !file.isDirectory()) {
             FileUtils.copyFile(file, new File(dir.getAbsolutePath() + File.separator + file.getName()));
         }else{
@@ -458,10 +478,10 @@ public class Exporter{
      * @param tmpOutputDirectory folder to create version file in
      * @throws IOException if tmpOutputDirectory is null, doesn't exist or is not a directory
      */
-    public void backUpVersion(String tmpOutputDirectory) throws IOException {
+    public void backUpVersion(final String tmpOutputDirectory) throws IOException {
         ImportExportUtilities.verifyDirExistence(tmpOutputDirectory);
 
-        FileOutputStream fos = new FileOutputStream(tmpOutputDirectory + File.separator + VERSIONFILENAME);
+        final FileOutputStream fos = new FileOutputStream(tmpOutputDirectory + File.separator + VERSIONFILENAME);
         fos.write( BuildInfo.getProductVersion().getBytes());
         fos.close();
     }
@@ -473,8 +493,8 @@ public class Exporter{
      * folder representing this component "config"
      * @throws IOException if any exception occurs writing the SSG config files to the backup folder
      */
-    public void backUpComponentConfig(String tmpOutputDirectory) throws IOException {
-        File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.CONFIG.getDirName());
+    public void backUpComponentConfig(final String tmpOutputDirectory) throws IOException {
+        final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.CONFIG.getDirName());
 
         copyFiles(confDir, dir, new FilenameFilter(){
             public boolean accept(File dir, String name) {
@@ -495,10 +515,10 @@ public class Exporter{
      * folder representing this component "os"
      * @throws IOException if any exception occurs writing the OS files to the backup folder
      */
-    public void backUpComponentOS(String tmpOutputDirectory) throws IOException {
+    public void backUpComponentOS(final String tmpOutputDirectory) throws IOException {
         if (new File(OPT_SECURE_SPAN_APPLIANCE).exists()) {
             // copy system config files
-            File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.OS.getDirName());
+            final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.OS.getDirName());
             OSConfigManager.saveOSConfigFiles(dir.getAbsolutePath(), ssgHome);
         }
         //there is no else as backing up os files is not a user option. It just happens when were on an appliance
@@ -514,8 +534,8 @@ public class Exporter{
      * They will be in the folder representing this component "ca"
      * @throws IOException if any exception occurs writing the custom assertions and property files to the backup folder
      */
-    public void backUpComponentCA(String tmpOutputDirectory) throws IOException {
-        File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.CA.getDirName());
+    public void backUpComponentCA(final String tmpOutputDirectory) throws IOException {
+        final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.CA.getDirName());
 
         //backup all .property files in the conf folder which are not in CONFIG_FILES
         copyFiles(confDir, dir, new FilenameFilter(){
@@ -546,8 +566,8 @@ public class Exporter{
      * They will be in the folder representing this component "ma"
      * @throws IOException if any exception occurs writing the modular assertions to the backup folder
      */
-    public void backUpComponentMA(String tmpOutputDirectory) throws IOException {
-        File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.MA.getDirName());
+    public void backUpComponentMA(final String tmpOutputDirectory) throws IOException {
+        final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.MA.getDirName());
 
         //back up all jar files in /opt/SecureSpan/Gateway/runtime/modules/assertions
         copyFiles(new File(ssgHome, MA_AAR_DIR), dir, new FilenameFilter(){
@@ -563,21 +583,21 @@ public class Exporter{
      * @param tmpOutputDirectory The folder to zip
      * @throws IOException if any exception occurs while creating the zip
      */
-    public void createImageZip(String zipFileName, String tmpOutputDirectory) throws IOException {
+    public void createImageZip(final String zipFileName, final String tmpOutputDirectory) throws IOException {
         logger.info("compressing image into " + zipFileName);
-        File dirObj = new File(tmpOutputDirectory);
+        final File dirObj = new File(tmpOutputDirectory);
         if (!dirObj.isDirectory()) {
             throw new IOException(tmpOutputDirectory + " is not a directory");
         }
-        ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFileName));
+        final ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFileName));
         if (stdout != null) stdout.println("Compressing SecureSpan Gateway image into " + zipFileName);
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         addDir(dirObj, out, tmpOutputDirectory, sb);
 
         //Add the manifest listing all files in the archive to the archive
-        File manifest = new File(tmpOutputDirectory + File.separator + "manifest.log");
+        final File manifest = new File(tmpOutputDirectory + File.separator + "manifest.log");
         manifest.createNewFile();
-        FileOutputStream fos = new FileOutputStream(manifest);
+        final FileOutputStream fos = new FileOutputStream(manifest);
         fos.write(sb.toString().getBytes());
         fos.close();
 
@@ -594,13 +614,13 @@ public class Exporter{
      * @return DatabaseConfig representing the db in node.properties
      * @throws IOException if any exception occurs while reading the supplied files
      */
-    public DatabaseConfig getNodeConfig(File nodePropsFile, File ompFile) throws IOException {
+    public DatabaseConfig getNodeConfig(final File nodePropsFile, final File ompFile) throws IOException {
         final MasterPasswordManager decryptor = ompFile.exists() ?
                 new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword()) :
                 null;
 
-        NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodePropsFile, true);
-        DatabaseConfig config = nodeConfig.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );
+        final NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodePropsFile, true);
+        final DatabaseConfig config = nodeConfig.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );
         if ( config == null ) {
             throw new CausedIOException("Database configuration not found.");
         }
@@ -623,10 +643,11 @@ public class Exporter{
      * @throws IOException if any exception occurs while writing to the zip archive
      * @throws IllegalStateException if the fileToAdd does not reside in tmpOutputDirectory
      */
-    private void addZipFileToArchive(ZipOutputStream out, String tmpOutputDirectory, File fileToAdd, StringBuilder sb)
+    private void addZipFileToArchive(final ZipOutputStream out, final String tmpOutputDirectory, final File fileToAdd,
+                                     final StringBuilder sb)
             throws IOException {
-        byte[] tmpBuf = new byte[1024];
-        FileInputStream in = new FileInputStream(fileToAdd.getAbsolutePath());
+        final byte[] tmpBuf = new byte[1024];
+        final FileInputStream in = new FileInputStream(fileToAdd.getAbsolutePath());
         if (stdout != null) stdout.println("\t- " + fileToAdd.getAbsolutePath());
         String zipEntryName = fileToAdd.getAbsolutePath();
         if (zipEntryName.startsWith(tmpOutputDirectory)) {
@@ -657,7 +678,8 @@ public class Exporter{
      * @throws IOException if any exception occurs writing the database back up files
      * @throws IllegalThreadStateException if the database is not local
      */
-    private void addDatabaseToBackupFolder(File dbTmpOutputDirectory, DatabaseConfig config) throws IOException {
+    private void addDatabaseToBackupFolder(final File dbTmpOutputDirectory, final DatabaseConfig config)
+            throws IOException {
         if(!isDbLocal(config.getHost())){
             logger.log(Level.WARNING, "Cannot backup database as it is not local");
             throw new IllegalStateException("Cannot back up database as it is not local");
@@ -678,11 +700,12 @@ public class Exporter{
      * @param fileFilter FilenameFilter can be null. Use to filter the files in sourceDir
      * @throws IOException if any exception occurs while copying the files
      */
-    private void copyFiles(File sourceDir, File destinationDir, FilenameFilter fileFilter) throws IOException{
-        String [] filesToCopy = sourceDir.list(fileFilter);
+    private void copyFiles(final File sourceDir, final File destinationDir, final FilenameFilter fileFilter)
+            throws IOException{
+        final String [] filesToCopy = sourceDir.list(fileFilter);
 
-        for ( String filename : filesToCopy ) {
-            File file = new File(sourceDir, filename);
+        for ( final String filename : filesToCopy ) {
+            final File file = new File(sourceDir, filename);
             if ( file.exists() && !file.isDirectory()) {
                 FileUtils.copyFile(file, new File(destinationDir.getAbsolutePath() + File.separator + file.getName()));
             }
@@ -697,8 +720,8 @@ public class Exporter{
      * @return File representing the created directory
      * @throws IOException if any exception occurs while creating the directory
      */
-    private File createComponentDir(String tmpOutputDirectory, String componentName) throws IOException {
-        File dir = new File(tmpOutputDirectory, componentName);
+    private File createComponentDir(final String tmpOutputDirectory, final String componentName) throws IOException {
+        final File dir = new File(tmpOutputDirectory, componentName);
         if(dir.exists()){
             dir.delete();
         }
@@ -712,7 +735,7 @@ public class Exporter{
      * @param config The DatabaseConfig used to connect to the database
      * @throws IOException if any exception occurs when creating the mapping file
      */
-    private void createMappingFile(String mappingFileName, DatabaseConfig config) throws IOException {
+    private void createMappingFile(final String mappingFileName, final DatabaseConfig config) throws IOException {
         if(!isDbLocal(config.getHost())){
             logger.log(Level.WARNING, "Cannot create maping file as database is not local");
             throw new IllegalStateException("Cannot create maping file as database is not local");
@@ -742,7 +765,7 @@ public class Exporter{
      * @param pathToImageFile String representing the relative or absolute path to the image file. Cannot be nul
      * @throws IOException if we cannot write to the pathToImageFile file
      */
-    private void validateImageFile(String pathToImageFile) throws IOException {
+    private void validateImageFile(final String pathToImageFile) throws IOException {
         if (pathToImageFile == null) {
             logger.info("No target image path specified");
             throw new NullPointerException("pathToImageFile cannot be null");
@@ -763,9 +786,9 @@ public class Exporter{
      * @param path  Path to test
      * @return  TRUE if can write on the given path, otherwise FALSE.
      */
-    private boolean testCanWriteSilently(String path) {
+    private boolean testCanWriteSilently(final String path) {
         try {
-            FileOutputStream fos = new FileOutputStream(path);
+            final FileOutputStream fos = new FileOutputStream(path);
             fos.close();
             (new File(path)).delete();
             logger.warning("Successfully tested write permission for " + path);
@@ -784,10 +807,11 @@ public class Exporter{
      * @param sb The StringBuilder used to record each file archived
      * @throws IOException if any exception occurs when writing to the zip archive
      */
-    private void addDir(File dirObj, ZipOutputStream out, String tmpOutputDirectory, StringBuilder sb) throws IOException {
-        File[] files = dirObj.listFiles();
+    private void addDir(final File dirObj, final ZipOutputStream out, final String tmpOutputDirectory,
+                        final StringBuilder sb) throws IOException {
+        final File[] files = dirObj.listFiles();
 
-        for (File file : files) {
+        for (final File file : files) {
             if (file.isDirectory()) {
                 addDir(file, out, tmpOutputDirectory, sb);
                 continue;
@@ -804,7 +828,7 @@ public class Exporter{
      * @throws IOException for arguments which are files, they are checked to see if the exist, which may cause an IOException
      * @throws BackupRestoreLauncher.InvalidProgramArgumentException
      */
-    private void validateProgramParameters(Map<String, String> args, boolean validateImageExistence)
+    private void validateProgramParameters(final Map<String, String> args, final boolean validateImageExistence)
             throws IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
         //image option must be specified
         if (!args.containsKey(IMAGE_PATH.name)) {
@@ -824,15 +848,15 @@ public class Exporter{
         checkAndValidateFtpParams(args);
 
         //check if node.properties file exists
-        File configDir = new File(ssgHome, NODE_CONF_DIR);
-        File nodePropsFile = new File(configDir, NODE_PROPERTIES_FILE);
-        NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodePropsFile, true);
-        DatabaseConfig config = nodeConfig.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );
+        final File configDir = new File(ssgHome, NODE_CONF_DIR);
+        final File nodePropsFile = new File(configDir, NODE_PROPERTIES_FILE);
+        final NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodePropsFile, true);
+        final DatabaseConfig config = nodeConfig.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );
         if ( config == null ) {
             throw new IOException("database configuration not found.");
         }
 
-        File ompFile = new File(configDir, OMP_DAT_FILE);
+        final File ompFile = new File(configDir, OMP_DAT_FILE);
         final MasterPasswordManager decryptor =
                 ompFile.exists() ? new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword()) : null;
         config.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())) );
@@ -853,18 +877,18 @@ public class Exporter{
      * @throws InvalidProgramArgumentException if an incomplete set of ftp parameters were supplied, or if the ftp
      * host name is invalid
      */
-    public boolean checkAndValidateFtpParams(Map<String, String> allParams) throws InvalidProgramArgumentException {
+    public boolean checkAndValidateFtpParams(final Map<String, String> allParams) throws InvalidProgramArgumentException {
         //check if ftp requested
         for(Map.Entry<String, String> entry: allParams.entrySet()){
             if(entry.getKey().startsWith("-ftp")){
                 //make sure they are all there
-                for(CommandLineOption clo: ALL_FTP_OPTIONS){
+                for(final CommandLineOption clo: ALL_FTP_OPTIONS){
                     if(!allParams.containsKey(clo.name)) throw new InvalidProgramArgumentException("Missing argument: " + clo.name);
                     if(clo == FTP_HOST){
                         String hostName = allParams.get(FTP_HOST.name);
                         try {
                             if(!hostName.startsWith(FTP_PROTOCOL)) hostName = FTP_PROTOCOL +hostName;
-                            URL url = new URL(hostName);
+                            final URL url = new URL(hostName);
                             if(url.getPort() == -1)
                                 throw new InvalidProgramArgumentException("-ftp_host value requires a port number");
                         } catch (MalformedURLException e) {
@@ -882,15 +906,15 @@ public class Exporter{
      * Get the usage for the Exporter utility. Usage information is written to the StringBuilder output
      * @param output StringBuilder to write the usage information to
      */
-    public static void getExporterUsage(StringBuilder output) {
+    public static void getExporterUsage(final StringBuilder output) {
 
-        List<CommandLineOption> allOptList = new ArrayList<CommandLineOption>();
+        final List<CommandLineOption> allOptList = new ArrayList<CommandLineOption>();
         allOptList.addAll(Arrays.asList(ALLOPTIONS));
         allOptList.addAll(Arrays.asList(ALL_FTP_OPTIONS));
 
         int largestNameStringSize;
         largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(allOptList);
-        for (CommandLineOption option : allOptList) {
+        for (final CommandLineOption option : allOptList) {
             output.append("\t")
                     .append(option.name)
                     .append(ImportExportUtilities.createSpace(largestNameStringSize-option.name.length() + 1))

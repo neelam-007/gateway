@@ -53,38 +53,38 @@ class DBDumpUtil {
     public static void dump(final DatabaseConfig config,
                             final String outputDirectory,
                             final PrintStream stdout) throws SQLException, IOException {
-        NetworkInterface networkInterface =
+        final NetworkInterface networkInterface =
                 NetworkInterface.getByInetAddress( InetAddress.getByName(config.getHost()) );
         if ( networkInterface == null ) {
             throw new UnsupportedOperationException("Backup of a remote database is not supported");
         }
 
-        DBActions dba = new DBActions();
-        Connection conn = dba.getConnection(config, false);
-        DatabaseMetaData metadata = conn.getMetaData();
+        final DBActions dba = new DBActions();
+        final Connection conn = dba.getConnection(config, false);
+        final DatabaseMetaData metadata = conn.getMetaData();
 
-        String[] tableTypes = {
+        final String[] tableTypes = {
                 "TABLE"
         };
         ResultSet tableNames = null;
-        File dbBackupFile = new File(outputDirectory, MAIN_BACKUP_FILENAME);
+        final File dbBackupFile = new File(outputDirectory, MAIN_BACKUP_FILENAME);
         if(dbBackupFile.exists()){
             dbBackupFile.delete();//is this needed?
         }
         dbBackupFile.createNewFile();
-        FileOutputStream mainOutput = new FileOutputStream(dbBackupFile);
+        final FileOutputStream mainOutput = new FileOutputStream(dbBackupFile);
 
         Functions.BinaryThrows<Boolean, String, ResultSet, Exception> checkForClusterPropTable =
                 new Functions.BinaryThrows<Boolean, String, ResultSet, Exception>(){
-            public Boolean call(String tableName, ResultSet resultSet) throws Exception {
+            public Boolean call(final String tableName, final ResultSet resultSet) throws Exception {
                 if (tableName.equals("cluster_properties")) { // dont include license in image
-                    String tmp = resultSet.getString(3);
+                    final String tmp = resultSet.getString(3);
                     if (tmp != null && tmp.equals("license")) {
                         // we dont include the license, however, we will record the object id
                         // in order to be able to put back same id when we restore the original
                         // target license. this will avoid clashing object id
-                        long licenseobjectid = resultSet.getLong(1);
-                        FileOutputStream licenseFos = new FileOutputStream(outputDirectory + File.separator + LICENCEORIGINALID);
+                        final long licenseobjectid = resultSet.getLong(1);
+                        final FileOutputStream licenseFos = new FileOutputStream(outputDirectory + File.separator + LICENCEORIGINALID);
                         licenseFos.write(Long.toString(licenseobjectid).getBytes());
                         licenseFos.close();
                         return true;
@@ -102,7 +102,7 @@ class DBDumpUtil {
 
             if (stdout != null) stdout.print("Dumping database to " + outputDirectory + " ..");
             while (tableNames.next()) {
-                String tableName = tableNames.getString("TABLE_NAME");
+                final String tableName = tableNames.getString("TABLE_NAME");
 
                 // write drop and recreate table statement
                 //Note this write drop and create statements for every table it finds
@@ -153,7 +153,7 @@ class DBDumpUtil {
         }
 
         //read all configuration file data in to arrays
-        String[] auditTables = parseConfigFile(ssgHome.getAbsolutePath() + File.separator+ AUDIT_TABLES_CONFIG);
+        final String[] auditTables = parseConfigFile(ssgHome.getAbsolutePath() + File.separator+ AUDIT_TABLES_CONFIG);
 
         Connection conn = null;
         ResultSet tableNames = null;
@@ -162,12 +162,29 @@ class DBDumpUtil {
         final GZIPOutputStream gzipOutputStream = new GZIPOutputStream(outputStream);
 
         try{
-            DBActions dba = new DBActions();
+            final DBActions dba = new DBActions();
             conn = dba.getConnection(config, false);
+
+//            final String sizeSql = "show table status like 'audit%'";
+//            final Statement stmt = conn.createStatement();
+//            final ResultSet rs = stmt.executeQuery(sizeSql);
+//            int totalSize = 0;
+//            while(rs.next()){
+//                final String tableName = rs.getString("Name");
+//                final int dataLength = rs.getInt("Data_Length");
+//                final int indexLength = rs.getInt("Index_length");
+//                System.out.println(tableName+" length: " + dataLength+" index length is: " + indexLength);
+//                totalSize += (dataLength + indexLength);
+//            }
+//
+//            System.out.println("Size of audits is in bytes is: " + totalSize);
+//            System.out.println("Size of audits is: " + totalSize / 1024+" kb");
+
+
             gzipOutputStream.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
 
             if (stdout != null) stdout.print("Dumping database audit tables to " + outputDirectory + " ..");
-            for(String tableName: auditTables){
+            for(final String tableName: auditTables){
 
                 if(!tableName.startsWith("audit")){
                     //this is ok as a 5.0 system will have the message_context_mapping_* tables in the audit file
@@ -187,12 +204,13 @@ class DBDumpUtil {
         }
     }
 
-    private static void writeDropCreateTableStmt(Connection conn, FileOutputStream mainOutput, String tableName) throws IOException, SQLException {
+    private static void writeDropCreateTableStmt(final Connection conn, final FileOutputStream mainOutput,
+                                                 final String tableName) throws IOException, SQLException {
         mainOutput.write(("DROP TABLE IF EXISTS " + tableName + ";\n").getBytes());
         Statement getCreateTablesStmt = null;
         try{
             getCreateTablesStmt = conn.createStatement();
-            ResultSet createTables = getCreateTablesStmt.executeQuery("show create table " + tableName);
+            final ResultSet createTables = getCreateTablesStmt.executeQuery("show create table " + tableName);
             while (createTables.next()) {
                 String s = createTables.getString(2);
                 s = s.replace("\r", " ");
@@ -216,10 +234,10 @@ class DBDumpUtil {
      * @throws SQLException Any database exception
      * @throws IOException Any exception writing to the backup output stream
      */
-    private static void backUpTable(String tableName, Connection conn, OutputStream mainOutput,
-                                    Functions.BinaryThrows<Boolean, String, ResultSet, Exception> rowFilter)
+    private static void backUpTable(final String tableName, final Connection conn, final OutputStream mainOutput,
+                                    final Functions.BinaryThrows<Boolean, String, ResultSet, Exception> rowFilter)
             throws SQLException, IOException {
-        Statement tdata = conn.createStatement();
+        final Statement tdata = conn.createStatement();
         ResultSet resultSet = null;
 
         try{
@@ -241,7 +259,7 @@ class DBDumpUtil {
                     }
                     if(isRowExcluded) continue;
                 }
-                StringBuilder insertStatementToRecord = getInsertStmtForRow(tableName, resultSet);
+                final StringBuilder insertStatementToRecord = getInsertStmtForRow(tableName, resultSet);
                 mainOutput.write(insertStatementToRecord.toString().getBytes());
             }
         }finally{
@@ -249,11 +267,12 @@ class DBDumpUtil {
         }
     }
 
-    private static StringBuilder getInsertStmtForRow(String tableName, ResultSet resultSet) throws SQLException {
-        StringBuilder insertStatementToRecord = new StringBuilder("INSERT INTO " + tableName + " VALUES (");
-        ResultSetMetaData rowInfo = resultSet.getMetaData();
+    private static StringBuilder getInsertStmtForRow(final String tableName, final ResultSet resultSet)
+            throws SQLException {
+        final StringBuilder insertStatementToRecord = new StringBuilder("INSERT INTO " + tableName + " VALUES (");
+        final ResultSetMetaData rowInfo = resultSet.getMetaData();
         for (int i = 1; i <= rowInfo.getColumnCount(); i++) {
-            int colType = rowInfo.getColumnType(i);
+            final int colType = rowInfo.getColumnType(i);
             switch (colType) {
                 case Types.BIGINT: {
                     final long value = resultSet.getLong(i);
@@ -316,16 +335,16 @@ class DBDumpUtil {
         return output;
     }
 
-    private static String[] parseConfigFile(String filename) throws IOException {
-        ArrayList<String> parsedElements = new ArrayList<String>();
-        File configFile = new File(filename);
+    private static String[] parseConfigFile(final String filename) throws IOException {
+        final ArrayList<String> parsedElements = new ArrayList<String>();
+        final File configFile = new File(filename);
         if (configFile.isFile()) {
-            FileReader fr = new FileReader(configFile);
-            BufferedReader br = new BufferedReader(fr);
+            final FileReader fr = new FileReader(configFile);
+            final BufferedReader br = new BufferedReader(fr);
             String line;
             while ((line = br.readLine()) != null) {
                 if (!line.startsWith("#")) {//ignore comments
-                    String tableName = line.trim();
+                    final String tableName = line.trim();
                     if (!parsedElements.contains(tableName)) {//no duplicates
                         parsedElements.add(tableName);
                     }

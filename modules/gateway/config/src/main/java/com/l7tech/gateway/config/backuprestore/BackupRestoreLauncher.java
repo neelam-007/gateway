@@ -42,14 +42,14 @@ public class BackupRestoreLauncher {
         try {
             Map<String, String> passedArgs;
             if (args[0].toLowerCase().equals("import")) {
-                Importer importer = new Importer();
+                final Importer importer = new Importer();
                 passedArgs = ImportExportUtilities.getParameters(
                         args, Arrays.asList(Importer.ALLOPTIONS), Importer.getIgnoredOptions());
                 importer.preProcess(passedArgs);
                 importer.doIt(passedArgs, null);
                 System.out.println("\nImport completed with no errors.");
             } else if (args[0].toLowerCase().equals("export")) {
-                Exporter exporter = new Exporter(new File("/opt/SecureSpan/Gateway"), System.out);
+                final Exporter exporter = new Exporter(new File("/opt/SecureSpan/Gateway"), System.out);
                 exporter.createBackupImage(args);
                 System.out.println("\nExport of SecureSpan Gateway image completed with no errors.");
             } else if (args[0].toLowerCase().equals("cfgdeamon")) {
