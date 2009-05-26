@@ -38,27 +38,7 @@ public class ServerCertificateAttributesAssertion extends AbstractServerAssertio
         AuthenticationResult result = context.getLastAuthenticationResult();
         if ( result != null ) {
             X509Certificate certificate = result.getAuthenticatedCert();
-
-            // Federated IDP does not set the X.509 Certificate in the AuthenticationResult, so we'll have to find it ...
-            if ( certificate == null && result.getUser() instanceof FederatedUser ) {
-                FederatedUser fu = (FederatedUser) result.getUser();
-                String subjectDn = fu.getSubjectDn();
-                if ( subjectDn != null ) {
-                    // find credential for this certificate
-                    for ( LoginCredentials credential : context.getCredentials() ) {
-                        if ( credential.getClientCert() != null && subjectDn.equals(credential.getClientCert().getSubjectDN().getName()) ) {
-                            if ( certificate == null || CertUtils.certsAreEqual( certificate, credential.getClientCert() ) ) {
-                                certificate = credential.getClientCert();
-                            } else { // we can't tell which is the right credential, so fail
-                                logger.info( "Found multiple certificates matching authorized user." );
-                                certificate = null;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
+            
             if ( certificate != null ) {
                 CertificateAttributesExtractor cae = new CertificateAttributesExtractor( certificate );
 

@@ -72,11 +72,11 @@ public class FederatedIdentityProviderImpl
             } catch (Exception e) {
                 throw new AuthenticationException("Couldn't authorize X.509 credentials", e);
             }
-            return user == null ? null : new AuthenticationResult(user);
+            return user == null ? null : new AuthenticationResult(user, pc.getClientCert(), false);
         }
         else if ( pc.getFormat() == CredentialFormat.SAML ) {
             User user = samlHandler.authorize(pc);
-            return user == null ? null : new AuthenticationResult(user);
+            return user == null ? null : new AuthenticationResult(user, pc.getClientCert(), false);
         } else {
             throw new BadCredentialsException("Can't authenticate without SAML or X.509 certificate credentials");
         }
