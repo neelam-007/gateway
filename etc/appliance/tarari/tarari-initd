@@ -57,7 +57,7 @@ fi
 CARD=`/sbin/lspci -nv  |grep "1863" |grep "${CARD_ID}"`
 
 if [ -z "${CARD}" ]; then
-        echo "This release (${RELEASE}) does not support this card (${CARD_ID})"
+        echo "No card detected or this release (${RELEASE}) does not support this card (${CARD_ID})"
         exit 
 fi
 
