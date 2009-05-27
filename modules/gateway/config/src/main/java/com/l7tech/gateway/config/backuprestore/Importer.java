@@ -136,7 +136,7 @@ class Importer{
             }
 
             // compare version of the image with version of the target system
-            FileInputStream fis = new FileInputStream(tempDirectory + File.separator + Exporter.VERSIONFILENAME);
+            FileInputStream fis = new FileInputStream(tempDirectory + File.separator + ImportExportUtilities.VERSION);
             byte[] buf = new byte[512];
             int read = fis.read(buf);
             String imgversion = new String(buf, 0, read);
@@ -187,10 +187,10 @@ class Importer{
             }
 
             boolean cleanRestore = false;
-            MasterPasswordManager mpm = new MasterPasswordManager(new DefaultMasterPasswordFinder(new File(new File(CONFIG_PATH), Exporter.OMP_DAT_FILE)));
+            MasterPasswordManager mpm = new MasterPasswordManager(new DefaultMasterPasswordFinder(new File(new File(CONFIG_PATH), ImportExportUtilities.OMP_DAT)));
             String databaseUser = gatewayDbUsername;
             String databasePass = gatewayDbPassword;
-            File nodePropsFile = new File(new File(CONFIG_PATH), Exporter.NODE_PROPERTIES_FILE);
+            File nodePropsFile = new File(new File(CONFIG_PATH), ImportExportUtilities.NODE_PROPERTIES);
 
             final PropertiesConfiguration nodeConfig = new PropertiesConfiguration();
             nodeConfig.setAutoSave(false);
@@ -825,7 +825,7 @@ class Importer{
         if (!args.containsKey(IMAGE_PATH.name)) {
             throw new InvalidProgramArgumentException("missing option " + IMAGE_PATH.name + ", required for importing image");
         } else {
-            ImportExportUtilities.checkFileExistence(args.get(IMAGE_PATH.name), false);  //check if file exists
+            ImportExportUtilities.throwIfFileDoesNotExist(args.get(IMAGE_PATH.name));  //check if file exists
 
             //unzip the file to check for version and mandatory files, we should always remove the files afterwards
             try {
@@ -834,7 +834,7 @@ class Importer{
 
                 //check for version
                 try {
-                    FileInputStream fis = new FileInputStream(tempDirectory + File.separator + Exporter.VERSIONFILENAME);
+                    FileInputStream fis = new FileInputStream(tempDirectory + File.separator + ImportExportUtilities.VERSION);
                     byte[] buf = new byte[512];
                     int read = fis.read(buf);
                     String imageVersion = new String(buf, 0, read);
@@ -855,7 +855,7 @@ class Importer{
 
 //        //check if wan to ignore tables upon import
 //        if (args.containsKey(MIGRATE.name)) {
-//            checkFileExistence(args.get(MIGRATE.name), false);
+//            confirmFileExistenceStatus(args.get(MIGRATE.name), false);
 //        }
 
         //if config option is specified, then we need to check that we have proper information to populate node.properties
@@ -907,7 +907,7 @@ class Importer{
 
         //check permission and file existence for mapping option
         if (args.containsKey(MAPPING_PATH.name)) {
-            ImportExportUtilities.checkFileExistence(args.get(MAPPING_PATH.name), false);    //check file exists
+            ImportExportUtilities.throwIfFileDoesNotExist(args.get(MAPPING_PATH.name));    //check file exists
             try {
                 //try to parse through the mapping to see if formatted to what we are expecting
                 mapping = MappingUtil.loadMapping(args.get(MAPPING_PATH.name));
@@ -941,8 +941,8 @@ class Importer{
                 port = Integer.parseInt(host.split(":", 2)[1]);
             }
 
-            MasterPasswordManager mpm = new MasterPasswordManager(new DefaultMasterPasswordFinder(new File(new File(CONFIG_PATH), Exporter.OMP_DAT_FILE)));
-            File nodePropsFile = new File(new File(CONFIG_PATH), Exporter.NODE_PROPERTIES_FILE);
+            MasterPasswordManager mpm = new MasterPasswordManager(new DefaultMasterPasswordFinder(new File(new File(CONFIG_PATH), ImportExportUtilities.OMP_DAT)));
+            File nodePropsFile = new File(new File(CONFIG_PATH), ImportExportUtilities.NODE_PROPERTIES);
             final PropertiesConfiguration nodeConfig = new PropertiesConfiguration();
             nodeConfig.setAutoSave(false);
             nodeConfig.setListDelimiter((char) 0);
@@ -999,7 +999,7 @@ class Importer{
             }
 
         } catch (ConfigurationException ce) {
-            throw new IOException("failed to load information from " + Exporter.NODE_PROPERTIES_FILE);
+            throw new IOException("failed to load information from " + ImportExportUtilities.NODE_PROPERTIES);
         } catch (SQLException sqle) {
             throw new IOException("database error: " + ExceptionUtils.getMessage(sqle));
         } catch (InterruptedException ie) {

@@ -75,24 +75,10 @@ public class Exporter{
     private static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
             new CommandLineOption("-p", "Ignored parameter for partition", true, false) };
 
-    public static final String VERSIONFILENAME = "version";
     public static final String SRCPARTNMFILENAME = "sourcepartitionname";
-    public static final String OMP_DAT_FILE = "omp.dat";
-    public static final String NODE_PROPERTIES_FILE = "node.properties";
     public static final String NODE_CONF_DIR = "node/default/etc/conf/";
     public static final String CA_JAR_DIR = "runtime/modules/lib";
     public static final String MA_AAR_DIR = "runtime/modules/assertions";
-
-    /**
-     * These configuration files are expected in ssg_home/node/default/etc/conf/ and constitute
-     * the complete backing up of SSG configuration files
-     */
-    private static final String[] CONFIG_FILES = new String[]{
-        "ssglog.properties",
-        "system.properties",
-        "node.properties",
-        "omp.dat"
-    };
 
     /** Home directory of the SSG installation. This will always be /opt/SecureSpan/Gateway however maintaining
      * the ability for this to be theoritically installed into other directories*/
@@ -108,29 +94,33 @@ public class Exporter{
     private final File confDir;
 
     /**
-     * Used to test if the node has the appliance installed
-     */
-    private static final String OPT_SECURE_SPAN_APPLIANCE = "/opt/SecureSpan/Appliance";
-
-    /**
      * my.cnf makes up part of a databsae backup. This is the current known path to this file
      */
     private static final String PATH_TO_MY_CNF = "/etc/my.cnf";
     private static final String UNIQUE_TIMESTAMP = "yyyyMMddHHmmss";
     private static final String FTP_PROTOCOL = "ftp://";
+    private String applianceHome;
 
     /**
      * @param ssgHome   home directory where the SSG is installed. Should equal /opt/SecureSpan/Gateway. Cannot be null
      * @param stdout        stream for verbose output; <code>null</code> for no verbose output
+     * @param applianceHome the standard installation directory of the SSG appliance. If this folder exists then
+     * OS files will be backed up via backUpComponentOS(). Cannot be null or the empty string
+     * @throws NullPointerException if ssgHome or ssgAppliance are null
+     * @throws IllegalArgumentException if ssgHome does not exsit or is not a directory, or if applianceHome is the
+     * empty string
      */
-    public Exporter(final File ssgHome, final PrintStream stdout) {
+    public Exporter(final File ssgHome, final PrintStream stdout, String applianceHome) {
         if(ssgHome == null) throw new NullPointerException("ssgHome cannot be null");
         if(!ssgHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
         if(!ssgHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
+        if(applianceHome == null) throw new NullPointerException("applianceHome cannot be null");
+        if(applianceHome.equals("")) throw new IllegalArgumentException("applianceHome cannot be null");
 
         this.ssgHome = ssgHome;
         this.stdout = stdout;
         confDir = new File(ssgHome, NODE_CONF_DIR);
+        this.applianceHome = applianceHome;
     }
 
     /**
@@ -146,6 +136,8 @@ public class Exporter{
      * @throws IOException Any IOException which occurs while creating the image zip file
      * @throws IllegalStateException if node.properties is not found. This must exist as we only back up a
      * correctly configured SSG node
+     * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.FatalException if ftp is requested and
+     * its not possible to ftp the newly created image
      */
     public void createBackupImage(final String [] args)
             throws InvalidProgramArgumentException, IOException, BackupRestoreLauncher.FatalException {
@@ -153,7 +145,7 @@ public class Exporter{
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
         validArgList.addAll(Arrays.asList(ALLOPTIONS));
         validArgList.addAll(Arrays.asList(ALL_FTP_OPTIONS));
-        final Map<String, String> programFlagsAndValues = ImportExportUtilities.getParameters(args, validArgList,
+        final Map<String, String> programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args, validArgList,
                 Arrays.asList(ALL_IGNORED_OPTIONS));
 
         boolean usingFtp = checkAndValidateFtpParams(programFlagsAndValues);
@@ -167,7 +159,7 @@ public class Exporter{
         }
 
         //check that node.properties exists
-        final File nodePropsFile = new File(confDir, NODE_PROPERTIES_FILE);
+        final File nodePropsFile = new File(confDir, ImportExportUtilities.NODE_PROPERTIES);
         if ( !nodePropsFile.exists() ) {
             throw new IllegalStateException("node.properties must exist in " + nodePropsFile.getAbsolutePath());
         }
@@ -176,7 +168,7 @@ public class Exporter{
         //were doing this here as if it's requested, then we need to be able to create it
         if(programFlagsAndValues.get(MAPPING_PATH.name) != null) {
             //fail if file exists
-            ImportExportUtilities.checkFileExistence(programFlagsAndValues.get(MAPPING_PATH.name), true);
+            ImportExportUtilities.throwIfFileExists(programFlagsAndValues.get(MAPPING_PATH.name));
         }
 
         String tmpDirectory = null;
@@ -232,47 +224,11 @@ public class Exporter{
         ftpConfig.setPass(ftpPass);
 
         final String imageName = programParams.get(IMAGE_PATH.name);
-        final String dirPart = getDirPart(imageName);
+        final String dirPart = ImportExportUtilities.getDirPart(imageName);
         if(dirPart != null){
             ftpConfig.setDirectory(dirPart);
         }
         return ftpConfig;
-    }
-
-    /**
-     * Get the directory part of a path and filename string e.g. /home/layer7/temp/image1.zip
-     * The path information is optional
-     * @param imageName The String name to extract the path information from
-     * @return The path information not including the final / or \, null if no path information in the imageName
-     * @throws NullPointerException if imageName is null 
-     */
-    private String getDirPart(final String imageName){
-        if(imageName == null) throw new NullPointerException("imageName cannot be null");
-        
-        int lastIndex = imageName.lastIndexOf("/");
-        if(lastIndex == -1) lastIndex = imageName.lastIndexOf("\\");
-        if(lastIndex != -1){
-            return imageName.substring(0, lastIndex);
-        }
-        return null;
-    }
-
-    /**
-     * Get the file part of a path and filename string e.g. /home/layer7/temp/image1.zip
-     * The path information is optional
-     * @param imageName The String name to extract the file name information from
-     * @return The file name, never null
-     * @throws NullPointerException if imageName is null
-     */
-    private String getFilePart(final String imageName){
-        if(imageName == null) throw new NullPointerException("imageName cannot be null");
-
-        int lastIndex = imageName.lastIndexOf("/");
-        if(lastIndex == -1) lastIndex = imageName.lastIndexOf("\\");
-        if(lastIndex == -1){
-            return imageName;
-        }
-        return imageName.substring(lastIndex + 1, imageName.length());
     }
 
     /**
@@ -286,6 +242,8 @@ public class Exporter{
      * the image zip file is created
      * @param ftpConfig FtpClientConfig if ftp is required, Pass <code>null</code> when ftp is not required
      * @throws IOException for any IO Exception when backing up the components or when creating the zip file
+     * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.FatalException if ftp is requested and
+     * its not possible to ftp the newly created image
      */
     private void performBackupSteps(final boolean includeAudits, final String mappingFile, final String pathToImageZip,
                                     final String tmpOutputDirectory, final FtpClientConfig ftpConfig)
@@ -295,13 +253,13 @@ public class Exporter{
         backUpVersion(tmpOutputDirectory);
 
         //Back up the database
-        final File nodePropsFile = new File(confDir, NODE_PROPERTIES_FILE);
-        final File ompFile = new File(confDir, OMP_DAT_FILE);
+        final File nodePropsFile = new File(confDir, ImportExportUtilities.NODE_PROPERTIES);
+        final File ompFile = new File(confDir, ImportExportUtilities.OMP_DAT);
         // Read database connection settings
-        final DatabaseConfig config = getNodeConfig(nodePropsFile, ompFile);
+        final DatabaseConfig config = ImportExportUtilities.getNodeConfig(nodePropsFile, ompFile);
 
         //Backup database info if the db is local
-        if(isDbLocal(config.getHost())){
+        if(ImportExportUtilities.isHostLocal(config.getHost())){
             //this will also create the mapping file if it was requested
             backUpComponentMainDb(mappingFile, tmpOutputDirectory, config);
             // check whether or not we are expected to include audit in export
@@ -328,7 +286,7 @@ public class Exporter{
             try{
                 newTmpDir = ImportExportUtilities.createTmpDirectory();
                 //What is just the file name? We will use just the file name, and create the zip in the tmp directory
-                String zipFileName = getFilePart(pathToImageZip);
+                String zipFileName = ImportExportUtilities.getFilePart(pathToImageZip);
                 zipFileName = newTmpDir+File.separator+zipFileName;                
                 createImageZip(zipFileName, tmpOutputDirectory);
                 ftpImage(zipFileName, pathToImageZip, ftpConfig);
@@ -371,7 +329,7 @@ public class Exporter{
                 stdout.println("Ftp file '" + localZipFile+"' to host '" + ftpConfig.getHost()+"' into directory '"
                         + destPathAndFileName+"'");
 
-            final String filePart = getFilePart(destPathAndFileName);
+            final String filePart = ImportExportUtilities.getFilePart(destPathAndFileName);
             final SimpleDateFormat dateFormat = new SimpleDateFormat(UNIQUE_TIMESTAMP);
             //timezone not really needed as we don't modify the calendar with add() operations
             final Calendar cal = Calendar.getInstance();
@@ -386,23 +344,6 @@ public class Exporter{
     }
 
     /**
-     * Determine if the given host is local. Any exceptions are logged and false returned.
-     * @param host String name of the host to check if it is local or not
-     * @return true if host is local. False otherwise. False if any exception occurs when looking up the host.
-     */
-    public boolean isDbLocal(final String host) {
-        try{
-            final NetworkInterface networkInterface = NetworkInterface.getByInetAddress( InetAddress.getByName(host) );
-            if ( networkInterface != null ) return true;
-        } catch (UnknownHostException e) {
-            logger.log(Level.WARNING,  "Could not look up database host: " + e.getMessage());
-        } catch (SocketException e) {
-            logger.log(Level.WARNING,  "Socket exception looking up database host: " + e.getMessage());
-        }
-        return false;
-    }
-
-    /**
      * This method will back up database audits. Audits are written directly from memory into a gzip file to
      * conserve space. The file created is called "audits.gz" and is contained inside the "audits" folder in
      * the tmpOutputDirectory
@@ -414,14 +355,14 @@ public class Exporter{
      * the audit tables have been recreated.
      *
      * Audits can only be backed up if the database is local. If it's not and this method is called an
-     * IllegalStateException will be thrown. Call isDbLocal() to see if the database is local or not
+     * IllegalStateException will be thrown. Call isHostLocal() to see if the database is local or not
      * @param tmpOutputDirectory The name of the directory to back the audits file up into. They will be in the
      * folder representing this component "audits"
      * @param config DatabaseConfig object used for connecting to the database
      * @throws IOException if any exception occurs writing the database back up files
      */
     public void backUpComponentAudits(final String tmpOutputDirectory, final DatabaseConfig config) throws IOException {
-        if(!isDbLocal(config.getHost())){
+        if(!ImportExportUtilities.isHostLocal(config.getHost())){
             logger.log(Level.WARNING, "Cannot backup database as it is not local");
             throw new IllegalStateException("Cannot back up database as it is not local");
         }
@@ -445,7 +386,7 @@ public class Exporter{
      * Note: When using the backup image to import, if -migrate is not used, this template file is ignored.
      *
      * If the database is not local and this method is called, then an IllegalState exception will be thrown. To
-     * determine if a database is local nor not, call isDbLocal()
+     * determine if a database is local nor not, call isHostLocal()
      *
      * @param mappingFile name of the mapping file. Can include path information. Can be null when it is not required
      * @param tmpOutputDirectory The name of the directory to back the database file up into. They will be in the
@@ -481,9 +422,13 @@ public class Exporter{
     public void backUpVersion(final String tmpOutputDirectory) throws IOException {
         ImportExportUtilities.verifyDirExistence(tmpOutputDirectory);
 
-        final FileOutputStream fos = new FileOutputStream(tmpOutputDirectory + File.separator + VERSIONFILENAME);
-        fos.write( BuildInfo.getProductVersion().getBytes());
-        fos.close();
+        FileOutputStream fos = null;
+        try{
+            fos = new FileOutputStream(tmpOutputDirectory + File.separator + ImportExportUtilities.VERSION);
+            fos.write( BuildInfo.getProductVersion().getBytes());
+        } finally{
+            ResourceUtils.closeQuietly(fos);            
+        }
     }
 
     /**
@@ -496,9 +441,9 @@ public class Exporter{
     public void backUpComponentConfig(final String tmpOutputDirectory) throws IOException {
         final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.CONFIG.getDirName());
 
-        copyFiles(confDir, dir, new FilenameFilter(){
+        ImportExportUtilities.copyFiles(confDir, dir, new FilenameFilter(){
             public boolean accept(File dir, String name) {
-                for(String ssgFile: CONFIG_FILES){
+                for(String ssgFile: ImportExportUtilities.CONFIG_FILES){
                     if(ssgFile.equals(name)) return true;
                 }
                 return false;
@@ -516,7 +461,7 @@ public class Exporter{
      * @throws IOException if any exception occurs writing the OS files to the backup folder
      */
     public void backUpComponentOS(final String tmpOutputDirectory) throws IOException {
-        if (new File(OPT_SECURE_SPAN_APPLIANCE).exists()) {
+        if (new File(applianceHome).exists()) {
             // copy system config files
             final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.OS.getDirName());
             OSConfigManager.saveOSConfigFiles(dir.getAbsolutePath(), ssgHome);
@@ -538,11 +483,11 @@ public class Exporter{
         final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.CA.getDirName());
 
         //backup all .property files in the conf folder which are not in CONFIG_FILES
-        copyFiles(confDir, dir, new FilenameFilter(){
+        ImportExportUtilities.copyFiles(confDir, dir, new FilenameFilter(){
             public boolean accept(File dir, String name) {
                 if(!name.endsWith(".properties")) return false;
 
-                for(String ssgFile: CONFIG_FILES){
+                for(String ssgFile: ImportExportUtilities.CONFIG_FILES){
                     if(ssgFile.equals(name)) return false;
                 }
                 return true;
@@ -550,7 +495,7 @@ public class Exporter{
         });
 
         //back up all jar files in /opt/SecureSpan/Gateway/runtime/modules/lib
-        copyFiles(new File(ssgHome, CA_JAR_DIR), dir, new FilenameFilter(){
+        ImportExportUtilities.copyFiles(new File(ssgHome, CA_JAR_DIR), dir, new FilenameFilter(){
             public boolean accept(File dir, String name) {
                 return name.endsWith(".jar");
             }
@@ -570,7 +515,7 @@ public class Exporter{
         final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.MA.getDirName());
 
         //back up all jar files in /opt/SecureSpan/Gateway/runtime/modules/assertions
-        copyFiles(new File(ssgHome, MA_AAR_DIR), dir, new FilenameFilter(){
+        ImportExportUtilities.copyFiles(new File(ssgHome, MA_AAR_DIR), dir, new FilenameFilter(){
             public boolean accept(File dir, String name) {
                 return name.endsWith(".aar");
             }
@@ -595,7 +540,7 @@ public class Exporter{
         addDir(dirObj, out, tmpOutputDirectory, sb);
 
         //Add the manifest listing all files in the archive to the archive
-        final File manifest = new File(tmpOutputDirectory + File.separator + "manifest.log");
+        final File manifest = new File(tmpOutputDirectory + File.separator + ImportExportUtilities.MANIFEST_LOG);
         manifest.createNewFile();
         final FileOutputStream fos = new FileOutputStream(manifest);
         fos.write(sb.toString().getBytes());
@@ -604,34 +549,6 @@ public class Exporter{
         addZipFileToArchive(out, tmpOutputDirectory, manifest, sb);
 
         out.close();
-    }
-
-    /**
-     * Retrieve a DatabaseConfig object using the supplied node.properties file and omp.dat file. This provides all
-     * information required to connect to the database represented in node.properties
-     * @param nodePropsFile node.properties
-     * @param ompFile omp.dat
-     * @return DatabaseConfig representing the db in node.properties
-     * @throws IOException if any exception occurs while reading the supplied files
-     */
-    public DatabaseConfig getNodeConfig(final File nodePropsFile, final File ompFile) throws IOException {
-        final MasterPasswordManager decryptor = ompFile.exists() ?
-                new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword()) :
-                null;
-
-        final NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodePropsFile, true);
-        final DatabaseConfig config = nodeConfig.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );
-        if ( config == null ) {
-            throw new CausedIOException("Database configuration not found.");
-        }
-
-        config.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())) );
-
-        logger.info("Using database host '" + config.getHost() + "'.");
-        logger.info("Using database port '" + config.getPort() + "'.");
-        logger.info("Using database name '" + config.getName() + "'.");
-        logger.info("Using database user '" + config.getNodeUsername() + "'.");
-        return config;
     }
 
     /**
@@ -680,7 +597,7 @@ public class Exporter{
      */
     private void addDatabaseToBackupFolder(final File dbTmpOutputDirectory, final DatabaseConfig config)
             throws IOException {
-        if(!isDbLocal(config.getHost())){
+        if(!ImportExportUtilities.isHostLocal(config.getHost())){
             logger.log(Level.WARNING, "Cannot backup database as it is not local");
             throw new IllegalStateException("Cannot back up database as it is not local");
         }
@@ -690,25 +607,6 @@ public class Exporter{
             logger.log(Level.INFO, "exception dumping database, possible that the database is not running or credentials " +
                     "are not correct", ExceptionUtils.getDebugException(e));
             throw new IOException("cannot dump the database, please ensure the database is running and the credentials are correct");
-        }
-    }
-
-    /**
-     * Copy the files from destinationDir to sourceDir. Does not copy directories
-     * @param destinationDir The directory containing the files to copy
-     * @param sourceDir The directory to copy the files to
-     * @param fileFilter FilenameFilter can be null. Use to filter the files in sourceDir
-     * @throws IOException if any exception occurs while copying the files
-     */
-    private void copyFiles(final File sourceDir, final File destinationDir, final FilenameFilter fileFilter)
-            throws IOException{
-        final String [] filesToCopy = sourceDir.list(fileFilter);
-
-        for ( final String filename : filesToCopy ) {
-            final File file = new File(sourceDir, filename);
-            if ( file.exists() && !file.isDirectory()) {
-                FileUtils.copyFile(file, new File(destinationDir.getAbsolutePath() + File.separator + file.getName()));
-            }
         }
     }
 
@@ -736,7 +634,7 @@ public class Exporter{
      * @throws IOException if any exception occurs when creating the mapping file
      */
     private void createMappingFile(final String mappingFileName, final DatabaseConfig config) throws IOException {
-        if(!isDbLocal(config.getHost())){
+        if(!ImportExportUtilities.isHostLocal(config.getHost())){
             logger.log(Level.WARNING, "Cannot create maping file as database is not local");
             throw new IllegalStateException("Cannot create maping file as database is not local");
         }
@@ -771,7 +669,7 @@ public class Exporter{
             throw new NullPointerException("pathToImageFile cannot be null");
         } else {
             //fail if file exists
-            ImportExportUtilities.checkFileExistence(pathToImageFile, true);
+            ImportExportUtilities.throwIfFileExists(pathToImageFile);
         }
 
         if (!testCanWriteSilently(pathToImageFile)) {
@@ -826,7 +724,7 @@ public class Exporter{
      * @param args The name value pair map of each argument to it's value, if a vaule exists
      * @param validateImageExistence if true, check that the iamge file exists and that we can write to it
      * @throws IOException for arguments which are files, they are checked to see if the exist, which may cause an IOException
-     * @throws BackupRestoreLauncher.InvalidProgramArgumentException
+     * @throws BackupRestoreLauncher.InvalidProgramArgumentException if any program params are invalid
      */
     private void validateProgramParameters(final Map<String, String> args, final boolean validateImageExistence)
             throws IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
@@ -834,13 +732,13 @@ public class Exporter{
         if (!args.containsKey(IMAGE_PATH.name)) {
             throw new InvalidProgramArgumentException("missing option " + IMAGE_PATH.name + ", required for exporting image");
         } else if(validateImageExistence){
-            ImportExportUtilities.checkFileExistence(args.get(IMAGE_PATH.name), true);   //test that the file is a new file
+            ImportExportUtilities.throwIfFileExists(args.get(IMAGE_PATH.name));   //test that the file is a new file
             ImportExportUtilities.verifyCanWriteFile(args.get(IMAGE_PATH.name));  //test if we can create the file
         }
 
         //check condition for mapping file
         if (args.containsKey(MAPPING_PATH.name)) {
-            ImportExportUtilities.checkFileExistence(args.get(MAPPING_PATH.name), true); //test that the file is a new file
+            ImportExportUtilities.throwIfFileExists(args.get(MAPPING_PATH.name)); //test that the file is a new file
             ImportExportUtilities.verifyCanWriteFile(args.get(MAPPING_PATH.name));    //test if we can create the file
         }
 
@@ -849,22 +747,26 @@ public class Exporter{
 
         //check if node.properties file exists
         final File configDir = new File(ssgHome, NODE_CONF_DIR);
-        final File nodePropsFile = new File(configDir, NODE_PROPERTIES_FILE);
+        final File nodePropsFile = new File(configDir, ImportExportUtilities.NODE_PROPERTIES);
         final NodeConfig nodeConfig = NodeConfigurationManager.loadNodeConfig("default", nodePropsFile, true);
         final DatabaseConfig config = nodeConfig.getDatabase( DatabaseType.NODE_ALL, NodeConfig.ClusterType.STANDALONE, NodeConfig.ClusterType.REPL_MASTER );
         if ( config == null ) {
             throw new IOException("database configuration not found.");
         }
 
-        final File ompFile = new File(configDir, OMP_DAT_FILE);
+        final File ompFile = new File(configDir, ImportExportUtilities.OMP_DAT);
         final MasterPasswordManager decryptor =
                 ompFile.exists() ? new MasterPasswordManager(new DefaultMasterPasswordFinder(ompFile).findMasterPassword()) : null;
         config.setNodePassword( new String(decryptor.decryptPasswordIfEncrypted(config.getNodePassword())) );
 
         //check if we can connect to the database
         //we only need to do this if the db is local, as otherwise a db connection is not required to perform the backup
-        if(isDbLocal(config.getHost())){
-            ImportExportUtilities.verifyDatabaseConnection(config, false);    
+        if(ImportExportUtilities.isHostLocal(config.getHost())){
+            try {
+                ImportExportUtilities.verifyDatabaseConnection(config, false);
+            } catch (SQLException e) {
+                throw new InvalidProgramArgumentException(e.getMessage());
+            }
         }
 
     }

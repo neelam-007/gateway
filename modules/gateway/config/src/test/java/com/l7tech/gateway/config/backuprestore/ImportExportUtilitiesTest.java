@@ -1,0 +1,326 @@
+/**
+ * Copyright (C) 2008, Layer 7 Technologies Inc.
+ * User: darmstrong
+ * Date: May 26, 2009
+ * Time: 11:14:10 AM
+ */
+package com.l7tech.gateway.config.backuprestore;
+
+import org.junit.Test;
+import org.junit.Assert;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Collections;
+
+import com.l7tech.server.management.config.node.DatabaseConfig;
+import com.l7tech.util.BuildInfo;
+import com.l7tech.util.FileUtils;
+
+public class ImportExportUtilitiesTest {
+
+    /**
+     * Test that absolute paths are resolved correctly according to the system property ImportExportUtilities.BASE_DIR_PROPERTY
+     */
+    @Test
+    public void testGetAbsolutePath(){
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        System.setProperty(ImportExportUtilities.BASE_DIR_PROPERTY, tmpDir);
+
+        String testFile = "testfile.txt";
+        String absFile = ImportExportUtilities.getAbsolutePath(testFile);
+        Assert.assertTrue("absFile's path should be '"+tmpDir+File.separator+testFile,
+                absFile.equals(tmpDir+File.separator+testFile));
+    }
+
+    /**
+     * Tests that a runtime exception occurs when the ImportExportUtilities.BASE_DIR_PROPERTY is not set
+     */
+    @Test(expected = RuntimeException.class)
+    public void testGetAbsolutePath_NoSystemProperty(){
+        //need to clear this property as other tests set it
+        System.clearProperty(ImportExportUtilities.BASE_DIR_PROPERTY);
+        ImportExportUtilities.getAbsolutePath("notimpotant");
+    }
+
+    /**
+     * Tests isHostLocal with a local and non existent hostname
+     */
+    @Test
+    public void testisHostLocal(){
+        String host = "localhost";
+        Assert.assertTrue("localhost is local", ImportExportUtilities.isHostLocal(host));
+
+        host = "doesnotexist";
+        Assert.assertFalse("doesnotexist is not local", ImportExportUtilities.isHostLocal(host));
+    }
+
+    /**
+     * Test that getNodeConfig() correctly constructs a DatabaseConfig, based on our project's node.properties and
+     * omp.dat
+     * @throws IOException
+     */
+    @Test
+    public void testGetNodeConfig() throws IOException {
+
+        final URL nodeRes = this.getClass().getClassLoader().getResource("node/default/etc/conf/node.properties");
+        File nodeFile = new File(nodeRes.getPath());
+        final URL ompRes = this.getClass().getClassLoader().getResource("node/default/etc/conf/omp.dat");
+        File ompFile = new File(ompRes.getPath());
+
+        DatabaseConfig dbConfig = ImportExportUtilities.getNodeConfig(nodeFile, ompFile);
+
+        Assert.assertNotNull("dbConfig should not be null", dbConfig);
+        Assert.assertEquals("Invalid value returned from " +
+                "dbConfig.getHost()", "doesnotexist.l7tech.com", dbConfig.getHost());
+        Assert.assertEquals("Invalid value returned from " +
+                "dbConfig.getPort()", 3306, dbConfig.getPort());
+        Assert.assertEquals("Invalid value returned from " +
+                "dbConfig.getName()", "ssg_5_0_1", dbConfig.getName());
+        Assert.assertEquals("Invalid value returned from " +
+                "dbConfig.getNodeUsername()", "gateway", dbConfig.getNodeUsername());
+    }
+
+    /**
+     * Test that getAndValidateCommandLineOptions() correctly validates command line arguments
+     */
+    @Test
+    public void testGetAndValidateCommandLineOptions() throws BackupRestoreLauncher.InvalidProgramArgumentException {
+        final String [] args = new String[]{"export","-image", "image.zip", "-ia", "-it", "mapping.xml"};
+        final List<CommandLineOption> validOptions = new ArrayList<CommandLineOption>();
+        validOptions.add(Exporter.IMAGE_PATH);
+        validOptions.add(Exporter.AUDIT);
+        validOptions.add(Exporter.MAPPING_PATH);
+
+        final Map<String, String> params = ImportExportUtilities.getAndValidateCommandLineOptions(
+                args, validOptions, Collections.<CommandLineOption>emptyList());
+        Assert.assertEquals("-image option has an incorrect value", "image.zip", params.get(Exporter.IMAGE_PATH.name));
+    }
+
+    /**
+     * Test that getAndValidateCommandLineOptions() correctly validates command line arguments
+     * In this test the -image command line option has no value supplied
+     */
+    @Test(expected = BackupRestoreLauncher.InvalidProgramArgumentException.class)
+    public void testGetAndValidateCommandLineOptions_MissingValue() throws BackupRestoreLauncher.InvalidProgramArgumentException {
+        final String [] args = new String[]{"export","-image", "-ia", "-it", "mapping.xml"};
+        final List<CommandLineOption> validOptions = new ArrayList<CommandLineOption>();
+        validOptions.add(Exporter.IMAGE_PATH);
+        validOptions.add(Exporter.AUDIT);
+        validOptions.add(Exporter.MAPPING_PATH);
+
+        ImportExportUtilities.getAndValidateCommandLineOptions(args, validOptions,
+                Collections.<CommandLineOption>emptyList());
+    }
+
+    /**
+     * Test that getAndValidateCommandLineOptions() correctly validates command line arguments
+     * In this test the -unknown command line option is supplied, as it's not expected and exception should be thrown
+     */
+    @Test(expected = BackupRestoreLauncher.InvalidProgramArgumentException.class)
+    public void testGetAndValidateCommandLineOptions_UnknownValue() throws BackupRestoreLauncher.InvalidProgramArgumentException {
+        final String [] args = new String[]{"export","-image", "image.zip", "-ia", "-it", "mapping.xml", "-unknown"};
+        final List<CommandLineOption> validOptions = new ArrayList<CommandLineOption>();
+        validOptions.add(Exporter.IMAGE_PATH);
+        validOptions.add(Exporter.AUDIT);
+        validOptions.add(Exporter.MAPPING_PATH);
+
+        ImportExportUtilities.getAndValidateCommandLineOptions(args, validOptions,
+                Collections.<CommandLineOption>emptyList());
+    }
+
+    /**
+     * Test that getAndValidateCommandLineOptions() correctly validates command line arguments
+     * Tests that ignore options are processed correctly. In this test -it is supplied but is listed with the ignore
+     * options instead of the valid options, so it should be ignored, if it wasn't listed as ignored, then an exception
+     * should be thrown
+     */
+    @Test
+    public void testGetAndValidateCommandLineOptions_IgnoreOptions() throws BackupRestoreLauncher.InvalidProgramArgumentException {
+        final String [] args = new String[]{"export","-image", "image.zip", "-ia", "-it", "mapping.xml"};
+        final List<CommandLineOption> validOptions = new ArrayList<CommandLineOption>();
+        validOptions.add(Exporter.IMAGE_PATH);
+        validOptions.add(Exporter.AUDIT);
+
+        final List<CommandLineOption> ignoreOptions = new ArrayList<CommandLineOption>();
+        ignoreOptions.add(Exporter.MAPPING_PATH);
+
+        ImportExportUtilities.getAndValidateCommandLineOptions(args, validOptions, ignoreOptions);
+    }
+
+    /**
+     * Validate the method throwIfFileExists() which throws exceptions when a file exists
+     */
+    @Test
+    public void testThrowIfFileExists() throws IOException {
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        File testFile = new File(tmpDir + File.separator + "noexist.txt");
+        ImportExportUtilities.throwIfFileExists(testFile.getAbsolutePath());
+    }
+
+    /**
+     * Validate the method throwIfFileExists() which throws exceptions when a file exists
+     * Tests that an IllegalArgumentException is thrown when the file already exists
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testThrowIfFileExists_FileExists() throws IOException {
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        File testFile = new File(tmpDir + File.separator + "noexist.txt");
+        try{
+            testFile.createNewFile();
+            ImportExportUtilities.throwIfFileExists(testFile.getAbsolutePath());
+        }finally{
+            testFile.delete();
+        }
+    }
+
+    /**
+     * Validate the method throwIfFileDoesNotExist() which throws exceptions when a file exists
+     */
+    @Test
+    public void testThrowIfFileDoesNotExist() throws IOException {
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        File testFile = new File(tmpDir + File.separator + "noexist.txt");
+        try{
+            testFile.createNewFile();
+            ImportExportUtilities.throwIfFileDoesNotExist(testFile.getAbsolutePath());
+        }finally{
+            testFile.delete();
+        }
+    }
+
+    /**
+     * Validate the method throwIfFileDoesNotExist() which throws exceptions when a file exists
+     * Validates that IllegalArgumentException is thrown as the file does not exist
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testThrowIfFileDoesNotExist_DoesNotExist() throws IOException {
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        File testFile = new File(tmpDir + File.separator + "noexist.txt");
+        ImportExportUtilities.throwIfFileDoesNotExist(testFile.getAbsolutePath());
+    }
+
+    /**
+     * Tests verifyCanWriteFile correctly validates that we can write to a file
+     * @throws IOException
+     */
+    @Test
+    public void testVerifyCanWriteFile() throws IOException {
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        File f = new File(tmpDir, "testfilesdoesnotexist.txt");
+        ImportExportUtilities.verifyCanWriteFile(f.getAbsolutePath());
+    }
+
+    /**
+     * Tests verifyCanWriteFile correctly validates that we can write to a file. In this case we cant 
+     * @throws IOException
+     */
+    @Test(expected = IOException.class)
+    public void testVerifyCanWriteFile_CantWrite() throws IOException {
+        File f = new File("/root/testfilesdoesnotexist.txt");
+        ImportExportUtilities.verifyCanWriteFile(f.getAbsolutePath());
+    }
+
+    /**
+     * Tests that the version from BuildInfo is correctly matched in throwIfDbVersionDoesNotMatchSSG
+     */
+    @Test
+    public void testThrowIfDbVersionDoesNotMatchSSG(){
+        String version = BuildInfo.getProductVersion();
+        ImportExportUtilities.throwIfDbVersionDoesNotMatchSSG(version);
+    }
+
+    /**
+     * Validates that throwIfDbVersionDoesNotMatchSSG throws when the wrong version is found
+     */
+    @Test(expected = UnsupportedOperationException.class)
+    public void testThrowIfDbVersionDoesNotMatchSSG_WrongVersion(){
+        ImportExportUtilities.throwIfDbVersionDoesNotMatchSSG("made up version");
+    }
+
+    /**
+     * Test that temp directories are created correctly
+     */
+    @Test
+    public void testcreateTmpDirectory() throws IOException {
+        String tmpDir = null;
+        try {
+            tmpDir = ImportExportUtilities.createTmpDirectory();
+            File test = new File(tmpDir);
+            Assert.assertTrue("Temp directory should exist", test.exists());
+            Assert.assertTrue("Temp directory should be a diretory", test.isDirectory());
+        } finally{
+            if(tmpDir != null) new File(tmpDir).delete();            
+        }
+    }
+
+    /**
+     * Test verifyDirExistence
+     * @throws IOException
+     */
+    @Test
+    public void testVerifyDirExistence() throws IOException{
+        String tmpDir = null;
+        try {
+            tmpDir = ImportExportUtilities.createTmpDirectory();
+            ImportExportUtilities.verifyDirExistence(tmpDir);
+        } finally{
+            if(tmpDir != null) new File(tmpDir).delete();
+        }
+
+    }
+
+    /**
+     * Tests that the file part is extacted correctly
+     */
+    @Test
+    public void testGetFilePart(){
+        String fileName = "/home/layer7/file.txt";
+        String test = ImportExportUtilities.getFilePart(fileName);
+        Assert.assertEquals("Incorrect file name extracted", "file.txt", test);
+
+        fileName = "/";
+        test = ImportExportUtilities.getFilePart(fileName);
+        Assert.assertEquals("Incorrect file name extracted", "", test);
+
+        fileName = "/home/";
+        test = ImportExportUtilities.getFilePart(fileName);
+        Assert.assertEquals("Incorrect file name extracted", "", test);
+    }
+
+    /**
+     * Tests that the file part is extacted correctly
+     */
+    @Test
+    public void testGetDirPart(){
+        String fileName = "/home/layer7/file.txt";
+        String test = ImportExportUtilities.getDirPart(fileName);
+        Assert.assertEquals("Incorrect path extracted", "/home/layer7", test);
+
+        fileName = "/";
+        test = ImportExportUtilities.getDirPart(fileName);
+        Assert.assertEquals("Incorrect path extracted", "", test);
+
+        fileName = "/home/";
+        test = ImportExportUtilities.getDirPart(fileName);
+        Assert.assertEquals("Incorrect path extracted", "/home", test);
+
+        fileName = "filename";
+        test = ImportExportUtilities.getDirPart(fileName);
+        Assert.assertNull("Path should be null", test);
+
+    }
+
+    //getNodeConfig
+
+    @Test
+    public void testDeleteAfter(){
+        File f = new File("/noexist/doesnotexist");
+        System.out.println(f.getName());
+    }
+
+}
