@@ -204,6 +204,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         }
 
         String address = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+        address = translateBindAddress(address, connector.getPort());
         if (address == null) address = "0.0.0.0";
 
         int portStart = toInt(connector.getProperty(SsgConnector.PROP_PORT_RANGE_START), "FTP port range start");

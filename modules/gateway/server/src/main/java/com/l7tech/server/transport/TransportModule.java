@@ -131,7 +131,7 @@ public abstract class TransportModule extends LifecycleBean {
      * Translate a bind address that references an interface tag into a concrete IP address.
      * 
      * @param bindAddress
-     * @return
+     * @return dotted decimal IP for the corresponding local interface, ie "192.168.1.1"
      */
     protected String translateBindAddress(String bindAddress, int port) throws ListenerException {
         if (!looksLikeInterfaceTagName(bindAddress))
