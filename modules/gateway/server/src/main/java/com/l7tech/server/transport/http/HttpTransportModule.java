@@ -11,6 +11,7 @@ import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -48,7 +49,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.text.ParseException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -101,9 +103,10 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                                 final SsgKeyStoreManager ssgKeyStoreManager,
                                 final LicenseManager licenseManager,
                                 final SsgConnectorManager ssgConnectorManager,
+                                final ClusterPropertyManager clusterPropertyManager,
                                 final Set<SsgConnectorActivationListener> endpointListeners )
     {
-        super("HTTP Transport Module", logger, GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
+        super("HTTP Transport Module", logger, GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, clusterPropertyManager);
         this.serverConfig = serverConfig;
         this.masterPasswordManager = masterPasswordManager;
         this.defaultKeyManager = defaultKeyManager;
@@ -540,7 +543,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         if (bindAddress == null || bindAddress.equals("*") || bindAddress.equals("0.0.0.0")) {
             m.remove("address");
         } else {
-            m.put("address", bindAddress);
+            m.put("address", translateBindAddress(bindAddress, c.getPort()));
         }
 
         m.put(CONNECTOR_ATTR_TRANSPORT_MODULE_ID, Long.toString(instanceId));

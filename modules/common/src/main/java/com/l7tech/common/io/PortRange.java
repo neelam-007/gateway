@@ -1,10 +1,9 @@
 package com.l7tech.common.io;
 
+import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Arrays;
-import java.net.InetAddress;
-import java.io.Serializable;
 
 /**
  * Represents a range of TCP or UDP ports.
@@ -13,7 +12,7 @@ public class PortRange implements Serializable, PortOwner {
     private final int portStart;
     private final int portEnd;
     private final boolean udp;
-    private final InetAddress device;
+    private final String device;
 
     /**
      * Create a port range not confined to any particular device.
@@ -36,7 +35,7 @@ public class PortRange implements Serializable, PortOwner {
      * @param device     a particular device this port exists on, or null for INADDR_ANY
      * @throws IllegalArgumentException if either port is out of range.
      */
-    public PortRange(int portStart, int portEnd, boolean udp, InetAddress device) {
+    public PortRange(int portStart, int portEnd, boolean udp, String device) {
         if (portStart > portEnd) {
             int tmp = portEnd;
             portEnd = portStart;
@@ -65,15 +64,15 @@ public class PortRange implements Serializable, PortOwner {
     }
 
     /** @return the device associated with this port range, or null if not confined to any one in particular. */
-    public InetAddress getDevice() {
+    public String getDevice() {
         return device;
     }
 
-    private static boolean devicesOverlap(InetAddress left, InetAddress right) {
-        return right == null || left == null || left.isAnyLocalAddress() || right.isAnyLocalAddress() || left.equals(right);
+    private static boolean devicesOverlap(String left, String right) {
+        return right == null || left == null || left.equals(right);
     }
 
-    public boolean isPortUsed(int port, boolean udp, InetAddress otherDevice) {
+    public boolean isPortUsed(int port, boolean udp, String otherDevice) {
         return udp == this.udp &&
                devicesOverlap(getDevice(), otherDevice) &&
                port >= portStart && port <= portEnd;
@@ -99,7 +98,7 @@ public class PortRange implements Serializable, PortOwner {
      * @param device the device to match, or null to match any device.
      * @return true if the specified port is in use in the specified collection of owners.
      */
-    public static boolean isPortUsed(Collection<? extends PortOwner> owners, int port, boolean udp, InetAddress device) {
+    public static boolean isPortUsed(Collection<? extends PortOwner> owners, int port, boolean udp, String device) {
         for (PortOwner owner : owners) {
             if (owner.isPortUsed(port, udp, device))
                 return true;

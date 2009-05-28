@@ -129,6 +129,11 @@ public class SortedListModel<E> extends AbstractListModel {
         return (E[]) model.toArray();
     }
 
+    /** @return a List containing all of the elements of the list in the correct order. */
+    public List<E> toList() {
+        return new ArrayList<E>(model);
+    }
+
     /**
      * remove the element from the JList
      *

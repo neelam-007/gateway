@@ -111,7 +111,11 @@ public class SsgConnectorManagerWindow extends JDialog {
             }
         });
 
-        // TODO wire up interfaces button
+        interfacesButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                InterfaceTagsDialog.show(SsgConnectorManagerWindow.this, null);
+            }
+        });
 
         conflictLabel.setText(" ");
 

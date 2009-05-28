@@ -227,6 +227,34 @@ public class ArrayUtils {
         return true;
     }
 
+    /**
+     * Perform a lexical compare of two byte arrays, as with {@link Comparator#compare(Object, Object)}.
+     *
+     * @param left  the left array.  May be null.
+     * @param right the right array.  May be null.
+     * @return 0 if both arrays are the same length and contain the same elements.
+     *         Returns a negative integer if the left array is null but the right is not; or, if the first
+     *         differing byte has a value in the left array that is less than the corresponding value
+     *         in the right array; or, if the arrays are different lengths and the left array is a prefix of the right array.
+     *         Returns a positive integer if the right array is null but the left is not; or, if the first
+     *         differing byte has a vlue in the right array that is less than the corresponding value
+     *         in the left array; or, if the arrays are different lengths and the right array is a prefix of the left array.
+     */
+    public static int compareArrays(byte[] left, byte[] right) {
+        if (left == right) return 0;
+        if (left == null) return -1;
+        if (right == null) return 1;
+        for (int i = 0; i < left.length; i++) {
+            if (i >= right.length)
+                return 1;
+            int comp = left[i] - right[i];
+            if (comp != 0)
+                return comp;
+        }
+        if (right.length == left.length) return 0;
+        return left.length < right.length ? -1 : 1;
+    }
+
     public static byte[] copy(final byte[] data) {
         byte[] copy = null;
         if (data != null) {

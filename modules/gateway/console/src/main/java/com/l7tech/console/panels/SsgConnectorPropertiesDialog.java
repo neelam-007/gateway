@@ -90,7 +90,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private JSpinner threadPoolSizeSpinner;
     private JCheckBox usePrivateThreadPoolCheckBox;
     private JLabel threadPoolSizeLabel;
-    private JButton manageButton;
+    private JButton interfacesButton;
 
     private SsgConnector connector;
     private boolean confirmed = false;
@@ -258,7 +258,15 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             }
         });
 
-        // TODO wire up "manage interfaces" button
+        interfacesButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                InterfaceTagsDialog.show(SsgConnectorPropertiesDialog.this, new Functions.UnaryVoid<String>() {
+                    public void call(String newInterfaceTags) {
+                        populateInterfaceComboBox(newInterfaceTags);
+                    }
+                });
+            }
+        });
 
         threadPoolSizeSpinner.setModel( new SpinnerNumberModel( DEFAULT_POOL_SIZE, 1, 10000, 1 ) );
 
@@ -361,17 +369,37 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     }
 
     private void initializeInterfaceComboBox() {
+        populateInterfaceComboBox(null);
+
+        if(isCluster) {
+            interfaceComboBox.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent evt) {
+                    final Object item = interfaceComboBox.getSelectedItem();
+                    if(item != null && item.toString().matches("^\\d.*")) {
+                        JOptionPane.showMessageDialog(SsgConnectorPropertiesDialog.this,
+                                "With a cluster, using an interface identified by a raw IP address can have unexpected effects.",
+                                "Possible Input Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            });
+        }
+    }
+
+    private void populateInterfaceComboBox(String interfaceTags) {
         List<String> entries = new ArrayList<String>();
 
         entries.add(INTERFACE_ANY);
 
         try {
-            ClusterProperty tagProp = Registry.getDefault().getClusterStatusAdmin().findPropertyByName(InterfaceTag.PROPERTY_NAME);
-            if (tagProp != null) {
-                Set<InterfaceTag> tags = InterfaceTag.parseMultiple(tagProp.getValue());
-                for (InterfaceTag tag : tags)
-                    entries.add(tag.getName());
+            if (interfaceTags == null) {
+                ClusterProperty tagProp = Registry.getDefault().getClusterStatusAdmin().findPropertyByName(InterfaceTag.PROPERTY_NAME);
+                if (tagProp != null)
+                    interfaceTags = tagProp.getValue();
             }
+            if (interfaceTags != null)
+                for (InterfaceTag tag : InterfaceTag.parseMultiple(interfaceTags))
+                    entries.add(tag.getName());
         } catch (FindException e) {
             if (logger.isLoggable(Level.INFO))
                 logger.log(Level.INFO, "FindException looking up cluster property " + InterfaceTag.PROPERTY_NAME + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -389,20 +417,6 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         interfaceComboBoxModel = new DefaultComboBoxModel(entries.toArray());
         interfaceComboBox.setModel(interfaceComboBoxModel);
-
-        if(isCluster) {
-            interfaceComboBox.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent evt) {
-                    final Object item = interfaceComboBox.getSelectedItem();
-                    if(item != null && item.toString().matches("^\\d.*")) {
-                        JOptionPane.showMessageDialog(SsgConnectorPropertiesDialog.this,
-                                "With a cluster, using an interface identified by a raw IP address can have unexpected effects.",
-                                "Possible Input Error", JOptionPane.ERROR_MESSAGE);
-                    }
-                }
-            });
-        }
     }
 
     public static class JCheckBoxListModel extends AbstractListModel {
@@ -913,6 +927,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         cbEnablePCAPI.setSelected(pcapi);
     }
 
+
+
     /**
      * Configure the GUI control states with information gathered from the connector instance.
      */
@@ -922,13 +938,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         portField.setText(String.valueOf(connector.getPort()));
         enabledCheckBox.setSelected(connector.isEnabled());
 
-        String bindAddr = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
-        interfaceComboBox.setSelectedItem(bindAddr != null ? bindAddr : INTERFACE_ANY);
-        if (bindAddr != null && interfaceComboBox.getSelectedItem() == null) {
-            // It wasn't there -- add it so we don't lose user data
-            interfaceComboBoxModel.addElement(bindAddr);
-            interfaceComboBox.setSelectedItem(bindAddr);
-        }
+        selectCurrentBindAddress();
 
         setEndpointList(connector.getEndpoints());
 
@@ -975,6 +985,16 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
 
         enableOrDisableComponents();
+    }
+
+    private void selectCurrentBindAddress() {
+        String bindAddr = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+        interfaceComboBox.setSelectedItem(bindAddr != null ? bindAddr : INTERFACE_ANY);
+        if (bindAddr != null && interfaceComboBox.getSelectedItem() == null) {
+            // It wasn't there -- add it so we don't lose user data
+            interfaceComboBoxModel.addElement(bindAddr);
+            interfaceComboBox.setSelectedItem(bindAddr);
+        }
     }
 
     /**

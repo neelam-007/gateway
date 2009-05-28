@@ -9,6 +9,7 @@ import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterPropertyCache;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
@@ -56,9 +57,10 @@ public class FtpServerManager extends TransportModule implements ApplicationList
                             final SsgKeyStoreManager ssgKeyStoreManager,
                             final DefaultKey defaultKeystore,
                             final SsgConnectorManager ssgConnectorManager,
+                            final ClusterPropertyManager clusterPropertyManager,
                             final EventChannel messageProcessingEventChannel,
                             final Timer timer) {
-        super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
+        super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, clusterPropertyManager);
 
         this.auditContext = auditContext;
         this.clusterPropertyCache = clusterPropertyCache;

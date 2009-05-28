@@ -1,7 +1,6 @@
 package com.l7tech.common.io;
 
 import java.util.List;
-import java.net.InetAddress;
 
 /**
  * Implemented by objects that own one or more TCP or UDP addresses.
@@ -15,7 +14,7 @@ public interface PortOwner {
      * @param device a device to search within, or null to match any port on any device
      * @return  true if the specified port is in this range.
      */
-     boolean isPortUsed(int port, boolean udp, InetAddress device);
+     boolean isPortUsed(int port, boolean udp, String device);
 
     /**
      * Check if any port in the specified range is claimed by this PortOwner.

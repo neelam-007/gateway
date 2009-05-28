@@ -14,8 +14,6 @@ import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import java.lang.reflect.InvocationTargetException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -176,8 +174,6 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
 
     // Fields not saved by hibernate
     private Set<Endpoint> endpointSet;
-    private boolean inetAddressSet = false;
-    private InetAddress inetAddress;
 
     public SsgConnector() {
     }
@@ -379,11 +375,6 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     public void putProperty(String key, String value) {
         checkLocked();
 
-        if (PROP_BIND_ADDRESS.equals(key)) {
-            inetAddressSet = false;
-            inetAddress = null;
-        }
-
         properties.put(key, value);
     }
 
@@ -454,39 +445,6 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     }
 
     /**
-     * Convenience accessor for the property {@link #PROP_BIND_ADDRESS} that converts to InetAddress,
-     * with caching.
-     *
-     * @return an InetAddress instance, or null if this connector should bind to all addresses.
-     */
-    @Transient
-    public InetAddress getBindAddress() {
-        if (inetAddressSet)
-            return inetAddress;
-
-        String bindAddr = getProperty(PROP_BIND_ADDRESS);
-        final InetAddress result;
-        if (bindAddr == null) {
-            result = null;
-        } else {
-            try {
-                result = InetAddress.getByName(bindAddr);
-            } catch (UnknownHostException e) {
-                logger.log(Level.WARNING, "Bad bindAddr hostname in connector oid " + getOid() + ": " + ExceptionUtils.getMessage(e));
-                try {
-                    return InetAddress.getByAddress(new byte[] { 127, 0, 0, 1 });
-                } catch (UnknownHostException e1) {
-                    throw new RuntimeException(e1); // can't happen
-                }
-            }
-        }
-
-        inetAddressSet = true;
-        inetAddress = result;
-        return inetAddress;
-    }
-
-    /**
      * Get the extra properties of this connector.
      * <p/>
      * Should only be used by Hibernate, for serialization.
@@ -514,8 +472,6 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     protected void setProperties(Map<String,String> properties) {
         checkLocked();
 
-        inetAddressSet = false;
-        inetAddress = null;
         //noinspection AssignmentToCollectionOrArrayFieldFromParameter
         this.properties = properties;
     }
@@ -526,7 +482,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     @Transient
     public List<PortRange> getTcpPortsUsed() {
         List<PortRange> ret = new ArrayList<PortRange>();
-        ret.add(new PortRange(port, port, false, getBindAddress()));
+        ret.add(new PortRange(port, port, false, getProperty(PROP_BIND_ADDRESS)));
         PortRange range = getPortRange();
         if (range != null)
             ret.add(range);
@@ -545,7 +501,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
             if (countstr == null)
                 return null;
             int count = Integer.parseInt(countstr);
-            return new PortRange(start, start + count, false, getBindAddress());
+            return new PortRange(start, start + count, false, getProperty(PROP_BIND_ADDRESS));
         } catch (IllegalArgumentException e) {
             logger.log(Level.WARNING, "Ignoring invalid port range settings for connector oid #" + getOid() + ": " + ExceptionUtils.getMessage(e), e);
             return null;
@@ -553,12 +509,12 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
     }
 
     @Override
-    public boolean isPortUsed(int port, boolean udp, InetAddress device) {
+    public boolean isPortUsed(int port, boolean udp, String device) {
         if (udp)
             return false;
 
         if (device != null) {
-            InetAddress bindAddress = getBindAddress();
+            String bindAddress = getProperty(PROP_BIND_ADDRESS);
             if (bindAddress != null && !device.equals(bindAddress))
                 return false;
         }
@@ -572,7 +528,7 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
 
     @Override
     public boolean isOverlapping(PortRange range) {
-        if (range.isPortUsed(getPort(), false, getBindAddress()))
+        if (range.isPortUsed(getPort(), false, getProperty(PROP_BIND_ADDRESS)))
             return true;
         final PortRange ourRange = getPortRange();
         return ourRange != null && range.isOverlapping(ourRange);
@@ -590,7 +546,6 @@ public class SsgConnector extends NamedEntityImp implements PortOwner {
      */
     private void setReadOnly() {
         this.endpointSet();
-        this.getBindAddress();
         this.getPortRange();
         this.getClientAuth();
         this.getKeyAlias();

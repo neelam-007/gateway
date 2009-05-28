@@ -16,17 +16,23 @@ public class InterfaceTag {
     /** Conventional name of a property that might contain an interface tag set in string format. */
     public static final String PROPERTY_NAME = "interfaceTags";
 
+    /** Pattern that matches a valid InterfaceTag name. */
+    private static final Pattern NAME_PAT = Pattern.compile("[a-zA-Z_][a-zA-Z_0-9]*");
+
+    /** Pattern that matches syntax (but not numeric sematics) of a valid IPv4 network address. */
+    private static final Pattern IPV4_PAT = Pattern.compile("\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3})))(?:/\\d{1,2})");
+
     /** Pattern that matches a single InterfaceTag in String format. */
     private static final Pattern SINGLE_PAT = Pattern.compile("([a-zA-Z_][a-zA-Z_0-9]*)\\(([0-9.,/]*)\\)");
 
     private String name;
     private Set<String> ipPatterns; // TODO use a more appropriate class for this than String
 
-    InterfaceTag(String name, Set<String> ipPatterns) {
+    public InterfaceTag(String name, Set<String> ipPatterns) {
         if (name == null || ipPatterns == null) throw new NullPointerException();
         if (name.trim().length() < 1) throw new IllegalArgumentException("empty name");
         this.name = name;
-        this.ipPatterns = ipPatterns;
+        this.ipPatterns = new LinkedHashSet<String>(ipPatterns);
     }
 
     /**
@@ -87,6 +93,14 @@ public class InterfaceTag {
 
     public static String toString(Set<InterfaceTag> tags) {
         return TextUtils.join(";", tags).toString();
+    }
+
+    public static boolean isValidName(String name) {
+        return NAME_PAT.matcher(name).matches();
+    }
+
+    public static boolean isValidPattern(String pattern) {
+        return IPV4_PAT.matcher(pattern).matches();
     }
 
     @SuppressWarnings({"RedundantIfStatement"})
