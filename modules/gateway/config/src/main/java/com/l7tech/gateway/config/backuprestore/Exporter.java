@@ -20,6 +20,8 @@ import java.util.zip.ZipOutputStream;
 import java.sql.SQLException;
 import java.net.*;
 import java.text.SimpleDateFormat;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 import org.xml.sax.SAXException;
 
@@ -37,7 +39,7 @@ import org.xml.sax.SAXException;
  * User: flascell<br/>
  * Date: Nov 8, 2006<br/>
  */
-public class Exporter{
+public final class Exporter{
 
     private static final Logger logger = Logger.getLogger(Exporter.class.getName());
 
@@ -80,6 +82,8 @@ public class Exporter{
     public static final String CA_JAR_DIR = "runtime/modules/lib";
     public static final String MA_AAR_DIR = "runtime/modules/assertions";
 
+    public static final String POST_FIVE_O_DEFAULT_BACKUP_FOLDER = "Backup";
+
     /** Home directory of the SSG installation. This will always be /opt/SecureSpan/Gateway however maintaining
      * the ability for this to be theoritically installed into other directories*/
     private final File ssgHome;
@@ -100,6 +104,10 @@ public class Exporter{
     private static final String UNIQUE_TIMESTAMP = "yyyyMMddHHmmss";
     private static final String FTP_PROTOCOL = "ftp://";
     private String applianceHome;
+    public static final String NO_UNIQUE_IMAGE_SYSTEM_PROP =
+            "com.l7tech.gateway.config.backuprestore.nouniqueimagename";
+
+    private final boolean isPostFiveO;
 
     /**
      * @param ssgHome   home directory where the SSG is installed. Should equal /opt/SecureSpan/Gateway. Cannot be null
@@ -116,13 +124,46 @@ public class Exporter{
         if(!ssgHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
         if(applianceHome == null) throw new NullPointerException("applianceHome cannot be null");
         if(applianceHome.equals("")) throw new IllegalArgumentException("applianceHome cannot be null");
-
+        
         this.ssgHome = ssgHome;
+        //this class is not usable without an installed SSG > 5.0
+        int [] versionInfo = throwIfLessThanFiveO(new File(ssgHome, "runtime/Gateway.jar"));
+        isPostFiveO = versionInfo[2] > 0;
+        
         this.stdout = stdout;
         confDir = new File(ssgHome, NODE_CONF_DIR);
         this.applianceHome = applianceHome;
     }
 
+    /**
+     * This constructor is only used with tests.
+     * This constructor will not check the for an SSG installation
+     * @param ssgHome   home directory where the SSG is installed. For tests this will be a tmp directory. Cannot be null
+     * @param stdout    stream for verbose output; <code>null</code> for no verbose output
+     * @param applianceHome the standard installation directory of the SSG appliance. If this folder exists then
+     * OS files will be backed up via backUpComponentOS(). Cannot be null or the empty string. For testing this should
+     * just be any folder which exists, so that the OS backup can be tested
+     * @param flagNotUsed just used to make the constructor signature unique
+     * @throws IllegalStateException if constructor is used outside of a test environment
+     */
+    Exporter(final File ssgHome, final PrintStream stdout, String applianceHome, boolean flagNotUsed) {
+        File f = new File(ssgHome, "runtime/Gateway.jar");
+        if(f.exists()) throw new IllegalStateException("This constructor is only for testing. Not for use in production");
+        
+        if(ssgHome == null) throw new NullPointerException("ssgHome cannot be null");
+        if(!ssgHome.exists()) throw new IllegalArgumentException("ssgHome directory does not exist");
+        if(!ssgHome.isDirectory()) throw new IllegalArgumentException("ssgHome must be a directory");
+        if(applianceHome == null) throw new NullPointerException("applianceHome cannot be null");
+        if(applianceHome.equals("")) throw new IllegalArgumentException("applianceHome cannot be null");
+
+        this.ssgHome = ssgHome;
+        isPostFiveO = false;//we won't have the /opt/SecureSpan/Gateway/Backup folder
+
+        this.stdout = stdout;
+        confDir = new File(ssgHome, NODE_CONF_DIR);
+        this.applianceHome = applianceHome;
+    }
+    
     /**
      * Create the backup image zip file.
      * The following arguments are expected in the array args:
@@ -138,24 +179,32 @@ public class Exporter{
      * correctly configured SSG node
      * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.FatalException if ftp is requested and
      * its not possible to ftp the newly created image
+     * @return pathToUniqueImageFile the name of the image file created. This will be based on the value supplied with
+     * the -image parameter. A timestamp will have been added to the file name
      */
-    public void createBackupImage(final String [] args)
+    public String createBackupImage(final String [] args)
             throws InvalidProgramArgumentException, IOException, BackupRestoreLauncher.FatalException {
 
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
         validArgList.addAll(Arrays.asList(ALLOPTIONS));
         validArgList.addAll(Arrays.asList(ALL_FTP_OPTIONS));
-        final Map<String, String> programFlagsAndValues = ImportExportUtilities.getAndValidateCommandLineOptions(args, validArgList,
-                Arrays.asList(ALL_IGNORED_OPTIONS));
+        final Map<String, String> programFlagsAndValues =
+                ImportExportUtilities.getAndValidateCommandLineOptions(args,
+                        validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
 
-        boolean usingFtp = checkAndValidateFtpParams(programFlagsAndValues);
-        validateProgramParameters(programFlagsAndValues, !usingFtp);
+        validateProgramParameters(programFlagsAndValues);
+        final boolean usingFtp = checkAndValidateFtpParams(programFlagsAndValues);
+
+        //overwrite the supplied image name with a unique name based on it
+        String pathToUniqueImageFile = getUniqueImageFileName(programFlagsAndValues.get(IMAGE_PATH.name));
+        programFlagsAndValues.put(IMAGE_PATH.name, pathToUniqueImageFile);
         //We only want to validate the image file when we are not using ftp
-        String pathToImageFile = programFlagsAndValues.get(IMAGE_PATH.name);
+        validateFiles(programFlagsAndValues, !usingFtp);
+
         if(!usingFtp){
             // check that we can write output at location asked for
-            pathToImageFile = ImportExportUtilities.getAbsolutePath(pathToImageFile);
-            validateImageFile(pathToImageFile);
+            pathToUniqueImageFile = ImportExportUtilities.getAbsolutePath(pathToUniqueImageFile);
+            validateImageFile(pathToUniqueImageFile);
         }
 
         //check that node.properties exists
@@ -182,7 +231,7 @@ public class Exporter{
 
             final String mappingFile = programFlagsAndValues.get(MAPPING_PATH.name);
             final FtpClientConfig ftpConfig = getFtpConfig(programFlagsAndValues);
-            performBackupSteps(includeAudits, mappingFile, pathToImageFile, tmpDirectory, ftpConfig);
+            performBackupSteps(includeAudits, mappingFile, pathToUniqueImageFile, tmpDirectory, ftpConfig);
         } finally {
             if(tmpDirectory != null){
                 logger.info("cleaning up temp files at " + tmpDirectory);
@@ -190,8 +239,53 @@ public class Exporter{
                 FileUtils.deleteDir(new File(tmpDirectory));
             }
         }
+        return pathToUniqueImageFile;
     }
 
+    /**
+     * Given the image file path (optional) and name, return a unique file name which is equal to
+     * getDirPart(pathToImageFile) + "yyyymmddhhnnss_" + getFilePart(pathToImageFile)
+     *
+     * If the system property com.l7tech.gateway.config.backuprestore.nomodifyimagename.nouniqueimagename is set
+     * to 'true', then this will return the pathToImageFile unmodified 
+     * @param pathToImageFile path and file name to make unique
+     * @return a unique file name
+     */
+    private String getUniqueImageFileName(final String pathToImageFile) {
+
+        final String imagePathAndName = (isPostFiveO)?getPostFiveOAbsImagePath(pathToImageFile):pathToImageFile;
+
+        String ignoreProp = System.getProperty(NO_UNIQUE_IMAGE_SYSTEM_PROP);
+        if(ignoreProp != null){
+            if(Boolean.valueOf(ignoreProp)) return imagePathAndName;
+        }
+        final SimpleDateFormat dateFormat = new SimpleDateFormat(UNIQUE_TIMESTAMP);
+        final Calendar cal = Calendar.getInstance();
+        final String uniqueStart = dateFormat.format(cal.getTime());
+
+        String dir = ImportExportUtilities.getDirPart(imagePathAndName);
+        String file = ImportExportUtilities.getFilePart(imagePathAndName);
+        return (dir != null) ? dir + File.separator + uniqueStart + "_" + file : uniqueStart + "_" + file;
+    }
+
+    /**
+     * Get the path name to the supplied file in a post 5.0 environment
+     * If pathToImageFile has path info, then it is returned unmodified
+     * If the system is on 5.0, then pathToImageFile is returned unmodified
+     * If pathToImageFile has no path info, and the environment is > 5.0, then the return string is
+     * the absolute path to the default backup folder in a Buzzcut install
+     * @param pathToImageFile user supplied image location
+     * @return path info to where the image file should be located
+     */
+    private String getPostFiveOAbsImagePath(String pathToImageFile){
+        if(!isPostFiveO) return pathToImageFile;
+
+        String dirPart = ImportExportUtilities.getDirPart(pathToImageFile);
+        if(dirPart != null) return pathToImageFile;//path info has been supplied
+
+        File f = new File(ssgHome, POST_FIVE_O_DEFAULT_BACKUP_FOLDER);
+        return f.getAbsolutePath();
+    }
     /**
      * Extract ftp parameters from the programParams and create and return an FtpClientConfig. If no -ftp_* parameters
      * were passed into createBackupImage, then this will return null
@@ -330,12 +424,7 @@ public class Exporter{
                         + destPathAndFileName+"'");
 
             final String filePart = ImportExportUtilities.getFilePart(destPathAndFileName);
-            final SimpleDateFormat dateFormat = new SimpleDateFormat(UNIQUE_TIMESTAMP);
-            //timezone not really needed as we don't modify the calendar with add() operations
-            final Calendar cal = Calendar.getInstance();
-            final String uniqueStart = dateFormat.format(cal.getTime());
-
-            FtpUtils.upload(ftpConfig, is, uniqueStart+"_"+filePart, true);
+            FtpUtils.upload(ftpConfig, is, filePart, true);
         } catch (FtpException e) {
             throw new BackupRestoreLauncher.FatalException(e.getMessage());
         } finally{
@@ -552,6 +641,78 @@ public class Exporter{
     }
 
     /**
+     * Classloader designed to ONLY work with Gateway jar from the standard install directory of
+     * /opt/SecureSpan/Gateway/runtime/Gateway.jar
+     */
+    public static class GatewayClassLoader extends ClassLoader{
+        private ClassLoader loader;
+
+        public GatewayClassLoader() throws MalformedURLException {
+            File gatewayJarFile = new File("/opt/SecureSpan/Gateway/runtime/Gateway.jar");
+            URL gatewayJar = gatewayJarFile.toURI().toURL();
+            loader = new URLClassLoader(new URL[]{gatewayJar}, null);
+        }
+
+        public Class<?> loadClass(String name) throws ClassNotFoundException {
+            Class c = super.findLoadedClass(name);
+            if(name.equals("com.l7tech.util.BuildInfo")){
+                return loader.loadClass(name);
+            }
+            return super.loadClass(name);
+        }
+    }
+
+    /**
+     * Are we running on a pre 5.0 system? If so a BackupRestoreLauncher.FatalException is thrown. This method will
+     * return the version of the SSG installed
+     * @throws BackupRestoreLauncher.FatalException if either the SSG installation is not found or if there is any
+     * problems getting product version info from the installed SSG's Gateway.jar
+     * @throws UnsupportedOperationException if the installed ssg version is < 5.0 or if this information cannot be
+     * determined
+     * @return an int arrary with the major, minor and subversion values for the installed SSG as indexs 0, 1 and 2
+     */
+    int [] throwIfLessThanFiveO(File gatewayJarFile){
+        try {
+            if(!gatewayJarFile.exists()) throw new RuntimeException("Cannot find SSG installation");
+            
+            GatewayClassLoader gCl = new GatewayClassLoader();
+            Class clazz = gCl.loadClass("com.l7tech.util.BuildInfo");
+            Method method = clazz.getMethod("getProductVersion");
+            Object test = method.invoke(clazz);
+            System.out.println(test);
+            method = clazz.getMethod("getProductVersionMajor");
+            test = method.invoke(clazz);
+            int majorVersion = Integer.parseInt(test.toString());
+            method = clazz.getMethod("getProductVersionMinor");
+            test = method.invoke(clazz);
+            int minorVersion = Integer.parseInt(test.toString());
+            method = clazz.getMethod("getProductVersionSubMinor");
+            test = method.invoke(clazz);
+            int subMinorVersion = Integer.parseInt(test.toString());
+
+            if(majorVersion < 5) throw new UnsupportedOperationException("Pre 5.0 SSG installations are not supported");
+
+            return new int[]{majorVersion, minorVersion, subMinorVersion};
+
+        } catch (MalformedURLException e) {
+            logger.log(Level.SEVERE, "Cannot determine SSG version: " + e.getMessage() );
+            throw new RuntimeException("Cannot determine SSG version: " + e.getMessage());
+        } catch (InvocationTargetException e) {
+            logger.log(Level.SEVERE, "Cannot determine SSG version: " + e.getMessage() );
+            throw new RuntimeException("Cannot determine SSG version: " + e.getMessage());
+        } catch (ClassNotFoundException e) {
+            logger.log(Level.SEVERE, "Cannot determine SSG version: " + e.getMessage() );
+            throw new RuntimeException("Cannot determine SSG version: " + e.getMessage());
+        } catch (NoSuchMethodException e) {
+            logger.log(Level.SEVERE, "Cannot determine SSG version: " + e.getMessage() );
+            throw new RuntimeException("Cannot determine SSG version: " + e.getMessage());
+        } catch (IllegalAccessException e) {
+            logger.log(Level.SEVERE, "Cannot determine SSG version: " + e.getMessage() );
+            throw new RuntimeException("Cannot determine SSG version: " + e.getMessage());
+        }
+    }
+    
+    /**
      * Add any arbitrary file to the zip archive being created. This is used to add the manifest.log file to the archive
      * @param out The zip archive to add the file to. It must be open
      * @param tmpOutputDirectory The directory the zip archieve is archiving. The fileToAdd should be in this directory
@@ -722,25 +883,15 @@ public class Exporter{
      * Validate all program arguments. This method will validate all required params are met, and that any which expect
      * a value recieve it
      * @param args The name value pair map of each argument to it's value, if a vaule exists
-     * @param validateImageExistence if true, check that the iamge file exists and that we can write to it
      * @throws IOException for arguments which are files, they are checked to see if the exist, which may cause an IOException
      * @throws BackupRestoreLauncher.InvalidProgramArgumentException if any program params are invalid
      */
-    private void validateProgramParameters(final Map<String, String> args, final boolean validateImageExistence)
+    private void validateProgramParameters(final Map<String, String> args)
             throws IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
         //image option must be specified
         if (!args.containsKey(IMAGE_PATH.name)) {
             throw new InvalidProgramArgumentException("missing option " + IMAGE_PATH.name + ", required for exporting image");
-        } else if(validateImageExistence){
-            ImportExportUtilities.throwIfFileExists(args.get(IMAGE_PATH.name));   //test that the file is a new file
-            ImportExportUtilities.verifyCanWriteFile(args.get(IMAGE_PATH.name));  //test if we can create the file
-        }
-
-        //check condition for mapping file
-        if (args.containsKey(MAPPING_PATH.name)) {
-            ImportExportUtilities.throwIfFileExists(args.get(MAPPING_PATH.name)); //test that the file is a new file
-            ImportExportUtilities.verifyCanWriteFile(args.get(MAPPING_PATH.name));    //test if we can create the file
-        }
+        } 
 
         //check if ftp requested
         checkAndValidateFtpParams(args);
@@ -771,6 +922,27 @@ public class Exporter{
 
     }
 
+    /**
+     * Validate any files which are specified by the program arguments. If validateImageExistence is true, then
+     * it will validate that the image file does not exist and that it can be written to.
+     *
+     * If a mapping file was supplied, it will also have the same tests applied
+     * @param args program arguments
+     * @param validateImageExistence if true, check that the iamge file exists and that we can write to it
+     * @throws IOException if any exception occurs when trying to write to the files
+     */
+    private void validateFiles(final Map<String, String> args, final boolean validateImageExistence) throws IOException {
+        if(validateImageExistence){
+            ImportExportUtilities.throwIfFileExists(args.get(IMAGE_PATH.name));   //test that the file is a new file
+            ImportExportUtilities.verifyCanWriteFile(args.get(IMAGE_PATH.name));  //test if we can create the file
+        }
+
+        //check condition for mapping file
+        if (args.containsKey(MAPPING_PATH.name)) {
+            ImportExportUtilities.throwIfFileExists(args.get(MAPPING_PATH.name)); //test that the file is a new file
+            ImportExportUtilities.verifyCanWriteFile(args.get(MAPPING_PATH.name));    //test if we can create the file
+        }
+    }
     /**
      * Validae the ftp program parameters. If any ftp param is supplied, then they all must. This method enforces that
      * constraint. If all ftp params are supplied then true is returned, otherwise false

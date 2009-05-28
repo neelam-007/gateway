@@ -461,14 +461,21 @@ public class ImportExportUtilities {
     /**
      * Get the directory part of a path and filename string e.g. /home/layer7/temp/image1.zip
      * The path information is optional
+     *
+     * This method supports both the unix / and the windows \ as the user may supply a unix or windows path name
+     * when the export / import is used in conjection with ftp
      * @param imageName The String name to extract the path information from
-     * @return The path information not including the final / or \, null if no path information in the imageName. The
-     * return string can be the emtpy string if imageName only contains / or \
+     * @return The path information not including the final / or \, null if no path information in the imageName.
      * @throws NullPointerException if imageName is null
+     * @throws IllegalArgumentException if imageName is empty
      */
     public static String getDirPart(final String imageName){
         if(imageName == null) throw new NullPointerException("imageName cannot be null");
+        if(imageName.isEmpty()) throw new IllegalArgumentException("imageName cannot be empty");
 
+        if(imageName.equals("/")) return imageName;
+        if(imageName.equals("\\")) throw new IllegalArgumentException("\\ is an invalid imageName");
+        
         int lastIndex = imageName.lastIndexOf("/");
         if(lastIndex == -1) lastIndex = imageName.lastIndexOf("\\");
         if(lastIndex != -1){
@@ -481,12 +488,20 @@ public class ImportExportUtilities {
      * Get the file part of a path and filename string e.g. /home/layer7/temp/image1.zip
      * The path information is optional
      * If the file name only contains a path ending in either / or \, then an empty string will be returned
+     *
+     * This method supports both the unix / and the windows \ as the user may supply a unix or windows path name
+     * when the export / import is used in conjection with ftp
      * @param imageName The String name to extract the file name information from
-     * @return The file name, never null, but can be the empty string if the imageName ends in either / or \
+     * @return The file name, never null
      * @throws NullPointerException if imageName is null
+     * @throws IllegalArgumentException if imageName is empty or is equal to / or \
      */
     public static String getFilePart(final String imageName){
         if(imageName == null) throw new NullPointerException("imageName cannot be null");
+        if(imageName.isEmpty()) throw new IllegalArgumentException("imageName cannot be empty");
+
+        if(imageName.equals("/")) throw new IllegalArgumentException("/ is an invalid imageName");
+        if(imageName.equals("\\")) throw new IllegalArgumentException("\\ is an invalid imageName");
 
         int lastIndex = imageName.lastIndexOf("/");
         if(lastIndex == -1) lastIndex = imageName.lastIndexOf("\\");

@@ -29,6 +29,9 @@ import com.l7tech.util.ResourceUtils;
  * These tests write to temporary folder in the system temp directory
  * Regardless of test outcome, no temp folders will be left over in the system temp directory. If there are its a
  * coding error
+ *
+ * Any test which sets a system property should unset it in a finally block, so that it doesn't cause other tests
+ * to fail
  */
 public class ExporterTest {
 
@@ -70,18 +73,18 @@ public class ExporterTest {
         final File osFile = createPretendOsFile();
         //config/backup/cfg/backup_manifest
         createBackupManifest(osFile);
-
     }
 
     @Test
     public void testConstructor(){
-        final Exporter exporter = new Exporter(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Exporter exporter = new Exporter(tmpSsgHome, System.out,
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
         Assert.assertNotNull(exporter);
     }
 
     @Test(expected=NullPointerException.class)
     public void testConstructorException(){
-        new Exporter(null, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        new Exporter(null, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
     }
 
     /**
@@ -102,13 +105,14 @@ public class ExporterTest {
             final String imageZipFile = tmpDir + File.separator + "image.zip";
             programArgs.add(imageZipFile);
             final String[] args = programArgs.toArray(new String[]{});
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
-            exporter.createBackupImage(args);
+            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
+                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
+            final String uniqueImageZipFile = exporter.createBackupImage(args);
 
             //Check image.zip exists
-            final File checkFile = new File(imageZipFile);
-            Assert.assertTrue("image.zip should exist in '" + imageZipFile+"'", checkFile.exists());
-            Assert.assertTrue("'" + imageZipFile+"' should not be a directory", !checkFile.isDirectory());
+            final File checkFile = new File(uniqueImageZipFile);
+            Assert.assertTrue("image.zip should exist in '" + uniqueImageZipFile+"'", checkFile.exists());
+            Assert.assertTrue("'" + uniqueImageZipFile+"' should not be a directory", !checkFile.isDirectory());
         }finally{
             if(tmpDir != null) FileUtils.deleteDir(new File(tmpDir));
         }
@@ -132,11 +136,12 @@ public class ExporterTest {
             final String imageZipFile = tmpDir + File.separator + "image.zip";
             programArgs.add(imageZipFile);
             final String[] args = programArgs.toArray(new String[]{});
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out, tmpSsgHome.getAbsolutePath()/*just used for existence check*/);
-            exporter.createBackupImage(args);
+            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
+                    tmpSsgHome.getAbsolutePath()/*just used for existence check*/, true);
+            String uniqueImageZipFile = exporter.createBackupImage(args);
 
             //Check image.zip exists
-            final File checkFile = new File(imageZipFile);
+            final File checkFile = new File(uniqueImageZipFile);
             final ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(checkFile));
             ZipEntry zipEntry;
             //fileToFolderMap is a map of the file name from the archive to the folder containing it
@@ -201,20 +206,21 @@ public class ExporterTest {
 
     /**
      * Tests that the Exporter correctly validates its command line arguments
-     * export is missing
+     * -image is missing
      */
     @Test(expected = BackupRestoreLauncher.InvalidProgramArgumentException.class)
     public void testInvalidExporterArgs_NoExport() throws BackupRestoreLauncher.FatalException, IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
         final List<String> programArgs = new ArrayList<String>();
         programArgs.add("export");
         final String[] args = programArgs.toArray(new String[]{});
-        final Exporter exporter = new Exporter(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Exporter exporter = new Exporter(tmpSsgHome, System.out,
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
         exporter.createBackupImage(args);
     }
 
     /**
      * Tests that the Exporter correctly validates its command line arguments
-     * export is missing
+     * -noexist parameter is supplied, which doesn't exist
      */
     @Test(expected = BackupRestoreLauncher.InvalidProgramArgumentException.class)
     public void testInvalidExporterArgs_InvalidArg() throws BackupRestoreLauncher.FatalException, IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
@@ -222,7 +228,8 @@ public class ExporterTest {
         programArgs.add("export");
         programArgs.add("-noexist");
         final String[] args = programArgs.toArray(new String[]{});
-        final Exporter exporter = new Exporter(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Exporter exporter = new Exporter(tmpSsgHome, System.out,
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
         exporter.createBackupImage(args);
     }
 
@@ -236,8 +243,37 @@ public class ExporterTest {
         programArgs.add("export");
         programArgs.add("-image");
         final String[] args = programArgs.toArray(new String[]{});
-        final Exporter exporter = new Exporter(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Exporter exporter = new Exporter(tmpSsgHome, System.out,
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
         exporter.createBackupImage(args);
+    }
+
+    /**
+     * Tests that the Exporter correctly observes the
+     * com.l7tech.gateway.config.backuprestore.nomodifyimagename.nouniqueimagename system property.
+     */
+    @Test
+    public void testInvalidExporterArgs_NoUniqueImageName() throws BackupRestoreLauncher.FatalException, IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
+        createTestEnvironment();
+        final List<String> programArgs = new ArrayList<String>();
+        programArgs.add("export");
+        programArgs.add("-image");
+        String tmpDir = null;
+        try{
+            tmpDir = ImportExportUtilities.createTmpDirectory();
+            final String imageZipFile = tmpDir + File.separator + "image.zip";
+            programArgs.add(imageZipFile);
+            final String[] args = programArgs.toArray(new String[]{});
+            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
+                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
+            System.setProperty(Exporter.NO_UNIQUE_IMAGE_SYSTEM_PROP, "true");
+            final String uniqueImageZipFile = exporter.createBackupImage(args);
+
+            Assert.assertEquals("Returned file name should equal the supplie image name", imageZipFile, uniqueImageZipFile);
+        }finally{
+            if(tmpDir != null) FileUtils.deleteDir(new File(tmpDir));
+            System.clearProperty(Exporter.NO_UNIQUE_IMAGE_SYSTEM_PROP);
+        }
     }
 
     /**
@@ -249,7 +285,8 @@ public class ExporterTest {
         String tmpDir = null;
         try{
             tmpDir = ImportExportUtilities.createTmpDirectory();
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
+                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
             exporter.backUpVersion(tmpDir);
 
             //Check version file exists
@@ -272,7 +309,8 @@ public class ExporterTest {
         String tmpDir = null;
         try{
             tmpDir = ImportExportUtilities.createTmpDirectory();
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
+                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
             exporter.backUpComponentConfig(tmpDir);
 
             //Check config dir exists
@@ -338,7 +376,8 @@ public class ExporterTest {
         try{
             tmpDir = ImportExportUtilities.createTmpDirectory();
 
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out, tmpSsgHome.getAbsolutePath()/*just used for existence check*/);
+            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
+                    tmpSsgHome.getAbsolutePath()/*just used for existence check*/, true);
             exporter.backUpComponentOS(tmpDir);
 
             //confirm pretend os file was copied
@@ -366,7 +405,8 @@ public class ExporterTest {
         String tmpDir = null;
         try{
             tmpDir = ImportExportUtilities.createTmpDirectory();
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
+                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
             exporter.backUpComponentCA(tmpDir);
 
             //Check config dir exists
@@ -408,7 +448,8 @@ public class ExporterTest {
         String tmpDir = null;
         try{
             tmpDir = ImportExportUtilities.createTmpDirectory();
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
+                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
             exporter.backUpComponentCA(tmpDir);
 
             //Check config dir exists
@@ -448,7 +489,7 @@ public class ExporterTest {
         String tmpDir = null;
         try{
             tmpDir = ImportExportUtilities.createTmpDirectory();
-            final Exporter exporter = new Exporter(tmpSsgHome, System.out, tmpSsgHome.getAbsolutePath());
+            final Exporter exporter = new Exporter(tmpSsgHome, System.out, tmpSsgHome.getAbsolutePath(), true);
             exporter.backUpComponentCA(tmpDir);//just back up something
 
             //zip the tmpDir
@@ -471,7 +512,8 @@ public class ExporterTest {
      */
     @Test
     public void testGetFtpConfig() throws IOException, BackupRestoreLauncher.InvalidProgramArgumentException {
-        final Exporter export = new Exporter(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Exporter export = new Exporter(tmpSsgHome, System.out,
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
         final Map<String, String> args = new HashMap<String, String>();
         args.put(Exporter.FTP_HOST.name, "donal.l7tech.com:21");
         args.put(Exporter.FTP_USER.name, "root");
@@ -493,7 +535,8 @@ public class ExporterTest {
      */
     @Test(expected = BackupRestoreLauncher.InvalidProgramArgumentException.class)
     public void testValidateFtpParametersNoPort() throws BackupRestoreLauncher.InvalidProgramArgumentException {
-        final Exporter export = new Exporter(tmpSsgHome, System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
+        final Exporter export = new Exporter(tmpSsgHome, System.out,
+                ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
 
         final Map<String, String> args = new HashMap<String, String>();
         args.put(Exporter.FTP_HOST.name, "donal.l7tech.com");

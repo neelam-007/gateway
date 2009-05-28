@@ -19,8 +19,12 @@ import java.util.Collections;
 
 import com.l7tech.server.management.config.node.DatabaseConfig;
 import com.l7tech.util.BuildInfo;
-import com.l7tech.util.FileUtils;
 
+/**
+ * Tests the ImportExportUtilitiesTest unility functions.
+ * Any test which sets a system property should unset it in a finally block, so that it doesn't cause other tests
+ * to fail
+ */
 public class ImportExportUtilitiesTest {
 
     /**
@@ -28,13 +32,17 @@ public class ImportExportUtilitiesTest {
      */
     @Test
     public void testGetAbsolutePath(){
-        String tmpDir = System.getProperty("java.io.tmpdir");
-        System.setProperty(ImportExportUtilities.BASE_DIR_PROPERTY, tmpDir);
+        try{
+            String tmpDir = System.getProperty("java.io.tmpdir");
+            System.setProperty(ImportExportUtilities.BASE_DIR_PROPERTY, tmpDir);
 
-        String testFile = "testfile.txt";
-        String absFile = ImportExportUtilities.getAbsolutePath(testFile);
-        Assert.assertTrue("absFile's path should be '"+tmpDir+File.separator+testFile,
-                absFile.equals(tmpDir+File.separator+testFile));
+            String testFile = "testfile.txt";
+            String absFile = ImportExportUtilities.getAbsolutePath(testFile);
+            Assert.assertTrue("absFile's path should be '"+tmpDir+File.separator+testFile,
+                    absFile.equals(tmpDir+File.separator+testFile));
+        } finally {
+            System.clearProperty(ImportExportUtilities.BASE_DIR_PROPERTY);
+        }
     }
 
     /**
@@ -42,8 +50,6 @@ public class ImportExportUtilitiesTest {
      */
     @Test(expected = RuntimeException.class)
     public void testGetAbsolutePath_NoSystemProperty(){
-        //need to clear this property as other tests set it
-        System.clearProperty(ImportExportUtilities.BASE_DIR_PROPERTY);
         ImportExportUtilities.getAbsolutePath("notimpotant");
     }
 
@@ -283,10 +289,6 @@ public class ImportExportUtilitiesTest {
         String test = ImportExportUtilities.getFilePart(fileName);
         Assert.assertEquals("Incorrect file name extracted", "file.txt", test);
 
-        fileName = "/";
-        test = ImportExportUtilities.getFilePart(fileName);
-        Assert.assertEquals("Incorrect file name extracted", "", test);
-
         fileName = "/home/";
         test = ImportExportUtilities.getFilePart(fileName);
         Assert.assertEquals("Incorrect file name extracted", "", test);
@@ -300,10 +302,6 @@ public class ImportExportUtilitiesTest {
         String fileName = "/home/layer7/file.txt";
         String test = ImportExportUtilities.getDirPart(fileName);
         Assert.assertEquals("Incorrect path extracted", "/home/layer7", test);
-
-        fileName = "/";
-        test = ImportExportUtilities.getDirPart(fileName);
-        Assert.assertEquals("Incorrect path extracted", "", test);
 
         fileName = "/home/";
         test = ImportExportUtilities.getDirPart(fileName);
