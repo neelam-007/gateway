@@ -2108,13 +2108,12 @@
         <copy todir="${build.dir}/gatewayconfig">
             <fileset dir="${src.root}/etc">
                 <include name="ssgbackup_noninstall.sh" />
-                <include name="backupgatewaylogging.properties"/>
                 <include name="backuputilitylogging.properties"/>
             </fileset>
         </copy>
 
         <move file="${build.dir}/gatewayconfig/ssgbackup_noninstall.sh" tofile="${build.dir}/gatewayconfig/ssgbackup.sh" />
-        
+
         <ivy:resolve inline="true" organisation="com.l7tech" module="layer7-gateway-config" showprogress="false" conf="default" log="quiet"/>
         <ivy:findrevision organisation="com.l7tech" module="layer7-gateway-config" revision="latest.integration" property="module.gateway.config.version"/>
         
@@ -2845,6 +2844,8 @@
             <mkdir dir="@{dir}/${install.src.ssg.etc}"/>
             <mkdir dir="@{dir}/${install.src.ssg.backuprestore}"/>
             <mkdir dir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
+            <mkdir dir="@{dir}/${install.src.ssg.backuprestore.images}"/>
+            <mkdir dir="@{dir}/${install.src.ssg.backuprestore.logs}"/>
             <mkdir dir="@{dir}/${install.src.ssg.help}"/>
             <mkdir dir="@{dir}/${install.src.ssg.lib}"/>
             <mkdir dir="@{dir}/${install.src.ssg.libext}"/>

@@ -46,13 +46,15 @@ class DBDumpUtil {
      * @param config          database configuration
      * @param outputDirectory the directory path where the dump files should go to
      * @param stdout          stream for verbose output; <code>null</code> for no verbose output
+     * @param verbose if true, then verbose output will be written to stdout, if it's not null
      * @throws java.sql.SQLException problem getting data out of db
      * @throws java.io.IOException   problem with dump files
      * @throws UnsupportedOperationException if the database is remote
      */
     public static void dump(final DatabaseConfig config,
                             final String outputDirectory,
-                            final PrintStream stdout) throws SQLException, IOException {
+                            final PrintStream stdout,
+                            final boolean verbose) throws SQLException, IOException {
         final NetworkInterface networkInterface =
                 NetworkInterface.getByInetAddress( InetAddress.getByName(config.getHost()) );
         if ( networkInterface == null ) {
@@ -100,7 +102,7 @@ class DBDumpUtil {
             tableNames = metadata.getTables(null, "%", "%", tableTypes);
             mainOutput.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
 
-            if (stdout != null) stdout.print("Dumping database to " + outputDirectory + " ..");
+            if (stdout != null && verbose) stdout.print("Dumping database to " + outputDirectory + " ..");
             while (tableNames.next()) {
                 final String tableName = tableNames.getString("TABLE_NAME");
 
@@ -115,7 +117,7 @@ class DBDumpUtil {
                 backUpTable(tableName, conn, mainOutput, checkForClusterPropTable);
             }
             mainOutput.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
-            if (stdout != null) stdout.println(". Done");
+            if (stdout != null && verbose) stdout.println(". Done");
         }finally{
             ResourceUtils.closeQuietly(tableNames);
             ResourceUtils.closeQuietly(conn);
@@ -138,6 +140,7 @@ class DBDumpUtil {
      * @param ssgHome The installation directory of the SSG, so that the backup_tables_audit file can be located
      * @param config DatabaseConfig to use for connecting to database
      * @param outputDirectory The directory to write the audits.gz file to
+     * @param verbose if true, then verbose output will be written to stdout, if it's not null 
      * @param stdout PrintStream to write verbose info messages to. Ok to be null
      * @throws SQLException if any database exceptions occur
      * @throws IOException if any exceptions occur writing to audits.gz
@@ -145,7 +148,8 @@ class DBDumpUtil {
     public static void auditDump(final File ssgHome,
                                  final DatabaseConfig config,
                                  final String outputDirectory,
-                                 final PrintStream stdout) throws SQLException, IOException {
+                                 final PrintStream stdout,
+                                 final boolean verbose) throws SQLException, IOException {
         final NetworkInterface networkInterface =
                 NetworkInterface.getByInetAddress( InetAddress.getByName(config.getHost()) );
         if ( networkInterface == null ) {
@@ -183,7 +187,7 @@ class DBDumpUtil {
 
             gzipOutputStream.write("SET FOREIGN_KEY_CHECKS = 0;\n".getBytes());
 
-            if (stdout != null) stdout.print("Dumping database audit tables to " + outputDirectory + " ..");
+            if (stdout != null && verbose) stdout.print("Dumping database audit tables to " + outputDirectory + " ..");
             for(final String tableName: auditTables){
 
                 if(!tableName.startsWith("audit")){
@@ -197,7 +201,7 @@ class DBDumpUtil {
             }
             gzipOutputStream.write("SET FOREIGN_KEY_CHECKS = 1;\n".getBytes());
             gzipOutputStream.close();
-            if (stdout != null) stdout.println(". Done");
+            if (stdout != null && verbose) stdout.println(". Done");
         }finally{
             ResourceUtils.closeQuietly(tableNames);
             ResourceUtils.closeQuietly(conn);

@@ -87,6 +87,8 @@ rm -fr %{buildroot}
 %dir /opt/SecureSpan/Gateway/config/backup
 /opt/SecureSpan/Gateway/config/backup/cfg/
 /opt/SecureSpan/Gateway/config/backup/*.properties
+/opt/SecureSpan/Gateway/config/backup/logs/
+/opt/SecureSpan/Gateway/config/backup/images/
 %defattr(0444,layer7,layer7,0755)
 /opt/SecureSpan/Gateway/config/backup/*.jar
 %defattr(0555,layer7,layer7,0755)

@@ -56,6 +56,12 @@ public final class Exporter{
                                                                                "path of the output mapping template file",
                                                                                true, false);
 
+    public static final CommandLineOption VERBOSE = new CommandLineOption("-v",
+            "verbose output, without this ssgbackup.sh is silent. Consult log file ssgbackup%g.log for logging messages",
+                                                                               false, true);
+
+    private static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, MAPPING_PATH, VERBOSE};
+
     public static final CommandLineOption FTP_HOST =
             new CommandLineOption("-ftp_host",
                                     "[Optional] host to ftp backup image to: "+
@@ -70,8 +76,6 @@ public final class Exporter{
                                                                                    "[Optional] ftp password",
                                                                                    false, false);
 
-    private static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, MAPPING_PATH};
-
     private static final CommandLineOption[] ALL_FTP_OPTIONS = {FTP_HOST, FTP_USER, FTP_PASS};
 
     private static final CommandLineOption[] ALL_IGNORED_OPTIONS = {
@@ -82,7 +86,13 @@ public final class Exporter{
     public static final String CA_JAR_DIR = "runtime/modules/lib";
     public static final String MA_AAR_DIR = "runtime/modules/assertions";
 
-    public static final String POST_FIVE_O_DEFAULT_BACKUP_FOLDER = "Backup";
+    public static final String POST_FIVE_O_DEFAULT_BACKUP_FOLDER = "config/backup/images";
+    /**
+     * my.cnf makes up part of a databsae backup. This is the current known path to this file
+     */
+    private static final String PATH_TO_MY_CNF = "/etc/my.cnf";
+    private static final String UNIQUE_TIMESTAMP = "yyyyMMddHHmmss";
+    private static final String FTP_PROTOCOL = "ftp://";
 
     /** Home directory of the SSG installation. This will always be /opt/SecureSpan/Gateway however maintaining
      * the ability for this to be theoritically installed into other directories*/
@@ -97,18 +107,13 @@ public final class Exporter{
      */
     private final File confDir;
 
-    /**
-     * my.cnf makes up part of a databsae backup. This is the current known path to this file
-     */
-    private static final String PATH_TO_MY_CNF = "/etc/my.cnf";
-    private static final String UNIQUE_TIMESTAMP = "yyyyMMddHHmmss";
-    private static final String FTP_PROTOCOL = "ftp://";
     private String applianceHome;
     public static final String NO_UNIQUE_IMAGE_SYSTEM_PROP =
             "com.l7tech.gateway.config.backuprestore.nouniqueimagename";
 
     private final boolean isPostFiveO;
 
+    private boolean verbose;
     /**
      * @param ssgHome   home directory where the SSG is installed. Should equal /opt/SecureSpan/Gateway. Cannot be null
      * @param stdout        stream for verbose output; <code>null</code> for no verbose output
@@ -129,8 +134,9 @@ public final class Exporter{
         //this class is not usable without an installed SSG > 5.0
         int [] versionInfo = throwIfLessThanFiveO(new File(ssgHome, "runtime/Gateway.jar"));
         isPostFiveO = versionInfo[2] > 0;
-        
+
         this.stdout = stdout;
+
         confDir = new File(ssgHome, NODE_CONF_DIR);
         this.applianceHome = applianceHome;
     }
@@ -197,6 +203,7 @@ public final class Exporter{
 
         //overwrite the supplied image name with a unique name based on it
         String pathToUniqueImageFile = getUniqueImageFileName(programFlagsAndValues.get(IMAGE_PATH.name));
+        if (stdout != null && verbose) stdout.println("Creating image: " + pathToUniqueImageFile);        
         programFlagsAndValues.put(IMAGE_PATH.name, pathToUniqueImageFile);
         //We only want to validate the image file when we are not using ftp
         validateFiles(programFlagsAndValues, !usingFtp);
@@ -235,7 +242,7 @@ public final class Exporter{
         } finally {
             if(tmpDirectory != null){
                 logger.info("cleaning up temp files at " + tmpDirectory);
-                if (stdout != null) stdout.println("Cleaning temporary files at " + tmpDirectory);
+                if (stdout != null && verbose) stdout.println("Cleaning temporary files at " + tmpDirectory);
                 FileUtils.deleteDir(new File(tmpDirectory));
             }
         }
@@ -283,8 +290,9 @@ public final class Exporter{
         String dirPart = ImportExportUtilities.getDirPart(pathToImageFile);
         if(dirPart != null) return pathToImageFile;//path info has been supplied
 
-        File f = new File(ssgHome, POST_FIVE_O_DEFAULT_BACKUP_FOLDER);
-        return f.getAbsolutePath();
+        File imageFolder = new File(ssgHome, POST_FIVE_O_DEFAULT_BACKUP_FOLDER);
+        File imageFile = new File(imageFolder, pathToImageFile);
+        return imageFile.getAbsolutePath();
     }
     /**
      * Extract ftp parameters from the programParams and create and return an FtpClientConfig. If no -ftp_* parameters
@@ -387,7 +395,7 @@ public final class Exporter{
             }finally{
                 if(newTmpDir != null){
                     logger.info("cleaning up temp files at " + newTmpDir);
-                    if (stdout != null) stdout.println("Cleaning temporary files at " + newTmpDir);
+                    if (stdout != null && verbose) stdout.println("Cleaning temporary files at " + newTmpDir);
                     FileUtils.deleteDir(new File(newTmpDir));
                 }
             }
@@ -419,7 +427,7 @@ public final class Exporter{
         InputStream is = null;
         try {
             is = new FileInputStream(new File(localZipFile));
-            if (stdout != null)
+            if (stdout != null && verbose)
                 stdout.println("Ftp file '" + localZipFile+"' to host '" + ftpConfig.getHost()+"' into directory '"
                         + destPathAndFileName+"'");
 
@@ -437,6 +445,7 @@ public final class Exporter{
      * conserve space. The file created is called "audits.gz" and is contained inside the "audits" folder in
      * the tmpOutputDirectory
      * //todo [Donal] implement heuristic for determine backup space for audits here
+     * //todo [Donal] make audits interruptable - error depending on -halt status
      *
      * Note: The sql created in the file "audits.gz" will NOT contain create and drop statements. The drop and
      * create statments are created by addDatabaseToBackupFolder. When restoring or migrating the audits tables must
@@ -459,7 +468,7 @@ public final class Exporter{
             //Create the database folder
             final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.AUDITS.getDirName());
             //never include audits with the main db dump
-            DBDumpUtil.auditDump(ssgHome, config, dir.getAbsolutePath(), stdout);
+            DBDumpUtil.auditDump(ssgHome, config, dir.getAbsolutePath(), stdout, verbose);
         } catch (SQLException e) {
             logger.log(Level.INFO, "exception dumping database, possible that the database is not running or credentials " +
                     "are not correct", ExceptionUtils.getDebugException(e));
@@ -624,7 +633,7 @@ public final class Exporter{
             throw new IOException(tmpOutputDirectory + " is not a directory");
         }
         final ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFileName));
-        if (stdout != null) stdout.println("Compressing SecureSpan Gateway image into " + zipFileName);
+        if (stdout != null && verbose) stdout.println("Compressing SecureSpan Gateway image into " + zipFileName);
         final StringBuilder sb = new StringBuilder();
         addDir(dirObj, out, tmpOutputDirectory, sb);
 
@@ -663,11 +672,10 @@ public final class Exporter{
     /**
      * Are we running on a pre 5.0 system? If so a BackupRestoreLauncher.FatalException is thrown. This method will
      * return the version of the SSG installed
-     * @throws BackupRestoreLauncher.FatalException if either the SSG installation is not found or if there is any
-     * problems getting product version info from the installed SSG's Gateway.jar
-     * @throws UnsupportedOperationException if the installed ssg version is < 5.0 or if this information cannot be
-     * determined
+     * @param gatewayJarFile File representing Gateway.jar, from the local SSG installation
      * @return an int arrary with the major, minor and subversion values for the installed SSG as indexs 0, 1 and 2
+     * @throws RuntimeException if the SSG installation cannot be found, based on the existence of Gateway.jar. Also
+     * thrown if it's not possible to determine the SSG version from the SSG installation
      */
     int [] throwIfLessThanFiveO(File gatewayJarFile){
         try {
@@ -724,7 +732,7 @@ public final class Exporter{
             throws IOException {
         final byte[] tmpBuf = new byte[1024];
         final FileInputStream in = new FileInputStream(fileToAdd.getAbsolutePath());
-        if (stdout != null) stdout.println("\t- " + fileToAdd.getAbsolutePath());
+        if (stdout != null && verbose) stdout.println("\t- " + fileToAdd.getAbsolutePath());
         String zipEntryName = fileToAdd.getAbsolutePath();
         if (zipEntryName.startsWith(tmpOutputDirectory)) {
             zipEntryName = zipEntryName.substring(tmpOutputDirectory.length() + 1);
@@ -761,7 +769,7 @@ public final class Exporter{
             throw new IllegalStateException("Cannot back up database as it is not local");
         }
         try {
-            DBDumpUtil.dump(config, dbTmpOutputDirectory.getAbsolutePath(), stdout);
+            DBDumpUtil.dump(config, dbTmpOutputDirectory.getAbsolutePath(), stdout, verbose);
         } catch (SQLException e) {
             logger.log(Level.INFO, "exception dumping database, possible that the database is not running or credentials " +
                     "are not correct", ExceptionUtils.getDebugException(e));
@@ -879,7 +887,8 @@ public final class Exporter{
 
     /**
      * Validate all program arguments. This method will validate all required params are met, and that any which expect
-     * a value recieve it
+     * a value recieve it.
+     * Checks for -v parameter, if found sets verbose = true
      * @param args The name value pair map of each argument to it's value, if a vaule exists
      * @throws IOException for arguments which are files, they are checked to see if the exist, which may cause an IOException
      * @throws BackupRestoreLauncher.InvalidProgramArgumentException if any program params are invalid
@@ -918,6 +927,8 @@ public final class Exporter{
             }
         }
 
+        //will we use verbose output?
+        if(args.containsKey(VERBOSE.name)) verbose = true;
     }
 
     /**

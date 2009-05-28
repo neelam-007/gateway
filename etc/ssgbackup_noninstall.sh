@@ -34,12 +34,7 @@ elif [ "$USER" == "layer7" ]; then
     ${SSG_JAVA_HOME}/bin/java -Xmx256m \
         -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
         -jar ${REL_BASE_DIR}/SSGBackupOnlyUtility.jar export $*
-elif [ "$USER" == "gateway" ]; then
-    ${SSG_JAVA_HOME}/bin/java -Xmx256m \
-        -Dcom.l7tech.server.backuprestore.basedir=${REL_BASE_DIR} \
-        -Djava.util.logging.config.file=backupgatewaylogging.properties \
-        -jar ${REL_BASE_DIR}/SSGBackupOnlyUtility.jar export $*
 else
-    echo "Must be layer7 to invoke ssgbackup.sh"
+    echo "Must be layer7 or root to invoke ssgbackup.sh"
     exit 1
 fi
