@@ -647,8 +647,7 @@ public final class Exporter{
     public static class GatewayJarClassLoader extends ClassLoader{
         private ClassLoader loader;
 
-        public GatewayJarClassLoader() throws MalformedURLException {
-            File gatewayJarFile = new File("/opt/SecureSpan/Gateway/runtime/Gateway.jar");
+        public GatewayJarClassLoader(File gatewayJarFile) throws MalformedURLException {
             URL gatewayJar = gatewayJarFile.toURI().toURL();
             loader = new URLClassLoader(new URL[]{gatewayJar}, null);
         }
@@ -674,7 +673,7 @@ public final class Exporter{
         try {
             if(!gatewayJarFile.exists()) throw new RuntimeException("Cannot find SSG installation");
             
-            GatewayJarClassLoader gatewayJarClassLoader = new GatewayJarClassLoader();
+            GatewayJarClassLoader gatewayJarClassLoader = new GatewayJarClassLoader(gatewayJarFile);
             Class clazz = gatewayJarClassLoader.loadClass("com.l7tech.util.BuildInfo");
 
             Method method = clazz.getMethod("getProductVersionMajor");
