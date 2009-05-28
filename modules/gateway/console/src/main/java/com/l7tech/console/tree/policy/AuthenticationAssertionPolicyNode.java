@@ -48,7 +48,7 @@ public class AuthenticationAssertionPolicyNode extends IdentityAssertionTreeNode
 
     @Override
     public String getName() {
-        return "Authenticate against " + idProviderName();
+        return "Authenticate against " + idProviderName() + getIdentityTagSuffix();
     }
 
     @Override

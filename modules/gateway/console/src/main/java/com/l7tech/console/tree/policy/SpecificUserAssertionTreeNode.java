@@ -18,6 +18,7 @@ public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode<Spe
      *
      * @param open for nodes that can be opened, can have children
      */
+    @Override
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/user16.png";
     }
@@ -25,8 +26,9 @@ public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode<Spe
     /**
      * @return the node name that is displayed
      */
+    @Override
     public String getName() {
-        return "User: " + getUserName() + " [" + idProviderName() + "]";
+        return "User: " + getUserName() + " [" + idProviderName() + "]" + getIdentityTagSuffix();
     }
 
     private String getUserName() {

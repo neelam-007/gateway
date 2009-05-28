@@ -6,10 +6,9 @@ package com.l7tech.policy.assertion.identity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.PersistentEntity;
-import com.l7tech.objectmodel.migration.Migration;
-import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesEntities;
+import com.l7tech.policy.assertion.IdentityTagable;
 
 /**
  * Subclasses of IdentityAssertion are used to specify that the entity making
@@ -19,8 +18,9 @@ import com.l7tech.policy.assertion.UsesEntities;
  * @author alex
  * @version $Revision$
  */
-public abstract class IdentityAssertion extends Assertion implements UsesEntities {
+public abstract class IdentityAssertion extends Assertion implements UsesEntities, IdentityTagable {
     protected long _identityProviderOid = PersistentEntity.DEFAULT_OID;
+    protected String identityTag;
 
     protected IdentityAssertion() { }
 
@@ -46,10 +46,22 @@ public abstract class IdentityAssertion extends Assertion implements UsesEntitie
         return _identityProviderOid;
     }
 
+    @Override
+    public String getIdentityTag() {
+        return identityTag;
+    }
+
+    @Override
+    public void setIdentityTag(String identityTag) {
+        this.identityTag = identityTag;
+    }
+
+    @Override
     public EntityHeader[] getEntitiesUsed() {
         return new EntityHeader[] { new EntityHeader(Long.toString(_identityProviderOid), EntityType.ID_PROVIDER_CONFIG, null, null) };
     }
 
+    @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
         if(oldEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG) && oldEntityHeader.getOid() == _identityProviderOid &&
                 newEntityHeader.getType().equals(EntityType.ID_PROVIDER_CONFIG))

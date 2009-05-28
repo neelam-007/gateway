@@ -21,6 +21,7 @@ public class AuthenticationAssertion extends IdentityAssertion {
     public AuthenticationAssertion() {
     }
 
+    @Override
     public void setIdentityProviderOid(long provider) {
         super.setIdentityProviderOid(provider);
         updateLoggingIdentity();
@@ -34,6 +35,7 @@ public class AuthenticationAssertion extends IdentityAssertion {
             loggingIdentity = "identity provider ID " + poid;
     }
 
+    @Override
     public String loggingIdentity() {
         return loggingIdentity;
     }
@@ -43,6 +45,7 @@ public class AuthenticationAssertion extends IdentityAssertion {
         return super.getIdentityProviderOid();
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
         return super.getEntitiesUsed();

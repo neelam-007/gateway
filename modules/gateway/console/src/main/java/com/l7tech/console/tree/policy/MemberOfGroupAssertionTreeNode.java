@@ -34,6 +34,7 @@ public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode<Me
     /**
      * specify this node image resource
      */
+    @Override
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/group16.png";
     }
@@ -41,8 +42,9 @@ public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode<Me
     /**
      * @return the node name that is displayed
      */
+    @Override
     public String getName() {
         return "Group Membership: " + ((MemberOfGroup)getUserObject()).getGroupName() +
-          " [" + idProviderName() + "]";
+          " [" + idProviderName() + "]" + getIdentityTagSuffix();
     }
 }
