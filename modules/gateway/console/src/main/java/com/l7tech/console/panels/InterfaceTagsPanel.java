@@ -4,6 +4,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.ValidatedPanel;
@@ -60,7 +61,8 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
         Utilities.equalizeButtonSizes(createTagButton, deleteTagButton, addAddressButton, removeAddressButton);
 
         try {
-            connectors = Registry.getDefault().getTransportAdmin().findAllSsgConnectors();
+            final TransportAdmin transportAdmin = Registry.getDefault().getTransportAdmin();
+            connectors = transportAdmin == null ? Collections.<SsgConnector>emptyList() : transportAdmin.findAllSsgConnectors();
         } catch (FindException e) {
             logger.log(Level.WARNING, "Unable to load connector list to check if interface tag is in use: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             connectors = Collections.emptyList();
@@ -199,7 +201,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
                     return;
                 final String pattern = option.toString();
                 if (!InterfaceTag.isValidPattern(pattern)) {
-                    DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "Address patterns should be in this format: 127.0.0/24", "Invalid Address Pattern", null);
+                    DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "Invalid Address Pattern", "Address patterns should be in this format: 127.0.0/24", null);
                     return;
                 }
                 patternUser.call(pattern);

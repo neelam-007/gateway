@@ -98,7 +98,7 @@ public class OkCancelDialog<V> extends JDialog {
         okButton.setDefaultCapable(true);
         getRootPane().setDefaultButton(okButton);
         okButton.setEnabled(validatedPanel.isSyntaxOk() && !readOnly);
-        innerPanel.add(validatedPanel);
+        innerPanel.add(validatedPanel, BorderLayout.CENTER);
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -107,7 +107,8 @@ public class OkCancelDialog<V> extends JDialog {
         });
 
         Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
-        getContentPane().add(mainPanel);
+        getContentPane().setLayout(new BorderLayout());
+        getContentPane().add(mainPanel, BorderLayout.CENTER);
     }
 
     public boolean isReadOnly() {

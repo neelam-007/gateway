@@ -600,9 +600,9 @@ public class Utilities {
     private static final Map<Long, Boolean> threadsCanceledByCancelDialog = new ConcurrentHashMap<Long, Boolean>();
 
     /**
-     * Check if the current thread is executing via {@link #doWithDelayedCancelDialog}.
+     * Check if any thread is executing via {@link #doWithDelayedCancelDialog}.
      *
-     * @return true iff. the current thread has a doWithDelayedCancelDialog call active.
+     * @return true iff. the any thread has a doWithDelayedCancelDialog call active.
      */
     public static boolean isAnyThreadDoingWithDelayedCancelDialog() {
         return isAnyThreadDoingWithDelayedCancelDialog.get();
