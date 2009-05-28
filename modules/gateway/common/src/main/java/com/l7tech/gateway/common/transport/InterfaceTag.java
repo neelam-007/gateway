@@ -20,7 +20,7 @@ public class InterfaceTag {
     private static final Pattern NAME_PAT = Pattern.compile("[a-zA-Z_][a-zA-Z_0-9]*");
 
     /** Pattern that matches syntax (but not numeric sematics) of a valid IPv4 network address. */
-    private static final Pattern IPV4_PAT = Pattern.compile("\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3})))(?:/\\d{1,2})");
+    private static final Pattern IPV4_PAT = Pattern.compile("\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3})?)?)?(?:/\\d{1,2})?");
 
     /** Pattern that matches a single InterfaceTag in String format. */
     private static final Pattern SINGLE_PAT = Pattern.compile("([a-zA-Z_][a-zA-Z_0-9]*)\\(([0-9.,/]*)\\)");
@@ -96,11 +96,11 @@ public class InterfaceTag {
     }
 
     public static boolean isValidName(String name) {
-        return NAME_PAT.matcher(name).matches();
+        return name != null && NAME_PAT.matcher(name).matches();
     }
 
     public static boolean isValidPattern(String pattern) {
-        return IPV4_PAT.matcher(pattern).matches();
+        return pattern != null && IPV4_PAT.matcher(pattern).matches();
     }
 
     @SuppressWarnings({"RedundantIfStatement"})

@@ -1,5 +1,7 @@
 package com.l7tech.gateway.common.transport;
 
+import static com.l7tech.gateway.common.transport.InterfaceTag.isValidName;
+import static com.l7tech.gateway.common.transport.InterfaceTag.isValidPattern;
 import static org.junit.Assert.*;
 import org.junit.*;
 
@@ -60,6 +62,27 @@ public class InterfaceTagTest {
         assertEquals(tags(a), InterfaceTag.parseMultiple(InterfaceTag.toString(tags(a))));
         assertEquals(tags(a, c), InterfaceTag.parseMultiple(InterfaceTag.toString(tags(a, c))));
         assertEquals(tags(a, b, c), InterfaceTag.parseMultiple(InterfaceTag.toString(tags(a, b, c))));
+    }
+    
+    @Test
+    public void testIsValidName() throws Exception {
+        for (String valid : new String[] {"foo", "Blat_234", "_blah23", "FRGL"})
+            assertTrue("Should be accepted as valid interface tag name: " + valid, isValidName(valid));
+
+        for (String invalid : new String[] {" foo", "", "234_Blat", "23blah_", null, "FRGL!!"})
+            assertFalse("Should NOT be accepted as vaid interface tag name: " + invalid, isValidName(invalid));
+    }
+
+    @Test
+    public void testIsValidPattern() throws Exception {
+        for (String valid : new String[] { "10", "255", "1.2", "1.2.3", "1.2.3.4", "1.2.3.4/32", "0/0", "0.0.0.0", "255.255.255.255/16", "255.255/16" })
+            assertTrue("Should accept as valid pattern: " + valid, isValidPattern(valid));
+
+        for (String invalid : new String[] { "a", "", null, " 2.3.4.5", "2.3 ", "4.2//32", "///", "/2/2/2", "3/3/3", "/0", "20/-1" })
+            assertFalse("Should NOT accept as valid pattern: " + invalid, isValidPattern(invalid));
+
+        for (String invalidButPasses : new String[] { "255.255/33", "255.346.23/1" })
+            assertTrue("Currently does not check semantics, only syntax, and so accepts: " + invalidButPasses, isValidPattern(invalidButPasses));
     }
 
     private Set<String> pats(String... in) {
