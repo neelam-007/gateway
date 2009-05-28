@@ -641,24 +641,23 @@ public final class Exporter{
     }
 
     /**
-     * Classloader designed to ONLY work with Gateway jar from the standard install directory of
+     * Classloader designed to ONLY to load BuildInfo from Gateway jar from the standard install directory of
      * /opt/SecureSpan/Gateway/runtime/Gateway.jar
      */
-    public static class GatewayClassLoader extends ClassLoader{
+    public static class GatewayJarClassLoader extends ClassLoader{
         private ClassLoader loader;
 
-        public GatewayClassLoader() throws MalformedURLException {
+        public GatewayJarClassLoader() throws MalformedURLException {
             File gatewayJarFile = new File("/opt/SecureSpan/Gateway/runtime/Gateway.jar");
             URL gatewayJar = gatewayJarFile.toURI().toURL();
             loader = new URLClassLoader(new URL[]{gatewayJar}, null);
         }
 
         public Class<?> loadClass(String name) throws ClassNotFoundException {
-            Class c = super.findLoadedClass(name);
             if(name.equals("com.l7tech.util.BuildInfo")){
                 return loader.loadClass(name);
             }
-            return super.loadClass(name);
+            throw new ClassNotFoundException(GatewayJarClassLoader.class.getName()+" only supports class BuildInfo");
         }
     }
 
@@ -675,17 +674,17 @@ public final class Exporter{
         try {
             if(!gatewayJarFile.exists()) throw new RuntimeException("Cannot find SSG installation");
             
-            GatewayClassLoader gCl = new GatewayClassLoader();
-            Class clazz = gCl.loadClass("com.l7tech.util.BuildInfo");
-            Method method = clazz.getMethod("getProductVersion");
+            GatewayJarClassLoader gatewayJarClassLoader = new GatewayJarClassLoader();
+            Class clazz = gatewayJarClassLoader.loadClass("com.l7tech.util.BuildInfo");
+
+            Method method = clazz.getMethod("getProductVersionMajor");
             Object test = method.invoke(clazz);
-            System.out.println(test);
-            method = clazz.getMethod("getProductVersionMajor");
-            test = method.invoke(clazz);
             int majorVersion = Integer.parseInt(test.toString());
+
             method = clazz.getMethod("getProductVersionMinor");
             test = method.invoke(clazz);
             int minorVersion = Integer.parseInt(test.toString());
+
             method = clazz.getMethod("getProductVersionSubMinor");
             test = method.invoke(clazz);
             int subMinorVersion = Integer.parseInt(test.toString());
