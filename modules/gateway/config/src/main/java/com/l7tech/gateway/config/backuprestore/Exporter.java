@@ -59,8 +59,11 @@ public final class Exporter{
     public static final CommandLineOption VERBOSE = new CommandLineOption("-v",
             "verbose output, without this ssgbackup.sh is silent. Consult log file ssgbackup%g.log for logging messages",
                                                                                false, true);
+    public static final CommandLineOption HALT_ON_FIRST_FAILURE = new CommandLineOption("-halt",
+            "halt on first failure. Default behaviour is to try each component independently",
+                                                                               false, true);
 
-    private static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, MAPPING_PATH, VERBOSE};
+    private static final CommandLineOption[] ALLOPTIONS = {IMAGE_PATH, AUDIT, MAPPING_PATH, VERBOSE, HALT_ON_FIRST_FAILURE};
 
     public static final CommandLineOption FTP_HOST =
             new CommandLineOption("-ftp_host",
@@ -114,6 +117,8 @@ public final class Exporter{
     private final boolean isPostFiveO;
 
     private boolean verbose;
+
+    private boolean haltOnFirstFailure;
     /**
      * @param ssgHome   home directory where the SSG is installed. Should equal /opt/SecureSpan/Gateway. Cannot be null
      * @param stdout        stream for verbose output; <code>null</code> for no verbose output
@@ -334,8 +339,18 @@ public final class Exporter{
     }
 
     /**
+     * <p>
      * Backs up each required component and places it into the tmpOutputDirectory directory, in the correct folder.
-     * This method orchestrates the calls to the various addXXXToBackupFolder methods
+     * This method orchestrates the calls to the various backUp*() methods
+     * </p>
+     *
+     * <p>
+     * The bahviour of this method is that each back up is performed individually and independently of others. If any
+     * component fails to back up, this is logged, and the execution continues onto the next backup. This behaviour
+     * can be modified via the -halt parameter
+     * </p>
+     *
+     *
      * @param includeAudits boolean true if audits are to be backed up, false if not
      * @param mappingFile path (optional) and name of the mapping file to be created. if not required pass <code>null</code>
      * @param pathToImageZip String representing the path (optional) and name of the image zip file to create. If
@@ -351,35 +366,29 @@ public final class Exporter{
                                     final String tmpOutputDirectory, final FtpClientConfig ftpConfig)
             throws IOException, BackupRestoreLauncher.FatalException {
 
-        // record version of this image
-        backUpVersion(tmpOutputDirectory);
+        Map<Functions.NullaryVoidThrows<IOException>, String> compsToBackup =
+                getComponentsForBackup(includeAudits, mappingFile, tmpOutputDirectory);
 
-        //Back up the database
-        final File nodePropsFile = new File(confDir, ImportExportUtilities.NODE_PROPERTIES);
-        final File ompFile = new File(confDir, ImportExportUtilities.OMP_DAT);
-        // Read database connection settings
-        final DatabaseConfig config = ImportExportUtilities.getNodeConfig(nodePropsFile, ompFile);
-
-        //Backup database info if the db is local
-        if(ImportExportUtilities.isHostLocal(config.getHost())){
-            //this will also create the mapping file if it was requested
-            backUpComponentMainDb(mappingFile, tmpOutputDirectory, config);
-            // check whether or not we are expected to include audit in export
-            if (includeAudits) {
-                backUpComponentAudits(tmpOutputDirectory, config);
+        for(Map.Entry<Functions.NullaryVoidThrows<IOException>, String> entry: compsToBackup.entrySet()){
+            try{
+                entry.getKey().call();
+            } catch (IOException e) {
+                if (haltOnFirstFailure) {
+                    logger.log(Level.SEVERE, "Could not back up component " + entry.getValue());
+                    logger.log(Level.SEVERE, "Halting backup as -halt option was supplied");
+                    throw e;
+                }
+                logger.log(Level.WARNING, "Could not back up component " + entry.getValue());
+            } catch( RuntimeException e){
+                //We catch RuntimeException as we are promising non fail fast. 
+                if (haltOnFirstFailure) {
+                    logger.log(Level.SEVERE, "Could not back up component " + entry.getValue());
+                    logger.log(Level.SEVERE, "Halting backup as -halt option was supplied");
+                    throw e;
+                }
+                logger.log(Level.WARNING, "Could not back up component " + entry.getValue());
             }
-        }else{
-            logger.log(Level.INFO,  "Database is not local so no backup of database being created");
         }
-
-        backUpComponentConfig(tmpOutputDirectory);
-
-        //restore OS files if this is an appliance
-        backUpComponentOS(tmpOutputDirectory);
-
-        backUpComponentCA(tmpOutputDirectory);
-
-        backUpComponentMA(tmpOutputDirectory);
 
         //when we are using ftp, we need to store the image file somewhere locally
         //not using the same temp directory as the image data as it causes recursive problems when zipping
@@ -402,6 +411,112 @@ public final class Exporter{
         }else{
             createImageZip(pathToImageZip, tmpOutputDirectory);
         }
+    }
+
+    /**
+     * <p>
+     * All of the backUp* methods are public and can be used as an API for Exporter. However when createBackupImage()
+     * is used, it promises to do a non fail fast backup. This means that we will try and back up each applicable
+     * component individually and independently of others. As each backUp* method can throw Exceptions, this is a
+     * convenience method to wrap each component to be backed up in a Function.NullaryVoidThrows(Exception) and to
+     * return them in a Map, which can then simply be iterated over with a very simple and clean try / catch structure.
+     * </p>
+     *
+     * <p>
+     * The returned data structure is a Map, as it's nice to be able to report in the logs at a higher level, which
+     * component failed to back up. If any other information is required, or if the exception needs to change from
+     * IOException, then this generic use of Functions.NullaryVoidThrows can be promoted to using a new interface of
+     * its own, for this task of wrapping calls to these functions.
+     * </p>
+     *
+     * <p>
+     * When this function is used from performBackupSteps we will not take action based on specific subclasses of
+     * Exception. All we care about from providing a non fail fast backup is that we can catch any exception that happens
+     * when backing up a component, and then be able to proceed onto the next.
+     * </p>
+     *  
+     * @param includeAudits should the audits be backed up?
+     * @param mappingFile should the db compoment backup create a mapping file? Can be null if not required
+     * @param tmpOutputDirectory where the components should write their backup to
+     * @return A ordered Map of a Function.NullaryVoidThrows to a string description. Clients can iterate over this map
+     * and call call() to back up the component its wrapping
+     * @throws IOException if any exception ocurs reading node.properties to get database information. This is always
+     * done to determine if the database is local or remote
+     */
+    private Map<Functions.NullaryVoidThrows<IOException>, String> getComponentsForBackup(final boolean includeAudits,
+                                                                                       final String mappingFile,
+                                                                                       final String tmpOutputDirectory)
+            throws IOException {
+
+        Map<Functions.NullaryVoidThrows<IOException>, String>
+                returnMap = new LinkedHashMap<Functions.NullaryVoidThrows<IOException>, String>();
+
+        Functions.NullaryVoidThrows<IOException> versionComp = new Functions.NullaryVoidThrows<IOException>() {
+            public void call() throws IOException {
+                // record version of this image
+                backUpVersion(tmpOutputDirectory);
+            }
+        };
+        returnMap.put(versionComp, "Version");
+
+        final File nodePropsFile = new File(confDir, ImportExportUtilities.NODE_PROPERTIES);
+        final File ompFile = new File(confDir, ImportExportUtilities.OMP_DAT);
+        // Read database connection settings
+        final DatabaseConfig config = ImportExportUtilities.getNodeConfig(nodePropsFile, ompFile);
+
+        //Backup database info if the db is local
+        if(ImportExportUtilities.isHostLocal(config.getHost())){
+            Functions.NullaryVoidThrows<IOException> dbComp = new Functions.NullaryVoidThrows<IOException>() {
+                public void call() throws IOException {
+                    //this will also create the mapping file if it was requested
+                    backUpComponentMainDb(mappingFile, tmpOutputDirectory, config);
+                }
+            };
+            returnMap.put(dbComp, "Main database");
+            // check whether or not we are expected to include audit in export
+            if (includeAudits) {
+                Functions.NullaryVoidThrows<IOException> auditComp = new Functions.NullaryVoidThrows<IOException>() {
+                    public void call() throws IOException {
+                        //this will also create the mapping file if it was requested
+                        backUpComponentAudits(tmpOutputDirectory, config);
+                    }
+                };
+                returnMap.put(auditComp, "Database audits");
+
+            }
+        }else{
+            logger.log(Level.INFO,  "Database is not local so no backup of database being created");
+        }
+        Functions.NullaryVoidThrows<IOException> configComp = new Functions.NullaryVoidThrows<IOException>() {
+            public void call() throws IOException {
+                // record version of this image
+                backUpComponentConfig(tmpOutputDirectory);
+            }
+        };
+        returnMap.put(configComp, "SSG Config");
+
+        Functions.NullaryVoidThrows<IOException> osComp = new Functions.NullaryVoidThrows<IOException>() {
+            public void call() throws IOException {
+                //restore OS files if this is an appliance
+                backUpComponentOS(tmpOutputDirectory);
+            }
+        };
+        returnMap.put(osComp, "Operating System files");
+
+        Functions.NullaryVoidThrows<IOException> caComp = new Functions.NullaryVoidThrows<IOException>() {
+            public void call() throws IOException {
+                backUpComponentCA(tmpOutputDirectory);
+            }
+        };
+        returnMap.put(caComp, "Custom Assertions");
+
+        Functions.NullaryVoidThrows<IOException> maComp = new Functions.NullaryVoidThrows<IOException>() {
+            public void call() throws IOException {
+                backUpComponentMA(tmpOutputDirectory);
+            }
+        };
+        returnMap.put(maComp, "Modular Assertions");
+        return returnMap;
     }
 
     /**
@@ -856,9 +971,9 @@ public final class Exporter{
             final FileOutputStream fos = new FileOutputStream(path);
             fos.close();
             (new File(path)).delete();
-            logger.warning("Successfully tested write permission for " + path);
+            logger.log(Level.INFO, "Successfully tested write permission for " + path);
         } catch (Exception e) {
-            logger.warning("Cannot write to " + path + ". ");
+            logger.log(Level.WARNING, "Cannot write to " + path + ". ");
             return false;
         }
         return true;
@@ -929,6 +1044,8 @@ public final class Exporter{
 
         //will we use verbose output?
         if(args.containsKey(VERBOSE.name)) verbose = true;
+
+        if(args.containsKey(HALT_ON_FIRST_FAILURE.name)) haltOnFirstFailure = true;
     }
 
     /**

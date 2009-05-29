@@ -1,6 +1,7 @@
 package com.l7tech.gateway.config.backuprestore;
 
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ExceptionUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -81,7 +82,7 @@ public class BackupRestoreLauncher {
             System.exit(1);
         } catch (Exception e) {
             //this catches all runtime Exceptions which can be thrown for Null pointers, Illegal States and Unsupported Ops
-            String message = "Import / Export failed due to '" + e.getMessage() + "'.";
+            String message = "Import / Export failed due to '" + ExceptionUtils.getMessage(e,"Unknown error") + "'.";
             System.out.println(message);
             logger.log(Level.WARNING, message);
             System.exit(1);
