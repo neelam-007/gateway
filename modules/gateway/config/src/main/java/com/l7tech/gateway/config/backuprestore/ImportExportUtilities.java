@@ -434,6 +434,16 @@ public class ImportExportUtilities {
      */
     public static void copyFiles(final File sourceDir, final File destinationDir, final FilenameFilter fileFilter)
             throws IOException{
+        if(!sourceDir.exists())
+            throw new IllegalArgumentException("Directory '"+sourceDir.getAbsolutePath()+"' does not exist");
+        if(!sourceDir.isDirectory())
+            throw new IllegalArgumentException("Directory '"+sourceDir.getAbsolutePath()+"' is not a directory");
+
+        if(!destinationDir.exists())
+            throw new IllegalArgumentException("Directory '"+destinationDir.getAbsolutePath()+"' does not exist");
+        if(!destinationDir.isDirectory())
+            throw new IllegalArgumentException("Directory '"+destinationDir.getAbsolutePath()+"' is not a directory");
+
         final String [] filesToCopy = sourceDir.list(fileFilter);
 
         for ( final String filename : filesToCopy ) {
@@ -445,8 +455,16 @@ public class ImportExportUtilities {
     }
 
     public static void copyDir(final File sourceDir, final File destDir) throws IOException {
-        if(!destDir.exists()) destDir.mkdir();
-        else if (!destDir.isDirectory()) throw new RuntimeException("desDir '"+destDir.getName()+"' is not a directory");
+        if(!sourceDir.exists())
+            throw new IllegalArgumentException("Directory '"+sourceDir.getAbsolutePath()+"' does not exist");
+        if(!sourceDir.isDirectory())
+            throw new IllegalArgumentException("Directory '"+sourceDir.getAbsolutePath()+"' is not a directory");
+
+        if(!destDir.exists()){
+            if(!destDir.mkdir()){
+                throw new IllegalArgumentException("Directory '"+destDir.getAbsolutePath()+"' does not exist and could not be created");
+            }
+        }
 
         final File [] allFiles = sourceDir.listFiles();
         for(final  File f: allFiles){
