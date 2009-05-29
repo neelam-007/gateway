@@ -107,7 +107,9 @@ public class ExporterTest {
             final String[] args = programArgs.toArray(new String[]{});
             final Exporter exporter = new Exporter(tmpSsgHome, System.out,
                     ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
-            final String uniqueImageZipFile = exporter.createBackupImage(args);
+            final Exporter.BackupResult result = exporter.createBackupImage(args);
+            Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
+            final String uniqueImageZipFile = result.getBackUpImageName(); 
 
             //Check image.zip exists
             final File checkFile = new File(uniqueImageZipFile);
@@ -138,7 +140,10 @@ public class ExporterTest {
             final String[] args = programArgs.toArray(new String[]{});
             final Exporter exporter = new Exporter(tmpSsgHome, System.out,
                     tmpSsgHome.getAbsolutePath()/*just used for existence check*/, true);
-            String uniqueImageZipFile = exporter.createBackupImage(args);
+            final Exporter.BackupResult result = exporter.createBackupImage(args);
+            Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
+
+            String uniqueImageZipFile = result.getBackUpImageName();
 
             //Check image.zip exists
             final File checkFile = new File(uniqueImageZipFile);
@@ -267,7 +272,10 @@ public class ExporterTest {
             final Exporter exporter = new Exporter(tmpSsgHome, System.out,
                     ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
             System.setProperty(Exporter.NO_UNIQUE_IMAGE_SYSTEM_PROP, "true");
-            final String uniqueImageZipFile = exporter.createBackupImage(args);
+            final Exporter.BackupResult result = exporter.createBackupImage(args);
+            Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
+
+            final String uniqueImageZipFile = result.getBackUpImageName();
 
             Assert.assertEquals("Returned file name should equal the supplie image name", imageZipFile, uniqueImageZipFile);
         }finally{

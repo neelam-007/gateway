@@ -27,13 +27,15 @@ import org.xml.sax.SAXException;
 
 
 /**
+ * <p>
  * Exporter manages the creation of a complete SSG backup. Calling createBackupImage() will create a zip file
  * containing all components which constitute a complete backup.
  * See http://sarek.l7tech.com/mediawiki/index.php?title=Buzzcut_Backup_Restore_Func_Spec and
  * http://sarek.l7tech.com/mediawiki/index.php?title=Buzzcut_Backup_Restore_Design
+ * </p>
  *
- * <p/>
- * <p/>
+ * <p>Instances of Exporter are not safe to be used by multiple threads</p>
+ * 
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
@@ -119,6 +121,12 @@ public final class Exporter{
     private boolean verbose;
 
     private boolean haltOnFirstFailure;
+
+    /**
+     * Backup is not fail fast. As a result we will allow clients access to this list of error message so that they
+     * can be printed to the screen, when in -v mode
+     */
+    private final List<String> failedComponents = new ArrayList<String>();
     /**
      * @param ssgHome   home directory where the SSG is installed. Should equal /opt/SecureSpan/Gateway. Cannot be null
      * @param stdout        stream for verbose output; <code>null</code> for no verbose output
@@ -174,15 +182,71 @@ public final class Exporter{
         confDir = new File(ssgHome, NODE_CONF_DIR);
         this.applianceHome = applianceHome;
     }
-    
+
+    public static class BackupResult{
+
+        private final String backUpImageName;
+        private final Status status;
+        private final List<String> failedComponents;
+        private final Exception exception;
+
+        public enum Status{
+            SUCCESS(),
+            FAILURE(),
+            PARTIAL_SUCCESS();
+
+            Status() {}
+        }
+
+        private BackupResult(String backUpImageName, Status status, List<String> failedComponents, Exception exception){
+            this.backUpImageName = backUpImageName;
+            this.status = status;
+            this.failedComponents = failedComponents;
+            this.exception = exception;
+        }
+
+        private BackupResult(String backUpImageName, Status status){
+            this.backUpImageName = backUpImageName;
+            this.status = status;
+            this.failedComponents = null;
+            this.exception = null;
+        }
+
+        public String getBackUpImageName() {
+            return backUpImageName;
+        }
+
+        public List<String> getFailedComponents() {
+            return failedComponents;
+        }
+
+        public Status getStatus() {
+            return status;
+        }
+
+        public Exception getException() {
+            return exception;
+        }
+    }
     /**
+     * <p>
      * Create the backup image zip file.
      * The following arguments are expected in the array args:
      * <pre>
      * -image    location of image file to export. Value required
 	 * -ia       to include audit tables. No value reuired
 	 * -it       path of the output mapping template file. Value required
+     * -v        verbose output
+     * -halt     if supplied, then we fail fast
      * </pre>
+     * </p>
+     *
+     * <p>
+     * The returned BackupResult will contain BackupResult.Status.SUCCESS when all components applicable were backed up
+     * and no failures occured. BackupResult.Status.PARTIAL_SUCCESS is returned when -halt was used and 1 or more
+     * components failed to back up succesfully, BackupResult.Status.FAILURE is returned when the back up failed,
+     * and no image zip file was produced
+     * </p>
      * @param args array of all command line arguments
      * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.InvalidProgramArgumentException If any of the required program parameters are not supplied
      * @throws IOException Any IOException which occurs while creating the image zip file
@@ -190,10 +254,11 @@ public final class Exporter{
      * correctly configured SSG node
      * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.FatalException if ftp is requested and
      * its not possible to ftp the newly created image
-     * @return pathToUniqueImageFile the name of the image file created. This will be based on the value supplied with
-     * the -image parameter. A timestamp will have been added to the file name
+     * @return BackupResult This contains the name of the image file created. This will be based on the value supplied with
+     * the -image parameter. A timestamp will have been added to the file name. It also contains the status. The status
+     * can be SUCCESS, FAILURE or PARTIAL_SUCCESS.
      */
-    public String createBackupImage(final String [] args)
+    public BackupResult createBackupImage(final String [] args)
             throws InvalidProgramArgumentException, IOException, BackupRestoreLauncher.FatalException {
 
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
@@ -244,14 +309,20 @@ public final class Exporter{
             final String mappingFile = programFlagsAndValues.get(MAPPING_PATH.name);
             final FtpClientConfig ftpConfig = getFtpConfig(programFlagsAndValues);
             performBackupSteps(includeAudits, mappingFile, pathToUniqueImageFile, tmpDirectory, ftpConfig);
+        } catch(Exception e){
+            return new BackupResult(null, BackupResult.Status.FAILURE, null, e);
         } finally {
-            if(tmpDirectory != null){
+          if(tmpDirectory != null){
                 logger.info("cleaning up temp files at " + tmpDirectory);
                 if (stdout != null && verbose) stdout.println("Cleaning temporary files at " + tmpDirectory);
                 FileUtils.deleteDir(new File(tmpDirectory));
             }
         }
-        return pathToUniqueImageFile;
+
+        if(!failedComponents.isEmpty()){
+            return new BackupResult(pathToUniqueImageFile, BackupResult.Status.PARTIAL_SUCCESS, failedComponents, null);            
+        }
+        return new BackupResult(pathToUniqueImageFile, BackupResult.Status.SUCCESS);
     }
 
     /**
@@ -379,6 +450,7 @@ public final class Exporter{
                     throw e;
                 }
                 logger.log(Level.WARNING, "Could not back up component " + entry.getValue());
+                failedComponents.add(entry.getValue());
             } catch( RuntimeException e){
                 //We catch RuntimeException as we are promising non fail fast. 
                 if (haltOnFirstFailure) {
@@ -387,6 +459,7 @@ public final class Exporter{
                     throw e;
                 }
                 logger.log(Level.WARNING, "Could not back up component " + entry.getValue());
+                failedComponents.add(entry.getValue());
             }
         }
 

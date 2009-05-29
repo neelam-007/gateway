@@ -31,6 +31,11 @@ public class BackupRestoreLauncher {
     private static ArrayList<CommandLineOption> allRuntimeOptions = null;
     private static int argparseri = 0;
 
+    /**
+     * If the Backup / Import fails, then the VM will exist with status 1. If there is a partially successfull
+     * backup, then the VM will exist with status 2
+     * @param args
+     */
     public static void main(String[] args) {
         if (args == null || args.length < 1) {
             System.out.println(getUsage(null));
@@ -52,8 +57,23 @@ public class BackupRestoreLauncher {
             } else if (args[0].toLowerCase().equals("export")) {
                 final Exporter exporter = new Exporter(new File("/opt/SecureSpan/Gateway"),
                         System.out, ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE);
-                exporter.createBackupImage(args);
-                System.out.println("\nExport of SecureSpan Gateway image completed with no errors.");
+                Exporter.BackupResult result = exporter.createBackupImage(args);
+                switch (result.getStatus()){
+                    case SUCCESS:
+                        System.out.println("\nExport of SecureSpan Gateway image completed with no errors.");
+                        break;
+                    case FAILURE:
+                        System.out.println("\nExport of SecureSpan Gateway image failed.");
+                        System.exit(1);
+                    case PARTIAL_SUCCESS:
+                        System.out.println("\nExport of SecureSpan Gateway image partially succeeded");
+                        List<String> failedComponents = result.getFailedComponents();
+                        for(String s: failedComponents ){
+                            System.out.println("Failed component: " + s);
+                        }
+                        System.exit(2);
+                }
+
             } else if (args[0].toLowerCase().equals("cfgdeamon")) {
                 OSConfigManager.restoreOSConfigFilesForReal();
             } else if (args[0] != null) {
@@ -61,9 +81,7 @@ public class BackupRestoreLauncher {
                 logger.warning(issue);
                 System.out.println(issue);
                 System.out.println(getUsage(args[0]));
-                return;
             }
-            logger.info("Operation complete without errors");
         } catch (InvalidProgramArgumentException e) {
             String message = "Invalid argument due to '" + e.getMessage() + "'.";
             System.out.println(message);
@@ -154,7 +172,6 @@ public class BackupRestoreLauncher {
         public InvalidProgramArgumentException(String reason) {super(reason);}
     }
 
-    //todo [Donal] are these exceptions needed?
     public static class FatalException extends Exception {
         public FatalException(String reason) {super(reason);}
     }
