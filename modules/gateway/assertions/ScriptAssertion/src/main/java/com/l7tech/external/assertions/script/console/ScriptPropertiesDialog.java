@@ -22,13 +22,8 @@ public class ScriptPropertiesDialog extends AssertionPropertiesEditorSupport<Scr
 
     private boolean confirmed = false;
 
-    public ScriptPropertiesDialog(Frame owner, ScriptAssertion rla) throws HeadlessException {
-        super(owner, "Custom Script Properties", true);
-        initialize(rla);
-    }
-
-    public ScriptPropertiesDialog(Dialog owner, ScriptAssertion rla) throws HeadlessException {
-        super(owner, "Custom Script Properties", true);
+    public ScriptPropertiesDialog(Window owner, ScriptAssertion rla) throws HeadlessException {
+        super(owner, "Custom Script Properties");
         initialize(rla);
     }
 

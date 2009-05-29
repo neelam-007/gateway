@@ -13,5 +13,4 @@ import com.l7tech.security.token.ParsedElement;
 public interface WssTimestamp extends ParsedElement {
     WssTimestampDate getCreated();
     WssTimestampDate getExpires();
-    boolean isSigned();
 }

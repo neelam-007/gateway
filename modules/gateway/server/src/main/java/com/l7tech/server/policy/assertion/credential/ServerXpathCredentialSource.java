@@ -10,7 +10,6 @@ import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathVariableContext;
@@ -26,7 +25,6 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
@@ -34,7 +32,7 @@ import java.util.logging.Logger;
 /**
  * @author alex
  */
-public class ServerXpathCredentialSource extends AbstractServerAssertion implements ServerAssertion {
+public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCredentialSource> {
     private static final Logger logger = Logger.getLogger(ServerXpathCredentialSource.class.getName());
     private static final FunctionContext XPATH_FUNCTIONS = new XPathFunctionContext(false);
     private final Auditor auditor;
@@ -56,9 +54,8 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
                 loginXpath = new DOMXPath(loginExpr.getExpression());
                 loginXpath.setFunctionContext(XPATH_FUNCTIONS);
                 loginXpath.setVariableContext(new XpathVariableFinderVariableContext(null)); // uses thread-local rendezvous
-                for (Iterator i = loginExpr.getNamespaces().keySet().iterator(); i.hasNext();) {
-                    String prefix = (String) i.next();
-                    String uri = (String)loginExpr.getNamespaces().get(prefix);
+                for (String prefix : loginExpr.getNamespaces().keySet()) {
+                    String uri = loginExpr.getNamespaces().get(prefix);
                     loginXpath.addNamespace(prefix, uri);
                 }
             }
@@ -76,9 +73,8 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
                 passwordXpath = new DOMXPath(passwordExpr.getExpression());
                 passwordXpath.setFunctionContext(XPATH_FUNCTIONS);
                 passwordXpath.setVariableContext(new XpathVariableFinderVariableContext(null)); // uses thread-local rendezvous
-                for (Iterator i = passwordExpr.getNamespaces().keySet().iterator(); i.hasNext();) {
-                    String prefix = (String) i.next();
-                    String uri = (String)passwordExpr.getNamespaces().get(prefix);
+                for (String prefix : passwordExpr.getNamespaces().keySet()) {
+                    String uri = passwordExpr.getNamespaces().get(prefix);
                     passwordXpath.addNamespace(prefix, uri);
                 }
             }
@@ -87,10 +83,12 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
         }
     }
 
+    @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
             return XpathVariableContext.doWithVariableFinder(new PolicyEnforcementContextXpathVariableFinder(context),
                     new Callable<AssertionStatus>() {
+                        @Override
                         public AssertionStatus call() throws Exception {
                             return doCheckRequest(context);
                         }
@@ -107,14 +105,14 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
     private AssertionStatus doCheckRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         XmlKnob requestXml = null;
         if (context.getRequest().isXml())
-            requestXml = (XmlKnob) context.getRequest().getKnob(XmlKnob.class);
+            requestXml = context.getRequest().getKnob(XmlKnob.class);
 
         if (requestXml == null) {
             auditor.logAndAudit(AssertionMessages.XPATHCREDENTIAL_REQUEST_NOT_XML);
             return AssertionStatus.NOT_APPLICABLE;
         }
 
-        Document requestDoc = null;
+        Document requestDoc;
         try {
             if (assertion.isRemoveLoginElement() || assertion.isRemovePasswordElement()) {
                 requestDoc = requestXml.getDocumentWritable();
@@ -126,8 +124,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
             return AssertionStatus.FAILED;
         }
 
-        String login = null;
-
+        String login;
         try {
             login = find(requestDoc,
                     loginXpath,
@@ -141,8 +138,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
             return AssertionStatus.FAILED;
         }
 
-        String pass = null;
-
+        String pass;
         try {
             pass = find(requestDoc,
                     passwordXpath,
@@ -161,7 +157,7 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion impleme
             return AssertionStatus.AUTH_REQUIRED;
         }
 
-        context.addCredentials(LoginCredentials.makePasswordCredentials(login, pass.toCharArray(), XpathCredentialSource.class));
+        context.getAuthenticationContext(context.getRequest()).addCredentials(LoginCredentials.makePasswordCredentials(login, pass.toCharArray(), XpathCredentialSource.class));
 
         return AssertionStatus.NONE;
     }

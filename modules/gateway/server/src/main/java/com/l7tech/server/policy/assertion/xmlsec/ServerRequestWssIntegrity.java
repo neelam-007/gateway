@@ -1,33 +1,34 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.security.token.ParsedElement;
-import com.l7tech.security.token.SecurityToken;
-import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.token.SigningSecurityToken;
+import com.l7tech.security.token.SignedElement;
+import com.l7tech.security.token.X509SecurityToken;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.util.CausedIOException;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.IdentityTarget;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.util.CausedIOException;
+import com.l7tech.server.util.WSSecurityProcessorUtils;
+import com.l7tech.message.Message;
 import org.springframework.context.ApplicationContext;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * Enforces that a specific element in a request is signed.
+ * Enforces that a specific element in a message is signed.
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -41,25 +42,36 @@ public class ServerRequestWssIntegrity extends ServerRequestWssOperation<Request
         super(logger, data, springContext);
     }
 
+    @Override
     protected String getPastTenseOperationName() {
         return "signed";
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        AssertionStatus result =  super.checkRequest(context);
-        if (result == AssertionStatus.NONE) {
-            ProcessorResult wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
-            if (wssResults != null && context.isResponseWss11() && !wssResults.getValidatedSignatureValues().isEmpty()) {
-                context.addDeferredAssertion(this, deferredSignatureConfirmation(data, auditor, wssResults.getValidatedSignatureValues()));
+    @Override
+    protected AssertionStatus onCheckRequestSuccess( final PolicyEnforcementContext context,
+                                                     final Message message,
+                                                     final String messageDesc ) {
+        final ProcessorResult wssResults = message.getSecurityKnob().getProcessorResult();
+        if ( wssResults != null ) {
+            setVariables( context, message,  wssResults );
+
+            if ( isRequest() ) {
+                if (context.isResponseWss11() && !wssResults.getValidatedSignatureValues().isEmpty()) {
+                    context.addDeferredAssertion(this, deferredSignatureConfirmation(assertion, auditor, wssResults.getValidatedSignatureValues()));
+                }
             }
         }
-        return result;
+        
+        return AssertionStatus.NONE;
     }
 
     // A deferred job that tries to attach a SignatureConfirmation to the response, if the response is SOAP.
-    public static ServerAssertion deferredSignatureConfirmation(Assertion owner, final Auditor auditor, final List<String> signatureConfirmations) {
+    public static ServerAssertion deferredSignatureConfirmation( final Assertion owner,
+                                                                 final Auditor auditor,
+                                                                 final List<String> signatureConfirmations) {
         return new AbstractServerAssertion<Assertion>(owner) {
-            public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
+            @Override
+            public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException {
                 DecorationRequirements wssReq;
 
                 try {
@@ -80,63 +92,107 @@ public class ServerRequestWssIntegrity extends ServerRequestWssOperation<Request
         };
     }
 
-    protected ParsedElement[] getElementsFoundByProcessor(ProcessorResult wssResults) {
+    @Override
+    protected ParsedElement[] getElementsFoundByProcessor(final ProcessorResult wssResults) {
         if (wssResults == null) return new ParsedElement[0];
         return wssResults.getElementsThatWereSigned();
     }
 
     /**
      * Ensure that any signed elements that not security tokens are signed by
-     * the same key.
+     * the same key unless multiple signatures are enabled.
+     *
+     * If multiple signatures are enabled then all the required elements must be
+     * signed by the same token (the token for the target identity)
      */
-    protected boolean elementsFoundByProcessorAreValid(ProcessorResult wssResults, ParsedElement[] elements) {
+    @Override
+    protected boolean elementsFoundByProcessorAreValid( final PolicyEnforcementContext context,
+                                                        final Message message,
+                                                        final ProcessorResult wssResults,
+                                                        final ParsedElement[] elements ) {
         boolean valid = true;
 
-        if(elements.length>0) {
-            SigningSecurityToken sst = null;
-            Set securityTokenElements = getSecurityTokenElements(wssResults);
-
-            for (ParsedElement element : elements) {
-                if (element instanceof SignedElement) {
-                    SignedElement signedElement = (SignedElement) element;
-                    if (!securityTokenElements.contains(signedElement.asElement())) {
-                        if (sst == null) {
-                            sst = signedElement.getSigningSecurityToken();
-                        } else {
-                            if (sst != signedElement.getSigningSecurityToken()) {
-                                //auditor.logAndAudit(AssertionMessages.REQUEST_WSS_INT_REQUEST_MULTI_SIGNED);
-                                valid = false;
-                                break;
-                            }
-                        }
-                    } else {
-                        logger.fine("Not checking single signature source for signed security token.");
-                    }
-                } else {
-                    // Can't happen; log and ignore.
-                    logger.info("Unable to check element (not signed)");
-                }
-            }
+        // This check occurs before the ParsedElements relevant to this assertion have been
+        // matched. Therefore we only perform this check if there is no target identity for
+        // the assertion.
+        if( elements.length>0 &&
+           new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
+            valid = WSSecurityProcessorUtils.isValidSingleSigner(
+                wssResults,
+                new ParsedElement[0] // we validate that the right elements are signed elsewhere
+            );
         }
 
         return valid;
     }
 
+    @Override
+    protected boolean elementsFoundForAssertionAreValid( final PolicyEnforcementContext context,
+                                                         final Message message,
+                                                         final ProcessorResult wssResults,
+                                                         final ParsedElement[] elements ) {
+        boolean valid = true;
+
+        // When this check occurs the ParsedElements relevant to this assertion have been
+        // matched. Therefore we only perform this check if there is a target identity for
+        // the assertion.
+        if ( !new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
+            return WSSecurityProcessorUtils.isValidSigningIdentity(
+                context.getAuthenticationContext(message),
+                assertion.getIdentityTarget(),
+                wssResults,
+                elements
+            );            
+        }
+
+        return valid;
+    }
+
+    @Override
     protected boolean isAllowIfEmpty() {
         return false;
     }
 
-    private Set<Element> getSecurityTokenElements(ProcessorResult wssResults) {
-        Set<Element> tokenElements = new HashSet<Element>();
-        SecurityToken[] sts = wssResults.getXmlSecurityTokens();
-        if(sts!=null) {
-            for (SecurityToken st : sts) {
-                if (st instanceof SigningSecurityToken) {
-                    SigningSecurityToken sst = (SigningSecurityToken) st;
-                    tokenElements.add(sst.asElement());
-                }
-            }
-        }
-        return tokenElements;
+    private String prefixVariable( final String variableName ) {
+        return VariableMetadata.prefixName(  assertion.getVariablePrefix(), variableName );
     }
+
+    private void setVariables( final PolicyEnforcementContext context,
+                               final Message message,
+                               final ProcessorResult wssResults ) {
+        SigningSecurityToken token = WSSecurityProcessorUtils.getSigningSecurityTokenByIdentity(
+                context.getAuthenticationContext(message),
+                wssResults,
+                assertion.getIdentityTarget() );
+
+        if ( token != null ) {
+            SignedElement[] signedElements = token.getSignedElements();
+            if ( signedElements.length > 0 ) {
+                setVariable( context, RequestWssIntegrity.VAR_SIGNATURE_ELEMENT, signedElements[0].getSignatureElement() );
+            }
+
+        }
+
+        X509SecurityToken x509Token = null;
+        if ( token instanceof X509SecurityToken ) {
+            x509Token = (X509SecurityToken) token;
+        }
+
+        if ( x509Token != null) {
+            setVariable( context, RequestWssIntegrity.VAR_TOKEN_ELEMENT, x509Token.asElement() );
+            setVariable( context, RequestWssIntegrity.VAR_TOKEN_TYPE, "X.509" );
+            setVariable( context, RequestWssIntegrity.VAR_TOKEN_ATTRIBUTES, x509Token.getCertificate() );
+        }
+    }
+
+    private void setVariable( final PolicyEnforcementContext context,
+                              final String name,
+                              final Object value ) {
+        try {
+            context.setVariable( prefixVariable(name), value );
+        } catch ( VariableNotSettableException vnse ) {
+            auditor.logAndAudit( AssertionMessages.VARIABLE_NOTSET, vnse.getVariable() );
+        }
+    }
+
 }

@@ -63,7 +63,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
-import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -83,7 +82,6 @@ import java.util.regex.Pattern;
  * Date: Aug 6, 2004<br/>
  */
 public class TokenServiceImpl extends ApplicationObjectSupport implements TokenService {
-    private static final SecureRandom rand = new SecureRandom();
     private static final Logger logger = Logger.getLogger(TokenServiceImpl.class.getName());
 
     private final DefaultKey defaultKey;
@@ -135,6 +133,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
      * @return AssertionStatus.NONE if all is good, other return values indicate an error in which case
      * context.getFaultLevel() is to contain a template for an error to return to the requestor.
      */
+    @Override
     public AssertionStatus respondToSecurityTokenRequest(PolicyEnforcementContext context,
                                                          CredentialsAuthenticator authenticator,
                                                          boolean useThumbprintForSamlSignature,
@@ -174,7 +173,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
             }
 
             // at this point, we should have credentials
-            LoginCredentials creds = context.getLastCredentials();
+            LoginCredentials creds = context.getDefaultAuthenticationContext().getLastCredentials();
             User authenticatedUser = null;
             if(creds!=null) {
                 authenticatedUser = authenticator.authenticate(creds);
@@ -218,7 +217,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                 return status;
             }
 
-            context.addAuthenticationResult(new AuthenticationResult(authenticatedUser, null, false));
+            context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(authenticatedUser, null, false));
 
             if (status != AssertionStatus.NONE) {
                 String msg = "The internal policy was not respected " + status;
@@ -332,7 +331,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         TcpKnob tcpKnob = context.getRequest().getTcpKnob();
         if (tcpKnob != null)
             clientAddress = tcpKnob.getRemoteAddress();
-        LoginCredentials creds = context.getLastCredentials();
+        LoginCredentials creds = context.getDefaultAuthenticationContext().getLastCredentials();
 
         // Generate the SAML assertion
         SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
@@ -391,7 +390,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         SecureConversationSession newSession;
         try {
             newSession = SecureConversationContextManager.getInstance().createContextForUser(requestor,
-                                                                                             context.getLastCredentials(),
+                                                                                             context.getDefaultAuthenticationContext().getLastCredentials(),
                                                                                              scns);
         } catch (DuplicateSessionException e) {
             throw new TokenServiceException(e);
@@ -673,8 +672,8 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
     private User getUser(PolicyEnforcementContext context) {
         User user = null;
 
-        if(context.isAuthenticated()) {
-            user = context.getLastAuthenticatedUser();
+        if(context.getDefaultAuthenticationContext().isAuthenticated()) {
+            user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
         }
 
         if(user==null) {

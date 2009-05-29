@@ -270,7 +270,7 @@ public class AuditContextImpl implements AuditContext {
      */
     @Override
     public String[] getContextVariablesUsed() {
-        return this.logFormatter.getContextVariablesUsed();
+        return AuditLogFormatter.getContextVariablesUsed();
     }
 
     /**
@@ -468,7 +468,6 @@ public class AuditContextImpl implements AuditContext {
     private final AuditRecordManager auditRecordManager;
     private DefaultKey keystore;
     private AuditLogListener listener;
-    private AuditLogFormatter logFormatter;
     private Map<String, Object> logFormatContextVariables;
 
     private Level currentMessageThreshold;

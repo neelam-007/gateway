@@ -51,10 +51,11 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Message request = context.getRequest();
 
-        final MimeKnob mimeKnob = (MimeKnob) request.getKnob(MimeKnob.class);
+        final MimeKnob mimeKnob = request.getKnob(MimeKnob.class);
 
         // DELETE CURRENT SECURITY HEADER IF NECESSARY
         try {
@@ -66,7 +67,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         String userName = null;
         String password = null;
         if (assertion.getCredentialsSource() == FtpCredentialsSource.PASS_THRU) {
-            final LoginCredentials credentials = context.getLastCredentials();
+            final LoginCredentials credentials = context.getDefaultAuthenticationContext().getLastCredentials();
             if (credentials != null) {
                 userName = credentials.getName();
                 password = new String(credentials.getCredentials());

@@ -75,6 +75,7 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
         this.varsUsed = assertion.getVariablesUsed();
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Message msg;
         try {
@@ -96,7 +97,7 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
         }
 
         final String template = assertion.getSamlAssertionTemplate();
-        if (assertion.isSamlIncluded() && (template == null || template.length() == 0) && context.getLastCredentials() == null) {
+        if (assertion.isSamlIncluded() && (template == null || template.length() == 0) && context.getDefaultAuthenticationContext().getLastCredentials() == null) {
             auditor.logAndAudit(AssertionMessages.NCESDECO_NO_CREDS);
             if (assertion.getTarget() == TargetMessageType.REQUEST) {
                 // No point setting these flags for creds missing from non-request
@@ -227,7 +228,7 @@ public class ServerNcesDecoratorAssertion extends AbstractServerAssertion<NcesDe
             } catch (UnknownHostException e) {
                 throw new RuntimeException(e); // Can't happen
             }
-            final SubjectStatement authnStmt = SubjectStatement.createAuthenticationStatement(context.getLastCredentials(), SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
+            final SubjectStatement authnStmt = SubjectStatement.createAuthenticationStatement(context.getDefaultAuthenticationContext().getLastCredentials(), SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
 
             try {
                 samlEl = samlAssertionGenerator.createAssertion(authnStmt, opts).getDocumentElement();

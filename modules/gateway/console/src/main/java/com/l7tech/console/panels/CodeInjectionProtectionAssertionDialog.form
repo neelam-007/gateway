@@ -3,7 +3,7 @@
   <grid id="cbd77" binding="_contentPane" layout-manager="GridLayoutManager" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="48" y="54" width="400" height="315"/>
+      <xy x="48" y="54" width="417" height="316"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -49,7 +49,7 @@
           </grid>
         </children>
       </grid>
-      <grid id="61182" layout-manager="GridLayoutManager" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="1">
+      <grid id="61182" layout-manager="GridLayoutManager" row-count="4" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -67,15 +67,6 @@
               <text value="Apply protection to:"/>
             </properties>
           </component>
-          <component id="9b897" class="javax.swing.JRadioButton" binding="_requestRadioButton">
-            <constraints>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <selected value="true"/>
-              <text value="Request"/>
-            </properties>
-          </component>
           <component id="a095d" class="javax.swing.JCheckBox" binding="_requestUrlCheckBox">
             <constraints>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
@@ -87,9 +78,18 @@
               <text value="URL"/>
             </properties>
           </component>
+          <component id="9b897" class="javax.swing.JRadioButton" binding="_requestRadioButton">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <selected value="true"/>
+              <text value="Request"/>
+            </properties>
+          </component>
           <component id="7f16c" class="javax.swing.JCheckBox" binding="_requestBodyCheckBox">
             <constraints>
-              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <actionCommand value="Request body"/>
@@ -100,13 +100,31 @@
           </component>
           <component id="c5c3b" class="javax.swing.JRadioButton" binding="_responseRadioButton">
             <constraints>
-              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <actionCommand value="Response body"/>
               <label value="Response (body)"/>
               <text value="Response (body)"/>
             </properties>
+          </component>
+          <component id="b6046" class="javax.swing.JRadioButton" binding="_contextVariableRadioButton" default-binding="true">
+            <constraints>
+              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <actionCommand value="Response body"/>
+              <label value="Context Variable"/>
+              <text value="Context Variable"/>
+            </properties>
+          </component>
+          <component id="e92a6" class="javax.swing.JTextField" binding="_contextVarName">
+            <constraints>
+              <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="100" height="-1"/>
+              </grid>
+            </constraints>
+            <properties/>
           </component>
         </children>
       </grid>
@@ -162,10 +180,10 @@
     </children>
   </grid>
   <buttonGroups>
-    <group name="_locationButtonGroup">
-      <member id="c5c3b"/>
-      <member id="c5c3b"/>
+    <group name="messageTargetGroup">
       <member id="9b897"/>
+      <member id="c5c3b"/>
+      <member id="b6046"/>
     </group>
   </buttonGroups>
 </form>

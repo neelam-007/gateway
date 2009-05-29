@@ -6,6 +6,7 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.xml.xpath.DeferredFailureDomCompiledXpathHolder;
+import com.l7tech.server.message.AuthenticationContext;
 import org.jaxen.JaxenException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -15,11 +16,9 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * XML Digital signature on the soap response sent from the ssg server to the requestor (probably proxy). Also does
- * XML Encryption of the response's body if the assertion's property dictates it.
+ * XML Digital signature on the soap message sent from the ssg server.
  * <p/>
- * On the server side, this schedules decoration of a response with an xml d-sig.
- * On the proxy side, this verifies that the Soap Response contains a valid xml d-sig.
+ * This assertion schedules decoration of a message with an xml d-sig.
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -27,14 +26,13 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Aug 26, 2003<br/>
  */
-public class ServerResponseWssIntegrity extends ServerResponseWssSignature {
+public class ServerResponseWssIntegrity extends ServerResponseWssSignature<ResponseWssIntegrity> {
     private static final Logger logger = Logger.getLogger(ServerResponseWssIntegrity.class.getName());
-    private final ResponseWssIntegrity assertion;
     private final DeferredFailureDomCompiledXpathHolder compiledXpath;
 
-    public ServerResponseWssIntegrity(ResponseWssIntegrity assertion, ApplicationContext ctx) throws IOException {
-        super(assertion, ctx, logger);
-        this.assertion = assertion;
+    public ServerResponseWssIntegrity( final ResponseWssIntegrity assertion,
+                                       final ApplicationContext ctx ) throws IOException {
+        super(assertion, assertion, assertion, ctx, logger);
         this.compiledXpath = new DeferredFailureDomCompiledXpathHolder(assertion.getXpathExpression());
     }
 
@@ -42,7 +40,11 @@ public class ServerResponseWssIntegrity extends ServerResponseWssSignature {
      * @return the number of elements that will be affected by the decorator, <code>0</code> if
      *         none, or <code>-1</code> if the assertion should fail.
      */
-    protected int addDecorationRequirements(PolicyEnforcementContext context, Document soapmsg, DecorationRequirements wssReq)
+    @Override
+    protected int addDecorationRequirements( final PolicyEnforcementContext context,
+                                             final AuthenticationContext authContext,
+                                             final Document soapmsg,
+                                             final DecorationRequirements wssReq)
             throws PolicyAssertionException
     {
         List selectedElements;

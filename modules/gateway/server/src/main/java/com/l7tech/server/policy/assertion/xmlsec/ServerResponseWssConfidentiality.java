@@ -12,13 +12,14 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.xpath.DeferredFailureDomCompiledXpathHolder;
+import com.l7tech.message.Message;
 import org.jaxen.JaxenException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -43,23 +44,27 @@ import java.util.logging.Logger;
  * <p/>
  * User: flascell<br/>
  * Date: Aug 26, 2003<br/>
+ *
+ * TODO [steve] add decoration requirements even if certificate is not currently available
+ * TODO [steve] auditing for target message
  */
-public class ServerResponseWssConfidentiality extends AbstractServerAssertion<ResponseWssConfidentiality> implements ServerAssertion {
+public class ServerResponseWssConfidentiality extends AbstractMessageTargetableServerAssertion<ResponseWssConfidentiality> {
+
+    private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
     private final X509Certificate recipientContextCert;
     private final DeferredFailureDomCompiledXpathHolder compiledXpath;
 
     public ServerResponseWssConfidentiality(ResponseWssConfidentiality data, ApplicationContext ctx) throws IOException {
-        super(data);
-        responseWssConfidentiality = data;
+        super(data,data);
         this.auditor = new Auditor(this, ctx, logger);
         this.compiledXpath = new DeferredFailureDomCompiledXpathHolder(assertion.getXpathExpression());
 
         X509Certificate rccert = null;
-        if (!responseWssConfidentiality.getRecipientContext().localRecipient()) {
+        if (!assertion.getRecipientContext().localRecipient()) {
             try {
                 rccert = CertUtils.decodeCert(HexUtils.decodeBase64(
-                        responseWssConfidentiality.getRecipientContext().getBase64edX509Certificate(), true));
+                        assertion.getRecipientContext().getBase64edX509Certificate(), true));
             } catch (CertificateException e) {
                 logger.log(Level.WARNING, "Assertion will always fail: recipient cert cannot be decoded: " + e.getMessage(), e);
                 rccert = null;
@@ -69,37 +74,28 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
     }
 
     // despite the name of this method, i'm actually working on the response document here
-    public AssertionStatus checkRequest(PolicyEnforcementContext context)
-            throws IOException, PolicyAssertionException
-    {
-        try {
-            if (!context.getRequest().isSoap()) {
-                auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_REQUEST_NOT_SOAP);
-                return AssertionStatus.BAD_REQUEST;
-            }
-        } catch (SAXException e) {
-            throw new CausedIOException(e);
-        }
+    @Override
+    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
+                                              final Message message,
+                                              final String messageDescription,
+                                              final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
+        X509Certificate clientCert = null;
+        KerberosServiceTicket kerberosServiceTicket = null;
+        SecurityContextToken secConvContext = null;
+        EncryptedKey encryptedKey = null;
+        String keyEncryptionAlgorithm = null;
+        XmlSecurityRecipientContext recipientContext = null;
 
-        if (!responseWssConfidentiality.getRecipientContext().localRecipient()) {
-            final X509Certificate clientCert;
+        if (!assertion.getRecipientContext().localRecipient()) {
             if (recipientContextCert == null) {
                 String msg = "cannot retrieve the recipient cert";
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, msg);
-                throw new PolicyAssertionException(responseWssConfidentiality, msg);
+                throw new PolicyAssertionException(assertion, msg);
             }
             clientCert = recipientContextCert;
-            return addDecorationRequirements(clientCert,
-                                     null,
-                                     null,
-                                     null,
-                                     null,
-                                     responseWssConfidentiality.getRecipientContext(),
-                                     context);
-        } else {
-            ProcessorResult wssResult;
-            wssResult = context.getRequest().getSecurityKnob().getProcessorResult();
-
+            recipientContext = assertion.getRecipientContext();
+        } else if ( isResponse() ) {
+            ProcessorResult wssResult = context.getRequest().getSecurityKnob().getProcessorResult();
             if (wssResult == null) {
                 auditor.logAndAudit(AssertionMessages.REQUESTWSS_NO_SECURITY);
                 context.setRequestPolicyViolated();
@@ -108,13 +104,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
 
             // Ecrypting the Response will require either the presence of a client cert (to encrypt the symmetric key)
             // or a SecureConversation in progress or an Encrypted Key or Kerberos Session
-
-            X509Certificate clientCert = null;
-            KerberosServiceTicket kerberosServiceTicket = null;
-            SecurityContextToken secConvContext = null;
-            EncryptedKey encryptedKey = null;
             XmlSecurityToken[] tokens = wssResult.getXmlSecurityTokens();
-            String keyEncryptionAlgorithm = null;
             for (XmlSecurityToken token : tokens) {
                 if (token instanceof X509SecurityToken) {
                     X509SecurityToken x509token = (X509SecurityToken)token;
@@ -163,19 +153,25 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
                 return AssertionStatus.FAILED; // todo verify that this return value is appropriate
             }
 
-            return addDecorationRequirements(clientCert,
-                                     kerberosServiceTicket,
-                                     secConvContext,
-                                     encryptedKey,
-                                     keyEncryptionAlgorithm,
-                                     null,
-                                     context);
+        } else {
+            return AssertionStatus.FALSIFIED;
         }
+
+        return addDecorationRequirements(
+                                 message,
+                                 clientCert,
+                                 kerberosServiceTicket,
+                                 secConvContext,
+                                 encryptedKey,
+                                 keyEncryptionAlgorithm,
+                                 recipientContext,
+                                 context);
     }
 
     /**
      * Immediately configure response decoration.
      *
+     * @param message The message to be encrypted
      * @param clientCert client cert to encrypt to, or null to use alternate means
      * @param kerberosServiceTicket   kerberos ticked to use for encrypting response, or null to use alternate means
      * @param secConvTok WS-SecureConversation session to encrypt to, or null to use alternate means
@@ -191,7 +187,9 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
      * @throws com.l7tech.policy.assertion.PolicyAssertionException  if the XPath expression is invalid
      * @throws java.io.IOException if there is a problem gathering info from the request
      */
-    private AssertionStatus addDecorationRequirements(final X509Certificate clientCert,
+    private AssertionStatus addDecorationRequirements(
+                                              final Message message,
+                                              final X509Certificate clientCert,
                                               final KerberosServiceTicket kerberosServiceTicket,
                                               final SecurityContextToken secConvTok,
                                               final EncryptedKey encryptedKey,
@@ -201,7 +199,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
             throws IOException, PolicyAssertionException
     {
         try {
-            if (!context.getResponse().isSoap()) {
+            if (!message.isSoap()) {
                 auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_RESPONSE_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
@@ -212,7 +210,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
         // GET THE DOCUMENT
         final Document soapmsg;
         try {
-            soapmsg = context.getResponse().getXmlKnob().getDocumentReadOnly();
+            soapmsg = message.getXmlKnob().getDocumentReadOnly();
 
             final List selectedElements;
             try {
@@ -221,7 +219,7 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
             } catch (JaxenException e) {
                 // this is thrown when there is an error in the expression
                 // this is therefore a bad policy
-                throw new PolicyAssertionException(responseWssConfidentiality, e);
+                throw new PolicyAssertionException(assertion, e);
             }
 
             if (selectedElements == null || selectedElements.size() < 1) {
@@ -229,13 +227,13 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
                 return AssertionStatus.FALSIFIED;
             }
             DecorationRequirements wssReq;
-            wssReq = context.getResponse().getSecurityKnob().getAlternateDecorationRequirements(recipient);
+            wssReq = message.getSecurityKnob().getAlternateDecorationRequirements(recipient);
             //noinspection unchecked
             wssReq.getElementsToEncrypt().addAll(selectedElements);
-            wssReq.setEncryptionAlgorithm(responseWssConfidentiality.getXEncAlgorithm());
+            wssReq.setEncryptionAlgorithm(assertion.getXEncAlgorithm());
             if (clientCert != null) {
                 wssReq.setRecipientCertificate(clientCert);
-                wssReq.setKeyEncryptionAlgorithm(responseWssConfidentiality.getKeyEncryptionAlgorithm());
+                wssReq.setKeyEncryptionAlgorithm(assertion.getKeyEncryptionAlgorithm());
                 if (wssReq.getKeyEncryptionAlgorithm()==null)
                     wssReq.setKeyEncryptionAlgorithm(keyEncryptionAlgorithm);
                 // LYONSM: need to rethink configuring a signature and assuming a signature source here
@@ -270,6 +268,8 @@ public class ServerResponseWssConfidentiality extends AbstractServerAssertion<Re
         }
     }
 
-    private final Logger logger = Logger.getLogger(getClass().getName());
-    private ResponseWssConfidentiality responseWssConfidentiality;
+    @Override
+    protected Auditor getAuditor() {
+        return auditor;
+    }
 }

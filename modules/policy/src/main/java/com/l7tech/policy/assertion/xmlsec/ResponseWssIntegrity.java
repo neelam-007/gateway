@@ -5,7 +5,8 @@ import com.l7tech.security.xml.KeyReference;
 import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.annotation.ProcessesResponse;
+import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.util.Functions;
 
 /**
@@ -17,16 +18,16 @@ import com.l7tech.util.Functions;
  * @author flascell<br/>
  * @version Aug 27, 2003<br/>
  */
-@ProcessesResponse
 public class ResponseWssIntegrity extends XmlSecurityAssertionBase implements ResponseWssConfig, PrivateKeyable {
 
     //- PUBLIC
 
     public ResponseWssIntegrity() {
-        setXpathExpression(XpathExpression.soapBodyXpathValue());
+        this(XpathExpression.soapBodyXpathValue());
     }
 
     public ResponseWssIntegrity(XpathExpression xpath) {
+        super( TargetMessageType.RESPONSE );
         setXpathExpression(xpath);
     }
 
@@ -84,21 +85,22 @@ public class ResponseWssIntegrity extends XmlSecurityAssertionBase implements Re
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Sign Response Element");
-        meta.put(AssertionMetadata.DESCRIPTION, "Server will sign an element of the SOAP response");
+        meta.put(AssertionMetadata.SHORT_NAME, "Sign Element");
+        meta.put(AssertionMetadata.DESCRIPTION, "Sign one or more elements of the message.");
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
+        meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, 80000);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, ResponseWssIntegrity>() {
             @Override
             public String call( final ResponseWssIntegrity responseWssIntegrity ) {
-                StringBuilder name = new StringBuilder("Sign response element ");
+                StringBuilder name = new StringBuilder("Sign element ");
                 if (responseWssIntegrity.getXpathExpression() == null) {
                     name .append("[XPath expression not set]");
                 } else {
                     name.append(responseWssIntegrity.getXpathExpression().getExpression());
                 }
-                name.append(SecurityHeaderAddressableSupport.getActorSuffix(responseWssIntegrity));
-                return name.toString();
+                return AssertionUtils.decorateName(responseWssIntegrity, name);
             }
         });
 

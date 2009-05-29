@@ -209,6 +209,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     protected PolicyService.PolicyGetter normalPolicyGetter(final boolean inlineIncludes) {
         return new PolicyService.PolicyGetter() {
+            @Override
             public PolicyService.ServiceInfo getPolicy(String serviceId) {
                 try {
                     final PublishedService targetService = resolveService(Long.parseLong(serviceId));
@@ -221,6 +222,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                         // if not processing then initialize with the service policy, else we'll process it when required 
                         private Assertion policy = inlineIncludes ? null : servicePolicy;
 
+                        @Override
                         public synchronized Assertion getPolicy() throws PolicyAssertionException {
                             // process if not already initialized
                             if (policy == null) {
@@ -233,6 +235,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                             return policy;
                         }
 
+                        @Override
                         public String getVersion() {
                             return servicePolicyVersion;
                         }
@@ -480,8 +483,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private User getUser(PolicyEnforcementContext context) {
         User user = null;
 
-        if(context.isAuthenticated()) {
-            user = context.getLastAuthenticatedUser();
+        if(context.getDefaultAuthenticationContext().isAuthenticated()) {
+            user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
         }
 
         if(user==null) {

@@ -10,7 +10,7 @@ import com.l7tech.util.Functions;
  *
  * @author Steve Jones
  */
-public class TextListCellRenderer extends JLabel implements ListCellRenderer {
+public class TextListCellRenderer<SO> extends JLabel implements ListCellRenderer {
 
     //- PUBLIC
 
@@ -21,7 +21,7 @@ public class TextListCellRenderer extends JLabel implements ListCellRenderer {
      *
      * @param accessorFunction The function to use (must not be null)
      */
-    public TextListCellRenderer(final Functions.Unary<String,Object> accessorFunction) {
+    public TextListCellRenderer(final Functions.Unary<String,SO> accessorFunction) {
         this(accessorFunction, null, false);
     }
 
@@ -32,8 +32,8 @@ public class TextListCellRenderer extends JLabel implements ListCellRenderer {
      * @param tooltipAccessorFunction The function to use (must not be null)
      * @param useAccessorForNull True to call the accessor function for null values.
      */
-    public TextListCellRenderer(final Functions.Unary<String,Object> accessorFunction,
-                                final Functions.Unary<String,Object> tooltipAccessorFunction,
+    public TextListCellRenderer(final Functions.Unary<String,SO> accessorFunction,
+                                final Functions.Unary<String,SO> tooltipAccessorFunction,
                                 final boolean useAccessorForNull) {
         this.accessorFunction = accessorFunction;
         this.tooltipAccessorFunction = tooltipAccessorFunction;
@@ -53,9 +53,9 @@ public class TextListCellRenderer extends JLabel implements ListCellRenderer {
         String tooltipText = null;
 
         if ( value != null || useAccessorForNull ) {
-            text = accessorFunction.call(value);
+            text = accessorFunction.call((SO)value);
             tooltipText = tooltipAccessorFunction != null ?
-                    tooltipAccessorFunction.call(value) :
+                    tooltipAccessorFunction.call((SO)value) :
                     null;
         }
 
@@ -80,7 +80,7 @@ public class TextListCellRenderer extends JLabel implements ListCellRenderer {
 
     //- PRIVATE
 
-    private final Functions.Unary<String,Object> accessorFunction;
-    private final Functions.Unary<String,Object> tooltipAccessorFunction;
+    private final Functions.Unary<String,SO> accessorFunction;
+    private final Functions.Unary<String,SO> tooltipAccessorFunction;
     private final boolean useAccessorForNull;
 }

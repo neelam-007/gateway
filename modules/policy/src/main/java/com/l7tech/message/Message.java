@@ -93,8 +93,8 @@ public final class Message {
                                   InputStream body)
             throws IOException
     {
-        HttpRequestKnob reqKnob = (HttpRequestKnob)getKnob(HttpRequestKnob.class);
-        HttpResponseKnob respKnob = (HttpResponseKnob)getKnob(HttpResponseKnob.class);
+        HttpRequestKnob reqKnob = getKnob(HttpRequestKnob.class);
+        HttpResponseKnob respKnob = getKnob(HttpResponseKnob.class);
         if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
         rootFacet = null; // null it first just in case MimeFacet c'tor throws
         invalidateCachedKnobs();
@@ -116,8 +116,8 @@ public final class Message {
     public void initialize(Document body)
     {
         try {
-            HttpRequestKnob reqKnob = (HttpRequestKnob)getKnob(HttpRequestKnob.class);
-            HttpResponseKnob respKnob = (HttpResponseKnob)getKnob(HttpResponseKnob.class);
+            HttpRequestKnob reqKnob = getKnob(HttpRequestKnob.class);
+            HttpResponseKnob respKnob = getKnob(HttpResponseKnob.class);
             if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
             rootFacet = null;
             rootFacet = new MimeFacet(this, new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream());
@@ -143,8 +143,8 @@ public final class Message {
      */
     public void initialize(ContentTypeHeader contentType, byte[] bodyBytes) throws IOException {
         try {
-            HttpRequestKnob reqKnob = (HttpRequestKnob)getKnob(HttpRequestKnob.class);
-            HttpResponseKnob respKnob = (HttpResponseKnob)getKnob(HttpResponseKnob.class);
+            HttpRequestKnob reqKnob = getKnob(HttpRequestKnob.class);
+            HttpResponseKnob respKnob = getKnob(HttpResponseKnob.class);
             if (rootFacet != null) rootFacet.close(); // This will close the reqKnob and respKnob as well, but they don't do anything when closed
             rootFacet = null;
             rootFacet = new MimeFacet(this, new ByteArrayStashManager(), contentType, new ByteArrayInputStream(bodyBytes));
@@ -174,7 +174,7 @@ public final class Message {
     public MimeKnob getMimeKnob() throws IllegalStateException {
         if (this.mimeKnob != null)
             return this.mimeKnob;
-        MimeKnob mimeKnob = (MimeKnob)getKnob(MimeKnob.class);
+        MimeKnob mimeKnob = getKnob(MimeKnob.class);
         if (mimeKnob == null) throw new IllegalStateException("This Message has not yet been attached to an InputStream");
         return mimeKnob;
     }
@@ -191,12 +191,12 @@ public final class Message {
     public XmlKnob getXmlKnob() throws SAXException {
         if (this.xmlKnob != null)
             return this.xmlKnob;
-        XmlKnob xmlKnob = (XmlKnob)getKnob(XmlKnob.class);
+        XmlKnob xmlKnob = getKnob(XmlKnob.class);
         if (xmlKnob == null) {
             try {
                 rootFacet = new XmlFacet(this, rootFacet);
                 invalidateCachedKnobs();
-                xmlKnob = (XmlKnob)getKnob(XmlKnob.class);
+                xmlKnob = getKnob(XmlKnob.class);
                 if (xmlKnob == null) throw new IllegalStateException(); // can't happen, we just made one
             } catch (IOException e) {
                 throw new CausedIllegalStateException(e); // can't happen, no XML facet yet
@@ -212,11 +212,11 @@ public final class Message {
      * @return the security knob for this Message.  Never null.
      */
     public SecurityKnob getSecurityKnob() {
-        SecurityKnob secKnob = (SecurityKnob)getKnob(SecurityKnob.class);
+        SecurityKnob secKnob = getKnob(SecurityKnob.class);
         if (secKnob == null) {
             rootFacet = new SecurityFacet(this, rootFacet);
             invalidateCachedKnobs();
-            secKnob = (SecurityKnob)getKnob(SecurityKnob.class);
+            secKnob = getKnob(SecurityKnob.class);
             if (secKnob == null) throw new IllegalStateException();
         }
         return secKnob;
@@ -238,14 +238,14 @@ public final class Message {
             return true;
         if (getKnob(XmlKnob.class) != null)
             return true;
-        MimeKnob mimeKnob = (MimeKnob)getKnob(MimeKnob.class);
+        MimeKnob mimeKnob = getKnob(MimeKnob.class);
         if (mimeKnob == null)
             return false;
         if (!mimeKnob.getFirstPart().getContentType().isXml())
             return false;
 
         // It's declared as XML, check that there is some content
-        HttpRequestKnob knob = (HttpRequestKnob)getKnob(HttpRequestKnob.class);
+        HttpRequestKnob knob = getKnob(HttpRequestKnob.class);
         if (knob != null) {
             int length = knob.getIntHeader(HttpConstants.HEADER_CONTENT_LENGTH);
             if (length == 0) {
@@ -274,11 +274,11 @@ public final class Message {
      * @throws IllegalStateException if the SOAP MIME part has already been destructively read.
      */
     public SoapKnob getSoapKnob() throws SAXException, IOException, MessageNotSoapException {
-        SoapKnob soapKnob = (SoapKnob)getKnob(SoapKnob.class);
+        SoapKnob soapKnob = getKnob(SoapKnob.class);
         if (soapKnob == null) {
             if (!isSoap())
                 throw new MessageNotSoapException();
-            soapKnob = (SoapKnob)getKnob(SoapKnob.class);
+            soapKnob = getKnob(SoapKnob.class);
             if (soapKnob == null)
                 throw new IllegalStateException("isSoap() is true but there's no SoapKnob");
         }
@@ -325,7 +325,7 @@ public final class Message {
     public boolean isSoap(boolean preferDOM) throws IOException, SAXException {
         if (this.soapKnob != null)
             return true;
-        HttpRequestKnob hrk = (HttpRequestKnob) getKnob(HttpRequestKnob.class);
+        HttpRequestKnob hrk = getKnob(HttpRequestKnob.class);
         if (hrk != null && hrk.getMethod() != HttpMethod.POST)
             return false;
         if (getKnob(SoapKnob.class) != null)
@@ -336,7 +336,7 @@ public final class Message {
         SoapInfo info = null;
 
         // See if we have already inspected a non-SOAP XML message
-        TarariKnob tk = (TarariKnob)getKnob(TarariKnob.class);
+        TarariKnob tk = getKnob(TarariKnob.class);
         if (tk != null && !preferDOM)
             info = tk.getSoapInfo();
 
@@ -433,7 +433,7 @@ public final class Message {
      * @throws IllegalStateException if this Message is not configured as an HTTP request.
      */
     public HttpRequestKnob getHttpRequestKnob() throws IllegalStateException {
-        HttpRequestKnob knob = (HttpRequestKnob)getKnob(HttpRequestKnob.class);
+        HttpRequestKnob knob = getKnob(HttpRequestKnob.class);
         if (knob == null)
             throw new IllegalStateException("This Message is not configured as an HTTP request");
         return knob;
@@ -462,7 +462,7 @@ public final class Message {
      * @throws IllegalStateException if this Message is not configured as an HTTP response
      */
     public HttpResponseKnob getHttpResponseKnob() throws IllegalStateException {
-        HttpResponseKnob knob = (HttpResponseKnob)getKnob(HttpResponseKnob.class);
+        HttpResponseKnob knob = getKnob(HttpResponseKnob.class);
         if (knob == null)
             throw new IllegalStateException("This Message is not configured as an HTTP response");
         return knob;
@@ -476,7 +476,7 @@ public final class Message {
      * @throws IllegalStateException if this message is not configured as having arrived over TCP.
      */
     public TcpKnob getTcpKnob() throws IllegalStateException {
-        TcpKnob knob = (TcpKnob)getKnob(TcpKnob.class);
+        TcpKnob knob = getKnob(TcpKnob.class);
         if (knob == null)
             throw new IllegalStateException("This Message is not configured as having arrived over TCP");
         return knob;
@@ -490,7 +490,7 @@ public final class Message {
      * @throws IllegalStateException if this message is not configured as having arrived over JMS.
      */
     public JmsKnob getJmsKnob() {
-        JmsKnob knob = (JmsKnob)getKnob(JmsKnob.class);
+        JmsKnob knob = getKnob(JmsKnob.class);
         if (knob == null)
             throw new IllegalStateException("This Message is not configured as having arrived over JMS");
         return knob;
@@ -504,7 +504,7 @@ public final class Message {
      * @throws IllegalStateException if this message already offers an implementation of the specified knobClass
      * @throws IllegalArgumentException if knob is not an instance of knobClass
      */
-    public void attachKnob(Class knobClass, MessageKnob knob) {
+    public void attachKnob(Class<? extends MessageKnob> knobClass, MessageKnob knob) {
         if (getKnob(knobClass) != null)
             throw new IllegalStateException("An implementation of the knob " + knobClass + " is already attached to this Message.");
         if (!knobClass.isAssignableFrom(knob.getClass()))
@@ -521,8 +521,9 @@ public final class Message {
      * @return the requested MessageKnob.  Never null.
      * @throws IllegalStateException if no such knob is currently available from this Message.
      */
-    public MessageKnob getKnobAlways(Class c) throws IllegalStateException {
-        MessageKnob got = getKnob(c);
+    @SuppressWarnings({"unchecked"})
+    public <T extends MessageKnob> T getKnobAlways(Class<T> c) throws IllegalStateException {
+        T got = getKnob(c);
         if (got == null)
             throw new IllegalStateException("This Message is not currently configured with " + c.getName());
         return got;
@@ -532,35 +533,36 @@ public final class Message {
      * If this Message has the specified knob, then return it.  Will not attempt to create any facets
      * that haven't yet been installed, even assuming it might be possible to do so.
      *
-     * @param c a Class derived from MessageKnob.  Must be non-null.
+     * @param c a Class (usually) derived from MessageKnob.  Must be non-null.
      * @return the requested MessageKnob, if its facet is installed on this Message, or null.
      */
-    public MessageKnob getKnob(Class c) {
+    @SuppressWarnings({"unchecked"})
+    public <T> T getKnob(Class<T> c) {
         if (c == null) throw new NullPointerException();
         if (rootFacet == null) return null;
 
         // These knobs account for at least 2/3rds of the dozens of calls to this method that are made
         // per request.  Traversing the knob list so much was starting to show up in the profile.
         if (c == MimeKnob.class)
-            return mimeKnob != null ? mimeKnob : (mimeKnob = (MimeKnob)findKnob(c));
+            return mimeKnob != null ? (T)mimeKnob : (T)(mimeKnob = (MimeKnob)findKnob(c));
         if (c == HttpRequestKnob.class)
-            return httpRequestKnob != null ? httpRequestKnob : (httpRequestKnob = (HttpRequestKnob)findKnob(c));
+            return httpRequestKnob != null ? (T)httpRequestKnob : (T)(httpRequestKnob = (HttpRequestKnob)findKnob(c));
         if (c == HttpServletRequestKnob.class)
-            return httpServletRequestKnob != null ? httpServletRequestKnob : (httpServletRequestKnob = (HttpServletRequestKnob)findKnob(c));
+            return httpServletRequestKnob != null ? (T)httpServletRequestKnob : (T)(httpServletRequestKnob = (HttpServletRequestKnob)findKnob(c));
         if (c == HttpResponseKnob.class)
-            return httpResponseKnob != null ? httpResponseKnob : (httpResponseKnob = (HttpResponseKnob)findKnob(c));
+            return httpResponseKnob != null ? (T)httpResponseKnob : (T)(httpResponseKnob = (HttpResponseKnob)findKnob(c));
         if (c == HttpServletResponseKnob.class)
-            return httpServletResponseKnob != null ? httpServletResponseKnob : (httpServletResponseKnob = (HttpServletResponseKnob)findKnob(c));
+            return httpServletResponseKnob != null ? (T)httpServletResponseKnob : (T)(httpServletResponseKnob = (HttpServletResponseKnob)findKnob(c));
         if (c == TcpKnob.class)
-            return tcpKnob != null ? tcpKnob : (tcpKnob = (TcpKnob)findKnob(c));
+            return tcpKnob != null ? (T)tcpKnob : (T)(tcpKnob = (TcpKnob)findKnob(c));
         if (c == XmlKnob.class)
-            return xmlKnob != null ? xmlKnob : (xmlKnob = (XmlKnob)findKnob(c));
+            return xmlKnob != null ? (T)xmlKnob : (T)(xmlKnob = (XmlKnob)findKnob(c));
         if (c == SecurityKnob.class)
-            return securityKnob != null ? securityKnob : (securityKnob = (SecurityKnob)findKnob(c));
+            return securityKnob != null ? (T)securityKnob : (T)(securityKnob = (SecurityKnob)findKnob(c));
         if (c == SoapKnob.class)
-            return soapKnob != null ? soapKnob : (soapKnob = (SoapKnob)findKnob(c));
+            return soapKnob != null ? (T)soapKnob : (T)(soapKnob = (SoapKnob)findKnob(c));
 
-        return findKnob(c);
+        return (T)findKnob(c);
     }
 
     private MessageKnob findKnob(Class c) {
@@ -597,9 +599,9 @@ public final class Message {
      * be invalid (i.e. the document may have mutated out from under the cache)
      */
     void invalidateCaches() {
-        TarariKnob tk = (TarariKnob)getKnob(TarariKnob.class);
+        TarariKnob tk = getKnob(TarariKnob.class);
         if (tk != null) tk.close();
-        SoapKnob sk = (SoapKnob) getKnob(SoapKnob.class);
+        SoapKnob sk = getKnob(SoapKnob.class);
         if (sk != null) sk.invalidate();
     }
 }

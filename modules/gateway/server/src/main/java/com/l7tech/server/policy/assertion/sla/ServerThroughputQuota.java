@@ -15,7 +15,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.sla.CounterManager;
 import com.l7tech.server.sla.CounterIDManager;
@@ -29,7 +28,7 @@ import java.util.logging.Logger;
  *
  * @author flascelles@layer7-tech.com
  */
-public class ServerThroughputQuota extends AbstractServerAssertion implements ServerAssertion {
+public class ServerThroughputQuota extends AbstractServerAssertion<ThroughputQuota> {
     private ThroughputQuota assertion;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
@@ -55,10 +54,11 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
         maxVariable = assertion.maxVariable();
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         context.setVariable(idVariable, assertion.getCounterName());
         context.setVariable(periodVariable, TIME_UNITS[assertion.getTimeUnit() - 1]);
-        User user = context.getLastAuthenticatedUser();
+        User user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
         if (user != null) {
             context.setVariable(userVariable, user.getName());
         } else {
@@ -82,7 +82,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
         boolean requiresIncrement = !alreadyIncrementedInThisContext(context);
         long counterid = getCounterId(context);
         long now = System.currentTimeMillis();
-        long val = -1;
+        long val;
         CounterManager counter = (CounterManager)applicationContext.getBean("counterManager");
         if (requiresIncrement) {
             try {
@@ -97,8 +97,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
             } catch (CounterManager.LimitAlreadyReachedException e) {
                 String msg = "throughput quota limit is already reached.";
                 logger.info(msg);
-                auditor.logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_ALREADY_MET,
-                                    new String[] {assertion.getCounterName()});
+                auditor.logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_ALREADY_MET, assertion.getCounterName());
                 return AssertionStatus.FALSIFIED;
             } finally {
                 // no sync issue here: this flag array belongs to the context which lives inside one thread only
@@ -115,8 +114,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
                 String limit = "max " + assertion.getQuota() + " per " + TIME_UNITS[assertion.getTimeUnit()-1];
                 String msg = "the quota " + assertion.getCounterName() + " [" + limit +
                              "] was exceeded " + "(current value is " + val + ")";
-                auditor.logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED,
-                                    new String[] {assertion.getCounterName(), limit, Long.toString(val)});
+                auditor.logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED, assertion.getCounterName(), limit, Long.toString(val));
                 logger.info(msg);
                 return AssertionStatus.FALSIFIED;
             }
@@ -143,7 +141,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
         boolean requiresIncrement = !alreadyIncrementedInThisContext(context);
         long counterid = getCounterId(context);
         long now = System.currentTimeMillis();
-        long val = -1;
+        long val;
         CounterManager counter = (CounterManager)applicationContext.getBean("counterManager");
         if (requiresIncrement) {
             val = counter.incrementAndReturnValue(counterid, now, assertion.getTimeUnit());
@@ -158,8 +156,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
             return AssertionStatus.NONE;
         } else {
             String limit = "max " + assertion.getQuota() + " per " + TIME_UNITS[assertion.getTimeUnit()-1];
-            auditor.logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED,
-                                new String[] {assertion.getCounterName(), limit, Long.toString(val)});
+            auditor.logAndAudit(AssertionMessages.THROUGHPUT_QUOTA_EXCEEDED, assertion.getCounterName(), limit, Long.toString(val));
             return AssertionStatus.FALSIFIED;
         }
     }
@@ -169,7 +166,7 @@ public class ServerThroughputQuota extends AbstractServerAssertion implements Se
         if (assertion.isGlobal()) {
             logger.finest("checking counter against null user");
         } else {
-            user = context.getLastAuthenticatedUser();
+            user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
             logger.finest("checking counter against user " + user);
         }
 

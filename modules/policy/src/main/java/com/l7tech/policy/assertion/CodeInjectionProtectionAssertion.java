@@ -13,7 +13,7 @@ package com.l7tech.policy.assertion;
  * @author rmak
  * @since SecureSpan 3.7
  */
-public class CodeInjectionProtectionAssertion extends Assertion {
+public class CodeInjectionProtectionAssertion extends MessageTargetableAssertion {
 
     /** Whether to apply protections to request URL. */
     private boolean _includeRequestUrl;
@@ -26,6 +26,10 @@ public class CodeInjectionProtectionAssertion extends Assertion {
 
     /** Protection types to apply. Replaces previous _protection since 4.3. */
     private CodeInjectionProtectionType[] _protections = new CodeInjectionProtectionType[0];
+
+    public CodeInjectionProtectionAssertion() {
+        super(null);
+    }
 
     public boolean isIncludeRequestUrl() {
         return _includeRequestUrl;
@@ -70,5 +74,31 @@ public class CodeInjectionProtectionAssertion extends Assertion {
         if (protections == null)
             throw new IllegalArgumentException("protections array must not be null");
         _protections = protections;
+    }
+
+    @Override
+    public TargetMessageType getTarget() {
+        TargetMessageType target = super.getTarget();
+
+        // If not configured then use the values that were available before
+        // this assertion was message targetable.
+        if ( target == null ) {
+            target = _includeResponseBody ?
+                    TargetMessageType.RESPONSE :
+                    TargetMessageType.REQUEST;
+        }
+        return target;
+    }
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+        meta.put(AssertionMetadata.SHORT_NAME, "Code Injection Protection");
+        meta.put(AssertionMetadata.LONG_NAME, "Code Injection Protection");
+        meta.put(AssertionMetadata.DESCRIPTION, "Provides basic threat protection against attacks on web applications by blocking malicious code injection.");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/RedYellowShield16.gif");
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.CodeInjectionProtectionAssertionDialog");
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        return meta;
     }
 }

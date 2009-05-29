@@ -41,6 +41,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
      * 
      * @return true if leaf, false otherwise
      */
+    @Override
     public boolean isLeaf() {
         return false;
     }
@@ -48,6 +49,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
     /**
      * Returns true if the receiver allows children.
      */
+    @Override
     public boolean getAllowsChildren() {
         return true;
     }
@@ -55,6 +57,8 @@ public class IdentitiesRootNode extends AbstractTreeNode {
     /**
      * subclasses override this method
      */
+    @SuppressWarnings({"unchecked"})
+    @Override
     protected void doLoadChildren() {
         IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
         List nodeList = new ArrayList();
@@ -62,7 +66,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
           getTreeNodeEnumeration(new EntitiesEnumeration(new ProviderEntitiesCollection(admin)));
         nodeList.addAll(Collections.list(e));
 
-        AbstractTreeNode[] nodes = (AbstractTreeNode[])nodeList.toArray(new AbstractTreeNode[]{});
+        AbstractTreeNode[] nodes = (AbstractTreeNode[])nodeList.toArray(new AbstractTreeNode[nodeList.size()]);
 
         children = null;
         int i = 0;
@@ -78,6 +82,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
      *
      * @return always true
      */
+    @Override
     public boolean canRefresh() {
         return true;
     }
@@ -91,6 +96,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
      *
      * @return actions appropriate to the node
      */
+    @Override
     public Action[] getActions() {
         return new Action[]{
             new NewFederatedIdentityProviderAction(this),
@@ -103,6 +109,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
     /**
      * @return the root name
      */
+    @Override
     public String getName() {
         return label;
     }
@@ -112,6 +119,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
      * 
      * @param open for nodes that can be opened, can have children
      */
+    @Override
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/identity.png";
     }

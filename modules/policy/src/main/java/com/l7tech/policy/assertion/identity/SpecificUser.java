@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
+import com.l7tech.policy.assertion.IdentityTarget;
 
 /**
  * Asserts that the requester is a particular User.
@@ -24,12 +25,12 @@ public class SpecificUser extends IdentityAssertion {
 
     /**
      * Constructs a new SpecificUser assertion. Either the userlogin or userUid must be non-null.
-     * @param providerId the oid of the {@link com.l7tech.identity.IdentityProviderConfig} of the
-     * {@link com.l7tech.identity.IdentityProvider} to which the specific user belongs
-     * @param userLogin the login of the {@link com.l7tech.identity.User} mentioned by this assertion.
+     * @param providerId the oid of the {@code com.l7tech.identity.IdentityProviderConfig} of the
+     * {@code com.l7tech.identity.IdentityProvider} to which the specific user belongs
+     * @param userLogin the login of the {@code com.l7tech.identity.User} mentioned by this assertion.
      * May be null.
-     * @param userUid the unique identifier (DN for an {@link com.l7tech.identity.ldap.LdapUser} or
-     * oid for a {@link com.l7tech.identity.PersistentUser}). May be null.
+     * @param userUid the unique identifier (DN for an {@code com.l7tech.identity.ldap.LdapUser} or
+     * oid for a {@code com.l7tech.identity.PersistentUser}). May be null.
      */
     public SpecificUser(long providerId, String userLogin, String userUid, String userName) {
         super(providerId);
@@ -103,6 +104,11 @@ public class SpecificUser extends IdentityAssertion {
         if (idtomatch == null || idtomatch.trim().length() < 1)
             idtomatch = getUserUid();
         return idtomatch;
+    }
+
+    @Override
+    public IdentityTarget getIdentityTarget() {
+        return new IdentityTarget(IdentityTarget.TargetIdentityType.USER, getIdentityProviderOid(), getUserUid(), loggingIdentity());
     }
 
     @Override

@@ -13,6 +13,7 @@ import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.message.Message;
 import com.l7tech.message.ProcessingContext;
 import com.l7tech.message.SecurityKnob;
+import com.l7tech.message.CredentialContext;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
@@ -71,7 +72,7 @@ import java.util.logging.Logger;
  * This class is not intended to be used across multiple threads (nor would it make sense if it were).
  */
 @SuppressWarnings({"JavaDoc"})
-public class PolicyApplicationContext extends ProcessingContext {
+public class PolicyApplicationContext extends ProcessingContext<CredentialContext> {
 
     private static final Logger logger = Logger.getLogger(PolicyApplicationContext.class.getName());
     private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
@@ -166,6 +167,11 @@ public class PolicyApplicationContext extends ProcessingContext {
         this.policyAttachmentKey = policyAttachmentKey;
     }
 
+    @Override
+    protected CredentialContext buildContext() {
+        return new CredentialContext();
+    }
+
     private URL makeFakeOriginalUrl() {
         URL origUrl;
         try {
@@ -185,7 +191,7 @@ public class PolicyApplicationContext extends ProcessingContext {
      * @param requestCredentials the credentials that arrived with the original request.
      */
     public void setRequestCredentials(LoginCredentials requestCredentials) {
-        addCredentials(requestCredentials);
+        getDefaultAuthenticationContext().addCredentials(requestCredentials);
         this.requestCredentials = requestCredentials;
     }
 
@@ -444,23 +450,13 @@ public class PolicyApplicationContext extends ProcessingContext {
         if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null) {
             pw = ssg.getRuntime().getCredentialManager().getCredentials(trusted);
             if (pw != null)
-                addCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
+                getDefaultAuthenticationContext().addCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
         }
         return pw;
     }
 
-    /**
-     * Get the login credentials.  Should not be used by Agent code.
-     *
-     * @deprecated Agent code should use getCredentialsForTrustedSsg() or getFederatedCredentials() instead.
-     */
-    @Override
-    public LoginCredentials getLastCredentials() {
-        throw new UnsupportedOperationException();
-    }
-
     private PasswordAuthentication getPasswordAuthentication() {
-        LoginCredentials lc = super.getLastCredentials();
+        LoginCredentials lc = super.getDefaultAuthenticationContext().getLastCredentials();
         if (lc == null) return null;
         return new PasswordAuthentication(lc.getLogin(), lc.getCredentials());
     }
@@ -474,7 +470,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     public PasswordAuthentication getNewCredentials() throws OperationCanceledException, HttpChallengeRequiredException {
         PasswordAuthentication pw = ssg.getRuntime().getCredentialManager().getNewCredentials(ssg, true);
         if (pw != null)
-            addCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
+            getDefaultAuthenticationContext().addCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
         return pw;
     }
 
@@ -498,7 +494,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null) {
             pw = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
             if (pw != null)
-                addCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
+                getDefaultAuthenticationContext().addCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
         }
         return pw;
     }
@@ -838,7 +834,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         Object username = null;
 
         // Try a separate username from the client first
-        SecurityKnob sk = (SecurityKnob)getRequest().getKnob(SecurityKnob.class);
+        SecurityKnob sk = getRequest().getKnob(SecurityKnob.class);
         if (sk != null) {
             List<SecurityToken> tokens = sk.getAllSecurityTokens();
             if (tokens != null) for (SecurityToken token : tokens) {

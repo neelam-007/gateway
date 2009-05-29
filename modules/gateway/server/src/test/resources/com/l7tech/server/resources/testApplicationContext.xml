@@ -277,17 +277,6 @@
         <constructor-arg ref="policyManager"/>
     </bean>
 
-    <bean id="auditLogListener" class="com.l7tech.server.log.FilteringAuditLogListener">
-        <constructor-arg ref="serverConfig"/>
-        <constructor-arg>
-            <bean class="com.l7tech.server.log.LoggingMessageSink"/>
-        </constructor-arg>
-    </bean>
-
-    <bean id="auditDetailFilter" class="com.l7tech.server.audit.GatewayAuditDetailFilter">
-        <constructor-arg ref="serverConfig"/>
-    </bean>    
-
     <bean id="distributedMessageIdManager" class="com.l7tech.server.StubMessageIdManager"/>
 
     <bean id="messageContextMappingManager" class="com.l7tech.server.mapping.MessageContextMappingManagerStub"/>

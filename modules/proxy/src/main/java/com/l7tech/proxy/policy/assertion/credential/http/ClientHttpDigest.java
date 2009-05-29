@@ -41,7 +41,7 @@ public class ClientHttpDigest extends ClientAssertion {
         PasswordAuthentication pw = context.getCachedCredentialsForTrustedSsg();
         if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1) {
             log.info("HttpDigest: No username/password credentials available for HTTP digest.  Assertion therefore fails.");
-            context.setAuthenticationMissing();
+            context.getDefaultAuthenticationContext().setAuthenticationMissing();
             return AssertionStatus.FAILED;
         }
         context.setDigestAuthRequired(true);

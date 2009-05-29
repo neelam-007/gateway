@@ -59,6 +59,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
 
     private static class MyUser {
         private char[] password;
+        private String certDn;
         private UserBean user;
         private long passwordExpiryTime;
 
@@ -67,10 +68,21 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
             this.password = password;
             this.passwordExpiryTime = passwordExpiryTime;
         }
+
+        private MyUser(UserBean user, String certDn, long passwordExpiryTime) {
+            this.user = user;
+            this.certDn = certDn;
+            this.passwordExpiryTime = passwordExpiryTime;
+        }
     }
 
     public static void addUser(UserBean user, String username, char[] password) {
         MyUser myUser = new MyUser(user, password, user.getPasswordExpiry());
+        usernameMap.put(username, myUser);
+    }
+
+    public static void addUser(UserBean user, String username, String certDn) {
+        MyUser myUser = new MyUser(user, certDn, user.getPasswordExpiry());
         usernameMap.put(username, myUser);
     }
 
@@ -82,8 +94,11 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
     public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
         MyUser mu = usernameMap.get(pc.getLogin());
         if (mu == null) return null;
-        if (Arrays.equals(mu.password, pc.getCredentials())) {
+        if (mu.password != null && pc.getCredentials()!=null && Arrays.equals(mu.password, pc.getCredentials())) {
             return new AuthenticationResult(mu.user);
+        }
+        if (mu.certDn != null && pc.getClientCert()!=null && mu.certDn.equals(pc.getClientCert().getSubjectDN().getName())) {
+            return new AuthenticationResult(mu.user, pc.getClientCert(), false);
         }
         throw new AuthenticationException("Invalid username or password");
     }

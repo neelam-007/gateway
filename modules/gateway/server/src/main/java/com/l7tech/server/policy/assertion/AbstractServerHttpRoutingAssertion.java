@@ -8,7 +8,7 @@ import com.l7tech.common.http.HttpCookie;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.server.audit.Auditor;
-import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import org.springframework.context.ApplicationContext;
 
 import java.net.MalformedURLException;
@@ -51,6 +51,7 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
      *
      * @return The connection timeout in millis
      */
+    @Override
     protected int getConnectionTimeout() {
         Integer timeout = validateTimeout(assertion.getConnectionTimeout());
 
@@ -67,6 +68,7 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
      *
      * @return The timeout in millis
      */
+    @Override
     protected int getTimeout() {
         Integer timeout = validateTimeout(assertion.getTimeout());
 
@@ -134,7 +136,7 @@ public abstract class AbstractServerHttpRoutingAssertion<HRAT extends HttpRoutin
     /**
      *
      */
-    protected void doTaiCredentialChaining(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams, URL url) {
+    protected void doTaiCredentialChaining(AuthenticationContext context, GenericHttpRequestParams routedRequestParams, URL url) {
         String chainId = null;
         if (!context.isAuthenticated()) {
             auditor.logAndAudit(AssertionMessages.HTTPROUTE_TAI_NOT_AUTHENTICATED);

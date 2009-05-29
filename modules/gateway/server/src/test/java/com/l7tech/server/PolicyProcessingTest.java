@@ -18,6 +18,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.service.ServiceCacheStub;
 import com.l7tech.server.tomcat.ResponseKillerValve;
@@ -107,7 +108,13 @@ public class PolicyProcessingTest extends TestCase {
         {"/httpwssheaderpromote", "POLICY_httpwssheaderpromote.xml"},
         {"/attachment", "POLICY_signed_attachment.xml"},
         {"/requestnonxmlok", "POLICY_request_modified_non_xml.xml"},
-        {"/httpdigestauth", "POLICY_twohttpdigestauth.xml"}
+        {"/httpdigestauth", "POLICY_twohttpdigestauth.xml"},
+        {"/x509token", "POLICY_wss_x509credssignedbody.xml"},
+        {"/multiplesignatures", "POLICY_multiplesignatures.xml"},
+        {"/multiplesignaturesnoid", "POLICY_multiplesignature_noidentity.xml"},
+//        {"/wssDecoration1", "POLICY_requestdecoration1.xml"},
+//        {"/wssDecoration2", "POLICY_requestdecoration2.xml"},
+        {"/threatprotections", "POLICY_threatprotections.xml"}
     };
 
     /**
@@ -142,6 +149,7 @@ public class PolicyProcessingTest extends TestCase {
                  WspConstants.setTypeMappingFinder(tmf);
 
                  buildServices();
+                 buildUsers();
 
                  applicationContext = ApplicationContexts.getTestApplicationContext();
                  messageProcessor = (MessageProcessor) applicationContext.getBean("messageProcessor", MessageProcessor.class);
@@ -192,6 +200,16 @@ public class PolicyProcessingTest extends TestCase {
         }
     }
 
+    private static void buildUsers() {
+        UserBean ub1 = new UserBean(9898, "Alice");
+        ub1.setUniqueIdentifier( "4718592" );
+        TestIdentityProvider.addUser(ub1, "Alice", "CN=Alice, OU=OASIS Interop Test Cert, O=OASIS");
+
+        UserBean ub2 = new UserBean(9898, "Bob");
+        ub2.setUniqueIdentifier( "4718593" );
+        TestIdentityProvider.addUser(ub2, "Bob", "CN=Bob, OU=OASIS Interop Test Cert, O=OASIS");
+    }
+
     /**
      * Load a resource from the resource directory.
      */
@@ -214,6 +232,7 @@ public class PolicyProcessingTest extends TestCase {
      *
       * @throws Exception
      */
+    @SuppressWarnings({"unchecked"})
     public void testTwoHttpDigestAuth() throws Exception {
         String requestMessage = new String(loadResource("REQUEST_general.xml"));
 
@@ -227,7 +246,7 @@ public class PolicyProcessingTest extends TestCase {
         DigestSessions digestSession = DigestSessions.getInstance();
         Field nonceInfoField = DigestSessions.class.getDeclaredField("_nonceInfos");
         nonceInfoField.setAccessible(true);
-        Map nonceInfo = (Map) nonceInfoField.get(digestSession);    //grab the field from the digest session
+        Map<String,Object> nonceInfo = (Map<String,Object>) nonceInfoField.get(digestSession);    //grab the field from the digest session
 
         //register the nonce
         nonceInfo.put(nonce, constructor.newInstance(nonce, System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1), 3));
@@ -345,8 +364,8 @@ public class PolicyProcessingTest extends TestCase {
         PasswordAuthentication pa = new PasswordAuthentication(username, "password".toCharArray());
         String authHeader = "Basic " + HexUtils.encodeBase64( (pa.getUserName() + ":" + new String(pa.getPassword())).getBytes("ISO-8859-1") );
         Result result = processMessage("/httpbasic", requestMessage1, "10.0.0.1", 0, null, authHeader);
-        assertTrue("Credential present", !result.context.getCredentials().isEmpty());
-        assertEquals("Username correct", username, result.context.getCredentials().iterator().next().getLogin());
+        assertTrue("Credential present", !result.context.getDefaultAuthenticationContext().getCredentials().isEmpty());
+        assertEquals("Username correct", username, result.context.getDefaultAuthenticationContext().getCredentials().iterator().next().getLogin());
     }
 
     /**
@@ -479,6 +498,100 @@ public class PolicyProcessingTest extends TestCase {
     }
 
     /**
+     * Test multiple request/response signatures
+     */
+    public void testMultipleSignatures() throws Exception {
+        byte[] responseMessage1 = loadResource("REQUEST_multiplesignatures.xml");
+
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        processMessage("/multiplesignatures", new String(loadResource("REQUEST_multiplesignatures.xml")), 0);
+    }
+
+    /**
+     * Test failure with wrong signing identities in request message
+     */
+    public void testMultipleSignaturesWrongIdentitiesRequest() throws Exception {
+        byte[] responseMessage1 = loadResource("REQUEST_multiplesignatures.xml");
+
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        processMessage("/multiplesignatures", new String(loadResource("REQUEST_multiplesignatures2.xml")), 600);
+    }
+
+    /**
+     * Test failure with wrong signing identities in response message
+     */
+    public void testMultipleSignaturesWrongIdentitiesResponse() throws Exception {
+        byte[] responseMessage1 = loadResource("REQUEST_multiplesignatures2.xml");
+
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        processMessage("/multiplesignatures", new String(loadResource("REQUEST_multiplesignatures.xml")), 600);
+    }
+
+    /**
+     * Test policy failure on missing response signatures
+     */
+    public void testMultipleSignaturesMissingResponseSignatures() throws Exception {
+        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/multiplesignatures", new String(loadResource("REQUEST_multiplesignatures.xml")), 600);
+    }
+
+    /**
+     * Test policy failure when there are multiple request signatures and
+     * the identity is not specified for a Require Signed Element assertion.
+     */
+    public void testMultipleSignaturesNoIdentity() throws Exception {
+        processMessage("/multiplesignaturesnoid", new String(loadResource("REQUEST_multiplesignatures.xml")), 600);
+    }
+
+    /**
+     * Test multiple request signatures are rejected by WSS X.509 assertion when not enabled.
+     */
+    public void testMultipleSignaturesRejected() throws Exception {
+        processMessage("/x509token", new String(loadResource("REQUEST_multiplesignatures.xml")), 400);
+    }
+
+// TODO [steve] enable tests when decoration assertion is added
+//
+//    /**
+//     * Test success on applying a signature to the request message using the WssDecoration assertion.
+//     */
+//    public void testDecorationCommitOnRequest() throws Exception {
+//        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+//        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+//        testingHttpClientFactory.setMockHttpClient(mockClient);
+//        processMessage("/wssDecoration1", new String(loadResource("REQUEST_general.xml")), 0);
+//    }
+//
+//    /**
+//     * Test success on adding a signature that endorses an existing signature from the request
+//     */
+//    public void testEndorsingRequest() throws Exception {
+//        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+//        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+//        testingHttpClientFactory.setMockHttpClient(mockClient);
+//        processMessage("/wssDecoration2", new String(loadResource("REQUEST_decoration2.xml")), 0);
+//    }
+
+    /**
+     * Test running threat protections for request, variable and response messages
+     */
+    public void testThreatProtectionsRequestResponseAndMessageTarget() throws Exception {
+        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/threatprotections", new String(loadResource("REQUEST_general.xml")), 0);
+    }
+
+    /**
      *
      */
     private Result processMessage(String uri, String message, int expectedStatus) throws IOException {
@@ -496,11 +609,13 @@ public class PolicyProcessingTest extends TestCase {
         hrequest.setMethod("POST");
         if ( message.indexOf("Content-ID: ") < 0 ) {
             hrequest.setContentType("text/xml; charset=utf8");
+            hrequest.addHeader("Content-Type", "text/xml; charset=utf8");
         } else {
             String boundary = message.substring(2, message.indexOf('\n'));
             String contentType = "multipart/related; type=\"text/xml\"; boundary=\"" + boundary + "\"";
             System.out.println("Set content type to: "+ contentType);
             hrequest.setContentType(contentType);
+            hrequest.addHeader("Content-Type", contentType);
         }
         hrequest.setRemoteAddr(requestIp);
         hrequest.setRequestURI(uri);
@@ -550,7 +665,7 @@ public class PolicyProcessingTest extends TestCase {
                 UserBean user = new UserBean();
                 user.setLogin(contextAuth.getUserName());
                 user.setCleartextPassword(new String(contextAuth.getPassword()));
-                context.addAuthenticationResult(new AuthenticationResult(user));
+                context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(user));
             }
 
             status = messageProcessor.processMessage(context);
@@ -631,6 +746,10 @@ public class PolicyProcessingTest extends TestCase {
                 context.close();
             }
 
+            for ( PolicyEnforcementContext.AssertionResult result : context.getAssertionResults( context.getAuditContext() ) ) {
+                logger.info( "Assertion '" + result.getAssertion() + "', result: " + result.getStatus() );
+            }
+
             assertEquals("Policy status", expectedStatus, status.getNumeric());
         }
 
@@ -648,13 +767,16 @@ public class PolicyProcessingTest extends TestCase {
         ContentTypeHeader ctype = ContentTypeHeader.XML_DEFAULT;
         request.initialize(TestStashManagerFactory.getInstance().createStashManager(), ctype, new ByteArrayInputStream(message.getBytes()) );
         request.attachJmsKnob(new JmsKnob() {
+            @Override
             public boolean isBytesMessage() {
                 return true;
             }
+            @Override
             public Map<String, Object> getJmsMsgPropMap() {
                 //noinspection unchecked
                 return Collections.EMPTY_MAP;
             }
+            @Override
             public String getSoapAction() {
                 return null;
             }

@@ -69,8 +69,8 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
     @SuppressWarnings({ "deprecation" })
     @Deprecated
     public int getDirection() {
-        if (target == TargetMessageType.REQUEST) return APPLY_TO_REQUEST;
-        if (target == TargetMessageType.RESPONSE) return APPLY_TO_RESPONSE;
+        if (getTarget() == TargetMessageType.REQUEST) return APPLY_TO_REQUEST;
+        if (getTarget() == TargetMessageType.RESPONSE) return APPLY_TO_RESPONSE;
         return -1;
     }
 
@@ -85,13 +85,13 @@ public class XslTransformation extends MessageTargetableAssertion implements Use
     public void setDirection(int direction) {
         switch(direction) {
             case APPLY_TO_REQUEST:
-                this.target = TargetMessageType.REQUEST;
+                this.setTarget( TargetMessageType.REQUEST );
                 break;
             case APPLY_TO_RESPONSE:
-                this.target = TargetMessageType.RESPONSE;
+                this.setTarget( TargetMessageType.RESPONSE );
                 break;
             case -1:
-                this.target = TargetMessageType.OTHER;
+                this.setTarget( TargetMessageType.OTHER );
                 break;
         }
     }

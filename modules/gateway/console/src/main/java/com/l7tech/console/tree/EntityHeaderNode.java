@@ -24,8 +24,9 @@ public abstract class EntityHeaderNode<HT extends EntityHeader> extends Abstract
     /**
      * The entity name comparator
      */
-    public static final Comparator NAME_COMPARATOR = new Comparator() {
-        public int compare(Object o1, Object o2) {
+    public static final Comparator<TreeNode> NAME_COMPARATOR = new Comparator<TreeNode>() {
+        @Override
+        public int compare(TreeNode o1, TreeNode o2) {
             if (o1 instanceof EntityHeaderNode && o2 instanceof EntityHeaderNode) {
                 String name1 = ((EntityHeaderNode)o1).getEntityHeader().getName();
                 String name2 = ((EntityHeaderNode)o2).getEntityHeader().getName();
@@ -39,7 +40,8 @@ public abstract class EntityHeaderNode<HT extends EntityHeader> extends Abstract
     /**
      * The entity name comparator
      */
-    public static final Comparator<? super TreeNode> IGNORE_CASE_NAME_COMPARATOR = new Comparator<TreeNode>() {
+    public static final Comparator<TreeNode> IGNORE_CASE_NAME_COMPARATOR = new Comparator<TreeNode>() {
+        @Override
         public int compare(TreeNode o1, TreeNode o2) {
             if (o1 instanceof EntityHeaderNode && o2 instanceof EntityHeaderNode) {
                 String name1 = ((EntityHeaderNode)o1).getEntityHeader().getName();
@@ -62,7 +64,7 @@ public abstract class EntityHeaderNode<HT extends EntityHeader> extends Abstract
         setAllowsChildren(false);
     }
 
-    public EntityHeaderNode(HT e, Comparator c){
+    public EntityHeaderNode(HT e, Comparator<TreeNode> c){
         super(e, c);
         setAllowsChildren(false);
     }
@@ -72,6 +74,7 @@ public abstract class EntityHeaderNode<HT extends EntityHeader> extends Abstract
      *
      * @return true if leaf, false otherwise
      */
+    @Override
     public boolean isLeaf() {
         return true;
     }
@@ -83,6 +86,7 @@ public abstract class EntityHeaderNode<HT extends EntityHeader> extends Abstract
      *
      * @return actions appropriate to the node
      */
+    @Override
     public Action[] getActions() {
         final DeleteEntityAction deleteAction = new DeleteEntityAction(this, config);
         deleteAction.setEnabled(canDelete());
@@ -96,6 +100,7 @@ public abstract class EntityHeaderNode<HT extends EntityHeader> extends Abstract
      *
      * @return true if the node can be deleted, false otherwise
      */
+    @Override
     public boolean canDelete() {
         return super.canDelete();
     }
@@ -105,6 +110,7 @@ public abstract class EntityHeaderNode<HT extends EntityHeader> extends Abstract
      *
      * @return the <code>EntityHeader</code>
      */
+    @SuppressWarnings({"unchecked"})
     public HT getEntityHeader() {
         return (HT)getUserObject();
     }
@@ -132,9 +138,11 @@ public abstract class EntityHeaderNode<HT extends EntityHeader> extends Abstract
     /**
      * subclasses override this method
      */
+    @Override
     protected void doLoadChildren() {
     }
 
+    @Override
     public String getName() {
         return getEntityHeader().getName();
     }
@@ -142,6 +150,7 @@ public abstract class EntityHeaderNode<HT extends EntityHeader> extends Abstract
     /**
      * Override toString
      */
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append(getClass().getName()).append("\n").

@@ -96,6 +96,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         this.needsUpdate = false;
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException {
 
@@ -120,7 +121,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_SAML_SIGNER);
                     return AssertionStatus.FAILED;
                 }
-                doAttachSamlSenderVouches(requestMessage, context.getLastCredentials(), senderVouchesSignerInfo);
+                doAttachSamlSenderVouches(requestMessage, context.getDefaultAuthenticationContext().getLastCredentials(), senderVouchesSignerInfo);
             }
 
             // Get JMS Session
@@ -182,7 +183,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         jmsInboundDest = jmsOutboundRequest.getJMSReplyTo();
 
                     // Enforces rules on propagation of request JMS message properties.
-                    final JmsKnob jmsInboundKnob = (JmsKnob) requestMessage.getKnob(JmsKnob.class);
+                    final JmsKnob jmsInboundKnob = requestMessage.getKnob(JmsKnob.class);
                     Map<String, Object> inboundRequestProps;
                     if ( jmsInboundKnob != null ) {
                         inboundRequestProps = jmsInboundKnob.getJmsMsgPropMap();
@@ -303,12 +304,15 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         }
 
                         context.getResponse().attachJmsKnob(new JmsKnob() {
+                            @Override
                             public boolean isBytesMessage() {
                                 return (jmsResponse instanceof BytesMessage);
                             }
+                            @Override
                             public Map<String, Object> getJmsMsgPropMap() {
                                 return inResJmsMsgProps;
                             }
+                            @Override
                             public String getSoapAction() {
                                 return null;
                             }
@@ -400,7 +404,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             throw new PolicyAssertionException(assertion, msg, e);
         } catch ( Throwable t ) {
             if (ExceptionUtils.causedBy(t, InvalidDestinationException.class)) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound JMS request processing: " + t.getMessage()});
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, "Caught unexpected Throwable in outbound JMS request processing: " + t.getMessage());
             } else {
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[]{"Caught unexpected Throwable in outbound JMS request processing"}, t );
             }
@@ -660,6 +664,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             this.serverJmsRoutingAssertion = serverJmsRoutingAssertion;
         }
 
+        @Override
         public void onApplicationEvent(ApplicationEvent applicationEvent) {
             if (applicationEvent instanceof EntityInvalidationEvent) {
                 EntityInvalidationEvent eie = (EntityInvalidationEvent) applicationEvent;

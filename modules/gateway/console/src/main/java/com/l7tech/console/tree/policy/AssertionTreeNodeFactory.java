@@ -85,8 +85,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(HttpFormPost.class, HttpFormPostPolicyNode.class);
         assertionMap.put(InverseHttpFormPost.class, InverseHttpFormPostPolicyNode.class);
         assertionMap.put(CommentAssertion.class, CommentAssertionPolicyNode.class);
-        assertionMap.put(SqlAttackAssertion.class, SqlAttackAssertionTreeNode.class);
-        assertionMap.put(OversizedTextAssertion.class, OversizedTextAssertionTreeNode.class);
         assertionMap.put(RequestSizeLimit.class, RequestSizeLimitTreeNode.class);
         assertionMap.put(WsiBspAssertion.class, WsiBspAssertionPolicyNode.class);
         assertionMap.put(WsiSamlAssertion.class, WsiSamlAssertionPolicyNode.class);
@@ -94,7 +92,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(Operation.class, OperationTreeNode.class);
         assertionMap.put(SetVariableAssertion.class, SetVariableAssertionPolicyNode.class);
         assertionMap.put(HtmlFormDataAssertion.class, HtmlFormDataAssertionPolicyNode.class);
-        assertionMap.put(CodeInjectionProtectionAssertion.class, CodeInjectionProtectionAssertionPolicyNode.class);
         assertionMap.put(Include.class, IncludeAssertionPolicyNode.class);
         assertionMap.put(PreemptiveCompression.class, PreemptiveCompressionPolicyNode.class);
     }

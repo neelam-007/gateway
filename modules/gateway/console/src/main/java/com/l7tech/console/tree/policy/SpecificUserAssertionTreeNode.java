@@ -28,7 +28,7 @@ public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode<Spe
      */
     @Override
     public String getName() {
-        return "User: " + getUserName() + " [" + idProviderName() + "]" + getIdentityTagSuffix();
+        return decorateName("User: " + getUserName() + " [" + idProviderName() + "]");
     }
 
     private String getUserName() {

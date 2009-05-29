@@ -772,9 +772,7 @@ public class WssProcessorImpl implements WssProcessor {
         if (timestamp != null) {
             Element timeElement = timestamp.asElement();
             SigningSecurityToken[] signingTokens = processorResult.getSigningTokens(timeElement);
-            if (signingTokens.length == 1) {
-                timestamp.setSigned();
-            } else if (signingTokens.length > 1) {
+            if (signingTokens.length > 1) {
                 throw new IllegalStateException("More then one signing token over Timestamp detected!");
             }
         }
@@ -1657,6 +1655,10 @@ public class WssProcessorImpl implements WssProcessor {
                                 return EmbeddedSamlSignatureToken.this;
                             }
 
+                            public Element getSignatureElement() {
+                                return samlToken.getEmbeddedIssuerSignature();
+                            }
+
                             public Element asElement() {
                                 return samlToken.asElement();
                             }
@@ -1681,18 +1683,7 @@ public class WssProcessorImpl implements WssProcessor {
                 // Add the fake X509SecurityToken that signed the assertion
                 final EmbeddedSamlSignatureToken samlSignatureToken = new EmbeddedSamlSignatureToken();
                 securityTokens.add(samlSignatureToken);
-
-                final SignedElement signedElement = new SignedElement() {
-                    public SigningSecurityToken getSigningSecurityToken() {
-                        return samlSignatureToken;
-                    }
-
-                    public Element asElement() {
-                        return securityTokenElement;
-                    }
-                };
-
-                elementsThatWereSigned.add(signedElement);
+                elementsThatWereSigned.addAll(Arrays.asList(samlSignatureToken.getSignedElements()));
             }
 
             // Add the assertion itself
@@ -1898,7 +1889,7 @@ public class WssProcessorImpl implements WssProcessor {
                     elementCovered = targetElement;
                 }
                 // make reference to this element
-                final SignedElement signedElement = new SignedElementImpl(signingSecurityToken, elementCovered);
+                final SignedElement signedElement = new SignedElementImpl(signingSecurityToken, elementCovered, sigElement);
                 elementsThatWereSigned.add(signedElement);
                 signingSecurityToken.addSignedElement(signedElement);
             } else {
@@ -1978,23 +1969,17 @@ public class WssProcessorImpl implements WssProcessor {
         public com.l7tech.security.xml.processor.WssTimestampDate getExpires() {
             return expiresTimestampDate;
         }
-
-        public boolean isSigned() {
-            return signed;
-        }
-
-        void setSigned() {
-            signed = true;
-        }
     }
 
     private static class SignedElementImpl implements SignedElement {
         private final SigningSecurityToken signingToken;
         private final Element element;
+        private final Element signatureElement;
 
-        public SignedElementImpl(SigningSecurityToken signingToken, Element element) {
+        public SignedElementImpl(SigningSecurityToken signingToken, Element element, Element signatureElement) {
             this.signingToken = signingToken;
             this.element = element;
+            this.signatureElement = signatureElement;
         }
 
         public SigningSecurityToken getSigningSecurityToken() {
@@ -2003,6 +1988,10 @@ public class WssProcessorImpl implements WssProcessor {
 
         public Element asElement() {
             return element;
+        }
+
+        public Element getSignatureElement() {
+            return signatureElement;
         }
     }
 

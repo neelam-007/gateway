@@ -27,22 +27,24 @@ public class ServerRequestWssConfidentiality extends ServerRequestWssOperation<R
         super(logger, data, springContext);
     }
 
+    @Override
     protected String getPastTenseOperationName() {
         return "encrypted";
     }
 
+    @Override
     protected ParsedElement[] getElementsFoundByProcessor(ProcessorResult wssResults) {
         if (wssResults == null) return new ParsedElement[0];
         EncryptedElement[] elementsThatWereEncrypted = wssResults.getElementsThatWereEncrypted();
         if (elementsThatWereEncrypted.length == 0) {
             return elementsThatWereEncrypted;
         }
-        RequestWssConfidentiality rwss = (RequestWssConfidentiality)data;
+        RequestWssConfidentiality rwss = assertion;
         List<String> algList = rwss.getXEncAlgorithmList();
         if (algList == null) {
             algList = Collections.singletonList(rwss.getXEncAlgorithm());
         }
-        Collection elementsToReturn = new ArrayList();
+        Collection<ParsedElement> elementsToReturn = new ArrayList<ParsedElement>();
         for (int i = elementsThatWereEncrypted.length - 1; i >= 0; i--) {
             EncryptedElement encryptedElement = elementsThatWereEncrypted[i];
 
@@ -50,9 +52,10 @@ public class ServerRequestWssConfidentiality extends ServerRequestWssOperation<R
                 elementsToReturn.add(encryptedElement);
             }
         }
-        return (ParsedElement[])elementsToReturn.toArray(new ParsedElement[] {});
+        return elementsToReturn.toArray(new ParsedElement[elementsToReturn.size()]);
     }
 
+    @Override
     protected boolean isAllowIfEmpty() {
         return true;
     }

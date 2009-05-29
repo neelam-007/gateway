@@ -82,6 +82,8 @@ public abstract class SamlAssertion extends X509SigningSecurityTokenImpl impleme
      */
     public abstract void setAttestingEntity(X509Certificate attestingEntity);
 
+    public abstract Element getEmbeddedIssuerSignature();
+
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

@@ -17,6 +17,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
@@ -36,19 +37,17 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Aug 4, 2004<br/>
  */
-public class ServerSecureConversation extends AbstractServerAssertion implements ServerAssertion {
+public class ServerSecureConversation extends AbstractServerAssertion<SecureConversation> {
     private final Auditor auditor;
-    private final SecureConversation assertion;
 
     public ServerSecureConversation(SecureConversation assertion, ApplicationContext springContext) {
         super(assertion);
-        this.assertion = assertion;
         // nothing to remember from the passed assertion
         auditor = new Auditor(this, springContext, logger);
     }
 
     private String getIncomingURL(PolicyEnforcementContext context) {
-        HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+        HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
         if (hrk == null) {
             logger.warning("cannot generate incoming URL");
             return "";
@@ -56,6 +55,7 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
         return hrk.getQueryString() == null ? hrk.getRequestUrl() : hrk.getRequestUrl() + "?" + hrk.getQueryString();
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (!SecurityHeaderAddressableSupport.isLocalRecipient(assertion)) {
             auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
@@ -82,10 +82,9 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
         }
 
         XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
-        for (int i = 0; i < tokens.length; i++) {
-            XmlSecurityToken token = tokens[i];
+        for (XmlSecurityToken token : tokens) {
             if (token instanceof SecurityContextToken) {
-                SecurityContextToken secConTok = (SecurityContextToken)token;
+                SecurityContextToken secConTok = (SecurityContextToken) token;
                 if (!secConTok.isPossessionProved()) {
                     auditor.logAndAudit(AssertionMessages.SC_NO_PROOF_OF_POSSESSION);
                     continue;
@@ -103,10 +102,11 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
                     return AssertionStatus.AUTH_FAILED;
                 }
                 User authenticatedUser = session.getUsedBy();
-                context.addAuthenticationResult(new AuthenticationResult(authenticatedUser, session.getCredentials().getClientCert(), false));
-                context.addCredentials(session.getCredentials());
+                AuthenticationContext authContext = context.getAuthenticationContext(context.getRequest());
+                authContext.addAuthenticationResult(new AuthenticationResult(authenticatedUser, session.getCredentials().getClientCert(), false));
+                authContext.addCredentials(session.getCredentials());
                 context.addDeferredAssertion(this, deferredSecureConversationResponseDecoration(session));
-                auditor.logAndAudit(AssertionMessages.SC_SESSION_FOR_USER, new String[] {authenticatedUser.getLogin()});
+                auditor.logAndAudit(AssertionMessages.SC_SESSION_FOR_USER, authenticatedUser.getLogin());
                 return AssertionStatus.NONE;
             }
         }
@@ -117,7 +117,8 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
     }
 
     private ServerAssertion deferredSecureConversationResponseDecoration(final SecureConversationSession session) {
-        return new AbstractServerAssertion(assertion) {
+        return new AbstractServerAssertion<SecureConversation>(assertion) {
+            @Override
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
                 DecorationRequirements wssReq;
 
@@ -133,12 +134,15 @@ public class ServerSecureConversation extends AbstractServerAssertion implements
                 }
                 wssReq.setSignTimestamp();
                 wssReq.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
+                    @Override
                     public String getId() {
                         return session.getIdentifier();
                     }
+                    @Override
                     public byte[] getSecretKey() {
                         return session.getSharedSecret();
                     }
+                    @Override
                     public String getSCNamespace() {
                         return session.getSecConvNamespaceUsed();
                     }

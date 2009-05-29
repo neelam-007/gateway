@@ -54,7 +54,6 @@ import java.util.logging.Logger;
  */
 public class ServerSchemaValidation
         extends AbstractServerAssertion<SchemaValidation>
-        implements ServerAssertion
 {
     private static final Logger logger = Logger.getLogger(ServerSchemaValidation.class.getName());
 

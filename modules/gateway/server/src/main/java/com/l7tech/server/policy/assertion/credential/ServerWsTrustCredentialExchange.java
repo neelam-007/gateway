@@ -86,7 +86,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
             final X509TrustManager trustManager = (X509TrustManager)springContext.getBean("trustManager");
             hostnameVerifier = (HostnameVerifier)springContext.getBean("hostnameVerifier", HostnameVerifier.class);            
             final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
-                                                   HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
+                                                   HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
             sslContext.init(null, new TrustManager[]{trustManager}, null);
 
@@ -97,13 +97,14 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
         }
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        XmlKnob requestXml = (XmlKnob)context.getRequest().getKnob(XmlKnob.class);
+        XmlKnob requestXml = context.getRequest().getKnob(XmlKnob.class);
         if (requestXml == null) {
             auditor.logAndAudit(AssertionMessages.WSTRUST_NON_XML_MESSAGE);
             return AssertionStatus.FAILED;
         }
-        SecurityKnob requestSec = (SecurityKnob)context.getRequest().getKnob(SecurityKnob.class);
+        SecurityKnob requestSec = context.getRequest().getKnob(SecurityKnob.class);
 
         // Try to get credentials from WSS processor results
         XmlSecurityToken originalToken = null;
@@ -112,8 +113,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
             ProcessorResult wssProcResult = requestSec.getProcessorResult();
             if (wssProcResult != null) {
                 XmlSecurityToken[] tokens = wssProcResult.getXmlSecurityTokens();
-                for (int i = 0; i < tokens.length; i++) {
-                    XmlSecurityToken token = tokens[i];
+                for (XmlSecurityToken token : tokens) {
                     if (token instanceof SamlAssertion || token instanceof UsernameToken) {
                         if (originalToken == null) {
                             originalToken = token;
@@ -129,7 +129,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
 
         // Try to get non-WSS credentials
         if (originalToken == null) {
-            LoginCredentials creds = context.getLastCredentials();
+            LoginCredentials creds = context.getAuthenticationContext(context.getRequest()).getLastCredentials();
             if (creds != null) {
                 Object payload = creds.getPayload();
                 if (payload instanceof XmlSecurityToken) {
@@ -148,13 +148,12 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
         SecurityToken secTok = super.getCachedSecurityToken(context.getCache());
 
         try {
-            boolean fetched = true;
-            Object rstrObj = null;
+            Object rstrObj;
 
             if(secTok==null) {
                 // Create RST
-                Document rstDoc = null;
-                GenericHttpRequestParams params = null;
+                Document rstDoc;
+                GenericHttpRequestParams params;
                 WsTrustConfig wstConfig = WsTrustConfigFactory.getDefaultWsTrustConfig();
                 TokenServiceClient tokenServiceClient = new TokenServiceClient(wstConfig);
                 rstDoc = tokenServiceClient.createRequestSecurityTokenMessage(null,
@@ -182,7 +181,6 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
                 rstrObj = tokenServiceClient.parseUnsignedRequestSecurityTokenResponse(rstrDoc);
             }
             else {
-                fetched = false;
                 rstrObj = secTok;
             }
 
@@ -210,7 +208,7 @@ public class ServerWsTrustCredentialExchange extends AbstractServerCachedSecurit
             if (rstrObj instanceof SamlAssertion) {
                 SamlAssertion samlAssertion = (SamlAssertion) rstrObj;
                 setCachedSecurityToken(context.getCache(), samlAssertion, getSamlAssertionExpiry(samlAssertion));
-                context.addCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, assertion.getClass()));
+                context.getAuthenticationContext(context.getRequest()).addCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, assertion.getClass()));
                 decoReq.setSenderSamlToken(samlAssertion, false);
             } else if (rstrObj instanceof UsernameToken) {
                 UsernameToken ut = (UsernameToken) rstrObj;

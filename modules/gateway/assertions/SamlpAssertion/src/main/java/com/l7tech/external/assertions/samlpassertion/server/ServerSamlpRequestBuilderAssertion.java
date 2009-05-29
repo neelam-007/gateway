@@ -17,6 +17,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
@@ -190,8 +191,8 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
      * @throws SamlpAssertionException when unable to obtain the NameIdentifier value(s)
      */
     private void setResolvers(final PolicyEnforcementContext context, final BuilderContext bContext ) throws SamlpAssertionException {
-
-        final String[] nameOverrides = getNameIdentifier(context, bContext);
+        final AuthenticationContext authContext = context.getDefaultAuthenticationContext();
+        final String[] nameOverrides = getNameIdentifier(authContext, bContext);
 
         bContext.nameResolver = new NameIdentifierResolver(assertion) {
                 @Override
@@ -209,11 +210,11 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
                 }
             };
 
-        if (context.getLastCredentials() != null) {
+        if (authContext.getLastCredentials() != null) {
             bContext.clientCertResolver = new MessageValueResolver<X509Certificate>(assertion) {
                 @Override
                 protected void parse() {
-                    this.value = context.getLastCredentials().getClientCert();
+                    this.value = authContext.getLastCredentials().getClientCert();
                 }
             };
         } else if (SamlpRequestBuilderAssertion.HOK_URIS.contains(assertion.getSubjectConfirmationMethodUri())) {
@@ -248,8 +249,8 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
 
                 @Override
                 protected void parse() {
-                    if (context.getLastCredentials() != null) {
-                        this.value = getAuthMethod(context.getLastCredentials().getCredentialSourceAssertion());
+                    if (authContext.getLastCredentials() != null) {
+                        this.value = getAuthMethod(authContext.getLastCredentials().getCredentialSourceAssertion());
                     } else {
                         this.value = getAuthMethod(null);
                     }
@@ -493,7 +494,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
      * @return String array of 2 elements: [0] is the nameValue; and [1] is the nameFormat
      * @throws SamlpAssertionException if the "FROM_USER" property is chosen and no user Auth is found in the ctx
      */
-    private String[] getNameIdentifier( final PolicyEnforcementContext ctx, final BuilderContext bContext )
+    private String[] getNameIdentifier( final AuthenticationContext ctx, final BuilderContext bContext )
         throws SamlpAssertionException
     {
         String nameValue;

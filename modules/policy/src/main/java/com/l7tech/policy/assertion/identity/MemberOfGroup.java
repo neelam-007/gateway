@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
+import com.l7tech.policy.assertion.IdentityTarget;
 
 /**
  * Asserts that the requestor is a member of a particular group.
@@ -78,6 +79,11 @@ public class MemberOfGroup extends IdentityAssertion {
     @Override
     public String loggingIdentity() {
         return getGroupName();
+    }
+
+    @Override
+    public IdentityTarget getIdentityTarget() {
+        return new IdentityTarget(IdentityTarget.TargetIdentityType.GROUP, getIdentityProviderOid(), getGroupId(), getGroupName());
     }
 
     @Override

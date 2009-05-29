@@ -41,6 +41,7 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
         this.variablesUsed = assertion.getVariablesUsed();
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         List<MessageContextMapping> mappings = new ArrayList<MessageContextMapping>(5);
         for (MessageContextMapping mapping: assertion.getMappings()) {
@@ -130,10 +131,10 @@ public class ServerMessageContextAssertion extends AbstractServerAssertion<Messa
         MessageContextMapping.MappingType mappingType = checkedMapping.getMappingType();
         if (mappingType == MessageContextMapping.MappingType.IP_ADDRESS) {
             Message request = context.getRequest();
-            TcpKnob reqTcp = (TcpKnob)request.getKnob(TcpKnob.class);
+            TcpKnob reqTcp = request.getKnob(TcpKnob.class);
             value = (reqTcp != null)? reqTcp.getRemoteAddress() : null;
         } else if (mappingType == MessageContextMapping.MappingType.AUTH_USER) {
-            User user = context.getLastAuthenticatedUser();
+            User user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
             value = (user != null)? user.getName() : null;
         } else {
             // Check if the varaibles are set.

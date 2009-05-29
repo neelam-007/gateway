@@ -1,14 +1,12 @@
 package com.l7tech.external.assertions.certificateattributes.server;
 
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.external.assertions.certificateattributes.CertificateAttributesAssertion;
 import com.l7tech.external.assertions.certificateattributes.CertificateAttributesExtractor;
-import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 
@@ -32,13 +30,15 @@ public class ServerCertificateAttributesAssertion extends AbstractServerAssertio
         super(assertion);
     }
 
+    @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
         AssertionStatus status = AssertionStatus.FALSIFIED;
 
-        AuthenticationResult result = context.getLastAuthenticationResult();
+        final AuthenticationContext authContext = context.getDefaultAuthenticationContext();
+        AuthenticationResult result = authContext.getLastAuthenticationResult();
         if ( result != null ) {
             X509Certificate certificate = result.getAuthenticatedCert();
-            
+
             if ( certificate != null ) {
                 CertificateAttributesExtractor cae = new CertificateAttributesExtractor( certificate );
 

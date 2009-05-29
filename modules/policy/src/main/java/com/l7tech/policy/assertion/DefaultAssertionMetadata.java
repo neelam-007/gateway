@@ -118,6 +118,12 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
             }
         });
 
+        put(PALETTE_NODE_SORT_PRIORITY, new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, 0);
+            }
+        });
+
         put(PALETTE_NODE_CLASSNAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, basepack(meta) + ".console." + basename(meta) + "PaletteNode");

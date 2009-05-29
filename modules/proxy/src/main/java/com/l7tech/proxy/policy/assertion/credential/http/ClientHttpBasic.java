@@ -43,7 +43,7 @@ public class ClientHttpBasic extends ClientAssertion {
         PasswordAuthentication pw = context.getCachedCredentialsForTrustedSsg();
         if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1) {
             log.info("HttpBasic: no username/password credentials available.  Assertion therefore fails.");
-            context.setAuthenticationMissing();
+            context.getDefaultAuthenticationContext().setAuthenticationMissing();
             return AssertionStatus.FAILED;
         }
 

@@ -30,7 +30,7 @@ import java.util.List;
 @HardwareAccelerated( type=HardwareAccelerated.Type.SCHEMA )
 public class SchemaValidation extends MessageTargetableAssertion implements UsesResourceInfo, UsesVariables {
     public SchemaValidation() {
-        this.target = null; // Backward compatibility; null implies old post-routing heuristic
+        clearTarget(); // Backward compatibility; null implies old post-routing heuristic
     }
 
     /**

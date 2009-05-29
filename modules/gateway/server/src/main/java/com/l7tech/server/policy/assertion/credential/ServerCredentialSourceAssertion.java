@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
@@ -39,11 +40,13 @@ public abstract class ServerCredentialSourceAssertion<A extends Assertion> exten
      * @throws IOException
      * @throws PolicyAssertionException
      */
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
-        final HashMap authParams = new HashMap();
+        final HashMap<String,String> authParams = new HashMap<String,String>();
         try {
-            LoginCredentials pc = context.getLastCredentials();
+            AuthenticationContext authContext = context.getDefaultAuthenticationContext();
+            LoginCredentials pc = authContext.getLastCredentials();
             // bugzilla #1884
             if (pc != null && !pc.getCredentialSourceAssertion().equals(assertion.getClass())) {
                 pc = null;
@@ -59,7 +62,7 @@ public abstract class ServerCredentialSourceAssertion<A extends Assertion> exten
                 auditor.logAndAudit(AssertionMessages.HTTPCREDS_AUTH_REQUIRED);
                 return AssertionStatus.AUTH_REQUIRED;
             } else {
-                context.addCredentials( pc );
+                authContext.addCredentials( pc );
                 return checkCredentials(pc, findCredentialAuthParams(pc, authParams));
             }
         } catch (CredentialFinderException cfe) {

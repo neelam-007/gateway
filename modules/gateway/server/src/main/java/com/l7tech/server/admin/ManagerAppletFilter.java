@@ -35,6 +35,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.server.event.system.AdminAppletEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.ServerAssertionRegistry;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
@@ -293,6 +294,8 @@ public class ManagerAppletFilter implements Filter {
 
     // If this method returns, an audit detail message has been added.
     private AuthResult authenticate(HttpServletRequest hreq, HttpServletResponse hresp, PolicyEnforcementContext context, Auditor auditor) throws ServletException, IOException {
+        final AuthenticationContext authContext = context.getDefaultAuthenticationContext();
+
         // Check if already auth'd
         if (hreq.getAttribute(ManagerAppletFilter.PROP_USER) != null) {
             // we've already seen this request (dispatched)
@@ -332,7 +335,7 @@ public class ManagerAppletFilter implements Filter {
                                     sessionId.toCharArray(),
                                     CredentialFormat.OPAQUETOKEN,
                                     CookieCredentialSourceAssertion.class);
-                            context.addCredentials(creds);
+                            authContext.addCredentials(creds);
                             hreq.setAttribute(PROP_CREDS, creds);
                             hreq.setAttribute(PROP_USER, user);
                             hreq.setAttribute(ManagerAppletFilter.SESSION_ID_COOKIE_NAME, sessionId);
@@ -352,7 +355,7 @@ public class ManagerAppletFilter implements Filter {
         try {
             final AssertionStatus result = dogfoodPolicy.checkRequest(context);
             if (result == AssertionStatus.NONE) {
-                if ( (username == null || password == null) && (context.isAuthenticationMissing() || context.getLastCredentials() == null) ){
+                if ( (username == null || password == null) && (authContext.isAuthenticationMissing() || authContext.getLastCredentials() == null) ){
                     if (isClasspathResourceRequest(hreq)) {
                         hresp.setStatus(403);
                         hresp.sendError(403);
@@ -378,7 +381,7 @@ public class ManagerAppletFilter implements Filter {
                 } else if ( username != null || password != null ){
                     loginResult = adminLogin.login(username, password);
                 } else {
-                    loginResult = adminLogin.login(context.getLastCredentials().getClientCert());
+                    loginResult = adminLogin.login(authContext.getLastCredentials().getClientCert());
                 }
 
                 final User user = loginResult.getUser();

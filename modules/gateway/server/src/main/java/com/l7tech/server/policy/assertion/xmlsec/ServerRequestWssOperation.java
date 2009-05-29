@@ -7,20 +7,24 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertionBase;
 import com.l7tech.security.token.ParsedElement;
 import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorResultUtil;
+import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
+import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.DomCompiledXpath;
+import com.l7tech.message.Message;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -30,19 +34,24 @@ import java.util.logging.Logger;
 
 /**
  * Code shared between ServerRequestWssConfidentiality and ServerRequestWssIntegrity.
+ *
+ * TODO [steve] auditing for message target
  */
-public abstract class ServerRequestWssOperation<AT extends XpathBasedAssertion> extends AbstractServerAssertion<AT> implements ServerAssertion {
-    private Logger logger;
+public abstract class ServerRequestWssOperation<AT extends XmlSecurityAssertionBase> extends AbstractMessageTargetableServerAssertion<AT> implements ServerAssertion<AT> {
     protected final Auditor auditor;
 
+    private final Logger logger;
+    private final SecurityTokenResolver securityTokenResolver;
     private final DomCompiledXpath compiledXpath;
     private final InvalidXpathException compileFailure;
 
-    protected ServerRequestWssOperation(Logger logger, AT data, ApplicationContext springContext) {
-        super(data);
+    protected ServerRequestWssOperation( final Logger logger,
+                                         final AT data,
+                                         final ApplicationContext context ) {
+        super(data,data);
         this.logger = logger;
-        this.data = data;
-        auditor = new Auditor(this, springContext, logger);
+        this.auditor = new Auditor(this, context, logger);
+        this.securityTokenResolver = (SecurityTokenResolver)context.getBean("securityTokenResolver");
         DomCompiledXpath xp;
         InvalidXpathException fail;
         try {
@@ -58,26 +67,40 @@ public abstract class ServerRequestWssOperation<AT extends XpathBasedAssertion> 
 
     protected DomCompiledXpath getCompiledXpath() throws PolicyAssertionException {
         if (compileFailure != null)
-            throw new PolicyAssertionException(data, compileFailure);
+            throw new PolicyAssertionException(assertion, compileFailure);
         if (compiledXpath == null)
-            throw new PolicyAssertionException(data, "No CompiledXpath"); // can't happen
+            throw new PolicyAssertionException(assertion, "No CompiledXpath"); // can't happen
         return compiledXpath;
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        if (!SecurityHeaderAddressableSupport.isLocalRecipient(data)) {
+    @Override
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if (!SecurityHeaderAddressableSupport.isLocalRecipient(assertion)) {
             auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
             return AssertionStatus.NONE;
         }
 
+        return super.checkRequest( context );
+    }
+
+    @Override
+    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
+                                              final Message message,
+                                              final String messageDescription,
+                                              final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
         ProcessorResult wssResults;
         try {
-            if (!context.getRequest().isSoap()) {
+            if (!message.isSoap()) {
                 auditor.logAndAudit(AssertionMessages.REQUESTWSS_NONSOAP);
 
                 return AssertionStatus.BAD_REQUEST;
             }
-            wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
+
+            if ( isRequest() ) {
+                wssResults = message.getSecurityKnob().getProcessorResult();
+            } else {
+                wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDescription, securityTokenResolver, auditor);
+            }
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
@@ -93,7 +116,7 @@ public abstract class ServerRequestWssOperation<AT extends XpathBasedAssertion> 
         // get the document
         Document soapmsg;
         try {
-            soapmsg = context.getRequest().getXmlKnob().getDocumentReadOnly();
+            soapmsg = message.getXmlKnob().getDocumentReadOnly();
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {"Cannot get payload document."}, e);
             return AssertionStatus.BAD_REQUEST;
@@ -101,7 +124,7 @@ public abstract class ServerRequestWssOperation<AT extends XpathBasedAssertion> 
 
         ParsedElement[] elements = getElementsFoundByProcessor(wssResults);
 
-        if(!elementsFoundByProcessorAreValid(wssResults, elements)) {
+        if(!elementsFoundByProcessorAreValid(context, message, wssResults, elements)) {
             return AssertionStatus.FALSIFIED;
         }
 
@@ -115,13 +138,19 @@ public abstract class ServerRequestWssOperation<AT extends XpathBasedAssertion> 
                                                         elements,
                                                         getPastTenseOperationName());
         } catch (ProcessorException e) {
-            throw new PolicyAssertionException(data, e);
+            throw new PolicyAssertionException(assertion, e);
         }
-        if (result.isFoundButWasntOperatedOn())
+
+        if (!elementsFoundForAssertionAreValid(context, message, wssResults, result.getElements())) {
+            return AssertionStatus.FALSIFIED;
+        }
+
+        if ( isRequest() && result.isFoundButWasntOperatedOn() )
             context.setRequestPolicyViolated();
+
         switch (result.getResultCode()) {
             case ProcessorResultUtil.NO_ERROR:
-                return AssertionStatus.NONE;
+                return onCheckRequestSuccess( context, message, messageDescription );
             case ProcessorResultUtil.FALSIFIED:
                 return AssertionStatus.FALSIFIED;
             default:
@@ -137,7 +166,25 @@ public abstract class ServerRequestWssOperation<AT extends XpathBasedAssertion> 
      * @return true if valid, false to falsify this assertion.
      * @see #getElementsFoundByProcessor(ProcessorResult)
      */
-    protected boolean elementsFoundByProcessorAreValid(ProcessorResult wssResults, ParsedElement[] elements) {
+    protected boolean elementsFoundByProcessorAreValid(PolicyEnforcementContext context,
+                                                       Message message,
+                                                       ProcessorResult wssResults,
+                                                       ParsedElement[] elements) {
+        return true;
+    }
+
+    /**
+     * Check that the ParsedElements that should have been signed for this assertion are valid.
+     *
+     * @param wssResults the processor results
+     * @param elements the parsed elements to check.
+     * @return true if valid, false to falsify this assertion.
+     * @return True if valid, false to falsify this assertion
+     */
+    protected boolean elementsFoundForAssertionAreValid(PolicyEnforcementContext context,
+                                                        Message message,
+                                                        ProcessorResult wssResults,
+                                                        ParsedElement[] elements) {
         return true;
     }
 
@@ -151,11 +198,21 @@ public abstract class ServerRequestWssOperation<AT extends XpathBasedAssertion> 
     protected abstract boolean isAllowIfEmpty();
 
     /**
+     * Override for any additional processing on success. 
+     */
+    protected AssertionStatus onCheckRequestSuccess( PolicyEnforcementContext context, Message message, String messageDesc ) {
+        return AssertionStatus.NONE;
+    }
+
+    /**
      * Given this wssResults, return the list of approved, operated-on elements.
      * @param wssResults the processor results to look at
      * @return either elementsThatWereSigned or elementsThatWereEncrypted
      */
     protected abstract ParsedElement[] getElementsFoundByProcessor(ProcessorResult wssResults);
 
-    protected XpathBasedAssertion data;
+    @Override
+    public Auditor getAuditor() {
+        return auditor;
+    }
 }

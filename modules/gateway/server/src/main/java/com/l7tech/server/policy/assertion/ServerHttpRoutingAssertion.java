@@ -121,7 +121,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             final X509TrustManager trustManager = (X509TrustManager)applicationContext.getBean("routingTrustManager");
             hostnameVerifier = (HostnameVerifier)applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
             sslContext.init(keyManagers, new TrustManager[]{trustManager}, null);
-            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
+            final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
             socketFactory = sslContext.getSocketFactory();
             senderVouchesSignerInfo = signerInfo;
@@ -194,6 +194,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
      * @throws com.l7tech.policy.assertion.PolicyAssertionException
      *          if some error preventing the execution of the PolicyAssertion has occurred.
      */
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
         URL u;
@@ -271,10 +272,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
             routedRequestParams.addExtraHeader(new GenericHttpHeader(HOST, hostValue.toString()));
 
-            HttpRequestKnob httpRequestKnob = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+            HttpRequestKnob httpRequestKnob = context.getRequest().getKnob(HttpRequestKnob.class);
 
             if (assertion.isTaiCredentialChaining()) {
-                doTaiCredentialChaining(context, routedRequestParams, url);
+                doTaiCredentialChaining(context.getDefaultAuthenticationContext(), routedRequestParams, url);
             }
 
             String login = assertion.getLogin();
@@ -305,7 +306,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
 
             if (assertion.isAttachSamlSenderVouches()) {
-                doAttachSamlSenderVouches(requestMessage, context.getLastCredentials(), senderVouchesSignerInfo);
+                doAttachSamlSenderVouches(requestMessage, context.getDefaultAuthenticationContext().getLastCredentials(), senderVouchesSignerInfo);
             } else if (assertion.isPassthroughHttpAuthentication() && httpRequestKnob != null) {
                 String[] authHeaders = httpRequestKnob.getHeaderValues(HttpConstants.HEADER_AUTHORIZATION);
                 boolean passed = false;
@@ -522,6 +523,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     if (routedRequest instanceof RerunnableHttpRequest) {
                         RerunnableHttpRequest rerunnableHttpRequest = (RerunnableHttpRequest) routedRequest;
                         rerunnableHttpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory() {
+                            @Override
                             public InputStream getInputStream() {
                                 try {
                                     InputStream out = reqMime.getEntireMessageBodyAsInputStream();
@@ -558,6 +560,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 routedResponseDestinationIsContextVariable = true;
                 routedResponseDestination = new Message();
                 routedResponseDestination.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
+                    @Override
                     public void addCookie(HttpCookie cookie) {
                         // TODO what to do with the cookie?
                     }
@@ -587,7 +590,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_CHALLENGE);
             }
 
-            HttpResponseKnob httpResponseKnob = (HttpResponseKnob) routedResponseDestination.getKnob(HttpResponseKnob.class);
+            HttpResponseKnob httpResponseKnob = routedResponseDestination.getKnob(HttpResponseKnob.class);
             if (readOk && httpResponseKnob != null) {
                 httpResponseKnob.setStatus(status);
 
@@ -647,6 +650,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 final GenericHttpRequest req = routedRequest;
                 final GenericHttpResponse resp = routedResponse;
                 context.runOnClose(new Runnable() {
+                    @Override
                     public void run() {
                         if (resp != null) resp.close();
                         if (req != null) req.close();
@@ -664,7 +668,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
      * @return a request message object as configured by this assertion
      */
     protected Message getRequestMessage(final PolicyEnforcementContext context) {
-        Message msg;
         if (assertion.getRequestMsgSrc() == null)
             return context.getRequest();
 

@@ -44,15 +44,8 @@ public class MessageContextAssertionPropertiesDialog extends AssertionProperties
     private int updatedRowPosition = 0;
     private boolean ok = false;
 
-    public MessageContextAssertionPropertiesDialog(Frame owner, MessageContextAssertion assertion) {
-        super(owner, resources.getString("mca.properties.dialog.title"), true);
-        this.assertion = assertion;
-        mappings.addAll(Arrays.asList(assertion.getMappings()));
-        initialize();
-    }
-
-    public MessageContextAssertionPropertiesDialog(Dialog owner, MessageContextAssertion assertion) {
-        super(owner, resources.getString("mca.properties.dialog.title"), true);
+    public MessageContextAssertionPropertiesDialog(Window owner, MessageContextAssertion assertion) {
+        super(owner, resources.getString("mca.properties.dialog.title"));
         this.assertion = assertion;
         mappings.addAll(Arrays.asList(assertion.getMappings()));
         initialize();

@@ -8,7 +8,6 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
 import java.util.logging.Logger;
@@ -27,10 +26,10 @@ public class ServerSpecificUser extends ServerIdentityAssertion<SpecificUser> {
      * corresponding to this Assertion's <code>userLogin</code> property.
      *
      * @param authResult the authentication result <code>User</code> to check
-     * @param context
      * @return <code>AssertionStatus.NONE</code> if the <code>User</code> matches.
      */
-    public AssertionStatus checkUser(AuthenticationResult authResult, PolicyEnforcementContext context) {
+    @Override
+    public AssertionStatus checkUser(AuthenticationResult authResult) {
         // The login and the uid can't both be null
         if (requiredLogin == null && requiredUid == null) {
             auditor.logAndAudit(AssertionMessages.SPECIFICUSER_NOLOGIN_NOOID);

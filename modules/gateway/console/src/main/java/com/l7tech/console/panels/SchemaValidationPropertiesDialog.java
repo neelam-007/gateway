@@ -185,9 +185,16 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
         // Set up a fake model for the TMP to avoid mutating the assertion prior to {@link #ok}
         targetMessagePanel.setModel(new MessageTargetableAssertion() {{
-            this.target = schemaValidationAssertion.getTarget();
-            if (target == null) target = inferredTargetMessageType;
-            this.otherTargetMessageVariable = schemaValidationAssertion.getOtherTargetMessageVariable();
+            TargetMessageType targetMessageType = schemaValidationAssertion.getTarget();
+            if ( targetMessageType == null ) {
+                targetMessageType = inferredTargetMessageType;
+            }
+            if ( targetMessageType != null ) {
+                setTarget(targetMessageType);
+            } else {
+                clearTarget();
+            }
+            setOtherTargetMessageVariable(schemaValidationAssertion.getOtherTargetMessageVariable());
         }});
 
         targetMessagePanel.addActionListener(new ActionListener() {

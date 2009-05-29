@@ -119,8 +119,8 @@ public class WhichModuleAssertion extends Assertion implements SetsVariables {
         private JButton ok;
         private boolean confirmed = false;
 
-        public PropDialog(Frame parent, WhichModuleAssertion bean) {
-            super(parent, "Assertion XML", true);
+        public PropDialog(Window parent, WhichModuleAssertion bean) {
+            super(parent, "Assertion XML");
             JPanel panel = new JPanel(new BorderLayout());
             panel.add(new JScrollPane(field), BorderLayout.CENTER);
             panel.add(makeButtons(), BorderLayout.SOUTH);

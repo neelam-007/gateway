@@ -409,7 +409,8 @@ public class GatewayFeatureSets {
             ass(SetVariableAssertion.class),
             ass(Include.class),
             mass("assertion:EchoRouting"),
-            mass("assertion:HardcodedResponse"));
+            mass("assertion:HardcodedResponse"),
+            mass("assertion:CertificateAttributes"));
 
         GatewayFeatureSet threatIps =
         fsr("set:Threats:IPS", "SecureSpan XML IPS threat protection",
@@ -521,7 +522,7 @@ public class GatewayFeatureSets {
             ass(SslAssertion.class),
             srv(SERVICE_WSDLPROXY, "WSDL proxy service")); // TODO omit client cert support from this grant (when it is possible to do so)
 
-            fsp("set:Profile:Firewall", "SecureSpan Firewall",
+        fsp("set:Profile:Firewall", "SecureSpan Firewall",
             "XML firewall with custom assertions.  No BRA, no JMS, no special XML VPN Client support",
             fs(core),
             fs(adminAndEms),

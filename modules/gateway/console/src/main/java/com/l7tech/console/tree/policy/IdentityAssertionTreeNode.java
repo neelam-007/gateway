@@ -1,18 +1,18 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.action.SelectMessageTargetAction;
 import com.l7tech.console.action.SelectIdentityTagAction;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.AssertionUtils;
 
 import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 
 /**
  * An assertion node in an assertion tree that refers to a user or group.
@@ -29,6 +29,10 @@ public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> ex
     public IdentityAssertionTreeNode(AT idass) {
         super(idass);
         assertion = idass;
+    }
+
+    protected String decorateName( final String name ) {
+        return AssertionUtils.decorateName(assertion, name);
     }
 
     protected String idProviderName() {
@@ -56,11 +60,6 @@ public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> ex
         return provName;
     }
 
-    protected String getIdentityTagSuffix() {
-        String idTag = assertion.getIdentityTag();
-        return idTag == null ? "" : " as \"" + idTag + "\"";
-    }
-
     @Override
     public Action[] getActions() {
         List<Action> actions = new ArrayList<Action>( Arrays.asList(super.getActions()) );
@@ -70,6 +69,7 @@ public abstract class IdentityAssertionTreeNode<AT extends IdentityAssertion> ex
             insertPosition = 0;
         }
 
+        actions.add( insertPosition++, new SelectMessageTargetAction(this));
         actions.add( insertPosition, new SelectIdentityTagAction(this));
 
         return actions.toArray(new Action[actions.size()]);

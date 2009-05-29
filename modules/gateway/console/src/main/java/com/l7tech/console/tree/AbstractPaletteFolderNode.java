@@ -12,8 +12,8 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
 
+import javax.swing.tree.TreeNode;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,7 +33,7 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
         this(name, id, null, null);
     }
 
-    protected AbstractPaletteFolderNode(String name, String id, Object object, Comparator c) {
+    protected AbstractPaletteFolderNode(String name, String id, Object object, Comparator<TreeNode> c) {
         super(object, c);
         this.name = name;
         this.id = id;
@@ -42,14 +42,17 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
         logger.fine("PaletteFolderNode ID: " + id);
     }
 
+    @Override
     public boolean getAllowsChildren() {
         return true;
     }
 
+    @Override
     public boolean isLeaf() {
         return false;
     }
 
+    @Override
     public String getName() {
         return this.name;
     }
@@ -57,9 +60,9 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
     /**
      * Insert any modular assertions that belong in this folder.
      *
-     * @param nextIndex the childIndex to use for the first modular assertion inserted by this method.
+     * @param nextIndex the childIndex to use for the first modular assertion inserted by this method (or -1 to insert in order)
      * @return the childIndex to use for the next child inserted.  This will be the incoming nextIndex plus one
-     *         for each modular assertion that was inserted.
+     *         for each modular assertion that was inserted or -1 if using insert order.
      */
     protected int insertMatchingModularAssertions(int nextIndex) {
         AssertionFinder assFinder = TopComponents.getInstance().getAssertionRegistry();
@@ -107,7 +110,7 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
      * Insert a palette node for the specified modular assertion into this folder, if possible.
      *
      * @param ass  the prototype assertion that wants to be inserted.  Must not be null.
-     * @param nextIndex the childIndex to use for this modular assertion.
+     * @param nextIndex the childIndex to use for this modular assertion (or -1 to insert in order)
      * @return the childIndex to use for the next child inserted.  This will have been incremented from nextIndex
      *         if an palette node was added successfully.
      */
@@ -127,16 +130,22 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
             return nextIndex;
         }
 
-        insert(paletteNode, nextIndex++);
+        int insertPosition;
+        if ( nextIndex == -1 ) {
+            insertPosition = this.getInsertPosition( paletteNode );
+        } else {
+            insertPosition = nextIndex++;
+        }
+
+        insert(paletteNode, insertPosition);
         return nextIndex;
     }
 
     protected int insertMatchingCustomAssertions(int index, Category category) {
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
-            Iterator it = cr.getAssertions(category).iterator();
-            while (it.hasNext()) {
-                CustomAssertionHolder a = (CustomAssertionHolder)it.next();
+            for (Object o : cr.getAssertions(category)) {
+                CustomAssertionHolder a = (CustomAssertionHolder) o;
                 insert(new CustomAccessControlNode(a), index++);
             }
         } catch (RuntimeException e1) {
@@ -146,8 +155,9 @@ public abstract class AbstractPaletteFolderNode extends AbstractAssertionPalette
                 logger.log(Level.WARNING, "Unable to retrieve custom assertions", e1);
         } 
         return index;
-    }    
+    }
 
+    @Override
     protected String iconResource(boolean open) {
         if (open) return getOpenIconResource();
         return getClosedIconResource();

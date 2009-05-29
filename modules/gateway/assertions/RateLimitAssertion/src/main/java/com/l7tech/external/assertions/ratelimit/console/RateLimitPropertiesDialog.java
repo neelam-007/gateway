@@ -35,13 +35,8 @@ public class RateLimitPropertiesDialog extends AssertionPropertiesEditorSupport<
     private String expr = "";
 
 
-    public RateLimitPropertiesDialog(Frame owner, RateLimitAssertion rla) throws HeadlessException {
-        super(owner, "Rate Limit Properties", true);
-        initialize(rla);
-    }
-
-    public RateLimitPropertiesDialog(Dialog owner, RateLimitAssertion rla) throws HeadlessException {
-        super(owner, "Rate Limit Properties", true);
+    public RateLimitPropertiesDialog(Window owner, RateLimitAssertion rla) throws HeadlessException {
+        super(owner, "Rate Limit Properties");
         initialize(rla);
     }
 

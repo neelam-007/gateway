@@ -258,10 +258,6 @@ public class PolicyService extends ApplicationObjectSupport {
             logger.info("cannot find target policy from id: " + policyId);
             Document fault;
             try {
-                String soapProtocol = null;
-                if(context.getService() != null) {
-                    soapProtocol = context.getService().getSoapVersion().getProtocol();
-                }
                 fault = SoapFaultUtils.generateSoapFaultDocument(soapVersion,
                                                                  SoapUtil.FC_SERVER,
                                                                  "policy " + policyId + " not found",
@@ -313,7 +309,7 @@ public class PolicyService extends ApplicationObjectSupport {
         Document policyDoc = null;
         if (canSkipMetaPolicyStep || status == AssertionStatus.NONE) {
             try {
-                User user = context.getLastAuthenticatedUser();
+                User user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
                 policyDoc = respondToPolicyDownloadRequest(policyId, user, policyGetter, false);
             } catch (FilteringException e) {
                 response.initialize(exceptionToFault(soapVersion, e));

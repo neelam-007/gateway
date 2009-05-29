@@ -55,8 +55,8 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     private ArrayList<ComboItem> comboStuff = new ArrayList<ComboItem>();
     private InputValidator validator;
 
-    public LDAPQueryPropertiesDialog(Frame owner, LDAPQueryAssertion assertion) throws HeadlessException {
-        super(owner, "LDAP Query Properties", true);
+    public LDAPQueryPropertiesDialog(Window owner, LDAPQueryAssertion assertion) throws HeadlessException {
+        super(owner, "LDAP Query Properties");
         this.assertion = assertion;
         initialize();
     }
@@ -252,12 +252,6 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
 //        wasOKed = true;
 //        dispose();
 //    }
-
-    public LDAPQueryPropertiesDialog(Dialog owner, LDAPQueryAssertion assertion) throws HeadlessException {
-        super(owner, "LDAP Query Properties", true);
-        this.assertion = assertion;
-        initialize();
-    }
 
     public JDialog getDialog() {
         return this;

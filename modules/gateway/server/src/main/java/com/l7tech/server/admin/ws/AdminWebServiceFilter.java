@@ -24,11 +24,11 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.*;
-import com.l7tech.server.DefaultKey;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.system.AdminWebServiceEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -56,7 +56,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.*;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -73,8 +72,6 @@ public class AdminWebServiceFilter implements Filter {
     private AuditContext auditContext;
     private SoapFaultManager soapFaultManager;
     private ServerAssertion adminPolicy;
-    private X509Certificate serverCertificate;
-    private PrivateKey serverPrivateKey;
     private SecurityTokenResolver securityTokenResolver;
     private StashManagerFactory stashManagerFactory;
     private AdminLogin adminLogin;
@@ -93,7 +90,8 @@ public class AdminWebServiceFilter implements Filter {
         }
     }
 
-    public void init(FilterConfig filterConfig) throws ServletException {
+    @Override
+    public void init( final FilterConfig filterConfig ) throws ServletException {
         // Constructs a policy for all admin web services.
         applicationContext = WebApplicationContextUtils.getWebApplicationContext(filterConfig.getServletContext());
         if (applicationContext == null) {
@@ -102,15 +100,6 @@ public class AdminWebServiceFilter implements Filter {
 
         auditContext = (AuditContext)getBean(applicationContext, "auditContext", "audit context", AuditContext.class);
         soapFaultManager = (SoapFaultManager)getBean(applicationContext, "soapFaultManager", "soapFaultManager", SoapFaultManager.class);
-        DefaultKey defaultKey = (DefaultKey)getBean(applicationContext, "defaultKey", "defaultKey", DefaultKey.class);
-        try {
-            serverPrivateKey = defaultKey.getSslInfo().getPrivateKey();
-            serverCertificate = defaultKey.getSslInfo().getCertificate();
-        } catch (UnrecoverableKeyException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
         securityTokenResolver = (SecurityTokenResolver)getBean(applicationContext, "securityTokenResolver", "certificate resolver", SecurityTokenResolver.class);
         stashManagerFactory = (StashManagerFactory) applicationContext.getBean("stashManagerFactory", StashManagerFactory.class);
         adminLogin = (AdminLogin) applicationContext.getBean("adminLogin", AdminLogin.class);
@@ -144,6 +133,7 @@ public class AdminWebServiceFilter implements Filter {
         }
     }
 
+    @Override
     public void doFilter(ServletRequest servletRequest, final ServletResponse servletResponse, final FilterChain filterChain) throws IOException, ServletException {
         final Message response = new Message();
         final Message request = new Message();
@@ -183,6 +173,7 @@ public class AdminWebServiceFilter implements Filter {
         context.setAuditContext(auditContext);
         context.setSoapFaultManager(soapFaultManager);
 
+        final AuthenticationContext authContext = context.getDefaultAuthenticationContext();
         AssertionStatus status = null;
         try {
             request.initialize(stashManagerFactory.createStashManager(), ctype, servletRequest.getInputStream());
@@ -193,11 +184,11 @@ public class AdminWebServiceFilter implements Filter {
             // Get credentials from dogfood policy
             status = adminPolicy.checkRequest(context);
             if (status == AssertionStatus.NONE) {
-                if (context.getLastCredentials() != null) {
+                if (authContext.getLastCredentials() != null) {
                     try {
                         // Try to authenticate using same rules as SSM login
                         // (i.e. must be assigned to a Role with at least one RBAC permission)
-                        final LoginCredentials credentials = context.getLastCredentials();
+                        final LoginCredentials credentials = authContext.getLastCredentials();
                         AdminLoginResult loginResult =
                                 adminLogin.login(credentials.getLogin(), new String(credentials.getCredentials()));
 
@@ -213,6 +204,7 @@ public class AdminWebServiceFilter implements Filter {
             if (status == AssertionStatus.NONE && authenticatedUser != null) {
                 // Pass it along to XFire
                 final HttpServletRequestWrapper wrapper = new HttpServletRequestWrapper(httpServletRequest) {
+                    @Override
                     public ServletInputStream getInputStream() throws IOException {
                         try {
                             final InputStream is = request.getMimeKnob().getEntireMessageBodyAsInputStream();
@@ -221,26 +213,13 @@ public class AdminWebServiceFilter implements Filter {
                             throw new IOException("Couldn't get InputStream"); // Very unlikely
                         }
                     }
-
-                    /**
-                     * @deprecated
-                     */
-                    public boolean isRequestedSessionIdFromUrl() {
-                        return super.isRequestedSessionIdFromUrl();
-                    }
-
-                    /**
-                     * @deprecated
-                     */
-                    public String getRealPath(String string) {
-                        return super.getRealPath(string);
-                    }
                 };
 
                 Set<Principal> principals = new HashSet<Principal>();
                 principals.add(authenticatedUser);
                 Subject subject = new Subject(true, principals, Collections.emptySet(), Collections.emptySet());
                 Subject.doAs(subject, new PrivilegedExceptionAction<Object>() {
+                    @Override
                     public Object run() throws Exception {
                         filterChain.doFilter(wrapper, servletResponse);
                         return null;
@@ -280,7 +259,7 @@ public class AdminWebServiceFilter implements Filter {
             try {
                 String message = "Administration Web Service";
                 if (status != null && status != AssertionStatus.NONE) message += ": " + status.getMessage();
-                User user = getUser(context);
+                User user = getUser(authContext);
                 applicationContext.publishEvent(new AdminWebServiceEvent(this, Level.INFO, servletRequest.getRemoteAddr(), message, user.getProviderId(), getName(user), user.getId()));
             } catch(Exception se) {
                 log.log(Level.WARNING, "Error dispatching event.", se);
@@ -312,7 +291,7 @@ public class AdminWebServiceFilter implements Filter {
         }
     }
 
-    private User getUser(PolicyEnforcementContext context) {
+    private User getUser(AuthenticationContext context) {
         User user = null;
 
         if(context.isAuthenticated()) {
@@ -330,6 +309,7 @@ public class AdminWebServiceFilter implements Filter {
         return user.getName()!=null ? user.getName() : user.getLogin();
     }
 
+    @Override
     public void destroy() {
     }
 }

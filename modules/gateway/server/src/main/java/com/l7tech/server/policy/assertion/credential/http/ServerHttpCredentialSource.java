@@ -23,7 +23,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Logger;
 
-public abstract class ServerHttpCredentialSource<AT extends HttpCredentialSourceAssertion> extends ServerCredentialSourceAssertion<AT> implements ServerAssertion {
+public abstract class ServerHttpCredentialSource<AT extends HttpCredentialSourceAssertion> extends ServerCredentialSourceAssertion<AT> {
     private static final Logger logger = Logger.getLogger(ServerHttpCredentialSource.class.getName());
 
     private final Auditor auditor;

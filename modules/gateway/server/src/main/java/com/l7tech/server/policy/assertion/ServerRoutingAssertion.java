@@ -30,6 +30,7 @@ import com.l7tech.server.event.PostRoutingEvent;
 import com.l7tech.server.event.PreRoutingEvent;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.security.kerberos.KerberosRoutingClient;
 import com.l7tech.server.util.EventChannel;
@@ -56,7 +57,7 @@ import java.util.logging.Logger;
  *
  * @author alex
  */
-public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> extends AbstractServerAssertion<RAT> implements ServerAssertion {
+public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> extends AbstractServerAssertion<RAT> {
     private static final Logger sraLogger = Logger.getLogger(ServerRoutingAssertion.class.getName());
 
     //- PUBLIC
@@ -127,13 +128,13 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
         if (secHeaderHandlingOption == RoutingAssertion.IGNORE_SECURITY_HEADER)
             return;
 
-        final XmlKnob requestXml = (XmlKnob)message.getKnob(XmlKnob.class);
+        final XmlKnob requestXml = message.getKnob(XmlKnob.class);
         if (requestXml == null) {
             logger.finest("skipping this because the message isn't XML");
             return;
         }
 
-        final SecurityKnob requestSec = (SecurityKnob)message.getKnob(SecurityKnob.class);
+        final SecurityKnob requestSec = message.getKnob(SecurityKnob.class);
         if (requestSec == null || requestSec.getProcessorResult() == null) {
             logger.finest("skipping this because no security header was processed");
             return;
@@ -281,7 +282,7 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
         SamlAssertionGenerator ag = new SamlAssertionGenerator(signerInfo);
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setAttestingEntity(signerInfo);
-        TcpKnob requestTcp = (TcpKnob) message.getKnob(TcpKnob.class);
+        TcpKnob requestTcp = message.getKnob(TcpKnob.class);
         if (requestTcp != null) {
             try {
                 InetAddress clientAddress = InetAddress.getByName(requestTcp.getRemoteAddress());
@@ -306,20 +307,20 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
     /**
      * Method to handle creating a delegated Kerberos ticket for use in downstream routing.
      *
-     * @param context the policy enforcement context
+     * @param policyEnforcementContext the policy enforcement context
      * @param server the server to that the delegated service ticket is destined for
      * @return a valid KerberosServiceTicket based on validated creds.  Null if
      * @throws KerberosException if there is an error obtaining the ticket
      */
-    protected KerberosServiceTicket getDelegatedKerberosTicket(PolicyEnforcementContext context, String server)
+    protected KerberosServiceTicket getDelegatedKerberosTicket(PolicyEnforcementContext policyEnforcementContext, String server)
        throws KerberosException
     {
         final KerberosServiceTicket delegatedServiceTicket;
 
         // first locate the Kerberos service ticket from the request
-        final ProcessorResult wssResults;
-        wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
-
+        final ProcessorResult wssResults = policyEnforcementContext.getRequest().getSecurityKnob().getProcessorResult();
+        final AuthenticationContext context = policyEnforcementContext.getAuthenticationContext(policyEnforcementContext.getRequest());
+        
         KerberosServiceTicket kerberosServiceTicket = null;
         if (wssResults == null) {
             java.util.List<LoginCredentials> creds = context.getCredentials();

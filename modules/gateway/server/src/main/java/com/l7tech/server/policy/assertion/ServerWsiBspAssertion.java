@@ -16,7 +16,7 @@ import com.l7tech.policy.assertion.WsiBspAssertion;
  * @author $Author$
  * @version $Revision$
  */
-public class ServerWsiBspAssertion extends ServerXpathValidationAssertion {
+public class ServerWsiBspAssertion extends ServerXpathValidationAssertion<WsiBspAssertion> {
 
     //- PUBLIC
 
@@ -29,53 +29,63 @@ public class ServerWsiBspAssertion extends ServerXpathValidationAssertion {
     public ServerWsiBspAssertion(WsiBspAssertion wsiBspAssertion, ApplicationContext springContext) {
         super(wsiBspAssertion, logger);
         this.auditor = (springContext!=null) ? new Auditor(this, springContext, logger) : null;
-        this.wsiBspAssertion = wsiBspAssertion;
     }
 
     //- PROTECTED
 
+    @Override
     protected boolean isCheckRequestMessages() {
-        return wsiBspAssertion.isCheckRequestMessages();
+        return assertion.isCheckRequestMessages();
     }
 
+    @Override
     protected boolean isCheckResponseMessages() {
-        return wsiBspAssertion.isCheckResponseMessages();
+        return assertion.isCheckResponseMessages();
     }
 
+    @Override
     protected boolean isFailOnNonCompliantRequest() {
-        return wsiBspAssertion.isFailOnNonCompliantRequest();
+        return assertion.isFailOnNonCompliantRequest();
     }
 
+    @Override
     protected boolean isFailOnNonCompliantResponse() {
-        return wsiBspAssertion.isFailOnNonCompliantResponse();
+        return assertion.isFailOnNonCompliantResponse();
     }
 
+    @Override
     protected void onRequestFailure() {
         auditor.logAndAudit(AssertionMessages.WSI_BSP_REQUEST_FAIL);
     }
 
+    @Override
     protected void onRequestNonCompliance(String ruleId, String description) {
-        if(wsiBspAssertion.isAuditRequestNonCompliance())
-            auditor.logAndAudit(AssertionMessages.WSI_BSP_REQUEST_NON_COMPLIANT, new String[]{ruleId,description});
+        if(assertion.isAuditRequestNonCompliance())
+            auditor.logAndAudit(AssertionMessages.WSI_BSP_REQUEST_NON_COMPLIANT, ruleId,description);
     }
 
+    @Override
     protected void onRequestNonSoap() {
         auditor.logAndAudit(AssertionMessages.WSI_BSP_REQUEST_NON_SOAP);
     }
 
+    @Override
     protected void onResponseFailure() {
         auditor.logAndAudit(AssertionMessages.WSI_BSP_RESPONSE_FAIL);
     }
 
+    @Override
     protected void onResponseNonCompliance(String ruleId, String description) {
-        if(wsiBspAssertion.isAuditResponseNonCompliance())
-            auditor.logAndAudit(AssertionMessages.WSI_BSP_RESPONSE_NON_COMPLIANT, new String[]{ruleId,description});
+        if(assertion.isAuditResponseNonCompliance())
+            auditor.logAndAudit(AssertionMessages.WSI_BSP_RESPONSE_NON_COMPLIANT, ruleId,description);
     }
 
+    @Override
     protected void onResponseNonSoap() {
         auditor.logAndAudit(AssertionMessages.WSI_BSP_RESPONSE_NON_SOAP);
     }
 
+    @Override
     protected void onXPathError(XPathException xpe) {
         auditor.logAndAudit(AssertionMessages.WSI_BSP_XPATH_ERROR, null, xpe);
     }
@@ -83,6 +93,7 @@ public class ServerWsiBspAssertion extends ServerXpathValidationAssertion {
     /**
      * Return input stream from which properties can be read
      */
+    @Override
     protected InputStream getRulesResource() {
         ClassLoader loader = ServerWsiBspAssertion.class.getClassLoader();
         return loader.getResourceAsStream(RESOURCE_RULES);
@@ -96,7 +107,6 @@ public class ServerWsiBspAssertion extends ServerXpathValidationAssertion {
     ServerWsiBspAssertion() {
         super(null, logger);
         this.auditor = null;
-        this.wsiBspAssertion = null;
     }
 
     //- PRIVATE
@@ -107,5 +117,4 @@ public class ServerWsiBspAssertion extends ServerXpathValidationAssertion {
 
     //
     private final Auditor auditor;
-    private final WsiBspAssertion wsiBspAssertion;
 }

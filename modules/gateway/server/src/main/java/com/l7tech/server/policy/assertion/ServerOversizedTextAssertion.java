@@ -18,6 +18,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.Attributes;
@@ -39,7 +40,7 @@ import java.util.logging.Logger;
  * Server side implementation of the OversizedTextAssertion convenience assertion.
  * Internally this is implemented, essentially, as just a nested xpath assertion.
  */
-public class ServerOversizedTextAssertion extends AbstractServerAssertion<OversizedTextAssertion> implements ServerAssertion {
+public class ServerOversizedTextAssertion extends AbstractMessageTargetableServerAssertion<OversizedTextAssertion> {
     private static final Logger logger = Logger.getLogger(ServerOversizedTextAssertion.class.getName());
     private final Auditor auditor;
     private final CompiledXpath matchBigText;
@@ -60,7 +61,7 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion<Oversi
      * @throws ServerPolicyException if the provided assertion bean produced an invalid XPath.  Normally not possible.
      */
     ServerOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext, boolean omitTarariTests) throws ServerPolicyException {
-        super(data);
+        super(data,data);
         auditor = new Auditor(this, springContext, ServerOversizedTextAssertion.logger);
 
         // These three tests might be taken over by ServerAcceleratedOversizedTextAssertion
@@ -96,38 +97,51 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion<Oversi
         this(data, springContext, false);
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context)
-            throws PolicyAssertionException, IOException
-    {
-        if (context.isPostRouting()) {
+    @Override
+    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
+                                              final Message msg,
+                                              final String targetName,
+                                              final AuthenticationContext authContext ) throws PolicyAssertionException, IOException {
+        if ( isRequest() && context.isPostRouting()) {
             auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_ALREADY_ROUTED);
             return AssertionStatus.FAILED;
         }
 
+        // TODO [steve] handling for response processing before routing
+
+        if (!msg.isXml()) {
+            auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NOT_XML);
+            return AssertionStatus.NOT_APPLICABLE;
+        }
+
         try {
-            final Message request = context.getRequest();
-            ElementCursor cursor = request.getXmlKnob().getElementCursor();
+            ElementCursor cursor = msg.getXmlKnob().getElementCursor();
             cursor.moveToRoot();
 
             if (matchBigText != null && cursor.matches(matchBigText)) {
-                auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_OVERSIZED_TEXT);
+                auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NODE_OR_ATTRIBUTE, targetName);
                 return AssertionStatus.BAD_REQUEST;
             }
 
             if ((attrLimit >= 0 || attrNameLimit >= 0) && exceedsAttrLimit(cursor, attrLimit, attrNameLimit)) {
-                auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_OVERSIZED_TEXT);
+                auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NODE_OR_ATTRIBUTE, targetName);
                 return AssertionStatus.BAD_REQUEST;
             }
 
             if (matchOverdeepNesting != null && cursor.matches(matchOverdeepNesting)) {
-                auditor.logAndAudit(AssertionMessages.XML_NESTING_DEPTH_EXCEEDED);
+                auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_XML_NESTING_DEPTH_EXCEEDED, targetName);
                 return AssertionStatus.BAD_REQUEST;
             }
 
-            return checkAllNonTarariSpecific(request, cursor, auditor);
+            return checkAllNonTarariSpecific(msg, targetName, cursor, auditor);
 
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.XPATH_REQUEST_NOT_XML);
+            if ( isRequest() )
+                auditor.logAndAudit(AssertionMessages.XPATH_REQUEST_NOT_XML);
+            else if ( isResponse() )
+                auditor.logAndAudit(AssertionMessages.XPATH_RESPONSE_NOT_XML);
+            else 
+                auditor.logAndAudit(AssertionMessages.XPATH_MESSAGE_NOT_XML, targetName);
             return AssertionStatus.BAD_REQUEST;
         } catch (XPathExpressionException e) {
             auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
@@ -140,9 +154,15 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion<Oversi
         }
     }
 
+    @Override
+    protected Auditor getAuditor() {
+        return auditor;
+    }
+
     private boolean exceedsAttrLimit(ElementCursor cursor, final long attrLimit, final long attrNameLimit) throws TransformerConfigurationException {
         Source source = new DOMSource(cursor.asDomElement().getOwnerDocument());
         SAXResult result = new SAXResult(new DefaultHandler() {
+            @Override
             public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
                 int num = attributes.getLength();
                 for (int i = 0; i < num; i++) {
@@ -168,6 +188,7 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion<Oversi
      * by scanning the token buffer or getting the RaxStatistics.  (See ServerAcceleratedOversizedTextAssertion.)
      *
      * @param request  the request to examine.  Must not be null.
+     * @param targetName  Message target name (request, response, or context var name).
      * @param cursor   an ElementCursor positioned anywhere on the request to examine.  Must not be null.
      * @param auditor  where to save audit records
      * @return AssertionStatus.NONE if all enabled constraints were satisfied; otherwise AssertionStatus.BAD_REQUEST,
@@ -178,19 +199,19 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion<Oversi
      *                     if XML serialization is necessary, and it throws IOException (perhaps due to a lazy DOM)
      * @throws IllegalStateException if the SOAP MIME part has already been destructively read.
      */
-    AssertionStatus checkAllNonTarariSpecific(Message request, ElementCursor cursor, Auditor auditor)
+    AssertionStatus checkAllNonTarariSpecific(Message request, String targetName, ElementCursor cursor, Auditor auditor)
             throws XPathExpressionException, IOException, SAXException
     {
         if (requireValidSoap) {
             if (!request.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_NOT_SOAP);
+                auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NOT_SOAP, targetName);
                 return AssertionStatus.BAD_REQUEST;
             }
 
             String problem = SoapValidator.validateSoapMessage(cursor);
             if (problem != null) {
                 if (logger.isLoggable(Level.INFO)) logger.info("Request not valid SOAP: " + problem);
-                auditor.logAndAudit(AssertionMessages.REQUEST_NOT_SOAP);
+                auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NOT_SOAP, targetName);
                 return AssertionStatus.BAD_REQUEST;
             }
         }
@@ -198,7 +219,7 @@ public class ServerOversizedTextAssertion extends AbstractServerAssertion<Oversi
         cursor.moveToRoot();
 
         if (matchExtraPayload != null && cursor.matches(matchExtraPayload)) {
-            auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_EXTRA_PAYLOAD);
+            auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_EXTRA_PAYLOAD_ELEMENTS, targetName);
             return AssertionStatus.BAD_REQUEST;
         }
 

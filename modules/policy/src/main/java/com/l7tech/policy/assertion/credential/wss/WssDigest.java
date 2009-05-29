@@ -2,12 +2,10 @@ package com.l7tech.policy.assertion.credential.wss;
 
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
 /**
  * WSS Digest authentication.
  */
-@ProcessesRequest
 public class WssDigest extends WssCredentialSourceAssertion {
     private boolean requireNonce = false;
     private boolean requireTimestamp = false;
@@ -37,6 +35,7 @@ public class WssDigest extends WssCredentialSourceAssertion {
         this.requiredPassword = requiredPassword;
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 

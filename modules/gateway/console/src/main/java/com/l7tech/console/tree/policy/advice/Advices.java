@@ -110,8 +110,6 @@ public class Advices {
                 put(EmailAlertAssertion.class, ary(AddEmailAlertAssertionAdvice.class));
                 put(ThroughputQuota.class, ary(AddThroughputQuotaAssertionAdvice.class));
                 put(CommentAssertion.class, ary(CommentAssertionAdvice.class));
-                put(SqlAttackAssertion.class, ary(SqlAttackAssertionAdvice.class));
-                put(OversizedTextAssertion.class, ary(OversizedTextAssertionAdvice.class));
                 put(RequestSizeLimit.class, ary(RequestSizeLimitAdvice.class));
                 put(AuditDetailAssertion.class, ary(AddAuditAdviceAssertion.class));
                 put(Operation.class, ary(AddWSDLOperationAssertionAdvice.class));
@@ -120,7 +118,6 @@ public class Advices {
                 put(WsiBspAssertion.class, ary(AddWsiBspAssertionAdvice.class));
                 put(WsiSamlAssertion.class, ary(AddWsiSamlAssertionAdvice.class));
                 put(HtmlFormDataAssertion.class, ary(HtmlFormDataAssertionAdvice.class));
-                put(CodeInjectionProtectionAssertion.class, ary(CodeInjectionProtectionAssertionAdvice.class));
                 put(SimpleXpathAssertion.class, ary(AddXPathAssertionAdvice.class));
             }};
 }

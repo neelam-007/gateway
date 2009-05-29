@@ -50,7 +50,7 @@ public abstract class ClientCompositeAssertion extends ClientAssertion {
         try {
             return assertion.decorateRequest(context);
         } catch (HttpChallengeRequiredException e) {
-            context.setAuthenticationMissing();
+            context.getDefaultAuthenticationContext().setAuthenticationMissing();
             return AssertionStatus.FAILED;
         }
     }

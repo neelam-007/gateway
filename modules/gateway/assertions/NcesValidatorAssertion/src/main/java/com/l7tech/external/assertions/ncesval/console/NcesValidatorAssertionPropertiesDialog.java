@@ -21,13 +21,8 @@ public class NcesValidatorAssertionPropertiesDialog extends AssertionPropertiesE
 
     //- PUBLIC
 
-    public NcesValidatorAssertionPropertiesDialog(Dialog owner) {
-        super(owner, "NCES Validator Properties", true);
-        initialize();
-    }
-
-    public NcesValidatorAssertionPropertiesDialog(Frame owner) {
-        super(owner, "NCES Validator Properties", true);
+    public NcesValidatorAssertionPropertiesDialog(Window owner) {
+        super(owner, "NCES Validator Properties");
         initialize();
     }
 

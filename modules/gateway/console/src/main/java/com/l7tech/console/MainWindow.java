@@ -2826,9 +2826,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     public JMenuItem getManagePrivateKeysMenuItem() {
         if (managePrivateKeysMenuItem != null)
             return managePrivateKeysMenuItem;
-        managePrivateKeysMenuItem = new JMenuItem(getManagePrivateKeysAction());
-
-        return managePrivateKeysMenuItem;
+        return managePrivateKeysMenuItem = new JMenuItem(getManagePrivateKeysAction());
     }
 
     public JMenuItem getManageSsgConnectorsMenuItem() {

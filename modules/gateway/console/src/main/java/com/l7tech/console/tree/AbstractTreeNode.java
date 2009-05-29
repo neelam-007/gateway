@@ -38,7 +38,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     protected WeakPropertyChangeSupport propChangeSupport = new WeakPropertyChangeSupport();
     private java.util.List<Cookie> cookies = new ArrayList<Cookie>();
     protected String tooltip = null;
-    protected Comparator<? super TreeNode> childrenComparator = DEFAULT_COMPARATOR;
+    protected Comparator<TreeNode> childrenComparator = DEFAULT_COMPARATOR;
     private boolean isCut = false;
 
     public boolean isCut() {
@@ -90,7 +90,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * @param object
      * @param c the children omparator used for sorting
      */
-    public AbstractTreeNode(Object object, Comparator<? super TreeNode> c) {
+    public AbstractTreeNode(Object object, Comparator<TreeNode> c) {
         super(object);
         if (c !=null) {
             childrenComparator = c;

@@ -50,14 +50,8 @@ public class ComparisonPropertiesDialog extends AssertionPropertiesEditorSupport
         DataType.BOOLEAN,
     };
 
-    public ComparisonPropertiesDialog(Frame owner, ComparisonAssertion assertion) throws HeadlessException {
-        super(owner, ComparisonAssertion.resources.getString("dialog.title"), true);
-        this.assertion = assertion;
-        init();
-    }
-
-    public ComparisonPropertiesDialog(Dialog owner, ComparisonAssertion assertion) throws HeadlessException {
-        super(owner, ComparisonAssertion.resources.getString("dialog.title"), true);
+    public ComparisonPropertiesDialog(Window owner, ComparisonAssertion assertion) throws HeadlessException {
+        super(owner, ComparisonAssertion.resources.getString("dialog.title"));
         this.assertion = assertion;
         init();
     }

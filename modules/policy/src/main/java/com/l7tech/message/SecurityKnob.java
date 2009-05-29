@@ -78,6 +78,12 @@ public interface SecurityKnob extends MessageKnob {
     DecorationRequirements getOrMakeDecorationRequirements();
 
     /**
+     * Removes all decoration requirements. Should be called after decorations are applied to a message,
+     * in order to prevent them from being applied more than once.
+     */
+    void removeAllDecorationRequirements();
+
+    /**
      * Get the decoration requirements that should be applied to this Message in a security header addressed
      * to the specified recipient (role or actor).
      *

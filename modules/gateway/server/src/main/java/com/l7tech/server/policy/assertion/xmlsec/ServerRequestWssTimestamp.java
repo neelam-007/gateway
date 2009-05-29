@@ -7,19 +7,21 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.xmlsec.RequestWssTimestamp;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssTimestamp;
 import com.l7tech.security.xml.processor.WssTimestampDate;
+import com.l7tech.security.xml.processor.ProcessorResultUtil;
+import com.l7tech.security.token.ParsedElement;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.beans.factory.BeanFactory;
@@ -32,19 +34,17 @@ import java.util.logging.Logger;
 /**
  * @author alex
  */
-public class ServerRequestWssTimestamp extends AbstractServerAssertion<RequestWssTimestamp> {
+public class ServerRequestWssTimestamp extends AbstractMessageTargetableServerAssertion<RequestWssTimestamp> {
     private static final Logger logger = Logger.getLogger(ServerRequestWssTimestamp.class.getName());
     private static final long DEFAULT_GRACE = 60000;
     private static final int PROP_CACHE_AGE = 151013;
 
-    private final RequestWssTimestamp assertion;
     private final Auditor auditor;
     private final SecurityTokenResolver securityTokenResolver;
     private final ServerConfig serverConfig;
 
     public ServerRequestWssTimestamp(RequestWssTimestamp assertion, BeanFactory spring) {
-        super(assertion);
-        this.assertion = assertion;
+        super(assertion,assertion);
         this.auditor = spring instanceof ApplicationContext
                 ? new Auditor(this, (ApplicationContext) spring, logger)
                 : new LogOnlyAuditor(logger);
@@ -52,21 +52,21 @@ public class ServerRequestWssTimestamp extends AbstractServerAssertion<RequestWs
         this.serverConfig = (ServerConfig)spring.getBean("serverConfig", ServerConfig.class);
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        if (!SecurityHeaderAddressableSupport.isLocalRecipient(assertion) && TargetMessageType.REQUEST.equals(assertion.getTarget())) {
+    @Override
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if ( !SecurityHeaderAddressableSupport.isLocalRecipient(assertion) ) {
             auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
             return AssertionStatus.NONE;
         }
 
-        final String what = assertion.getTargetName();
-        final Message msg;
-        try {
-            msg = context.getTargetMessage(assertion);
-        } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
-            return AssertionStatus.FAILED;
-        }
+        return super.checkRequest( context );
+    }
 
+    @Override
+    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
+                                              final Message msg,
+                                              final String what,
+                                              final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
         try {
             if (!msg.isSoap()) {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_NOTAPPLICABLE, what);
@@ -86,9 +86,25 @@ public class ServerRequestWssTimestamp extends AbstractServerAssertion<RequestWs
             return AssertionStatus.BAD_REQUEST;
         }
 
-        if (assertion.isSignatureRequired() && !wssTimestamp.isSigned()) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_NOT_SIGNED, what);
-            return AssertionStatus.BAD_REQUEST;
+        if ( assertion.isSignatureRequired() ) {
+            final ParsedElement element = ProcessorResultUtil.getParsedElementForNode( wssTimestamp.asElement(), processorResult.getElementsThatWereSigned() );
+            if ( new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
+                if ( element==null || !WSSecurityProcessorUtils.isValidSingleSigner(processorResult, new ParsedElement[]{element}) ) {
+                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_NOT_SIGNED, what);
+                    return AssertionStatus.BAD_REQUEST;
+                }
+            } else {
+                // Ensure signed with the required identity
+                if ( element==null ||
+                     !WSSecurityProcessorUtils.isValidSigningIdentity(
+                             authContext,
+                             assertion.getIdentityTarget(),
+                             processorResult,
+                             new ParsedElement[]{element} ) ) {
+                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_NOT_SIGNED, what);
+                    return AssertionStatus.BAD_REQUEST;
+                }
+            }
         }
 
         final long now = System.currentTimeMillis();
@@ -138,4 +154,8 @@ public class ServerRequestWssTimestamp extends AbstractServerAssertion<RequestWs
         return AssertionStatus.NONE;
     }
 
+    @Override
+    protected Auditor getAuditor() {
+        return auditor;
+    }
 }

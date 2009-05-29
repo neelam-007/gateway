@@ -353,7 +353,7 @@ public class MessageProcessor {
                 throw e;
             }
             if (result != AssertionStatus.NONE) {
-                if (context.isAuthenticationMissing()) {
+                if (context.getDefaultAuthenticationContext().isAuthenticationMissing()) {
                     if (!context.getSsg().isFederatedGateway()) {
                         // Prevent infinite challenge if we already have some credentials
                         PasswordAuthentication pw = context.getCachedCredentialsForTrustedSsg();

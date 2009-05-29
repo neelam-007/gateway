@@ -7,6 +7,9 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.MessageTargetableAssertion;
+import com.l7tech.policy.assertion.IdentityTargetable;
+import com.l7tech.policy.assertion.IdentityTarget;
+import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TimeUnit;
@@ -20,7 +23,7 @@ import java.text.MessageFormat;
  * must follow one of {@link RequestWssX509Cert}, {@link SecureConversation} or {@link RequestWssSaml}).
  */
 @RequiresSOAP(wss=true)
-public class RequestWssTimestamp extends MessageTargetableAssertion implements SecurityHeaderAddressable {
+public class RequestWssTimestamp extends MessageTargetableAssertion implements IdentityTargetable, SecurityHeaderAddressable {
 
     /**
      * The recommended max expiry time to use when creating request wss timestamps;
@@ -72,33 +75,43 @@ public class RequestWssTimestamp extends MessageTargetableAssertion implements S
     }
 
     @Override
+    public IdentityTarget getIdentityTarget() {
+        return identityTarget;
+    }
+
+    @Override
+    public void setIdentityTarget(IdentityTarget identityTarget) {
+        this.identityTarget = identityTarget;
+    }
+
+    @Override
     public String toString() {
         return super.toString() + " signatureRequired=" + signatureRequired;
     }
 
     public void copyFrom(RequestWssTimestamp other) {
+        super.copyFrom(other);
         this.timeUnit = other.timeUnit;
         this.maxExpiryMilliseconds = other.maxExpiryMilliseconds;
         this.signatureRequired = other.signatureRequired;
         this.recipientContext = other.recipientContext;
-        this.setTarget(other.getTarget());
-        this.setOtherTargetMessageVariable(other.getOtherTargetMessageVariable());
+        this.setIdentityTarget(other.getIdentityTarget()==null ? null : new IdentityTarget(other.getIdentityTarget()));
     }
 
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
-        meta.put(PALETTE_NODE_NAME, "Require Timestamp in Message");
-        meta.put(DESCRIPTION, "Require Timestamp in Message");
+        meta.put(PALETTE_NODE_NAME, "Require Timestamp");
+        meta.put(DESCRIPTION, "The message must contain a Timestamp.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, RequestWssTimestamp>() {
             @Override
             public String call(RequestWssTimestamp assertion) {
-                return MessageFormat.format("Require {0}Timestamp in {1}",
-                                            assertion.isSignatureRequired() ? "signed " : "",
-                                            assertion.getTargetName()) +
-                       SecurityHeaderAddressableSupport.getActorSuffix(assertion);
+                return AssertionUtils.decorateName(
+                        assertion,
+                        MessageFormat.format("Require {0}Timestamp",
+                                assertion.isSignatureRequired() ? "signed " : ""));
             }
         });
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.RequestWssTimestampDialog");
@@ -117,4 +130,5 @@ public class RequestWssTimestamp extends MessageTargetableAssertion implements S
     private int maxExpiryMilliseconds;
     private boolean signatureRequired = true;
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
+    private IdentityTarget identityTarget;
 }

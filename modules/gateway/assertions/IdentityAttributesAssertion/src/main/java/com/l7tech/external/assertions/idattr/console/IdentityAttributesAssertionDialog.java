@@ -67,14 +67,8 @@ public class IdentityAttributesAssertionDialog extends AssertionPropertiesEditor
     private final IdentityMappingTableModel tableModel = new IdentityMappingTableModel();
     private static final String BAD_ATTRIBUTE_MESSAGE = resources.getString("badAttributeMessage");
 
-    public IdentityAttributesAssertionDialog(Dialog owner, IdentityAttributesAssertion assertion) throws HeadlessException {
-        super(owner, resources.getString("dialog.title"), true);
-        this.assertion = assertion;
-        init();
-    }
-
-    public IdentityAttributesAssertionDialog(Frame owner, IdentityAttributesAssertion assertion) throws HeadlessException {
-        super(owner, resources.getString("dialog.title"), true);
+    public IdentityAttributesAssertionDialog(Window owner, IdentityAttributesAssertion assertion) throws HeadlessException {
+        super(owner, resources.getString("dialog.title"));
         this.assertion = assertion;
         init();
     }

@@ -38,13 +38,8 @@ public class CacheStoragePropertiesDialog extends AssertionPropertiesEditorSuppo
     private final InputValidator validator = new InputValidator(this, TITLE);
     private boolean confirmed = false;
 
-    public CacheStoragePropertiesDialog(Frame owner) {
-        super(owner, TITLE, true);
-        init();
-    }
-
-    public CacheStoragePropertiesDialog(Dialog owner) {
-        super(owner, TITLE, true);
+    public CacheStoragePropertiesDialog(Window owner) {
+        super(owner, TITLE);
         init();
     }
 

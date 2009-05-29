@@ -21,7 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-public class ServerSslAssertion extends AbstractServerAssertion<SslAssertion> implements ServerAssertion {
+public class ServerSslAssertion extends AbstractServerAssertion<SslAssertion> {
     private final Auditor auditor;
 
     public ServerSslAssertion(SslAssertion data, ApplicationContext springContext) {
@@ -30,10 +30,11 @@ public class ServerSslAssertion extends AbstractServerAssertion<SslAssertion> im
         serverHttpClientCert = new ServerHttpClientCert(new HttpClientCert(), springContext);
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
-        final HttpServletRequestKnob hsRequestKnob = (HttpServletRequestKnob)context.getRequest().getKnob(HttpServletRequestKnob.class);
+        final HttpServletRequestKnob hsRequestKnob = context.getRequest().getKnob(HttpServletRequestKnob.class);
         final HttpServletRequest httpServletRequest = hsRequestKnob == null ? null : hsRequestKnob.getHttpServletRequest();
-        final FtpRequestKnob ftpRequestKnob = hsRequestKnob != null ? null : (FtpRequestKnob)context.getRequest().getKnob(FtpRequestKnob.class);
+        final FtpRequestKnob ftpRequestKnob = hsRequestKnob != null ? null : context.getRequest().getKnob(FtpRequestKnob.class);
         if (httpServletRequest == null && ftpRequestKnob == null) {
             logger.info("Request not received over FTP or HTTP; don't know how to check for SSL");
             context.setRequestPolicyViolated();
@@ -93,7 +94,7 @@ public class ServerSslAssertion extends AbstractServerAssertion<SslAssertion> im
     private AssertionStatus processAsCredentialSourceAssertion(PolicyEnforcementContext context, Auditor auditor)
       throws PolicyAssertionException, IOException {
         Message request = context.getRequest();
-        HttpRequestKnob httpReq = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
+        HttpRequestKnob httpReq = request.getKnob(HttpRequestKnob.class);
         if (httpReq != null) {
             return serverHttpClientCert.checkRequest(context);
         }

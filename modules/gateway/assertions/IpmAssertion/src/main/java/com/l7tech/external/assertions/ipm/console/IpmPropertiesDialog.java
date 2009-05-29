@@ -39,13 +39,8 @@ public class IpmPropertiesDialog extends AssertionPropertiesEditorSupport<IpmAss
     /** @noinspection ThisEscapedInObjectConstruction*/
     private final InputValidator validator = new InputValidator(this, TITLE);
 
-    public IpmPropertiesDialog(Frame owner) {
-        super(owner, TITLE, true);
-        initialize();
-    }
-
-    public IpmPropertiesDialog(Dialog owner) {
-        super(owner, TITLE, true);
+    public IpmPropertiesDialog(Window owner) {
+        super(owner, TITLE);
         initialize();
     }
 

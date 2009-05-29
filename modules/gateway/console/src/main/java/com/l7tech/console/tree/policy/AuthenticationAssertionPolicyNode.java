@@ -21,6 +21,7 @@ public class AuthenticationAssertionPolicyNode extends IdentityAssertionTreeNode
         @Override
         protected void performAction() {
             FindEntityDialog.find(EntityType.ID_PROVIDER_CONFIG, new Functions.UnaryVoid<EntityHeader>() {
+                @Override
                 public void call(EntityHeader entityHeader) {
                     assertion.setIdentityProviderOid(entityHeader.getOid());
                     provName = null; // Reset cached name
@@ -48,7 +49,7 @@ public class AuthenticationAssertionPolicyNode extends IdentityAssertionTreeNode
 
     @Override
     public String getName() {
-        return "Authenticate against " + idProviderName() + getIdentityTagSuffix();
+        return decorateName("Authenticate against " + idProviderName());
     }
 
     @Override

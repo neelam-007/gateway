@@ -59,8 +59,8 @@ public class ServerCertificateAttributesAssertionTest {
         Message req = new Message();
         Message resp = new Message();
         PolicyEnforcementContext context = new PolicyEnforcementContext(req, resp);
-        context.addCredentials(new LoginCredentials(null, null, CredentialFormat.CLIENTCERT, SslAssertion.class, null, cert, SecurityTokenType.HTTP_CLIENT_CERT));
-        context.addAuthenticationResult(new AuthenticationResult(new UserBean(), cert, false));
+        context.getDefaultAuthenticationContext().addCredentials(new LoginCredentials(null, null, CredentialFormat.CLIENTCERT, SslAssertion.class, null, cert, SecurityTokenType.HTTP_CLIENT_CERT));
+        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new UserBean(), cert, false));
         return context;
     }
 

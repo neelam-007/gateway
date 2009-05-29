@@ -44,7 +44,7 @@ public class SamlBrowserArtifactTest extends TestCase {
         ServerSamlBrowserArtifact ssba = new ServerSamlBrowserArtifact(sba, spring);
 
         PolicyEnforcementContext pec = new PolicyEnforcementContext(new Message(), new Message());
-        pec.addCredentials(LoginCredentials.makePasswordCredentials("testuser", "passw0rd".toCharArray(), HttpBasic.class));
+        pec.getDefaultAuthenticationContext().addCredentials(LoginCredentials.makePasswordCredentials("testuser", "passw0rd".toCharArray(), HttpBasic.class));
         ssba.checkRequest(pec);
     }
 

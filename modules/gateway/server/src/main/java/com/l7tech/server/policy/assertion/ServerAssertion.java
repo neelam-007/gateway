@@ -18,7 +18,7 @@ import java.io.IOException;
  * @author alex
  * @version $Revision$
  */
-public interface ServerAssertion extends Closeable {
+public interface ServerAssertion<AT extends Assertion> extends Closeable {
     /**
      * SSG Server-side processing of the given request.
      * @param context the PolicyEnforcementContext.  Never null.
@@ -32,5 +32,5 @@ public interface ServerAssertion extends Closeable {
     /**
      * @return the assertion associated with this server assertion
      */
-    Assertion getAssertion();
+    AT getAssertion();
 }

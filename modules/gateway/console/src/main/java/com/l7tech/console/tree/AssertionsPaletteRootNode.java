@@ -1,6 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.policy.assertion.ext.Category;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -34,7 +35,7 @@ public class AssertionsPaletteRootNode extends AbstractPaletteFolderNode {
         List<AbstractPaletteFolderNode> nodeList = new LinkedList<AbstractPaletteFolderNode>();
         nodeList.add(new AccessControlFolderNode());
         nodeList.add(new TransportLayerSecurityFolderNode());
-        nodeList.add(new XmlSecurityFolderNode());
+        nodeList.add(new DefaultAssertionPaletteFolderNode("XML Security", "xmlSecurity", Category.XML_SEC));
         nodeList.add(new XmlFolderNode());
         nodeList.add(new RoutingFolderNode());
         nodeList.add(new MiscFolderNode());

@@ -33,32 +33,30 @@ import java.util.regex.Pattern;
 /**
  * The Server side Regex Assertion
  */
-public class ServerRegex extends AbstractServerAssertion<Regex> implements ServerAssertion {
+public class ServerRegex extends AbstractServerAssertion<Regex> {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final Auditor auditor;
 
     private Pattern regexPattern;
     private Exception compileException;
-    private Regex regexAssertion;
     private final String[] varNames;
     public static final String ENCODING = "UTF-8";
     private final boolean isReplacement;
 
     public ServerRegex(Regex ass, ApplicationContext springContext) {
         super(ass);
-        regexAssertion = ass;
         auditor = springContext != null ? new Auditor(this, springContext, logger) : new LogOnlyAuditor(logger);
         String regExExpression = ass.getRegex();
         try {
             int flags = Pattern.DOTALL | Pattern.MULTILINE;
-            if (regexAssertion.isCaseInsensitive()) {
+            if (assertion.isCaseInsensitive()) {
                 flags |= Pattern.CASE_INSENSITIVE;
             }
             regexPattern = Pattern.compile(regExExpression, flags);
         } catch (Exception e) {
             compileException = e;
         }
-        isReplacement = regexAssertion.isReplace();
+        isReplacement = assertion.isReplace();
         varNames = ass.getVariablesUsed();
     }
 
@@ -70,6 +68,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
         void setOutput(CharSequence output) throws IOException;
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
         checkPattern();
@@ -87,14 +86,14 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
         RegexInput input;
         RegexOutput output = null;
         Message target = getTarget(context);
-        int whichPart = regexAssertion.getMimePart();
+        int whichPart = assertion.getMimePart();
 
 
         try {
             final PartInfo part = target.getMimeKnob().getPart(whichPart);
             final String encoding = getEncoding(part);
 
-            ContextVariableKnob cvk = (ContextVariableKnob) target.getKnob(ContextVariableKnob.class);
+            ContextVariableKnob cvk = target.getKnob(ContextVariableKnob.class);
             if (cvk != null)
                 cvk.setOverrideEncoding(encoding);
 
@@ -113,6 +112,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
     private RegexInput makeInput(final PartInfo part, final String encoding) {
         return new RegexInput() {
 
+            @Override
             public CharSequence getInput() throws IOException {
                 InputStream is = null;
                 try {
@@ -133,6 +133,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
 
     private RegexOutput makeOutput(final PartInfo part, final String encoding) {
         return new RegexOutput() {
+            @Override
             public void setOutput(CharSequence output) throws IOException {
                 part.setBodyBytes(output.toString().getBytes(encoding));
             }
@@ -140,7 +141,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
     }
 
     private String getEncoding(PartInfo part) {
-        String encoding = regexAssertion.getEncoding();
+        String encoding = assertion.getEncoding();
         if (encoding != null && encoding.length() > 0) {
             auditor.logAndAudit(AssertionMessages.REGEX_ENCODING_OVERRIDE, encoding);
         } else if (encoding == null || encoding.length() == 0) {
@@ -156,14 +157,14 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
 
     private Message getTarget(PolicyEnforcementContext context) {
         try {
-            if (regexAssertion.isAutoTarget()) {
+            if (assertion.isAutoTarget()) {
                 // Preserve old behavior for old policies that didn't specify a message target
                 return context.isPostRouting()
                         ? context.getResponse()
                         : context.getRequest();
             }
 
-            return context.getTargetMessage(regexAssertion, true);
+            return context.getTargetMessage(assertion, true);
         } catch (NoSuchVariableException e) {
             auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
@@ -173,7 +174,7 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
     private AssertionStatus doMatch(PolicyEnforcementContext context, Matcher matcher) {
         final boolean matched = matcher.find();
 
-        final String capvar = regexAssertion.getCaptureVar();
+        final String capvar = assertion.getCaptureVar();
         if (matched && capvar != null) {
             List<String> captured = new ArrayList<String>();
             captured.add(matcher.group(0));
@@ -184,32 +185,32 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
             context.setVariable(capvar, captured.toArray(new String[captured.size()]));
         }
 
-        if (regexAssertion.isProceedIfPatternMatches()) {
+        if (assertion.isProceedIfPatternMatches()) {
             if (matched) {
                 if (logger.isLoggable(Level.FINE))
-                    logger.fine("Proceeding : Matched " + regexAssertion.getRegex());
+                    logger.fine("Proceeding : Matched " + assertion.getRegex());
                 return AssertionStatus.NONE;
             } else {
-                auditor.logAndAudit(AssertionMessages.REGEX_NO_MATCH_FAILURE, regexAssertion.getRegex());
+                auditor.logAndAudit(AssertionMessages.REGEX_NO_MATCH_FAILURE, assertion.getRegex());
                 return AssertionStatus.FAILED;
             }
         } else { // !proceedIfPatternMatches
             if (matched) {
-                auditor.logAndAudit(AssertionMessages.REGEX_MATCH_FAILURE, regexAssertion.getRegex());
+                auditor.logAndAudit(AssertionMessages.REGEX_MATCH_FAILURE, assertion.getRegex());
                 return AssertionStatus.FAILED;
             } else {
                 if (logger.isLoggable(Level.FINE))
-                    logger.fine("Proceeding : Not matched and proceed if no match requested " + regexAssertion.getRegex());
+                    logger.fine("Proceeding : Not matched and proceed if no match requested " + assertion.getRegex());
                 return AssertionStatus.NONE;
             }
         }
     }
 
     private AssertionStatus doReplace(PolicyEnforcementContext context, Matcher matcher, RegexOutput out) throws IOException {
-        String replacement = regexAssertion.getReplacement();
+        String replacement = assertion.getReplacement();
         if (logger.isLoggable(Level.FINE))
             logger.log(Level.FINE, "Replace requested: Match pattern ''{0}'', replace pattern ''{1}''",
-                    new Object[] { regexAssertion.getRegex(), replacement });
+                    new Object[] { assertion.getRegex(), replacement });
         replacement = ExpandVariables.process(replacement, context.getVariableMap(varNames, auditor), auditor);
         String result = matcher.replaceAll(replacement);
         out.setOutput(result);
@@ -220,18 +221,18 @@ public class ServerRegex extends AbstractServerAssertion<Regex> implements Serve
         if (regexPattern == null) {
             if (compileException != null) {
                 auditor.logAndAudit(AssertionMessages.REGEX_PATTERN_INVALID,
-                                    new String[]{regexAssertion.getRegex(),
+                                    new String[]{assertion.getRegex(),
                                         compileException.getMessage()}, compileException);
             } else {
                 auditor.logAndAudit(AssertionMessages.REGEX_PATTERN_INVALID,
-                                    regexAssertion.getRegex(), "unknown error");
+                                    assertion.getRegex(), "unknown error");
             }
             throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
         }
 
-        if (isReplacement && regexAssertion.getReplacement() == null) {
+        if (isReplacement && assertion.getReplacement() == null) {
             auditor.logAndAudit(AssertionMessages.REGEX_NO_REPLACEMENT);
-            throw new PolicyAssertionException(regexAssertion, AssertionMessages.REGEX_NO_REPLACEMENT.getMessage());
+            throw new PolicyAssertionException(assertion, AssertionMessages.REGEX_NO_REPLACEMENT.getMessage());
         }
     }
 }

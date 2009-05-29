@@ -17,7 +17,7 @@ import java.util.List;
  * Date: Sep 28, 2005
  * Time: 9:42:34 AM
  */
-public class SqlAttackDialog extends JDialog {
+public class SqlAttackDialog extends AssertionPropertiesEditorSupport<SqlAttackAssertion> {
     private static final String PROTECTION_KEY = "PROT.KEY";
     private static final String PROTECTION_DESCRIPTION = "PROT.DESCRIPTION";
 
@@ -25,43 +25,37 @@ public class SqlAttackDialog extends JDialog {
     private JTextArea attackDescription;
     private JPanel attackNameList;
 
-    private final boolean readOnly;
     private SqlAttackAssertion sqlAssertion;
     private JButton okButton;
     private JButton cancelButton;
-    private boolean modified;
     private boolean confirmed = false;
-    private ArrayList attacks;
+    private List<JCheckBox> attacks;
 
-    public boolean wasConfirmed() {
-        return confirmed;
-    }
-
-    public SqlAttackDialog(Frame owner, SqlAttackAssertion assertion, boolean modal, boolean readOnly) throws HeadlessException {
-        super(owner, "Configure SQL Attack Protection", modal);
-        this.readOnly = readOnly;
+    public SqlAttackDialog( final Window owner, final SqlAttackAssertion assertion) {
+        super(owner, "Configure SQL Attack Protection");
         doInit(assertion);
     }
 
     private void doInit(SqlAttackAssertion assertion) {
         attackNameList.setLayout(new BoxLayout(attackNameList, BoxLayout.Y_AXIS));
-        attacks = new ArrayList();
+        attacks = new ArrayList<JCheckBox>();
 
         this.sqlAssertion = assertion;
         getContentPane().add(mainPanel);
 
         attackNameList.setBackground(mainPanel.getBackground());
         attackDescription.setBackground(mainPanel.getBackground());
-        Utilities.equalizeButtonSizes(new AbstractButton[]{okButton, cancelButton});
+        Utilities.equalizeButtonSizes(okButton, cancelButton);
 
-        okButton.setEnabled( !readOnly );
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doSave();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doCancel();
             }
@@ -69,19 +63,20 @@ public class SqlAttackDialog extends JDialog {
 
         Utilities.setEscKeyStrokeDisposes(this);
         populateProtectionList();
+    }
 
+    @Override
+    protected void configureView() {
+        okButton.setEnabled( !isReadOnly() );
     }
 
     private void doCancel() {
         confirmed = false;
-        modified = false;
         dispose();
     }
 
     private void doSave() {
-        Iterator iter = attacks.iterator();
-        while (iter.hasNext()) {
-            JCheckBox checkBox = (JCheckBox) iter.next();
+        for (JCheckBox checkBox : attacks) {
             String thekey = (String) checkBox.getClientProperty(PROTECTION_KEY);
             if (checkBox.isSelected()) {
                 sqlAssertion.setProtection(thekey);
@@ -90,32 +85,37 @@ public class SqlAttackDialog extends JDialog {
             }
         }
         confirmed = true;
-        modified = true;
         dispose();
     }
 
-    public boolean isModified() {
-        return modified;
+    @Override
+    public boolean isConfirmed() {
+        return confirmed;
     }
 
-    public SqlAttackAssertion getAssertion() {
+    @Override
+    public void setData(SqlAttackAssertion assertion) {
+        sqlAssertion = assertion;
+    }
+
+    @Override
+    public SqlAttackAssertion getData(SqlAttackAssertion assertion) {
         return sqlAssertion;
     }
 
     private void populateProtectionList() {
         List protections = getAvailableProtections();
         if (protections != null) {
-            Iterator iter = protections.iterator();
-            while (iter.hasNext()) {
-                String theProtection = (String) iter.next();
+            for (Object protection : protections) {
+                String theProtection = (String) protection;
                 addProtectionToList(theProtection, sqlAssertion);
             }
         }
     }
 
     private void addProtectionToList(String theProtection, SqlAttackAssertion sqlAssertion) {
-        String theLabel = null;
-        String theDescription = null;
+        String theLabel;
+        String theDescription;
 
         Set enabledProtections = sqlAssertion.getProtections();
 
@@ -126,6 +126,7 @@ public class SqlAttackDialog extends JDialog {
             JCheckBox theCheckBox = new JCheckBox(theLabel);
 
             theCheckBox.addMouseMotionListener(new MouseInputAdapter() {
+                @Override
                 public void mouseMoved(MouseEvent e) {
                     updateDescription((JCheckBox)e.getComponent());
                 }

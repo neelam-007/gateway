@@ -35,18 +35,18 @@ import java.util.logging.Logger;
  * @author $Author$
  * @version $Version: $
  */
-public class ServerRequestWssKerberos extends AbstractServerAssertion implements ServerAssertion {
+public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWssKerberos> {
 
     //- PUBLIC
 
-    @SuppressWarnings( { "unchecked" } )
     public ServerRequestWssKerberos(RequestWssKerberos requestWssKerberos, ApplicationContext springContext) {
         super(requestWssKerberos);
         this.requestWssKerberos = requestWssKerberos;
         auditor = new Auditor(this, springContext, logger);
     }
 
-    @SuppressWarnings( { "RedundantArrayCreation" } )
+    @SuppressWarnings({"RedundantArrayCreation"})
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (!SecurityHeaderAddressableSupport.isLocalRecipient(requestWssKerberos)) {
             auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
@@ -116,7 +116,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
                     logger.info("Ignoring Kerberos session for another service ('"+requestWssKerberos.getServicePrincipalName()+"', '"+kerberosServiceTicket.getServicePrincipalName()+"').");
                 }
                 else {
-                    context.addCredentials(creds);
+                    context.getAuthenticationContext(context.getRequest()).addCredentials(creds);
                     context.setVariable("kerberos.realm", extractRealm(kerberosServiceTicket.getClientPrincipalName()));
 
                     auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_SESSION, new String[] {kerberosServiceTicket.getClientPrincipalName()});
@@ -138,7 +138,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
                                                         RequestWssKerberos.class,
                                                         null,
                                                         kerberosServiceTicket);
-            context.addCredentials(loginCreds);
+            context.getAuthenticationContext(context.getRequest()).addCredentials(loginCreds);
             context.setVariable("kerberos.realm", extractRealm(kerberosServiceTicket.getClientPrincipalName()));
 
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_KERBEROS_GOT_TICKET, new String[] {kerberosServiceTicket.getClientPrincipalName()});
@@ -174,6 +174,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion implements
     @SuppressWarnings( { "unchecked" } )
     private void addDeferredAssertion(PolicyEnforcementContext context, final KerberosServiceTicket kerberosServiceTicket) {
         context.addDeferredAssertion(this, new AbstractServerAssertion(requestWssKerberos) {
+            @Override
             @SuppressWarnings( { "unchecked" } )
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException

@@ -19,7 +19,7 @@ import java.util.Set;
  *
  * <p>Optionally sets variables for the message properties found.</p> 
  */
-public class WsAddressingAssertion extends MessageTargetableAssertion implements SetsVariables, SecurityHeaderAddressable {
+public class WsAddressingAssertion extends MessageTargetableAssertion implements IdentityTargetable, SetsVariables, SecurityHeaderAddressable {
     //- PUBLIC
     
     public static final String VAR_SUFFIX_TO = "to";
@@ -136,6 +136,7 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
      *
      * @return The variable metadata
      */
+    @Override
     public VariableMetadata[] getVariablesSet() {
         String prefix = getVariablePrefix();
 
@@ -155,13 +156,25 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
         }
     }
 
+    @Override
     public XmlSecurityRecipientContext getRecipientContext() {
         return recipientContext;
     }
 
+    @Override
     public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
         if (recipientContext == null) recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
         this.recipientContext = recipientContext;
+    }
+
+    @Override
+    public IdentityTarget getIdentityTarget() {
+        return identityTarget;
+    }
+
+    @Override
+    public void setIdentityTarget(IdentityTarget identityTarget) {
+        this.identityTarget = identityTarget;
     }
 
     /**
@@ -169,6 +182,7 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
      *
      * @return The metadata for this assertion
      */
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (!Boolean.TRUE.equals(meta.get(META_INITIALIZED))) {
@@ -190,6 +204,7 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
     private boolean requireSignature;
     private String enableOtherNamespace = null;
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
+    private IdentityTarget identityTarget;
 
 
     /**
@@ -207,6 +222,7 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Information16.gif");
 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, WsAddressingAssertion>() {
+            @Override
             public String call(WsAddressingAssertion addressingAssertion) {
                 StringBuilder sb = new StringBuilder("Require ");
 
@@ -224,6 +240,7 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
         });
 
         meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, WsAddressingAssertion>(){
+            @Override
             public Set<ValidatorFlag> call(WsAddressingAssertion assertion) {
                 Set<ValidatorFlag> flags = EnumSet.noneOf(ValidatorFlag.class);
 

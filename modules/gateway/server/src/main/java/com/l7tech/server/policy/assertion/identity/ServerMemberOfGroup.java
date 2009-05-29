@@ -11,7 +11,6 @@ import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
@@ -29,11 +28,10 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> 
      *
      * <p>This will cache the Group information for a short time.</p>
      *
-     * @param context The PEC to use
      * @throws com.l7tech.objectmodel.FindException If an error occurs loading the group
      */
     @SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
-    protected Group getGroup(final PolicyEnforcementContext context) throws FindException, ObjectNotFoundException {
+    protected Group getGroup() throws FindException, ObjectNotFoundException {
         Group group = null;
         CachedGroup cg = cachedGroup.get();
 
@@ -61,8 +59,9 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> 
      * Returns <code>AssertionStatus.NONE</code> if the authenticated <code>User</code>
      * is a member of the <code>Group</code> with which this assertion was initialized.
      */
+    @Override
     @SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
-    public AssertionStatus checkUser(AuthenticationResult authResult, PolicyEnforcementContext context) {
+    public AssertionStatus checkUser(AuthenticationResult authResult) {
         GroupManager gman;
         try {
             gman = getIdentityProvider().getGroupManager();
@@ -76,7 +75,7 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> 
 
         try {
 
-            Group targetGroup = getGroup(context);
+            Group targetGroup = getGroup();
             if (targetGroup == null) {
                 auditor.logAndAudit(AssertionMessages.MEMBEROFGROUP_GROUP_NOT_EXIST);
                 return AssertionStatus.UNAUTHORIZED;
@@ -116,7 +115,7 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion<MemberOfGroup> 
 
     private final Logger logger = Logger.getLogger(getClass().getName());
     private static final long MAX_CACHED_GROUP_AGE = 1000; // cache for very short time only (1 second)
-    private final AtomicReference<CachedGroup> cachedGroup = new AtomicReference();
+    private final AtomicReference<CachedGroup> cachedGroup = new AtomicReference<CachedGroup>();
 
     private boolean isStale(long timestamp) {
         boolean stale = true;

@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  * @see com.l7tech.external.assertions.ftpcredential.FtpCredentialAssertion
  * @author Steve Jones
  */
-public class ServerFtpCredentialAssertion extends ServerCredentialSourceAssertion implements ServerAssertion {
+public class ServerFtpCredentialAssertion extends ServerCredentialSourceAssertion<FtpCredentialAssertion> {
 
     //- PUBLIC
 
@@ -49,11 +49,13 @@ public class ServerFtpCredentialAssertion extends ServerCredentialSourceAssertio
 
     //- PROTECTED
 
+    @Override
     protected void challenge(PolicyEnforcementContext context, Map authParams) {
     }
 
+    @Override
     protected LoginCredentials findCredentials(Message request, Map authParams) throws IOException, CredentialFinderException {
-        FtpRequestKnob ftpRequestKnob = (FtpRequestKnob) request.getKnob(FtpRequestKnob.class);
+        FtpRequestKnob ftpRequestKnob = request.getKnob(FtpRequestKnob.class);
         if (ftpRequestKnob == null) {
             auditor.logAndAudit(AssertionMessages.FTP_CREDENTIAL_NOT_FTP);
             throw new CredentialFinderException("Request is not FTP.", AssertionStatus.NOT_APPLICABLE);
@@ -61,6 +63,7 @@ public class ServerFtpCredentialAssertion extends ServerCredentialSourceAssertio
         return findCredentials( ftpRequestKnob.getCredentials() );
     }
 
+    @Override
     protected AssertionStatus checkCredentials(LoginCredentials pc, Map authParams) throws CredentialFinderException {
         AssertionStatus status = AssertionStatus.AUTH_REQUIRED;
 

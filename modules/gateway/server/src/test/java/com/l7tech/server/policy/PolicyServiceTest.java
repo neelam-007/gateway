@@ -61,6 +61,7 @@ public class PolicyServiceTest extends TestCase {
     public static Test suite() {
          final TestSuite suite = new TestSuite(PolicyServiceTest.class);
         return new TestSetup(suite) {
+            @Override
             protected void setUp() throws Exception {
                 applicationContext = createApplicationContext();
             }
@@ -71,6 +72,7 @@ public class PolicyServiceTest extends TestCase {
         };
     }
 
+    @Override
     protected void setUp() throws Exception {
         UserBean francoBean = new UserBean();
         francoBean.setName(TESTUSER_LOGIN);
@@ -100,7 +102,7 @@ public class PolicyServiceTest extends TestCase {
         response.attachHttpResponseKnob(httpResponseKnob);
 
         PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
-        context.addCredentials(loginCredentials);
+        context.getDefaultAuthenticationContext().addCredentials(loginCredentials);
         if (loginCredentials != null) {
             requestDoc = PolicyServiceClient.createGetPolicyRequest("123");
         }
@@ -122,13 +124,16 @@ public class PolicyServiceTest extends TestCase {
                 (PolicyPathBuilderFactory) applicationContext.getBean("policyPathBuilderFactory"));
         ps.setApplicationContext(applicationContext);
         PolicyService.PolicyGetter policyGetter = new PolicyService.PolicyGetter() {
+            @Override
             public PolicyService.ServiceInfo getPolicy(String serviceId) {
                 return new PolicyService.ServiceInfo() {
 
+                    @Override
                     public Assertion getPolicy() {
                         return policyToTest;
                     }
 
+                    @Override
                     public String getVersion() {
                         return "1";
                     }

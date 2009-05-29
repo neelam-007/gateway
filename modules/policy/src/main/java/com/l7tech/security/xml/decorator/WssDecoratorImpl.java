@@ -112,10 +112,14 @@ public class WssDecoratorImpl implements WssDecorator {
         Set<String> signPartList = dreq.getPartsToSign();
 
         Element timestamp = null;
+        if ( dreq.isSecurityHeaderReusable() ) {
+            timestamp = DomUtils.findOnlyOneChildElementByName(securityHeader, c.nsf.getWsuNs(), SoapUtil.TIMESTAMP_EL_NAME);
+        }
+
         int timeoutMillis = dreq.getTimestampTimeoutMillis();
         if (timeoutMillis < 1)
             timeoutMillis = TIMESTAMP_TIMOUT_MILLIS;
-        if (dreq.isIncludeTimestamp()) {
+        if (dreq.isIncludeTimestamp() && timestamp==null) {
             Date createdDate = dreq.getTimestampCreatedDate();
             // Have to add some uniqueness to this timestamp
             timestamp = SoapUtil.addTimestamp(securityHeader,

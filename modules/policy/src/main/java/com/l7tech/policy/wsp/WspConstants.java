@@ -322,9 +322,11 @@ public class WspConstants {
         new BeanTypeMapping(JmsMessagePropertyRule.class, "jmsMessagePropertyRule"),
         new ArrayTypeMapping(new JmsMessagePropertyRule[0], "jmsMessagePropertyRuleArray"),
         new BeanTypeMapping(JmsMessagePropertyRuleSet.class, "jmsMessagePropertyRuleSet"),
+        new BeanTypeMapping(IdentityTarget.class, "IdentityTarget"),            
 
         new Java5EnumTypeMapping(TargetMessageType.class, "target"),
         new Java5EnumTypeMapping(CertificateValidationType.class, "certificateValidation"),
+        new Java5EnumTypeMapping(IdentityTarget.TargetIdentityType.class, "identityType"),
 
         // Make sure we get equal instances of built-in attributes (analogous to readResolve())
         new BeanTypeMapping( AttributeHeader.class, "header") {

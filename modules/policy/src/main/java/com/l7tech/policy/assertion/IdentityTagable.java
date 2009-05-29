@@ -6,8 +6,18 @@ package com.l7tech.policy.assertion;
  */
 public interface IdentityTagable {
 
-    public void setIdentityTag(String tag);
+    /**
+     * Get the identity tag.
+     *
+     * @return The tag or null if not set.
+     */
+    String getIdentityTag();
 
-    public String getIdentityTag();
+    /**
+     * Set the identity tag.
+     *
+     * @param tag The tag to use, or null for no tag.
+     */
+    void setIdentityTag(String tag);
 
 }

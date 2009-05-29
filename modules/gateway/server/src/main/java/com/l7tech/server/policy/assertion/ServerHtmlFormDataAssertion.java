@@ -31,8 +31,7 @@ import java.util.logging.Logger;
  * @since SecureSpan 3.7
  * @see <a href="http://www.w3.org/TR/html4/interact/forms.html#h-17.13">HTML 4.0 Form Submisssion specification</a>
  */
-public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFormDataAssertion>
-        implements ServerAssertion {
+public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFormDataAssertion> {
 
     /** An HTML Form field value. */
     private static class FieldValue {
@@ -67,12 +66,13 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
         _auditor = new Auditor(this, springContext, _logger);
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Message requestMessage = context.getRequest();
         final MimeKnob mimeKnob = requestMessage.getMimeKnob();
 
         // Skips if not HTTP.
-        final HttpRequestKnob httpRequestKnob = (HttpRequestKnob) requestMessage.getKnob(HttpRequestKnob.class);
+        final HttpRequestKnob httpRequestKnob = requestMessage.getKnob(HttpRequestKnob.class);
         if (httpRequestKnob == null) {
             _auditor.logAndAudit(AssertionMessages.HTMLFORMDATA_NOT_HTTP);
             return AssertionStatus.NOT_APPLICABLE;
@@ -103,7 +103,7 @@ public class ServerHtmlFormDataAssertion extends AbstractServerAssertion<HtmlFor
         final Map<String, Field> fields = new HashMap<String, Field>();
 
         // Parses for fields in request URI.
-        final HttpServletRequestKnob httpServletRequestKnob = (HttpServletRequestKnob) requestMessage.getKnob(HttpServletRequestKnob.class);
+        final HttpServletRequestKnob httpServletRequestKnob = requestMessage.getKnob(HttpServletRequestKnob.class);
         paramsToFields(httpServletRequestKnob.getQueryParameterMap(), fields, true);
 
         // Parses for fields in request body.

@@ -169,7 +169,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     private String getIncomingURL(PolicyEnforcementContext context) {
-        HttpRequestKnob hrk = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+        HttpRequestKnob hrk = context.getRequest().getKnob(HttpRequestKnob.class);
         if (hrk == null) {
             logger.warning("cannot generate incoming URL");
             return "";
@@ -319,7 +319,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 }
 
                 // avoid re-Tarari-ing request that's already DOM parsed unless some assertions need it bad
-                XmlKnob xk = (XmlKnob) request.getKnob(XmlKnob.class);
+                XmlKnob xk = request.getKnob(XmlKnob.class);
                 if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
             }
 
@@ -335,7 +335,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             MimeKnob mk;
             try {
                 // attempts to read and stash the whole response
-                mk = (MimeKnob) response.getKnob(MimeKnob.class);
+                mk = response.getKnob(MimeKnob.class);
                 if (mk != null) mk.getFirstPart().getActualContentLength();
             } catch (IOException e) {
                 // create fault to be sent
@@ -536,7 +536,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 serviceMetricsServices.addRequest(
                         serviceOid, 
                         getOperationName(context),
-                        context.getLastAuthenticatedUser(),
+                        context.getDefaultAuthenticationContext().getLastAuthenticatedUser(),
                         context.getMappings(),
                         authorizedRequest, completedRequest, frontTime, backTime);
             }

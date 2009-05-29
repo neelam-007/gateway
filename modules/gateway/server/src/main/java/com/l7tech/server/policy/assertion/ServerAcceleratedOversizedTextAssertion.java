@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.OversizedTextAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.ServerPolicyException;
 import com.tarari.xml.rax.token.XmlToken;
 import com.tarari.xml.rax.token.XmlTokenList;
@@ -33,25 +34,24 @@ import java.util.logging.Logger;
  * been examined by Tarari, and works by scanning the token buffer in one pass (two if nesting depth
  * is being checked).
  */
-public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAssertion implements ServerAssertion {
+public class ServerAcceleratedOversizedTextAssertion extends AbstractMessageTargetableServerAssertion<OversizedTextAssertion> {
     private static final Logger logger = Logger.getLogger(ServerAcceleratedOversizedTextAssertion.class.getName());
     private final Auditor auditor;
     private final ServerOversizedTextAssertion delegate;  // Non-Tarari-specific impl to handle the stuff that can just use XPath
     private final ServerOversizedTextAssertion fallBackDelegate;  // Non-Tarari-specific impl to handle the stuff that can just use XPath
-    private final OversizedTextAssertion ota;
     private final boolean lengthLimitTestsPresent;  // true if limiting lengths: that is, if LimitAttrChars or LimitTextChars
     private final boolean accelTestsPresent;        // true if doing any accelerated tets: that is, if lengthLimitTestsPresent or LimitNestingDepth
 
-    public ServerAcceleratedOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) throws ServerPolicyException {
-        super(data);
+    public ServerAcceleratedOversizedTextAssertion( final OversizedTextAssertion data,
+                                                    final ApplicationContext springContext ) throws ServerPolicyException {
+        super(data,data);
         auditor = new Auditor(this, springContext, ServerAcceleratedOversizedTextAssertion.logger);
         // The delegate will do all the checking except for oversized text and attr nodes, which we can do
         // specially by just scanning the token buffer in one pass.
         delegate = new ServerOversizedTextAssertion(data, springContext, true);
         fallBackDelegate = new ServerOversizedTextAssertion(data, springContext, false);
-        this.ota = data;
-        this.lengthLimitTestsPresent = ota.isLimitAttrChars() || ota.isLimitTextChars() || ota.isLimitAttrNameChars();
-        this.accelTestsPresent = lengthLimitTestsPresent || ota.isLimitNestingDepth();
+        this.lengthLimitTestsPresent = assertion.isLimitAttrChars() || assertion.isLimitTextChars() || assertion.isLimitAttrNameChars();
+        this.accelTestsPresent = lengthLimitTestsPresent || assertion.isLimitNestingDepth();
     }
 
     private static final int TEXT = 0;
@@ -104,22 +104,31 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
         private int getLongestOther(){ return longest[OTHR]; }
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context)
+    @Override
+    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
+                                              final Message msg,
+                                              final String targetName,
+                                              final AuthenticationContext authContext )
             throws PolicyAssertionException, IOException
     {
-        if (context.isPostRouting()) {
+        if ( isRequest() && context.isPostRouting() ) {
             auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_ALREADY_ROUTED);
             return AssertionStatus.FAILED;
         }
 
-        Message mess = context.getRequest();
+        //TODO [steve] fail if target is resonse and not routed
+
+        if (!msg.isXml()) {
+            auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NOT_XML, targetName);
+            return AssertionStatus.NOT_APPLICABLE;
+        }
+
         try {
             // Force Tarari evaluation to have occurred
-            mess.isSoap();
-
+            msg.isSoap();
             if (accelTestsPresent) {
                 // At least one accelerated test is enabled.  We'll neeed a RaxDocument.
-                TarariKnob tknob = (TarariKnob) mess.getKnob(TarariKnob.class);
+                TarariKnob tknob = msg.getKnob(TarariKnob.class);
                 if (tknob == null) {
                     auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_CONTEXT);
                     return fallbackToDelegate(context);
@@ -146,25 +155,30 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
                     //int longestElement = chunkState.getLongestElem();
                     //int longestOther = chunkState.getLongestOther();
 
-                    boolean brokeAttrValue = ota.isLimitAttrChars() && longestAttrValue > ota.getMaxAttrChars();
-                    boolean brokeAttrName = ota.isLimitAttrNameChars() && longestAttrName > ota.getMaxAttrNameChars();
-                    boolean brokeText = ota.isLimitTextChars() && longestText > ota.getMaxTextChars();
+                    boolean brokeAttrValue = assertion.isLimitAttrChars() && longestAttrValue > assertion.getMaxAttrChars();
+                    boolean brokeAttrName = assertion.isLimitAttrNameChars() && longestAttrName > assertion.getMaxAttrNameChars();
+                    boolean brokeText = assertion.isLimitTextChars() && longestText > assertion.getMaxTextChars();
                     if (brokeAttrValue || brokeAttrName || brokeText) {
-                        auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_OVERSIZED_TEXT);
+                        auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NODE_OR_ATTRIBUTE, targetName);
                         return AssertionStatus.BAD_REQUEST;
                     }
                 }
 
-                if (ota.isLimitNestingDepth() && raxDocument.getStatistics().getMaxElementDepth() > ota.getMaxNestingDepth()) {
-                    auditor.logAndAudit(AssertionMessages.XML_NESTING_DEPTH_EXCEEDED);
+                if (assertion.isLimitNestingDepth() && raxDocument.getStatistics().getMaxElementDepth() > assertion.getMaxNestingDepth()) {
+                    auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_XML_NESTING_DEPTH_EXCEEDED, targetName);
                     return AssertionStatus.BAD_REQUEST;
                 }
             }
 
-            return delegate.checkAllNonTarariSpecific(mess, mess.getXmlKnob().getElementCursor(), auditor);
+            return delegate.checkAllNonTarariSpecific(msg, targetName, msg.getXmlKnob().getElementCursor(), auditor);
 
         } catch (SAXException e) {
-            auditor.logAndAudit(AssertionMessages.XPATH_REQUEST_NOT_XML);
+            if ( isRequest() )
+                auditor.logAndAudit(AssertionMessages.XPATH_REQUEST_NOT_XML);
+            else if ( isResponse() )
+                auditor.logAndAudit(AssertionMessages.XPATH_RESPONSE_NOT_XML);
+            else
+                auditor.logAndAudit(AssertionMessages.XPATH_MESSAGE_NOT_XML, targetName);
             return AssertionStatus.BAD_REQUEST;
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {"The required attachment " + e.getWhatWasMissing() + "was not found in the request"}, e);
@@ -173,6 +187,11 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractServerAsser
             auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
             return AssertionStatus.FAILED;
         }
+    }
+
+    @Override
+    protected Auditor getAuditor() {
+        return auditor;
     }
 
     private ChunkState findLongestChunks(RaxDocument doc) {

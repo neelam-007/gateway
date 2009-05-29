@@ -1,8 +1,10 @@
 package com.l7tech.gateway.common.audit;
 
 import java.util.logging.Level;
+import java.util.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.text.MessageFormat;
 
 import junit.framework.TestCase;
 import junit.framework.Test;
@@ -55,6 +57,34 @@ public class MessagesTest extends TestCase {
                 }
             }
         }
+    }
+
+    /**
+     * You can't change the number (or order, but we can't test that) of parameters in a message
+     * once it has been used in a released product.
+     */
+    public void testMessageParameters() throws Exception {
+        Properties props = new Properties();
+        props.load( MessagesTest.class.getResourceAsStream("MessageFormatParameters.properties") );
+
+        Properties currentProps = new Properties();
+
+        for(int i=0; i<MESSAGE_MAX_ID; i++) {
+            AuditDetailMessage message = MessagesUtil.getAuditDetailMessageById(i);
+            if ( message == null ) continue;
+            try {
+                MessageFormat format = new MessageFormat(message.getMessage());
+                if ( props.containsKey( Integer.toString(i) ) ) {
+                    assertEquals("Assertion message " +i+ " format arguments", props.getProperty(Integer.toString(i)), Integer.toString(format.getFormats().length));                    
+                }
+                currentProps.put( Integer.toString(i), Integer.toString(format.getFormats().length) );
+            } catch ( IllegalArgumentException iae ) {
+                // this test is not a format compilation test
+            }
+        }
+
+        // uncomment, to allow copy / paste of updated properties.
+        //currentProps.store( System.out, null );
     }
 
     /**

@@ -9,6 +9,7 @@ import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
 import java.io.*;
 import java.util.Comparator;
 import java.util.logging.Level;
@@ -27,12 +28,16 @@ public class PolicyTemplatesFolderNode extends AbstractPaletteFolderNode {
     public static final String TEMPLATES_DIR = "policy.templates";
     public static final String REFRESH_POLICY_TEMPLATES = "Refresh Policy Templates";
 
-    /** The entity name comparator  */
-      protected static final Comparator<PolicyTemplateNode> FILENAME_COMPARATOR = new Comparator<PolicyTemplateNode>() {
-          public int compare(PolicyTemplateNode o1, PolicyTemplateNode o2) {
-              if (o1 != null && o2 != null) {
-                  String name1 = o1.getFile().getName();
-                  String name2 = o2.getFile().getName();
+    /**
+     * The entity name comparator
+     */
+    @SuppressWarnings({"unchecked"})
+    protected static final Comparator<TreeNode> FILENAME_COMPARATOR = new Comparator<TreeNode>() {
+          @Override
+          public int compare(TreeNode o1, TreeNode o2) {
+              if (o1 instanceof PolicyTemplateNode && o2 instanceof PolicyTemplateNode) {
+                  String name1 = ((PolicyTemplateNode)o1).getFile().getName();
+                  String name2 = ((PolicyTemplateNode)o2).getFile().getName();
                   return name1.compareToIgnoreCase(name2);
               }
               throw new ClassCastException("Expected "+PolicyTemplateNode.class +
@@ -48,6 +53,7 @@ public class PolicyTemplatesFolderNode extends AbstractPaletteFolderNode {
         // after Refresh clicked or F5 pressed, these policy templates will be reloaded in the assertion palette panel.
         JTree paletteTree = (JTree) TopComponents.getInstance().getComponent(AssertionsTree.NAME);
         paletteTree.addPropertyChangeListener(REFRESH_POLICY_TEMPLATES, new PropertyChangeListener() {
+            @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 reloadChildren();
             }
@@ -65,6 +71,7 @@ public class PolicyTemplatesFolderNode extends AbstractPaletteFolderNode {
     /**
      * subclasses override this method
      */
+    @Override
     protected void doLoadChildren() {
         // This folder does not allow modular assertions to invite themselves into it, so we don't call
         // insertMatchingModularAssertions here.
@@ -81,11 +88,13 @@ public class PolicyTemplatesFolderNode extends AbstractPaletteFolderNode {
         }
     }
 
+    @Override
     protected boolean isEnabledByLicense() {
         // Policy templates always shown, regardless of license
         return true;
     }
 
+    @Override
     protected void filterChildren() {
         // Suppress filtering for policy templates
     }
@@ -109,6 +118,7 @@ public class PolicyTemplatesFolderNode extends AbstractPaletteFolderNode {
              * @return  <code>true</code> if and only if the name should be
              * included in the file list; <code>false</code> otherwise.
              */
+            @Override
             public boolean accept(File dir, String name) {
                 File f = new File(dir.getPath()+File.separator+name);
                 if (f.isFile()) {

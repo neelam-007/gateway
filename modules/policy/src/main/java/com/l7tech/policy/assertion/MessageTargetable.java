@@ -8,7 +8,7 @@ package com.l7tech.policy.assertion;
  * @see MessageTargetableAssertion  
  * @author alex
  */
-public interface MessageTargetable {
+public interface MessageTargetable extends UsesVariables {
     /**
      * The type of message this assertion targets.  Defaults to {@link TargetMessageType#REQUEST}. Never null.
      */

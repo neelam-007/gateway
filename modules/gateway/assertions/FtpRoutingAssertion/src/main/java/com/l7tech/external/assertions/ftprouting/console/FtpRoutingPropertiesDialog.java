@@ -85,8 +85,8 @@ public class FtpRoutingPropertiesDialog extends AssertionPropertiesEditorSupport
      * @param owner  parent for dialog
      * @param a      assertion to edit
      */
-    public FtpRoutingPropertiesDialog(Frame owner, FtpRoutingAssertion a) {
-        super(owner, "FTP(S) Routing Properties", true);
+    public FtpRoutingPropertiesDialog(Window owner, FtpRoutingAssertion a) {
+        super(owner, "FTP(S) Routing Properties");
         _assertion = a;
         initComponents();
         initFormData();

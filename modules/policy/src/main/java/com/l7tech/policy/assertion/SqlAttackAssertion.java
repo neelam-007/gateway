@@ -4,15 +4,13 @@
  */
 
 package com.l7tech.policy.assertion;
-import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 
 import java.util.*;
 
 /**
  * Assertion that triggers the canned SQL attack threat protection behavior.
  */
-@ProcessesRequest
-public class SqlAttackAssertion extends Assertion {
+public class SqlAttackAssertion extends MessageTargetableAssertion {
     public static final String PROT_METATEXT = "SqlMetaText";
     public static final String PROT_META = "SqlMeta";
     public static final String PROT_MSSQL = "MsSql";
@@ -47,9 +45,21 @@ public class SqlAttackAssertion extends Assertion {
             },
     };
 
-    Set protections = new HashSet();
+    Set<String> protections = new HashSet<String>();
 
     public SqlAttackAssertion() {
+    }
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+        meta.put(AssertionMetadata.SHORT_NAME, "SQL Attack Protection");
+        meta.put(AssertionMetadata.LONG_NAME, "Enable protection against SQL attacks");
+        meta.put(AssertionMetadata.DESCRIPTION, "<html>Helps prevent <b>malicious code injection</b> and <b>common SQL injection</b> attacks by blocking common SQL exploits from reaching protected web services. </html>");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/SQLProtection16x16.gif");
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.SqlAttackDialog");
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        return meta;
     }
 
     /**
@@ -57,10 +67,9 @@ public class SqlAttackAssertion extends Assertion {
      *
      * @return a list of protections that COULD be enabled.  Never null or empty.
      */
-    public static List getAllProtections() {
-        List ret = new ArrayList();
-        for (int i = 0; i < PROTS.length; i++) {
-            String[] prot = PROTS[i];
+    public static List<String> getAllProtections() {
+        List<String> ret = new ArrayList<String>();
+        for (String[] prot : PROTS) {
             ret.add(prot[NAME]);
         }
         return ret;
@@ -71,15 +80,15 @@ public class SqlAttackAssertion extends Assertion {
      *
      * @return the set of enabled protection names.  May be empty, but never null.
      */
-    public Set getProtections() {
+    public Set<String> getProtections() {
         return Collections.unmodifiableSet(protections);
     }
 
     /**
      * @deprecated this method is only here for deserialization purposes and should not be called directly.
      */
-    public void setProtections(Set protections) {
-        this.protections = protections == null ? new HashSet() : new HashSet(protections);
+    public void setProtections(Set<String> protections) {
+        this.protections = protections == null ? new HashSet<String>() : new HashSet<String>(protections);
     }
 
     /**
@@ -141,8 +150,7 @@ public class SqlAttackAssertion extends Assertion {
     }
 
     private static String lookupName(String name, int column) {
-        for (int i = 0; i < PROTS.length; i++) {
-            String[] prot = PROTS[i];
+        for (String[] prot : PROTS) {
             if (prot[NAME].equalsIgnoreCase(name)) {
                 return prot[column];
             }

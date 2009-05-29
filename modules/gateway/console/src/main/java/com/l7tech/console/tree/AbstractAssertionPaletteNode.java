@@ -21,7 +21,7 @@ public abstract class AbstractAssertionPaletteNode extends AbstractTreeNode {
         super(object);
     }
 
-    protected AbstractAssertionPaletteNode(Object object, Comparator<? super TreeNode> c) {
+    protected AbstractAssertionPaletteNode(Object object, Comparator<TreeNode> c) {
         super(object, c);
     }
 
@@ -64,6 +64,7 @@ public abstract class AbstractAssertionPaletteNode extends AbstractTreeNode {
         return false;
     }
 
+    @Override
     protected void filterChildren() {
         List<TreeNode> keepKids = new ArrayList<TreeNode>();
 
@@ -91,7 +92,9 @@ public abstract class AbstractAssertionPaletteNode extends AbstractTreeNode {
         }
     }
 
+    @Override
     abstract public String getName();
 
+    @Override
     abstract protected String iconResource(boolean open);
 }

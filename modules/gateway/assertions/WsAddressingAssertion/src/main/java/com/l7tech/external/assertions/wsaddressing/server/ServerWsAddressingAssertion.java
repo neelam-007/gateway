@@ -13,6 +13,7 @@ import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.*;
@@ -65,6 +66,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     /**
      * 
      */
+    @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         AssertionStatus status = AssertionStatus.FALSIFIED;
         final Message msg;
@@ -78,7 +80,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
         try {
             Map<QName, String> addressingProperties = new HashMap<QName,String>();
             if ( assertion.isRequireSignature() ) {
-                populateAddressingFromSignedElements(getSignedElements(msg, null), addressingProperties);
+                populateAddressingFromSignedElements(getSignedElements(context.getAuthenticationContext(msg), msg, null), addressingProperties);
             } else {
                 populateAddressingFromMessage(getElementCursor(msg), addressingProperties);
             }
@@ -141,6 +143,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
         try {
             if ( moveToSoapHeader(cursor) ) {
                 final ElementCursor.Visitor visitor = new ElementCursor.Visitor(){
+                    @Override
                     public void visit(final ElementCursor ec) throws InvalidDocumentFormatException {
                         if ( ArrayUtils.contains(acceptableNamespaces, ec.getNamespaceUri()) ) {
                             QName name = new QName(ec.getNamespaceUri(), ec.getLocalName());
@@ -235,7 +238,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     /**
      * Get signed elements for request message of given context. 
      */
-    private SignedElement[] getSignedElements(final Message msg, String what)
+    private SignedElement[] getSignedElements(final AuthenticationContext authContext, final Message msg, final String what)
             throws AddressingProcessingException, IOException {
         ProcessorResult wssResults;
 
@@ -257,7 +260,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             throw new AddressingProcessingException("Request does not contain any WSS security", AssertionStatus.FALSIFIED);
         }
 
-        return wssResults.getElementsThatWereSigned();
+        return WSSecurityProcessorUtils.filterSignedElementsByIdentity( authContext, wssResults, assertion.getIdentityTarget() );
     }
 
     /**
@@ -357,6 +360,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                               final String namespace,
                               final PolicyEnforcementContext context) {
         setVariables(addressingProperties, namespace, new Functions.BinaryVoid<String,String>(){
+            @Override
             public void call(String name, String value) {
                 context.setVariable(name, value);
             }

@@ -129,7 +129,7 @@ public class WssRoundTripTest {
             for (XmlSecurityToken toke : r.getXmlSecurityTokens())
                 if (toke instanceof EncryptedKey)
                     fail("Second request included an EncryptedKey");
-            assertFalse(r.getTimestamp().isSigned());
+            assertTrue(null==ProcessorResultUtil.getParsedElementForNode(r.getTimestamp()==null ? null : r.getTimestamp().asElement(), r.getElementsThatWereSigned()));
         } else {
             // If timestamp was supposed to be signed, make sure it actually was
             EncryptedKey[] ekOut2 = new EncryptedKey[1];
@@ -559,7 +559,7 @@ public class WssRoundTripTest {
         if (td.req.isSignTimestamp()) {
             WssTimestamp rts = r.getTimestamp();
             assertNotNull(rts);
-            assertTrue("Timestamp was supposed to have been signed", rts.isSigned());
+            assertNotNull("Timestamp was supposed to have been signed", ProcessorResultUtil.getParsedElementForNode(r.getTimestamp().asElement(), r.getElementsThatWereSigned()));
             SigningSecurityToken[] signers = r.getSigningTokens(rts.asElement());
             assertNotNull(signers);
             // Martha can currently only produce messages with a single timestamp-covering signature in the default sec header
@@ -601,8 +601,10 @@ public class WssRoundTripTest {
         if (secureConversationSession == null)
             return null;
         return new SecurityContextFinder() {
+            @Override
             public SecurityContext getSecurityContext(String securityContextIdentifier) {
                 return new SecurityContext() {
+                    @Override
                     public byte[] getSharedSecret() {
                         return secureConversationSession.getSecretKey();
                     }

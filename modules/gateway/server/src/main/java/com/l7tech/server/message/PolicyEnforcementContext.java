@@ -13,7 +13,6 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.AuditDetail;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.identity.User;
 import com.l7tech.message.Message;
 import com.l7tech.message.ProcessingContext;
 import com.l7tech.policy.assertion.Assertion;
@@ -26,10 +25,8 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.RequestIdGenerator;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.cluster.ClusterPropertyCache;
-import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.policy.assertion.CompositeRoutingResultListener;
 import com.l7tech.server.policy.assertion.RoutingResultListener;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -56,15 +53,13 @@ import java.util.logging.Level;
  * Holds message processing state needed by policy enforcement server (SSG) message processor and policy assertions.
  * TODO write some farking javadoc
  */
-public class PolicyEnforcementContext extends ProcessingContext {
+public class PolicyEnforcementContext extends ProcessingContext<AuthenticationContext> {
     private final long startTime = System.currentTimeMillis();
     private long endTime;
     private final RequestId requestId;
     private ArrayList<String> incrementedCounters = new ArrayList<String>();
     private final Map<ServerAssertion,ServerAssertion> deferredAssertions = new LinkedHashMap<ServerAssertion, ServerAssertion>();
     private boolean replyExpected;
-    private AuthenticationResult lastAuthenticationResult = null;
-    private List<AuthenticationResult> authenticationResults = new ArrayList<AuthenticationResult>();
     private Level auditLevel;
     private boolean auditSaveRequest;
     private boolean auditSaveResponse;
@@ -106,6 +101,11 @@ public class PolicyEnforcementContext extends ProcessingContext {
         instanceHolder.set(this);
     }
 
+    @Override
+    protected AuthenticationContext buildContext() {
+        return new AuthenticationContext();
+    }
+
     /**
      * There is one PolicyEnforcementContext per request sent to the SSG. This allows the caller to
      * retrieve the current PEC for the thread which is this is being called from.
@@ -120,33 +120,10 @@ public class PolicyEnforcementContext extends ProcessingContext {
      * Call this when you are done using a PEC. This is important for PolicyEnforcementContext#close() to
      * function properly.
      */
+    @Override
     public void close() {
         instanceHolder.set(null);
         super.close();
-    }
-
-    public boolean isAuthenticated() {
-        return lastAuthenticationResult != null;
-    }
-
-    public void addAuthenticationResult(AuthenticationResult authResult) {
-        if (authResult == null) throw new NullPointerException("authResult");
-        if (!authenticationResults.contains(authResult)) {
-            authenticationResults.add(authResult);
-        }
-        this.lastAuthenticationResult = authResult;
-    }
-
-    public List<AuthenticationResult> getAllAuthenticationResults() {
-        return authenticationResults;
-    }
-
-    public AuthenticationResult getLastAuthenticationResult() {
-        return lastAuthenticationResult;
-    }
-
-    public User getLastAuthenticatedUser() {
-        return lastAuthenticationResult == null ? null : lastAuthenticationResult.getUser();
     }
 
     public AuditContext getAuditContext() {
@@ -256,7 +233,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     }
 
     public void setAuthenticationMissing() {
-        super.setAuthenticationMissing();
+        super.getDefaultAuthenticationContext().setAuthenticationMissing();
         setRequestPolicyViolated();
     }
 
@@ -477,14 +454,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
         return startTime;
     }
 
-    public int getAuthSuccessCacheTime() {
-        return ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_AUTH_CACHE_MAX_SUCCESS_TIME, 1000, 27000L);
-    }
-
-    public int getAuthFailureCacheTime() {
-        return ServerConfig.getInstance().getIntPropertyCached(ServerConfig.PARAM_AUTH_CACHE_MAX_FAILURE_TIME, 1000, 27000L);
-    }
-
     /**
      * Gets the last URL to which the SSG <em>attempted</em> to send this request.
      *
@@ -626,6 +595,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
             final ContextVariableKnob cvk = new ContextVariableKnob(variableName);
 
             StashManager sm = new ByteArrayStashManager() {
+                @Override
                 public void stash(int ordinal, byte[] in, int offset, int length) {
                     super.stash(ordinal, in, offset, length);
                     if (ordinal != 0) // Probably won't happen but you never knob 

@@ -7,7 +7,6 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
 /**
@@ -16,12 +15,14 @@ import org.springframework.context.ApplicationContext;
  * {@link com.l7tech.identity.User} or {@link com.l7tech.identity.Group}.
  * @author alex
  */
-public class ServerAuthenticationAssertion extends ServerIdentityAssertion {
+public class ServerAuthenticationAssertion extends ServerIdentityAssertion<AuthenticationAssertion> {
+    
     public ServerAuthenticationAssertion(AuthenticationAssertion data, ApplicationContext spring) {
         super(data, spring);
     }
 
-    protected AssertionStatus checkUser(AuthenticationResult authResult, PolicyEnforcementContext context) {
+    @Override
+    protected AssertionStatus checkUser(AuthenticationResult authResult) {
         // Doesn't care
         return AssertionStatus.NONE;
     }

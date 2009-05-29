@@ -22,10 +22,11 @@ import java.util.logging.Logger;
  * Server side implementation of the SqlAttackAssertion all-in-one convenience assertion.
  * Internally this is implemented, essentially, as just zero or more regexp assertions.
  */
-public class ServerSqlAttackAssertion extends AbstractServerAssertion<SqlAttackAssertion> implements ServerAssertion {
+public class ServerSqlAttackAssertion extends AbstractServerAssertion<SqlAttackAssertion> {
     private static final Logger logger = Logger.getLogger(ServerSqlAttackAssertion.class.getName());
     private final Auditor auditor;
-    private final ArrayList<ServerAssertion> children = new ArrayList<ServerAssertion>();
+    private final ArrayList<AbstractServerAssertion<? extends MessageTargetableAssertion>> children =
+                                    new ArrayList<AbstractServerAssertion<? extends MessageTargetableAssertion>>();
 
     public ServerSqlAttackAssertion(SqlAttackAssertion assertion, ApplicationContext springContext) {
         super(assertion);
@@ -39,13 +40,13 @@ public class ServerSqlAttackAssertion extends AbstractServerAssertion<SqlAttackA
             String prot = (String)i.next();
             String regex = SqlAttackAssertion.getProtectionRegex(prot);
             if (regex == null) {
-                auditor.logAndAudit(AssertionMessages.SQLATTACK_UNRECOGNIZED_PROTECTION,
-                                    new String[]{prot});
+                auditor.logAndAudit(AssertionMessages.SQLATTACK_UNRECOGNIZED_PROTECTION, prot);
                 abort = true;
                 break;
             }
 
             Regex ra = new Regex();
+            ra.setAutoTarget(false);
             ra.setRegex(regex);
             ra.setCaseInsensitive(false);
             ra.setProceedIfPatternMatches(false);
@@ -63,15 +64,17 @@ public class ServerSqlAttackAssertion extends AbstractServerAssertion<SqlAttackA
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws PolicyAssertionException, IOException
     {
-        if (context.isPostRouting()) {
+        TargetMessageType target = getAssertion().getTarget();
+        if (TargetMessageType.REQUEST == target && context.isPostRouting()) {
             auditor.logAndAudit(AssertionMessages.SQLATTACK_ALREADY_ROUTED);
             return AssertionStatus.FAILED;
         }
-
-        for (ServerAssertion serverAssertion : children) {
-            AssertionStatus result = serverAssertion.checkRequest(context);
+        for (AbstractServerAssertion<? extends MessageTargetableAssertion> mtServerAssertion : children) {
+            mtServerAssertion.getAssertion().setTarget(target);
+            mtServerAssertion.getAssertion().setOtherTargetMessageVariable(getAssertion().getOtherTargetMessageVariable());
+            AssertionStatus result = mtServerAssertion.checkRequest(context);
             if (AssertionStatus.NONE != result) {
-                auditor.logAndAudit(AssertionMessages.SQLATTACK_REQUEST_REJECTED);
+                auditor.logAndAudit(AssertionMessages.SQLATTACK_REJECTED, getAssertion().getTargetName());
                 return AssertionStatus.BAD_REQUEST;
             }
         }

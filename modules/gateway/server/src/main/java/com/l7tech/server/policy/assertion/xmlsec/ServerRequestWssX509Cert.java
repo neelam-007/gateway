@@ -9,13 +9,17 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.security.token.X509SigningSecurityToken;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.message.Message;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
+import org.w3c.dom.Element;
 import sun.security.x509.X500Name;
 
 import java.io.IOException;
@@ -34,77 +38,125 @@ import java.util.logging.Logger;
  * Date: Jul 14, 2004<br/>
  * $Id$<br/>
  */
-public class ServerRequestWssX509Cert extends AbstractServerAssertion implements ServerAssertion {
-    private final Auditor auditor;
+public class ServerRequestWssX509Cert extends AbstractMessageTargetableServerAssertion<RequestWssX509Cert> {
 
-    public ServerRequestWssX509Cert(RequestWssX509Cert subject, ApplicationContext springContext) {
-        super(subject);
-        this.subject = subject;
+    //- PUBLIC
+
+    public ServerRequestWssX509Cert( final RequestWssX509Cert subject, final ApplicationContext springContext ) {
+        super(subject, subject);
         this.auditor = new Auditor(this, springContext, logger);
+        this.securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver", SecurityTokenResolver.class);
     }
     
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        if (!subject.getRecipientContext().localRecipient()) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_FOR_ANOTHER_USER);
+    @Override
+    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
+        if (!assertion.getRecipientContext().localRecipient()) {
+            auditor.logAndAudit(AssertionMessages.WSS_X509_FOR_ANOTHER_USER);
             return AssertionStatus.NONE;
         }
+
+        return super.checkRequest( context );
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
+                                              final Message message,
+                                              final String messageDesc,
+                                              final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
         ProcessorResult wssResults;
         try {
-            if (!context.getRequest().isSoap()) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_NON_SOAP);
-                return AssertionStatus.BAD_REQUEST;
+            if (!message.isSoap()) {
+                auditor.logAndAudit(AssertionMessages.WSS_X509_NON_SOAP, messageDesc);
+                return isRequest() ? AssertionStatus.BAD_REQUEST : AssertionStatus.FALSIFIED;
             }
-            wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
+
+            if ( isRequest() ) {
+                wssResults = message.getSecurityKnob().getProcessorResult();
+            } else {
+                wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDesc, securityTokenResolver, auditor);
+            }
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
         if (wssResults == null) {
-            auditor.logAndAudit(AssertionMessages.REQUESTWSS_NO_SECURITY);
-            context.setRequestPolicyViolated();
-            context.setAuthenticationMissing();
+            auditor.logAndAudit(AssertionMessages.WSS_X509_NO_WSS_LEVEL_SECURITY, messageDesc);
+            if ( isRequest() ) {
+                context.setRequestPolicyViolated();
+                context.setAuthenticationMissing();
+            }
             return AssertionStatus.FALSIFIED;
         }
 
         XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
         if (tokens == null) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_NO_TOKEN);
-            context.setAuthenticationMissing();
-            return AssertionStatus.AUTH_REQUIRED;
+            AssertionStatus result = getBadAuthStatus( context );
+            auditor.logAndAudit(AssertionMessages.WSS_X509_NO_TOKEN, messageDesc, result.getMessage());
+            return result;
         }
-        X509Certificate gotACertAlready = null;
+
+        Element processedSignatureElement = null;
         for (XmlSecurityToken tok : tokens) {
             if (tok instanceof X509SigningSecurityToken) {
                 X509SigningSecurityToken x509Tok = (X509SigningSecurityToken)tok;
                 if (x509Tok.isPossessionProved()) {
-                    X509Certificate okCert = x509Tok.getMessageSigningCertificate();
-                    // todo, it is possible that a request has more than one signature by more than one
-                    // identity. we should refactor request.setPrincipalCredentials to be able to remember
-                    // more than one proven identity.
-                    if (gotACertAlready != null) {
-                        auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_TOO_MANY_VALID_SIG);
-                        return AssertionStatus.BAD_REQUEST;
+
+                    // Check for a single signature element, not token or certificate (bug 7157)
+                    final X509Certificate signingCertificate = x509Tok.getMessageSigningCertificate();
+                    if ( processedSignatureElement != null &&
+                         processedSignatureElement != x509Tok.getSignedElements()[0].getSignatureElement() &&
+                         !assertion.isAllowMultipleSignatures() ) {
+                        auditor.logAndAudit(AssertionMessages.WSS_X509_TOO_MANY_VALID_SIG, messageDesc);
+                        return isRequest() ? AssertionStatus.BAD_REQUEST : AssertionStatus.FALSIFIED;
                     }
-                    gotACertAlready = okCert;
+
+                    processedSignatureElement = x509Tok.getSignedElements()[0].getSignatureElement();
+                    X500Name x500name = new X500Name(signingCertificate.getSubjectX500Principal().getName());
+                    String certCN = x500name.getCommonName();
+                    authContext.addCredentials(
+                            new LoginCredentials(certCN,
+                                                null,
+                                                CredentialFormat.CLIENTCERT,
+                                                assertion.getClass(),
+                                                null,
+                                                signingCertificate));
+                    auditor.logAndAudit(AssertionMessages.WSS_X509_CERT_LOADED, certCN);
                 }
             }
         }
-        if (gotACertAlready != null) {
-            X500Name x500name = new X500Name(gotACertAlready.getSubjectX500Principal().getName());
-            String certCN = x500name.getCommonName();
-            context.addCredentials(new LoginCredentials(certCN,
-                                                        null,
-                                                        CredentialFormat.CLIENTCERT,
-                                                        subject.getClass(),
-                                                        null,
-                                                        gotACertAlready));
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_CERT_LOADED, certCN);
-            return AssertionStatus.NONE;
+
+        if ( processedSignatureElement == null ) {
+            AssertionStatus result = getBadAuthStatus( context );
+            auditor.logAndAudit(AssertionMessages.WSS_X509_NO_PROVEN_CERT, messageDesc, result.getMessage());
+            return result;
         }
-        auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_NO_PROVEN_CERT);
-        context.setAuthenticationMissing();
-        return AssertionStatus.AUTH_REQUIRED;
+
+        return AssertionStatus.NONE;
     }
 
+    @Override
+    protected Auditor getAuditor() {
+        return auditor;
+    }
+
+    //- PRIVATE
+
     private static final Logger logger = Logger.getLogger(ServerRequestWssX509Cert.class.getName());
-    private RequestWssX509Cert subject;
+
+    private final Auditor auditor;
+    private final SecurityTokenResolver securityTokenResolver;
+
+    private AssertionStatus getBadAuthStatus( final PolicyEnforcementContext context ) {
+        AssertionStatus status;
+
+        if ( isRequest() ) {
+            status = AssertionStatus.AUTH_REQUIRED;
+            context.setAuthenticationMissing();
+        } else {
+            status = AssertionStatus.FALSIFIED;
+        }
+
+        return status;
+    }
 }

@@ -6,9 +6,10 @@ package com.l7tech.policy.assertion.identity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.PersistentEntity;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.assertion.IdentityTagable;
+import com.l7tech.policy.assertion.IdentityTarget;
+import com.l7tech.policy.assertion.MessageTargetableAssertion;
 
 /**
  * Subclasses of IdentityAssertion are used to specify that the entity making
@@ -18,7 +19,7 @@ import com.l7tech.policy.assertion.IdentityTagable;
  * @author alex
  * @version $Revision$
  */
-public abstract class IdentityAssertion extends Assertion implements UsesEntities, IdentityTagable {
+public abstract class IdentityAssertion extends MessageTargetableAssertion implements UsesEntities, IdentityTagable {
     protected long _identityProviderOid = PersistentEntity.DEFAULT_OID;
     protected String identityTag;
 
@@ -80,4 +81,11 @@ public abstract class IdentityAssertion extends Assertion implements UsesEntitie
      *          at all useful they could return instead.)
      */
     public abstract String loggingIdentity();
+
+    /**
+     * Get the identity targetted by this assertion.
+     *
+     * @return The identity that this assertion asserts.
+     */
+    public abstract IdentityTarget getIdentityTarget();
 }

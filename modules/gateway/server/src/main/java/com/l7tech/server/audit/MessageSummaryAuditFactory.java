@@ -22,6 +22,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.mapping.MessageContextMappingManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -91,12 +92,13 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
         }
 
         // User info
+        final AuthenticationContext authContext = context.getDefaultAuthenticationContext();
         final User authUser;
-        authenticated = context.isAuthenticated();
+        authenticated = authContext.isAuthenticated();
         if (authenticated) {
             StringBuffer usernamebuf = new StringBuffer();
             StringBuffer useridbuf = new StringBuffer();
-            List<AuthenticationResult> allCreds = context.getAllAuthenticationResults();
+            List<AuthenticationResult> allCreds = authContext.getAllAuthenticationResults();
             for (AuthenticationResult aARes : allCreds) {
                 String tmp = aARes.getUser().getLogin();
                 if (tmp == null || tmp.length() < 1) {
@@ -116,7 +118,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
                 userId = useridbuf.toString();
             // todo, refactor so that we record all authentication types
             authType = authType(context);
-            authUser = context.getLastAuthenticatedUser();
+            authUser = authContext.getLastAuthenticatedUser();
         } else {
             authUser = null;
         }
@@ -305,7 +307,7 @@ public class MessageSummaryAuditFactory implements PropertyChangeListener {
 
     private SecurityTokenType authType(PolicyEnforcementContext context) {
         SecurityTokenType authType = null;
-        LoginCredentials creds = context.getLastCredentials();
+        LoginCredentials creds = context.getDefaultAuthenticationContext().getLastCredentials();
         if (creds != null) {
             authType = creds.getType();
         }

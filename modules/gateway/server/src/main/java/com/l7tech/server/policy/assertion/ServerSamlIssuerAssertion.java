@@ -103,9 +103,9 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // Generate the SAML assertion
-        final TcpKnob tcpKnob = (TcpKnob) context.getRequest().getKnob(TcpKnob.class);
+        final TcpKnob tcpKnob = context.getRequest().getKnob(TcpKnob.class);
         final String clientAddress = tcpKnob == null ? null : tcpKnob.getRemoteAddress();
-        LoginCredentials creds = context.getLastCredentials(); // TODO support some choice of credentials
+        LoginCredentials creds = context.getDefaultAuthenticationContext().getLastCredentials(); // TODO support some choice of credentials
 
         final SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
         options.setAudienceRestriction(assertion.getAudienceRestriction());
@@ -138,7 +138,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 nameFormat = assertion.getNameIdentifierFormat();
                 break;
             case FROM_USER:
-                User u = context.getLastAuthenticatedUser(); // TODO support some choice of user
+                User u = context.getDefaultAuthenticationContext().getLastAuthenticatedUser(); // TODO support some choice of user
                 if (u == null) {
                     auditor.logAndAudit(AssertionMessages.SAML_ISSUER_AUTH_REQUIRED);
                     return AssertionStatus.AUTH_REQUIRED;
@@ -149,7 +149,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                     nameValue = u.getEmail();
                 } else if (nameFormat != null && nameFormat.equals(SamlConstants.NAMEIDENTIFIER_X509_SUBJECT)) {
                     X509Certificate foundCert = null;
-                    for (AuthenticationResult result : context.getAllAuthenticationResults()) {
+                    for (AuthenticationResult result : context.getDefaultAuthenticationContext().getAllAuthenticationResults()) {
                         X509Certificate cert = result.getAuthenticatedCert();
                         if (cert != null) {
                             foundCert = cert;
@@ -230,7 +230,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 return AssertionStatus.BAD_REQUEST;
             }
 
-            XmlKnob xk = (XmlKnob) msg.getKnob(XmlKnob.class);
+            XmlKnob xk = msg.getKnob(XmlKnob.class);
             if (xk == null) {
                 auditor.logAndAudit(AssertionMessages.SAML_ISSUER_NOT_XML);
                 return AssertionStatus.FAILED;

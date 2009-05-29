@@ -17,14 +17,16 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.message.SecurityKnob;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -35,44 +37,61 @@ import java.security.GeneralSecurityException;
 /**
  * Ensures that a UsernameToken was present in the request, was encrypted, and was signed with the same token that
  * signed the timestamp.
+ *
+ * TODO [steve] auditing for message target
  */
-public class ServerEncryptedUsernameTokenAssertion extends AbstractServerAssertion implements ServerAssertion {
+public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTargetableServerAssertion<EncryptedUsernameTokenAssertion> {
 
     //- PUBLIC
 
-    public ServerEncryptedUsernameTokenAssertion(EncryptedUsernameTokenAssertion data, ApplicationContext springContext) {
-        super(data);
+    public ServerEncryptedUsernameTokenAssertion( final EncryptedUsernameTokenAssertion data,
+                                                  final ApplicationContext springContext ) {
+        super(data,data);
         this.data = data;
         this.auditor = new Auditor(this, springContext, logger);
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
+    @Override
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
         if (!data.getRecipientContext().localRecipient()) {
             auditor.logAndAudit(AssertionMessages.WSS_BASIC_FOR_ANOTHER_RECIPIENT);
             return AssertionStatus.NONE;
         }
+
+        return super.checkRequest( context );
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
+                                              final Message message,
+                                              final String messageDescription,
+                                              final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
         ProcessorResult wssResults;
         try {
-            if (!context.getRequest().isSoap()) {
+            if (!message.isSoap()) {
                 auditor.logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
-            wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
+            wssResults = message.getSecurityKnob().getProcessorResult();
         } catch (SAXException e) {
             throw new CausedIOException("Request declared as XML but is not well-formed", e);
         }
         if (wssResults == null) {
             auditor.logAndAudit(AssertionMessages.WSS_BASIC_NO_CREDENTIALS);
-            context.setAuthenticationMissing();
-            context.setRequestPolicyViolated();
+            if ( isRequest() ) {
+                context.setAuthenticationMissing();
+                context.setRequestPolicyViolated();
+            }
             return AssertionStatus.AUTH_REQUIRED;
         }
 
         XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
-        for (int i = 0; i < tokens.length; i++) {
-            if (tokens[i] instanceof UsernameToken) {
-                UsernameToken utok = (UsernameToken)tokens[i];
+        for (XmlSecurityToken token : tokens) {
+            if (token instanceof UsernameToken) {
+                UsernameToken utok = (UsernameToken) token;
 
                 if (!ProcessorResultUtil.nodeIsPresent(utok.asElement(), wssResults.getElementsThatWereEncrypted())) {
                     logger.fine("Ignoring UsernameToken that was not encrypted");
@@ -86,13 +105,12 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractServerAsserti
                 }
 
                 EncryptedKey signingToken = null;
-                for (int j = 0; j < signingTokens.length; j++) {
-                    SigningSecurityToken stok = signingTokens[j];
+                for (SigningSecurityToken stok : signingTokens) {
                     if (!(stok instanceof EncryptedKey)) {
                         logger.fine("Ignoring UsernameToken signging token that was not an EncryptedKey");
                         continue;
                     }
-                    signingToken = (EncryptedKey)stok;
+                    signingToken = (EncryptedKey) stok;
                 }
 
                 if (signingToken == null) {
@@ -105,14 +123,14 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractServerAsserti
                 char[] pass = utok.getPassword();
                 if (pass == null) pass = new char[0];
                 LoginCredentials creds = LoginCredentials.makePasswordCredentials(user, pass, WssBasic.class);
-                context.addCredentials(creds);
+                authContext.addCredentials(creds);
 
                 // Configure the eventual response to reuse this EncryptedKey
                 try {
                     // Since it's a signing token it must already have been unwrapped
                     final String encryptedKeySha1 = signingToken.getEncryptedKeySHA1();
                     addDeferredAssertion(context, encryptedKeySha1, signingToken.getSecretKey());
-                } catch ( InvalidDocumentFormatException e) {
+                } catch (InvalidDocumentFormatException e) {
                     throw new IllegalStateException(e); // can't happen -- it's a signing token
                 } catch (GeneralSecurityException e) {
                     throw new IllegalStateException(e); // can't happen -- it's a signing token
@@ -123,8 +141,15 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractServerAsserti
         auditor.logAndAudit(AssertionMessages.WSS_BASIC_CANNOT_FIND_ENC_CREDENTIALS);
         // we get here because there were no credentials found in the format we want
         // therefore this assertion was violated
-        context.setRequestPolicyViolated();        
+        if ( isRequest() ) {
+            context.setRequestPolicyViolated();
+        }
         return AssertionStatus.AUTH_REQUIRED;
+    }
+
+    @Override
+    protected Auditor getAuditor() {
+        return auditor;
     }
 
     //- PRIVATE
@@ -137,8 +162,9 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractServerAsserti
     private void addDeferredAssertion(PolicyEnforcementContext context,
                                       final String encryptedKeySha1,
                                       final byte[] secretKey) {
-        context.addDeferredAssertion(this, new AbstractServerAssertion(data) {
-            public AssertionStatus checkRequest(PolicyEnforcementContext context)
+        context.addDeferredAssertion(this, new AbstractServerAssertion<EncryptedUsernameTokenAssertion>(data) {
+            @Override
+            public AssertionStatus checkRequest(final PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException
             {
                 try {

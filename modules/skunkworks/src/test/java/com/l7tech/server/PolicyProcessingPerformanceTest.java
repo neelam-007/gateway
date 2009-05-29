@@ -527,7 +527,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
                 UserBean user = new UserBean();
                 user.setLogin("test");
                 user.setCleartextPassword("password");
-                context.addAuthenticationResult(new AuthenticationResult(user));
+                context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(user));
             }
 
             status = messageProcessor.processMessage(context);

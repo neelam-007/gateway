@@ -49,7 +49,7 @@ import java.util.logging.Logger;
  *
  * @author alex
  */
-public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrowserArtifact> implements ServerAssertion {
+public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrowserArtifact> {
 
     //- PUBLIC
 
@@ -128,7 +128,7 @@ public class ServerSamlBrowserArtifact extends AbstractServerAssertion<SamlBrows
         GenericHttpRequest loginRequest = null;
         GenericHttpResponse loginResponse = null;
         try {
-            LoginCredentials creds = context.getLastCredentials();
+            LoginCredentials creds = context.getAuthenticationContext(context.getRequest()).getLastCredentials();
             if (creds == null) {
                 throw new AssertionException(AssertionStatus.AUTH_REQUIRED, AssertionMessages.SAMLBROWSER_CREDENTIALS_NOCREDS);
             }

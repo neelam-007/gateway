@@ -513,7 +513,8 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
     private void exportKey() {
         final SsgKeyEntry entry = subject.getKeyEntry();
-        final boolean hardwareHint = "PKCS11_HARDWARE".equals(subject.getKeystore().getKeyStoreType());
+        final String kstype = subject.getKeystore().getKeyStoreType();
+        final boolean hardwareHint = kstype != null && kstype.contains("HARDWARE");
 
         final PasswordDoubleEntryDialog passDlg = new PasswordDoubleEntryDialog(this, "Enter Export Passphrase");
         DialogDisplayer.display(passDlg, new Runnable() {

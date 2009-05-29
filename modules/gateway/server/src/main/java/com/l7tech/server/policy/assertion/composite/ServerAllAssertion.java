@@ -15,7 +15,7 @@ import org.springframework.context.ApplicationContext;
 import java.io.IOException;
 import java.util.List;
 
-public final class ServerAllAssertion extends ServerCompositeAssertion<AllAssertion> implements ServerAssertion {
+public final class ServerAllAssertion extends ServerCompositeAssertion<AllAssertion> {
     public ServerAllAssertion(AllAssertion data, ApplicationContext applicationContext) throws PolicyAssertionException, LicenseException {
         super(data, applicationContext);
     }

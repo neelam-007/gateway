@@ -21,6 +21,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.server.message.PolicyContextCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -72,6 +73,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
     /**
      *
      */
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         AssertionStatus result = AssertionStatus.FAILED;
 
@@ -113,8 +115,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
             ProcessorResult wssProcResult = secKnob.getProcessorResult();
             if (wssProcResult != null) {
                 XmlSecurityToken[] tokens = wssProcResult.getXmlSecurityTokens();
-                for (int i = 0; i < tokens.length; i++) {
-                    XmlSecurityToken currentToken = tokens[i];
+                for (XmlSecurityToken currentToken : tokens) {
                     if (currentToken instanceof UsernameToken) {
                         if (token == null) {
                             token = (UsernameToken) currentToken;
@@ -134,7 +135,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
     /**
      *
      */
-    private UsernameToken getToken(PolicyEnforcementContext context) {
+    private UsernameToken getToken(AuthenticationContext context) {
         UsernameToken token = null;
 
         LoginCredentials creds = context.getLastCredentials();
@@ -239,9 +240,9 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
      *
      */
     private AssertionStatus doCheckRequest(PolicyEnforcementContext context) throws AuthRequiredException, StopAndAuditException {
-        XmlKnob requestXml = (XmlKnob)context.getRequest().getKnob(XmlKnob.class);
+        XmlKnob requestXml = context.getRequest().getKnob(XmlKnob.class);
         ensureXmlRequest(requestXml);
-        SecurityKnob requestSec = (SecurityKnob)context.getRequest().getKnob(SecurityKnob.class);
+        SecurityKnob requestSec = context.getRequest().getKnob(SecurityKnob.class);
 
         // Try to get credentials from WSS processor results
         boolean tokenFromRequest = true;
@@ -250,7 +251,7 @@ public class ServerWsFederationPassiveTokenRequest extends AbstractServerWsFeder
         // Try to get non-WSS credentials
         if (existingToken == null) {
             tokenFromRequest = false;
-            existingToken = getToken(context);
+            existingToken = getToken(context.getAuthenticationContext(context.getRequest()));
         }
 
         // Error if there is no token at all

@@ -15,7 +15,7 @@ import org.springframework.context.ApplicationContext;
 import java.io.IOException;
 import java.util.List;
 
-public final class ServerOneOrMoreAssertion extends ServerCompositeAssertion<OneOrMoreAssertion> implements ServerAssertion {
+public final class ServerOneOrMoreAssertion extends ServerCompositeAssertion<OneOrMoreAssertion> {
     public ServerOneOrMoreAssertion( OneOrMoreAssertion data, ApplicationContext applicationContext) throws PolicyAssertionException, LicenseException {
         super(data, applicationContext);
     }

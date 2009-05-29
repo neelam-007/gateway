@@ -2,7 +2,8 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.validator.RequestWssConfidentialityValidator;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.security.xml.XencUtil;
@@ -15,13 +16,13 @@ import java.util.List;
  * @author flascell<br/>
  * @version Aug 27, 2003<br/>
  */
-@ProcessesRequest
 public class RequestWssConfidentiality extends XmlSecurityAssertionBase {
     public RequestWssConfidentiality() {
-        setXpathExpression(XpathExpression.soapBodyXpathValue());
+        this(XpathExpression.soapBodyXpathValue());
     }
 
     public RequestWssConfidentiality(XpathExpression xpath) {
+        super(TargetMessageType.REQUEST);
         setXpathExpression(xpath);
     }
 
@@ -79,21 +80,22 @@ public class RequestWssConfidentiality extends XmlSecurityAssertionBase {
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Encrypt Request Element");
-        meta.put(AssertionMetadata.DESCRIPTION, "Requestor must encrypt an element of the SOAP request");
+        meta.put(AssertionMetadata.SHORT_NAME, "Require Encrypted Element");
+        meta.put(AssertionMetadata.DESCRIPTION, "The message must contain one or more encrypted elements.");
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
+        meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, 90000);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, RequestWssConfidentiality>() {
             @Override
             public String call( final RequestWssConfidentiality requestWssConfidentiality ) {
-                StringBuilder name = new StringBuilder("Encrypt request element ");                
+                StringBuilder name = new StringBuilder("Require encrypted element ");
                 if (requestWssConfidentiality.getXpathExpression() == null) {
                     name .append("[XPath expression not set]");
                 } else {
                     name.append(requestWssConfidentiality.getXpathExpression().getExpression());
                 }
-                name.append(SecurityHeaderAddressableSupport.getActorSuffix(requestWssConfidentiality));
-                return name.toString();
+                return AssertionUtils.decorateName(requestWssConfidentiality, name);
             }
         });
         meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, RequestWssConfidentialityValidator.class.getName());

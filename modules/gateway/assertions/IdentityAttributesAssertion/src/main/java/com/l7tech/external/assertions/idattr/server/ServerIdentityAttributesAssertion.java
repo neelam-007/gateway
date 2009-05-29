@@ -12,6 +12,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.mapping.AttributeExtractor;
 import com.l7tech.server.identity.mapping.ExtractorFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import org.springframework.context.ApplicationContext;
 
@@ -56,8 +57,10 @@ public class ServerIdentityAttributesAssertion extends AbstractServerAssertion<I
         this.variablePrefix = p;
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        List<AuthenticationResult> results = context.getAllAuthenticationResults();
+        AuthenticationContext authContext = context.getAuthenticationContext(context.getRequest());
+        List<AuthenticationResult> results = authContext.getAllAuthenticationResults();
 
         User foundUser = null;
         for (AuthenticationResult result : results) {

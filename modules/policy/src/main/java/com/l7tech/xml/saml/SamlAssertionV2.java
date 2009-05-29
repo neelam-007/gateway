@@ -51,7 +51,7 @@ public final class SamlAssertionV2 extends SamlAssertion {
 
     private final AssertionType assertion;
     private Element assertionElement = null;
-    private boolean hasEmbeddedSignature = false;
+    private Element embeddedSignatureElement = null;
     private ConfirmationMethod confirmationMethod = null;
     private X509Certificate subjectCertificate = null;
     private X509Certificate issuerCertificate = null;
@@ -200,7 +200,7 @@ public final class SamlAssertionV2 extends SamlAssertion {
             // Check if assertion is signed
             SignatureType signature = assertion.getSignature();
             if (signature != null) {
-                hasEmbeddedSignature = true;
+                embeddedSignatureElement = (Element)signature.getDomNode();
                 // Extract the issuer certificate
                 KeyInfoType keyInfo = signature.getKeyInfo();
                 if (keyInfo == null) throw new SAXException("SAML issuer signature has no KeyInfo");
@@ -257,7 +257,11 @@ public final class SamlAssertionV2 extends SamlAssertion {
     }
 
     public boolean hasEmbeddedIssuerSignature() {
-        return hasEmbeddedSignature;
+        return embeddedSignatureElement!=null;
+    }
+
+    public Element getEmbeddedIssuerSignature() {
+        return embeddedSignatureElement;
     }
 
     public X509Certificate getSubjectCertificate() {
@@ -308,7 +312,7 @@ public final class SamlAssertionV2 extends SamlAssertion {
     }
 
     public void verifyEmbeddedIssuerSignature() throws SignatureException {
-        if (!hasEmbeddedSignature) throw new IllegalStateException("May not verify signature; this assertion is not signed");
+        if (!hasEmbeddedIssuerSignature()) throw new IllegalStateException("May not verify signature; this assertion is not signed");
 
         try {
             Element signature = DomUtils.findOnlyOneChildElementByName(assertionElement, SoapConstants.DIGSIG_URI, "Signature");

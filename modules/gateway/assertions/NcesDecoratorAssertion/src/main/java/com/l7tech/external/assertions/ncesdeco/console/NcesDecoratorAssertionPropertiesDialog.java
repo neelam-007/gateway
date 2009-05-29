@@ -52,8 +52,8 @@ public class NcesDecoratorAssertionPropertiesDialog extends AssertionPropertiesE
         }
     });
 
-    public NcesDecoratorAssertionPropertiesDialog(Frame owner, final NcesDecoratorAssertion assertion) {
-        super(owner, "NCES Decorator Properties", true);
+    public NcesDecoratorAssertionPropertiesDialog(Window owner, final NcesDecoratorAssertion assertion) {
+        super(owner, "NCES Decorator Properties");
         this.assertion = assertion;
         initialize();
     }

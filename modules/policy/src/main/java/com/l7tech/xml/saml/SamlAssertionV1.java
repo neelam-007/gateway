@@ -49,7 +49,7 @@ public class SamlAssertionV1 extends SamlAssertion {
 
     private final AssertionType assertion;
     private Element assertionElement = null;
-    private boolean hasEmbeddedSignature = false;
+    private Element embeddedSignatureElement = null;
     private ConfirmationMethod confirmationMethod = null;
     private X509Certificate subjectCertificate = null;
     private X509Certificate issuerCertificate = null;
@@ -167,7 +167,7 @@ public class SamlAssertionV1 extends SamlAssertion {
             // Check if assertion is signed
             Element signature = DomUtils.findOnlyOneChildElementByName(assertionElement, SoapConstants.DIGSIG_URI, "Signature");
             if (signature != null) {
-                hasEmbeddedSignature = true;
+                embeddedSignatureElement = signature;
                 // Extract the issuer certificate
                 Element keyinfo = DomUtils.findOnlyOneChildElementByName(signature, SoapConstants.DIGSIG_URI, "KeyInfo");
                 if (keyinfo == null) throw new SAXException("SAML issuer signature has no KeyInfo");
@@ -226,7 +226,11 @@ public class SamlAssertionV1 extends SamlAssertion {
     }
 
     public boolean hasEmbeddedIssuerSignature() {
-        return hasEmbeddedSignature;
+        return embeddedSignatureElement != null;
+    }
+
+    public Element getEmbeddedIssuerSignature() {
+        return embeddedSignatureElement;
     }
 
     public X509Certificate getSubjectCertificate() {
@@ -278,7 +282,7 @@ public class SamlAssertionV1 extends SamlAssertion {
     }
 
     public void verifyEmbeddedIssuerSignature() throws SignatureException {
-        if (!hasEmbeddedSignature) throw new IllegalStateException("May not verify signature; this assertion is not signed");
+        if (!hasEmbeddedIssuerSignature()) throw new IllegalStateException("May not verify signature; this assertion is not signed");
 
         try {
             Element signature = DomUtils.findOnlyOneChildElementByName(assertionElement, SoapConstants.DIGSIG_URI, "Signature");

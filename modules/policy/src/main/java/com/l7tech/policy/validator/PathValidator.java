@@ -12,7 +12,6 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
-import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
@@ -26,6 +25,7 @@ import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.validator.DefaultPolicyValidator.DeferredValidate;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.util.Functions;
+import com.l7tech.util.Pair;
 import com.l7tech.wsdl.Wsdl;
 
 import javax.wsdl.BindingOperation;
@@ -57,8 +57,6 @@ class PathValidator {
     private static final Class<? extends Assertion> ASSERTION_WSSUSERNAMETOKENBASIC = WssBasic.class;
     private static final Class<? extends Assertion> ASSERTION_ENCRYPTEDUSERNAMETOKEN = EncryptedUsernameTokenAssertion.class;
     private static final Class<? extends Assertion> ASSERTION_KERBEROSTICKET = RequestWssKerberos.class;
-    private static final Class<? extends Assertion> ASSERTION_COOKIECREDS = CookieCredentialSourceAssertion.class;
-
 
     private static Map<String, Object> policyParseCache = Collections.synchronizedMap(new WeakHashMap<String, Object>());
 
@@ -72,11 +70,12 @@ class PathValidator {
     private Set<Class<? extends Assertion>> seenAssertionClasses = new HashSet<Class<? extends Assertion>>();
     private Map<String, Boolean> seenCredentials = new HashMap<String, Boolean>();
     private Map<String, Boolean> seenCredentialsSinceModified = new HashMap<String, Boolean>();
-    private Map<String, Boolean> seenWssSignature = new HashMap<String, Boolean>();
+    private Map<Pair<String,String>, Boolean> seenWssSignature = new HashMap<Pair<String, String>, Boolean>();
     private Map<String, Boolean> seenSamlSecurity = new HashMap<String, Boolean>();
     private boolean seenSpecificUserAssertion = false;
     private boolean seenAuthenticationAssertion = false;
     private boolean seenCustomAuth = false;
+    private boolean allowsMultipleSignatures = false;
     private final AssertionLicense assertionLicense;
 
     boolean seenAccessControl = false;
@@ -288,7 +287,7 @@ class PathValidator {
     }
 
     private void processOversizedText(OversizedTextAssertion oversizedTextAssertion) {
-        if (oversizedTextAssertion != null && seenRouting) {
+        if (oversizedTextAssertion != null && oversizedTextAssertion.getTarget()==TargetMessageType.REQUEST && seenRouting) {
             result.addWarning(new PolicyValidatorResult.Warning(oversizedTextAssertion, assertionPath,
                                                                 "This assertion should occur before the request is routed.",
                                                                 null));
@@ -368,9 +367,9 @@ class PathValidator {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion is after route.", null));
         }
 
-        if (seenSpecificUserAssertion && isSpecificUser(a)) {
+        if (seenSpecificUserAssertion && isSpecificUser(a) && !allowsMultipleSignatures) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "Uncommon use of multiple user identities in the same path.", null));
-        } else if (seenAuthenticationAssertion && isAuthenticationAssertion(a)) {
+        } else if (seenAuthenticationAssertion && isAuthenticationAssertion(a) && !allowsMultipleSignatures) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "Uncommon use of multiple authentication assertions in the same path.", null));
         }
 
@@ -405,20 +404,19 @@ class PathValidator {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion must occur before routing.", null));
         }
 
-        if (seenAccessControl && isDefaultActor(a) || seenCredentialsSinceModified(a)) {
-            result.addWarning(new PolicyValidatorResult.
-              Warning(a, assertionPath, "Uncommon use of multiple access control.", null));
+        if (a instanceof RequestWssX509Cert) {
+            String targetName = ((RequestWssX509Cert)a).getTargetName();
+            if ( seenWssSignature(a, targetName)) {
+                result.addError(new PolicyValidatorResult.
+                  Error(a, assertionPath, "WSS Signature(s) already required for " + targetName, null));
+            }
+            setSeenWssSignature(a, targetName);
+            if (((RequestWssX509Cert)a).isAllowMultipleSignatures()) {
+                allowsMultipleSignatures = true;
+            }
         }
 
         // Dupe checks
-        if (a instanceof RequestWssX509Cert) {
-            if (seenWssSignature(a)) {
-                result.addError(new PolicyValidatorResult.
-                  Error(a, assertionPath, "WSS Signature already set.", null));
-            }
-            setSeenWssSignature(a, true);
-        }
-
         if (a instanceof SecureConversation) {
             if (haveSeen(ASSERTION_SECURECONVERSATION)) {
                 result.addError(new PolicyValidatorResult.
@@ -448,11 +446,10 @@ class PathValidator {
 
     private void processPrecondition(final Assertion a) {
         if (a instanceof MessageTargetable) {
-            MessageTargetable mt = (MessageTargetable)a;
-            if (mt.getTarget() == TargetMessageType.REQUEST && seenResponse) {
+            if (Assertion.isRequest(a) && seenResponse) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "Assertion targets the request after a response is available.", null));
-            } else if (mt.getTarget() == TargetMessageType.RESPONSE && !seenResponse) {
+            } else if (Assertion.isResponse(a)  && !seenResponse) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
                   "Assertion targeting the response must not be positioned before a response is available.", null));
             }
@@ -480,7 +477,8 @@ class PathValidator {
             // the server needs to encrypt a symmetric key for the recipient
             // the server needs the client cert for this purpose. this ensures that
             // the client certis available from the request.
-            if (!seenWssSignature(a) && !haveSeen(ASSERTION_SECURECONVERSATION) && !seenSamlSecurity(a) &&
+            String targetName = a instanceof MessageTargetable ? ((MessageTargetable)a).getTargetName() : (new MessageTargetableSupport(TargetMessageType.REQUEST)).getTargetName();
+            if (!seenWssSignature(a, targetName) && !haveSeen(ASSERTION_SECURECONVERSATION) && !seenSamlSecurity(a) &&
                     !haveSeen(ASSERTION_ENCRYPTEDUSERNAMETOKEN) && !haveSeen(ASSERTION_KERBEROSTICKET))
             {
                 String actor = assertionToActor(a);
@@ -520,7 +518,7 @@ class PathValidator {
                   "This assertion should occur before the request is routed.", null));
             }
         } else if (a instanceof ResponseXpathAssertion) {
-            if (!seenResponse) {
+            if (((ResponseXpathAssertion)a).getXmlMsgSrc()==null && !seenResponse) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion will not work because there is no response yet. " +
                   "Move this assertion after a routing assertion.", null));
@@ -556,16 +554,6 @@ class PathValidator {
                   "This assertion should be preceded by an assertion that collects a password.", null));
             }
         }
-
-        if (a instanceof ResponseWssConfig || a instanceof ResponseWssConfidentiality) {
-            if (!seenResponse) {
-                result.addWarning(
-                        new PolicyValidatorResult.Warning(a,
-                                                          assertionPath,
-                                                          "This assertion acts on the response and should be preceded by a routing assertion",
-                                                          null));
-            }
-        }
     }
 
     /**
@@ -575,7 +563,7 @@ class PathValidator {
         boolean flagged = false;
 
         Functions.Unary<Set<ValidatorFlag>,Assertion> flagAccessor =
-            (Functions.Unary<Set<ValidatorFlag>,Assertion>) a.meta().get(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY);
+             a.meta().get(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY);
 
         if ( flagAccessor != null ) {
             Set<ValidatorFlag> flags = flagAccessor.call(a);
@@ -810,15 +798,17 @@ class PathValidator {
         seenCredentialsSinceModified.put(actor, (value) ? Boolean.TRUE : Boolean.FALSE);
     }
 
-    private boolean seenWssSignature(Assertion context) {
+    private boolean seenWssSignature(Assertion context, String targetName) {
         String actor = assertionToActor(context);
-        Boolean currentvalue = seenWssSignature.get(actor);
+        Pair<String,String> key = new Pair<String, String>(actor, targetName);
+        Boolean currentvalue = seenWssSignature.get(key);
         return currentvalue != null && currentvalue;
     }
 
-    private void setSeenWssSignature(Assertion context, boolean value) {
+    private void setSeenWssSignature(Assertion context, String targetName) {
         String actor = assertionToActor(context);
-        seenWssSignature.put(actor, value);
+        Pair<String,String> key = new Pair<String, String>(actor, targetName);
+        seenWssSignature.put(key, true);
     }
 
     private boolean seenSamlSecurity(Assertion context) {

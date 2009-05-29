@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <wsp:All wsp:Usage="Required">
+            <L7p:SqlAttackProtection>
+                <L7p:Protections stringSetValue="included">
+                    <L7p:item stringValue="MsSql"/>
+                    <L7p:item stringValue="SqlMetaText"/>
+                    <L7p:item stringValue="OraSql"/>
+                    <L7p:item stringValue="SqlMeta"/>
+                </L7p:Protections>
+            </L7p:SqlAttackProtection>
+            <L7p:OversizedText/>
+            <L7p:CodeInjectionProtectionAssertion>
+                <L7p:Protections codeInjectionProtectionTypeArray="included"/>
+            </L7p:CodeInjectionProtectionAssertion>
+            <L7p:SetVariable>
+                <L7p:Base64Expression stringValue="PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4NCjxzb2FwZW52OkVudmVsb3BlDQogICAgeG1sbnM6c29hcGVudj0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvc29hcC9lbnZlbG9wZS8iDQogICAgeG1sbnM6eHNkPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSIgeG1sbnM6eHNpPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYS1pbnN0YW5jZSI+DQogICAgPHNvYXBlbnY6SGVhZGVyLz4NCiAgICA8c29hcGVudjpCb2R5Pg0KICAgICAgICA8dG5zOmxpc3RQcm9kdWN0cyB4bWxuczp0bnM9Imh0dHA6Ly93YXJlaG91c2UuYWNtZS5jb20vd3MiPg0KICAgICAgICAgICAgPHRuczpkZWxheT5pbnQ8L3RuczpkZWxheT4NCiAgICAgICAgPC90bnM6bGlzdFByb2R1Y3RzPg0KICAgIDwvc29hcGVudjpCb2R5Pg0KPC9zb2FwZW52OkVudmVsb3BlPg=="/>
+                <L7p:ContentType stringValue="text/xml"/>
+                <L7p:DataType variableDataType="message"/>
+                <L7p:VariableToSet stringValue="message"/>
+            </L7p:SetVariable>
+            <L7p:SqlAttackProtection>
+                <L7p:OtherTargetMessageVariable stringValue="message"/>
+                <L7p:Protections stringSetValue="included">
+                    <L7p:item stringValue="MsSql"/>
+                    <L7p:item stringValue="OraSql"/>
+                    <L7p:item stringValue="SqlMeta"/>
+                </L7p:Protections>
+                <L7p:Target target="OTHER"/>
+            </L7p:SqlAttackProtection>
+            <L7p:OversizedText>
+                <L7p:OtherTargetMessageVariable stringValue="message"/>
+                <L7p:Target target="OTHER"/>
+            </L7p:OversizedText>
+            <L7p:CodeInjectionProtectionAssertion>
+                <L7p:OtherTargetMessageVariable stringValue="message"/>
+                <L7p:Protections codeInjectionProtectionTypeArray="included"/>
+                <L7p:Target target="OTHER"/>
+            </L7p:CodeInjectionProtectionAssertion>
+            <L7p:HttpRoutingAssertion>
+                <L7p:ProtectedServiceUrl stringValue="http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx"/>
+                <L7p:RequestHeaderRules httpPassthroughRuleSet="included">
+                    <L7p:Rules httpPassthroughRules="included">
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="Cookie"/>
+                        </L7p:item>
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="SOAPAction"/>
+                        </L7p:item>
+                    </L7p:Rules>
+                </L7p:RequestHeaderRules>
+                <L7p:RequestParamRules httpPassthroughRuleSet="included">
+                    <L7p:ForwardAll booleanValue="true"/>
+                    <L7p:Rules httpPassthroughRules="included"/>
+                </L7p:RequestParamRules>
+                <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                    <L7p:Rules httpPassthroughRules="included">
+                        <L7p:item httpPassthroughRule="included">
+                            <L7p:Name stringValue="Set-Cookie"/>
+                        </L7p:item>
+                    </L7p:Rules>
+                </L7p:ResponseHeaderRules>
+                <L7p:SamlAssertionVersion intValue="2"/>
+            </L7p:HttpRoutingAssertion>
+            <L7p:SqlAttackProtection>
+                <L7p:Protections stringSetValue="included">
+                    <L7p:item stringValue="MsSql"/>
+                    <L7p:item stringValue="SqlMetaText"/>
+                    <L7p:item stringValue="OraSql"/>
+                    <L7p:item stringValue="SqlMeta"/>
+                </L7p:Protections>
+                <L7p:Target target="RESPONSE"/>
+            </L7p:SqlAttackProtection>
+            <L7p:OversizedText>
+                <L7p:Target target="RESPONSE"/>
+            </L7p:OversizedText>
+            <L7p:CodeInjectionProtectionAssertion>
+                <L7p:Protections codeInjectionProtectionTypeArray="included"/>
+                <L7p:Target target="RESPONSE"/>
+            </L7p:CodeInjectionProtectionAssertion>
+        </wsp:All>
+    </wsp:All>
+</wsp:Policy>

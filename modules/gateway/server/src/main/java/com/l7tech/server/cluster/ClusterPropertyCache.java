@@ -80,9 +80,9 @@ public class ClusterPropertyCache implements ApplicationListener {
     /**
      * Set the server config.
      *
-     * @param serverConfig The listener to be used for default values and as property listener
-     * @throws IllegalArgumentException if the given listener is null
-     * @throws IllegalStateException if the listener is already set.
+     * @param serverConfig The ServerConfig to use for default values.
+     * @throws IllegalArgumentException if the given ServerConfig is null
+     * @throws IllegalStateException if the ServerConfig is already set.
      */
     public void setServerConfig(final ServerConfig serverConfig) {
         synchronized (propLock) {
@@ -96,6 +96,25 @@ public class ClusterPropertyCache implements ApplicationListener {
         this.defaultValues = serverConfig.getClusterPropertyDefaults();
     }
 
+    /**
+     * Set the cluster property listener.
+     *
+     * @param clusterPropertyListener The listener to use
+     * @throws IllegalArgumentException if the given listener is null
+     * @throws IllegalStateException if the listener is already set.
+     */
+    public void setClusterPropertyListener(final ClusterPropertyListener clusterPropertyListener) {
+        synchronized (propLock) {
+            if (clusterPropertyListener == null)
+                throw new IllegalArgumentException("clusterPropertyListener must not be null");
+            if (this.clusterPropertyListener != null)
+                throw new IllegalStateException("clusterPropertyListener already set!");
+
+            this.clusterPropertyListener = clusterPropertyListener;
+        }
+    }    
+
+    @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if (event instanceof EntityInvalidationEvent) {
             EntityInvalidationEvent eiEvent = (EntityInvalidationEvent) event;
@@ -104,7 +123,7 @@ public class ClusterPropertyCache implements ApplicationListener {
                 ClusterPropertyListener cpl;
                 synchronized (propLock) {
                     cpm = clusterPropertyManager;
-                    cpl = serverConfig;
+                    cpl = clusterPropertyListener;
                 }
                 if (cpm == null) {
                     logger.warning("Received entity invalidation event but cluster property manager is not set!");
@@ -217,6 +236,7 @@ public class ClusterPropertyCache implements ApplicationListener {
     private final AtomicReference<Map<String,ClusterProperty>> clusterPropertyCacheRef = new AtomicReference<Map<String,ClusterProperty>>();
     private final Object propLock = new Object();
     private ClusterPropertyManager clusterPropertyManager;
+    private ClusterPropertyListener clusterPropertyListener;
     private ServerConfig serverConfig;
     private Map<String, String> defaultValues;
 

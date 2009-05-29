@@ -185,7 +185,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
      */
     public XpathBasedAssertionPropertiesDialog(final Window owner,
                                                final boolean modal,
-                                               final XpathBasedAssertionTreeNode n,
+                                               final XpathBasedAssertionTreeNode<? extends XpathBasedAssertion> n,
                                                final ActionListener okListener,
                                                final boolean showHardwareAccelStatus,
                                                final boolean readOnly) {
@@ -569,9 +569,9 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
 
                 XpathFeedBack res = getFeedBackMessage(namespaces, xpathTextField);
                 if (res != null && !res.valid()) {
-                    if (xpath == null || xpath.equals("")) {
+                    if (xpath == null || xpath.trim().equals("")) {
                         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
-                                "The empty XPath is invalid. Please specify it.", null);
+                                "Please enter an XPath value.", null);
                         return;
                     }
                     int rs2 = JOptionPane.showConfirmDialog(okButton, "The path " + xpath + " is not valid (" +
@@ -589,6 +589,14 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
 
                 if (assertion instanceof SimpleXpathAssertion) {
                     ((SimpleXpathAssertion)assertion).setVariablePrefix(varPrefixField.getText());
+                }
+
+                if (assertion instanceof RequestWssIntegrity) {
+                    if ( varPrefixField.getText()!= null && varPrefixField.getText().length() > 0 ) {
+                        ((RequestWssIntegrity)assertion).setVariablePrefix( varPrefixField.getText() );
+                    } else {
+                        ((RequestWssIntegrity)assertion).setVariablePrefix( null );
+                    }
                 }
 
                 if (assertion instanceof ResponseXpathAssertion) {
@@ -667,17 +675,17 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         String description = null;
         String title = null;
         if (assertion instanceof RequestWssConfidentiality) {
-            description = "Select a request element to encrypt:";
-            title = "Encrypt Request Element Properties";
+            description = "Select encrypted elements:";
+            title = "Require Encrypted " + ((RequestWssConfidentiality)assertion).getTargetName() + " Element Properties";
         } else if (assertion instanceof ResponseWssConfidentiality) {
-            description = "Select a response element to encrypt:";
-            title = "Encrypt Response Element Properties";
+            description = "Select elements to encrypt:";
+            title = "Encrypt " + ((ResponseWssConfidentiality)assertion).getTargetName() + " Element Properties";
         } else if (assertion instanceof RequestWssIntegrity) {
-            description = "Select a request element to sign:";
-            title = "Sign Request Element Properties";
+            description = "Select signed elements:";
+            title = "Require Signed " + ((RequestWssIntegrity)assertion).getTargetName() + " Element Properties";
         } else if (assertion instanceof ResponseWssIntegrity) {
-            description = "Select a response element to sign:";
-            title = "Sign Response Element Properties";
+            description = "Select elements to sign:";
+            title = "Sign " + ((ResponseWssIntegrity)assertion).getTargetName() + " Element Properties";
         } else if (assertion instanceof ResponseXpathAssertion) {
             description = "Select the response path to evaluate:";
             title = "Evaluate Response XPath Properties";
@@ -686,10 +694,21 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             title = "Evaluate Request XPath Properties";
         }
 
-        if (assertion instanceof SimpleXpathAssertion) {
+        boolean processPrefix = false;
+        String prefix = null;
+        if ( assertion instanceof SimpleXpathAssertion ) {
             SimpleXpathAssertion sxa = (SimpleXpathAssertion)assertion;
+            processPrefix = true;
+            prefix = sxa.getVariablePrefix();
+        } else if ( assertion instanceof RequestWssIntegrity ) {
+            RequestWssIntegrity sxa = (RequestWssIntegrity)assertion;
+            processPrefix = true;
+            prefix = sxa.getVariablePrefix();
+        }
+
+        if ( processPrefix ) {
             clearVariablePrefixStatus();
-            varPrefixField.setText(sxa.getVariablePrefix());
+            varPrefixField.setText(prefix);
             varPrefixField.setVisible(true);
             varPrefixLabel.setVisible(true);
             validateVariablePrefix();
@@ -917,7 +936,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
      * @return whether we are editing the request
      */
     private boolean isEditingRequest() {
-        return Assertion.isRequest( assertion );
+        return !Assertion.isResponse(assertion); // !isResponse so that message variable messages show requests
     }
 
     private final
@@ -1252,10 +1271,16 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
      * @see {@link com.l7tech.console.util.VariablePrefixUtil#validateVariablePrefix}
      */
     private boolean validateVariablePrefix() {
+        String[] suffixes = new String[0];
+
+        if ( assertion instanceof SimpleXpathAssertion ) {
+            suffixes = ((SimpleXpathAssertion)assertion).getVariableSuffixes();
+        }
+
         return VariablePrefixUtil.validateVariablePrefix(
             varPrefixField.getText(),
             PolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet(),
-            ((SimpleXpathAssertion)assertion).getVariableSuffixes(),
+            suffixes,
             varPrefixStatusLabel);
     }
 

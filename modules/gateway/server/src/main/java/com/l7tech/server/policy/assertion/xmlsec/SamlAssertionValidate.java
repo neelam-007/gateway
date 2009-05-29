@@ -12,6 +12,7 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.server.util.WSSecurityProcessorUtils;
 import org.apache.xmlbeans.XmlObject;
 import org.w3c.dom.Document;
 import x0Assertion.oasisNamesTcSAML1.*;
@@ -261,7 +262,7 @@ public class SamlAssertionValidate {
      */
     private X509Certificate getBodySigner(ProcessorResult wssResult)
       throws InvalidDocumentFormatException {
-        SignedElement[] signedElements = wssResult.getElementsThatWereSigned();
+        SignedElement[] signedElements = WSSecurityProcessorUtils.filterSignedElementsByIdentity(null, wssResult, null);
         for (SignedElement signedElement : signedElements) {
             if (SoapUtil.isBody(signedElement.asElement())) {
                 SigningSecurityToken signingSecurityToken = signedElement.getSigningSecurityToken();

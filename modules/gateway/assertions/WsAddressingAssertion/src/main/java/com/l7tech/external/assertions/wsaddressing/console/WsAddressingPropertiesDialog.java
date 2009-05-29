@@ -57,22 +57,9 @@ public class WsAddressingPropertiesDialog extends AssertionPropertiesEditorSuppo
      * @param owner The owner for the dialog
      * @param assertion The assertion data
      */
-    public WsAddressingPropertiesDialog(final Frame owner,
-                                        final WsAddressingAssertion assertion) {
-        super(owner, resources.getString("title.text"), true);
-        init();
-        setData(assertion);
-    }
-
-    /**
-     * Create a new dialog with the given owner and data.
-     *
-     * @param owner The owner for the dialog
-     * @param assertion The assertion data
-     */
-    public WsAddressingPropertiesDialog(final Dialog owner,
+    public WsAddressingPropertiesDialog(final Window owner,
                                         final WsAddressingAssertion assertion)  {
-        super(owner, resources.getString("title.text"), true);
+        super(owner, resources.getString("title.text"));
         init();
         setData(assertion);
     }

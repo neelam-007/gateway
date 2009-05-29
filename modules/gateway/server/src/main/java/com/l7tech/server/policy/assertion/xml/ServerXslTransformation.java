@@ -72,7 +72,6 @@ import java.util.logging.Logger;
  */
 public class ServerXslTransformation
         extends AbstractServerAssertion<XslTransformation>
-        implements ServerAssertion
 {
     private static final Logger logger = Logger.getLogger(ServerXslTransformation.class.getName());
     private static final SAXParserFactory piParser = SAXParserFactory.newInstance();

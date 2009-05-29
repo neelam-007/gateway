@@ -34,13 +34,8 @@ public class EsmSubscriptionPropertiesDialog extends AssertionPropertiesEditorSu
 
     private DefaultComboBoxModel listModel;
 
-    public EsmSubscriptionPropertiesDialog(Frame owner) {
-        super(owner, "ESM Subscription Properties", true);
-        initialise();
-    }
-
-    public EsmSubscriptionPropertiesDialog(Dialog owner) {
-        super(owner, "ESM Subscription Properties", true);
+    public EsmSubscriptionPropertiesDialog(Window owner) {
+        super(owner, "ESM Subscription Properties");
         initialise();
     }
 

@@ -9,6 +9,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
+import com.l7tech.util.ExceptionUtils;
 import org.jaxen.FunctionContext;
 import org.jaxen.JaxenException;
 import org.jaxen.XPathFunctionContext;
@@ -68,7 +69,7 @@ public class DomCompiledXpath extends CompiledXpath {
      * @throws InvalidXpathException if the expression is invalid or uses an undeclared namespace prefix.
      */
     protected DOMXPath getDomXpath() throws InvalidXpathException {
-        DOMXPath dxp = null;
+        DOMXPath dxp;
         synchronized (this) {
             dxp = domXpath;
         }
@@ -95,7 +96,7 @@ public class DomCompiledXpath extends CompiledXpath {
             throw new InvalidXpathException("No expression is currently set");
 
         try {
-            DOMXPath domXpath = new DOMXPath(expression);
+            final DOMXPath domXpath = new DOMXPath(expression);
             domXpath.setFunctionContext(XPATH_FUNCTIONS); // no JAXEN extensions
 
             // Stupidly, Jaxen bakes the variable context into the DOMXPath, so we'll have to rendezvous
@@ -112,7 +113,24 @@ public class DomCompiledXpath extends CompiledXpath {
 
             // fail early for expressions that are syntactically valid but that use incorrect
             // namespace prefixes or functions
-            domXpath.evaluate(XmlUtil.stringAsDocument("<test xmlns=\"http://test.com/testing\"/>"));
+            try {
+                XpathVariableContext.doWithVariableFinder( new XpathVariableFinder(){
+                    @Override
+                    public Object getVariableValue(String namespaceUri, String variableName) {
+                        return null;
+                    }
+                }, new Callable<Object>(){
+                    @Override
+                    public Object call() throws Exception {
+                        domXpath.evaluate(XmlUtil.stringAsDocument("<test xmlns=\"http://test.com/testing\"/>"));
+                        return null;
+                    }
+                });
+            } catch (JaxenException e) {
+                throw e;
+            } catch (Exception e) {
+                throw ExceptionUtils.wrap(e);
+            }
 
             return domXpath;
         } catch (JaxenException e) {
@@ -133,6 +151,7 @@ public class DomCompiledXpath extends CompiledXpath {
             return getXpathResult(cursor);
         try {
             return XpathVariableContext.doWithVariableFinder(variableFinder, new Callable<XpathResult>() {
+                @Override
                 public XpathResult call() throws Exception {
                     return getXpathResult(cursor);
                 }
@@ -156,6 +175,7 @@ public class DomCompiledXpath extends CompiledXpath {
     public List<Element> rawSelectElements(final Document targetDocument, XpathVariableFinder variableFinder) throws JaxenException {
         try {
             return XpathVariableContext.doWithVariableFinder(variableFinder, new Callable<List<Element>>() {
+                @Override
                 public List<Element> call() throws Exception {
                     DOMXPath dx = getDomXpath();
                     List nodes = dx.selectNodes(targetDocument);
@@ -192,34 +212,40 @@ public class DomCompiledXpath extends CompiledXpath {
         if (o instanceof Boolean) {
             final Boolean b = (Boolean)o;
             return new XpathResult.XpathResultAdapter() {
+                @Override
                 public short getType() {
                     return TYPE_BOOLEAN;
                 }
 
+                @Override
                 public boolean getBoolean() {
-                    return b.booleanValue();
+                    return b;
                 }
             };
         }
         if (o instanceof Double) {
             final Double d = (Double)o;
             return new XpathResult.XpathResultAdapter() {
+                @Override
                 public short getType() {
                     return TYPE_NUMBER;
                 }
 
+                @Override
                 public double getNumber() {
-                    return d.doubleValue();
+                    return d;
                 }
             };
         }
         if (o instanceof String) {
             final String s = (String)o;
             return new XpathResult.XpathResultAdapter() {
+                @Override
                 public short getType() {
                     return TYPE_STRING;
                 }
 
+                @Override
                 public String getString() {
                     return s;
                 }
@@ -233,25 +259,31 @@ public class DomCompiledXpath extends CompiledXpath {
         }
 
         return new XpathResult.XpathResultAdapter() {
+            @Override
             public short getType() {
                 return TYPE_NODESET;
             }
 
+            @Override
             public XpathResultNodeSet getNodeSet() {
                 return new XpathResultNodeSet() {
+                    @Override
                     public boolean isEmpty() {
                         return result.isEmpty();
                     }
 
+                    @Override
                     public int size() {
                         return result.size();
                     }
 
+                    @Override
                     public XpathResultIterator getIterator() {
                         return new XpathResultIterator() {
                             private Iterator i = result.iterator();
                             private Node node = null;
                             private Object nodeValueMaker = new Object() {
+                                @Override
                                 public String toString() {
                                     if (node == null) throw new IllegalStateException();
                                     return node.getTextContent();
@@ -259,10 +291,12 @@ public class DomCompiledXpath extends CompiledXpath {
                             };
                             private Node nextNode = null; // If not null, this was unread from the iterator and is waiting to be returned
 
+                            @Override
                             public boolean hasNext() {
                                 return i.hasNext();
                             }
 
+                            @Override
                             public void next(XpathResultNode template) throws NoSuchElementException {
                                 node = doNext();
                                 template.type = node.getNodeType();
@@ -282,6 +316,7 @@ public class DomCompiledXpath extends CompiledXpath {
                                 return (Node)o;
                             }
 
+                            @Override
                             public ElementCursor nextElementAsCursor() throws NoSuchElementException {
                                 Node n = doNext();
                                 if (n.getNodeType() != Node.ELEMENT_NODE && n.getNodeType() != Node.DOCUMENT_NODE) {
@@ -302,26 +337,31 @@ public class DomCompiledXpath extends CompiledXpath {
                         throw new IllegalStateException("Jaxen xpath result nodeset included non-Node object of type " + n.getClass().getName());
                     }
 
+                    @Override
                     public int getType(int ordinal) {
                         final Node n = getNode(ordinal);
                         return n == null ? -1 : n.getNodeType();
                     }
 
+                    @Override
                     public String getNodePrefix(int ordinal) {
                         final Node node = getNode(ordinal);
                         return node == null ? null : node.getPrefix();
                     }
 
+                    @Override
                     public String getNodeLocalName(int ordinal) {
                         final Node node = getNode(ordinal);
                         return node == null ? null : node.getLocalName();
                     }
 
+                    @Override
                     public String getNodeName(int ordinal) {
                         final Node node = getNode(ordinal);
                         return node == null ? null : node.getNodeName();
                     }
 
+                    @Override
                     public String getNodeValue(int ordinal) {
                         final Node node = getNode(ordinal);
                         return node == null ? null : node.getTextContent();

@@ -4,12 +4,9 @@
 
 package com.l7tech.message;
 
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.util.Closeable;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -17,16 +14,15 @@ import java.util.logging.Logger;
  * Holds request and response messages during processing, and provides a place to keep state throughout
  * message processing for both policy enforcement (SSG) and policy application (SSB).
  */
-public abstract class ProcessingContext implements Closeable {
+public abstract class ProcessingContext<CT extends CredentialContext> implements Closeable {
     private static final Logger logger = Logger.getLogger(ProcessingContext.class.getName());
 
     private final Message request;
     private final Message response;
+    private final CT credentialContext = buildContext();
+    private final Map<Message,CT> authenticationContexts = new HashMap<Message,CT>();
 
-    private List<LoginCredentials> credentials = new ArrayList<LoginCredentials>();
-    private LoginCredentials lastCredentials;
-    private final List runOnClose = new ArrayList();
-    private boolean isAuthenticationMissing = false;
+    private final List<Runnable> runOnClose = new ArrayList<Runnable>();
 
     /**
      * Create a processing context holding the specified request and response.
@@ -43,34 +39,6 @@ public abstract class ProcessingContext implements Closeable {
         this.response = response;
     }
 
-    /**
-     * Returns only one set of credentials.
-     *
-     * @return null if there are no credentials present, a LoginCredentials if there is only one present
-     */
-    public LoginCredentials getLastCredentials() {
-        return lastCredentials;
-    }
-
-    public List<LoginCredentials> getCredentials() {
-        return credentials;
-    }
-
-    public void addCredentials(LoginCredentials credentials) {
-        for (LoginCredentials l : this.credentials) {
-            if (l.getCredentialSourceAssertion() == null && credentials.getCredentialSourceAssertion() == null) {
-                logger.warning("A credential of type null was already added in this context");
-                return;
-            } else if (l.getCredentialSourceAssertion().equals(credentials.getCredentialSourceAssertion().getClass())) {
-                logger.warning("A credential of type " + l.getCredentialSourceAssertion().getName() +
-                               " was already added in this context");
-                return;
-            }
-        }
-        this.credentials.add(credentials);
-        lastCredentials = credentials;
-    }
-
     public final Message getRequest() {
         return request;
     }
@@ -83,6 +51,28 @@ public abstract class ProcessingContext implements Closeable {
         runOnClose.add( runMe );
     }
 
+    public CT getDefaultAuthenticationContext() {
+        return credentialContext;
+    }
+
+    public CT getAuthenticationContext( final Message message ) {
+        CT context;
+
+        if ( message == getRequest() ) {
+            context = credentialContext;
+        } else {
+            context = authenticationContexts.get(message);
+            if ( context == null ) {
+                context = buildContext();
+                authenticationContexts.put(message, context);
+            }
+        }
+
+        return context;
+    }
+
+
+
     /**
      * Free any resources being used by this ProcessingContext, and run all {@link #runOnClose} {@link Runnable}s.
      * After this call, the behaviour of other methods
@@ -92,6 +82,7 @@ public abstract class ProcessingContext implements Closeable {
      * Subclasses that override this method must either chain to <code>super.close()</code> or
      * close the request and response themselves.
      */
+    @Override
     public void close() {
         Runnable runMe;
         Iterator i = runOnClose.iterator();
@@ -120,21 +111,5 @@ public abstract class ProcessingContext implements Closeable {
         }
     }
 
-    /**
-     * Check if some authentication credentials that were expected in the request were not found.
-     * (For PolicyEnforcementContext, this implies PolicyViolated, as well.)
-     *
-     * @return true if the policy expected credentials, but they weren't present
-     */
-    public boolean isAuthenticationMissing() {
-        return isAuthenticationMissing;
-    }
-
-    /**
-     * Report that some authentication credentials that were expected in the request were not found.
-     * This implies requestPolicyViolated, as well.
-     */
-    public void setAuthenticationMissing() {
-        isAuthenticationMissing = true;
-    }
+    protected abstract CT buildContext();
 }

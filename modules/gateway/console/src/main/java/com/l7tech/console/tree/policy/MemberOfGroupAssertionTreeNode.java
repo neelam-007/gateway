@@ -44,7 +44,7 @@ public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode<Me
      */
     @Override
     public String getName() {
-        return "Group Membership: " + ((MemberOfGroup)getUserObject()).getGroupName() +
-          " [" + idProviderName() + "]" + getIdentityTagSuffix();
+        return decorateName( "Group Membership: " + ((MemberOfGroup)getUserObject()).getGroupName() +
+          " [" + idProviderName() + "]");
     }
 }

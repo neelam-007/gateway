@@ -15,7 +15,7 @@ import org.springframework.context.ApplicationContext;
 import java.io.IOException;
 import java.util.List;
 
-public final class ServerExactlyOneAssertion extends ServerCompositeAssertion<ExactlyOneAssertion> implements ServerAssertion {
+public final class ServerExactlyOneAssertion extends ServerCompositeAssertion<ExactlyOneAssertion> {
     public ServerExactlyOneAssertion( ExactlyOneAssertion data, ApplicationContext applicationContext ) throws PolicyAssertionException, LicenseException {
         super( data, applicationContext );
     }

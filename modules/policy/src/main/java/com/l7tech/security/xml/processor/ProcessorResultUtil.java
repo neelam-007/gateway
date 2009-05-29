@@ -1,9 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
-
 package com.l7tech.security.xml.processor;
 
 import com.l7tech.security.token.ParsedElement;
@@ -15,7 +12,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -46,13 +45,13 @@ public class ProcessorResultUtil {
      * @return The result of the search.
      * @throws com.l7tech.security.xml.processor.ProcessorException if the xpath is invalid, or finds results other than Nodes.
      */
-    public static SearchResult searchInResult(Logger logger,
-                                              Document doc,
-                                              final DomCompiledXpath xpath,
-                                              final XpathVariableFinder variableFinder,
-                                              final boolean allowIfEmpty,
-                                              final ParsedElement[] elementsFoundByProcessor,
-                                              String pastTenseOperationName)
+    public static SearchResult searchInResult( final Logger logger,
+                                               final Document doc,
+                                               final DomCompiledXpath xpath,
+                                               final XpathVariableFinder variableFinder,
+                                               final boolean allowIfEmpty,
+                                               final ParsedElement[] elementsFoundByProcessor,
+                                               final String pastTenseOperationName )
             throws ProcessorException
     {
         List<Element> selectedNodes;
@@ -73,25 +72,27 @@ public class ProcessorResultUtil {
 
         // to assert this, i must make sure that all of these nodes are part of the nodes
         // that were decrypted by the wss processor
+        List<ParsedElement> elements = new ArrayList<ParsedElement>();
         boolean foundany = false;
-        for (Iterator i = selectedNodes.iterator(); i.hasNext();) {
-            Object obj = i.next();
+        for (Object obj : selectedNodes) {
             if (!(obj instanceof Node)) {
                 logger.severe("Invalid xpath: The xpath result included a non-Node object of type " + obj.getClass().getName());
                 return new SearchResult(SERVER_ERROR, false);
             }
 
-            Node node = (Node)obj;
+            Node node = (Node) obj;
             if (allowIfEmpty && DomUtils.elementIsEmpty(node)) {
-                logger.finer("The element " + xpath + " was found in this message but was empty and so needn't be "+pastTenseOperationName+".");
+                logger.finer("The element " + xpath + " was found in this message but was empty and so needn't be " + pastTenseOperationName + ".");
                 continue;
             }
 
             foundany = true;
 
-            if (nodeIsPresent(node, elementsFoundByProcessor)) {
+            ParsedElement element = getParsedElementForNode( node, elementsFoundByProcessor );
+            if ( element != null ) {
                 logger.finest("An element " + xpath + " was found in this " +
-                        "message, and was properly "+pastTenseOperationName+".");
+                        "message, and was properly " + pastTenseOperationName + ".");
+                elements.add(element);
             } else {
                 logger.info("An element " + xpath + " was found in this " +
                         "message, but was neither empty nor properly " + pastTenseOperationName + "; assertion therefore fails.");
@@ -103,7 +104,31 @@ public class ProcessorResultUtil {
             logger.fine("All matching elements were either empty or properly "+pastTenseOperationName+"; assertion therefore succeeds.");
         else
             logger.fine("All matching elements were empty; assertion therefore succeeds.");
-        return new SearchResult(NO_ERROR, false);
+        return new SearchResult(NO_ERROR, false, elements);
+    }
+
+    /**
+     * Find a ParsedElement from the list of elements found by the processor.
+     *
+     * The node must be a reference to a node in the exact same document as the members of
+     * elementsFoundByProcessor.  A match is only detected if it is an exact match -- that
+     * is, this method will return false even if some parent element of node is present in
+     * the list of elements that were found.
+     *
+     * @param node the node to check
+     * @param elementsFoundByProcessor the list of ParsedElement to see if it is in
+     * @return The ParsedElement for the node, or null if not found 
+     */
+    public static ParsedElement getParsedElementForNode(Node node, final ParsedElement[] elementsFoundByProcessor) {
+        ParsedElement element = null;
+        for (ParsedElement anElementsFoundByProcessor : elementsFoundByProcessor) {
+            if (anElementsFoundByProcessor.asElement() == node) {
+                // we got the bugger!
+                element = anElementsFoundByProcessor;
+                break;
+            }
+        }
+        return element;
     }
 
     /**
@@ -117,29 +142,27 @@ public class ProcessorResultUtil {
      * @return true if node was found in the list.
      */
     public static boolean nodeIsPresent(Node node, final ParsedElement[] elementsFoundByProcessor) {
-        boolean found = false;
-        for (int j = 0; j < elementsFoundByProcessor.length; j++) {
-            if (elementsFoundByProcessor[j].asElement() == node) {
-                // we got the bugger!
-                found = true;
-                break;
-            }
-        }
-        return found;
+        return getParsedElementForNode(node, elementsFoundByProcessor) != null;
     }
-
 
     public static class SearchResult {
         private final int resultCode;
         private final boolean foundButWasntOperatedOn;
+        private final Collection<ParsedElement> elements;
 
         private SearchResult(int resultCode, boolean foundButWasntOperatedOn) {
+            this(resultCode, foundButWasntOperatedOn, Collections.<ParsedElement>emptyList());
+        }
+
+        private SearchResult(int resultCode, boolean foundButWasntOperatedOn, Collection<ParsedElement> elements) {
             this.resultCode = resultCode;
             this.foundButWasntOperatedOn = foundButWasntOperatedOn;
+            this.elements = Collections.unmodifiableCollection( new ArrayList<ParsedElement>(elements) );
         }
 
         public int getResultCode() {return resultCode;}
         public boolean isFoundButWasntOperatedOn() {return foundButWasntOperatedOn;}
+        public ParsedElement[] getElements() {return elements.toArray(new ParsedElement[elements.size()]);}
     }
 
 

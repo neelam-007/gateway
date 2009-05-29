@@ -6,10 +6,8 @@
 package com.l7tech.policy.assertion.credential.wss;
 
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
-import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.util.Functions;
 
 /**
  * @author mike
@@ -24,14 +22,7 @@ public class EncryptedUsernameTokenAssertion extends WssBasic implements Securit
         meta.put(AssertionMetadata.DESCRIPTION, "The requestor must provide BASIC credentials in a WSS Username Token, encrypted and signed using an ephemeral EncryptedKey");
         meta.putNull(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME);
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
-        meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, EncryptedUsernameTokenAssertion>() {
-            @Override
-            public String call( final EncryptedUsernameTokenAssertion encryptedUsernameTokenAssertion ) {
-                StringBuilder name = new StringBuilder("Require Encrypted UsernameToken Authentication");
-                name.append(SecurityHeaderAddressableSupport.getActorSuffix(encryptedUsernameTokenAssertion));
-                return name.toString();
-            }
-        });
+        meta.put(AssertionMetadata.POLICY_NODE_NAME, "Require Encrypted UsernameToken Authentication");
 
         return meta;
     }

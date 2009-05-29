@@ -45,10 +45,6 @@ public class WssTimestampWrapper implements WssTimestamp {
         return delegate.getExpires();
     }
 
-    public boolean isSigned() {
-        return delegate.isSigned();
-    }
-
     public Element asElement() {
         return delegate.asElement();
     }

@@ -31,13 +31,8 @@ public class CacheLookupPropertiesDialog extends AssertionPropertiesEditorSuppor
     private final InputValidator validator = new InputValidator(this, TITLE);
     private boolean confirmed = false;
 
-    public CacheLookupPropertiesDialog(Frame owner) {
-        super(owner, TITLE, true);
-        init();
-    }
-
-    public CacheLookupPropertiesDialog(Dialog owner) {
-        super(owner, TITLE, true);
+    public CacheLookupPropertiesDialog(Window owner) {
+        super(owner, TITLE);
         init();
     }
 

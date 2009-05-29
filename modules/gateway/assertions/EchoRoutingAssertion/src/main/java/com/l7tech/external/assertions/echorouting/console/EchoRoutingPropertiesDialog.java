@@ -33,8 +33,8 @@ public class EchoRoutingPropertiesDialog extends AssertionPropertiesEditorSuppor
      * @param owner  parent for dialog
      * @param a      assertion to edit
      */
-    public EchoRoutingPropertiesDialog(Frame owner, EchoRoutingAssertion a) {
-        super(owner, "Echo Routing Properties", true);
+    public EchoRoutingPropertiesDialog(Window owner, EchoRoutingAssertion a) {
+        super(owner, "Echo Routing Properties");
         assertion = a;
         initComponents();
         initFormData();

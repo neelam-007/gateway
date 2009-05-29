@@ -7,7 +7,7 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.message.XmlKnob;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
+import com.l7tech.message.Message;
 import com.l7tech.security.token.EncryptedKey;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.KeyReference;
@@ -16,22 +16,17 @@ import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.PrivateKeyable;
+import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfig;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
-import com.l7tech.server.DefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.ServerAssertionUtils;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -39,22 +34,24 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
-import java.security.PrivateKey;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
 /**
+ * TODO [steve] auditing for message target
+ *
  * @author alex
- * @noinspection unchecked
  */
-public abstract class ServerResponseWssSignature extends AbstractServerAssertion implements ServerAssertion {
+public abstract class ServerResponseWssSignature<AT extends Assertion> extends AbstractMessageTargetableServerAssertion<AT> {
     protected final SignerInfo signerInfo;
     protected final ResponseWssConfig wssConfig;
     protected final Auditor auditor;
 
-    protected ServerResponseWssSignature(ResponseWssConfig responseWssAssertion, ApplicationContext spring, Logger logger) {
-        super((Assertion)responseWssAssertion);
+    protected ServerResponseWssSignature( final AT assertion,
+                                          final ResponseWssConfig responseWssAssertion,
+                                          final MessageTargetable messageTargetable,
+                                          final ApplicationContext spring,
+                                          final Logger logger) {
+        super(assertion, messageTargetable);
         this.auditor = new Auditor(this, spring, logger);
         this.wssConfig = responseWssAssertion;
         try {
@@ -65,24 +62,30 @@ public abstract class ServerResponseWssSignature extends AbstractServerAssertion
     }
 
     // despite the name of this method, i'm actually working on the response document here
-    public AssertionStatus checkRequest(PolicyEnforcementContext context)
-            throws IOException, PolicyAssertionException
-    {
-        final ProcessorResult wssResult;
-        try {
-            if (!context.getRequest().isSoap()) {
-                auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_REQUEST_NOT_SOAP);
-                return AssertionStatus.NOT_APPLICABLE;
+    @Override
+    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
+                                              final Message message,
+                                              final String messageDescription,
+                                              final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
+        final ProcessorResult processorResult;
+        if ( isResponse() ) {
+            try {
+                if (!context.getRequest().isSoap()) {
+                    auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_REQUEST_NOT_SOAP);
+                    return AssertionStatus.NOT_APPLICABLE;
+                }
+                processorResult = context.getRequest().getSecurityKnob().getProcessorResult();
+            } catch (SAXException e) {
+                throw new CausedIOException(e);
             }
-            wssResult = context.getRequest().getSecurityKnob().getProcessorResult();
-        } catch (SAXException e) {
-            throw new CausedIOException(e);
+        } else {
+            processorResult = null;   
         }
 
         final XmlSecurityRecipientContext recipient = wssConfig.getRecipientContext();
 
         try {
-            if (!context.getResponse().isSoap()) {
+            if (!message.isSoap()) {
                 auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
@@ -93,12 +96,12 @@ public abstract class ServerResponseWssSignature extends AbstractServerAssertion
 
         // GET THE DOCUMENT
         Document soapmsg;
-        final XmlKnob resXml;
-        final SecurityKnob resSec;
+        final XmlKnob xmlKnob;
+        final SecurityKnob securityKnob;
         try {
-            resXml = context.getResponse().getXmlKnob();
-            resSec = context.getResponse().getSecurityKnob();
-            soapmsg = resXml.getDocumentReadOnly();
+            xmlKnob = message.getXmlKnob();
+            securityKnob = message.getSecurityKnob();
+            soapmsg = xmlKnob.getDocumentReadOnly();
         } catch (SAXException e) {
             String msg = "cannot get an xml document from the response to sign";
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, e);
@@ -106,9 +109,9 @@ public abstract class ServerResponseWssSignature extends AbstractServerAssertion
         }
 
 
-        DecorationRequirements wssReq = resSec.getAlternateDecorationRequirements(recipient);
+        DecorationRequirements wssReq = securityKnob.getAlternateDecorationRequirements(recipient);
 
-        int howMany = addDecorationRequirements(context, soapmsg, wssReq);
+        int howMany = addDecorationRequirements(context, authContext, soapmsg, wssReq);
         if (howMany < 0) {
             return AssertionStatus.FAILED;
         } else if (howMany == 0) {
@@ -119,13 +122,13 @@ public abstract class ServerResponseWssSignature extends AbstractServerAssertion
         // TODO need some way to guess whether sender would prefer we sign with our cert or with his
         //      EncryptedKey.  For now, we'll cheat, and use EncryptedKey if the request used any wse11
         //      elements that we noticed.
-        if (wssResult != null && context.isResponseWss11()) {
+        if (processorResult != null && context.isResponseWss11()) {
             // Try to sign response using an existing EncryptedKey already known to the requestor,
             // using #EncryptedKeySHA1 KeyInfo reference, instead of making an RSA signature,
             // which is expensive.
             if (wssReq.getEncryptedKeySha1() == null || wssReq.getEncryptedKey() == null) {
                 // No EncryptedKeySHA1 reference on response yet; create one
-                XmlSecurityToken[] tokens = wssResult.getXmlSecurityTokens();
+                XmlSecurityToken[] tokens = processorResult.getXmlSecurityTokens();
                 for (XmlSecurityToken token : tokens) {
                     if (token instanceof EncryptedKey) {
                         // We'll just use the first one we see that's unwrapped
@@ -172,6 +175,7 @@ public abstract class ServerResponseWssSignature extends AbstractServerAssertion
      * Configure the decoration requirements for this signature.
      *
      * @param context  the PolicyEnforcementContext.  Required.
+     * @param authContext  the AuthenticationContext.  Required.
      * @param soapmsg  the message that is to be decorated.  Required.
      * @param wssReq   the existing decoration requirements, to which the new signature requirements should be added.  Required.
      * @return the number of elements selected for signing, zero if no elements were selected, or -1 if the assertion
@@ -180,6 +184,11 @@ public abstract class ServerResponseWssSignature extends AbstractServerAssertion
      *                                                              a misconfigured assertion (for example, if it is
      *                                                              XPath based and the XPath is invalid)
      */
-    protected abstract int addDecorationRequirements(PolicyEnforcementContext context, Document soapmsg, DecorationRequirements wssReq)
+    protected abstract int addDecorationRequirements(PolicyEnforcementContext context, AuthenticationContext authContext, Document soapmsg, DecorationRequirements wssReq)
         throws PolicyAssertionException;
+
+    @Override
+    public Auditor getAuditor() {
+        return auditor;
+    }
 }

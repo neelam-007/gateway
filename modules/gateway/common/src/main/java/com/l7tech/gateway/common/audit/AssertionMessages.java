@@ -169,6 +169,7 @@ public class AssertionMessages extends Messages {
     public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE_MI   = m(4716, Level.INFO, "XPath pattern didn''t match response; assertion therefore fails; XPath is ''{0}''." );
     public static final M XPATH_NOT_ACCELERATED                   = m(4717, Level.FINE, "Multiple result elements expected, using non-accelerated XPath." );
     public static final M XPATH_PATTERN_IS                        = m(4718, Level.FINE, "XPath is ''{0}''");
+    public static final M XPATH_MESSAGE_NOT_XML                   = m(4719, Level.WARNING, "{0} not XML; cannot evaluate XPath expression");
 
     // ServerRequestAcceleratedXpathAssertion & ServerResponseAcceleratedXpathAssertion messages
     public static final M ACCEL_XPATH_NO_HARDWARE                 = m(4750, Level.INFO, "Hardware acceleration not available; falling back to software XPath processing");
@@ -176,13 +177,19 @@ public class AssertionMessages extends Messages {
     public static final M ACCEL_XPATH_NO_CONTEXT                  = m(4752, Level.WARNING, "Message has no hardware acceleration context; falling back to software XPath processing");
 
     // ServerRequestWssX509Cert messages
-    public static final M REQUEST_WSS_X509_FOR_ANOTHER_USER       = m(4800, Level.FINE, "This is intended for another recipient; there is nothing to validate");
-    public static final M REQUEST_WSS_X509_NON_SOAP               = m(4801, Level.INFO, "Request not SOAP; unable to check for WS-Security signature");
-    /** @deprecated */ @Deprecated public static final M _UNUSED_REQUEST_WSS_X509_NO_WSS_LEVEL_SECURITY  = m(4802, Level.INFO, "Request did not contain any WSS level security");
-    public static final M REQUEST_WSS_X509_NO_TOKEN               = m(4803, Level.INFO, "No tokens were processed from this request; returning AUTH_REQUIRED");
-    public static final M REQUEST_WSS_X509_TOO_MANY_VALID_SIG     = m(4804, Level.WARNING, true, false, "Request presented more than one valid signature from more than one client certificate");
-    public static final M REQUEST_WSS_X509_CERT_LOADED            = m(4805, Level.FINE, "Certificate loaded as principal credential for CN:{0}");
-    public static final M REQUEST_WSS_X509_NO_PROVEN_CERT         = m(4806, Level.INFO, "This assertion did not find a proven X.509 certificate to use as credentials - returning AUTH_REQUIRED");
+    public static final M WSS_X509_FOR_ANOTHER_USER               = m(4800, Level.FINE, "This is intended for another recipient; there is nothing to validate");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_REQUEST_WSS_X509_NON_SOAP = m(4801, Level.INFO, "Request not SOAP; unable to check for WS-Security signature");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_REQUEST_WSS_X509_NO_WSS_LEVEL_SECURITY = m(4802, Level.INFO, "Request did not contain any WSS level security");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_REQUEST_WSS_X509_NO_TOKEN = m(4803, Level.INFO, "No tokens were processed from this request; returning AUTH_REQUIRED");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_REQUEST_WSS_X509_TOO_MANY_VALID_SIG = m(4804, Level.WARNING, true, false, "Request presented more than one valid signature from more than one client certificate");
+    public static final M WSS_X509_CERT_LOADED                    = m(4805, Level.FINE, "Certificate loaded as principal credential for CN:{0}");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_REQUEST_WSS_X509_NO_PROVEN_CERT         = m(4806, Level.INFO, "This assertion did not find a proven X.509 certificate to use as credentials - returning AUTH_REQUIRED");
+    public static final M WSS_X509_NON_SOAP                       = m(4807, Level.INFO, "{0} not SOAP; unable to check for WS-Security signature");
+    public static final M WSS_X509_NO_WSS_LEVEL_SECURITY          = m(4808, Level.INFO, "{0} did not contain any WSS level security");
+    public static final M WSS_X509_NO_TOKEN                       = m(4809, Level.INFO, "No tokens were processed from {0}; returning {1}");
+    public static final M WSS_X509_TOO_MANY_VALID_SIG             = m(4810, Level.WARNING, true, false, "{0} presented more than one valid signature.");
+    public static final M WSS_X509_TOO_MANY_VALID_SIG_IDENTITY    = m(4811, Level.WARNING, true, false, "{0} presented more than one valid signature for {1}.");
+    public static final M WSS_X509_NO_PROVEN_CERT                 = m(4812, Level.INFO, "No proven {0} X.509 certificate to use as credentials - returning {1}");
 
     // ServerRequestWssReplayProtection messages
     public static final M REQUEST_WSS_REPLAY_NON_SOAP                       = m(4900, Level.INFO, "{0} not SOAP; cannot check for replayed signed WS-Security message");
@@ -232,7 +239,7 @@ public class AssertionMessages extends Messages {
     public static final M SSL_OPTIONAL_ABSENT                               = m(5305, Level.FINE, "SSL optional and not present");
 
     // ServerResponseWssConfidentiality
-    public static final M RESPONSE_WSS_CONF_REQUEST_NOT_SOAP                = m(5400, Level.INFO, "Request not SOAP; unable to check for WS-Security encrypted elements");
+    /** @deprecated */ @Deprecated public static final M RESPONSE_WSS_CONF_REQUEST_NOT_SOAP        = m(5400, Level.INFO, "Request not SOAP; unable to check for WS-Security encrypted elements");
     /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_CONF_NO_WSS_SECURITY = m(5401, Level.INFO, "Request did not contain any WSS level security");
     public static final M RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN             = m(5402, Level.WARNING, true, false, "Request included more than one X509 security token whose key ownership was proven");
     public static final M RESPONSE_WSS_CONF_NO_CERT_OR_SC_TOKEN             = m(5403, Level.WARNING, "Unable to encrypt response; request did not include X509 token or SecureConversation");
@@ -449,7 +456,7 @@ public class AssertionMessages extends Messages {
 
     // CodeInjectionProtectionAssertion
     public static final M CODEINJECTIONPROTECTION_NOT_HTTP                  = m(7150, Level.FINE, "Request is not HTTP.");
-    public static final M CODEINJECTIONPROTECTION_SKIP_RESPONSE_NOT_ROUTED  = m(7151, Level.FINE, "No response body to checked because request has not been routed yet.");
+    public static final M CODEINJECTIONPROTECTION_SKIP_RESPONSE_NOT_ROUTED  = m(7151, Level.FINE, "No response body to check because request has not been routed yet.");
     public static final M CODEINJECTIONPROTECTION_CANNOT_PARSE              = m(7152, Level.WARNING, "Cannot parse {0} as {1}.");
     public static final M CODEINJECTIONPROTECTION_DETECTED_PARAM            = m(7153, Level.WARNING, "{3} detected in {0} parameter \"{1}\": {2}");
     public static final M CODEINJECTIONPROTECTION_DETECTED                  = m(7154, Level.WARNING, "{2} detected in {0}: {1}");
@@ -461,11 +468,13 @@ public class AssertionMessages extends Messages {
     public static final M CODEINJECTIONPROJECTION_SCANNING_BODY_TEXT        = m(7160, Level.FINE, "Scanning {0} message body as text.");
     public static final M CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_XML   = m(7161, Level.FINE, "Scanning {0} as text/xml.");
     public static final M CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_TEXT  = m(7162, Level.FINE, "Scanning {0} as text/xml.");
+    public static final M CODEINJECTIONPROJECTION_ALREADY_ROUTED            = m(7163, Level.WARNING, "Unable to protect against code injection attacks - the request has already been routed");
 
     // SqlAttackAssertion
     public static final M SQLATTACK_UNRECOGNIZED_PROTECTION = m(7200, Level.WARNING, "Unrecognized protection name: {0}.  Assertion will always fail.");
-    public static final M SQLATTACK_REQUEST_REJECTED        = m(7201, Level.WARNING, true, false, "Request was flagged by SQL attack protection assertion");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_SQLATTACK_REQUEST_REJECTED        = m(7201, Level.WARNING, true, false, "Request was flagged by SQL attack protection assertion");
     public static final M SQLATTACK_ALREADY_ROUTED          = m(7203, Level.WARNING, "Unable to protect against SQL attacks - the request has already been routed");
+    public static final M SQLATTACK_REJECTED                = m(7204, Level.WARNING, true, false, "{0} was flagged by SQL attack protection assertion");
 
     // RequestSizeLimit
     public static final M REQUEST_BODY_TOO_LARGE            = m(7220, Level.WARNING,  "Request body size exceeds configured limit");
@@ -473,13 +482,18 @@ public class AssertionMessages extends Messages {
 
     // OversizedTextAssertion
     public static final M OVERSIZEDTEXT_ALREADY_ROUTED      = m(7230, Level.WARNING, "Unable to protect against document structure threats -- the request has already been routed");
-    public static final M OVERSIZEDTEXT_OVERSIZED_TEXT      = m(7231, Level.WARNING, "Request includes an oversized text node or attribute value");
-    public static final M XML_NESTING_DEPTH_EXCEEDED        = m(7232, Level.WARNING, "Request XML nesting depth exceeds the policy limit");
-    public static final M OVERSIZEDTEXT_EXTRA_PAYLOAD       = m(7233, Level.WARNING, "Request message SOAP Body has too many children");
-    public static final M REQUEST_NOT_SOAP                  = m(7234, Level.WARNING, "Request message does not have a valid SOAP Envelope");
-    public static final M REQUEST_BAD_XML                   = m(7235, Level.WARNING, "Request message is not well-formed XML");
-    public static final M RESPONSE_BAD_XML                  = m(7236, Level.WARNING, "Response message is not well-formed XML");
-    public static final M MESSAGE_BAD_XML                   = m(7237, Level.WARNING, "Message is not well-formed XML");
+    /** @deprecated */ @Deprecated public static final M OVERSIZEDTEXT_OVERSIZED_TEXT      = m(7231, Level.WARNING, "Request includes an oversized text node or attribute value");
+    /** @deprecated */ @Deprecated public static final M XML_NESTING_DEPTH_EXCEEDED        = m(7232, Level.WARNING, "Request XML nesting depth exceeds the policy limit");
+    /** @deprecated */ @Deprecated public static final M OVERSIZEDTEXT_EXTRA_PAYLOAD       = m(7233, Level.WARNING, "Request message SOAP Body has too many children");
+    /** @deprecated */ @Deprecated public static final M REQUEST_NOT_SOAP                  = m(7234, Level.WARNING, "Request message does not have a valid SOAP Envelope");
+    public static final M REQUEST_BAD_XML                               = m(7235, Level.WARNING, "Request message is not well-formed XML");
+    public static final M RESPONSE_BAD_XML                              = m(7236, Level.WARNING, "Response message is not well-formed XML");
+    public static final M MESSAGE_BAD_XML                               = m(7237, Level.WARNING, "Message is not well-formed XML");
+    public static final M OVERSIZEDTEXT_NODE_OR_ATTRIBUTE               = m(7238, Level.WARNING, "{0} includes an oversized text node or attribute value");
+    public static final M OVERSIZEDTEXT_XML_NESTING_DEPTH_EXCEEDED      = m(7239, Level.WARNING, "{0} XML nesting depth exceeds the policy limit");
+    public static final M OVERSIZEDTEXT_EXTRA_PAYLOAD_ELEMENTS          = m(7240, Level.WARNING, "{0} message SOAP Body has too many children");
+    public static final M OVERSIZEDTEXT_NOT_SOAP                        = m(7241, Level.WARNING, "{0} message does not have a valid SOAP Envelope");
+    public static final M OVERSIZEDTEXT_NOT_XML                         = m(7242, Level.WARNING, "{0} is not XML.");
 
     // ServerWsTrustCredentialExchange
     public static final M WSFEDPASS_NO_SUITABLE_CREDENTIALS = m(7300, Level.INFO, "The current request did not contain credentials of any supported type");
@@ -520,6 +534,7 @@ public class AssertionMessages extends Messages {
     public static final M USERDETAIL_WARNING = m(-5, Level.WARNING, "{0}");
     public static final M NO_SUCH_VARIABLE   = m(-6, Level.FINE, "No such variable: {0}");
     public static final M VARIABLE_IS_NULL   = m(-7, Level.FINE, "Variable exists but has no value: {0}");
+    public static final M VARIABLE_NOTSET    = m(-8, Level.WARNING, "Variable cannot be set: {0}");
 
     public static final M WSI_BSP_REQUEST_NON_SOAP       = m(7600, Level.INFO, "Request not SOAP; unable to check for WS-I Basic Security Profile compliance");
     public static final M WSI_BSP_RESPONSE_NON_SOAP      = m(7601, Level.INFO, false, true, "Response not SOAP; unable to check for WS-I Basic Security Profile compliance");
@@ -614,6 +629,11 @@ public class AssertionMessages extends Messages {
     public static final M DOMAINID_DECLINED           = m(8784, Level.INFO, "Requestor explicitly declines to provide domain ID information");
     public static final M DOMAINID_INCOMPLETE         = m(8785, Level.WARNING, "Requestor provided incomplete domain ID information");
     public static final M DOMAINID_IDENTIFIER_MISSING = m(8786, Level.WARNING, "Requestor did not include required identifier: {0}");
+
+    public static final M REMOVE_ELEMENT_NOT_XML = m(8800, Level.WARNING, "Message is not XML.");
+
+    public static final M WSS_DECORATION_NON_SOAP = m(8850, Level.WARNING, "Message is not SOAP.");
+    public static final M WSS_DECORATION_ERROR    = m(8851, Level.WARNING, "Unable to decorate {0}: {1}");
 
     public static final M MCM_VARIABLE_NOT_FOUND = m(9001, Level.WARNING, "Message context mapping variable not found {0}.");
     public static final M MCM_MAPPING_OVERRIDDEN = m(9002, Level.INFO, "Message context mapping overridden {0}.");

@@ -79,6 +79,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
     private static final Managers.BridgeStashManagerFactory BRIDGE_STASH_MANAGER_FACTORY =
         new Managers.BridgeStashManagerFactory() {
+            @Override
             public StashManager createStashManager() {
                 return DefaultStashManagerFactory.getInstance().createStashManager();
             }
@@ -165,6 +166,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         return tc.getCertificate();
     }
 
+    @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws PolicyAssertionException {
         context.routingStarted();
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
@@ -193,11 +195,11 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 handleProcessedSecurityHeader(requestMsg);
 
                 if (assertion.isAttachSamlSenderVouches()) {
-                    doAttachSamlSenderVouches(requestMsg, context.getLastCredentials(), signerInfo);
+                    doAttachSamlSenderVouches(requestMsg, context.getDefaultAuthenticationContext().getLastCredentials(), signerInfo);
                 }
 
                 try {
-                    final HttpRequestKnob httpRequestKnob = (HttpRequestKnob) requestMsg.getKnob(HttpRequestKnob.class);
+                    final HttpRequestKnob httpRequestKnob = requestMsg.getKnob(HttpRequestKnob.class);
 
                     Map vars = null;
 
@@ -236,6 +238,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     } else {
                         bridgeResponse = new Message();
                         bridgeResponse.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
+                            @Override
                             public void addCookie(HttpCookie cookie) {
                                 // TODO what to do with the cookie?
                             }
@@ -247,14 +250,14 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                     PolicyApplicationContext pac = newPolicyApplicationContext(context, bridgeRequest, bridgeResponse, pak, origUrl, hh);
                     messageProcessor.processMessage(pac);
 
-                    final HttpResponseKnob hrk = (HttpResponseKnob) bridgeResponse.getKnob(HttpResponseKnob.class);
+                    final HttpResponseKnob hrk = bridgeResponse.getKnob(HttpResponseKnob.class);
                     int status = hrk == null ? HttpConstants.STATUS_SERVER_ERROR : hrk.getStatus();
                     if (status == HttpConstants.STATUS_OK)
                         auditor.logAndAudit(AssertionMessages.HTTPROUTE_OK);
                     else
                         auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, url.getPath(), String.valueOf(status));
 
-                    HttpResponseKnob httpResponseKnob = (HttpResponseKnob) bridgeResponse.getKnob(HttpResponseKnob.class);
+                    HttpResponseKnob httpResponseKnob = bridgeResponse.getKnob(HttpResponseKnob.class);
                     if (httpResponseKnob != null) {
                         HttpForwardingRuleEnforcer.handleResponseHeaders(httpResponseKnob, auditor, hh,
                                                                          assertion.getResponseHeaderRules(), vars,
@@ -388,22 +391,27 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
     private Ssg newSSG(String gatewayHostname) {
         return new Ssg(1, gatewayHostname) {
+            @Override
             public void setTrustStoreFile(File file) {
                 throw new IllegalStateException("BridgeRoutingAssertion does not have a trust store path");
             }
 
+            @Override
             public void setKeyStoreFile(File file) {
                 throw new IllegalStateException("BridgeRoutingAssertion does not have a key store path");
             }
 
+            @Override
             public X509Certificate getServerCertificate() {
                 return getRuntime().getCachedServerCert();
             }
 
+            @Override
             public X509Certificate getClientCertificate() {
                 return useClientCert ? signerInfo.getCertificateChain()[0] : null;
             }
 
+            @Override
             public PrivateKey getClientCertificatePrivateKey() {
                 return useClientCert ? signerInfo.getPrivate() : null;
             }
@@ -437,6 +445,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
     private CredentialManager newCredentialManager(final X509TrustManager trustManager) {
         return new CredentialManagerImpl() {
+            @Override
             public void notifySslCertificateUntrusted(SslPeer sslPeer, String serverDesc, X509Certificate untrustedCertificate) throws OperationCanceledException {
                 if (!(sslPeer instanceof Ssg))
                     throw new OperationCanceledException("Unable to approve certificate import for SslPeer of unexpected type " + sslPeer.getClass().getName());
@@ -454,6 +463,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 ssg.getRuntime().setCachedServerCert(serverCert);
             }
 
+            @Override
             public PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException {
                 throw new OperationCanceledException(AssertionMessages.HTTPROUTE_ACCESS_DENIED.getMessage());
             }
@@ -475,6 +485,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
         params.setMaxTotalConnections(tmax);
         connectionManager.setPerHostStaleCleanupCount(getStaleCheckCount());
         GenericHttpClient client = new CommonsHttpClient(connectionManager, getConnectionTimeout(), getTimeout()) {
+            @Override
             public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
                 // override params to match server config
                 if ( Boolean.valueOf(ServerConfig.getInstance().getPropertyCached("ioHttpUseExpectContinue")) ) {
@@ -546,6 +557,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
     private PolicyApplicationContext newPolicyApplicationContext(final PolicyEnforcementContext context, Message bridgeRequest, Message bridgeResponse, PolicyAttachmentKey pak, URL origUrl, final HeaderHolder hh) {
         return new PolicyApplicationContext(ssg, bridgeRequest, bridgeResponse, NullRequestInterceptor.INSTANCE, pak, origUrl) {
+            @Override
             public HttpCookie[] getSessionCookies() {
                 int cookieRule = assertion.getRequestHeaderRules().ruleForName("cookie");
                 Set cookies = Collections.EMPTY_SET;
@@ -556,6 +568,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 //noinspection unchecked
                 return (HttpCookie[]) cookies.toArray(new HttpCookie[cookies.size()]);
             }
+            @Override
             public void setSessionCookies(HttpCookie[] cookies) {
                 // todo, fla, we need to handle all response http header rules, not just cookies
                 int setcookieRule = assertion.getResponseHeaderRules().ruleForName("set-cookie");
@@ -568,6 +581,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                 }
             }
 
+            @Override
             public SimpleHttpClient getHttpClient() {
                 return newRRLSimpleHttpClient(context, super.getHttpClient(), context.getRoutingResultListener(), hh);
             }
@@ -595,7 +609,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
                 if (msg.getKnob(HttpRequestKnob.class) == null) {
                     // Make it a request message by inheriting the HttpRequestKnob from the default request.
-                    final HttpRequestKnob defaultHRK = (HttpRequestKnob)context.getRequest().getKnob(HttpRequestKnob.class);
+                    final HttpRequestKnob defaultHRK = context.getRequest().getKnob(HttpRequestKnob.class);
                     if (defaultHRK != null) {
                         msg.attachHttpRequestKnob(defaultHRK);
                     }
@@ -635,38 +649,44 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             this.hh = hh;
         }
 
+        @Override
         public GenericHttpRequest createRequest(final HttpMethod method, final GenericHttpRequestParams params)  {
             // enforce http outgoing rules here
             HttpForwardingRuleEnforcer.handleRequestHeaders(params, context, assertion.getRequestHeaderRules(),
                                                             auditor, null, varNames);
 
             if (assertion.isTaiCredentialChaining()) {
-                doTaiCredentialChaining(context, params, params.getTargetUrl());
+                doTaiCredentialChaining(context.getDefaultAuthenticationContext(), params, params.getTargetUrl());
             }
 
             return new RerunnableHttpRequest() {
                 private RerunnableHttpRequest.InputStreamFactory isf = null;
                 private InputStream is = null;
 
+                @Override
                 public void setInputStreamFactory(RerunnableHttpRequest.InputStreamFactory isf) {
                     this.isf = isf;
                 }
 
+                @Override
                 public void setInputStream(InputStream is) {
                     this.is = is;
                 }
 
+                @Override
                 public void close() {
                 }
 
                 /*
                  * Get the response, re-routing if directed to do so by a listener.
                  */
+                @Override
                 public GenericHttpResponse getResponse() throws GenericHttpException {
                     getInputStreamFactory(); // init isf
                     return doGetResponse(true);
                 }
 
+                @Override
                 public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
                     throw new IllegalStateException("The bridge currently does not support form posts");
                 }
@@ -679,6 +699,7 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                             IOUtils.copyStream(is, baos);
                             final byte[] data = baos.toByteArray();
                             isf = new RerunnableHttpRequest.InputStreamFactory() {
+                                @Override
                                 public InputStream getInputStream() {
                                     return new ByteArrayInputStream(data);
                                 }
@@ -750,31 +771,38 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
 
     private class BridgeRoutingKeyStoreManager extends SsgKeyStoreManager {
 
+        @Override
         public boolean isClientCertUnlocked() throws KeyStoreCorruptException {
             return getClientCertPrivateKey(null) != null;
         }
 
+        @Override
         public void deleteClientCert() throws IOException, KeyStoreException, KeyStoreCorruptException {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public boolean deleteStores() {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public void saveSsgCertificate(X509Certificate cert) throws KeyStoreException, IOException, KeyStoreCorruptException, CertificateException {
             serverCert = cert;
             ssg.getRuntime().setCachedServerCert(cert);
         }
 
+        @Override
         public void saveClientCertificate(PrivateKey privateKey, X509Certificate cert, char[] privateKeyPassword) throws KeyStoreException, IOException, KeyStoreCorruptException, CertificateException {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public void obtainClientCertificate(PasswordAuthentication credentials) throws BadCredentialsException, GeneralSecurityException, KeyStoreCorruptException, CertificateAlreadyIssuedException, IOException {
             throw new CertificateAlreadyIssuedException("Unable to apply for client certificate; the Gateway uses its SSL certificate as its client certificate.");
         }
 
+        @Override
         public String lookupClientCertUsername() {
             try {
                 return CertUtils.extractSingleCommonNameFromCertificate(getClientCert());
@@ -785,38 +813,47 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
             }
         }
 
+        @Override
         protected X509Certificate getServerCert() throws KeyStoreCorruptException {
             return serverCert;
         }
 
+        @Override
         protected X509Certificate getClientCert() throws KeyStoreCorruptException {
             return useClientCert ? signerInfo.getCertificateChain()[0] : null;
         }
 
+        @Override
         public PrivateKey getClientCertPrivateKey(PasswordAuthentication passwordAuthentication) {
             return useClientCert ? signerInfo.getPrivate() : null;
         }
 
+        @Override
         protected boolean isClientCertAvailabile() throws KeyStoreCorruptException {
             return true;
         }
 
+        @Override
         protected KeyStore getKeyStore(char[] password) throws KeyStoreCorruptException {
             throw new UnsupportedOperationException("Gateway does not have an accessible key store file");
         }
 
+        @Override
         protected KeyStore getTrustStore() throws KeyStoreCorruptException {
             throw new UnsupportedOperationException("Gateway does not have an accessible cert store file");
         }
 
+        @Override
         public void importServerCertificate(File file) {
             throw new UnsupportedOperationException("Gateway is unable to import a server certificate");
         }
 
+        @Override
         public void importClientCertificate(File certFile, char[] pass, CertUtils.AliasPicker aliasPicker, char[] ssgPassword) throws IOException, GeneralSecurityException, KeyStoreCorruptException, AliasNotFoundException {
             throw new UnsupportedOperationException("Gateway is unable to import a client certificate");
         }
 
+        @Override
         public void installSsgServerCertificate( Ssg ssg, PasswordAuthentication credentials) throws IOException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException, CertificateException, KeyStoreException {
             Long loid = assertion.getServerCertificateOid();
             if (loid == null) {

@@ -35,8 +35,8 @@ public class RemoteDomainIdentityInjectionDialog extends AssertionPropertiesEdit
         add(new Pair<JLabel, String>(injectedProgramLabel, ".program"));
     }};
 
-    public RemoteDomainIdentityInjectionDialog(Frame owner, RemoteDomainIdentityInjection assertion) {
-        super(owner, "Configure Domain Identity Injection", true);
+    public RemoteDomainIdentityInjectionDialog(Window owner, RemoteDomainIdentityInjection assertion) {
+        super(owner, "Configure Domain Identity Injection");
         initialize();
         setData(assertion);
     }

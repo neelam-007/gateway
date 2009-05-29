@@ -33,8 +33,8 @@ public class HardcodedResponseDialog extends AssertionPropertiesEditorSupport<Ha
     private boolean modified;
     private boolean confirmed = false;
 
-    public HardcodedResponseDialog(Frame owner, HardcodedResponseAssertion assertion) throws HeadlessException {
-        super(owner, TITLE, true);
+    public HardcodedResponseDialog(Window owner, HardcodedResponseAssertion assertion) throws HeadlessException {
+        super(owner, TITLE);
         doInit(assertion);
     }
 

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wsse:TokenType>
+            <L7p:Properties>
+                <L7p:AllowMultipleSignatures booleanValue="true"/>
+            </L7p:Properties>
+        </wsse:SecurityToken>
+        <L7p:SpecificUser>
+            <L7p:IdentityProviderOid longValue="9898"/>
+            <L7p:UserLogin stringValue="Bob"/>
+            <L7p:UserName stringValue="Bob"/>
+            <L7p:UserUid stringValue="4718593"/>
+        </L7p:SpecificUser>
+        <L7p:SpecificUser>
+            <L7p:IdentityProviderOid longValue="9898"/>
+            <L7p:UserLogin stringValue="Alice"/>
+            <L7p:UserName stringValue="Alice"/>
+            <L7p:UserUid stringValue="4718592"/>
+        </L7p:SpecificUser>
+        <wsse:Integrity wsp:Usage="wsp:Required" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <L7p:IdentityTarget IdentityTarget="included">
+                <L7p:IdentityId stringValue="4718592"/>
+                <L7p:IdentityInfo stringValue="Alice"/>
+                <L7p:IdentityProviderOid longValue="9898"/>
+                <L7p:TargetIdentityType identityType="USER"/>
+            </L7p:IdentityTarget>
+            <wsse:MessageParts
+                Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
+                xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+                xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+                xmlns:s12="http://www.w3.org/2003/05/soap-envelope"
+                xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                xmlns:tns="http://warehouse.acme.com/ws"
+                xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">/soapenv:Envelope/soapenv:Body</wsse:MessageParts>
+            <L7p:VariablePrefix stringValue="signature"/>
+        </wsse:Integrity>
+        <wsse:Integrity messageParts="false" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <L7p:IdentityTarget IdentityTarget="included">
+                <L7p:IdentityId stringValue="4718593"/>
+                <L7p:IdentityInfo stringValue="Bob"/>
+                <L7p:IdentityProviderOid longValue="9898"/>
+                <L7p:TargetIdentityType identityType="USER"/>
+            </L7p:IdentityTarget>
+            <wsse:MessageParts
+                Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
+                xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+                xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+                xmlns:s12="http://www.w3.org/2003/05/soap-envelope"
+                xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                xmlns:tns="http://warehouse.acme.com/ws"
+                xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">$signature.element</wsse:MessageParts>
+        </wsse:Integrity>
+        <L7p:HttpRoutingAssertion>
+            <L7p:ProtectedServiceUrl stringValue="http://hugh/ACMEWarehouseWS/Service1.asmx"/>
+            <L7p:SamlAssertionVersion intValue="2"/>
+        </L7p:HttpRoutingAssertion>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wsse:TokenType>
+            <L7p:Properties>
+                <L7p:AllowMultipleSignatures booleanValue="true"/>
+                <L7p:Target target="RESPONSE"/>
+            </L7p:Properties>
+        </wsse:SecurityToken>
+        <L7p:Authentication>
+            <L7p:IdentityProviderOid longValue="9898"/>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:Authentication>
+        <wsse:Integrity wsp:Usage="wsp:Required" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <L7p:IdentityTarget IdentityTarget="included">
+                <L7p:IdentityId stringValue="4718592"/>
+                <L7p:IdentityInfo stringValue="Alice"/>
+                <L7p:IdentityProviderOid longValue="9898"/>
+                <L7p:TargetIdentityType identityType="USER"/>
+            </L7p:IdentityTarget>
+            <L7p:MessageTarget MessageTarget="included">
+                <L7p:Target target="RESPONSE"/>
+            </L7p:MessageTarget>
+            <wsse:MessageParts
+                Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
+                xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+                xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+                xmlns:s12="http://www.w3.org/2003/05/soap-envelope"
+                xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                xmlns:tns="http://warehouse.acme.com/ws"
+                xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">/soapenv:Envelope/soapenv:Body</wsse:MessageParts>
+            <L7p:VariablePrefix stringValue="responseSig"/>
+        </wsse:Integrity>
+    </wsp:All>
+</wsp:Policy>

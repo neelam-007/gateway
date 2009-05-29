@@ -46,7 +46,7 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
         AssertionStatus status = super.checkRequest( context );
 
         if ( status == AssertionStatus.NONE ) {
-            LoginCredentials creds = context.getLastCredentials();
+            LoginCredentials creds = context.getDefaultAuthenticationContext().getLastCredentials();
             if ( creds != null && creds.getPayload() instanceof KerberosServiceTicket) {
                 KerberosServiceTicket ticket = (KerberosServiceTicket) creds.getPayload();
                 context.setVariable( "kerberos.realm", extractRealm(ticket.getClientPrincipalName()) );        

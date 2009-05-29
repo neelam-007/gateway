@@ -2,11 +2,8 @@ package com.l7tech.server.policy.assertion;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -23,6 +20,7 @@ import org.xml.sax.SAXException;
 import com.l7tech.message.Message;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.NamespaceContextImpl;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.xpath.CursorXPathFactory;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -41,7 +39,8 @@ import com.l7tech.server.message.PolicyEnforcementContext;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public abstract class ServerXpathValidationAssertion extends AbstractServerAssertion implements ServerAssertion {
+public abstract class ServerXpathValidationAssertion<AT extends Assertion> extends AbstractServerAssertion<AT> {    
+
     //- PUBLIC
 
     /**
@@ -51,17 +50,18 @@ public abstract class ServerXpathValidationAssertion extends AbstractServerAsser
      * @param context the context for the request.
      * @return the status
      */
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
-        AssertionStatus status = AssertionStatus.SERVER_ERROR;
+        AssertionStatus status;
         if(context.getRoutingStatus().equals(RoutingStatus.ROUTED)) {
             Message responseMessage = context.getResponse();
-            status = processResponseMessage(responseMessage, context);
+            status = processResponseMessage(responseMessage);
         }
         else {
 
             if(isCheckRequestMessages()) {
                 Message requestMessage = context.getRequest();
-                status = processRequestMessage(requestMessage, context);
+                status = processRequestMessage(requestMessage);
             }
             else {
                 status = AssertionStatus.NONE;
@@ -82,12 +82,11 @@ public abstract class ServerXpathValidationAssertion extends AbstractServerAsser
 
     //- PROTECTED
 
-    protected ServerXpathValidationAssertion(Assertion assertion, Logger validationLogger) {
+    protected ServerXpathValidationAssertion(AT assertion, Logger validationLogger) {
         super(assertion);
         this.logger = validationLogger;
-        nsPreToUriMap = Collections.EMPTY_MAP;
-        nsUriToPreMap = Collections.EMPTY_MAP;
-        rulesMap = Collections.EMPTY_MAP;
+        namespaceContext = new NamespaceContextImpl(Collections.<String,String>emptyMap());
+        rulesMap = Collections.emptyMap();
         initRules();
     }
 
@@ -223,7 +222,7 @@ public abstract class ServerXpathValidationAssertion extends AbstractServerAsser
      */
     protected void onXPathError(XPathException xpe){
         logger.log(Level.WARNING, "Error processing XPath", xpe);
-    };
+    }
 
     //- PACKAGE
 
@@ -243,16 +242,14 @@ public abstract class ServerXpathValidationAssertion extends AbstractServerAsser
 
     //
     private final Logger logger;
-    private Map nsPreToUriMap; //Map of prefixes (String) to namespace uris (String)
-    private Map nsUriToPreMap; //Map of namespace uri (String) to prefixes (List)
-    private Map rulesMap;      //Map of XPaths to descriptions
+    private NamespaceContext namespaceContext;
+    private Map<XPathExpression,String> rulesMap;      //Map of XPaths to descriptions
 
     /**
      *
      */
-    private AssertionStatus processRequestMessage(Message requestMessage,
-                                                  PolicyEnforcementContext context) throws IOException {
-        AssertionStatus result = AssertionStatus.SERVER_ERROR;
+    private AssertionStatus processRequestMessage(Message requestMessage) throws IOException {
+        AssertionStatus result;
 
         if(logger.isLoggable(Level.FINE)) {
             logger.fine("Processing request message.");
@@ -270,19 +267,19 @@ public abstract class ServerXpathValidationAssertion extends AbstractServerAsser
             else {
                 try {
                     boolean success = true;
-                    for(Iterator ruleIter=rulesMap.keySet().iterator(); ruleIter.hasNext();) {
-                        XPathExpression xpe = (XPathExpression) ruleIter.next();
-                        if(logger.isLoggable(Level.FINEST)) {
-                            logger.finest("Evaluating XPath '"+xpe.toString()+"'.");
+                    for (Object o : rulesMap.keySet()) {
+                        XPathExpression xpe = (XPathExpression) o;
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.finest("Evaluating XPath '" + xpe.toString() + "'.");
                         }
-                        if(!"true".equals(xpe.evaluate(xpathContext))) {
-                            if(logger.isLoggable(Level.FINEST)) {
+                        if (!"true".equals(xpe.evaluate(xpathContext))) {
+                            if (logger.isLoggable(Level.FINEST)) {
                                 logger.finest("XPath evaluated to false.");
                             }
                             String[] details = getDetails(xpe);
                             onRequestNonCompliance(details[0], details[1]);
                             success = false;
-                            if(isFailOnNonCompliantRequest()) break; // fail fast
+                            if (isFailOnNonCompliantRequest()) break; // fail fast
                         }
                     }
                     result = success || !isFailOnNonCompliantRequest()
@@ -306,9 +303,8 @@ public abstract class ServerXpathValidationAssertion extends AbstractServerAsser
     /**
      *
      */
-    private AssertionStatus processResponseMessage(Message responseMessage,
-                                                   PolicyEnforcementContext context) throws IOException {
-        AssertionStatus result = AssertionStatus.SERVER_ERROR;
+    private AssertionStatus processResponseMessage(Message responseMessage) throws IOException {
+        AssertionStatus result;
 
         if(logger.isLoggable(Level.FINE)) {
             logger.fine("Processing response message.");
@@ -326,19 +322,19 @@ public abstract class ServerXpathValidationAssertion extends AbstractServerAsser
             else {
                 try {
                     boolean success = true;
-                    for(Iterator ruleIter=rulesMap.keySet().iterator(); ruleIter.hasNext();) {
-                        XPathExpression xpe = (XPathExpression) ruleIter.next();
-                        if(logger.isLoggable(Level.FINEST)) {
-                            logger.finest("Evaluating XPath '"+xpe.toString()+"'.");
+                    for (Object o : rulesMap.keySet()) {
+                        XPathExpression xpe = (XPathExpression) o;
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.finest("Evaluating XPath '" + xpe.toString() + "'.");
                         }
-                        if(!"true".equals(xpe.evaluate(xpathContext))) {
-                            if(logger.isLoggable(Level.FINEST)) {
+                        if (!"true".equals(xpe.evaluate(xpathContext))) {
+                            if (logger.isLoggable(Level.FINEST)) {
                                 logger.finest("XPath evaluated to false.");
                             }
                             String[] details = getDetails(xpe);
                             onResponseNonCompliance(details[0], details[1]);
                             success = false;
-                            if(isFailOnNonCompliantResponse()) break;
+                            if (isFailOnNonCompliantResponse()) break;
                         }
                     }
                     result = success || !isFailOnNonCompliantResponse()
@@ -363,7 +359,7 @@ public abstract class ServerXpathValidationAssertion extends AbstractServerAsser
      *
      */
     private String[] getDetails(XPathExpression xpe) {
-        String description = (String) rulesMap.get(xpe);
+        String description = rulesMap.get(xpe);
         if(description==null) description = "";
         return description.split(": ", 2);
     }
@@ -390,7 +386,7 @@ public abstract class ServerXpathValidationAssertion extends AbstractServerAsser
      *
      */
     private Object getXPathContext(Message message) throws IOException {
-        Object context = null;
+        Object context;
 
         try {
             ElementCursor ec = message.getXmlKnob().getElementCursor();
@@ -414,15 +410,11 @@ public abstract class ServerXpathValidationAssertion extends AbstractServerAsser
             if(in!=null) {
                 Properties props = new Properties();
                 props.load(in);
-                Map newRules = new HashMap(props.size());
-                Map newNsPreToUri = new HashMap();
-                Map newNsUriToPre = new HashMap();
+                Map<XPathExpression,String> newRules = new HashMap<XPathExpression,String>(props.size());
 
                 XPathFactory xpf = new CursorXPathFactory();//XPathFactory.newInstance();
 
-                loadNamespaces(props, newNsPreToUri, newNsUriToPre);
-                nsPreToUriMap = Collections.unmodifiableMap(newNsPreToUri);
-                nsUriToPreMap = Collections.unmodifiableMap(newNsUriToPre);  //TODO wrap mutable List?
+                namespaceContext = loadNamespaces(props);
 
                 loadRules(xpf, props, newRules);
                 rulesMap = Collections.unmodifiableMap(newRules);
@@ -439,90 +431,58 @@ public abstract class ServerXpathValidationAssertion extends AbstractServerAsser
         }
     }
 
-    private void loadNamespaces(Map props, Map newNsPreToUri, Map newNsUriToPre) {
-            for(Iterator iterator = props.entrySet().iterator(); iterator.hasNext(); ) {
-                Map.Entry entry = (Map.Entry) iterator.next();
-                String key = (String) entry.getKey();
-                String value = (String) entry.getValue();
+    private NamespaceContext loadNamespaces(Map props) {
+        Map<String,String> namespaceMap = new HashMap<String,String>();
 
-                if(key.startsWith(NAMESPACE_PREFIX)) {
-                    // Load namespace
-                    String nsPrefix = key.substring(NAMESPACE_PREFIX.length());
-                    String nsUri = value;
-
-                    if(nsPrefix.length()==0 || nsUri.length()==0) {
-                        continue;
-                    }
-
-                    newNsPreToUri.put(nsPrefix, nsUri);
-                    List uriList = (List) newNsUriToPre.get(nsUri);
-                    if(uriList==null) {
-                        uriList = new ArrayList(4);
-                        newNsUriToPre.put(nsUri, uriList);
-                    }
-                    uriList.add(nsPrefix);
-                }
-            }
-    }
-
-    private void loadRules(XPathFactory xpf, Properties props, Map newRules) {
-        for(Iterator iterator = props.entrySet().iterator(); iterator.hasNext(); ) {
-            Map.Entry entry = (Map.Entry) iterator.next();
+        for ( Object o : props.entrySet() ) {
+            Map.Entry entry = (Map.Entry) o;
             String key = (String) entry.getKey();
             String value = (String) entry.getValue();
 
-            if(key!=null && value!=null) {
-                if(key.endsWith(PATH_POSTFIX)) {
+            if (key.startsWith(NAMESPACE_PREFIX)) {
+                // Load namespace
+                String nsPrefix = key.substring(NAMESPACE_PREFIX.length());
+
+                if (nsPrefix.length() == 0 || value.length() == 0) {
+                    continue;
+                }
+
+                namespaceMap.put(nsPrefix, value);
+            }
+        }
+
+        return new NamespaceContextImpl(namespaceMap);
+    }
+
+    private void loadRules(XPathFactory xpf, Properties props, Map<XPathExpression,String> newRules) {
+        for (Object o : props.entrySet()) {
+            Map.Entry entry = (Map.Entry) o;
+            String key = (String) entry.getKey();
+            String value = (String) entry.getValue();
+
+            if (key != null && value != null) {
+                if (key.endsWith(PATH_POSTFIX)) {
                     // Load rule
-                    String ruleId = key.substring(0, key.length()-PATH_POSTFIX.length());
+                    String ruleId = key.substring(0, key.length() - PATH_POSTFIX.length());
                     String description = props.getProperty(ruleId + RULE_POSTFIX);
 
-                    if(description==null) description = "No description for rule.";
+                    if (description == null) description = "No description for rule.";
                     description = ruleId + ": " + description;
 
                     XPath xpath = xpf.newXPath();
-                    xpath.setNamespaceContext(getNamespaceContext());
+                    xpath.setNamespaceContext(namespaceContext);
                     try {
                         XPathExpression xpe = xpath.compile(value);
                         newRules.put(xpe, description);
                     }
-                    catch(XPathExpressionException xpee) {
-                        logger.log(Level.WARNING, "Error parsing XPath for rule '"+ruleId
-                                +"', xpath is '"+value+"',", xpee);
+                    catch (XPathExpressionException xpee) {
+                        logger.log(Level.WARNING, "Error parsing XPath for rule '" + ruleId
+                                + "', xpath is '" + value + "',", xpee);
                     }
                 }
             }
         }
 
-    }
-
-    private NamespaceContext getNamespaceContext() {
-        return new NamespaceContext(){
-            public String getNamespaceURI(String prefix) {
-                return (String) nsPreToUriMap.get(prefix);
-            }
-
-            public String getPrefix(String namespaceURI) {
-                String prefix = null;
-                Iterator iter = getPrefixes(namespaceURI);
-                if(iter.hasNext()) {
-                    prefix = (String) iter.next();
-                }
-                return prefix;
-            }
-
-            public Iterator getPrefixes(String namespaceURI) {
-                List prefixes = (List) nsUriToPreMap.get(namespaceURI);
-                Iterator prefixIter = null;
-                if(prefixes!=null) {
-                    prefixIter = prefixes.iterator();
-                }
-                else {
-                    prefixIter = Collections.EMPTY_LIST.iterator();
-                }
-                return prefixIter;
-            }
-        };
     }
 
 }

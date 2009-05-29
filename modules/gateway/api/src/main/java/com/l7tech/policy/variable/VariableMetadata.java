@@ -115,4 +115,33 @@ public class VariableMetadata implements Serializable {
             return e.getMessage();
         }
     }
+
+    /**
+     * Prefix the given name.
+     *
+     * @param prefix The prefix to use (may be null)
+     * @param name The name being prefixed (must not be null)
+     * @return The name with prefix appended and a separator inserted if required.
+     * @throws IllegalArgumentException if name is null
+     */
+    public static String prefixName( final String prefix, final String name ) {
+        if ( name == null ) throw new IllegalArgumentException( "name must not be null" );
+        String prefixedName = "";
+
+        if ( prefix != null ) {
+            prefixedName = prefix;
+        }
+
+        if ( !prefixedName.endsWith(".") ) {
+            prefixedName += ".";
+        }
+
+        if ( name.startsWith(".") ) {
+            prefixedName += name.substring(1);
+        } else {
+            prefixedName += name;
+        }
+
+        return prefixedName;
+    }
 }

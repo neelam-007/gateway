@@ -28,35 +28,16 @@ public class OkCancelDialog<V> extends JDialog {
     private final ValidatedPanel validatedPanel;
 
     public static OkCancelDialog createOKCancelDialog(Component owner, String title, boolean modal, ValidatedPanel panel) {
-        OkCancelDialog dialog;
         Window window = SwingUtilities.getWindowAncestor(owner);
-
-        if (window instanceof Frame) {
-            dialog = new OkCancelDialog((Frame)window, title, modal, panel);
-        } else {
-            dialog = new OkCancelDialog((Dialog)window, title, modal, panel);
-        }
-
-        return dialog;
+        return new OkCancelDialog(window, title, modal, panel);
     }
 
-    public OkCancelDialog(Frame owner, String title, boolean modal, ValidatedPanel panel) {
+    public OkCancelDialog(Window owner, String title, boolean modal, ValidatedPanel panel) {
         this( owner, title, modal, panel, false );
     }
 
-    public OkCancelDialog(Frame owner, String title, boolean modal, ValidatedPanel panel, boolean readOnly) {
-        super(owner, title, modal);
-        this.validatedPanel = panel;
-        this.readOnly = readOnly;
-        initialize();
-    }
-
-    public OkCancelDialog(Dialog owner, String title, boolean modal, ValidatedPanel panel) {
-        this( owner, title, modal, panel, false );
-    }
-
-    public OkCancelDialog(Dialog owner, String title, boolean modal, ValidatedPanel panel, boolean readOnly) {
-        super(owner, title, modal);
+    public OkCancelDialog(Window owner, String title, boolean modal, ValidatedPanel panel, boolean readOnly) {
+        super(owner, title, modal ? DEFAULT_MODALITY_TYPE : ModalityType.MODELESS );
         this.validatedPanel = panel;
         this.readOnly = readOnly;
         initialize();
@@ -64,24 +45,28 @@ public class OkCancelDialog<V> extends JDialog {
 
     private void initialize() {
         Utilities.setEscAction(this, new AbstractAction() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
         });
 
         validatedPanel.addPropertyChangeListener("ok", new PropertyChangeListener() {
+            @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 okButton.setEnabled(!readOnly && evt.getNewValue() == Boolean.TRUE);
             }
         });
 
         validatedPanel.addPropertyChangeListener(validatedPanel.getPropertyName(), new PropertyChangeListener() {
+            @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 value = (V) evt.getNewValue();
             }
         });
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 wasoked = true;
                 validatedPanel.updateModel();
@@ -90,6 +75,7 @@ public class OkCancelDialog<V> extends JDialog {
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 cancel();
             }
@@ -101,6 +87,7 @@ public class OkCancelDialog<V> extends JDialog {
         innerPanel.add(validatedPanel, BorderLayout.CENTER);
 
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 validatedPanel.focusFirstComponent();
             }

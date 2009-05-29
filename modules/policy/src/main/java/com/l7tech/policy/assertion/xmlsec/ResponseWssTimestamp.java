@@ -3,9 +3,7 @@
  */
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.assertion.PrivateKeyableSupport;
 import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_NAME;
@@ -15,7 +13,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FAC
 import static com.l7tech.policy.assertion.AssertionMetadata.DESCRIPTION;
 import static com.l7tech.policy.assertion.AssertionMetadata.ASSERTION_FACTORY;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import com.l7tech.policy.assertion.annotation.ProcessesResponse;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.util.Functions;
@@ -25,14 +22,17 @@ import com.l7tech.util.Functions;
  *
  * @author alex
  */
-@ProcessesResponse
 @RequiresSOAP(wss=true)
-public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig, PrivateKeyable {
+public class ResponseWssTimestamp extends MessageTargetableAssertion implements ResponseWssConfig, PrivateKeyable {
 
     /**
      * The recommended expiry time to use when creating response wss timestamps;
      */
     public static final int DEFAULT_EXPIRY_TIME = 5 * TimeUnit.MINUTES.getMultiplier();
+
+    public ResponseWssTimestamp() {
+        super(TargetMessageType.RESPONSE);
+    }
 
     /**
      * Create a new ResponseWssTimestamp with default properties.
@@ -60,6 +60,7 @@ public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig
     private PrivateKeyableSupport privatekeyableSupport = new PrivateKeyableSupport();
 
     public void copyFrom(ResponseWssTimestamp other) {
+        super.copyFrom( other );
         this.expiryMillis = other.expiryMillis;
         this.timeUnit = other.timeUnit;
         this.keyReference = other.keyReference;
@@ -174,8 +175,8 @@ public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
-        meta.put(PALETTE_NODE_NAME, "Add Signed Timestamp to Response");
-        meta.put(DESCRIPTION, "Include signed timestamp in response");
+        meta.put(PALETTE_NODE_NAME, "Add Timestamp");
+        meta.put(DESCRIPTION, "Add a Timestamp to the message with an optional signature.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         meta.put(ASSERTION_FACTORY, new Functions.Unary<ResponseWssTimestamp,ResponseWssTimestamp>(){
@@ -189,9 +190,9 @@ public class ResponseWssTimestamp extends Assertion implements ResponseWssConfig
             public String call( final ResponseWssTimestamp assertion ) {
                 String qualifier = "";
                 if ( assertion.isSignatureRequired() ) {
-                    qualifier = "Signed ";
+                    qualifier = "signed ";
                 }
-                return "Add " + qualifier + "Timestamp to Response";
+                return AssertionUtils.decorateName(assertion, "Add " + qualifier + "Timestamp");
             }
         });
         meta.put(AssertionMetadata.PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.ResponseWssTimestampPropertiesAction");

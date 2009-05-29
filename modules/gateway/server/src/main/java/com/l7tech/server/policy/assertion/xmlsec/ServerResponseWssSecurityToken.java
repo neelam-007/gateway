@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssSecurityToken;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 
@@ -19,18 +20,22 @@ import java.util.logging.Logger;
 /**
  * @author alex
  */
-public class ServerResponseWssSecurityToken extends ServerResponseWssSignature {
+public class ServerResponseWssSecurityToken extends ServerResponseWssSignature<ResponseWssSecurityToken> {
     private static final Logger logger = Logger.getLogger(ServerResponseWssSecurityToken.class.getName());
-    private final ResponseWssSecurityToken assertion;
 
     public ServerResponseWssSecurityToken(ResponseWssSecurityToken assertion, ApplicationContext spring) {
-        super(assertion, spring, ServerResponseWssSecurityToken.logger);
-        this.assertion = assertion;
+        super(assertion, assertion, assertion, spring, ServerResponseWssSecurityToken.logger);
     }
 
-    protected int addDecorationRequirements(PolicyEnforcementContext context, Document soapmsg, DecorationRequirements wssReq) throws PolicyAssertionException {
+    @Override
+    protected int addDecorationRequirements( final PolicyEnforcementContext context,
+                                             final AuthenticationContext authContext,
+                                             final Document soapmsg,
+                                             final DecorationRequirements wssReq) throws PolicyAssertionException {
         if (assertion.getTokenType() == SecurityTokenType.WSS_USERNAME) {
-            LoginCredentials creds = context.getLastCredentials();
+            // For backwards compatibility we are taking credentials from the default context
+            // we may want to make this configurable at some point
+            LoginCredentials creds = context.getDefaultAuthenticationContext().getLastCredentials();
             String name = creds == null ? null : creds.getLogin();
             char[] pass = null;
             if (creds != null && creds.getFormat() == CredentialFormat.CLEARTEXT) {
@@ -67,7 +72,7 @@ public class ServerResponseWssSecurityToken extends ServerResponseWssSignature {
             wssReq.setSignUsernameToken(true);
             return 1;
         } else {
-            auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_TOKEN_UNSUPPORTED_TYPE, new String[] { assertion.getTokenType().getName()});
+            auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_TOKEN_UNSUPPORTED_TYPE, assertion.getTokenType().getName());
             return -1;
         }
     }

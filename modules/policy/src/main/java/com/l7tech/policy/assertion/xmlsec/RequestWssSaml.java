@@ -2,9 +2,13 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
-import com.l7tech.policy.assertion.annotation.ProcessesRequest;
+import com.l7tech.policy.assertion.MessageTargetable;
+import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.MessageTargetableSupport;
+import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.util.Functions;
 
 /**
@@ -12,15 +16,14 @@ import com.l7tech.util.Functions;
  * about subject, general SAML Assertion conditions and Statement constraints: for
  * authentication, authorization and attribute statements.
  */
-@ProcessesRequest
 @RequiresSOAP(wss=true)
-public class RequestWssSaml extends SamlPolicyAssertion implements SecurityHeaderAddressable {
+public class RequestWssSaml extends SamlPolicyAssertion implements MessageTargetable, UsesVariables, SecurityHeaderAddressable {
     private String[] subjectConfirmations = new String[]{};
     private String[] nameFormats = new String[]{};
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private boolean requireSenderVouchesWithMessageSignature = false;
     private boolean requireHolderOfKeyWithMessageSignature = false;
-
+    private MessageTargetableSupport messageTargetableSupport = new MessageTargetableSupport();
     private boolean checkAssertionValidity = true;
 
     public RequestWssSaml() {
@@ -71,6 +74,8 @@ public class RequestWssSaml extends SamlPolicyAssertion implements SecurityHeade
         this.setRequireSenderVouchesWithMessageSignature(requestWssSaml.isRequireSenderVouchesWithMessageSignature());
         this.setSubjectConfirmations(requestWssSaml.getSubjectConfirmations());
         this.setVersion(requestWssSaml.getVersion());
+        this.setTarget(requestWssSaml.getTarget());
+        this.setOtherTargetMessageVariable(requestWssSaml.getOtherTargetMessageVariable());
     }
 
     /**
@@ -153,6 +158,36 @@ public class RequestWssSaml extends SamlPolicyAssertion implements SecurityHeade
         }
     }
 
+    @Override
+    public String getOtherTargetMessageVariable() {
+        return messageTargetableSupport.getOtherTargetMessageVariable();
+    }
+
+    @Override
+    public TargetMessageType getTarget() {
+        return messageTargetableSupport.getTarget();
+    }
+
+    @Override
+    public String getTargetName() {
+        return messageTargetableSupport.getTargetName();
+    }
+
+    @Override
+    public String[] getVariablesUsed() {
+        return messageTargetableSupport.getVariablesUsed();
+    }
+
+    @Override
+    public void setOtherTargetMessageVariable(String otherTargetMessageVariable) {
+        messageTargetableSupport.setOtherTargetMessageVariable(otherTargetMessageVariable);
+    }
+
+    @Override
+    public void setTarget(TargetMessageType target) {
+        messageTargetableSupport.setTarget(target);
+    }
+
     /**
      * The SAML assertion is a credential source.
      *
@@ -166,7 +201,7 @@ public class RequestWssSaml extends SamlPolicyAssertion implements SecurityHeade
         return true;
     }
 
-     @Override
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
@@ -224,6 +259,6 @@ public class RequestWssSaml extends SamlPolicyAssertion implements SecurityHeade
             st = "v" + this.getVersion() + " " + st;
         }
 
-        return "SAML " + st + SecurityHeaderAddressableSupport.getActorSuffix(this);
+        return AssertionUtils.decorateName(this, "Require SAML " + st);
     }
 }

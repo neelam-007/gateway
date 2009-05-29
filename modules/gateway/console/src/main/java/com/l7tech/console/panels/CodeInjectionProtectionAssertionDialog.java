@@ -5,6 +5,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.CodeInjectionProtectionAssertion;
 import com.l7tech.policy.assertion.CodeInjectionProtectionType;
+import com.l7tech.policy.assertion.TargetMessageType;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,28 +21,31 @@ import java.util.List;
  * @since SecureSpan 3.7
  * @see com.l7tech.policy.assertion.CodeInjectionProtectionAssertion
  */
-public class CodeInjectionProtectionAssertionDialog extends JDialog {
+public class CodeInjectionProtectionAssertionDialog extends AssertionPropertiesEditorSupport<CodeInjectionProtectionAssertion> {
     private JPanel _contentPane;
+    
     private JCheckBox _requestUrlCheckBox;
     private JCheckBox _requestBodyCheckBox;
     private JRadioButton _requestRadioButton;
     private JRadioButton _responseRadioButton;
+    private JRadioButton _contextVariableRadioButton;
+    private JTextField _contextVarName;
+
     private JPanel _protectionsPanel;
     private List<JCheckBox> _protectionCheckBoxes = new ArrayList<JCheckBox>();
     private JTextArea _descriptionText;
     private JButton _okButton;
     private JButton _cancelButton;
 
-    private final CodeInjectionProtectionAssertion _assertion;
-    private final boolean _readOnly;
-    private boolean _modified;
+    private CodeInjectionProtectionAssertion _assertion;
+    private boolean _confirmed;
 
-    public CodeInjectionProtectionAssertionDialog(Frame owner, final CodeInjectionProtectionAssertion assertion, final boolean readOnly) throws HeadlessException {
-        super(owner, "Code Injection Protection", true);
+    public CodeInjectionProtectionAssertionDialog(final Window owner, final CodeInjectionProtectionAssertion assertion) throws HeadlessException {
+        super(owner, "Code Injection Protection");
         _assertion = assertion;
-        _readOnly = readOnly;
 
         _requestRadioButton.addItemListener(new ItemListener() {
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 _requestUrlCheckBox.setEnabled(_requestRadioButton.isSelected());
                 _requestBodyCheckBox.setEnabled(_requestRadioButton.isSelected());
@@ -86,18 +90,21 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
             });
 
         _requestUrlCheckBox.addItemListener(new ItemListener() {
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 enableOkButton();
             }
         });
 
         _requestBodyCheckBox.addItemListener(new ItemListener() {
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 enableOkButton();
             }
         });
 
         _responseRadioButton.addItemListener(new ItemListener() {
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 enableProtectionRadioButtons();
                 enableOkButton();
@@ -110,6 +117,26 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
                 }
 
                 @Override                
+                public void mouseExited(MouseEvent e) {
+                    _descriptionText.setText("");
+                }
+            });
+
+        _contextVariableRadioButton.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                _contextVarName.setEnabled(_contextVariableRadioButton.isSelected());
+                enableProtectionRadioButtons();
+                enableOkButton();
+            }
+        });
+        _contextVariableRadioButton.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    _descriptionText.setText("Scan the contents of the selected context variable.");
+                }
+
+                @Override
                 public void mouseExited(MouseEvent e) {
                     _descriptionText.setText("");
                 }
@@ -138,6 +165,7 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
                 }
             });
             checkbox.addItemListener(new ItemListener() {
+                @Override
                 public void itemStateChanged(ItemEvent e) {
                     enableOkButton();
                 }
@@ -149,21 +177,26 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
         _descriptionText.setMargin(new Insets(0, 10, 0, 10));
 
         _okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onOK();
             }
         });
 
         _cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onCancel();
             }
         });
 
-        _requestRadioButton.setSelected(_assertion.isIncludeRequestUrl() || _assertion.isIncludeRequestBody());
+        _requestRadioButton.setSelected(TargetMessageType.REQUEST == _assertion.getTarget());
         _requestUrlCheckBox.setSelected(_assertion.isIncludeRequestUrl());
         _requestBodyCheckBox.setSelected(_assertion.isIncludeRequestBody());
-        _responseRadioButton.setSelected(_assertion.isIncludeResponseBody());
+        _responseRadioButton.setSelected(TargetMessageType.RESPONSE == _assertion.getTarget());
+        _contextVariableRadioButton.setSelected(TargetMessageType.OTHER == _assertion.getTarget());
+        _contextVarName.setText(_assertion.getOtherTargetMessageVariable());
+        _contextVarName.setEnabled(_contextVariableRadioButton.isSelected());
         enableOkButton();
 
         setContentPane(_contentPane);
@@ -178,9 +211,11 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
     }
 
     private void onOK() {
-        _assertion.setIncludeRequestUrl(_requestRadioButton.isSelected() && _requestUrlCheckBox.isSelected());
-        _assertion.setIncludeRequestBody(_requestRadioButton.isSelected() && _requestBodyCheckBox.isSelected());
-        _assertion.setIncludeResponseBody(_responseRadioButton.isSelected());
+        _assertion.setTarget( _requestRadioButton.isSelected() ? TargetMessageType.REQUEST :
+                              _responseRadioButton.isSelected() ? TargetMessageType.RESPONSE : TargetMessageType.OTHER);
+        _assertion.setIncludeRequestUrl(_requestUrlCheckBox.isSelected());
+        _assertion.setIncludeRequestBody(_requestBodyCheckBox.isSelected());
+        _assertion.setOtherTargetMessageVariable(_contextVarName.getText());
 
         final List<CodeInjectionProtectionType> protectionsToApply = new ArrayList<CodeInjectionProtectionType>();
         for (JCheckBox checkBox : _protectionCheckBoxes) {
@@ -192,12 +227,12 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
         }
         _assertion.setProtections(protectionsToApply.toArray(new CodeInjectionProtectionType[protectionsToApply.size()]));
 
-        _modified = true;
+        _confirmed = true;
         dispose();
     }
 
     private void onCancel() {
-        _modified = false;
+        _confirmed = false;
         dispose();
     }
 
@@ -205,8 +240,9 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
         for (JCheckBox checkBox : _protectionCheckBoxes) {
             final String action = checkBox.getActionCommand();
             final CodeInjectionProtectionType protection = CodeInjectionProtectionType.fromWspName(action);
-            checkBox.setEnabled(   (_requestRadioButton.isSelected()  && protection.isApplicableToRequest())
-                                || (_responseRadioButton.isSelected() && protection.isApplicableToResponse()));
+            checkBox.setEnabled( (_requestRadioButton.isSelected()  && protection.isApplicableToRequest()) ||
+                                 (_responseRadioButton.isSelected() && protection.isApplicableToResponse()) ||
+                                 _contextVariableRadioButton.isSelected());
         }
     }
 
@@ -229,10 +265,21 @@ public class CodeInjectionProtectionAssertionDialog extends JDialog {
             ok &= _requestUrlCheckBox.isSelected() || _requestBodyCheckBox.isSelected();
         }
 
-        _okButton.setEnabled(!_readOnly && ok);
+        _okButton.setEnabled(ok && !isReadOnly());
     }
 
-    public boolean isAssertionModified() {
-        return _modified;
+    @Override
+    public boolean isConfirmed() {
+        return _confirmed;
+    }
+
+    @Override
+    public void setData(CodeInjectionProtectionAssertion assertion) {
+        _assertion = assertion;
+    }
+
+    @Override
+    public CodeInjectionProtectionAssertion getData(CodeInjectionProtectionAssertion assertion) {
+        return _assertion;
     }
 }

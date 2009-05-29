@@ -28,29 +28,41 @@ public class AssertionOkCancelDialog<AT extends Assertion> extends OkCancelDialo
         initialAssertion = assertion;
     }
 
+    @Override
     public JDialog getDialog() {
         return this;
     }
 
+    @Override
     public boolean isConfirmed() {
         return wasOKed();
     }
 
+    @Override
     public void setData(AT assertion) {
         // Limitation of dialogs based on OkCancelDialog/ValidatedPanel
         if (assertion != initialAssertion)
             throw new UnsupportedOperationException("Unable to change assertion bean after dialog construction");
     }
 
+    @Override
     public AT getData(AT assertion) {
-        return getValue();
+        AT value = getValue();
+
+        if ( value == null ) {
+            value = initialAssertion;
+        }
+
+        return value;
     }
 
+    @Override
     public void setParameter(String name, Object value) {
         if (PARAM_READONLY.equals(name))
             setReadOnly((Boolean)value);
     }
 
+    @Override
     public Object getParameter(String name) {
         if (PARAM_READONLY.equals(name))
             return isReadOnly();

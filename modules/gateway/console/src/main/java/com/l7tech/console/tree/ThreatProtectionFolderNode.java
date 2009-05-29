@@ -1,15 +1,18 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.console.tree.policy.CodeInjectionProtectionAssertionPaletteNode;
+import com.l7tech.policy.assertion.SqlAttackAssertion;
+import com.l7tech.policy.assertion.CodeInjectionProtectionAssertion;
+import com.l7tech.policy.assertion.OversizedTextAssertion;
 
 /**
  * The class represents an gui node element in the TreeModel that
- * represents the audit assertions folder.
+ * represents the threat protection assertions folder.
  */
 public class ThreatProtectionFolderNode extends AbstractPaletteFolderNode {
+
     /**
-     * construct the <CODE>ProvidersFolderNode</CODE> instance.
+     * Construct the <CODE>ThreatProtectionFolderNode</CODE> instance.
      */
     public ThreatProtectionFolderNode() {
         super("Threat Protection", "threatProtection");
@@ -18,13 +21,14 @@ public class ThreatProtectionFolderNode extends AbstractPaletteFolderNode {
     /**
      * subclasses override this method
      */
+    @Override
     protected void doLoadChildren() {
         int index = 0;
         children = null;
-        insert( new SqlAttackAssertionPaletteNode(), index++ );
-        insert( new CodeInjectionProtectionAssertionPaletteNode(), index++);
+        insertModularAssertionByType( index++, SqlAttackAssertion.class );
+        insertModularAssertionByType( index++, CodeInjectionProtectionAssertion.class );
         insert( new RequestSizeLimitPaletteNode(), index++ );
-        insert( new OversizedTextAssertionPaletteNode(), index++ );
+        insertModularAssertionByType( index++, OversizedTextAssertion.class );
         insert( new SchemaValidationPaletteNode(), index++ );
         //insert(new FaultLevelPaletteNode(), index++);
         index = insertMatchingModularAssertions(index);

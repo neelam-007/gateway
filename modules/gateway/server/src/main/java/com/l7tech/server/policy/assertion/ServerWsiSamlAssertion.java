@@ -16,7 +16,7 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
  * @author Steve Jones, $Author$
  * @version $Revision$
  */
-public class ServerWsiSamlAssertion extends ServerXpathValidationAssertion {
+public class ServerWsiSamlAssertion extends ServerXpathValidationAssertion<WsiSamlAssertion> {
 
     //- PUBLIC
 
@@ -29,53 +29,63 @@ public class ServerWsiSamlAssertion extends ServerXpathValidationAssertion {
     public ServerWsiSamlAssertion(WsiSamlAssertion wsiSamlAssertion, ApplicationContext springContext) {
         super(wsiSamlAssertion, logger);
         this.auditor = (springContext!=null) ? new Auditor(this, springContext, ServerWsiSamlAssertion.logger) : null;
-        this.wsiSamlAssertion = wsiSamlAssertion;
     }
 
     //- PROTECTED
 
+    @Override
     protected boolean isCheckRequestMessages() {
-        return wsiSamlAssertion.isCheckRequestMessages();
+        return assertion.isCheckRequestMessages();
     }
 
+    @Override
     protected boolean isCheckResponseMessages() {
-        return wsiSamlAssertion.isCheckResponseMessages();
+        return assertion.isCheckResponseMessages();
     }
 
+    @Override
     protected boolean isFailOnNonCompliantRequest() {
-        return wsiSamlAssertion.isFailOnNonCompliantRequest();
+        return assertion.isFailOnNonCompliantRequest();
     }
 
+    @Override
     protected boolean isFailOnNonCompliantResponse() {
-        return wsiSamlAssertion.isFailOnNonCompliantResponse();
+        return assertion.isFailOnNonCompliantResponse();
     }
 
+    @Override
     protected void onRequestFailure() {
         auditor.logAndAudit(AssertionMessages.WSI_SAML_REQUEST_FAIL);
     }
 
+    @Override
     protected void onRequestNonCompliance(String ruleId, String description) {
-        if(wsiSamlAssertion.isAuditRequestNonCompliance())
-            auditor.logAndAudit(AssertionMessages.WSI_SAML_REQUEST_NON_COMPLIANT, new String[]{ruleId,description});
+        if(assertion.isAuditRequestNonCompliance())
+            auditor.logAndAudit(AssertionMessages.WSI_SAML_REQUEST_NON_COMPLIANT, ruleId, description);
     }
 
+    @Override
     protected void onRequestNonSoap() {
         auditor.logAndAudit(AssertionMessages.WSI_SAML_REQUEST_NON_SOAP);
     }
 
+    @Override
     protected void onResponseFailure() {
         auditor.logAndAudit(AssertionMessages.WSI_SAML_RESPONSE_FAIL);
     }
 
+    @Override
     protected void onResponseNonCompliance(String ruleId, String description) {
-        if(wsiSamlAssertion.isAuditResponseNonCompliance())
-            auditor.logAndAudit(AssertionMessages.WSI_SAML_RESPONSE_NON_COMPLIANT, new String[]{ruleId,description});
+        if(assertion.isAuditResponseNonCompliance())
+            auditor.logAndAudit(AssertionMessages.WSI_SAML_RESPONSE_NON_COMPLIANT, ruleId, description);
     }
 
+    @Override
     protected void onResponseNonSoap() {
         auditor.logAndAudit(AssertionMessages.WSI_SAML_RESPONSE_NON_SOAP);
     }
 
+    @Override
     protected void onXPathError(XPathException xpe) {
         auditor.logAndAudit(AssertionMessages.WSI_SAML_XPATH_ERROR, null, xpe);
     }
@@ -83,6 +93,7 @@ public class ServerWsiSamlAssertion extends ServerXpathValidationAssertion {
     /**
      * Return input stream from which properties can be read
      */
+    @Override
     protected InputStream getRulesResource() {
         ClassLoader loader = ServerWsiSamlAssertion.class.getClassLoader();
         return loader.getResourceAsStream(ServerWsiSamlAssertion.RESOURCE_RULES);
@@ -96,7 +107,6 @@ public class ServerWsiSamlAssertion extends ServerXpathValidationAssertion {
     ServerWsiSamlAssertion() {
         super(null, logger);
         this.auditor = null;
-        this.wsiSamlAssertion = null;
     }
 
     //- PRIVATE
@@ -107,5 +117,4 @@ public class ServerWsiSamlAssertion extends ServerXpathValidationAssertion {
 
     //
     private final Auditor auditor;
-    private final WsiSamlAssertion wsiSamlAssertion;
 }

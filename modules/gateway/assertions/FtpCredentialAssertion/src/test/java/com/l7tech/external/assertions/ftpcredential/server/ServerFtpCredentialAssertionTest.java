@@ -115,8 +115,8 @@ public class ServerFtpCredentialAssertionTest extends TestCase {
         AssertionStatus result = ass.checkRequest(pec);
 
         assertEquals("Incorrect assertion status", AssertionStatus.NONE, result);
-        assertNotNull("Credentials missing", pec.getLastCredentials());
-        assertEquals("Incorrect login found", "user", pec.getLastCredentials().getLogin());
+        assertNotNull("Credentials missing", pec.getDefaultAuthenticationContext().getLastCredentials());
+        assertEquals("Incorrect login found", "user", pec.getDefaultAuthenticationContext().getLastCredentials().getLogin());
     }
 
     public void testMissingCredentials() throws Exception {

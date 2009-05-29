@@ -43,6 +43,7 @@ public class XmlUtil extends DomUtils {
     public static final String XERCES_DISALLOW_DOCTYPE = "http://apache.org/xml/features/disallow-doctype-decl";
 
     private static final EntityResolver SAFE_ENTITY_RESOLVER = new EntityResolver() {
+        @Override
         public InputSource resolveEntity(String publicId, String systemId) throws SAXException {
             String msg = "Document referred to an external entity with system id '" + systemId + "'";
             logger.warning( msg );
@@ -54,6 +55,7 @@ public class XmlUtil extends DomUtils {
      * Different from {@link #SAFE_ENTITY_RESOLVER} in that it throws {@link IOException} rather than {@link SAXException}.
      */
     private static final EntityResolver XSS4J_SAFE_ENTITY_RESOLVER = new EntityResolver() {
+        @Override
         public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
             String msg = "Document referred to an external entity with system id '" + systemId + "'";
             logger.warning( msg );
@@ -62,6 +64,7 @@ public class XmlUtil extends DomUtils {
     };
 
     private static final LSResourceResolver SAFE_LS_RESOURCE_RESOLVER = new LSResourceResolver() {
+        @Override
         public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
             String msg = "Document referred to an external entity with system id '" + systemId + "' of type '" + type + "'";
             logger.warning( msg );
@@ -70,6 +73,7 @@ public class XmlUtil extends DomUtils {
     };
 
     private static final URIResolver SAFE_URI_RESOLVER = new URIResolver(){
+        @Override
         public Source resolve(final String href, final String base) throws TransformerException {
             throw new TransformerException("External entities are not supported '"+href+"'.");
         }
@@ -79,13 +83,17 @@ public class XmlUtil extends DomUtils {
      * Error handler without the console output.
      */
     private static final ErrorHandler QUIET_ERROR_HANDLER = new ErrorHandler() {
+        @Override
         public void warning( SAXParseException exception) {}
+        @Override
         public void error(SAXParseException exception) {}
+        @Override
         public void fatalError(SAXParseException exception) throws SAXException {
             throw exception;
         }
     };
     private static ThreadLocal documentBuilder = new ThreadLocal() {
+        @Override
         protected synchronized Object initialValue() {
             try {
                 DocumentBuilder builder = dbf.newDocumentBuilder();
@@ -98,6 +106,7 @@ public class XmlUtil extends DomUtils {
         }
     };
     private static ThreadLocal documentBuilderAllowingDoctype = new ThreadLocal() {
+        @Override
         protected synchronized Object initialValue() {
             try {
                 DocumentBuilder builder = dbfAllowingDoctype.newDocumentBuilder();
@@ -111,6 +120,7 @@ public class XmlUtil extends DomUtils {
     };
     @SuppressWarnings({"deprecation"})
     private static ThreadLocal<XMLSerializer> formattedXMLSerializer = new ThreadLocal<XMLSerializer>() {
+        @Override
         @SuppressWarnings({"deprecation"})
         protected synchronized XMLSerializer initialValue() {
             XMLSerializer xmlSerializer = new XMLSerializer();
@@ -122,6 +132,7 @@ public class XmlUtil extends DomUtils {
     };
     @SuppressWarnings({"deprecation"})
     private static ThreadLocal<XMLSerializer> encodingXMLSerializer = new ThreadLocal<XMLSerializer>() {
+        @Override
         @SuppressWarnings({"deprecation"})
         protected synchronized XMLSerializer initialValue() {
             return new XMLSerializer();
@@ -129,6 +140,7 @@ public class XmlUtil extends DomUtils {
     };
     @SuppressWarnings({"deprecation"})
     private static ThreadLocal<XMLSerializer> transparentXMLSerializer = new ThreadLocal<XMLSerializer>() {
+        @Override
         @SuppressWarnings({"deprecation"})
         protected XMLSerializer initialValue() {
             OutputFormat format = new OutputFormat();
@@ -143,11 +155,13 @@ public class XmlUtil extends DomUtils {
         }
     };
     private static ThreadLocal<Canonicalizer> transparentXMLSerializer_XSS4J_W3C = new ThreadLocal<Canonicalizer>() {
+        @Override
         protected synchronized Canonicalizer initialValue() {
             return new W3CCanonicalizer2WC();
         }
     };
     private static ThreadLocal<Canonicalizer> exclusiveCanonicalizer = new ThreadLocal<Canonicalizer>() {
+        @Override
         protected synchronized Canonicalizer initialValue() {
             return new ExclusiveC11r();
         }
@@ -269,6 +283,20 @@ public class XmlUtil extends DomUtils {
         } catch (SAXException se) {
             throw new IllegalArgumentException("Unable to parse '"+inputXmlNotAUrl+"' as XML.", se);
         }
+    }
+
+    /**
+     * Same as "stringToDocument", parse the given text as XML.
+     *
+     * <p>This method exists because "parse" is easier to remember than
+     * "stringToDocument"</p>
+     *
+     * @param inputXmlNotAUrl The XML content as a string.
+     * @return The parsed document.
+     * @throws SAXException If the input is not valid XML
+     */
+    public static Document parse( String inputXmlNotAUrl ) throws SAXException {
+        return stringToDocument( inputXmlNotAUrl );
     }
 
     /**
@@ -710,6 +738,7 @@ public class XmlUtil extends DomUtils {
         if (schemaSchema == null) {
             SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
             factory.setResourceResolver(new LSResourceResolver(){
+                @Override
                 public LSInput resolveResource(String type, String namespaceURI, String publicId, String systemId, String baseURI) {
                     LSInputImpl input = new LSInputImpl();
                     // map this to the resource name

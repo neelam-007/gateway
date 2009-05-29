@@ -26,7 +26,6 @@ import java.util.logging.Logger;
 
 public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
     extends AbstractServerAssertion<CT>
-    implements ServerAssertion
 {
     private static final Logger logger = Logger.getLogger(ServerCompositeAssertion.class.getName());
     private List<ServerAssertion> children;

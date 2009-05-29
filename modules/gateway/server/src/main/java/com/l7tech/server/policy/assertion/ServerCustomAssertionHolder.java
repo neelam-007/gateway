@@ -32,6 +32,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.custom.CustomAuditorImpl;
 import com.l7tech.server.policy.ServiceFinderImpl;
 import com.l7tech.server.policy.CertificateFinderImpl;
@@ -106,7 +107,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
     }
 
     private static void saveServletKnobs(PolicyEnforcementContext pec, Map context) {
-        final HttpServletRequestKnob hsRequestKnob = (HttpServletRequestKnob) pec.getRequest().getKnob(HttpServletRequestKnob.class);
+        final HttpServletRequestKnob hsRequestKnob = pec.getRequest().getKnob(HttpServletRequestKnob.class);
         if (hsRequestKnob != null) {
             String[] headerNames = hsRequestKnob.getHeaderNames();
             for (int i = 0; i < headerNames.length; i++) {
@@ -118,7 +119,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             if (httpServletRequest != null)
                 context.put("httpRequest", httpServletRequest);
         }
-        final HttpServletResponseKnob hsResponseKnob = (HttpServletResponseKnob) pec.getResponse().getKnob(HttpServletResponseKnob.class);
+        final HttpServletResponseKnob hsResponseKnob = pec.getResponse().getKnob(HttpServletResponseKnob.class);
         final HttpServletResponse httpServletResponse = hsResponseKnob == null ? null : hsResponseKnob.getHttpServletResponse();
         if (httpServletResponse != null)
             context.put("httpResponse", wrap(httpServletResponse, pec));
@@ -153,7 +154,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                     throw new PolicyAssertionException(data, "Custom assertion is misconfigured, service '" + service.getName() + "'");
                 }
                 Subject subject = new Subject();
-                LoginCredentials principalCredentials = context.getLastCredentials();
+                LoginCredentials principalCredentials = context.getDefaultAuthenticationContext().getLastCredentials();
                 if (principalCredentials != null) {
                     String principalName = principalCredentials.getLogin();
                     auditor.logAndAudit(AssertionMessages.CA_CREDENTIAL_INFO,
@@ -189,10 +190,11 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                     }
                 });
                 if (isAuthAssertion) {
+                    AuthenticationContext authContext = context.getAuthenticationContext(context.getRequest());
                     if (principalCredentials != null) {
-                        context.addAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), null, false));
+                        authContext.addAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), null, false));
                     } else {
-                        context.addAuthenticationResult(new AuthenticationResult(new AnonymousUserReference("", -1, "<unknown>")));
+                        authContext.addAuthenticationResult(new AuthenticationResult(new AnonymousUserReference("", -1, "<unknown>")));
                     }
                 }
 
@@ -379,7 +381,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 }
 
                 public boolean isAuthenticated() {
-                    return CustomServiceResponse.this.pec.isAuthenticated();
+                    return CustomServiceResponse.this.pec.getDefaultAuthenticationContext().isAuthenticated();
                 }
 
                 public void setAuthenticated() throws GeneralSecurityException {
@@ -397,7 +399,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         }
 
         public void setDocument(Document document) {
-            XmlKnob respXml = (XmlKnob) pec.getResponse().getKnob(XmlKnob.class);
+            XmlKnob respXml = pec.getResponse().getKnob(XmlKnob.class);
             if (respXml == null)
                 pec.getResponse().initialize(document);
             else
@@ -470,7 +472,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 }
 
                 public boolean isAuthenticated() {
-                    return CustomServiceRequest.this.pec.isAuthenticated();
+                    return CustomServiceRequest.this.pec.getDefaultAuthenticationContext().isAuthenticated();
                 }
 
                 public void setAuthenticated() throws GeneralSecurityException {
@@ -485,7 +487,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
         }
 
         public void setDocument(Document document) {
-            XmlKnob reqXml = (XmlKnob) pec.getRequest().getKnob(XmlKnob.class);
+            XmlKnob reqXml = pec.getRequest().getKnob(XmlKnob.class);
             if (reqXml == null)
                 pec.getRequest().initialize(document);
             else

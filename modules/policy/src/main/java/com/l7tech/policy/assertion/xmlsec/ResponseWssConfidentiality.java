@@ -2,9 +2,10 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.security.xml.XencUtil;
-import com.l7tech.policy.assertion.annotation.ProcessesResponse;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.util.Functions;
 
 /**
@@ -16,13 +17,13 @@ import com.l7tech.util.Functions;
  * @author flascell<br/>
  * @version Aug 27, 2003<br/>
  */
-@ProcessesResponse
 public class ResponseWssConfidentiality extends XmlSecurityAssertionBase {
     public ResponseWssConfidentiality() {
-        setXpathExpression(XpathExpression.soapBodyXpathValue());
+        this(XpathExpression.soapBodyXpathValue());
     }
 
-    public ResponseWssConfidentiality(XpathExpression xpath) {
+    public ResponseWssConfidentiality(final XpathExpression xpath) {
+        super(TargetMessageType.RESPONSE);
         setXpathExpression(xpath);
     }
 
@@ -57,21 +58,22 @@ public class ResponseWssConfidentiality extends XmlSecurityAssertionBase {
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
-        meta.put(AssertionMetadata.SHORT_NAME, "Encrypt Response Element");
-        meta.put(AssertionMetadata.DESCRIPTION, "Server will encrypt an element of the SOAP response");
+        meta.put(AssertionMetadata.SHORT_NAME, "Encrypt Element");
+        meta.put(AssertionMetadata.DESCRIPTION, "Encrypt one or more elements of the message.");
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xmlSecurity"});
+        meta.put(AssertionMetadata.PALETTE_NODE_SORT_PRIORITY, 70000);
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, ResponseWssConfidentiality>() {
             @Override
             public String call( final ResponseWssConfidentiality responseWssConfidentiality ) {
-                StringBuilder name = new StringBuilder("Encrypt response element ");
+                StringBuilder name = new StringBuilder("Encrypt element ");
                 if (responseWssConfidentiality.getXpathExpression() == null) {
                     name .append("[XPath expression not set]");
                 } else {
                     name.append(responseWssConfidentiality.getXpathExpression().getExpression());
                 }
-                name.append(SecurityHeaderAddressableSupport.getActorSuffix(responseWssConfidentiality));
-                return name.toString();
+                return AssertionUtils.decorateName(responseWssConfidentiality, name);
             }
         });
 

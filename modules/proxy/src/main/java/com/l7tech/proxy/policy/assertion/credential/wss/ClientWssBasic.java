@@ -71,7 +71,7 @@ public class ClientWssBasic extends ClientWssCredentialSource {
 
             return AssertionStatus.NONE;
         } else {
-            context.setAuthenticationMissing();
+            context.getDefaultAuthenticationContext().setAuthenticationMissing();
             return AssertionStatus.FAILED;            
         }
     }

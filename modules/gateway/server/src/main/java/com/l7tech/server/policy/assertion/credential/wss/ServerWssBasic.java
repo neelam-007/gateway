@@ -17,8 +17,9 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
+import com.l7tech.message.Message;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -26,60 +27,88 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 /**
+ * TODO [steve] auditing for target message
+ *
  * @author alex
  * @version $Revision$
  */
-public class ServerWssBasic extends AbstractServerAssertion implements ServerAssertion {
-    final private WssBasic data;
-    private final Auditor auditor;
+public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<WssBasic> {
 
-    public ServerWssBasic(WssBasic data, ApplicationContext springContext) {
-        super(data);
-        this.data = data;
+    //- PUBLIC
+
+    public ServerWssBasic(final WssBasic data, final ApplicationContext springContext) {
+        super(data, data);
         this.auditor = new Auditor(this, springContext, logger);
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        if (!data.getRecipientContext().localRecipient()) {
+    @Override
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException
+    {
+        if (!assertion.getRecipientContext().localRecipient()) {
             auditor.logAndAudit(AssertionMessages.WSS_BASIC_FOR_ANOTHER_RECIPIENT);
             return AssertionStatus.NONE;
         }
+
+        return super.checkRequest( context );
+    }
+
+    //- PROTECTED
+
+    @Override
+    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
+                                              final Message message,
+                                              final String messageDescription,
+                                              final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
         ProcessorResult wssResults;
         try {
-            if (!context.getRequest().isSoap()) {
+            if (!message.isSoap()) {
                 auditor.logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
-            wssResults = context.getRequest().getSecurityKnob().getProcessorResult();
+            wssResults = message.getSecurityKnob().getProcessorResult();
         } catch (SAXException e) {
-            throw new CausedIOException("Request declared as XML but is not well-formed", e);
+            throw new CausedIOException("Message '"+messageDescription+"' declared as XML but is not well-formed", e);
         }
         if (wssResults == null) {
             auditor.logAndAudit(AssertionMessages.WSS_BASIC_NO_CREDENTIALS);
-            context.setAuthenticationMissing();
-            context.setRequestPolicyViolated();
+            
+            if ( isRequest() ) {
+                context.setAuthenticationMissing();
+                context.setRequestPolicyViolated();
+            }
             return AssertionStatus.AUTH_REQUIRED;
         }
 
         XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
-        for (int i = 0; i < tokens.length; i++) {
-            if (tokens[i] instanceof UsernameToken) {
-                UsernameToken ut = (UsernameToken)tokens[i];
+        for (XmlSecurityToken token : tokens) {
+            if (token instanceof UsernameToken) {
+                UsernameToken ut = (UsernameToken) token;
 
                 String user = ut.getUsername();
                 char[] pass = ut.getPassword();
                 if (pass == null) pass = new char[0];
                 LoginCredentials creds = LoginCredentials.makePasswordCredentials(user, pass, WssBasic.class);
-                context.addCredentials(creds);
+                authContext.addCredentials(creds);
                 return AssertionStatus.NONE;
             }
         }
         auditor.logAndAudit(AssertionMessages.WSS_BASIC_CANNOT_FIND_CREDENTIALS);
         // we get here because there were no credentials found in the format we want
         // therefore this assertion was violated
-        context.setRequestPolicyViolated();
+        if ( isRequest() ) {
+            context.setRequestPolicyViolated();
+        }
         return AssertionStatus.AUTH_REQUIRED;
     }
 
+    @Override
+    protected Auditor getAuditor() {
+        return auditor;
+    }
+
+    //- PRIVATE
+
     private final Logger logger = Logger.getLogger(getClass().getName());
+
+    private final Auditor auditor;
 }

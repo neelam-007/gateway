@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * Abstract superclass for server assertions whose operation centers around running a single xpath against
  * a message.
  */
-public abstract class ServerXpathBasedAssertion<AT extends XpathBasedAssertion> extends AbstractServerAssertion<AT> implements ServerAssertion {
+public abstract class ServerXpathBasedAssertion<AT extends XpathBasedAssertion> extends AbstractServerAssertion<AT> {
     protected final Auditor auditor;
     private final String xpath;
     private final CompiledXpath compiledXpath;

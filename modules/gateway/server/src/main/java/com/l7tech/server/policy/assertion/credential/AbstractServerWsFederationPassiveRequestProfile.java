@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Level;
@@ -51,7 +50,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
     protected AbstractServerWsFederationPassiveRequestProfile(Assertion assertion, String samlCacheKey, ApplicationContext springContext) {
         super(assertion, samlCacheKey);
 
-        this.authCookieSet = new CopyOnWriteArraySet();
+        this.authCookieSet = new CopyOnWriteArraySet<String>();
         this.auditor = new Auditor(this, springContext, logger);
 
         try {
@@ -59,7 +58,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
             final X509TrustManager trustManager = (X509TrustManager) springContext.getBean("trustManager");
             hostnameVerifier = (HostnameVerifier)springContext.getBean("hostnameVerifier", HostnameVerifier.class);
             final int timeout = Integer.getInteger(HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT,
-                                                   HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT).intValue();
+                                                   HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT);
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
             sslContext.init(null, new TrustManager[]{trustManager}, null);
 
@@ -114,7 +113,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
      */
     protected void updateRequestXml(PolicyEnforcementContext context, XmlKnob requestXml, SecurityKnob requestSec, Document requestDoc, SamlAssertion samlAssertion, Assertion credSource) throws Exception {
         WssDecorator deco = new WssDecoratorImpl();
-        context.addCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, credSource.getClass()));
+        context.getAuthenticationContext(context.getRequest()).addCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, credSource.getClass()));
 
         ProcessorResult processorResult = requestSec.getProcessorResult();
         DecorationRequirements decoReq = new DecorationRequirements();
@@ -152,10 +151,12 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
      */
     protected void addResponseAuthFailureDecorator(final PolicyEnforcementContext pec) {
         pec.addRoutingResultListener(new RoutingResultListener(){
+            @Override
             public boolean reroute(URL routedUrl, int status, HttpHeaders headers, PolicyEnforcementContext context) {
                 return false;
             }
 
+            @Override
             public void routed(URL attemptedUrl, int status, HttpHeaders headers, PolicyEnforcementContext context) {
                 if (status == HttpConstants.STATUS_FOUND || status == HttpConstants.STATUS_SEE_OTHER) {
                     try {
@@ -175,6 +176,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
                 }
             }
 
+            @Override
             public void failed(URL attemptedUrl, Throwable thrown, PolicyEnforcementContext context) {
             }
         });
@@ -219,7 +221,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
     private final HostnameVerifier hostnameVerifier;
     private final WssProcessor trogdor;
     private final SecurityTokenResolver securityTokenResolver;
-    private final Set authCookieSet;
+    private final Set<String> authCookieSet;
 
     /**
      *
@@ -267,10 +269,9 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
             GenericHttpRequestParams params = new GenericHttpRequestParams(endpoint);
             initParams(params);
 
-            Set cookies = FederationPassiveClient.postFederationToken(httpClient, params, samlAssertion, contextUrl, false);
+            Set<HttpCookie> cookies = FederationPassiveClient.postFederationToken(httpClient, params, samlAssertion, contextUrl, false);
 
-            for (Iterator iterator = cookies.iterator(); iterator.hasNext();) {
-                HttpCookie cookie = (HttpCookie) iterator.next();
+            for  (HttpCookie cookie : cookies ) {
                 context.addCookie(cookie);
                 ensureKnown(cookie);
             }
@@ -289,6 +290,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
      */
     private void doAuthLater(final PolicyEnforcementContext context, final GenericHttpClient httpClient, final SamlAssertion samlAssertion, final String replyUrl, final String contextUrl) {
         context.addRoutingResultListener(new RoutingResultListener(){
+            @Override
             public boolean reroute(URL routedUrl, int status, HttpHeaders headers, PolicyEnforcementContext context) {
                 boolean retry = false;
                 if(status==HttpConstants.STATUS_FOUND || status==HttpConstants.STATUS_SEE_OTHER) {
@@ -324,9 +326,11 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
                 return retry;
             }
 
+            @Override
             public void routed(URL attemptedUrl, int status, HttpHeaders headers, PolicyEnforcementContext context) {
             }
 
+            @Override
             public void failed(URL attemptedUrl, Throwable thrown, PolicyEnforcementContext context) {
             }
         });

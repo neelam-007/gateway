@@ -12,5 +12,5 @@ package com.l7tech.policy.assertion;
 public enum TargetMessageType {
     REQUEST,
     RESPONSE,
-    OTHER;
+    OTHER
 }

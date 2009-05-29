@@ -20,9 +20,9 @@ import org.xml.sax.SAXException;
  */
 public class SecurityFacet extends MessageFacet implements SecurityKnob {
     private ProcessorResult processorResult = null;
-    private final List tokens = new ArrayList();
+    private final List<SecurityToken> tokens = new ArrayList<SecurityToken>();
     private DecorationRequirements decorationRequirements = null;
-    private Map decorationRequirementsForAlternateRecipients = new HashMap();
+    private Map<String,DecorationRequirements> decorationRequirementsForAlternateRecipients = new HashMap<String,DecorationRequirements>();
     private ProcessorResultFactory lazyProcessor = null;
 
     /**
@@ -33,10 +33,12 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
         super(message, delegate);
     }
 
-    public List getAllSecurityTokens() {
+    @Override
+    public List<SecurityToken> getAllSecurityTokens() {
         return Collections.unmodifiableList(tokens);
     }
 
+    @Override
     public void addSecurityToken(SecurityToken token) {
         if (token == null) throw new NullPointerException();
         tokens.add(token);
@@ -58,10 +60,12 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
         this.lazyProcessor = lazyProcessor;
     }
 
+    @Override
     public ProcessorResult getProcessorResult() {
         return processorResult;
     }
 
+    @Override
     public ProcessorResult getOrCreateProcessorResult() throws ProcessorException, SAXException, IOException {
         if (processorResult != null || lazyProcessor == null)
             return processorResult;
@@ -69,6 +73,7 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
         return processorResult = lazyProcessor.createProcessorResult();
     }
 
+    @Override
     public void setProcessorResult(ProcessorResult pr) {
         processorResult = pr;
     }
@@ -78,16 +83,17 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
      * per recipient, the default recipient having its requirements at the end of the array. Can return an empty array
      * but never null.
      */
+    @Override
     public DecorationRequirements[] getDecorationRequirements() {
-        Set keys = decorationRequirementsForAlternateRecipients.keySet();
+        Set<String> keys = decorationRequirementsForAlternateRecipients.keySet();
         int arraysize = keys.size();
         if (decorationRequirements != null) {
             arraysize += 1;
         }
         DecorationRequirements[] output = new DecorationRequirements[arraysize];
         int i = 0;
-        for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
-            output[i] = (DecorationRequirements)decorationRequirementsForAlternateRecipients.get(iterator.next());
+        for (String key : keys) {
+            output[i] = decorationRequirementsForAlternateRecipients.get(key);
             i++;
         }
         if (decorationRequirements != null) {
@@ -96,12 +102,13 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
         return output;
     }
 
+    @Override
     public DecorationRequirements getAlternateDecorationRequirements(XmlSecurityRecipientContext recipient) {
         if (recipient == null || recipient.localRecipient()) {
             return getOrMakeDecorationRequirements();
         }
         String actor = recipient.getActor();
-        DecorationRequirements output = (DecorationRequirements)decorationRequirementsForAlternateRecipients.get(actor);
+        DecorationRequirements output = decorationRequirementsForAlternateRecipients.get(actor);
         if (output == null) {
             output = new DecorationRequirements();
             X509Certificate clientCert;
@@ -113,6 +120,7 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
         return output;
     }
 
+    @Override
     public DecorationRequirements getOrMakeDecorationRequirements() {
         if (decorationRequirements == null) {
             decorationRequirements = new DecorationRequirements();
@@ -120,6 +128,13 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
         return decorationRequirements;
     }
 
+    @Override
+    public void removeAllDecorationRequirements() {
+        decorationRequirements = null;
+        decorationRequirementsForAlternateRecipients = new HashMap<String,DecorationRequirements>();
+    }
+
+    @Override
     public MessageKnob getKnob(Class c) {
         if (c == SecurityKnob.class) {
             return this;

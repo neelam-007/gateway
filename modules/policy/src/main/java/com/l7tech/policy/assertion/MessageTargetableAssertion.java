@@ -10,42 +10,61 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /** @author alex */
 public abstract class MessageTargetableAssertion extends Assertion implements MessageTargetable, UsesVariables {
-    protected TargetMessageType target = TargetMessageType.REQUEST;
-    protected String otherTargetMessageVariable;
 
+    //- PUBLIC
+
+    @Override
     public TargetMessageType getTarget() {
-        return target;
+        return targetSupport.getTarget();
     }
 
+    @Override
     public void setTarget(TargetMessageType target) {
-        if (target == null) throw new NullPointerException();
-        this.target = target;
+        targetSupport.setTarget(target);
     }
 
+    @Override
     public String getOtherTargetMessageVariable() {
-        return otherTargetMessageVariable;
+        return targetSupport.getOtherTargetMessageVariable();
     }
 
+    @Override
     public void setOtherTargetMessageVariable(String otherTargetMessageVariable) {
-        this.otherTargetMessageVariable = otherTargetMessageVariable;
+        targetSupport.setOtherTargetMessageVariable(otherTargetMessageVariable);
     }
 
+    @Override
     public String getTargetName() {
-        switch(target) {
-            case REQUEST:
-                return "Request";
-            case RESPONSE:
-                return "Response";
-            case OTHER:
-                return "${" + otherTargetMessageVariable + "}";
-            default:
-                throw new IllegalStateException();
-        }
+        return targetSupport.getTargetName(this);
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        if (otherTargetMessageVariable != null) return new String[] { otherTargetMessageVariable };
-        return new String[0];
+        return targetSupport.getVariablesUsed();
     }
+
+    //- PROTECTED
+
+    protected MessageTargetableAssertion() {
+        this( TargetMessageType.REQUEST );
+    }
+
+    protected MessageTargetableAssertion( final TargetMessageType targetMessageType ) {
+        targetSupport = new MessageTargetableSupport(targetMessageType);
+    }
+
+    protected void clearTarget() {
+        targetSupport.clearTarget();
+    }
+
+    protected void copyFrom( final MessageTargetableAssertion other ) {
+        this.setTarget( other.getTarget() );
+        this.setOtherTargetMessageVariable( other.getOtherTargetMessageVariable() );
+    }
+
+    //- PRIVATE
+
+    private MessageTargetableSupport targetSupport;
+
 }

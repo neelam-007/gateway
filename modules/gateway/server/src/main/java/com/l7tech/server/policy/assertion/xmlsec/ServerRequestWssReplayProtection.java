@@ -9,12 +9,13 @@ import com.l7tech.security.xml.processor.*;
 import com.l7tech.util.*;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
-import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.message.AuthenticationContext;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
@@ -34,7 +35,7 @@ import java.util.logging.Logger;
  * This assertion asserts that this message had a signed timestamp, and that no message with this timestamp signed
  * by one of the same signing tokens has been seen recently.
  */
-public class ServerRequestWssReplayProtection extends AbstractServerAssertion<RequestWssReplayProtection> {
+public class ServerRequestWssReplayProtection extends AbstractMessageTargetableServerAssertion<RequestWssReplayProtection> {
     private static final long EXPIRY_GRACE_TIME_MILLIS = 1000L * 60 * 1; // allow messages expired up to 1 minute ago
     private static final long MAXIMUM_MESSAGE_AGE_MILLIS = 1000L * 60 * 60 * 24 * 30; // hard cap of 30 days old
     private static final long CACHE_ID_EXTRA_TIME_MILLIS = 1000L * 60 * 5; // cache IDs for at least 5 min extra
@@ -49,7 +50,7 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
     private final SecurityTokenResolver securityTokenResolver;
 
     public ServerRequestWssReplayProtection(RequestWssReplayProtection subject, ApplicationContext spring) {
-        super(subject);
+        super(subject, subject);
         this.auditor = new Auditor(this, spring, logger);
         this.messageIdManager = (MessageIdManager)spring.getBean("distributedMessageIdManager");
         this.securityTokenResolver = (SecurityTokenResolver)spring.getBean("securityTokenResolver");
@@ -57,22 +58,21 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
 
     private static final class MultipleSenderIdException extends Exception { }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
-        final Message msg;
-        try {
-            msg = context.getTargetMessage(assertion);
-        } catch (NoSuchVariableException e) {
-            auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
-            return AssertionStatus.FAILED;
-        }
-
-        if (TargetMessageType.REQUEST.equals(assertion.getTarget()) && !assertion.getRecipientContext().localRecipient()) {
+    @Override
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if (!SecurityHeaderAddressableSupport.isLocalRecipient(assertion)) {
             auditor.logAndAudit(AssertionMessages.REQUESTWSS_NOT_FOR_US);
             return AssertionStatus.NONE;
         }
 
-        final String targetName = assertion.getTargetName();
+        return super.checkRequest( context );
+    }
 
+    @Override
+    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
+                                              final Message msg,
+                                              final String targetName,
+                                              final AuthenticationContext authContext ) throws IOException {
         ProcessorResult wssResults;
         try {
             if (!msg.isSoap()) {
@@ -84,7 +84,7 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
 
             if (wssResults == null) {
                 // WssProcessorUtil.getWssResults already audited any error messages
-                if (assertion.getTarget() == TargetMessageType.REQUEST) {
+                if ( isRequest() ) {
                     // If we're dealing with something other than the request, there's no point sending a challenge or
                     // policy URL to the original requestor.
                     context.setRequestPolicyViolated();
@@ -101,7 +101,11 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
 
         // See if there's a wsa:MessageID
         String wsaMessageId = null;
-        for (SignedElement signedElement : wssResults.getElementsThatWereSigned()) {
+        final SignedElement[] signedElements =  WSSecurityProcessorUtils.filterSignedElementsByIdentity(
+                    authContext,
+                    wssResults,
+                    assertion.getIdentityTarget() );
+        for (SignedElement signedElement : signedElements) {
             Element el = signedElement.asElement();
             if (DomUtils.elementInNamespace(el, SoapConstants.WSA_NAMESPACE_ARRAY) && SoapConstants.MESSAGEID_EL_NAME.equals(el.getLocalName())) {
                 if (wsaMessageId != null) {
@@ -121,11 +125,12 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
         // Validate timestamp
         WssTimestamp timestamp = wssResults.getTimestamp();
         if (timestamp == null) {
-            context.setRequestPolicyViolated();
+            if ( isRequest() )
+                context.setRequestPolicyViolated();
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_TIMESTAMP, targetName);
             return AssertionStatus.BAD_REQUEST;
         }
-        if (!timestamp.isSigned()) {
+        if (null==ProcessorResultUtil.getParsedElementForNode(timestamp.asElement(), signedElements)) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NOT_SIGNED, targetName);
             return AssertionStatus.BAD_REQUEST;
         }
@@ -194,6 +199,11 @@ public class ServerRequestWssReplayProtection extends AbstractServerAssertion<Re
         }
 
         return AssertionStatus.NONE;
+    }
+
+    @Override
+    protected Auditor getAuditor() {
+        return auditor;
     }
 
     private String getSenderId(XmlSecurityToken[] signingTokens, String createdIsoString, String what)

@@ -70,6 +70,10 @@ public class ServerWsAddressingAssertionTest extends TestCase {
                     public Element asElement() {
                         return element;
                     }
+
+                    public Element getSignatureElement() {
+                        return null;
+                    }
                 });
             }
             node = node.getNextSibling();

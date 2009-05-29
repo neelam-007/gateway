@@ -5,6 +5,7 @@ package com.l7tech.policy.assertion.identity;
 
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
@@ -49,6 +50,11 @@ public class AuthenticationAssertion extends IdentityAssertion {
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
         return super.getEntitiesUsed();
+    }
+
+    @Override
+    public IdentityTarget getIdentityTarget() {
+        return new IdentityTarget(IdentityTarget.TargetIdentityType.PROVIDER, getIdentityProviderOid());
     }
 
     @Override

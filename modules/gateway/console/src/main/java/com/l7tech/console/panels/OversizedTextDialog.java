@@ -19,14 +19,13 @@ import java.awt.event.ActionListener;
 /**
  * Dialog for configuring OversizedTexctAssertion.
  */
-public class OversizedTextDialog extends JDialog {
+public class OversizedTextDialog extends AssertionPropertiesEditorSupport<OversizedTextAssertion> {
     private JPanel mainPanel;
 
-    private final OversizedTextAssertion assertion;
+    private OversizedTextAssertion assertion;
     private final InputValidator validator;
     private JButton okButton;
     private JButton cancelButton;
-    private boolean modified;
     private boolean confirmed = false;
     private JTextField textLengthField;
     private JTextField attrLengthField;
@@ -40,36 +39,34 @@ public class OversizedTextDialog extends JDialog {
     private JCheckBox attrNameLengthCheckBox;
     private JTextField attrNameLengthField;
 
-    public boolean wasConfirmed() {
-        return confirmed;
-    }
-
-    public OversizedTextDialog(Frame owner, OversizedTextAssertion assertion, boolean modal, boolean readOnly) throws HeadlessException {
-        super(owner, "Configure Document Structure Threat Protection", modal);
+    public OversizedTextDialog(Window owner, OversizedTextAssertion assertion) throws HeadlessException {
+        super(owner, "Configure Document Structure Threat Protection");
         this.assertion = assertion;
         this.validator = new InputValidator(this, "Document Structure Threats");
-        doInit(readOnly);
+        doInit();
     }
 
-    private void doInit(boolean readOnly) {
+    private void doInit() {
         getContentPane().add(mainPanel);
 
-        Utilities.equalizeButtonSizes(new AbstractButton[]{okButton, cancelButton});
+        Utilities.equalizeButtonSizes(okButton, cancelButton);
 
-        okButton.setEnabled( !readOnly );
         validator.attachToButton(okButton, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doSave();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 doCancel();
             }
         });
 
         final ChangeListener changeListener = new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 updateEnableState();
             }
@@ -103,6 +100,11 @@ public class OversizedTextDialog extends JDialog {
         updateEnableState();
     }
 
+    @Override
+    protected void configureView() {
+        okButton.setEnabled( !isReadOnly() );
+    }
+
     private void modelToView() {
         textLengthField.setText(Long.toString(assertion.getMaxTextChars()));
         textLengthCheckBox.setSelected(assertion.isLimitTextChars());
@@ -128,7 +130,6 @@ public class OversizedTextDialog extends JDialog {
 
     private void doCancel() {
         confirmed = false;
-        modified = false;
         dispose();
     }
 
@@ -206,15 +207,21 @@ public class OversizedTextDialog extends JDialog {
         assertion.setLimitNestingDepth(limitNestDepth);
         assertion.setRequireValidSoapEnvelope(soapEnvCheckBox.isSelected());
         confirmed = true;
-        modified = true;
         dispose();
     }
 
-    public boolean isModified() {
-        return modified;
+    @Override
+    public boolean isConfirmed() {
+        return confirmed;
     }
 
-    public OversizedTextAssertion getAssertion() {
+    @Override
+    public void setData(OversizedTextAssertion assertion) {
+        this.assertion = assertion;
+    }
+
+    @Override
+    public OversizedTextAssertion getData(OversizedTextAssertion assertion) {
         return assertion;
     }
 }

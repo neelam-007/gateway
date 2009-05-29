@@ -76,7 +76,7 @@ public class FederationPassiveClient {
         if(httpParams.getTargetUrl()==null) throw new IllegalArgumentException("httpParams targetUrl must not be null");
         if(httpParams.getTargetUrl().getQuery()!=null) throw new IllegalArgumentException("url must not have a query string");
 
-        Document result = null;
+        Document result;
         URL ipStsUrl = httpParams.getTargetUrl();
 
         URL targetUrl = buildUrl(ipStsUrl.toExternalForm(), realm, replyUrl, context, addTimestamp);
@@ -146,7 +146,7 @@ public class FederationPassiveClient {
         if(httpParams==null) throw new IllegalArgumentException("httpParams must not be null");
         if(httpParams.getTargetUrl()==null) throw new IllegalArgumentException("httpParams targetUrl must not be null");
 
-        Document result = null;
+        Document result;
         String requestBody = buildRequestBody(requestorToken, context, addTimestamp);
 
         try {
@@ -197,17 +197,17 @@ public class FederationPassiveClient {
      * @see com.l7tech.security.wsfederation.ResponseStatusException
      * @see com.l7tech.security.wsfederation.NotAuthorizedException
      */
-    public static Set postFederationToken(GenericHttpClient httpClient
-                                         ,GenericHttpRequestParams httpParams
-                                         , XmlSecurityToken resourceToken
-                                         ,String context
-                                         ,boolean addTimestamp) throws IOException {
+    public static Set<HttpCookie> postFederationToken( final GenericHttpClient httpClient,
+                                                       final GenericHttpRequestParams httpParams,
+                                                       final XmlSecurityToken resourceToken,
+                                                       final String context,
+                                                       final boolean addTimestamp ) throws IOException {
 
         if(httpClient==null) throw new IllegalArgumentException("httpClient must not be null");
         if(httpParams==null) throw new IllegalArgumentException("httpParams must not be null");
         if(httpParams.getTargetUrl()==null) throw new IllegalArgumentException("httpParams targetUrl must not be null");
 
-        Set cookies = new LinkedHashSet();
+        Set<HttpCookie> cookies = new LinkedHashSet<HttpCookie>();
         URL ipStsUrl = httpParams.getTargetUrl();
 
         String requestBody = buildRequestBody(resourceToken, context, addTimestamp);
@@ -237,8 +237,8 @@ public class FederationPassiveClient {
 
             List cookieHeaders = headers.getValues(HttpConstants.HEADER_SET_COOKIE);
             try {
-                for (Iterator iterator = cookieHeaders.iterator(); iterator.hasNext();) {
-                    String value = (String) iterator.next();
+                for (Object cookieHeader : cookieHeaders) {
+                    String value = (String) cookieHeader;
                     cookies.add(new HttpCookie(ipStsUrl, value));
                 }
             }
@@ -302,15 +302,14 @@ public class FederationPassiveClient {
      * NEKO Config
      */
     private static final String NEKO_PROP_ELEMS = "http://cyberneko.org/html/properties/names/elems";
-    private static final Short NEKO_VALUE_LOWERCASE = new Short((short)2);
+    private static final Short NEKO_VALUE_LOWERCASE = (short)2;
 
     /**
      * Currently only SamlAssertion is supported.
      */
-    private static SamlAssertion parseFederationToken(Document token) throws IOException {
-        SamlAssertion result = null;
+    private static SamlAssertion parseFederationToken(final Document rstrDoc) throws IOException {
+        SamlAssertion result;
         try {
-            Document rstrDoc = token;
             Document soapWrapped;
 
             // Could be RSTR by itself or could already be in a SOAP Envelope
@@ -350,7 +349,7 @@ public class FederationPassiveClient {
      * Get the XML document embedded in the hidden HTML form element "wresult".
      */
     private static Document getDocument(String html) throws IOException {
-        Document document = null;
+        Document document;
 
 
         try {
@@ -501,14 +500,12 @@ public class FederationPassiveClient {
     private static Element getOneElementByTagNameNS(Element element, String[] namespaces, String elementName) throws CausedIOException {
         Element result = null;
 
-        for(int n=0; n<namespaces.length; n++) {
-            String namespace = namespaces[n];
+        for (String namespace : namespaces) {
             NodeList matchingElements = element.getElementsByTagNameNS(namespace, elementName);
-            if(matchingElements.getLength()>1) {
-                throw new CausedIOException("Error, multiple " +elementName+ " elements.");
-            }
-            else if(matchingElements.getLength()==1) {
-                if(result!=null) throw new CausedIOException("Error, multiple " +elementName+ " elements.");
+            if (matchingElements.getLength() > 1) {
+                throw new CausedIOException("Error, multiple " + elementName + " elements.");
+            } else if (matchingElements.getLength() == 1) {
+                if (result != null) throw new CausedIOException("Error, multiple " + elementName + " elements.");
                 result = (Element) matchingElements.item(0);
             }
         }

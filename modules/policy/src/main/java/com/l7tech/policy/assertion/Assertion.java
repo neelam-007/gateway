@@ -211,7 +211,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      * @return	an <code>Iterator</code> for traversing the assertion tree in
      *          preorder
      */
-    public Iterator preorderIterator() {
+    public Iterator<Assertion> preorderIterator() {
         return new PreorderIterator(this);
     }
 
@@ -284,7 +284,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      * preorder depth first assertion traversal.
      * The class is not synchronized.
      */
-    final class PreorderIterator implements Iterator {
+    final class PreorderIterator implements Iterator<Assertion> {
         private Stack stack = new Stack(); // oh well
         private Assertion lastReturned = null;
 
@@ -301,7 +301,7 @@ public abstract class Assertion implements Cloneable, Serializable {
         }
 
         @Override
-        public Object next() {
+        public Assertion next() {
             final Iterator iterator;
 
             try {
@@ -571,20 +571,37 @@ public abstract class Assertion implements Cloneable, Serializable {
         return null;
     }
 
-    private static TargetMessageType getMessageTarget(Assertion assertion) {
-        if (assertion instanceof MessageTargetable) {
+    /**
+     * Get the TargetMessageType for the given assertion.
+     *
+     * <p>This will check if the assertion implements {@link MessageTargetable}
+     * and then check for either a {@link ProcessesRequest} or {@link ProcessesResponse}
+     * annotation.</p>
+     *
+     * @param assertion The assertion to heck.
+     * @return The TargetMessageType or null if the type cannot be determined.
+     */
+    public static TargetMessageType getTargetMessageType( final Assertion assertion ) {
+        TargetMessageType target = null;
+
+        if ( assertion instanceof MessageTargetable ) {
             MessageTargetable mt = (MessageTargetable) assertion;
-            return mt.getTarget();
+            target = mt.getTarget();
+        } else if ( hasAnnotation(assertion, ProcessesRequest.class) ) {
+            target = TargetMessageType.REQUEST;
+        } else if ( hasAnnotation(assertion, ProcessesResponse.class) ) {
+            target = TargetMessageType.RESPONSE;
         }
-        return null;
+
+        return target;
     }
 
     public static boolean isRequest(Assertion assertion) {
-        return TargetMessageType.REQUEST.equals(getMessageTarget(assertion)) || hasAnnotation(assertion, ProcessesRequest.class);
+        return TargetMessageType.REQUEST == getTargetMessageType(assertion);
     }
 
     public static boolean isResponse(Assertion assertion) {
-        return TargetMessageType.RESPONSE.equals(getMessageTarget(assertion)) || hasAnnotation(assertion, ProcessesResponse.class);
+        return TargetMessageType.RESPONSE == getTargetMessageType(assertion);
     }
 
     public static boolean isHardwareAccelerated(Assertion assertion) {

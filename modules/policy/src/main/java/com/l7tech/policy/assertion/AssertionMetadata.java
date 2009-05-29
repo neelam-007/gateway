@@ -101,6 +101,16 @@ public interface AssertionMetadata {
     String PALETTE_NODE_ICON = "paletteNodeIcon";
 
     /**
+     * Integer. The sort priority for the palette node for this assertion, if using DefaultAssertionPaletteNode.
+     * Defaults to "0". Nodes with higer priority appear higher in the palette folder. When two nodes have the same
+     * sort priority they are ordered by name (ignoring case).
+     *
+     * NOTE: currently only used for the following categories: xmlSecurity
+     */
+    String PALETTE_NODE_SORT_PRIORITY = "paletteNodeSortPriority";
+
+
+    /**
      * String classname.  Name of AbstractAssertionPaletteNode subclass to use when creating palette nodes for this assertion.
      * Defaults to "${basePackage}.console.${baseName}PaletteNode".
      */
@@ -544,7 +554,7 @@ public interface AssertionMetadata {
     String IS_ROUTING_ASSERTION = "isRoutingAssertion";
 
     /** @return the concrete Assertion class.  Returned class is never null and is always assignable to Assertion. */
-    Class getAssertionClass();
+    <T extends Assertion> Class<T> getAssertionClass();
 
     /**
      * Get the specified property.
@@ -552,5 +562,5 @@ public interface AssertionMetadata {
      * @param key the property name to get.  Must not be null.
      * @return The specified property value, if it exists, otherwise null.
      */
-    Object get(String key);
+    <T> T get(String key);
 }

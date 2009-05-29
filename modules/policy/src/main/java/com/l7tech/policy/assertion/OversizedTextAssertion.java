@@ -6,17 +6,15 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
-import com.l7tech.policy.assertion.annotation.ProcessesRequest;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import static com.l7tech.policy.assertion.annotation.HardwareAccelerated.Type.TOKENSCAN;
 
 /**
  * Assertion that can limit length of attribute and text nodes.
  */
-@ProcessesRequest
 @RequiresXML
 @HardwareAccelerated(type=TOKENSCAN)
-public class OversizedTextAssertion extends Assertion {
+public class OversizedTextAssertion extends MessageTargetableAssertion {
     public static final long DEFAULT_ATTR_LIMIT = 2048;
     public static final long DEFAULT_TEXT_LIMIT = 16384;
     public static final int DEFAULT_ATTR_NAME_LIMIT = 128;
@@ -168,4 +166,16 @@ public class OversizedTextAssertion extends Assertion {
 
         return XPATH_PAYLOAD_START + (maxPayloads + 1) + XPATH_PAYLOAD_END;
     }
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+        meta.put(AssertionMetadata.SHORT_NAME, "Document Structure Threats");
+        meta.put(AssertionMetadata.LONG_NAME, "Enable protection against oversized nodes, overdeep nesting, and trailers");
+        meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/OversizedElement16.gif");
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.OversizedTextDialog");
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        return meta;
+    }
+
 }

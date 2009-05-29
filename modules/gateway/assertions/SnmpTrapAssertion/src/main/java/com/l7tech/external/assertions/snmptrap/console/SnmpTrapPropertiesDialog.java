@@ -39,15 +39,8 @@ public class SnmpTrapPropertiesDialog extends AssertionPropertiesEditorSupport<S
 
     private boolean confirmed = false;
 
-    public SnmpTrapPropertiesDialog(Dialog owner, SnmpTrapAssertion assertion) throws HeadlessException {
-        super(owner, TITLE, true);
-        this.owner = owner;
-        if (assertion == null) throw new NullPointerException();
-        init(assertion);
-    }
-
-    public SnmpTrapPropertiesDialog(Frame owner, SnmpTrapAssertion assertion) throws HeadlessException {
-        super(owner, TITLE, true);
+    public SnmpTrapPropertiesDialog(Window owner, SnmpTrapAssertion assertion) throws HeadlessException {
+        super(owner, TITLE);
         this.owner = owner;
         if (assertion == null) throw new NullPointerException();
         init(assertion);

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <wsp:All wsp:Usage="Required">
+            <L7p:ResponseWssIntegrity>
+                <L7p:Target target="REQUEST"/>
+                <L7p:XpathExpression xpathExpressionValue="included">
+                    <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Body"/>
+                    <L7p:Namespaces mapValue="included">
+                        <L7p:entry>
+                            <L7p:key stringValue="soapenv"/>
+                            <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                        </L7p:entry>
+                        <L7p:entry>
+                            <L7p:key stringValue="SOAP-ENV"/>
+                            <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                        </L7p:entry>
+                        <L7p:entry>
+                            <L7p:key stringValue="s0"/>
+                            <L7p:value stringValue="http://warehouse.acme.com/ws"/>
+                        </L7p:entry>
+                        <L7p:entry>
+                            <L7p:key stringValue="wsp"/>
+                            <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2002/12/policy"/>
+                        </L7p:entry>
+                        <L7p:entry>
+                            <L7p:key stringValue="L7p"/>
+                            <L7p:value stringValue="http://www.layer7tech.com/ws/policy"/>
+                        </L7p:entry>
+                        <L7p:entry>
+                            <L7p:key stringValue="xsd"/>
+                            <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                        </L7p:entry>
+                        <L7p:entry>
+                            <L7p:key stringValue="xsi"/>
+                            <L7p:value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                        </L7p:entry>
+                    </L7p:Namespaces>
+                </L7p:XpathExpression>
+            </L7p:ResponseWssIntegrity>
+            <L7p:WssDecoration/>
+            <L7p:HttpRoutingAssertion>
+                <L7p:ProtectedServiceUrl stringValue="http://hugh/ACMEWarehouseWS/Service1.asmx"/>
+                <L7p:SamlAssertionVersion intValue="2"/>
+            </L7p:HttpRoutingAssertion>
+        </wsp:All>
+    </wsp:All>
+</wsp:Policy>
