@@ -816,10 +816,6 @@ class Importer{
     }
 
     public void preProcess(Map<String, String> args) throws BackupRestoreLauncher.InvalidProgramArgumentException, IOException, FatalException {
-        //skip the whole pre-processing
-        if (args.containsKey(ImportExportUtilities.SKIP_PRE_PROCESS.name)) {
-            return;
-        }
 
         //image file to import
         if (!args.containsKey(IMAGE_PATH.name)) {

@@ -118,15 +118,82 @@ public final class Exporter{
 
     private final boolean isPostFiveO;
 
-    private boolean verbose;
+    /**
+     * Include verbose output from back up methods
+     */
+    private boolean isVerbose;
 
-    private boolean haltOnFirstFailure;
+    /**
+     * When true, the createBackupImage is fail fast
+     */
+    private boolean isHaltOnFirstFailure;
+
+    /**
+     * When true, only the components actually requrested via the program parameters will be backed up
+     */
+    private boolean isSelectiveBackup;
+
+    private boolean includeAudits;
 
     /**
      * Backup is not fail fast. As a result we will allow clients access to this list of error message so that they
      * can be printed to the screen, when in -v mode
      */
     private final List<String> failedComponents = new ArrayList<String>();
+
+    private Map<String, String> programFlagsAndValues;
+
+    private static interface BackupComponent<E extends Exception>{
+
+        public void doBackup() throws E;
+
+        public ImportExportUtilities.ComponentType getComponentType();
+    }
+
+    public static class BackupResult{
+
+        private final String backUpImageName;
+        private final Status status;
+        private final List<String> failedComponents;
+        private final Exception exception;
+
+        public enum Status{
+            SUCCESS(),
+            FAILURE(),
+            PARTIAL_SUCCESS()
+        }
+
+        private BackupResult(String backUpImageName, Status status, List<String> failedComponents, Exception exception){
+            this.backUpImageName = backUpImageName;
+            this.status = status;
+            this.failedComponents = failedComponents;
+            this.exception = exception;
+        }
+
+        private BackupResult(String backUpImageName, Status status){
+            this.backUpImageName = backUpImageName;
+            this.status = status;
+            this.failedComponents = null;
+            this.exception = null;
+        }
+
+        public String getBackUpImageName() {
+            return backUpImageName;
+        }
+
+        public List<String> getFailedComponents() {
+            return failedComponents;
+        }
+
+        public Status getStatus() {
+            return status;
+        }
+
+        public Exception getException() {
+            return exception;
+        }
+    }
+    
     /**
      * @param ssgHome   home directory where the SSG is installed. Should equal /opt/SecureSpan/Gateway. Cannot be null
      * @param stdout        stream for verbose output; <code>null</code> for no verbose output
@@ -183,51 +250,6 @@ public final class Exporter{
         this.applianceHome = applianceHome;
     }
 
-    public static class BackupResult{
-
-        private final String backUpImageName;
-        private final Status status;
-        private final List<String> failedComponents;
-        private final Exception exception;
-
-        public enum Status{
-            SUCCESS(),
-            FAILURE(),
-            PARTIAL_SUCCESS();
-
-            Status() {}
-        }
-
-        private BackupResult(String backUpImageName, Status status, List<String> failedComponents, Exception exception){
-            this.backUpImageName = backUpImageName;
-            this.status = status;
-            this.failedComponents = failedComponents;
-            this.exception = exception;
-        }
-
-        private BackupResult(String backUpImageName, Status status){
-            this.backUpImageName = backUpImageName;
-            this.status = status;
-            this.failedComponents = null;
-            this.exception = null;
-        }
-
-        public String getBackUpImageName() {
-            return backUpImageName;
-        }
-
-        public List<String> getFailedComponents() {
-            return failedComponents;
-        }
-
-        public Status getStatus() {
-            return status;
-        }
-
-        public Exception getException() {
-            return exception;
-        }
-    }
     /**
      * <p>
      * Create the backup image zip file.
@@ -264,7 +286,8 @@ public final class Exporter{
         final List<CommandLineOption> validArgList = new ArrayList<CommandLineOption>();
         validArgList.addAll(Arrays.asList(ALLOPTIONS));
         validArgList.addAll(Arrays.asList(ALL_FTP_OPTIONS));
-        final Map<String, String> programFlagsAndValues =
+        validArgList.addAll(Arrays.asList(ImportExportUtilities.ALL_COMPONENTS));
+        programFlagsAndValues =
                 ImportExportUtilities.getAndValidateCommandLineOptions(args,
                         validArgList, Arrays.asList(ALL_IGNORED_OPTIONS));
 
@@ -273,7 +296,7 @@ public final class Exporter{
 
         //overwrite the supplied image name with a unique name based on it
         String pathToUniqueImageFile = getUniqueImageFileName(programFlagsAndValues.get(IMAGE_PATH.name));
-        if (stdout != null && verbose) stdout.println("Creating image: " + pathToUniqueImageFile);        
+        if (stdout != null && isVerbose) stdout.println("Creating image: " + pathToUniqueImageFile);
         programFlagsAndValues.put(IMAGE_PATH.name, pathToUniqueImageFile);
         //We only want to validate the image file when we are not using ftp
         validateFiles(programFlagsAndValues, !usingFtp);
@@ -300,21 +323,16 @@ public final class Exporter{
         String tmpDirectory = null;
         try {
             tmpDirectory = ImportExportUtilities.createTmpDirectory();
-            final String auditval = programFlagsAndValues.get(AUDIT.name);
-            boolean includeAudits = false;
-            if (auditval != null && !auditval.toLowerCase().equals("no") && !auditval.toLowerCase().equals("false")) {
-                includeAudits = true;
-            }
 
             final String mappingFile = programFlagsAndValues.get(MAPPING_PATH.name);
             final FtpClientConfig ftpConfig = getFtpConfig(programFlagsAndValues);
-            performBackupSteps(includeAudits, mappingFile, pathToUniqueImageFile, tmpDirectory, ftpConfig);
+            performBackupSteps(mappingFile, pathToUniqueImageFile, tmpDirectory, ftpConfig);
         } catch(Exception e){
             return new BackupResult(null, BackupResult.Status.FAILURE, null, e);
         } finally {
           if(tmpDirectory != null){
                 logger.info("cleaning up temp files at " + tmpDirectory);
-                if (stdout != null && verbose) stdout.println("Cleaning temporary files at " + tmpDirectory);
+                if (stdout != null && isVerbose) stdout.println("Cleaning temporary files at " + tmpDirectory);
                 FileUtils.deleteDir(new File(tmpDirectory));
             }
         }
@@ -415,51 +433,43 @@ public final class Exporter{
      * This method orchestrates the calls to the various backUp*() methods
      * </p>
      *
+     * <p> This method is private and depends on the state of instance variables which were set by the caller
+     * </p>
+     *
      * <p>
      * The bahviour of this method is that each back up is performed individually and independently of others. If any
      * component fails to back up, this is logged, and the execution continues onto the next backup. This behaviour
      * can be modified via the -halt parameter
      * </p>
      *
-     *
-     * @param includeAudits boolean true if audits are to be backed up, false if not
      * @param mappingFile path (optional) and name of the mapping file to be created. if not required pass <code>null</code>
      * @param pathToImageZip String representing the path (optional) and name of the image zip file to create. If
      * the image is going to be ftp'd then any path information is relative to the ftp server
      * @param tmpOutputDirectory String the temporary directory created to host the back up of each component before
      * the image zip file is created
      * @param ftpConfig FtpClientConfig if ftp is required, Pass <code>null</code> when ftp is not required
-     * @throws IOException for any IO Exception when backing up the components or when creating the zip file
+     * @throws Exception for any Exception when backing up the components or when creating the zip file
      * @throws com.l7tech.gateway.config.backuprestore.BackupRestoreLauncher.FatalException if ftp is requested and
      * its not possible to ftp the newly created image
      */
-    private void performBackupSteps(final boolean includeAudits, final String mappingFile, final String pathToImageZip,
+    private void performBackupSteps(final String mappingFile, final String pathToImageZip,
                                     final String tmpOutputDirectory, final FtpClientConfig ftpConfig)
-            throws IOException, BackupRestoreLauncher.FatalException {
+            throws Exception {
 
-        Map<Functions.NullaryVoidThrows<IOException>, String> compsToBackup =
-                getComponentsForBackup(includeAudits, mappingFile, tmpOutputDirectory);
+        List<BackupComponent<? extends Exception>> compsToBackup =
+                getComponentsForBackup(mappingFile, tmpOutputDirectory);
 
-        for(Map.Entry<Functions.NullaryVoidThrows<IOException>, String> entry: compsToBackup.entrySet()){
+        for(BackupComponent<? extends Exception> component: compsToBackup){
             try{
-                entry.getKey().call();
-            } catch (IOException e) {
-                if (haltOnFirstFailure) {
-                    logger.log(Level.SEVERE, "Could not back up component " + entry.getValue());
+                component.doBackup();
+            }catch (Exception e) {
+                if (isHaltOnFirstFailure) {
+                    logger.log(Level.SEVERE, "Could not back up component " + component.getComponentType().getDescription());
                     logger.log(Level.SEVERE, "Halting backup as -halt option was supplied");
                     throw e;
                 }
-                logger.log(Level.WARNING, "Could not back up component " + entry.getValue());
-                failedComponents.add(entry.getValue());
-            } catch( RuntimeException e){
-                //We catch RuntimeException as we are promising non fail fast. 
-                if (haltOnFirstFailure) {
-                    logger.log(Level.SEVERE, "Could not back up component " + entry.getValue());
-                    logger.log(Level.SEVERE, "Halting backup as -halt option was supplied");
-                    throw e;
-                }
-                logger.log(Level.WARNING, "Could not back up component " + entry.getValue());
-                failedComponents.add(entry.getValue());
+                logger.log(Level.WARNING, "Could not back up component " + component.getComponentType().getDescription());
+                failedComponents.add(component.getComponentType().getDescription());
             }
         }
 
@@ -477,7 +487,7 @@ public final class Exporter{
             }finally{
                 if(newTmpDir != null){
                     logger.info("cleaning up temp files at " + newTmpDir);
-                    if (stdout != null && verbose) stdout.println("Cleaning temporary files at " + newTmpDir);
+                    if (stdout != null && isVerbose) stdout.println("Cleaning temporary files at " + newTmpDir);
                     FileUtils.deleteDir(new File(newTmpDir));
                 }
             }
@@ -507,8 +517,12 @@ public final class Exporter{
      * Exception. All we care about from providing a non fail fast backup is that we can catch any exception that happens
      * when backing up a component, and then be able to proceed onto the next.
      * </p>
-     *  
-     * @param includeAudits should the audits be backed up?
+     *
+     * <p>
+     * The components returned are either all applicable for a full backup (e.g. if appliance then os, if local db, then
+     * db) however if any selective components were requrested via the program parameters, then the returned Map ONLY
+     * contains the requested components 
+     * </p>
      * @param mappingFile should the db compoment backup create a mapping file? Can be null if not required
      * @param tmpOutputDirectory where the components should write their backup to
      * @return A ordered Map of a Function.NullaryVoidThrows to a string description. Clients can iterate over this map
@@ -516,21 +530,24 @@ public final class Exporter{
      * @throws IOException if any exception ocurs reading node.properties to get database information. This is always
      * done to determine if the database is local or remote
      */
-    private Map<Functions.NullaryVoidThrows<IOException>, String> getComponentsForBackup(final boolean includeAudits,
-                                                                                       final String mappingFile,
-                                                                                       final String tmpOutputDirectory)
+    private List<BackupComponent<? extends Exception>> getComponentsForBackup(
+            final String mappingFile,
+            final String tmpOutputDirectory)
             throws IOException {
 
-        Map<Functions.NullaryVoidThrows<IOException>, String>
-                returnMap = new LinkedHashMap<Functions.NullaryVoidThrows<IOException>, String>();
+        List<BackupComponent<? extends Exception>> componentList = new ArrayList<BackupComponent<? extends Exception>>();
 
-        Functions.NullaryVoidThrows<IOException> versionComp = new Functions.NullaryVoidThrows<IOException>() {
-            public void call() throws IOException {
+        BackupComponent<IOException> versionComp = new BackupComponent<IOException>() {
+            public void doBackup() throws IOException {
                 // record version of this image
                 backUpVersion(tmpOutputDirectory);
             }
+
+            public ImportExportUtilities.ComponentType getComponentType() {
+                return ImportExportUtilities.ComponentType.VERSION;
+            }
         };
-        returnMap.put(versionComp, "Version");
+        componentList.add(versionComp);
 
         final File nodePropsFile = new File(confDir, ImportExportUtilities.NODE_PROPERTIES);
         final File ompFile = new File(confDir, ImportExportUtilities.OMP_DAT);
@@ -539,57 +556,109 @@ public final class Exporter{
 
         //Backup database info if the db is local
         if(ImportExportUtilities.isHostLocal(config.getHost())){
-            Functions.NullaryVoidThrows<IOException> dbComp = new Functions.NullaryVoidThrows<IOException>() {
-                public void call() throws IOException {
+
+            BackupComponent<IOException> dbComp = new BackupComponent<IOException>() {
+                public void doBackup() throws IOException {
                     //this will also create the mapping file if it was requested
                     backUpComponentMainDb(mappingFile, tmpOutputDirectory, config);
                 }
+
+                public ImportExportUtilities.ComponentType getComponentType() {
+                    return ImportExportUtilities.ComponentType.MAINDB;
+                }
             };
-            returnMap.put(dbComp, "Main database");
+            componentList.add(dbComp);
             // check whether or not we are expected to include audit in export
             if (includeAudits) {
-                Functions.NullaryVoidThrows<IOException> auditComp = new Functions.NullaryVoidThrows<IOException>() {
-                    public void call() throws IOException {
-                        //this will also create the mapping file if it was requested
+                BackupComponent<Exception> auditComp = new BackupComponent<Exception>() {
+                    public void doBackup() throws IOException {
                         backUpComponentAudits(tmpOutputDirectory, config);
                     }
-                };
-                returnMap.put(auditComp, "Database audits");
 
+                    public ImportExportUtilities.ComponentType getComponentType() {
+                        return ImportExportUtilities.ComponentType.AUDITS;
+                    }
+                };
+                componentList.add(auditComp);
             }
         }else{
             logger.log(Level.INFO,  "Database is not local so no backup of database being created");
         }
-        Functions.NullaryVoidThrows<IOException> configComp = new Functions.NullaryVoidThrows<IOException>() {
-            public void call() throws IOException {
-                // record version of this image
+
+        BackupComponent<Exception> configComp = new BackupComponent<Exception>() {
+            public void doBackup() throws IOException {
                 backUpComponentConfig(tmpOutputDirectory);
             }
-        };
-        returnMap.put(configComp, "SSG Config");
 
-        Functions.NullaryVoidThrows<IOException> osComp = new Functions.NullaryVoidThrows<IOException>() {
-            public void call() throws IOException {
+            public ImportExportUtilities.ComponentType getComponentType() {
+                return ImportExportUtilities.ComponentType.CONFIG;
+            }
+        };
+        componentList.add(configComp);
+
+        BackupComponent<Exception> osComp = new BackupComponent<Exception>() {
+            public void doBackup() throws IOException {
                 //restore OS files if this is an appliance
                 backUpComponentOS(tmpOutputDirectory);
             }
-        };
-        returnMap.put(osComp, "Operating System files");
 
-        Functions.NullaryVoidThrows<IOException> caComp = new Functions.NullaryVoidThrows<IOException>() {
-            public void call() throws IOException {
+            public ImportExportUtilities.ComponentType getComponentType() {
+                return ImportExportUtilities.ComponentType.OS;
+            }
+        };
+        componentList.add(osComp);
+
+        BackupComponent<Exception> caComp = new BackupComponent<Exception>() {
+            public void doBackup() throws IOException {
                 backUpComponentCA(tmpOutputDirectory);
             }
-        };
-        returnMap.put(caComp, "Custom Assertions");
 
-        Functions.NullaryVoidThrows<IOException> maComp = new Functions.NullaryVoidThrows<IOException>() {
-            public void call() throws IOException {
-                backUpComponentMA(tmpOutputDirectory);
+            public ImportExportUtilities.ComponentType getComponentType() {
+                return ImportExportUtilities.ComponentType.CA;
             }
         };
-        returnMap.put(maComp, "Modular Assertions");
-        return returnMap;
+
+        componentList.add(caComp);
+
+        BackupComponent<Exception> maComp = new BackupComponent<Exception>() {
+            public void doBackup() throws IOException {
+                backUpComponentMA(tmpOutputDirectory);
+            }
+
+            public ImportExportUtilities.ComponentType getComponentType() {
+                return ImportExportUtilities.ComponentType.MA;
+            }
+        };
+        componentList.add(maComp);
+
+        return filterComponents(componentList);
+    }
+
+    private List<BackupComponent<? extends Exception>> filterComponents(List<BackupComponent<? extends Exception>> allComponents){
+
+        if(!isSelectiveBackup){
+            return allComponents;
+        }
+
+        if(stdout != null && isVerbose) stdout.println("Performing a selective backup");
+        logger.log(Level.INFO, "Performing a selective backup");
+
+        List <BackupComponent<? extends Exception>>
+                returnList = new ArrayList<BackupComponent<? extends Exception>>();
+
+        for(BackupComponent<? extends Exception> comp: allComponents){
+            if(comp.getComponentType() == ImportExportUtilities.ComponentType.VERSION){
+                //We always include the version component
+                returnList.add(comp);
+                continue;
+            }
+
+            if(programFlagsAndValues.containsKey("-"+comp.getComponentType().getComponentName())){
+                returnList.add(comp);
+            } 
+        }
+
+        return returnList;
     }
 
     /**
@@ -615,7 +684,7 @@ public final class Exporter{
         InputStream is = null;
         try {
             is = new FileInputStream(new File(localZipFile));
-            if (stdout != null && verbose)
+            if (stdout != null && isVerbose)
                 stdout.println("Ftp file '" + localZipFile+"' to host '" + ftpConfig.getHost()+"' into directory '"
                         + destPathAndFileName+"'");
 
@@ -654,9 +723,9 @@ public final class Exporter{
         }
         try {
             //Create the database folder
-            final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.AUDITS.getDirName());
+            final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.AUDITS.getComponentName());
             //never include audits with the main db dump
-            DBDumpUtil.auditDump(ssgHome, config, dir.getAbsolutePath(), stdout, verbose);
+            DBDumpUtil.auditDump(ssgHome, config, dir.getAbsolutePath(), stdout, isVerbose);
         } catch (SQLException e) {
             logger.log(Level.INFO, "exception dumping database, possible that the database is not running or credentials " +
                     "are not correct", ExceptionUtils.getDebugException(e));
@@ -682,7 +751,7 @@ public final class Exporter{
      */
     public void backUpComponentMainDb(final String mappingFile, final String tmpOutputDirectory,
                                       final DatabaseConfig config) throws IOException {
-        final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.MAINDB.getDirName());
+        final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.MAINDB.getComponentName());
         addDatabaseToBackupFolder(dir, config);
         // produce template mapping if necessary
         if(mappingFile != null){
@@ -725,7 +794,7 @@ public final class Exporter{
      * @throws IOException if any exception occurs writing the SSG config files to the backup folder
      */
     public void backUpComponentConfig(final String tmpOutputDirectory) throws IOException {
-        final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.CONFIG.getDirName());
+        final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.CONFIG.getComponentName());
 
         ImportExportUtilities.copyFiles(confDir, dir, new FilenameFilter(){
             public boolean accept(File dir, String name) {
@@ -749,7 +818,7 @@ public final class Exporter{
     public void backUpComponentOS(final String tmpOutputDirectory) throws IOException {
         if (new File(applianceHome).exists()) {
             // copy system config files
-            final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.OS.getDirName());
+            final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.OS.getComponentName());
             OSConfigManager.saveOSConfigFiles(dir.getAbsolutePath(), ssgHome);
         }
         //there is no else as backing up os files is not a user option. It just happens when were on an appliance
@@ -766,7 +835,8 @@ public final class Exporter{
      * @throws IOException if any exception occurs writing the custom assertions and property files to the backup folder
      */
     public void backUpComponentCA(final String tmpOutputDirectory) throws IOException {
-        final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.CA.getDirName());
+        final File dir =
+                createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.CA.getComponentName());
 
         //backup all .property files in the conf folder which are not in CONFIG_FILES
         ImportExportUtilities.copyFiles(confDir, dir, new FilenameFilter(){
@@ -798,7 +868,7 @@ public final class Exporter{
      * @throws IOException if any exception occurs writing the modular assertions to the backup folder
      */
     public void backUpComponentMA(final String tmpOutputDirectory) throws IOException {
-        final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ImageDirectories.MA.getDirName());
+        final File dir = createComponentDir(tmpOutputDirectory, ImportExportUtilities.ComponentType.MA.getComponentName());
 
         //back up all jar files in /opt/SecureSpan/Gateway/runtime/modules/assertions
         ImportExportUtilities.copyFiles(new File(ssgHome, MA_AAR_DIR), dir, new FilenameFilter(){
@@ -821,7 +891,7 @@ public final class Exporter{
             throw new IOException(tmpOutputDirectory + " is not a directory");
         }
         final ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zipFileName));
-        if (stdout != null && verbose) stdout.println("Compressing SecureSpan Gateway image into " + zipFileName);
+        if (stdout != null && isVerbose) stdout.println("Compressing SecureSpan Gateway image into " + zipFileName);
         final StringBuilder sb = new StringBuilder();
         addDir(dirObj, out, tmpOutputDirectory, sb);
 
@@ -920,7 +990,7 @@ public final class Exporter{
             throws IOException {
         final byte[] tmpBuf = new byte[1024];
         final FileInputStream in = new FileInputStream(fileToAdd.getAbsolutePath());
-        if (stdout != null && verbose) stdout.println("\t- " + fileToAdd.getAbsolutePath());
+        if (stdout != null && isVerbose) stdout.println("\t- " + fileToAdd.getAbsolutePath());
         String zipEntryName = fileToAdd.getAbsolutePath();
         if (zipEntryName.startsWith(tmpOutputDirectory)) {
             zipEntryName = zipEntryName.substring(tmpOutputDirectory.length() + 1);
@@ -957,7 +1027,7 @@ public final class Exporter{
             throw new IllegalStateException("Cannot back up database as it is not local");
         }
         try {
-            DBDumpUtil.dump(config, dbTmpOutputDirectory.getAbsolutePath(), stdout, verbose);
+            DBDumpUtil.dump(config, dbTmpOutputDirectory.getAbsolutePath(), stdout, isVerbose);
         } catch (SQLException e) {
             logger.log(Level.INFO, "exception dumping database, possible that the database is not running or credentials " +
                     "are not correct", ExceptionUtils.getDebugException(e));
@@ -1115,10 +1185,36 @@ public final class Exporter{
             }
         }
 
-        //will we use verbose output?
-        if(args.containsKey(VERBOSE.name)) verbose = true;
+        //will we use isVerbose output?
+        if(args.containsKey(VERBOSE.name)) isVerbose = true;
 
-        if(args.containsKey(HALT_ON_FIRST_FAILURE.name)) haltOnFirstFailure = true;
+        if(args.containsKey(HALT_ON_FIRST_FAILURE.name)) isHaltOnFirstFailure = true;
+
+        //determine if we are doing a selective backup
+        isSelectiveBackup = isSelectiveBackup(args);
+
+        //the decision to back up audits can come from the -ia flag or from the audits flag
+        //-ia means backup audits with a full backup
+        //-audits means only audits, or if other components are selected then it meas 'also audits'
+        String auditVal = programFlagsAndValues.get(AUDIT.name);
+        if (auditVal != null && !auditVal.toLowerCase().equals("no") && !auditVal.toLowerCase().equals("false")) {
+            includeAudits = true;
+        }else {
+            includeAudits =  programFlagsAndValues.containsKey("-" + ImportExportUtilities.ComponentType.AUDITS.getComponentName());
+        }
+    }
+
+    /**
+     * If any of the options from ImportExportUtilities.ALL_COMPONENTS) is included in the args, return true
+     * as we are doing a selective backup
+     * @param args program parameters converted to a map of string to their values
+     * @return true if a selective backup should be done, false otherwise
+     */
+    private boolean isSelectiveBackup(final Map<String, String> args){
+        for(CommandLineOption option: ImportExportUtilities.ALL_COMPONENTS){
+            if(args.containsKey(option.name)) return true;
+        }
+        return false;
     }
 
     /**

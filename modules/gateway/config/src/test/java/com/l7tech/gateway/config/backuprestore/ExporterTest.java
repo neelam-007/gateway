@@ -121,6 +121,43 @@ public class ExporterTest {
     }
 
     /**
+     * Selectively backs a test environment with no database or os files included.
+     * After the backup image is created, it is tested for existence and is checked that it is a file and not
+     * a directory.
+     */
+    @Test
+    public void testSelectiveBackupImageCreated() throws IOException,
+            BackupRestoreLauncher.FatalException, BackupRestoreLauncher.InvalidProgramArgumentException {
+        createTestEnvironment();
+
+        final List<String> programArgs = new ArrayList<String>();
+        programArgs.add("export");
+        programArgs.add("-image");
+        String tmpDir = null;
+        try{
+            tmpDir = ImportExportUtilities.createTmpDirectory();
+            final String imageZipFile = tmpDir + File.separator + "image.zip";
+            programArgs.add(imageZipFile);
+            programArgs.add("-ca");
+            programArgs.add("-os");
+            
+            final String[] args = programArgs.toArray(new String[]{});
+            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
+                    ImportExportUtilities.OPT_SECURE_SPAN_APPLIANCE, true);
+            final Exporter.BackupResult result = exporter.createBackupImage(args);
+            Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
+            final String uniqueImageZipFile = result.getBackUpImageName();
+
+            //Check image.zip exists
+            final File checkFile = new File(uniqueImageZipFile);
+            Assert.assertTrue("image.zip should exist in '" + uniqueImageZipFile+"'", checkFile.exists());
+            Assert.assertTrue("'" + uniqueImageZipFile+"' should not be a directory", !checkFile.isDirectory());
+        }finally{
+            if(tmpDir != null) FileUtils.deleteDir(new File(tmpDir));
+        }
+    }
+
+    /**
      * Backup a test environment with no database or os files included. After the backup image is created, it is
      * validated to have backed up the correct files, based on the project's resources
      */
@@ -160,27 +197,27 @@ public class ExporterTest {
             //First the config folder
             Assert.assertTrue(ImportExportUtilities.NODE_PROPERTIES+" should exist in the config folder",
                     fileToFolderMap.get(ImportExportUtilities.NODE_PROPERTIES).equals(
-                            ImportExportUtilities.ImageDirectories.CONFIG.getDirName()));
+                            ImportExportUtilities.ComponentType.CONFIG.getComponentName()));
             Assert.assertTrue(ImportExportUtilities.SSGLOG_PROPERTIES+" should exist in the config folder",
                     fileToFolderMap.get(ImportExportUtilities.SSGLOG_PROPERTIES).equals(
-                            ImportExportUtilities.ImageDirectories.CONFIG.getDirName()));
+                            ImportExportUtilities.ComponentType.CONFIG.getComponentName()));
             Assert.assertTrue(ImportExportUtilities.SYSTEM_PROPERTIES+" should exist in the config folder",
                     fileToFolderMap.get(ImportExportUtilities.SYSTEM_PROPERTIES).equals(
-                            ImportExportUtilities.ImageDirectories.CONFIG.getDirName()));
+                            ImportExportUtilities.ComponentType.CONFIG.getComponentName()));
             Assert.assertTrue(ImportExportUtilities.OMP_DAT+" should exist in the config folder",
                     fileToFolderMap.get(ImportExportUtilities.OMP_DAT).equals(
-                            ImportExportUtilities.ImageDirectories.CONFIG.getDirName()));            
+                            ImportExportUtilities.ComponentType.CONFIG.getComponentName()));
 
             //Custom assertions property files
             Assert.assertTrue("empty.properties should exist in the config folder",
-                    fileToFolderMap.get("empty.properties").equals(ImportExportUtilities.ImageDirectories.CA.getDirName()));
+                    fileToFolderMap.get("empty.properties").equals(ImportExportUtilities.ComponentType.CA.getComponentName()));
             //Custom assertions jar files
             Assert.assertTrue("empty.jar should exist in the config folder",
-                    fileToFolderMap.get("empty.jar").equals(ImportExportUtilities.ImageDirectories.CA.getDirName()));
+                    fileToFolderMap.get("empty.jar").equals(ImportExportUtilities.ComponentType.CA.getComponentName()));
 
             //Modular assertion aar files
             Assert.assertTrue("empty.aar should exist in the config folder",
-                    fileToFolderMap.get("empty.aar").equals(ImportExportUtilities.ImageDirectories.MA.getDirName()));
+                    fileToFolderMap.get("empty.aar").equals(ImportExportUtilities.ComponentType.MA.getComponentName()));
 
             //os files
             //os files retain their complete folder strucutre in the image zip. Their root folder will come after
@@ -188,11 +225,11 @@ public class ExporterTest {
             //in this assertion
             Assert.assertTrue(OS_FILE_TO_COPY+" should exist in the os folder",
                     fileToFolderMap.get(OS_FILE_TO_COPY).equals(
-                            ImportExportUtilities.ImageDirectories.OS.getDirName()+tmpSsgHome));
+                            ImportExportUtilities.ComponentType.OS.getComponentName()+tmpSsgHome));
 
             //confirm pretend os file was copied
             Assert.assertTrue("empty.aar should exist in the config folder",
-                    fileToFolderMap.get("empty.aar").equals(ImportExportUtilities.ImageDirectories.MA.getDirName()));
+                    fileToFolderMap.get("empty.aar").equals(ImportExportUtilities.ComponentType.MA.getComponentName()));
 
             //version
             Assert.assertTrue(ImportExportUtilities.VERSION +" should exist in the zip root folder",
@@ -203,6 +240,86 @@ public class ExporterTest {
             Assert.assertTrue(ImportExportUtilities.MANIFEST_LOG+" should exist in the zip root folder",
                     fileToFolderMap.get(ImportExportUtilities.MANIFEST_LOG) == null
                             && fileToFolderMap.containsKey(ImportExportUtilities.MANIFEST_LOG));
+
+        }finally{
+            if(tmpDir != null) FileUtils.deleteDir(new File(tmpDir));
+        }
+    }
+
+    /**
+     * Selectively backs up a test environment with no database or os files included.
+     * After the backup image is created, it is validated to have backed up the correct components, based on
+     * the program parameters supplied
+     */
+    @Test
+    public void testAndValidateSelectiveBackupImage() throws IOException,
+            BackupRestoreLauncher.FatalException, BackupRestoreLauncher.InvalidProgramArgumentException {
+        createTestEnvironment();
+
+        final List<String> programArgs = new ArrayList<String>();
+        programArgs.add("export");
+        programArgs.add("-image");
+        String tmpDir = null;
+        try{
+            tmpDir = ImportExportUtilities.createTmpDirectory();
+            final String imageZipFile = tmpDir + File.separator + "image.zip";
+            programArgs.add(imageZipFile);
+            programArgs.add("-ca");
+            programArgs.add("-os");
+            
+            final String[] args = programArgs.toArray(new String[]{});
+            final Exporter exporter = new Exporter(tmpSsgHome, System.out,
+                    tmpSsgHome.getAbsolutePath()/*just used for existence check*/, true);
+            final Exporter.BackupResult result = exporter.createBackupImage(args);
+            Assert.assertEquals("Status should be success", result.getStatus(), Exporter.BackupResult.Status.SUCCESS);
+
+            String uniqueImageZipFile = result.getBackUpImageName();
+
+            //Check image.zip exists
+            final File checkFile = new File(uniqueImageZipFile);
+            final ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(checkFile));
+            ZipEntry zipEntry;
+            //fileToFolderMap is a map of the file name from the archive to the folder containing it
+            final Map<String, String> fileToFolderMap = new HashMap<String, String>();
+            final Map<String, String> componentExistenceMap = new HashMap<String, String>();
+            while((zipEntry = zipInputStream.getNextEntry()) != null){
+                final String entryName = zipEntry.getName();
+                fileToFolderMap.put(ImportExportUtilities.getFilePart(entryName), ImportExportUtilities.getDirPart(entryName));
+                String component = ImportExportUtilities.getDirPart(entryName);
+                if(component != null) componentExistenceMap.put(ImportExportUtilities.getDirPart(entryName), null);
+            }
+
+            //Confirm all that we EXPECT are found
+            //Custom assertions property files
+            Assert.assertTrue("empty.properties should exist in the config folder",
+                    fileToFolderMap.get("empty.properties").equals(ImportExportUtilities.ComponentType.CA.getComponentName()));
+            //Custom assertions jar files
+            Assert.assertTrue("empty.jar should exist in the config folder",
+                    fileToFolderMap.get("empty.jar").equals(ImportExportUtilities.ComponentType.CA.getComponentName()));
+
+            Assert.assertTrue(OS_FILE_TO_COPY+" should exist in the os folder",
+                    fileToFolderMap.get(OS_FILE_TO_COPY).equals(
+                            ImportExportUtilities.ComponentType.OS.getComponentName()+tmpSsgHome));
+
+            //version
+            Assert.assertTrue(ImportExportUtilities.VERSION +" should exist in the zip root folder",
+                    fileToFolderMap.get(ImportExportUtilities.VERSION) == null
+                            && fileToFolderMap.containsKey(ImportExportUtilities.VERSION));
+
+            //manifest.log
+            Assert.assertTrue(ImportExportUtilities.MANIFEST_LOG+" should exist in the zip root folder",
+                    fileToFolderMap.get(ImportExportUtilities.MANIFEST_LOG) == null
+                            && fileToFolderMap.containsKey(ImportExportUtilities.MANIFEST_LOG));
+
+            //Now make sure that nothing else was found that was not requrested
+
+            //confirm no config
+            Assert.assertFalse("config should not have been backedup",
+                    componentExistenceMap.containsKey(ImportExportUtilities.ComponentType.CONFIG));
+
+            //confirm no db
+            Assert.assertFalse("maindb should not have been backedup",
+                    componentExistenceMap.containsKey(ImportExportUtilities.ComponentType.MAINDB));
 
         }finally{
             if(tmpDir != null) FileUtils.deleteDir(new File(tmpDir));
@@ -322,42 +439,42 @@ public class ExporterTest {
             exporter.backUpComponentConfig(tmpDir);
 
             //Check config dir exists
-            final File configDir = new File(tmpDir, ImportExportUtilities.ImageDirectories.CONFIG.getDirName());
-            Assert.assertTrue(ImportExportUtilities.ImageDirectories.CONFIG.getDirName() +
+            final File configDir = new File(tmpDir, ImportExportUtilities.ComponentType.CONFIG.getComponentName());
+            Assert.assertTrue(ImportExportUtilities.ComponentType.CONFIG.getComponentName() +
                     " directory should exist in '" + tmpDir+"'", configDir.exists());
-            Assert.assertTrue(ImportExportUtilities.ImageDirectories.CONFIG.getDirName() +
+            Assert.assertTrue(ImportExportUtilities.ComponentType.CONFIG.getComponentName() +
                     " directory should be a directory '" + tmpDir+"'", configDir.isDirectory());
 
             //Test for the individual files
-            final File nodeProp = new File(tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CONFIG.getDirName(),
+            final File nodeProp = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
                     ImportExportUtilities.NODE_PROPERTIES);
             Assert.assertTrue(nodeProp.getName() +
                     " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CONFIG.getDirName()+"'",
+                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName()+"'",
                     nodeProp.exists());
 
-            final File ssgLog = new File(tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CONFIG.getDirName(),
+            final File ssgLog = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
                     ImportExportUtilities.SSGLOG_PROPERTIES);
 
             Assert.assertTrue(ssgLog.getName() +
                     " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CONFIG.getDirName()+"'",
+                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName()+"'",
                     ssgLog.exists());
 
-            final File systemProp = new File(tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CONFIG.getDirName(),
+            final File systemProp = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
                     ImportExportUtilities.SYSTEM_PROPERTIES);
 
             Assert.assertTrue(systemProp.getName() +
                     " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CONFIG.getDirName()+"'",
+                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName()+"'",
                     systemProp.exists());
 
-            final File ompDat = new File(tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CONFIG.getDirName(),
+            final File ompDat = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName(),
                     ImportExportUtilities.OMP_DAT);
 
             Assert.assertTrue(ompDat.getName() +
                     " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CONFIG.getDirName()+"'",
+                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CONFIG.getComponentName()+"'",
                     ompDat.exists());
 
         }finally{
@@ -389,11 +506,11 @@ public class ExporterTest {
             exporter.backUpComponentOS(tmpDir);
 
             //confirm pretend os file was copied
-            final File checkOsFile = new File(tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.OS.getDirName() +
+            final File checkOsFile = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.OS.getComponentName() +
                     File.separator + osFile.getAbsolutePath());
             Assert.assertTrue(checkOsFile.getName() +
                     " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.OS.getDirName()+"'",
+                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.OS.getComponentName()+"'",
                     checkOsFile.exists());
         } finally{
             ResourceUtils.closeQuietly(fos);
@@ -418,26 +535,26 @@ public class ExporterTest {
             exporter.backUpComponentCA(tmpDir);
 
             //Check config dir exists
-            final File configDir = new File(tmpDir, ImportExportUtilities.ImageDirectories.CA.getDirName());
-            Assert.assertTrue(ImportExportUtilities.ImageDirectories.CA.getDirName() +
+            final File configDir = new File(tmpDir, ImportExportUtilities.ComponentType.CA.getComponentName());
+            Assert.assertTrue(ImportExportUtilities.ComponentType.CA.getComponentName() +
                     " directory should exist in '" + tmpDir+"'", configDir.exists());
-            Assert.assertTrue(ImportExportUtilities.ImageDirectories.CA.getDirName() +
+            Assert.assertTrue(ImportExportUtilities.ComponentType.CA.getComponentName() +
                     " directory should be a directory '" + tmpDir+"'", configDir.isDirectory());
 
             //Test for the individual files, based on this project's resources
-            final File nodeProp = new File(tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CA.getDirName(),
+            final File nodeProp = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName(),
                     "empty.properties");
             Assert.assertTrue(nodeProp.getName() +
                     " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CA.getDirName()+"'",
+                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName()+"'",
                     nodeProp.exists());
 
-            final File ssgLog = new File(tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CA.getDirName(),
+            final File ssgLog = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName(),
                     "empty.jar");
 
             Assert.assertTrue(ssgLog.getName() +
                     " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CA.getDirName()+"'",
+                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName()+"'",
                     ssgLog.exists());
         }finally{
             if(tmpDir != null) FileUtils.deleteDir(new File(tmpDir));
@@ -461,26 +578,26 @@ public class ExporterTest {
             exporter.backUpComponentCA(tmpDir);
 
             //Check config dir exists
-            final File configDir = new File(tmpDir, ImportExportUtilities.ImageDirectories.CA.getDirName());
-            Assert.assertTrue(ImportExportUtilities.ImageDirectories.CA.getDirName() +
+            final File configDir = new File(tmpDir, ImportExportUtilities.ComponentType.CA.getComponentName());
+            Assert.assertTrue(ImportExportUtilities.ComponentType.CA.getComponentName() +
                     " directory should exist in '" + tmpDir+"'", configDir.exists());
-            Assert.assertTrue(ImportExportUtilities.ImageDirectories.CA.getDirName() +
+            Assert.assertTrue(ImportExportUtilities.ComponentType.CA.getComponentName() +
                     " directory should be a directory '" + tmpDir+"'", configDir.isDirectory());
 
             //Test for the individual files, based on this project's resources
-            final File nodeProp = new File(tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CA.getDirName(),
+            final File nodeProp = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName(),
                     "empty.properties");
             Assert.assertTrue(nodeProp.getName() +
                     " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CA.getDirName()+"'",
+                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName()+"'",
                     nodeProp.exists());
 
-            final File ssgLog = new File(tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CA.getDirName(),
+            final File ssgLog = new File(tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName(),
                     "empty.jar");
 
             Assert.assertTrue(ssgLog.getName() +
                     " should exist in '" +
-                    tmpDir+File.separator+ ImportExportUtilities.ImageDirectories.CA.getDirName()+"'",
+                    tmpDir+File.separator+ ImportExportUtilities.ComponentType.CA.getComponentName()+"'",
                     ssgLog.exists());
         }finally{
             if(tmpDir != null) FileUtils.deleteDir(new File(tmpDir));

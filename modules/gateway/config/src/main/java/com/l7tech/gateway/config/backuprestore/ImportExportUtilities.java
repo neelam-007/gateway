@@ -52,39 +52,58 @@ public class ImportExportUtilities {
      */
     public static final String OPT_SECURE_SPAN_APPLIANCE = "/opt/SecureSpan/Appliance";
 
-    private static enum ARGUMENT_TYPE {VALID_OPTION, IGNORED_OPTION, INVALID_OPTION, SKIP_OPTION, VALUE}
+    private static enum ARGUMENT_TYPE {VALID_OPTION, IGNORED_OPTION, INVALID_OPTION, VALUE}
     private static final Logger logger = Logger.getLogger(ImportExportUtilities.class.getName());
 
-    //todo [Donal] what is skip processing actually needed for? Program args must always be valid. Remove
-    public static final CommandLineOption SKIP_PRE_PROCESS = new CommandLineOption("-skipPreProcess", "skips pre-processing", false, true);
-    public static final CommandLineOption[] SKIP_OPTIONS = {SKIP_PRE_PROCESS};
+    public static final CommandLineOption OS_OPTION = new CommandLineOption("-"+ ComponentType.OS.getComponentName(),
+            "selectively include the os files for backup (if the appliance is installed)", false, true);
+
+    public static final CommandLineOption CONFIG_OPTION = new CommandLineOption("-"+ ComponentType.CONFIG.getComponentName(),
+            "selectively include the SSG config for backup", false, true);
+
+    public static final CommandLineOption MAINDB_OPTION = new CommandLineOption("-"+ ComponentType.MAINDB.getComponentName(),
+            "selectively include the database for backup (not including audits)", false, true);
+
+    public static final CommandLineOption AUDITS_OPTION = new CommandLineOption("-"+ ComponentType.AUDITS.getComponentName(),
+            "selectively include the database audits for backup", false, true);
+
+    public static final CommandLineOption CA_OPTION = new CommandLineOption("-"+ ComponentType.CA.getComponentName(),
+            "selectively include the custom assertion jars and property files for backup", false, true);
+
+    public static final CommandLineOption MA_OPTION = new CommandLineOption("-"+ ComponentType.MA.getComponentName(),
+            "selectively include the modular assertion jars for backup", false, true);
+
+    public static final CommandLineOption [] ALL_COMPONENTS = new CommandLineOption[]{OS_OPTION, CONFIG_OPTION,
+            MAINDB_OPTION, AUDITS_OPTION, CA_OPTION, MA_OPTION };
 
     /**
-     * ImageDirectories lists all the possible folders which can exist in a Backup image
+     * ComponentType is used for the directory names in the image zip file, and for processing selective
+     * backup component parameters
      */
-    protected enum ImageDirectories {
-        OS("os", "Folder for OS only files"),
-        CONFIG("config", "Folder for SSG only configuration files"),
-        MAINDB("maindb", "Folder for database backup sql file and my.cnf information. No audits ever"),
-        AUDITS("audits", "Folder containing audits zipped file"),
-        CA("ca", "Folder containing Custom Assertion jars and associated property files"),
-        MA("ma", "Folder containing Modular Assertion jars");
+    protected enum ComponentType{
+        OS("os", "Operating System files"),
+        CONFIG("config", "SSG Config"),
+        MAINDB("maindb", "Main database backup sql (no audits) and my.cnf"),
+        AUDITS("audits", "Database audits"),
+        CA("ca", "Custom Assertions"),
+        MA("ma", "Modular Assertions"),
+        VERSION("version", "SSG Version Information");
 
-        private ImageDirectories(String dirName, String description) {
-            this.dirName = dirName;
+        ComponentType(String componentName, String description) {
+            this.componentName = componentName;
             this.description = description;
         }
 
-        String getDirName() {
-            return dirName;
+        public String getComponentName() {
+            return componentName;
         }
 
         public String getDescription() {
             return description;
         }
 
-        private final String dirName;
-        private final String description;
+        private final String componentName;
+        private String description;
     }
 
     /**
@@ -183,10 +202,6 @@ public class ImportExportUtilities {
             final String argument = args[index];
 
             switch (determineArgumentType(argument, validOptions, ignoredOptions)) {
-                case SKIP_OPTION:   //todo [Donal] look at removing this
-                    arguments.put(argument, "");    //skip options does not have values!
-                    index++;
-                    break;
                 case VALID_OPTION:
                     if (optionHasNoValue(argument, validOptions)) {
                         arguments.put(argument, "");
@@ -594,8 +609,6 @@ public class ImportExportUtilities {
                 return ARGUMENT_TYPE.VALID_OPTION;
             else if (isOption(argument, ignoredOptions))
                 return ARGUMENT_TYPE.IGNORED_OPTION;
-            else if (isOption(argument, Arrays.asList(SKIP_OPTIONS)))
-                return ARGUMENT_TYPE.SKIP_OPTION;
             else
                 return ARGUMENT_TYPE.INVALID_OPTION;
         } else {
