@@ -1280,6 +1280,7 @@ public final class Exporter{
         final List<CommandLineOption> allOptList = new ArrayList<CommandLineOption>();
         allOptList.addAll(Arrays.asList(ALLOPTIONS));
         allOptList.addAll(Arrays.asList(ALL_FTP_OPTIONS));
+        allOptList.addAll(Arrays.asList(ImportExportUtilities.ALL_COMPONENTS));
 
         int largestNameStringSize;
         largestNameStringSize = ImportExportUtilities.getLargestNameStringSize(allOptList);
