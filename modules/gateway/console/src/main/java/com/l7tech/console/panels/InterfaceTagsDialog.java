@@ -59,7 +59,7 @@ public class InterfaceTagsDialog extends OkCancelDialog<Set<InterfaceTag>> {
      *                  a single argument: the new value of the interfaceTags cluster property.
      */
     public static void show(Frame parent, Functions.UnaryVoid<String> callback) {
-        doShow(new InterfaceTagsDialog(parent, "Manage Interface Tags", true, loadCurrentInterfaceTagsFromServer(), false), callback);
+        doShow(new InterfaceTagsDialog(parent, "Manage Interfaces", true, loadCurrentInterfaceTagsFromServer(), false), callback);
     }
 
     /**
@@ -72,7 +72,7 @@ public class InterfaceTagsDialog extends OkCancelDialog<Set<InterfaceTag>> {
      *                  a single argument: the new value of the interfaceTags cluster property.
      */
     public static void show(Dialog parent, Functions.UnaryVoid<String> callback) {
-        doShow(new InterfaceTagsDialog(parent, "Manage Interface Tags", true, loadCurrentInterfaceTagsFromServer(), false), callback);
+        doShow(new InterfaceTagsDialog(parent, "Manage Interfaces", true, loadCurrentInterfaceTagsFromServer(), false), callback);
     }
 
     private static void reportError(String title, String message, Throwable t) {
@@ -101,13 +101,13 @@ public class InterfaceTagsDialog extends OkCancelDialog<Set<InterfaceTag>> {
                         if (callback != null)
                             callback.call(stringForm);
                     } catch (SaveException e) {
-                        reportError("Unable to Save Interface Tags", "Unable to save interface tags", e);
+                        reportError("Unable to Save Interface Tags", "Unable to save interface", e);
                     } catch (UpdateException e) {
-                        reportError("Unable to Save Interface Tags", "Unable to save interface tags", e);
+                        reportError("Unable to Save Interface Tags", "Unable to save interface", e);
                     } catch (DeleteException e) {
-                        reportError("Unable to Save Interface Tags", "Unable to save interface tags", e);
+                        reportError("Unable to Save Interface Tags", "Unable to save interface", e);
                     } catch (FindException e) {
-                        reportError("Unable to Save Interface Tags", "Unable to save interface tags", e);
+                        reportError("Unable to Save Interface Tags", "Unable to save interface", e);
                     }
                 }
             }
@@ -121,10 +121,10 @@ public class InterfaceTagsDialog extends OkCancelDialog<Set<InterfaceTag>> {
                 return Collections.emptySet();
             return InterfaceTag.parseMultiple(property.getValue());
         } catch (FindException e) {
-            reportError("Unable to Load Interface Tags", "Unable to load interface tags", e);
+            reportError("Unable to Load Interface Tags", "Unable to load interface", e);
             return Collections.emptySet();
         } catch (ParseException e) {
-            reportError("Unable to Load Interface Tags", "Unable to load interface tags", e);
+            reportError("Unable to Load Interface Tags", "Unable to load interface", e);
             return Collections.emptySet();
         }
     }

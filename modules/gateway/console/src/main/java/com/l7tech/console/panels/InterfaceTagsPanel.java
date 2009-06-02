@@ -33,6 +33,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
     private JButton deleteTagButton;
     private JButton addAddressButton;
     private JButton removeAddressButton;
+    private JButton editAddressButton;
     private JList tagList;
     private SortedListModel<InterfaceTag> tagListModel;
     private JList patternList;
@@ -64,7 +65,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
             final TransportAdmin transportAdmin = Registry.getDefault().getTransportAdmin();
             connectors = transportAdmin == null ? Collections.<SsgConnector>emptyList() : transportAdmin.findAllSsgConnectors();
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to load connector list to check if interface tag is in use: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, "Unable to load connector list to check if interface is in use: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             connectors = Collections.emptyList();
         }
 
@@ -92,11 +93,18 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
         });
         populatePatternList(null);
 
+        Utilities.enableGrayOnDisabled(patternList);
+        patternList.addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                updateEnableState();
+            }
+        });
+
         createTagButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 promptForInterfaceName(new Functions.UnaryVoid<String>() {
                     public void call(final String interfaceName) {
-                        promptForAddressPattern(new Functions.UnaryVoid<String>() {
+                        promptForAddressPattern(null, new Functions.UnaryVoid<String>() {
                             public void call(String addressPattern) {
                                 final InterfaceTag added = new InterfaceTag(interfaceName, new LinkedHashSet<String>(Arrays.asList(addressPattern)));
                                 tagListModel.add(added);
@@ -129,7 +137,10 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
                 if (tag == null)
                     return;
 
-                promptForAddressPattern(new Functions.UnaryVoid<String>() {
+                if (warnIfInUse(tag))
+                    return;
+
+                promptForAddressPattern(null, new Functions.UnaryVoid<String>() {
                     public void call(String address) {
                         tag.getIpPatterns().add(address);
                         populatePatternList(tag);
@@ -157,15 +168,43 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
             }
         });
 
+        editAddressButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                final InterfaceTag tag = getSelectedTag();
+                if (tag == null)
+                    return;
+
+                final String oldAddress = getSelectedAddress();
+                if (oldAddress == null)
+                    return;
+
+                if (warnIfInUse(tag))
+                    return;
+
+                promptForAddressPattern(oldAddress, new Functions.UnaryVoid<String>() {
+                    public void call(String address) {
+                        if (oldAddress.equals(address))
+                            return;
+                        tag.getIpPatterns().remove(oldAddress);
+                        tag.getIpPatterns().add(address);
+                        populatePatternList(tag);
+                        patternList.setSelectedValue(address, true);
+                    }
+                });
+            }
+        });
+
         add(mainPanel, BorderLayout.CENTER);
+        updateEnableState();
     }
 
     private boolean warnIfInUse(InterfaceTag tag) {
         SsgConnector connector = getFirstConnectorUsingTag(tag.getName());
         if (connector != null) {
             DialogDisplayer.showMessageDialog(this,
-                    "The specified interface tag is currently in use by the listen port named " + connector.getName(),
-                    "Unable to Remove In-Use Interface Tag", null);
+                    "Unable to Change or Remove In-Use Interface",
+                    "The specified interface is currently in use by the listen port named " + connector.getName(),
+                    null);
             return true;
         }
         return false;
@@ -179,13 +218,13 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
     }
 
     private void promptForInterfaceName(final Functions.UnaryVoid<String> nameUser) {
-        DialogDisplayer.showInputDialog(InterfaceTagsPanel.this, "Please enter a name for the new interface tag.", "Interface Tag Name", 0, null, null, null, new DialogDisplayer.InputListener() {
+        DialogDisplayer.showInputDialog(InterfaceTagsPanel.this, "Please enter a name for the new interface.", "Interface Name", JOptionPane.PLAIN_MESSAGE, null, null, null, new DialogDisplayer.InputListener() {
             public void reportResult(Object option) {
                 if (option == null || option.toString().length() < 1)
                     return;
                 final String name = option.toString();
                 if (!InterfaceTag.isValidName(name)) {
-                    DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "An interface tag name must start with a letter or underscore, and can contain only ASCII letters, uderscores, or numbers.",
+                    DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "An interface name must start with a letter or underscore, and can contain only ASCII letters, uderscores, or numbers.",
                             "Invalid Interface Tag Name", JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
@@ -194,8 +233,8 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
         });
     }
 
-    private void promptForAddressPattern(final Functions.UnaryVoid<String> patternUser) {
-        DialogDisplayer.showInputDialog(InterfaceTagsPanel.this, "Please enter an address pattern.", "Address Pattern", 0, null, null, null, new DialogDisplayer.InputListener() {
+    private void promptForAddressPattern(String initialValue, final Functions.UnaryVoid<String> patternUser) {
+        DialogDisplayer.showInputDialog(InterfaceTagsPanel.this, "Please enter an address pattern.", "Address Pattern", JOptionPane.PLAIN_MESSAGE, null, null, initialValue, new DialogDisplayer.InputListener() {
             public void reportResult(Object option) {
                 if (option == null || option.toString().length() < 1)
                     return;
@@ -222,6 +261,20 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
             patternList.setListData(tag.getIpPatterns().toArray());
         else
             patternList.setListData(new Object[0]);
+        updateEnableState();
+    }
+
+    private void updateEnableState() {
+        boolean haveTag = getSelectedTag() != null;
+        boolean haveAddress = getSelectedAddress() != null;
+
+        deleteTagButton.setEnabled(haveTag);
+        addAddressButton.setEnabled(haveTag);
+        patternList.setEnabled(haveTag);
+
+        removeAddressButton.setEnabled(haveTag && haveAddress);
+        editAddressButton.setEnabled(haveTag && haveAddress);
+
         checkSyntax();
         checkSemantic();
     }
