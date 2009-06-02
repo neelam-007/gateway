@@ -309,17 +309,14 @@ public class CertManagerWindow extends JDialog {
                 List<X509Certificate> reverseCertificateChain = Arrays.asList(certificateChain);
                 Collections.reverse( reverseCertificateChain );
                 boolean first = true;
-                Collection<String> targetCertDupe = Collections.emptyList(); // we only care if the last is a dupe
                 for ( X509Certificate certificate : reverseCertificateChain ) {
-                    targetCertDupe = new ArrayList<String>();
                     boolean isTrustAnchor = false;
                     if ( first ) {
                         isTrustAnchor =  importAsTrustAnchor;
                         first = false;
                     }
-                    saveCert( certificate, isTrustAnchor, targetCertDupe, errorCerts, importedCertificateThumprints );
+                    saveCert( certificate, isTrustAnchor, duplicateCerts, errorCerts, importedCertificateThumprints );
                 }
-                duplicateCerts.addAll( targetCertDupe );
             } else {
                 saveCert( certificateChain[0], importAsTrustAnchor, duplicateCerts, errorCerts, importedCertificateThumprints );
             }
