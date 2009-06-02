@@ -2,7 +2,6 @@ package com.l7tech.external.assertions.wsaddressing;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
-import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.policy.variable.DataType;
@@ -230,12 +229,9 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
                     sb.append("signed ");
                 }
 
-                sb.append("WS-Addressing in ");
-                sb.append(addressingAssertion.getTargetName());
+                sb.append("WS-Addressing");
 
-                sb.append(SecurityHeaderAddressableSupport.getActorSuffix(addressingAssertion));
-
-                return sb.toString();
+                return AssertionUtils.decorateName(addressingAssertion, sb);
             }
         });
 

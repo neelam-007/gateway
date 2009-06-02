@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.TargetMessageType;
 
 import javax.swing.*;
+import javax.swing.event.DocumentListener;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
@@ -36,9 +37,10 @@ public class TargetMessagePanel extends JPanel {
     private JComponent otherExtra;
 
     private final RunOnChangeListener listener = new RunOnChangeListener(new Runnable() {
+        @Override
         public void run() {
             enableDisable();
-            final boolean valid = !otherRadioButton.isSelected() || otherMessageVariableTextfield.getText().trim().length() > 0;
+            final boolean valid = isValidTarget();
             firePropertyChange("valid", null, valid);
             if (valid) {
                 final ActionEvent event = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "updated", 0);
@@ -111,6 +113,10 @@ public class TargetMessagePanel extends JPanel {
             default:
                 throw new IllegalArgumentException();
         }
+    }
+
+    public boolean isValidTarget() {
+        return !otherRadioButton.isSelected() || otherMessageVariableTextfield.getText().trim().length() > 0;
     }
 
     protected void initComponents() {
@@ -217,6 +223,17 @@ public class TargetMessagePanel extends JPanel {
 
         model.setTarget(type);
         model.setOtherTargetMessageVariable(var);
+    }
+
+    public void addDocumentListener( final DocumentListener documentListener ) {
+        otherMessageVariableTextfield.getDocument().addDocumentListener( documentListener );
+
+        if ( documentListener instanceof ActionListener ) {
+            ActionListener al = (ActionListener) documentListener;
+            requestRadioButton.addActionListener(al);
+            responseRadioButton.addActionListener(al);
+            otherRadioButton.addActionListener(al);
+        }
     }
 
     public void addActionListener(ActionListener l) {

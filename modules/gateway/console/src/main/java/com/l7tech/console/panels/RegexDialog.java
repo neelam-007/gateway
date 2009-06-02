@@ -4,6 +4,7 @@ import com.l7tech.console.event.BeanEditSupport;
 import com.l7tech.gui.util.PauseListener;
 import com.l7tech.gui.util.TextComponentPauseListenerManager;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.widgets.SquigglyTextArea;
 import com.l7tech.policy.assertion.Regex;
 import com.l7tech.policy.assertion.TargetMessageType;
@@ -83,17 +84,27 @@ public class RegexDialog extends JDialog {
         matchAndReplaceRadioButton.setToolTipText("If the pattern matches, replace the match with the replacement expression, then proceed to process the message");
 
         final ItemListener radioButtonListener = new ItemListener() {
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 updateReplaceState();
                 doTest();
             }
         };
 
+        RunOnChangeListener buttonStateUpdateListener = new RunOnChangeListener( new Runnable(){
+            @Override
+            public void run() {
+                updateEnabledState();
+            }
+        } );
+
+        targetMessagePanel.addDocumentListener( buttonStateUpdateListener );
         proceedIfMatchRadioButton.addItemListener(radioButtonListener);
         matchAndReplaceRadioButton.addItemListener(radioButtonListener);
         proceedIfNoMatchRadioButton.addItemListener(radioButtonListener);
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
                 beanEditSupport.fireCancelled(regexAssertion);
@@ -101,6 +112,7 @@ public class RegexDialog extends JDialog {
         });
 
         okButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
                 viewToModel();
@@ -110,20 +122,26 @@ public class RegexDialog extends JDialog {
         });
 
         regexTextArea.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void insertUpdate(DocumentEvent e) { chk(); }
+            @Override
             public void removeUpdate(DocumentEvent e) { chk(); }
+            @Override
             public void changedUpdate(DocumentEvent e) { chk(); }
 
             private void chk() {
                 updatePattern();
-                okButton.setEnabled(!readOnly && pattern != null);
+                updateEnabledState();
                 doTest();
             }
         });
 
         DocumentListener doTestListener = new DocumentListener() {
+            @Override
             public void insertUpdate(DocumentEvent e) { doTest(); }
+            @Override
             public void removeUpdate(DocumentEvent e) { doTest(); }
+            @Override
             public void changedUpdate(DocumentEvent e) { doTest(); }
         };
         replaceTextArea.getDocument().addDocumentListener(doTestListener);
@@ -132,6 +150,7 @@ public class RegexDialog extends JDialog {
         testResultTextPane.setEditable(false);
         testResultTextPane.setFont(testInputTextArea.getFont());
         TextComponentPauseListenerManager.registerPauseListener(regexTextArea, new PauseListener() {
+            @Override
             public void textEntryPaused(JTextComponent component, long msecs) {
                 updatePattern();
                 if (empty(regexTextArea)) {
@@ -148,12 +167,14 @@ public class RegexDialog extends JDialog {
                 }
             }
 
+            @Override
             public void textEntryResumed(JTextComponent component) {
 
             }
         }, 700);
 
         caseInsensitivecheckBox.addItemListener(new ItemListener() {
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 updatePattern();
                 doTest();
@@ -171,6 +192,7 @@ public class RegexDialog extends JDialog {
         mimePartSpinner.setValue(mimePartIndex);
 
         ItemListener encodingRadioListener = new ItemListener() {
+            @Override
             public void itemStateChanged(ItemEvent e) {
                 updateEncodingEnabledState();
             }
@@ -199,7 +221,11 @@ public class RegexDialog extends JDialog {
         updateEncodingEnabledState();
         updateReplaceState();
         updatePattern();
-        okButton.setEnabled(!readOnly && pattern != null);
+        updateEnabledState();
+    }
+
+    private void updateEnabledState() {
+        okButton.setEnabled( !readOnly && pattern != null && targetMessagePanel.isValidTarget() );
     }
 
     private void updateEncodingEnabledState() {

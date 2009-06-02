@@ -113,33 +113,40 @@ public class NcesDecoratorAssertion
         this.samlAssertionTemplate = samlAssertionTemplate;
     }
 
+    @Override
     public String[] getVariablesUsed() {
         List<String> vars = new ArrayList<String>();
         vars.addAll(Arrays.asList(super.getVariablesUsed()));
         if (samlIncluded && samlAssertionTemplate != null) vars.addAll(Arrays.asList(Syntax.getReferencedNames(samlAssertionTemplate)));
-        return vars.toArray(new String[0]);
+        return vars.toArray(new String[vars.size()]);
     }
 
+    @Override
     public boolean isUsesDefaultKeyStore() {
         return usesDefaultKeystore;
     }
 
+    @Override
     public void setUsesDefaultKeyStore(boolean usesDefault) {
         this.usesDefaultKeystore = usesDefault;
     }
 
+    @Override
     public long getNonDefaultKeystoreId() {
         return nonDefaultKeystoreId;
     }
 
+    @Override
     public void setNonDefaultKeystoreId(long nonDefaultId) {
         this.nonDefaultKeystoreId = nonDefaultId;
     }
 
+    @Override
     public String getKeyAlias() {
         return keyAlias;
     }
 
+    @Override
     public void setKeyAlias(String keyid) {
         this.keyAlias = keyid;
     }
@@ -172,6 +179,7 @@ public class NcesDecoratorAssertion
         this.deferDecoration = deferDecoration;
     }
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
@@ -189,7 +197,7 @@ public class NcesDecoratorAssertion
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.ncesdeco.console.NcesDecoratorAssertionPropertiesDialog");
-        meta.put(AssertionMetadata.POLICY_NODE_CLASSNAME, "com.l7tech.external.assertions.ncesdeco.console.NcesDecoratorPolicyNode");
+        meta.put(AssertionMetadata.POLICY_NODE_NAME, "Add NCES Elements");
 
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
         )));

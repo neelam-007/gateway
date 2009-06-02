@@ -4,9 +4,12 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.XslTransformationPropertiesAction;
+import com.l7tech.console.action.SelectMessageTargetAction;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.assertion.AssertionUtils;
 
 import javax.swing.*;
+import java.util.*;
 
 /**
  * Policy tree node for XSL Transformation Assertion.
@@ -16,16 +19,18 @@ public class XslTransformationTreeNode extends LeafAssertionTreeNode<XslTransfor
         super(assertion);
     }
 
+    @Override
     public String getName() {
-        StringBuilder nodeName = new StringBuilder("XSL transform " + assertion.getTargetName());
+        StringBuilder nodeName = new StringBuilder("XSL transform");
 
         final String tname = assertion.getTransformName();
         if (tname != null && tname.length() > 0 && tname.trim().length() > 0) {
             nodeName.append(" - ").append(tname);
         }
-        return nodeName.toString();
+        return AssertionUtils.decorateName(assertion, nodeName);
     }
 
+    @Override
     protected String iconResource(boolean open) {
         // todo, a special icon for this assertion?
         return "com/l7tech/console/resources/xmlsignature.gif";
@@ -36,7 +41,23 @@ public class XslTransformationTreeNode extends LeafAssertionTreeNode<XslTransfor
      *
      * @return <code>null</code> indicating there should be none default action
      */
+    @Override
     public Action getPreferredAction() {
         return new XslTransformationPropertiesAction(this);
     }
+    
+    @Override
+    public Action[] getActions() {
+        List<Action> actions = new ArrayList<Action>( Arrays.asList(super.getActions()) );
+
+        int insertPosition = 1;
+        if ( getPreferredAction()==null ) {
+            insertPosition = 0;
+        }
+
+        actions.add( insertPosition, new SelectMessageTargetAction(this));
+
+        return actions.toArray(new Action[actions.size()]);
+    }
+
 }

@@ -4,13 +4,15 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.SchemaValidationPropertiesAction;
+import com.l7tech.console.action.SelectMessageTargetAction;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.AssertionUtils;
 
 import javax.swing.*;
-import java.text.MessageFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.*;
 
 /**
  * Policy tree node for Schema Validation Assertion.
@@ -20,14 +22,12 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode<SchemaValida
         super(assertion);
     }
 
+    @Override
     public String getName() {
-        if (assertion.getTarget() == null) {
-            return "[Validate Message's Schema]";
-        } else {
-            return MessageFormat.format("[Validate {0}''s Schema]", assertion.getTargetName());
-        }
+        return AssertionUtils.decorateName(assertion, "Validate Schema");
     }
 
+    @Override
     protected String iconResource(boolean open) {
         // todo, a special icon for this assertion?
         return "com/l7tech/console/resources/xmlsignature.gif";
@@ -38,6 +38,7 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode<SchemaValida
      *
      * @return <code>null</code> indicating there should be none default action
      */
+    @Override
     public Action getPreferredAction() {
         try {
             return new SchemaValidationPropertiesAction(this, getService());
@@ -45,6 +46,20 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode<SchemaValida
             log.log(Level.WARNING, "cannot get service", e);
         }
         return null;
+    }
+
+    @Override
+    public Action[] getActions() {
+        List<Action> actions = new ArrayList<Action>( Arrays.asList(super.getActions()) );
+
+        int insertPosition = 1;
+        if ( getPreferredAction()==null ) {
+            insertPosition = 0;
+        }
+
+        actions.add( insertPosition, new SelectMessageTargetAction(this));
+
+        return actions.toArray(new Action[actions.size()]);
     }
 
     private final Logger log = Logger.getLogger(getClass().getName());
