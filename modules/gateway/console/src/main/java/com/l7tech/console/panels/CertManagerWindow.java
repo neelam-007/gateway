@@ -35,6 +35,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -283,6 +284,7 @@ public class CertManagerWindow extends JDialog {
                                      final Collection<X509Certificate[]> certificates,
                                      final Collection<String> duplicateCerts,
                                      final Collection<String> errorCerts ) {
+        final Collection<String> importedCertificateThumprints = new ArrayList<String>();
         for ( X509Certificate[] certificateChain : certificates ) {
             if ( Thread.interrupted() ) break;
 
@@ -298,13 +300,17 @@ public class CertManagerWindow extends JDialog {
                         isTrustAnchor =  importAsTrustAnchor;
                         first = false;
                     }
-                    saveCert( certificate, isTrustAnchor, targetCertDupe, errorCerts );
+                    saveCert( certificate, isTrustAnchor, targetCertDupe, errorCerts, importedCertificateThumprints );
                 }
                 duplicateCerts.addAll( targetCertDupe );
             } else {
-                saveCert( certificateChain[0], importAsTrustAnchor, duplicateCerts, errorCerts );
+                saveCert( certificateChain[0], importAsTrustAnchor, duplicateCerts, errorCerts, importedCertificateThumprints );
             }
         }
+    }
+
+    private String describeCertificate( X509Certificate certificate ) {
+        return certificate.getSubjectX500Principal().getName();
     }
 
     private void handleImportResult( final Collection<String> duplicateCerts,
@@ -354,30 +360,42 @@ public class CertManagerWindow extends JDialog {
     private void saveCert( final X509Certificate certificate,
                            final boolean isTrustAnchor,
                            final Collection<String> duplicateCerts,
-                           final Collection<String> errorCerts ) {
+                           final Collection<String> errorCerts,
+                           final Collection<String> importedCertificateThumprints ) {
 
-        TrustedCert cert = new TrustedCert();
-        String name = CertUtils.extractFirstCommonNameFromCertificate( certificate );
-        if ( name == null ) {
-            name = certificate.getSubjectX500Principal().getName().trim();   
-        } else {
-            name = name.trim();
-        }
-        cert.setName( name );
-        cert.setCertificate( certificate );
-        cert.setTrustAnchor( isTrustAnchor );
-
+        String thumprint = null;
         try {
-            getTrustedCertAdmin().saveCert( cert );
-        } catch ( DuplicateObjectException doe ) {
-            duplicateCerts.add( certificate.getSubjectX500Principal().getName() );
-        } catch ( ObjectModelException e) {
-            errorCerts.add( certificate.getSubjectX500Principal().getName() );
+            thumprint = CertUtils.getThumbprintSHA1( certificate );
+        } catch (CertificateEncodingException e) {
+            errorCerts.add( describeCertificate( certificate ) );
             logger.log( Level.WARNING, "Certificate import failed", e);
-        } catch ( VersionException e) {
-            // doesn't happen for new certs
-            errorCerts.add( certificate.getSubjectX500Principal().getName() );
-            logger.log( Level.WARNING, "Certificate import failed", e);
+        }
+
+        if ( thumprint != null && !importedCertificateThumprints.contains(thumprint) ) {
+            TrustedCert cert = new TrustedCert();
+            String name = CertUtils.extractFirstCommonNameFromCertificate( certificate );
+            if ( name == null ) {
+                name = certificate.getSubjectX500Principal().getName().trim();
+            } else {
+                name = name.trim();
+            }
+            cert.setName( name );
+            cert.setCertificate( certificate );
+            cert.setTrustAnchor( isTrustAnchor );
+
+            try {
+                getTrustedCertAdmin().saveCert( cert );
+                importedCertificateThumprints.add( thumprint );
+            } catch ( DuplicateObjectException doe ) {
+                duplicateCerts.add( describeCertificate( certificate ) );
+            } catch ( ObjectModelException e) {
+                errorCerts.add( describeCertificate( certificate ) );
+                logger.log( Level.WARNING, "Certificate import failed", e);
+            } catch ( VersionException e) {
+                // doesn't happen for new certs
+                errorCerts.add( describeCertificate( certificate ) );
+                logger.log( Level.WARNING, "Certificate import failed", e);
+            }
         }
     }
 
