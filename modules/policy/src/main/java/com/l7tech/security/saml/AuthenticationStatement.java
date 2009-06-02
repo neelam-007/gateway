@@ -29,8 +29,7 @@ public class AuthenticationStatement extends SubjectStatement {
         this.authenticationMethod = overrideAuthnMethodUri != null
             ? overrideAuthnMethodUri
             : mapAuthMethod(credentials.getCredentialSourceAssertion());
-        long when = credentials.getAuthInstant();
-        if (when == 0) when = System.currentTimeMillis();
+        long when = System.currentTimeMillis();
         this.authenticationInstant.setTime(new Date(when));
     }
 

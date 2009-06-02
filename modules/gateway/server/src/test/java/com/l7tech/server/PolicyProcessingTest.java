@@ -112,8 +112,8 @@ public class PolicyProcessingTest extends TestCase {
         {"/x509token", "POLICY_wss_x509credssignedbody.xml"},
         {"/multiplesignatures", "POLICY_multiplesignatures.xml"},
         {"/multiplesignaturesnoid", "POLICY_multiplesignature_noidentity.xml"},
-//        {"/wssDecoration1", "POLICY_requestdecoration1.xml"},
-//        {"/wssDecoration2", "POLICY_requestdecoration2.xml"},
+        {"/wssDecoration1", "POLICY_requestdecoration1.xml"},
+        {"/wssDecoration2", "POLICY_requestdecoration2.xml"},
         {"/threatprotections", "POLICY_threatprotections.xml"}
     };
 
@@ -559,27 +559,25 @@ public class PolicyProcessingTest extends TestCase {
         processMessage("/x509token", new String(loadResource("REQUEST_multiplesignatures.xml")), 400);
     }
 
-// TODO [steve] enable tests when decoration assertion is added
-//
-//    /**
-//     * Test success on applying a signature to the request message using the WssDecoration assertion.
-//     */
-//    public void testDecorationCommitOnRequest() throws Exception {
-//        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
-//        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
-//        testingHttpClientFactory.setMockHttpClient(mockClient);
-//        processMessage("/wssDecoration1", new String(loadResource("REQUEST_general.xml")), 0);
-//    }
-//
-//    /**
-//     * Test success on adding a signature that endorses an existing signature from the request
-//     */
-//    public void testEndorsingRequest() throws Exception {
-//        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
-//        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
-//        testingHttpClientFactory.setMockHttpClient(mockClient);
-//        processMessage("/wssDecoration2", new String(loadResource("REQUEST_decoration2.xml")), 0);
-//    }
+    /**
+     * Test success on applying a signature to the request message using the WssDecoration assertion.
+     */
+    public void testDecorationCommitOnRequest() throws Exception {
+        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/wssDecoration1", new String(loadResource("REQUEST_general.xml")), 0);
+    }
+
+    /**
+     * Test success on adding a signature that endorses an existing signature from the request
+     */
+    public void testEndorsingRequest() throws Exception {
+        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        processMessage("/wssDecoration2", new String(loadResource("REQUEST_decoration2.xml")), 0);
+    }
 
     /**
      * Test running threat protections for request, variable and response messages

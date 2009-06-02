@@ -103,7 +103,7 @@ public class IdentityTargetSelectorValidatedPanel extends ValidatedPanel<Identit
 
         if ( descriptionCache.containsKey( identityTarget ) ) {
             description = descriptionCache.get( identityTarget );
-        } else if ( identityTarget.getIdentityProviderOid() != 0 && identityTarget.getTargetIdentityType() != null ) {
+        } else if ( identityTarget.getTargetIdentityType() != null ) {
             try {
                 final StringBuilder descriptionBuilder = new StringBuilder();
 
@@ -129,6 +129,10 @@ public class IdentityTargetSelectorValidatedPanel extends ValidatedPanel<Identit
                     case PROVIDER:
                         descriptionBuilder.append("Identity Provider: ");
                         descriptionBuilder.append(providerName);
+                        break;
+                    case TAG:
+                        descriptionBuilder.append("Identity Tag: ");
+                        descriptionBuilder.append(identityTarget.getIdentityId());
                         break;
                 }
 

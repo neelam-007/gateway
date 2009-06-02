@@ -11,6 +11,7 @@ import com.l7tech.identity.ldap.LdapIdentity;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -27,6 +28,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -533,33 +535,26 @@ public class ServerVariables {
                 return null;
             }
         }),
-        //TODO [steve] add new WSS variables and deprecate these (and update to only work for single cert credential)
+        //TODO [steve] add new WSS variables and deprecate these
         new Variable("request.wss.signingcertificate", new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
-                List<LoginCredentials> allCreds = context.getAuthenticationContext(context.getRequest()).getCredentials();
-                for (LoginCredentials creds : allCreds) {
-                    if (creds != null  && creds.getFormat().isClientCert() && creds.getCredentialSourceAssertion() == RequestWssX509Cert.class) {
-                        //can only have one credential of a particular type per ProcessingContext, so this must be it
-                        return creds.getClientCert();
-                    }
-                }
-                return null;
+                return getOnlyOneClientCertificateForSource(
+                        context.getAuthenticationContext(context.getRequest()).getCredentials(),
+                        RequestWssX509Cert.class );
             }
         }),
         new Variable("request.wss.signingcertificate.base64", new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
-                List<LoginCredentials> allCreds = context.getAuthenticationContext(context.getRequest()).getCredentials();
-                for (LoginCredentials creds : allCreds) {
-                    if (creds != null  && creds.getFormat().isClientCert() && creds.getCredentialSourceAssertion() == RequestWssX509Cert.class) {
-                        //can only have one credential of a particular type per ProcessingContext, so this must be it
-                        try {
-                            return HexUtils.encodeBase64(creds.getClientCert().getEncoded(), true);//strip whitespaces
-                        } catch (Exception e) {
-                            logger.log(Level.SEVERE, "Error getting base64 value.", e);
-                            return null;
-                        }
+                final X509Certificate certificate = getOnlyOneClientCertificateForSource(
+                        context.getAuthenticationContext(context.getRequest()).getCredentials(),
+                        RequestWssX509Cert.class );
+                if ( certificate != null ) {
+                    try {
+                        return HexUtils.encodeBase64(certificate.getEncoded(), true);//strip whitespaces
+                    } catch (Exception e) {
+                        logger.log(Level.SEVERE, "Error getting base64 value.", e);
                     }
                 }
                 return null;
@@ -568,16 +563,14 @@ public class ServerVariables {
         new Variable("request.wss.signingcertificate.pem", new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
-                List<LoginCredentials> allCreds = context.getAuthenticationContext(context.getRequest()).getCredentials();
-                for (LoginCredentials creds : allCreds) {
-                    if (creds != null  && creds.getFormat().isClientCert() && creds.getCredentialSourceAssertion() == RequestWssX509Cert.class) {
-                        //can only have one credential of a particular type per ProcessingContext, so this must be it
-                        try {
-                            return CertUtils.encodeAsPEM(creds.getClientCert());
-                        } catch (Exception e) {
-                            logger.log(Level.SEVERE, "Error getting certificate's PEM value.", e);
-                            return null;
-                        }
+                final X509Certificate certificate = getOnlyOneClientCertificateForSource(
+                        context.getAuthenticationContext(context.getRequest()).getCredentials(),
+                        RequestWssX509Cert.class );
+                if ( certificate != null ) {
+                    try {
+                        return CertUtils.encodeAsPEM(certificate);
+                    } catch (Exception e) {
+                        logger.log(Level.SEVERE, "Error getting certificate's PEM value.", e);
                     }
                 }
                 return null;
@@ -590,6 +583,23 @@ public class ServerVariables {
             }
         }),
     };
+
+    private static X509Certificate getOnlyOneClientCertificateForSource( final List<LoginCredentials> credentials,
+                                                                         final Class<? extends Assertion> assertionClass ) {
+        X509Certificate certificate = null;
+
+        for ( LoginCredentials credential : credentials ) {
+            if ( credential != null && credential.getFormat().isClientCert() && credential.getCredentialSourceAssertion() == assertionClass ) {
+                if ( certificate != null ) {
+                    certificate = null; // multiple certificates not supported here
+                    break;
+                }
+                certificate = credential.getClientCert();
+            }
+        }
+
+        return certificate;
+    }
 
     private static String getRequestRemoteIp(Message request) {
         TcpKnob tk = request.getKnob(TcpKnob.class);

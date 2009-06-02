@@ -37,16 +37,6 @@ public class Auditor implements Audit {
     }
 
     /**
-     * Create an Auditor that will only log.
-     *
-     * @param source  source object for audit events.  Required.
-     * @param logger  logger to which details will be written.
-     */
-    public Auditor(Object source, Logger logger) {
-        this(source, null, null, null, logger);
-    }
-
-    /**
      * Create an Auditor that will send details to the audit context and to the specified logger.
      *
      * @param source  source object for audit events.  Required.
@@ -103,6 +93,7 @@ public class Auditor implements Audit {
         this.formatter = new AuditLogFormatter();
     }
 
+    @Override
     public void logAndAudit(AuditDetailMessage msg, String[] params, Throwable e) {
         if ( eventPub != null && (filter == null || filter.isAuditable(msg)) )
             eventPub.publishEvent(new AuditDetailEvent(source, new AuditDetail(msg, params == null ? null : params, e), e));
@@ -112,10 +103,12 @@ public class Auditor implements Audit {
         log(msg, params, e);
     }
 
+    @Override
     public void logAndAudit(AuditDetailMessage msg, String... params) {
         logAndAudit(msg, params, null);
     }
 
+    @Override
     public void logAndAudit(AuditDetailMessage msg) {
         logAndAudit(msg, null, null);
     }

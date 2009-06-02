@@ -277,17 +277,19 @@ public class SoapUtil extends SoapConstants {
         return SyspropUtil.getBoolean(PROPERTY_MUSTUNDERSTAND, true);
     }
 
-    public static Element makeSecurityElement(Document soapMsg, String preferredWsseNamespace, String actor, boolean mustUnderstand) {
+    public static Element makeSecurityElement(Document soapMsg, String preferredWsseNamespace, String actor, Boolean mustUnderstand) {
         Element header = getOrMakeHeader(soapMsg);
         Element securityEl = soapMsg.createElementNS(preferredWsseNamespace, SECURITY_EL_NAME);
         securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
         securityEl.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:" + SECURITY_NAMESPACE_PREFIX, preferredWsseNamespace);
 
         boolean isSoap12 = SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(soapMsg.getDocumentElement().getNamespaceURI());
-        if(isSoap12) {
-            setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, mustUnderstand ? "true" : "false");
-        } else {
-            setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, mustUnderstand ? "1" : "0");
+        if ( mustUnderstand != null ) {
+            if(isSoap12) {
+                setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, mustUnderstand ? "true" : "false");
+            } else {
+                setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, mustUnderstand ? "1" : "0");
+            }
         }
         if (actor != null) {
             // todo, should we create this actor with a ns ?

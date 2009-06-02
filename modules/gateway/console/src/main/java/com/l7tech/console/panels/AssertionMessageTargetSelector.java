@@ -89,12 +89,14 @@ public class AssertionMessageTargetSelector extends JDialog {
     private void onOK() {
         if (_requestRadioButton.isSelected()) {
             messageTargetable.setTarget(TargetMessageType.REQUEST);
+            messageTargetable.setOtherTargetMessageVariable(null);
         } else if (_responseRadioButton.isSelected()) {
             messageTargetable.setTarget(TargetMessageType.RESPONSE);
+            messageTargetable.setOtherTargetMessageVariable(null);
         } else {
             messageTargetable.setTarget(TargetMessageType.OTHER);
+            messageTargetable.setOtherTargetMessageVariable(_contextVarName.getText().trim());
         }
-        messageTargetable.setOtherTargetMessageVariable(_contextVarName.getText().trim());
         wasOKed = true;
         dispose();
     }

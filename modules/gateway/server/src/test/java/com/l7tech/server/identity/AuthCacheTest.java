@@ -2,8 +2,8 @@ package com.l7tech.server.identity;
 
 import com.l7tech.identity.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.util.TimeSource;
-import com.whirlycott.cache.CacheDecorator;
 
 import java.lang.reflect.Field;
 
@@ -36,7 +36,7 @@ public class AuthCacheTest {
      */
     @Test
     public void testSuccessCache() throws Exception{
-        LoginCredentials lc = LoginCredentials.makePasswordCredentials(USER_NAME, PASSWORD.toCharArray(), this.getClass());
+        LoginCredentials lc = LoginCredentials.makePasswordCredentials(USER_NAME, PASSWORD.toCharArray(), Assertion.class);
         final int[] authInvocations = new int[1];
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG){
             public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
@@ -85,7 +85,7 @@ public class AuthCacheTest {
      */
     @Test
     public void testFailureCache() throws Exception{
-        LoginCredentials lc = LoginCredentials.makePasswordCredentials(USER_NAME+"miss", PASSWORD.toCharArray(), this.getClass());
+        LoginCredentials lc = LoginCredentials.makePasswordCredentials(USER_NAME+"miss", PASSWORD.toCharArray(), Assertion.class);
         final int[] authInvocations = new int[1];
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG){
             public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
@@ -146,7 +146,7 @@ public class AuthCacheTest {
         UserBean ub1 = new UserBean(tIP.getConfig().getOid(), userName);
         ub1.setCleartextPassword(PASSWORD);
         TestIdentityProvider.addUser(ub1, userName, PASSWORD.toCharArray());
-        LoginCredentials lc1 = LoginCredentials.makePasswordCredentials(userName, PASSWORD.toCharArray(), this.getClass());
+        LoginCredentials lc1 = LoginCredentials.makePasswordCredentials(userName, PASSWORD.toCharArray(), Assertion.class);
         Assert.assertNotNull(aC.getCachedAuthResult(lc1, tIP, MAX_AGE, MAX_AGE));
 
         addSomeUsers(5, tIP, aC);
@@ -181,10 +181,10 @@ public class AuthCacheTest {
             }
         };
 
-        LoginCredentials lc1 = LoginCredentials.makePasswordCredentials(USER_NAME+"1", PASSWORD.toCharArray(), this.getClass());
+        LoginCredentials lc1 = LoginCredentials.makePasswordCredentials(USER_NAME+"1", PASSWORD.toCharArray(), Assertion.class);
         Assert.assertNull(aC.getCachedAuthResult(lc1, tIP, MAX_AGE, MAX_AGE));
         for(int i = 0; i < 5; i++){
-            LoginCredentials lc = LoginCredentials.makePasswordCredentials(USER_NAME+"a"+i, PASSWORD.toCharArray(), this.getClass());
+            LoginCredentials lc = LoginCredentials.makePasswordCredentials(USER_NAME+"a"+i, PASSWORD.toCharArray(), Assertion.class);
             Assert.assertNull(aC.getCachedAuthResult(lc, tIP, MAX_AGE, MAX_AGE));
         }
 
@@ -202,7 +202,7 @@ public class AuthCacheTest {
             UserBean ub = new UserBean(tIP.getConfig().getOid(), userName);
             ub.setCleartextPassword(PASSWORD);
             TestIdentityProvider.addUser(ub, userName, PASSWORD.toCharArray());
-            LoginCredentials lc = LoginCredentials.makePasswordCredentials(userName, PASSWORD.toCharArray(), this.getClass());
+            LoginCredentials lc = LoginCredentials.makePasswordCredentials(userName, PASSWORD.toCharArray(), Assertion.class);
             Assert.assertNotNull(aC.getCachedAuthResult(lc, tIP, MAX_AGE, MAX_AGE));
         }
     } 

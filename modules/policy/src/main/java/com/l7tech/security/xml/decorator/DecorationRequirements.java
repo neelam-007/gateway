@@ -346,14 +346,17 @@ public class DecorationRequirements {
             this.ns = ns;
         }
 
+        @Override
         public String getId() {
             return id;
         }
 
+        @Override
         public byte[] getSecretKey() {
             return key;
         }
 
+        @Override
         public String getSCNamespace() {
             return ns;
         }
@@ -370,6 +373,7 @@ public class DecorationRequirements {
             this.ns = ns;
         }
 
+        @Override
         public byte[] getSharedSecret() {
             return key;
         }
@@ -454,12 +458,42 @@ public class DecorationRequirements {
 
     /** @return true if Security header should be created asserting mustUnderstand; false if it should not assert mustUnderstand; and null if it should use the WssDecorator's default behavior. */
     public Boolean getSecurityHeaderMustUnderstand() {
-        return securityHeaderMustUnderstand;
+        Boolean mustUnderstand;
+
+        switch ( securityHeaderMustUnderstand ) {
+            case YES:
+                mustUnderstand = true;
+                break;
+            case NO:
+            case SKIP:
+                mustUnderstand = false;
+                break;
+            default:
+                mustUnderstand = null;
+        }
+
+        return mustUnderstand;
     }
 
     /** @param securityHeaderMustUnderstand true if Security header should be created asserting mustUnderstand; false if it should not assert mustUnderstand; and null if it should use WssDecorator's default behavior. */
     public void setSecurityHeaderMustUnderstand(Boolean securityHeaderMustUnderstand) {
-        this.securityHeaderMustUnderstand = securityHeaderMustUnderstand;
+        setSecurityHeaderMustUnderstand( securityHeaderMustUnderstand, true );
+    }
+
+    /**
+     * @param securityHeaderMustUnderstand true if Security header should be created asserting mustUnderstand; false if it should not assert mustUnderstand; and null if it should use WssDecorator's default behavior.
+     * @param alwaysInclude true to include the mustUnderstand attribute even if it makes no difference to the meaning of the header (i.e. is false)
+     */
+    public void setSecurityHeaderMustUnderstand(Boolean securityHeaderMustUnderstand, boolean alwaysInclude ) {
+        if ( securityHeaderMustUnderstand==null ) {
+            this.securityHeaderMustUnderstand = SecurityHeaderMustUnderstand.DEFAULT;
+        } else if ( securityHeaderMustUnderstand ) {
+            this.securityHeaderMustUnderstand = SecurityHeaderMustUnderstand.YES;
+        } else {
+            this.securityHeaderMustUnderstand = alwaysInclude ?
+                    SecurityHeaderMustUnderstand.NO :
+                    SecurityHeaderMustUnderstand.SKIP;            
+        }
     }
 
     /**
@@ -615,6 +649,12 @@ public class DecorationRequirements {
         this.protectTokens = protectTokens;
     }
 
+    enum SecurityHeaderMustUnderstand { YES, NO, SKIP, DEFAULT }
+
+    SecurityHeaderMustUnderstand getMustUnderstand() {
+        return securityHeaderMustUnderstand;
+    }
+
     private X509Certificate recipientCertificate = null;
     private X509Certificate senderMessageSigningCertificate = null;
     private PrivateKey senderMessageSigningPrivateKey = null;
@@ -635,7 +675,7 @@ public class DecorationRequirements {
     private int timestampTimeoutMillis = 0;
     private boolean securityHeaderReusable = false;
     private String securityHeaderActor = SoapConstants.L7_SOAP_ACTOR;
-    private Boolean securityHeaderMustUnderstand = null;
+    private SecurityHeaderMustUnderstand securityHeaderMustUnderstand = SecurityHeaderMustUnderstand.DEFAULT;
     private boolean includeSamlTokenInSignature = false;
     private KeyInfoInclusionType keyInfoInclusionType = KeyInfoInclusionType.CERT;
     private byte[] encryptedKey = null;

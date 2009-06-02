@@ -28,6 +28,7 @@ import com.l7tech.policy.assertion.transport.PreemptiveCompression;
 import com.l7tech.policy.assertion.transport.RemoteDomainIdentityInjection;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.assertion.xml.RemoveElement;
 import com.l7tech.policy.assertion.xmlsec.*;
 
 import java.util.Collections;
@@ -132,6 +133,8 @@ public class AllAssertions {
         new SamlIssuerAssertion(),
         new Include(),
         new WssVersionAssertion(),
+        new WsSecurity(),
+        new RemoveElement(),
     };
 
 
@@ -211,5 +214,7 @@ public class AllAssertions {
         new WssVersionAssertion(),
         new PreemptiveCompression(),
         new RemoteDomainIdentityInjection(),
+        new WsSecurity(),
+        new RemoveElement(),
     };
 }

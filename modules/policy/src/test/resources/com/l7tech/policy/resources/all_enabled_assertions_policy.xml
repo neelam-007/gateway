@@ -162,5 +162,7 @@
         <L7p:WssVersion/>
         <L7p:PreemptiveCompression/>
         <L7p:RemoteDomainIdentityInjection/>
+        <L7p:WsSecurity/>
+        <L7p:RemoveElement/>
     </wsp:OneOrMore>
 </wsp:Policy>

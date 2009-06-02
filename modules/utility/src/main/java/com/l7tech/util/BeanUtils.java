@@ -9,9 +9,9 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.InvocationHandler;
+import java.util.*;
 
 /**
  * Utilities for working with Java beans.
@@ -75,6 +75,7 @@ public final class BeanUtils {
             return grep(new HashSet<PropertyDescriptor>(),
                         Arrays.asList(Introspector.getBeanInfo(clazz).getPropertyDescriptors()),
                         new Unary<Boolean, PropertyDescriptor>() {
+                @Override
                 public Boolean call(PropertyDescriptor propertyDescriptor) {
                     return propertyDescriptor.getReadMethod() != null && propertyDescriptor.getWriteMethod() != null;
                 }
@@ -94,6 +95,7 @@ public final class BeanUtils {
     public static Set<PropertyDescriptor> includeProperties(Set<PropertyDescriptor> in, String... propertyNamesToInclude) {
         final Set<String> goodNames = new HashSet<String>(Arrays.asList(propertyNamesToInclude));
         return grep(new HashSet<PropertyDescriptor>(), in, new Unary<Boolean, PropertyDescriptor>() {
+            @Override
             public Boolean call(PropertyDescriptor propertyDescriptor) {
                 return goodNames.contains(propertyDescriptor.getName());
             }
@@ -110,9 +112,40 @@ public final class BeanUtils {
     public static Set<PropertyDescriptor> omitProperties(Set<PropertyDescriptor> in, String... propertyNamesToOmit) {
         final Set<String> badNames = new HashSet<String>(Arrays.asList(propertyNamesToOmit));
         return grep(new HashSet<PropertyDescriptor>(), in, new Unary<Boolean, PropertyDescriptor>() {
+            @Override
             public Boolean call(PropertyDescriptor propertyDescriptor) {
                 return !badNames.contains(propertyDescriptor.getName());
             }
         });
+    }
+
+    /**
+     * Create an instance of the given class backed by the given collection.
+     *
+     * <p>This is useful if you want to set properties on a set of beans as though
+     * they were a single instance.</p>
+     *
+     * @param interfaceClass The instance class
+     * @param instances The instances (must be at least one)
+     * @return The proxy instance
+     */
+    @SuppressWarnings({"unchecked"})
+    public static <T> T collectionBackedInstance( final Class<T> interfaceClass,
+                                                  final Collection<? extends T> instances ) {
+        return (T) Proxy.newProxyInstance( BeanUtils.class.getClassLoader(), new Class[]{interfaceClass}, new InvocationHandler(){
+            @Override
+            public Object invoke( final Object proxy, final Method method, final Object[] args ) throws Throwable {
+                Object result = null;
+
+                for ( T instance : instances ) {
+                    result = method.invoke( instance, args );
+                    if ( result != null ) {
+                        break;                        
+                    }
+                }
+
+                return result;
+            }
+        } );
     }
 }

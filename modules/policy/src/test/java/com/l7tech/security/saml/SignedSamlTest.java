@@ -8,6 +8,7 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SignerInfo;
@@ -168,7 +169,7 @@ public class SignedSamlTest extends TestCase {
         samlOptions.setExpiryMinutes(5);
         samlOptions.setProofOfPosessionRequired(false);
         samlOptions.setId("TestAssertionId-001");
-        final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass());
+        final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(clientCertChain[0], RequestWssSaml.class);
         SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(new SignerInfo(caPrivateKey, caCertChain));
         Document samlsvAssertion = generator.createAssertion(subjectStatement, samlOptions);

@@ -9,7 +9,7 @@ public final class IdentityTarget implements Comparable, Serializable {
 
     //- PUBLIC
 
-    public enum TargetIdentityType { USER, GROUP, PROVIDER }
+    public enum TargetIdentityType { USER, GROUP, PROVIDER, TAG }
 
     public IdentityTarget() {
     }
@@ -17,6 +17,10 @@ public final class IdentityTarget implements Comparable, Serializable {
     public IdentityTarget( final TargetIdentityType targetIdentityType,
                            final long identityProviderOid ) {
         this( targetIdentityType, identityProviderOid, null, null );
+    }
+
+    public IdentityTarget( final String identityTag ) {
+        this( TargetIdentityType.TAG, 0, identityTag, null );
     }
 
     public IdentityTarget( final IdentityTarget identityTarget ) {
@@ -78,8 +82,13 @@ public final class IdentityTarget implements Comparable, Serializable {
     public String describeIdentity() {
         StringBuilder identityBuilder = new StringBuilder();
 
-        if ( targetIdentityType != null && identityProviderOid != 0 ) {
+        if ( targetIdentityType != null ) {
             switch ( targetIdentityType ) {
+                case TAG:
+                    identityBuilder.append("Tag '");
+                    identityBuilder.append(identityId);
+                    identityBuilder.append("'");
+                    break;
                 case PROVIDER:
                     identityBuilder.append("Identity Provider #");
                     identityBuilder.append(identityProviderOid);

@@ -14,7 +14,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -193,7 +192,7 @@ public class ServerRequestWssSaml<AT extends RequestWssSaml> extends AbstractMes
                     new LoginCredentials(nameIdentifier,
                                         null,
                                         CredentialFormat.SAML,
-                                        SamlAuthenticationStatement.class,
+                                        RequestWssSaml.class,
                                         null,
                                         samlAssertion));
             return AssertionStatus.NONE;

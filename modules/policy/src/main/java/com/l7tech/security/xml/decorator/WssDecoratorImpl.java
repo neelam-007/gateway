@@ -105,8 +105,23 @@ public class WssDecoratorImpl implements WssDecorator {
         // get writeable document after getting MIME part iterator
         final Document soapMsg = message.getXmlKnob().getDocumentWritable();
 
+        Boolean mustUnderstand = true;
+        switch (dreq.getMustUnderstand()) {
+            case DEFAULT:
+                mustUnderstand = SoapUtil.isSecHdrDefaultsToMustUnderstand();
+                break;
+            case NO:
+                mustUnderstand = false;
+                break;
+            case SKIP:
+                mustUnderstand = null;
+                break;
+            case YES:
+                mustUnderstand = true;
+                break;
+        }
         Element securityHeader = createSecurityHeader(soapMsg, c,
-                dreq.getSecurityHeaderActor(), dreq.getSecurityHeaderMustUnderstand(), dreq.isSecurityHeaderReusable());
+                dreq.getSecurityHeaderActor(), mustUnderstand, dreq.isSecurityHeaderReusable());
         Set<Element> signList = dreq.getElementsToSign();
         Set<Element> cryptList = dreq.getElementsToEncrypt();
         Set<String> signPartList = dreq.getPartsToSign();
@@ -1332,7 +1347,7 @@ public class WssDecoratorImpl implements WssDecorator {
         }
         else {
             Element securityHeader;
-            securityHeader = SoapUtil.makeSecurityElement(message, context.nsf.getWsseNs(), actor, mustUnderstand != null ? mustUnderstand : SoapUtil.isSecHdrDefaultsToMustUnderstand());
+            securityHeader = SoapUtil.makeSecurityElement(message, context.nsf.getWsseNs(), actor, mustUnderstand);
             // Make sure wsu is declared to save duplication
             DomUtils.getOrCreatePrefixForNamespace(securityHeader, context.nsf.getWsuNs(), "wsu");
             resultSecurity = securityHeader;

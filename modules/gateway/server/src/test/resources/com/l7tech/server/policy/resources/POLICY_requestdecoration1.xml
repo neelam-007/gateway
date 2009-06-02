@@ -38,7 +38,7 @@
                     </L7p:Namespaces>
                 </L7p:XpathExpression>
             </L7p:ResponseWssIntegrity>
-            <L7p:WssDecoration/>
+            <L7p:WsSecurity/>
             <L7p:HttpRoutingAssertion>
                 <L7p:ProtectedServiceUrl stringValue="http://hugh/ACMEWarehouseWS/Service1.asmx"/>
                 <L7p:SamlAssertionVersion intValue="2"/>

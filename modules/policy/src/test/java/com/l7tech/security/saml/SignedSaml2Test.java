@@ -15,6 +15,7 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -167,7 +168,7 @@ public class SignedSaml2Test extends TestCase {
         samlOptions.setExpiryMinutes(5);
         samlOptions.setProofOfPosessionRequired(false);
         samlOptions.setId(bstId);
-        final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass());
+        final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(clientCertChain[0], RequestWssSaml.class);
         SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(new SignerInfo(caPrivateKey, caCertChain));
         samlOptions.setId(bstId);

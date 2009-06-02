@@ -5,6 +5,9 @@ import com.l7tech.policy.assertion.IdentityTargetable;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.MessageTargetable;
+import com.l7tech.policy.assertion.MessageTargetableSupport;
+import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.IdentityTagable;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.gui.widgets.OkCancelDialog;
 
@@ -21,25 +24,35 @@ public class IdentityTargetSelector extends OkCancelDialog<IdentityTarget> {
     public IdentityTargetSelector( final Window owner,
                                    final boolean readOnly,
                                    final Assertion identityTargetableAssertion  ) {
-        this( owner, readOnly, identityTargetableAssertion, identityTargetableAssertion.getPath()[0], getTargetMessageType(identityTargetableAssertion) );
+        this( owner, readOnly, identityTargetableAssertion, identityTargetableAssertion.getPath()[0], getMessageTargetable(identityTargetableAssertion) );
     }
 
     public IdentityTargetSelector( final Window owner,
                                    final boolean readOnly,
                                    final Assertion identityTargetableAssertion,
-                                   final TargetMessageType targetMessageType ) {
-        this( owner, readOnly, identityTargetableAssertion, identityTargetableAssertion.getPath()[0], targetMessageType );
+                                   final MessageTargetable messageTargetable ) {
+        this( owner, readOnly, identityTargetableAssertion, identityTargetableAssertion.getPath()[0], messageTargetable );
     }
 
     public IdentityTargetSelector( final Window owner,
                                    final boolean readOnly,
                                    final Assertion identityTargetableAssertion,
                                    final Assertion policy,
-                                   final TargetMessageType targetMessageType ) {
+                                   final MessageTargetable messageTargetable ) {
         this( owner,
               readOnly,
               (IdentityTargetable)identityTargetableAssertion,
-              getIdentityTargetOptions(policy, identityTargetableAssertion, targetMessageType));
+              getIdentityTargetOptions(policy, identityTargetableAssertion, messageTargetable));
+    }
+
+    public IdentityTargetSelector( final Window owner,
+                                   final boolean readOnly,
+                                   final Assertion context,
+                                   final IdentityTargetable identityTargetable ) {
+        this( owner,
+              readOnly,
+              identityTargetable,
+              getIdentityTargetOptions(context.getPath()[0], context, getMessageTargetable(context)));
     }
 
     public IdentityTargetSelector( final Window owner,
@@ -68,26 +81,27 @@ public class IdentityTargetSelector extends OkCancelDialog<IdentityTarget> {
     /**
      *
      */
-    private static TargetMessageType getTargetMessageType( final Assertion assertion ) {
-        TargetMessageType targetMessageType = TargetMessageType.REQUEST;
+    private static MessageTargetable getMessageTargetable( final Assertion assertion ) {
+        MessageTargetable messageTargetable = new MessageTargetableSupport(TargetMessageType.REQUEST);
 
         if ( assertion instanceof MessageTargetable ) {
-            targetMessageType = ((MessageTargetable)assertion).getTarget();
+            messageTargetable = (MessageTargetable) assertion;
         } else {
             if ( Assertion.isResponse( assertion ) ) {
-                targetMessageType = TargetMessageType.RESPONSE;
+                messageTargetable.setTarget( TargetMessageType.RESPONSE );
             }
         }
 
-        return targetMessageType;
+        return messageTargetable;
     }
 
     /**
-     * 
+     * Find options for the identity that preceed the given assertion in the
+     * policy for the same target message.
      */
     private static IdentityTarget[] getIdentityTargetOptions( final Assertion policy,
                                                               final Assertion identityTargetableAssertion,
-                                                              final TargetMessageType targetMessageType  ) {
+                                                              final MessageTargetable messageTargetable  ) {
         TreeSet<IdentityTarget> targetOptions = new TreeSet<IdentityTarget>();
         Iterator<Assertion> assertionIterator = policy.preorderIterator();
 
@@ -97,8 +111,13 @@ public class IdentityTargetSelector extends OkCancelDialog<IdentityTarget> {
                 break;
             }
             if ( assertion instanceof IdentityAssertion &&
-                 ((IdentityAssertion)assertion).getTarget()==targetMessageType ) {
+                 AssertionUtils.isSameTargetMessage( identityTargetableAssertion, messageTargetable ) ) {
                 targetOptions.add( ((IdentityAssertion)assertion).getIdentityTarget() );
+            }
+
+            if ( assertion instanceof IdentityTagable &&
+                 AssertionUtils.isSameTargetMessage( identityTargetableAssertion, messageTargetable ) ) {
+                targetOptions.add( new IdentityTarget(((IdentityTagable)assertion).getIdentityTag()) );
             }
         }
 

@@ -283,5 +283,11 @@
         <L7p:RemoteDomainIdentityInjection>
             <L7p:Enabled booleanValue="false"/>
         </L7p:RemoteDomainIdentityInjection>
+        <L7p:WsSecurity>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:WsSecurity>
+        <L7p:RemoveElement>
+            <L7p:Enabled booleanValue="false"/>
+        </L7p:RemoveElement>
     </wsp:OneOrMore>
 </wsp:Policy>

@@ -22,6 +22,12 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.PolicyReference;
+import com.l7tech.policy.assertion.MessageTargetable;
+import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.IdentityTargetable;
+import com.l7tech.policy.assertion.IdentityTarget;
+import com.l7tech.policy.assertion.IdentityTagable;
+import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -64,6 +70,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -152,6 +159,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         setEditorListeners();
         if (validateOnOpen) {
             SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
                     try {
                         initialValidate = true;
@@ -172,6 +180,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      *             component's name
      * @see #getName()
      */
+    @Override
     public void setName(String name) {
         String oldName = getName();
         super.setName(name);
@@ -268,6 +277,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     protected static final Callable<PolicyValidatorResult> NO_VAL_CALLBACK = new Callable<PolicyValidatorResult>() {
+        @Override
         public PolicyValidatorResult call() throws Exception {
             PolicyValidatorResult output = new PolicyValidatorResult();
             output.addWarning(new PolicyValidatorResult.Warning( Collections.<Integer>emptyList(), -1, 0,
@@ -302,6 +312,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         Callable<PolicyValidatorResult> callable;
         if (isPolicyValidationOn()) {
             callable = new Callable<PolicyValidatorResult>() {
+                @Override
                 public PolicyValidatorResult call() throws Exception {
                 	final Policy policy = getPolicyNode().getPolicy();
 	                if (policy == null) {
@@ -387,6 +398,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         splitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY,
           new PropertyChangeListener() {
+              @Override
               public void propertyChange(PropertyChangeEvent evt) {
                   SsmPreferences prefs = preferences;
                   int l = splitPane.getDividerLocation();
@@ -394,6 +406,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
               }
           });
         messagePane.addHierarchyListener(new HierarchyListener() {
+            @Override
             public void hierarchyChanged(HierarchyEvent e) {
                 long flags = e.getChangeFlags();
                 if ((flags & HierarchyEvent.SHOWING_CHANGED) == HierarchyEvent.SHOWING_CHANGED) {
@@ -501,6 +514,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         policyTree.expandPath(rootPath);
 
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 if (root.getChildCount() > 0) {
                     final TreeNode selNode = root.getChildAt(0);
@@ -542,6 +556,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         messagesTab.addTab("Policy Validation Messages", scrollPane);
         messagesTab.setTabPlacement(JTabbedPane.TOP);
         messagesTextPane.addMouseListener(Utilities.createContextMenuMouseListener(messagesTextPane, new Utilities.DefaultContextMenuFactory() {
+            @Override
             public JPopupMenu createContextMenu(final JTextComponent tc) {
                 JPopupMenu menu = super.createContextMenu(tc);
                 menu.add(new ClearMessageAreaAction());
@@ -561,6 +576,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         /**
          * Invoked when an action occurs.
          */
+        @Override
         public void actionPerformed(ActionEvent e) {
             overWriteMessageArea("");
         }
@@ -600,6 +616,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             final BaseAction ba = (BaseAction)buttonSaveAndActivate.getAction();
             ba.setEnabled(false);
             ba.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     appendToMessageArea("<i>Policy saved and made active.</i>");
                     ba.setEnabled(false);
@@ -612,6 +629,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             add(buttonSaveOnly);
             bsaa.setEnabled(false);
             bsaa.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     appendToMessageArea("<i>Policy saved but not activated.</i>");
                     bsaa.setEnabled(false);
@@ -640,6 +658,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public Action getValidateAction() {
         if (validateAction == null) {
             validateAction = new ValidatePolicyAction() {
+                @Override
                 protected void performAction() {
                     validatePolicy();
                 }
@@ -684,6 +703,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         Callable<PolicyValidatorResult> callable;
         if (isPolicyValidationOn()) {
             callable = new Callable<PolicyValidatorResult>() {
+                @Override
                 public PolicyValidatorResult call() throws Exception {
                     final Policy policy = getPolicyNode().getPolicy();
                     PolicyValidatorResult result = policyValidator.validate(assertion, type, wsdl, soap, licenseManager);
@@ -736,6 +756,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public Action getServerValidateAction() {
         if (serverValidateAction == null) {
             serverValidateAction = new ValidatePolicyAction() {
+                @Override
                 protected void performAction() {
                     if (!validating) {
                         try {
@@ -816,6 +837,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 actions[i] = getAssertionMoveDownAction(node, action.isEnabled());
             } else if (action instanceof DeleteAssertionAction) {
                 actions[i] = getDeleteAssertionAction(node, action.isEnabled());
+            } else if (action instanceof SelectMessageTargetAction) {
+                actions[i] = getSelectMessageTargetAction(node, (SelectMessageTargetAction)action);
+            } else if (action instanceof SelectIdentityTargetAction) {
+                actions[i] = getSelectIdentityTargetAction(node, (SelectIdentityTargetAction)action);
+            } else if (action instanceof SelectIdentityTagAction) {
+                actions[i] = getSelectIdentityTagAction(node, (SelectIdentityTagAction)action);
             }
         }
     }
@@ -863,18 +890,131 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
         DeleteAssertionAction action;
         if (paths != null && paths.length > 1) {
-            action = new DeleteAssertionAction(node) {
-                @Override
-                protected void performAction() {
-                    nodes = assertionTreeNodes;
-                    super.performAction();
-                    node = null;
-                }
-            };
+            action = new DeleteAssertionAction(node, assertionTreeNodes);
         } else {
             action = new DeleteAssertionAction(node);
         }
         action.setEnabled(isEnabled && canEnableAction(node, assertionTreeNodes, action));
+        return action;
+    }
+
+    /**
+     * Support multiple selection (edit) for message target.
+     *
+     * <p>Multiple edit is only permitted if all selected items have the same setting.</p>
+     */
+    private SelectMessageTargetAction getSelectMessageTargetAction( final AssertionTreeNode node,
+                                                                    final SelectMessageTargetAction selectMessageTargetAction) {
+        SelectMessageTargetAction action = selectMessageTargetAction;
+        if ( action.isEnabled() ) {
+            final TreePath[] paths = policyTree.getSelectionPaths();
+            if ( paths != null && paths.length > 1 ) {
+                boolean sameTarget = true;
+
+                final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
+                final Assertion target = node.asAssertion();
+                final List<MessageTargetable> list = new ArrayList<MessageTargetable>();
+                for ( AssertionTreeNode assertionTreeNode : assertionTreeNodes ) {
+                    Assertion assertion = assertionTreeNode.asAssertion();
+                    if ( assertion instanceof MessageTargetable ) {
+                        MessageTargetable mt = (MessageTargetable) assertion;
+                        list.add(mt);
+                        sameTarget = AssertionUtils.isSameTargetMessage( target, assertion );
+                    } else {
+                        sameTarget = false;
+                    }
+                    if ( !sameTarget ) break;
+                }
+
+                if ( sameTarget ) {
+                    action = new SelectMessageTargetAction( assertionTreeNodes, list.toArray(new MessageTargetable[list.size()]) );
+                } else {
+                    action.setEnabled( false ); // disable, since we cannot edit all at once
+                }
+            }
+        }
+
+        return action;
+    }
+
+    /**
+     * Support multiple selection (edit) for identity target.
+     *
+     * <p>Multiple edit is only permitted if all selected items have the same
+     * setting and target the same message.</p>
+     */
+    private SelectIdentityTargetAction getSelectIdentityTargetAction( final AssertionTreeNode node,
+                                                                      final SelectIdentityTargetAction selectIdentityTargetAction ) {
+        SelectIdentityTargetAction action = selectIdentityTargetAction;
+        if ( action.isEnabled() ) {
+            final TreePath[] paths = policyTree.getSelectionPaths();
+            if ( paths != null && paths.length > 1 ) {
+                boolean sameTarget = true;
+
+                final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
+                final Assertion targetAssertion = node.asAssertion();
+                final IdentityTarget target = new IdentityTarget(((IdentityTargetable) targetAssertion).getIdentityTarget());
+                final List<IdentityTargetable> list = new ArrayList<IdentityTargetable>();
+                for ( AssertionTreeNode assertionTreeNode : assertionTreeNodes ) {
+                    Assertion assertion = assertionTreeNode.asAssertion();
+                    if ( assertion instanceof IdentityTargetable ) {
+                        IdentityTargetable it = (IdentityTargetable) assertion;
+                        list.add(it);
+                        sameTarget = new IdentityTarget(it.getIdentityTarget()).equals(target) &&
+                                     AssertionUtils.isSameTargetMessage( targetAssertion, assertion );
+                    } else {
+                        sameTarget = false;
+                    }
+                    if ( !sameTarget ) break;
+                }
+
+                if ( sameTarget ) {
+                    action = new SelectIdentityTargetAction( assertionTreeNodes, list.toArray(new IdentityTargetable[list.size()]) );
+                } else {
+                    action.setEnabled( false ); // disable, since we cannot edit all at once
+                }
+            }
+        }
+
+        return action;    }
+
+    /**
+     * Support multiple selection (edit) for identity tags.
+     *
+     * <p>Multiple edit is only permitted if all selected items have the same
+     * setting.</p>
+     */
+    private SelectIdentityTagAction getSelectIdentityTagAction( final AssertionTreeNode node,
+                                                                final SelectIdentityTagAction selectIdentityTagAction ) {
+        SelectIdentityTagAction action = selectIdentityTagAction;
+        if ( action.isEnabled() ) {
+            final TreePath[] paths = policyTree.getSelectionPaths();
+            if ( paths != null && paths.length > 1 ) {
+                boolean sameTag = true;
+
+                final AssertionTreeNode[] assertionTreeNodes = toAssertionTreeNodeArray(paths);
+                final String idTag = ((IdentityTagable) node.asAssertion()).getIdentityTag();
+                final List<IdentityTagable> list = new ArrayList<IdentityTagable>();
+                for ( AssertionTreeNode assertionTreeNode : assertionTreeNodes ) {
+                    Assertion assertion = assertionTreeNode.asAssertion();
+                    if ( assertion instanceof IdentityTagable ) {
+                        IdentityTagable it = (IdentityTagable) assertion;
+                        list.add(it);
+                        sameTag = idTag==null && it.getIdentityTag()==null || (idTag != null && idTag.equalsIgnoreCase(it.getIdentityTag()));
+                    } else {
+                        sameTag = false;
+                    }
+                    if ( !sameTag ) break;
+                }
+
+                if ( sameTag ) {
+                    action = new SelectIdentityTagAction( assertionTreeNodes, list.toArray(new IdentityTagable[list.size()]) );
+                } else {
+                    action.setEnabled( false ); // disable, since we cannot edit all at once
+                }
+            }
+        }
+
         return action;
     }
 
@@ -896,6 +1036,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     final JTree tree = policyTree;
                     if (paths != null && tree != null) {
                         SwingUtilities.invokeLater(new Runnable() {
+                            @Override
                             public void run() {
                                 tree.setSelectionPaths(paths);
                             }
@@ -928,6 +1069,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     final JTree tree = policyTree;
                     if (paths != null && tree != null) {
                         SwingUtilities.invokeLater(new Runnable() {
+                            @Override
                             public void run() {
                                 tree.setSelectionPaths(paths);
                             }
@@ -1019,11 +1161,13 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     // listener for policy tree changes
     TreeModelListener policyTreeModellistener = new TreeModelListener() {
+        @Override
         public void treeNodesChanged(TreeModelEvent e) {
             if (!(e instanceof PolicyTreeModelEvent)) return; // do not validate this
             if (!initialValidate) {
                 enableButtonSave();
                 SwingUtilities.invokeLater(new Runnable() {
+                    @Override
                     public void run() {
                         try {
                             if (!validating) {
@@ -1042,14 +1186,17 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
         }
 
+        @Override
         public void treeNodesInserted(final TreeModelEvent e) {
             enableButtonSave();
         }
 
+        @Override
         public void treeNodesRemoved(TreeModelEvent e) {
             enableButtonSave();
         }
 
+        @Override
         public void treeStructureChanged(TreeModelEvent e) {
             enableButtonSave();
         }
@@ -1070,12 +1217,15 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     // listener for policy tree changes
     TreeModelListener treeModelListener = new TreeModelListener() {
+        @Override
         public void treeNodesChanged(TreeModelEvent e) {
         }
 
+        @Override
         public void treeNodesInserted(TreeModelEvent e) {
         }
 
+        @Override
         public void treeNodesRemoved(TreeModelEvent e) {
             Object[] children = e.getChildren();
             for (Object child : children) {
@@ -1086,6 +1236,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
         }
 
+        @Override
         public void treeStructureChanged(TreeModelEvent e) {
         }
 
@@ -1099,6 +1250,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
            * @param evt A PropertyChangeEvent object describing the event source
            *            and the property that has changed.
            */
+          @Override
           public void propertyChange(PropertyChangeEvent evt) {
               log.info(evt.getPropertyName() + "changed");
               if (POLICYNAME_PROPERTY.equals(evt.getPropertyName())) {
@@ -1120,6 +1272,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
            *
            * @param e the event responsible for the update
            */
+          @Override
           public void hyperlinkUpdate(HyperlinkEvent e) {
               if (HyperlinkEvent.EventType.ACTIVATED != e.getEventType())
                   return;
@@ -1150,12 +1303,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     /**
      * Invoked when a component has been added to the container.
      */
+    @Override
     public void componentAdded(ContainerEvent e) {
     }
 
     /**
      * Invoked when a component has been removed from the container.
      */
+    @Override
     public void componentRemoved(ContainerEvent e) {
         log.fine("Resetting the policy editor panel");
         subject.removePropertyChangeListener(policyPropertyChangeListener);
@@ -1175,6 +1330,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      *          if the recipient wishes to stop
      *          (not perform) the action.
      */
+    @Override
     public void componentWillAdd(ContainerEvent e)
       throws ContainerVetoException {
     }
@@ -1186,6 +1342,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * @throws ContainerVetoException if the recipient wishes to stop
      *                                (not perform) the action.
      */
+    @Override
     public void componentWillRemove(ContainerEvent e)
       throws ContainerVetoException {
         if (e.getChild() == this) {
@@ -1283,6 +1440,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     private SecureAction makeSavePolicyAction(final boolean activateAsWell) {
         SecureAction ret = new SavePolicyAction(activateAsWell) {
+            @Override
             protected void performAction() {
                 // fla, bugzilla 1094. all saves are now preceeded by a validation action
                 if (!validating) {
@@ -1396,12 +1554,15 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     private SecureAction makeExportAction() {
         return new ExportPolicyToFileAction(getHomePath()) {
+            @Override
             public String getName() {
                 return "Save Policy";
             }
+            @Override
             public String getDescription() {
                 return "Save the policy to a file along with external references.";
             }
+            @Override
             protected void performAction() {
                 Assertion assertion = rootAssertion.asAssertion();
                 String dialogTitle = "Save Policy to File";
@@ -1417,6 +1578,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public Action getExportAction() {
         if (exportPolicyAction == null) {
             exportPolicyAction = new ExportPolicyToFileAction(getHomePath()) {
+                @Override
                 protected void performAction() {
                     Assertion assertion = rootAssertion.asAssertion();
                     exportPolicy(getName(), assertion);
@@ -1432,10 +1594,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public Action getSimpleExportAction() {
         if (simpleExportPolicyAction == null) {
             simpleExportPolicyAction = new ExportPolicyToFileAction(getHomePath()) {
+                @Override
                 protected void performAction() {
                     Assertion assertion = rootAssertion.asAssertion();
                     exportPolicy(getName(), assertion);
                 }
+                @Override
                 protected void serializeToFile(Assertion rootAssertion, File policyFile) throws IOException, SAXException {
                     // do policy to xml
                     Document policydoc = XmlUtil.stringToDocument(WspWriter.getPolicyXml(rootAssertion));
@@ -1463,14 +1627,17 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 return svc != null && canAttemptOperation(new AttemptedUpdate(EntityType.SERVICE, svc)) && enableUddi;
             }
 
+            @Override
             public String getName() {
                 return "Import From UDDI";
             }
 
+            @Override
             protected String iconResource() {
                 return "com/l7tech/console/resources/server16.gif";
             }
 
+            @Override
             protected void performAction() {
                 ImportPolicyFromUDDIWizard wiz = ImportPolicyFromUDDIWizard.getInstance(TopComponents.getInstance().getTopParent());
                 wiz.pack();
@@ -1492,10 +1659,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             if (subject.getPolicyNode() != null) {
                 importPolicyAction = new ImportPolicyFromFileAction(getHomePath()) {
 
+                    @Override
                     protected OperationType getOperation() {
                         return OperationType.UPDATE;
                     }
 
+                    @Override
                     protected void performAction() {
                         try {
                             Policy policy = subject.getPolicyNode().getPolicy();

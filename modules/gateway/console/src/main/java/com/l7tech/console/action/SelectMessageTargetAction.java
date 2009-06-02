@@ -7,20 +7,41 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.MessageTargetable;
+import com.l7tech.util.BeanUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.logging.Level;
+import java.util.*;
 
 /**
  * Action for selecting the target for MessageTargetable assertions.
  *
  */
 public class SelectMessageTargetAction extends NodeAction {
-    private final MessageTargetable assertion;
-    public SelectMessageTargetAction(AssertionTreeNode node) {
+    private final MessageTargetable messageTargetable;
+    private final boolean readOnly;
+    private final AssertionTreeNode[] nodes;
+
+    public SelectMessageTargetAction( final AssertionTreeNode node ) {
         super(node);
-        assertion = (MessageTargetable)node.asAssertion();
+        messageTargetable = (MessageTargetable)node.asAssertion();
+        readOnly = !node.canEdit();
+        nodes = new AssertionTreeNode[]{node};
+    }
+
+    public SelectMessageTargetAction( final AssertionTreeNode[] nodes, final MessageTargetable[] messageTargetables) {
+        super(nodes[0]);
+        this. messageTargetable = BeanUtils.collectionBackedInstance( MessageTargetable.class, Arrays.asList(messageTargetables) );
+        boolean readOnly = false;
+        for ( AssertionTreeNode node : nodes ) {
+            if ( !node.canEdit() ) {
+                readOnly = true;
+                break;
+            }
+        }
+        this.readOnly = readOnly;
+        this.nodes = nodes;
     }
 
     @Override
@@ -41,7 +62,7 @@ public class SelectMessageTargetAction extends NodeAction {
     @Override
     protected void performAction() {
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final AssertionMessageTargetSelector dlg = new AssertionMessageTargetSelector(mw, assertion, !node.canEdit());
+        final AssertionMessageTargetSelector dlg = new AssertionMessageTargetSelector(mw, messageTargetable, readOnly);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
@@ -51,7 +72,9 @@ public class SelectMessageTargetAction extends NodeAction {
                     JTree tree = TopComponents.getInstance().getPolicyTree();
                     if (tree != null) {
                         PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                        model.assertionTreeNodeChanged((AssertionTreeNode)node);
+                        for ( AssertionTreeNode node : nodes ) {
+                            model.assertionTreeNodeChanged(node);                            
+                        }
                     } else {
                         log.log(Level.WARNING, "Unable to reach the palette tree.");
                     }

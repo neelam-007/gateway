@@ -32,10 +32,9 @@
             <L7p:VariablePrefix stringValue="bodysig1"/>
         </wsse:Integrity>
         <L7p:ResponseWssIntegrity>
-            <L7p:SignedElementsVariable stringValue="bodysig1.element"/>
             <L7p:Target target="REQUEST"/>
             <L7p:XpathExpression xpathExpressionValue="included">
-                <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Body"/>
+                <L7p:Expression stringValue="$bodysig1.element"/>
                 <L7p:Namespaces mapValue="included">
                     <L7p:entry>
                         <L7p:key stringValue="s0"/>
@@ -68,7 +67,9 @@
                 </L7p:Namespaces>
             </L7p:XpathExpression>
         </L7p:ResponseWssIntegrity>
-        <L7p:WssDecoration/>
+        <L7p:WsSecurity>
+            <L7p:ReplaceSecurityHeader booleanValue="false"/>
+        </L7p:WsSecurity>
         <L7p:HttpRoutingAssertion>
             <L7p:ProtectedServiceUrl stringValue="http://hugh/ACMEWarehouseWS/Service1.asmx"/>
             <L7p:RequestHeaderRules httpPassthroughRuleSet="included">

@@ -31,6 +31,7 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.assertion.xml.RemoveElement;
 import com.l7tech.policy.assertion.xmlsec.*;
 
 import javax.servlet.http.HttpServlet;
@@ -292,6 +293,7 @@ public class GatewayFeatureSets {
             ass(RequestWssReplayProtection.class),
             ass(RequestWssTimestamp.class),
             ass(ResponseWssSecurityToken.class),
+            ass(WsSecurity.class),
             ass(WssVersionAssertion.class),
             feat(FEATURE_SIGNED_ATTACHMENTS, "Signed SOAP attachments."));
 
@@ -302,7 +304,8 @@ public class GatewayFeatureSets {
             ass(RequestXpathAssertion.class),
             ass(ResponseXpathAssertion.class),
             ass(SchemaValidation.class),
-            ass(XslTransformation.class));
+            ass(XslTransformation.class),
+            ass(RemoveElement.class));
 
         GatewayFeatureSet validationDs =
         fsr("set:Validation:Datascreen", "SecureSpan Datascreen message validation and transformation",

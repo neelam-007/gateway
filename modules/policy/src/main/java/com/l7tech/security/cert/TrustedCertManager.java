@@ -61,6 +61,15 @@ public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHea
     List<TrustedCert> findByIssuerAndSerial(X500Principal issuer, BigInteger serial) throws FindException;
 
     /**
+     * Retrieves every {@link TrustedCert} with the given name.
+     *
+     * @param name the name of the {@link TrustedCert}s to retrieve
+     * @return a Collection of matching TrustedCert instances.  May be empty but never null.
+     * @throws FindException if the retrieval fails for any reason other than nonexistence
+     */
+    Collection<TrustedCert> findByName(String name) throws FindException;
+
+    /**
      * Subclass of certificate exception thrown when a certificate is not known.
      */
     public static final class UnknownCertificateException extends CertificateException {

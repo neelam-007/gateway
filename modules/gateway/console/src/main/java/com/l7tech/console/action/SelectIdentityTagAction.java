@@ -7,20 +7,41 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.IdentityTagable;
+import com.l7tech.util.BeanUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.logging.Level;
+import java.util.*;
 
 /**
  * Action for selecting the tag for IdentityTagable assertions.
  *
  */
 public class SelectIdentityTagAction extends NodeAction {
-    private final IdentityTagable assertion;
-    public SelectIdentityTagAction(AssertionTreeNode node) {
+    private final IdentityTagable identityTagable;
+    private final boolean readOnly;
+    private final AssertionTreeNode[] nodes;
+
+    public SelectIdentityTagAction( final AssertionTreeNode node ) {
         super(node);
-        assertion = (IdentityTagable) node.asAssertion();
+        this.identityTagable = (IdentityTagable) node.asAssertion();
+        this.readOnly = !node.canEdit();
+        this.nodes = new AssertionTreeNode[]{node};
+    }
+
+    public SelectIdentityTagAction( final AssertionTreeNode[] nodes, final IdentityTagable[] IdentityTagables ) {
+        super(nodes[0]);
+        this.identityTagable = BeanUtils.collectionBackedInstance( IdentityTagable.class, Arrays.asList(IdentityTagables) );
+        boolean readOnly = false;
+        for ( AssertionTreeNode node : nodes ) {
+            if ( !node.canEdit() ) {
+                readOnly = true;
+                break;
+            }
+        }
+        this.readOnly = readOnly;
+        this.nodes = nodes;
     }
 
     @Override
@@ -41,7 +62,7 @@ public class SelectIdentityTagAction extends NodeAction {
     @Override
     protected void performAction() {
         final Frame mw = TopComponents.getInstance().getTopParent();
-        final AssertionIdentityTagSelector dlg = new AssertionIdentityTagSelector(mw, assertion, !node.canEdit());
+        final AssertionIdentityTagSelector dlg = new AssertionIdentityTagSelector(mw, identityTagable, readOnly);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         DialogDisplayer.display(dlg, new Runnable() {
@@ -51,7 +72,9 @@ public class SelectIdentityTagAction extends NodeAction {
                     JTree tree = TopComponents.getInstance().getPolicyTree();
                     if (tree != null) {
                         PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-                        model.assertionTreeNodeChanged((AssertionTreeNode)node);
+                        for ( AssertionTreeNode node : nodes ) {
+                            model.assertionTreeNodeChanged(node);
+                        }
                     } else {
                         log.log(Level.WARNING, "Unable to reach the palette tree.");
                     }

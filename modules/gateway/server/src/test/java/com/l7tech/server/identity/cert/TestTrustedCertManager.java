@@ -43,6 +43,10 @@ public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,Entity
         throw new UnsupportedOperationException();
     }
 
+    public Collection<TrustedCert> findByName(String name) throws FindException {
+        throw new UnsupportedOperationException();
+    }
+
     public Class<TrustedCert> getImpClass() {
         return TrustedCert.class;
     }

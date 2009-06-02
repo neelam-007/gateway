@@ -93,6 +93,26 @@ public class TrustedCertManagerImp
         }
     }
 
+    @Override
+    @Transactional(readOnly=true)
+    public Collection<TrustedCert> findByName(final String name) throws FindException {
+        final StringBuffer hql = new StringBuffer("FROM ");
+        hql.append(getTableName()).append(" IN CLASS ").append(getImpClass().getName());
+        hql.append(" WHERE ").append(getTableName()).append(".name = ?");
+        try {
+            //noinspection unchecked
+            return getHibernateTemplate().executeFind(new ReadOnlyHibernateCallback() {
+                @Override
+                public Object doInHibernateReadOnly(Session session) throws HibernateException {
+                    return session.createQuery(hql.toString()).setString(0, name).list();
+                }
+            });
+        } catch (DataAccessException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            throw new FindException("Couldn't retrieve cert", e);
+        }
+    }
+
     @SuppressWarnings({"unchecked"})
     @Override
     @Transactional(readOnly=true)
