@@ -216,6 +216,7 @@ public class CertificateImportDialog extends JDialog {
 
         viewButton.setEnabled( enableView );
         removeButton.setEnabled( enableRemove );
+        okButton.setEnabled(certificateList.getModel().getSize() > 0);
     }
 
 }
