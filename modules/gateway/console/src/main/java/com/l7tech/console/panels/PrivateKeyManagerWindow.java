@@ -103,13 +103,8 @@ public class PrivateKeyManagerWindow extends JDialog {
     private KeyTable keyTable = null;
     private Component showingInScrollPane = null;
 
-    public PrivateKeyManagerWindow(JDialog owner) {
-        super(owner, resources.getString("keydialog.title"), true);
-        initialize();
-    }
-
-    public PrivateKeyManagerWindow(Frame owner) {
-        super(owner, resources.getString("keydialog.title"), true);
+    public PrivateKeyManagerWindow( Window owner ) {
+        super(owner, resources.getString("keydialog.title"), DEFAULT_MODALITY_TYPE);
         initialize();
     }
 
@@ -178,6 +173,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             mutableKeystore = null;
         }
 
+        Utilities.setEscKeyStrokeDisposes(this);
         Utilities.setDoubleClickAction(keyTable, propertiesButton);
 
         loadPrivateKeys();
