@@ -9,6 +9,7 @@ import com.l7tech.util.ResolvingComparator;
 import com.l7tech.util.Resolver;
 import com.l7tech.util.Functions;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.common.io.CertUtils;
 
 import javax.swing.*;
 import java.awt.event.ActionListener;
@@ -92,7 +93,12 @@ public class CertificateImportDialog extends JDialog {
             public String call( final Object o) {
                 return certificateNameResolver.resolve((X509Certificate[])o);  
             }
-        } ) );
+        }, new Functions.Unary<String,Object>(){
+            @Override
+            public String call( final Object o) {
+                return getTooltip(((X509Certificate[])o)[0]);
+            }
+        }, false ) );
         certificateList.addListSelectionListener( new RunOnChangeListener( new Runnable(){
             @Override
             public void run() {
@@ -105,6 +111,27 @@ public class CertificateImportDialog extends JDialog {
         Utilities.setDoubleClickAction( certificateList, viewButton );
         Utilities.centerOnParentWindow(this);
         Utilities.setEscKeyStrokeDisposes(this);
+    }
+
+    private String getTooltip( final X509Certificate x509Certificate ) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("<html>Issuer: ");
+        builder.append(x509Certificate.getIssuerDN().getName());
+        builder.append("<br/>Serial Number: ");
+        builder.append(x509Certificate.getSerialNumber().toString());
+        builder.append("<br/>SHA-1 Thumbprint: ");
+
+        try {
+            builder.append(CertUtils.getCertificateFingerprint(x509Certificate, "SHA1"));
+        } catch (CertificateEncodingException e) {
+            builder.append("&lt;Unknown>");
+        } catch (NoSuchAlgorithmException e) {
+            builder.append("&lt;Unknown>");
+        }
+        builder.append("</html>");
+
+        return builder.toString();
     }
 
     /**
