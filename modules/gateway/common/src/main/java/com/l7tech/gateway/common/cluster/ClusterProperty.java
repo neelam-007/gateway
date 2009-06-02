@@ -7,14 +7,13 @@
 package com.l7tech.gateway.common.cluster;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.HashSet;
-
-import org.hibernate.annotations.Proxy;
 
 /**
  * A row in the cluster_properties table. On the server-side, this is managed through
@@ -45,6 +44,7 @@ public class ClusterProperty extends NamedEntityImp {
         hiddenInGui.add("krb5.keytab");
         hiddenInGui.add("keyStore.defaultSsl.alias");
         hiddenInGui.add("keyStore.defaultCa.alias");
+        hiddenInGui.add("interfaceTags");
     }
 
     public ClusterProperty() { }
