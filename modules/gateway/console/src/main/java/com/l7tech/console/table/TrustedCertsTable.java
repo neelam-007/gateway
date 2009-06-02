@@ -2,6 +2,7 @@ package com.l7tech.console.table;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.util.TimeUnit;
 
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
@@ -12,8 +13,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.*;
 import java.util.Date;
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -21,6 +20,9 @@ import java.text.ParseException;
  * $Id$
  */
 public class TrustedCertsTable extends JTable {
+
+    private static Date clusterDate = null;
+    private static long clusterDateRefresh = 0;
 
     private TrustedCertTableSorter tableSorter = null;
 
@@ -71,6 +73,7 @@ public class TrustedCertsTable extends JTable {
             };
 
             tableSorter = new TrustedCertTableSorter(new DefaultTableModel(rows, cols) {
+                @Override
                 public boolean isCellEditable(int row, int col) {
                     // the table cells are not editable
                     return false;
@@ -90,6 +93,7 @@ public class TrustedCertsTable extends JTable {
         final JTable tableView = this;
         tableView.setColumnSelectionAllowed(false);
         MouseAdapter listMouseListener = new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                 TableColumnModel columnModel = tableView.getColumnModel();
                 int viewColumn = columnModel.getColumnIndexAtX(e.getX());
@@ -113,7 +117,7 @@ public class TrustedCertsTable extends JTable {
     public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
         Component cell = super.prepareRenderer(renderer, row, column);
         TrustedCert trustedCert = (TrustedCert) tableSorter.getData(row);
-        Date today = Registry.getDefault().getClusterStatusAdmin().getCurrentClusterSystemTime();
+        Date today = getClusterDate();
 
         if (trustedCert.getCertificate().getNotAfter().before(today)) {
             cell.setBackground(Color.RED);
@@ -123,5 +127,15 @@ public class TrustedCertsTable extends JTable {
             cell.setBackground(Color.WHITE);
         }
         return cell;
+    }
+
+    private static Date getClusterDate() {
+        Date date = clusterDate;
+        if ( date == null || (System.currentTimeMillis() > (clusterDateRefresh + TimeUnit.MINUTES.toMillis(2)))) {
+            date = Registry.getDefault().getClusterStatusAdmin().getCurrentClusterSystemTime();
+            clusterDate = date;
+            clusterDateRefresh = System.currentTimeMillis();
+        }
+        return date;
     }
 }
