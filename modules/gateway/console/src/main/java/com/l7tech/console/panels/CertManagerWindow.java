@@ -67,8 +67,8 @@ public class CertManagerWindow extends JDialog {
      *
      * @param owner The parent component
      */
-    public CertManagerWindow(Frame owner) {
-        super(owner, resources.getString("dialog.title"), true);
+    public CertManagerWindow( final Window owner ) {
+        super(owner, resources.getString("dialog.title"), DEFAULT_MODALITY_TYPE);
 
         flags = PermissionFlags.get(TRUSTED_CERT);
 
@@ -171,23 +171,39 @@ public class CertManagerWindow extends JDialog {
         removeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent event) {
-                int sr = trustedCertTable.getSelectedRow();
+                int[] srs = trustedCertTable.getSelectedRows();
+                long[] oids = new long[srs.length];
 
-                String certName = (String)trustedCertTable.getValueAt(sr, TrustedCertTableSorter.CERT_TABLE_CERT_NAME_COLUMN_INDEX);
-                TrustedCert tc = (TrustedCert)trustedCertTable.getTableSorter().getData(sr);
-
-                Object[] options = {"Remove", "Cancel"};
-                int result = JOptionPane.showOptionDialog(null,
-                                                          "<html>Are you sure you want to remove the certificate:  " +
+                String message;
+                if ( srs.length == 1 ) {
+                    String certName = (String)trustedCertTable.getValueAt(srs[0], TrustedCertTableSorter.CERT_TABLE_CERT_NAME_COLUMN_INDEX);
+                    TrustedCert tc = (TrustedCert)trustedCertTable.getTableSorter().getData(srs[0]);
+                    message = "<html>Are you sure you want to remove the certificate:  " +
                                                           certName + "?<br>" +
                                                           "<center>This action cannot be undone." +
-                                                          "</center></html>",
-                                                          "Remove the certificate?",
+                                                          "</center></html>";
+                    oids[0] = tc.getOid();
+                } else {
+                    message = "<html>Are you sure you want to remove " +srs.length+ " certificates?<br>" +
+                                                          "<center>This action cannot be undone." +
+                                                          "</center></html>";
+                    for ( int i = 0; i < srs.length; i++ ) {
+                        TrustedCert tc = (TrustedCert)trustedCertTable.getTableSorter().getData(srs[i]);
+                        oids[i] = tc.getOid();
+                    }
+                }
+
+                Object[] options = {"Remove", "Cancel"};
+                int result = JOptionPane.showOptionDialog(CertManagerWindow.this,
+                                                          message,
+                                                          "Remove the certificate(s)?",
                                                           0, JOptionPane.WARNING_MESSAGE,
                                                           null, options, options[1]);
                 if (result == 0) {
                     try {
-                        getTrustedCertAdmin().deleteCert(tc.getOid());
+                        for ( long oid : oids ) {
+                            getTrustedCertAdmin().deleteCert(oid);
+                        }
 
                         // reload all certs from server
                         loadTrustedCerts();
@@ -465,6 +481,7 @@ public class CertManagerWindow extends JDialog {
     private void enableOrDisableButtons() {
         boolean propsEnabled = false;
         boolean removeEnabled = false;
+        boolean multiSelect = trustedCertTable.getSelectedRowCount() > 1;
         int row = trustedCertTable.getSelectedRow();
         if (row >= 0) {
             removeEnabled = true;
@@ -473,7 +490,7 @@ public class CertManagerWindow extends JDialog {
         addButton.setEnabled(flags.canCreateSome());
         importButton.setEnabled(flags.canCreateSome());
         removeButton.setEnabled(flags.canDeleteSome() && removeEnabled);
-        propertiesButton.setEnabled(propsEnabled); // Child dialog should be read-only if !canUpdateAny
+        propertiesButton.setEnabled( !multiSelect && propsEnabled ); // Child dialog should be read-only if !canUpdateAny
     }
 
     private void showCertificateValidation() {

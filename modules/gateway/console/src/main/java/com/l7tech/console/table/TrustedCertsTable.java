@@ -30,7 +30,6 @@ public class TrustedCertsTable extends JTable {
 
         setModel(getTrustedCertTableModel());
         getTableHeader().setReorderingAllowed(false);
-        getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         addMouseListenerToHeaderInTable();
     }
