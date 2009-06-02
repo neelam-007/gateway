@@ -343,11 +343,25 @@ public class CertUtils {
      * @throws CertificateException if the certificate decoding fails
      */
     public static X509Certificate decodeFromPEM(String certificateText) throws IOException, CertificateException {
+        return decodeFromPEM( certificateText, false );
+    }
+
+    /**
+     * Get the X509Certifcate that is (Base64) encoded in the given text.  PEM header/footers, if present, are ignored.
+     *
+     * @param certificateText The base64 encoded certficate data, possibly with PEM header/footer
+     * @param requireMarker True to require PEM header/footer
+     * @return the X509Certificate certificate
+     * @throws IOException if the text is not a PEM/Base64 data
+     * @throws CertificateException if the certificate decoding fails
+     */
+    public static X509Certificate decodeFromPEM(String certificateText, boolean requireMarker ) throws IOException, CertificateException {
         int startIndex = certificateText.indexOf(PEM_CERT_BEGIN_MARKER);
         int endIndex = certificateText.indexOf(PEM_CERT_END_MARKER);
 
         final String base64Certificate;
-        if (startIndex < 0) {
+        if ( startIndex < 0 || endIndex < startIndex ) {
+            if (requireMarker) throw new IOException("Invalid PEM begin/end marker");
             if (endIndex >= 0) throw new IOException("Begin PEM marker present, but end marker missing");
             base64Certificate = certificateText;
         } else {

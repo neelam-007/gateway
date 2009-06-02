@@ -270,7 +270,7 @@ public class GuiCertUtil {
                         try {
                             if (selectedFilter == pemFilter) {
                                 String fileData = new String(fileBytes, "UTF-8");
-                                X509Certificate[] certificateChain = new X509Certificate[] { CertUtils.decodeFromPEM(fileData) };
+                                X509Certificate[] certificateChain = new X509Certificate[] { CertUtils.decodeFromPEM(fileData, true) };
                                 PrivateKey privateKey = null;
                                 if (privateKeyRequired || fileData.indexOf(" PRIVATE KEY-----")>0) {
                                     try {
