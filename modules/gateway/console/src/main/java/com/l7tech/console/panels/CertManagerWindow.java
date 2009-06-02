@@ -36,6 +36,7 @@ import java.util.logging.Logger;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.security.NoSuchAlgorithmException;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -310,7 +311,16 @@ public class CertManagerWindow extends JDialog {
     }
 
     private String describeCertificate( X509Certificate certificate ) {
-        return certificate.getSubjectX500Principal().getName();
+        String thumbprint;
+        try {
+            thumbprint = CertUtils.getCertificateFingerprint( certificate, "SHA1" );
+        } catch ( CertificateEncodingException e ) {
+            thumbprint = "<Unknown>";
+        } catch ( NoSuchAlgorithmException e ) {
+            thumbprint = "<Unknown>";
+        }
+
+        return certificate.getSubjectX500Principal().getName() + " [SHA-1 Thumbprint: "+thumbprint+"]";
     }
 
     private void handleImportResult( final Collection<String> duplicateCerts,
@@ -363,15 +373,15 @@ public class CertManagerWindow extends JDialog {
                            final Collection<String> errorCerts,
                            final Collection<String> importedCertificateThumprints ) {
 
-        String thumprint = null;
+        String thumbprint = null;
         try {
-            thumprint = CertUtils.getThumbprintSHA1( certificate );
+            thumbprint = CertUtils.getThumbprintSHA1( certificate );
         } catch (CertificateEncodingException e) {
             errorCerts.add( describeCertificate( certificate ) );
             logger.log( Level.WARNING, "Certificate import failed", e);
         }
 
-        if ( thumprint != null && !importedCertificateThumprints.contains(thumprint) ) {
+        if ( thumbprint != null && !importedCertificateThumprints.contains(thumbprint) ) {
             TrustedCert cert = new TrustedCert();
             String name = CertUtils.extractFirstCommonNameFromCertificate( certificate );
             if ( name == null ) {
@@ -385,7 +395,7 @@ public class CertManagerWindow extends JDialog {
 
             try {
                 getTrustedCertAdmin().saveCert( cert );
-                importedCertificateThumprints.add( thumprint );
+                importedCertificateThumprints.add( thumbprint );
             } catch ( DuplicateObjectException doe ) {
                 duplicateCerts.add( describeCertificate( certificate ) );
             } catch ( ObjectModelException e) {

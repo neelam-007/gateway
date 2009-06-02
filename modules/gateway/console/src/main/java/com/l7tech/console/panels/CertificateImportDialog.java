@@ -87,7 +87,7 @@ public class CertificateImportDialog extends JDialog {
             model.addElement( certChain );
         }
         certificateList.setModel( model );
-        certificateList.setCellRenderer( new TextListCellRenderer( new Functions.Unary<String,Object>(){
+        certificateList.setCellRenderer( new TextListCellRenderer<Object>( new Functions.Unary<String,Object>(){
             @Override
             public String call( final Object o) {
                 return certificateNameResolver.resolve((X509Certificate[])o);  
