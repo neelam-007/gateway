@@ -39,7 +39,7 @@ import java.util.logging.Logger;
  * Uses JBossCache to maintain a distributed cache of message IDs, in order to detect
  * attempts at replaying the same messages to different cluster nodes.
  * <p>
- * This service is used by the {@link com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection} assertion.
+ * This service is used by the {@link com.l7tech.policy.assertion.xmlsec.WssReplayProtection} assertion.
  *
  * @author alex
  * @author mike

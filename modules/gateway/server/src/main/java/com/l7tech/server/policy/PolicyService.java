@@ -87,8 +87,8 @@ public class PolicyService extends ApplicationObjectSupport {
      * allowed to download the policy
      */
     private static final Assertion[] ALL_CREDENTIAL_ASSERTIONS_TYPES = new Assertion[] {
-        RequestWssSaml.newHolderOfKey(),
-        new RequestWssX509Cert(),
+        RequireWssSaml.newHolderOfKey(),
+        new RequireWssX509Cert(),
         new SecureConversation(),
         new HttpDigest(),
         new WssBasic(),
@@ -131,9 +131,9 @@ public class PolicyService extends ApplicationObjectSupport {
         // populate all possible credentials sources
         this.allCredentialAssertions = new ArrayList<Assertion>();
         for (Assertion assertion : ALL_CREDENTIAL_ASSERTIONS_TYPES) {
-            if (assertion instanceof RequestWssSaml) {
+            if (assertion instanceof RequireWssSaml) {
                 // Lighten saml requirements for policy download
-                RequestWssSaml requestWssSaml = (RequestWssSaml) assertion;
+                RequireWssSaml requestWssSaml = (RequireWssSaml) assertion;
                 requestWssSaml.setCheckAssertionValidity(false);
                 requestWssSaml.setNameFormats(SamlConstants.ALL_NAMEIDENTIFIERS);
                 SamlAuthenticationStatement as = new SamlAuthenticationStatement();

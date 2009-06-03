@@ -129,7 +129,7 @@ public class SamlProcessingTest extends TestCase {
         samlOptions.setAttestingEntity(holderOfKeySigner);
         SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(authoritySigner);
         SubjectStatement subjectStatement =
-          SubjectStatement.createAuthenticationStatement(LoginCredentials.makeCertificateCredentials(holderOfKeySigner.getCertificateChain()[0], RequestWssX509Cert.class),
+          SubjectStatement.createAuthenticationStatement(LoginCredentials.makeCertificateCredentials(holderOfKeySigner.getCertificateChain()[0], RequireWssX509Cert.class),
               SubjectStatement.HOLDER_OF_KEY,
               KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         for (ServiceDescriptor serviceDescriptor : serviceDescriptors) {
@@ -256,7 +256,7 @@ public class SamlProcessingTest extends TestCase {
         samlOptions.setClientAddress(InetAddress.getLocalHost());
         samlOptions.setAttestingEntity(holderOfKeySigner);
         SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(authoritySigner);
-        final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(holderOfKeySigner.getCertificateChain()[0], RequestWssX509Cert.class);
+        final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(holderOfKeySigner.getCertificateChain()[0], RequireWssX509Cert.class);
         SubjectStatement subjectStatement = SubjectStatement.createAuthorizationStatement(credentials,
           SubjectStatement.HOLDER_OF_KEY, KeyInfoInclusionType.CERT, "http://wheel", null, null, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
 
@@ -318,7 +318,7 @@ public class SamlProcessingTest extends TestCase {
 
     private static String getAttributeAssertionPolicy() {
         SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
-        RequestWssSaml a = new RequestWssSaml();
+        RequireWssSaml a = new RequireWssSaml();
         a.setAttributeStatement(samlAttributeStatement);
         Assertion policy = new AllAssertion(Arrays.asList(
             // Saml Attribute statement:
@@ -331,7 +331,7 @@ public class SamlProcessingTest extends TestCase {
     }
 
     private static String getAuthorizationAssertionPolicy() {
-        RequestWssSaml a = new RequestWssSaml();
+        RequireWssSaml a = new RequireWssSaml();
         SamlAuthorizationStatement samlAuthorizationStatement = new SamlAuthorizationStatement();
         a.setAuthorizationStatement(samlAuthorizationStatement);
         Assertion policy = new AllAssertion(Arrays.asList(
@@ -346,7 +346,7 @@ public class SamlProcessingTest extends TestCase {
 
     private static String getAuthenticationAssertionPolicy() {
         SamlAuthenticationStatement samlAuthenticationStatement = new SamlAuthenticationStatement();
-        RequestWssSaml a = new RequestWssSaml();
+        RequireWssSaml a = new RequireWssSaml();
         a.setAuthenticationStatement(samlAuthenticationStatement);
         Assertion policy = new AllAssertion(Arrays.asList(
             // Saml Authentication Statement:

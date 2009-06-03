@@ -10,8 +10,8 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml2;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
@@ -130,7 +130,7 @@ public class WspWriterTest extends TestCase {
         String policyXml = writePolicy(policy);
         log.fine("Policy XML output:\n" + policyXml);
 
-        assertEquals(policyXml, readPolicyFile(ALL_DISABLED_ASSERTIONS_POLICY));
+        assertEquals("Policy with disabled assertions", readPolicyFile(ALL_DISABLED_ASSERTIONS_POLICY), policyXml);
     }
 
     /**
@@ -145,7 +145,7 @@ public class WspWriterTest extends TestCase {
         String policyXml = writePolicy(policy);
         log.fine("Policy XML output:\n" + policyXml);
         
-        assertEquals(policyXml, readPolicyFile(ALL_ENABLED_ASSERTIONS_POLICY));
+        assertEquals("Policy with enabled assertions.", readPolicyFile(ALL_ENABLED_ASSERTIONS_POLICY), policyXml);
     }
 
     public void testWritePolicy() throws Exception {
@@ -175,7 +175,7 @@ public class WspWriterTest extends TestCase {
         fos.write(knownStr.getBytes());
         fos.close();
 
-        assertEquals(gotXml, knownStr);
+        assertEquals("Policy with all assertions",knownStr, gotXml);
         log.info("Output matched expected XML.");
 
         // Test validation with WS-Policy schema
@@ -383,12 +383,12 @@ public class WspWriterTest extends TestCase {
 
     @BugNumber(4752)
     public void testBug4752SamlVersion() throws Exception {
-        RequestWssSaml ass = new RequestWssSaml();
+        RequireWssSaml ass = new RequireWssSaml();
         ass.setVersion(1);
         assertTrue(WspWriter.getPolicyXml(ass).contains("TokenType>urn:oasis:names:tc:SAML:1.0:assertion#Assertion<"));
         assertFalse(WspWriter.getPolicyXml(ass).contains(":SAML:2.0:"));
 
-        RequestWssSaml2 ass2 = new RequestWssSaml2();
+        RequireWssSaml2 ass2 = new RequireWssSaml2();
         ass2.setVersion(2);
         assertFalse(WspWriter.getPolicyXml(ass2).contains("SAML:1.0:"));
         assertTrue(WspWriter.getPolicyXml(ass2).contains("TokenType>urn:oasis:names:tc:SAML:2.0:assertion#Assertion<"));

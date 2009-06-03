@@ -5,7 +5,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.panels.TargetMessagePanel;
 import com.l7tech.gui.widgets.ValidatedPanel;
-import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
+import com.l7tech.policy.assertion.xmlsec.WssReplayProtection;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,19 +13,19 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 /** @author alex */
-public class ReplayProtectionPropertiesPanel extends ValidatedPanel<RequestWssReplayProtection> {
+public class ReplayProtectionPropertiesPanel extends ValidatedPanel<WssReplayProtection> {
     private TargetMessagePanel targetMessagePanel;
     private JPanel mainPanel;
-    private final RequestWssReplayProtection assertion;
+    private final WssReplayProtection assertion;
 
     private volatile boolean targetPanelValid = true;
 
-    public ReplayProtectionPropertiesPanel(RequestWssReplayProtection assertion) {
+    public ReplayProtectionPropertiesPanel(WssReplayProtection assertion) {
         this.assertion = assertion;
         init();
     }
 
-    protected RequestWssReplayProtection getModel() {
+    protected WssReplayProtection getModel() {
         return assertion;
     }
 
@@ -50,7 +50,7 @@ public class ReplayProtectionPropertiesPanel extends ValidatedPanel<RequestWssRe
     }
 
     @Override
-    protected String getSyntaxError(RequestWssReplayProtection model) {
+    protected String getSyntaxError(WssReplayProtection model) {
         if (!targetPanelValid) return "Variable name is required";
         return null;
     }

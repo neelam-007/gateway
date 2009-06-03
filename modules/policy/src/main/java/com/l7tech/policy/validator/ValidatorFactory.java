@@ -31,13 +31,12 @@ class ValidatorFactory {
     static {
         assertionMap.put(RequestXpathAssertion.class, XpathBasedAssertionValidator.class);
         assertionMap.put(ResponseXpathAssertion.class, XpathBasedAssertionValidator.class);
-        assertionMap.put(RequestWssIntegrity.class, XpathBasedAssertionValidator.class);
-        assertionMap.put(RequestWssConfidentiality.class, RequestWssConfidentialityValidator.class);
-        assertionMap.put(ResponseWssIntegrity.class, ResponseWssIntegrityValidator.class);
-        assertionMap.put(ResponseWssConfidentiality.class, ResponseWssConfidentialityValidator.class);
+        assertionMap.put(RequireWssSignedElement.class, XpathBasedAssertionValidator.class);
+        assertionMap.put(WssSignElement.class, WssSignElementValidator.class);
+        assertionMap.put(WssEncryptElement.class, WssEncryptElementValidator.class);
         assertionMap.put(RequestSwAAssertion.class, SwaRequestAssertionValidator.class);
-        assertionMap.put(RequestWssSaml.class, SamlStatementValidator.class);
-        assertionMap.put(RequestWssSaml2.class, SamlStatementValidator.class);
+        assertionMap.put(RequireWssSaml.class, SamlStatementValidator.class);
+        assertionMap.put(RequireWssSaml2.class, SamlStatementValidator.class);
         assertionMap.put(WsiBspAssertion.class, WsiBspAssertionValidator.class);
         assertionMap.put(WsspAssertion.class, WsspAssertionValidator.class);
         assertionMap.put(BridgeRoutingAssertion.class, BridgeRoutingAssertionValidator.class);

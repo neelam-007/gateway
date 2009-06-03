@@ -7,7 +7,7 @@ package com.l7tech.policy.wsp;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.security.saml.SamlConstants;
 import org.w3c.dom.Element;
@@ -27,9 +27,9 @@ class WspUpgradeUtilFrom30 {
             };
     
     public static TypeMapping samlSecurityCompatibilityMapping =
-            new CompatibilityAssertionMapping(new RequestWssSaml(), "SamlSecurity") {
+            new CompatibilityAssertionMapping(new RequireWssSaml(), "SamlSecurity") {
                 protected void configureAssertion(Assertion ass, Element source, WspVisitor visitor) {
-                    RequestWssSaml saml = (RequestWssSaml)ass;
+                    RequireWssSaml saml = (RequireWssSaml)ass;
                     saml.setRequireHolderOfKeyWithMessageSignature(true);
                     saml.setSubjectConfirmations(new String[] { SamlConstants.CONFIRMATION_HOLDER_OF_KEY });
                     saml.setNameFormats(SamlConstants.ALL_NAMEIDENTIFIERS);

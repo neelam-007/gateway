@@ -13,7 +13,7 @@ import com.l7tech.util.ArrayUtils;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.Assertion;
 
 import java.security.cert.X509Certificate;
@@ -365,7 +365,7 @@ public class LoginCredentials implements SecurityToken {
 
     // Mappings from assertions to token types
     private static final Map CREDENTIAL_SOURCE_TO_TOKEN_TYPE = ArrayUtils.asMap(new Object[][]{
-            {RequestWssX509Cert.class, SecurityTokenType.WSS_X509_BST},
+            {RequireWssX509Cert.class, SecurityTokenType.WSS_X509_BST},
             {WssBasic.class, SecurityTokenType.WSS_USERNAME},
             {XpathCredentialSource.class, SecurityTokenType.XPATH_CREDENTIALS},
             {HttpNegotiate.class, SecurityTokenType.HTTP_KERBEROS},

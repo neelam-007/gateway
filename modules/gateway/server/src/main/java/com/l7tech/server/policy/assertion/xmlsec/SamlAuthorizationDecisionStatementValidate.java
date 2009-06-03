@@ -1,7 +1,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import org.w3c.dom.Document;
 import org.apache.xmlbeans.XmlObject;
@@ -23,7 +23,7 @@ class SamlAuthorizationDecisionStatementValidate extends SamlStatementValidate {
      *
      * @param requestWssSaml     the saml statement assertion
      */
-    SamlAuthorizationDecisionStatementValidate(RequestWssSaml requestWssSaml) {
+    SamlAuthorizationDecisionStatementValidate(RequireWssSaml requestWssSaml) {
         super(requestWssSaml);
         authorizationStatementRequirements = requestWssSaml.getAuthorizationStatement();
         if (authorizationStatementRequirements == null) {

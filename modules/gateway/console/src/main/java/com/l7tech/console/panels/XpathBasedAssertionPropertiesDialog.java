@@ -31,10 +31,10 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
+import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
+import com.l7tech.policy.assertion.xmlsec.WssSignElement;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.PolicyVariableUtils;
 import com.l7tech.policy.variable.Syntax;
@@ -239,8 +239,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         } else {
             namespaces = new HashMap<String,String>();
         }
-        isEncryption = assertion instanceof RequestWssConfidentiality ||
-                assertion instanceof ResponseWssConfidentiality;
+        isEncryption = assertion instanceof RequireWssEncryptedElement ||
+                assertion instanceof WssEncryptElement;
         final EntityWithPolicyNode ewpn = TopComponents.getInstance().getPolicyEditorPanel().getPolicyNode();
         serviceNode = ewpn instanceof ServiceNode ? (ServiceNode) ewpn : null;
         if ( serviceNode == null ) {
@@ -271,7 +271,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             xmlMsgSrcPanel.setVisible(false);
         }
 
-        signatureResponseConfigPanel.setVisible(assertion instanceof ResponseWssIntegrity);
+        signatureResponseConfigPanel.setVisible(assertion instanceof WssSignElement);
         if (serviceNode != null) {
             try {
                 serviceWsdl = serviceNode.getEntity().parsedWsdl();
@@ -591,11 +591,11 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                     ((SimpleXpathAssertion)assertion).setVariablePrefix(varPrefixField.getText());
                 }
 
-                if (assertion instanceof RequestWssIntegrity) {
+                if (assertion instanceof RequireWssSignedElement) {
                     if ( varPrefixField.getText()!= null && varPrefixField.getText().length() > 0 ) {
-                        ((RequestWssIntegrity)assertion).setVariablePrefix( varPrefixField.getText() );
+                        ((RequireWssSignedElement)assertion).setVariablePrefix( varPrefixField.getText() );
                     } else {
-                        ((RequestWssIntegrity)assertion).setVariablePrefix( null );
+                        ((RequireWssSignedElement)assertion).setVariablePrefix( null );
                     }
                 }
 
@@ -674,18 +674,18 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
 
         String description = null;
         String title = null;
-        if (assertion instanceof RequestWssConfidentiality) {
+        if (assertion instanceof RequireWssEncryptedElement) {
             description = "Select encrypted elements:";
-            title = "Require Encrypted " + ((RequestWssConfidentiality)assertion).getTargetName() + " Element Properties";
-        } else if (assertion instanceof ResponseWssConfidentiality) {
+            title = "Require Encrypted " + ((RequireWssEncryptedElement)assertion).getTargetName() + " Element Properties";
+        } else if (assertion instanceof WssEncryptElement) {
             description = "Select elements to encrypt:";
-            title = "Encrypt " + ((ResponseWssConfidentiality)assertion).getTargetName() + " Element Properties";
-        } else if (assertion instanceof RequestWssIntegrity) {
+            title = "Encrypt " + ((WssEncryptElement)assertion).getTargetName() + " Element Properties";
+        } else if (assertion instanceof RequireWssSignedElement) {
             description = "Select signed elements:";
-            title = "Require Signed " + ((RequestWssIntegrity)assertion).getTargetName() + " Element Properties";
-        } else if (assertion instanceof ResponseWssIntegrity) {
+            title = "Require Signed " + ((RequireWssSignedElement)assertion).getTargetName() + " Element Properties";
+        } else if (assertion instanceof WssSignElement) {
             description = "Select elements to sign:";
-            title = "Sign " + ((ResponseWssIntegrity)assertion).getTargetName() + " Element Properties";
+            title = "Sign " + ((WssSignElement)assertion).getTargetName() + " Element Properties";
         } else if (assertion instanceof ResponseXpathAssertion) {
             description = "Select the response path to evaluate:";
             title = "Evaluate Response XPath Properties";
@@ -700,8 +700,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             SimpleXpathAssertion sxa = (SimpleXpathAssertion)assertion;
             processPrefix = true;
             prefix = sxa.getVariablePrefix();
-        } else if ( assertion instanceof RequestWssIntegrity ) {
-            RequestWssIntegrity sxa = (RequestWssIntegrity)assertion;
+        } else if ( assertion instanceof RequireWssSignedElement) {
+            RequireWssSignedElement sxa = (RequireWssSignedElement)assertion;
             processPrefix = true;
             prefix = sxa.getVariablePrefix();
         }
@@ -742,11 +742,11 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     }
 
     private void initializeResponseSignatureConfig() {
-        if (!(assertion instanceof ResponseWssIntegrity)) {
+        if (!(assertion instanceof WssSignElement)) {
             signatureResponseConfigPanel.setVisible(false);
             return;
         }
-        ResponseWssIntegrity rwssi = (ResponseWssIntegrity)assertion;
+        WssSignElement rwssi = (WssSignElement)assertion;
         ButtonGroup bg = new ButtonGroup();
         bg.add(bstReferenceRadioButton);
         bg.add(skiReferenceRadioButton);
@@ -764,8 +764,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             return;
         }
 
-        if (assertion instanceof ResponseWssConfidentiality) {
-            ResponseWssConfidentiality responseWssConfidentiality = (ResponseWssConfidentiality)assertion;
+        if (assertion instanceof WssEncryptElement) {
+            WssEncryptElement responseWssConfidentiality = (WssEncryptElement)assertion;
             String xencAlgorithm = responseWssConfidentiality.getXEncAlgorithm();
 
             if (xencAlgorithm == null) {
@@ -776,8 +776,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             aes256CheckBox.setSelected(XencAlgorithm.AES_256_CBC.getXEncName().equals(xencAlgorithm));
             tripleDESCheckBox.setSelected(XencAlgorithm.TRIPLE_DES_CBC.getXEncName().equals(xencAlgorithm));
 
-        } else if (assertion instanceof RequestWssConfidentiality) {
-            RequestWssConfidentiality requestWssConfidentiality = (RequestWssConfidentiality)assertion;
+        } else if (assertion instanceof RequireWssEncryptedElement) {
+            RequireWssEncryptedElement requestWssConfidentiality = (RequireWssEncryptedElement)assertion;
             List<String> xencAlgorithmlist = requestWssConfidentiality.getXEncAlgorithmList();
 
             if (xencAlgorithmlist == null) {
@@ -819,28 +819,28 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                             "You did not choose any encryption methods.  Please choose at least one of them.", null);
             return false;
         }
-        if (assertion instanceof ResponseWssConfidentiality) {
+        if (assertion instanceof WssEncryptElement) {
             // Response Encryption Assertion allows only one encryption method.
             if (xencAlgorithmList.size() > 1) {
                 DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), null,
                             "It is not allowed to choose more than one encryption methods.  Please choose one of them.", null);
                 return false;
             }
-            ResponseWssConfidentiality responseWssConfidentiality = (ResponseWssConfidentiality)assertion;
+            WssEncryptElement responseWssConfidentiality = (WssEncryptElement)assertion;
             responseWssConfidentiality.setXEncAlgorithm(xencAlgorithmList.get(0));
 
-        } else if (assertion instanceof RequestWssConfidentiality) {
-            RequestWssConfidentiality requestWssConfidentiality = (RequestWssConfidentiality)assertion;
+        } else if (assertion instanceof RequireWssEncryptedElement) {
+            RequireWssEncryptedElement requestWssConfidentiality = (RequireWssEncryptedElement)assertion;
             requestWssConfidentiality.setXEncAlgorithmList(xencAlgorithmList);
         }
         return true;
     }
 
     private void collectResponseSignatureConfig() {
-        if (!(assertion instanceof ResponseWssIntegrity)) {
+        if (!(assertion instanceof WssSignElement)) {
             return;
         }
-        ResponseWssIntegrity rwssi = (ResponseWssIntegrity)assertion;
+        WssSignElement rwssi = (WssSignElement)assertion;
         rwssi.setProtectTokens(signedBstCheckBox.isSelected());
         if (bstReferenceRadioButton.isSelected()) {
             rwssi.setKeyReference(KeyReference.BST.getName());

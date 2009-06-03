@@ -8,7 +8,7 @@ package com.l7tech.external.assertions.samlpassertion.console;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.external.assertions.samlpassertion.SamlpRequestBuilderAssertion;
 import com.l7tech.external.assertions.samlpassertion.SamlProtocolAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlConstants;
 
@@ -141,7 +141,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
 
             enableDisable();
         } else {
-            RequestWssSaml requestWssSaml = (RequestWssSaml)settings;
+            RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
             for (Map.Entry<String, JToggleButton> entry : nameFormatsMap.entrySet()) {
                 JToggleButton jc = entry.getValue();
                 if (jc.isEnabled())
@@ -202,7 +202,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends SamlpWizar
                 sia.setNameIdentifierValue(null);
             }
         } else {
-            RequestWssSaml requestWssSaml = (RequestWssSaml)settings;
+            RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
             Collection<String> formats = new ArrayList<String>();
             for (Map.Entry<String, JToggleButton> entry : nameFormatsMap.entrySet()) {
                 JToggleButton jc = entry.getValue();

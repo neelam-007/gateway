@@ -7,7 +7,7 @@ package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.security.saml.SamlConstants;
 
 import javax.swing.*;
@@ -100,7 +100,7 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        RequestWssSaml assertion = (RequestWssSaml)settings;
+        RequireWssSaml assertion = (RequireWssSaml)settings;
         SamlAuthenticationStatement statement = assertion.getAuthenticationStatement();
         setSkipped(statement == null);
         if (statement == null) {
@@ -140,7 +140,7 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        RequestWssSaml assertion = (RequestWssSaml)settings;
+        RequireWssSaml assertion = (RequireWssSaml)settings;
          SamlAuthenticationStatement statement = assertion.getAuthenticationStatement();
          if (statement == null) {
              throw new IllegalArgumentException();

@@ -248,12 +248,12 @@ public class WsspWriter {
         Collection<? extends XpathBasedAssertion> encryptionAssertions;
         Collection<? extends XpathBasedAssertion> signingAssertions;
         if (isInput) {
-            encryptionAssertions = getInstancesOf(l7Assertions, RequestWssConfidentiality.class);
-            signingAssertions = getInstancesOf(l7Assertions, RequestWssIntegrity.class);
+            encryptionAssertions = getInstancesOf(l7Assertions, RequireWssEncryptedElement.class);
+            signingAssertions = getInstancesOf(l7Assertions, RequireWssSignedElement.class);
         }
         else {
-            encryptionAssertions = getInstancesOf(l7Assertions, ResponseWssConfidentiality.class);
-            signingAssertions = getInstancesOf(l7Assertions, ResponseWssIntegrity.class);
+            encryptionAssertions = getInstancesOf(l7Assertions, WssEncryptElement.class);
+            signingAssertions = getInstancesOf(l7Assertions, WssSignElement.class);
         }
 
         if (!encryptionAssertions.isEmpty()) {
@@ -368,11 +368,11 @@ public class WsspWriter {
 
     // WSS assertions
     private static final Collection<Class<? extends Assertion>> WSS_ASSERTIONS = Collections.unmodifiableCollection(Arrays.<Class<? extends Assertion>>asList(
-        RequestWssX509Cert.class,
-        RequestWssIntegrity.class,
-        RequestWssConfidentiality.class,
-        ResponseWssIntegrity.class,
-        ResponseWssConfidentiality.class
+        RequireWssX509Cert.class,
+        RequireWssSignedElement.class,
+        RequireWssEncryptedElement.class,
+        WssSignElement.class,
+        WssEncryptElement.class
     ));
 
     private static final Collection<Class<? extends Assertion>> SYMMETRIC_ASSERTIONS = Collections.<Class<? extends Assertion>>unmodifiableCollection(Arrays.asList(
@@ -393,13 +393,13 @@ public class WsspWriter {
         WssDigest.class,
         EncryptedUsernameTokenAssertion.class,
         SecureConversation.class,
-        RequestWssTimestamp.class,
-        RequestWssX509Cert.class,
-        RequestWssIntegrity.class,
-        RequestWssConfidentiality.class,
-        ResponseWssTimestamp.class,
-        ResponseWssIntegrity.class,
-        ResponseWssConfidentiality.class
+        RequireWssTimestamp.class,
+        RequireWssX509Cert.class,
+        RequireWssSignedElement.class,
+        RequireWssEncryptedElement.class,
+        AddWssTimestamp.class,
+        WssSignElement.class,
+        WssEncryptElement.class
     ));
 
     /**
@@ -418,10 +418,10 @@ public class WsspWriter {
             } else if (isWssAssertion(assertion)) {
                 usesWss = true;
 
-                ensureHeaderOrBodyXpathsOnly(this.<XpathBasedAssertion>getInstancesOf(assertions, RequestWssConfidentiality.class));
-                ensureHeaderOrBodyXpathsOnly(this.<XpathBasedAssertion>getInstancesOf(assertions, ResponseWssConfidentiality.class));
-                ensureHeaderOrBodyXpathsOnly(this.<XpathBasedAssertion>getInstancesOf(assertions, RequestWssIntegrity.class));
-                ensureHeaderOrBodyXpathsOnly(this.<XpathBasedAssertion>getInstancesOf(assertions, ResponseWssIntegrity.class));
+                ensureHeaderOrBodyXpathsOnly(this.<XpathBasedAssertion>getInstancesOf(assertions, RequireWssEncryptedElement.class));
+                ensureHeaderOrBodyXpathsOnly(this.<XpathBasedAssertion>getInstancesOf(assertions, WssEncryptElement.class));
+                ensureHeaderOrBodyXpathsOnly(this.<XpathBasedAssertion>getInstancesOf(assertions, RequireWssSignedElement.class));
+                ensureHeaderOrBodyXpathsOnly(this.<XpathBasedAssertion>getInstancesOf(assertions, WssSignElement.class));
             } else if (assertion instanceof SslAssertion) {
                 SslAssertion sslAssertion = (SslAssertion) assertion;
                 if (sslAssertion.isRequireClientAuthentication()) {
@@ -488,12 +488,12 @@ public class WsspWriter {
         for (Assertion assertion : assertions) {
             String algEncStr = null;
             String keyEncAlgStr = null;
-            if (assertion instanceof RequestWssConfidentiality) {
-                RequestWssConfidentiality rwc = (RequestWssConfidentiality) assertion;
+            if (assertion instanceof RequireWssEncryptedElement) {
+                RequireWssEncryptedElement rwc = (RequireWssEncryptedElement) assertion;
                 algEncStr = rwc.getXEncAlgorithm();
                 keyEncAlgStr = rwc.getKeyEncryptionAlgorithm();
-            } else if (assertion instanceof ResponseWssConfidentiality) {
-                ResponseWssConfidentiality rwc = (ResponseWssConfidentiality) assertion;
+            } else if (assertion instanceof WssEncryptElement) {
+                WssEncryptElement rwc = (WssEncryptElement) assertion;
                 algEncStr = rwc.getXEncAlgorithm();
                 keyEncAlgStr = rwc.getKeyEncryptionAlgorithm();
             }
@@ -719,8 +719,8 @@ public class WsspWriter {
 
         bindingPolicy.addTerm(buildAlgorithmSuite(algorithmSuite));
         bindingPolicy.addTerm(buildLayout());
-        if (containsInstanceOf(l7Assertions, RequestWssTimestamp.class) ||
-            containsInstanceOf(l7Assertions, ResponseWssTimestamp.class)) {
+        if (containsInstanceOf(l7Assertions, RequireWssTimestamp.class) ||
+            containsInstanceOf(l7Assertions, AddWssTimestamp.class)) {
             bindingPolicy.addTerm(prim(SPELE_TIMESTAMP));
         }
 
@@ -779,8 +779,8 @@ public class WsspWriter {
 
         bindingPolicy.addTerm(buildAlgorithmSuite(algorithmSuite));
         bindingPolicy.addTerm(buildLayout());
-        if (containsInstanceOf(l7Assertions, RequestWssTimestamp.class) ||
-            containsInstanceOf(l7Assertions, ResponseWssTimestamp.class)) {
+        if (containsInstanceOf(l7Assertions, RequireWssTimestamp.class) ||
+            containsInstanceOf(l7Assertions, AddWssTimestamp.class)) {
             bindingPolicy.addTerm(prim(SPELE_TIMESTAMP));
         }
 

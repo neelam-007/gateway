@@ -7,7 +7,7 @@ import com.l7tech.gui.util.GuiCertUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SamlConstants;
@@ -244,7 +244,7 @@ public class SamlGenerator {
             // Generate
             SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(issuerInfo);
             // this gets fixed up later
-            LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(subjectCertificate, RequestWssX509Cert.class);
+            LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(subjectCertificate, RequireWssX509Cert.class);
             SubjectStatement.Confirmation confirmationMethod = SubjectStatement.BEARER;
             if (SamlConstants.CONFIRMATION_HOLDER_OF_KEY.equals(subjectConfirmation) ||
                 SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY.equals(subjectConfirmation)) {

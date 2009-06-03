@@ -73,6 +73,13 @@ public interface AssertionMetadata {
     String CLIENT_ASSERTION_CLASSNAME = "clientAssertionClassname";
 
     /**
+     * String[]. Messages that are processed by the client assertion. If null, this defaults to ["request"]
+     *
+     * <p>Permited values are "request" and "response".</p>
+     */
+    String CLIENT_ASSERTION_TARGETS = "clientAssertionTargets";
+
+    /**
      * String.  Name to display on "Properties..." pop-up menu action if using the DefaultAssertionPropertiesAction.
      * <P/>
      * Defaults to SHORT_NAME converted to title caps, then followed by " Properties".

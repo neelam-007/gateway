@@ -4,8 +4,8 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.WsiBspAssertion;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement;
+import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
 import com.l7tech.security.xml.XencUtil;
 import com.l7tech.wsdl.Wsdl;
 
@@ -34,11 +34,11 @@ public class WsiBspAssertionValidator implements AssertionValidator {
             for(int p=0; p<count; p++) {
                 Assertion assertion = path.getPathAssertion(p);
 
-                if(assertion instanceof RequestWssConfidentiality) {
-                    checkAssertion((RequestWssConfidentiality)assertion, path, result);
+                if(assertion instanceof RequireWssEncryptedElement) {
+                    checkAssertion((RequireWssEncryptedElement)assertion, path, result);
                 }
-                else if(assertion instanceof ResponseWssConfidentiality) {
-                    checkAssertion((ResponseWssConfidentiality)assertion, path, result);
+                else if(assertion instanceof WssEncryptElement) {
+                    checkAssertion((WssEncryptElement)assertion, path, result);
                 }
             }
         }
@@ -46,14 +46,14 @@ public class WsiBspAssertionValidator implements AssertionValidator {
 
     //- PRIVATE
 
-    private void checkAssertion(RequestWssConfidentiality assertion, AssertionPath path, PolicyValidatorResult result) {
+    private void checkAssertion(RequireWssEncryptedElement assertion, AssertionPath path, PolicyValidatorResult result) {
         if(!permittedEncryptionAlgorithm(assertion.getXEncAlgorithm())) {
             result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
                     "Encryption is not WS-I Basic Security Profile compliant.", null));
         }
     }
 
-    private void checkAssertion(ResponseWssConfidentiality assertion, AssertionPath path, PolicyValidatorResult result) {
+    private void checkAssertion(WssEncryptElement assertion, AssertionPath path, PolicyValidatorResult result) {
         if(!permittedEncryptionAlgorithm(assertion.getXEncAlgorithm())) {
             result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
                     "Encryption is not WS-I Basic Security Profile compliant.", null));

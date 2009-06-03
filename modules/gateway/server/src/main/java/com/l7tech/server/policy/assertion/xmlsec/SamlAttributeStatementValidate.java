@@ -2,7 +2,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlCursor;
 import org.w3c.dom.Document;
@@ -25,7 +25,7 @@ class SamlAttributeStatementValidate extends SamlStatementValidate {
      *
      * @param requestWssSaml     the saml statemenet assertion
      */
-    SamlAttributeStatementValidate(RequestWssSaml requestWssSaml) {
+    SamlAttributeStatementValidate(RequireWssSaml requestWssSaml) {
         super(requestWssSaml);
         attribueStatementRequirements = requestWssSaml.getAttributeStatement();
         if (attribueStatementRequirements == null) {

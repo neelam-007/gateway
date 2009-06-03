@@ -4,6 +4,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.wsdl.BindingInfo;
 import com.l7tech.wsdl.BindingOperationInfo;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
+import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.policy.assertion.*;
@@ -12,18 +13,26 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.policy.assertion.xmlsec.WssReplayProtection;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
+import com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
+import com.l7tech.policy.assertion.xmlsec.WssSignElement;
+import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
+import com.l7tech.policy.assertion.xmlsec.AddWssSecurityToken;
 import com.l7tech.policy.wsp.*;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.w3c.dom.Document;
+import org.junit.Test;
+import org.junit.Assert;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -33,7 +42,7 @@ import java.util.logging.Level;
  * Date: Jun 10, 2003
  * Time: 3:33:36 PM
  */
-public class WspReaderTest extends TestCase {
+public class WspReaderTest {
     private static Logger log = Logger.getLogger(WspReaderTest.class.getName());
     private static final ClassLoader cl = WspReaderTest.class.getClassLoader();
     private static String RESOURCE_PATH = "com/l7tech/policy/resources";
@@ -51,79 +60,76 @@ public class WspReaderTest extends TestCase {
         System.setProperty("com.l7tech.policy.wsp.checkAccessors", "true");
     }
     
-    public WspReaderTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(WspReaderTest.class);
-    }
-
+    @Test
     public void testParseWsp() throws Exception {
         InputStream wspStream = cl.getResourceAsStream(SIMPLE_POLICY);
         Assertion policy = wspReader.parsePermissively( XmlUtil.parse(wspStream).getDocumentElement());
         log.info("Got back policy: " + policy);
-        assertTrue(policy != null);
-        assertTrue(policy instanceof ExactlyOneAssertion);
+        Assert.assertTrue(policy != null);
+        Assert.assertTrue(policy instanceof ExactlyOneAssertion);
         ExactlyOneAssertion eoa = (ExactlyOneAssertion)policy;
-        assertTrue(eoa.getChildren().size() == 5);
-        assertTrue(eoa.getChildren().get(0) instanceof AllAssertion);
+        Assert.assertTrue(eoa.getChildren().size() == 5);
+        Assert.assertTrue(eoa.getChildren().get(0) instanceof AllAssertion);
 
         // Do a round trip policyA -> xmlA -> policyB -> xmlB and verify that both XMLs match
         String xmlA = WspWriter.getPolicyXml(policy);
         log.info("Parsing policy: " + xmlA);
         Assertion policyB = wspReader.parseStrictly(xmlA);
         String xmlB = WspWriter.getPolicyXml(policyB);
-        assertEquals(xmlA, xmlB);
+        Assert.assertEquals(xmlA, xmlB);
     }
 
+    @Test
     public void testParseNonXml() {
         try {
             wspReader.parseStrictly("asdfhaodh/asdfu2h$9ha98h");
-            fail("Expected IOException not thrown");
+            Assert.fail("Expected IOException not thrown");
         } catch (IOException e) {
             // Ok
         }
     }
 
+    @Test
     public void testParseStrangeXml() {
         try {
             wspReader.parseStrictly("<foo><bar blee=\"1\"/></foo>");
-            fail("Expected IOException not thrown");
+            Assert.fail("Expected IOException not thrown");
         } catch (IOException e) {
             // Ok
         }
     }
 
+    @Test
     public void testParseSwAPolicy() throws Exception {
         Assertion policy = WspWriterTest.createSoapWithAttachmentsPolicy();
         String serialized = WspWriter.getPolicyXml(policy);
         Assertion parsedPolicy = wspReader.parseStrictly(serialized);
-        assertTrue(parsedPolicy instanceof AllAssertion);
+        Assert.assertTrue(parsedPolicy instanceof AllAssertion);
         AllAssertion all = (AllAssertion)parsedPolicy;
         Assertion kid = (Assertion)all.getChildren().get(0);
-        assertTrue(kid instanceof RequestSwAAssertion);
+        Assert.assertTrue(kid instanceof RequestSwAAssertion);
         RequestSwAAssertion swa = (RequestSwAAssertion)kid;
 
-        assertTrue(swa.getBindings().size() == 1);
-        String bindingInfoName = (String) swa.getBindings().keySet().iterator().next();
-        BindingInfo bindingInfo = (BindingInfo) swa.getBindings().get(bindingInfoName);
-        assertNotNull(bindingInfo);
+        Assert.assertTrue(swa.getBindings().size() == 1);
+        String bindingInfoName = swa.getBindings().keySet().iterator().next();
+        BindingInfo bindingInfo = swa.getBindings().get(bindingInfoName);
+        Assert.assertNotNull(bindingInfo);
 
-        assertNotNull(bindingInfo.getBindingName());
-        assertTrue(bindingInfo.getBindingName().length() > 0);
-        assertEquals(bindingInfo.getBindingName(), "serviceBinding1");
+        Assert.assertNotNull(bindingInfo.getBindingName());
+        Assert.assertTrue(bindingInfo.getBindingName().length() > 0);
+        Assert.assertEquals(bindingInfo.getBindingName(), "serviceBinding1");
 
         Map bops = bindingInfo.getBindingOperations();
-        assertFalse(bops.isEmpty());
+        Assert.assertFalse(bops.isEmpty());
         BindingOperationInfo[] bois = (BindingOperationInfo[])bops.values().toArray(new BindingOperationInfo[0]);
-        assertTrue(bois.length == 1);
+        Assert.assertTrue(bois.length == 1);
 
         String reserialized = WspWriter.getPolicyXml(parsedPolicy);
-        assertEquals(reserialized.length(), serialized.length());
+        Assert.assertEquals(reserialized.length(), serialized.length());
 
     }
 
+    @Test
     public void testCollectionMappings() throws Exception {
         // Use SqlAttackAssertion since it uses Set
         SqlAttackAssertion ass = new SqlAttackAssertion();
@@ -135,9 +141,9 @@ public class WspReaderTest extends TestCase {
         log.info("Serialized SqlProtectionAssertion: \n" + xml);
 
         SqlAttackAssertion out = (SqlAttackAssertion)wspReader.parseStrictly(xml);
-        assertNotNull(out);
-        assertTrue(out.getProtections().contains(SqlAttackAssertion.PROT_ORASQL));
-        assertFalse(out.getProtections().contains(SqlAttackAssertion.PROT_METATEXT));
+        Assert.assertNotNull(out);
+        Assert.assertTrue(out.getProtections().contains(SqlAttackAssertion.PROT_ORASQL));
+        Assert.assertFalse(out.getProtections().contains(SqlAttackAssertion.PROT_METATEXT));
     }
 
     private static final Object[][] VERSIONS = {
@@ -153,56 +159,353 @@ public class WspReaderTest extends TestCase {
             policyStream = cl.getResourceAsStream(RESOURCE_PATH + "/" + policyFile);
             Document policy = XmlUtil.parse(policyStream);
             Assertion root = wspReader.parsePermissively(policy.getDocumentElement());
-            assertTrue(root != null);
-            assertTrue(root instanceof ExactlyOneAssertion);
+            Assert.assertTrue(root != null);
+            Assert.assertTrue(root instanceof ExactlyOneAssertion);
         } finally {
             if (policyStream != null) policyStream.close();
         }
     }
 
+    @Test
     public void testSeamlessPolicyUpgrades() throws Exception {
-        for (int i = 0; i < VERSIONS.length; i++) {
-            Object[] version = VERSIONS[i];
-            String policyFile = (String)version[0];
+        for (Object[] version : VERSIONS) {
+            String policyFile = (String) version[0];
             trySeamlessPolicyUpgrade(policyFile);
         }
     }
 
+    @Test
     public void testSeamlessUpgradeFrom21() throws Exception {
         InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "simple_policy_21.xml");
         Document doc = XmlUtil.parse(is);
         Assertion ass = wspReader.parsePermissively(doc.getDocumentElement());
         log.info("Policy tree constructed after reading 2.1 policy XML:\n" + ass);
-        assertTrue(ass != null);
-        assertTrue(ass instanceof ExactlyOneAssertion);
+        Assert.assertTrue(ass != null);
+        Assert.assertTrue(ass instanceof ExactlyOneAssertion);
     }
 
+    @Test
     public void testSeamlessUpgradeFrom30() throws Exception {
         InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "simple_policy_30.xml");
         Document doc = XmlUtil.parse(is);
         Assertion ass = wspReader.parsePermissively(doc.getDocumentElement());
         log.info("Policy tree constructed after reading 3.0 policy XML:\n" + ass);
-        assertTrue(ass != null);
-        assertTrue(ass instanceof ExactlyOneAssertion);
+        Assert.assertTrue(ass != null);
+        Assert.assertTrue(ass instanceof ExactlyOneAssertion);
     }
 
+    @Test
     public void testSeamlessUpgradeFrom31() throws Exception {
         InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "simple_policy_31.xml");
         Document doc = XmlUtil.parse(is);
         Assertion ass = wspReader.parsePermissively(doc.getDocumentElement());
         log.info("Policy tree constructed after reading 3.1 policy XML:\n" + ass);
-        assertTrue(ass != null);
-        assertTrue(ass instanceof ExactlyOneAssertion);
+        Assert.assertTrue(ass != null);
+        Assert.assertTrue(ass instanceof ExactlyOneAssertion);
     }
 
+    @Test
     public void testSeamlessUpgradeFrom32() throws Exception {
         InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "simple_policy_32.xml");
         Document doc = XmlUtil.parse(is);
         Assertion ass = wspReader.parsePermissively(doc.getDocumentElement());
         log.info("Policy tree constructed after reading 3.2 policy XML:\n" + ass);
-        assertTrue(ass != null);
-        assertTrue(ass instanceof ExactlyOneAssertion);
+        Assert.assertTrue(ass != null);
+        Assert.assertTrue(ass instanceof ExactlyOneAssertion);
     }
+
+    @Test
+    public void testSeamlessUpgradeFrom50() throws Exception {
+        InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "renamed_wss_assertions_50.xml");
+        Document doc = XmlUtil.parse(is);
+        Assertion ass = wspReader.parsePermissively(doc.getDocumentElement());
+        log.info("Policy tree constructed after reading 5.0 policy XML:\n" + ass);
+        Assert.assertTrue("Policy not null", ass != null);
+        Assert.assertTrue("Root is AllAssertion", ass instanceof AllAssertion);
+
+        final List children = ((AllAssertion)ass).getChildren();
+        Assert.assertEquals( "Expected number of assertions", 25, children.size());
+
+        final XmlSecurityRecipientContext localRecipientContext = new XmlSecurityRecipientContext("", null);
+        final XmlSecurityRecipientContext recipientContext = new XmlSecurityRecipientContext(
+                "Alice",
+                "MIIDDDCCAfSgAwIBAgIQM6YEf7FVYx/tZyEXgVComTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQ4wDAYDVQQDDAVBbGljZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAoqi99By1VYo0aHrkKCNT4DkIgPL/SgahbeKdGhrbu3K2XG7arfD9tqIBIKMfrX4Gp90NJa85AV1yiNsEyvq+mUnMpNcKnLXLOjkTmMCqDYbbkehJlXPnaWLzve+mW0pJdPxtf3rbD4PS/cBQIvtpjmrDAU8VsZKT8DN5Kyz+EZsCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8vaW50ZXJvcC5iYnRlc3QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQK4l0TUHZ1QV3V2QtlLNDm+PoxiDAfBgNVHSMEGDAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkqhkiG9w0BAQUFAAOCAQEABTqpOpvW+6yrLXyUlP2xJbEkohXHI5OWwKWleOb9hlkhWntUalfcFOJAgUyH30TTpHldzx1+vK2LPzhoUFKYHE1IyQvokBN2JjFO64BQukCKnZhldLRPxGhfkTdxQgdf5rCK/wh3xVsZCNTfuMNmlAM6lOAg8QduDah3WFZpEA0s2nwQaCNQTNMjJC8tav1CBr6+E5FAmwPXP7pJxn9Fw9OXRyqbRA4v2y7YpbGkG2GI9UvOHw6SGvf4FRSthMMO35YbpikGsLix3vAsXWWi4rwfVOYzQK0OFPNi9RMCUdSH06m9uLWckiCxjos0FQODZE9l4ATGy9s9hNVwryOJTw==");
+
+        int assIndex = 0;
+        {
+            Assert.assertTrue("Assertion is request encryption", children.get(assIndex) instanceof RequireWssEncryptedElement);
+            RequireWssEncryptedElement assertion = (RequireWssEncryptedElement) children.get(assIndex);
+            Assert.assertTrue("Assertion targets request", Assertion.isRequest(assertion));
+            Assert.assertEquals("Xpath value", "/soapenv:Envelope/soapenv:Body[position()=1]", assertion.getXpathExpression().getExpression());
+            Assert.assertEquals("Encryption type", "http://www.w3.org/2001/04/xmlenc#aes128-cbc", assertion.getXEncAlgorithm());
+            Assert.assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
+        }
+        
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is request encryption", children.get(assIndex) instanceof RequireWssEncryptedElement);
+            RequireWssEncryptedElement assertion = (RequireWssEncryptedElement) children.get(assIndex);
+            Assert.assertTrue("Assertion targets request", Assertion.isRequest(assertion));
+            Assert.assertEquals("Xpath value", "/soapenv:Envelope/soapenv:Body[position()=1]", assertion.getXpathExpression().getExpression());
+            Assert.assertEquals("Encryption type", "http://www.w3.org/2001/04/xmlenc#aes128-cbc", assertion.getXEncAlgorithm());
+            Assert.assertEquals("Recipient context", recipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is request signature", children.get(assIndex) instanceof RequireWssSignedElement);
+            RequireWssSignedElement assertion = (RequireWssSignedElement) children.get(assIndex);
+            Assert.assertTrue("Assertion targets request", Assertion.isRequest(assertion));
+            Assert.assertEquals("Xpath value", "/soapenv:Envelope/soapenv:Body", assertion.getXpathExpression().getExpression());
+            Assert.assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is request signature", children.get(assIndex) instanceof RequireWssSignedElement);
+            RequireWssSignedElement assertion = (RequireWssSignedElement) children.get(assIndex);
+            Assert.assertTrue("Assertion targets request", Assertion.isRequest(assertion));
+            Assert.assertEquals("Xpath value", "/soapenv:Envelope/soapenv:Body", assertion.getXpathExpression().getExpression());
+            Assert.assertEquals("Recipient context", recipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is request replay protection", children.get(assIndex) instanceof WssReplayProtection);
+            WssReplayProtection assertion = (WssReplayProtection) children.get(assIndex);
+            Assert.assertTrue("Assertion targets request", Assertion.isRequest(assertion));
+            Assert.assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is request replay protection", children.get(assIndex) instanceof WssReplayProtection);
+            WssReplayProtection assertion = (WssReplayProtection) children.get(assIndex);
+            Assert.assertTrue("Assertion targets request", Assertion.isRequest(assertion));
+            Assert.assertEquals("Recipient context", recipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is request SAMLv1.1", children.get(assIndex) instanceof RequireWssSaml);
+            RequireWssSaml assertion = (RequireWssSaml) children.get(assIndex);
+            Assert.assertTrue("Assertion targets request", Assertion.isRequest(assertion));
+            Assert.assertEquals( "Audience restriction", "", assertion.getAudienceRestriction() );
+            Assert.assertNotNull( "Authentication Statement present", assertion.getAuthenticationStatement() );
+            Assert.assertArrayEquals( "Authentication statement auth methods", new String[]{"urn:ietf:rfc:3075"}, assertion.getAuthenticationStatement().getAuthenticationMethods() );
+            Assert.assertArrayEquals( "Name formats", new String[]{"urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"}, assertion.getNameFormats() );
+            Assert.assertEquals( "Name qualifier", "", assertion.getNameQualifier() );
+            Assert.assertTrue("isRequireHolderOfKeyWithMessageSignature", assertion.isRequireHolderOfKeyWithMessageSignature());
+            Assert.assertFalse("isRequireSenderVouchesWithMessageSignature", assertion.isRequireSenderVouchesWithMessageSignature());
+            Assert.assertArrayEquals( "SubjectConfirmations", new String[]{"urn:oasis:names:tc:SAML:1.0:cm:holder-of-key"}, assertion.getSubjectConfirmations() );
+            Assert.assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is request SAMLv1.1", children.get(assIndex) instanceof RequireWssSaml);
+            RequireWssSaml assertion = (RequireWssSaml) children.get(assIndex);
+            Assert.assertTrue("Assertion targets request", Assertion.isRequest(assertion));
+            Assert.assertEquals( "Audience restriction", "", assertion.getAudienceRestriction() );
+            Assert.assertNotNull( "Authentication Statement present", assertion.getAuthenticationStatement() );
+            Assert.assertArrayEquals( "Authentication statement auth methods", new String[]{"urn:ietf:rfc:3075"}, assertion.getAuthenticationStatement().getAuthenticationMethods() );
+            Assert.assertArrayEquals( "Name formats", new String[]{"urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"}, assertion.getNameFormats() );
+            Assert.assertEquals( "Name qualifier", "", assertion.getNameQualifier() );
+            Assert.assertTrue("isRequireHolderOfKeyWithMessageSignature", assertion.isRequireHolderOfKeyWithMessageSignature());
+            Assert.assertFalse("isRequireSenderVouchesWithMessageSignature", assertion.isRequireSenderVouchesWithMessageSignature());
+            Assert.assertArrayEquals( "SubjectConfirmations", new String[]{"urn:oasis:names:tc:SAML:1.0:cm:holder-of-key"}, assertion.getSubjectConfirmations() );
+            Assert.assertEquals("Recipient context", recipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is request SAMLv2", children.get(assIndex) instanceof RequireWssSaml2);
+            RequireWssSaml2 assertion = (RequireWssSaml2) children.get(assIndex);
+            Assert.assertTrue("Assertion targets request", Assertion.isRequest(assertion));
+            Assert.assertEquals( "Audience restriction", "", assertion.getAudienceRestriction() );
+            Assert.assertNotNull( "Authentication Statement present", assertion.getAuthenticationStatement() );
+            Assert.assertArrayEquals( "Authentication statement auth methods", new String[]{"urn:ietf:rfc:3075"}, assertion.getAuthenticationStatement().getAuthenticationMethods() );
+            Assert.assertArrayEquals( "Name formats", new String[]{"urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"}, assertion.getNameFormats() );
+            Assert.assertEquals( "Name qualifier", "", assertion.getNameQualifier() );
+            Assert.assertTrue("isRequireHolderOfKeyWithMessageSignature", assertion.isRequireHolderOfKeyWithMessageSignature());
+            Assert.assertFalse("isRequireSenderVouchesWithMessageSignature", assertion.isRequireSenderVouchesWithMessageSignature());
+            Assert.assertArrayEquals( "SubjectConfirmations", new String[]{"urn:oasis:names:tc:SAML:1.0:cm:holder-of-key"}, assertion.getSubjectConfirmations() );
+            Assert.assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is request SAMLv2", children.get(assIndex) instanceof RequireWssSaml2);
+            RequireWssSaml2 assertion = (RequireWssSaml2) children.get(assIndex);
+            Assert.assertTrue("Assertion targets request", Assertion.isRequest(assertion));
+            Assert.assertEquals( "Audience restriction", "", assertion.getAudienceRestriction() );
+            Assert.assertNotNull( "Authentication Statement present", assertion.getAuthenticationStatement() );
+            Assert.assertArrayEquals( "Authentication statement auth methods", new String[]{"urn:ietf:rfc:3075"}, assertion.getAuthenticationStatement().getAuthenticationMethods() );
+            Assert.assertArrayEquals( "Name formats", new String[]{"urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"}, assertion.getNameFormats() );
+            Assert.assertEquals( "Name qualifier", "", assertion.getNameQualifier() );
+            Assert.assertTrue("isRequireHolderOfKeyWithMessageSignature", assertion.isRequireHolderOfKeyWithMessageSignature());
+            Assert.assertFalse("isRequireSenderVouchesWithMessageSignature", assertion.isRequireSenderVouchesWithMessageSignature());
+            Assert.assertArrayEquals( "SubjectConfirmations", new String[]{"urn:oasis:names:tc:SAML:1.0:cm:holder-of-key"}, assertion.getSubjectConfirmations() );
+            Assert.assertEquals("Recipient context", recipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion ", children.get(assIndex) instanceof RequireWssTimestamp);
+            RequireWssTimestamp assertion = (RequireWssTimestamp) children.get(assIndex);
+            Assert.assertTrue("Assertion targets request", Assertion.isRequest(assertion));
+            Assert.assertEquals( "Max Expiry", 3600000, assertion.getMaxExpiryMilliseconds() );
+            Assert.assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion ", children.get(assIndex) instanceof RequireWssTimestamp);
+            RequireWssTimestamp assertion = (RequireWssTimestamp) children.get(assIndex);
+            Assert.assertTrue("Assertion targets request", Assertion.isRequest(assertion));
+            Assert.assertEquals( "Max Expiry", 3600000, assertion.getMaxExpiryMilliseconds() );
+            Assert.assertEquals("Recipient context", recipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion ", children.get(assIndex) instanceof RequireWssX509Cert);
+            RequireWssX509Cert assertion = (RequireWssX509Cert) children.get(assIndex);
+            Assert.assertTrue("Assertion targets request", Assertion.isRequest(assertion));
+            Assert.assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion ", children.get(assIndex) instanceof RequireWssX509Cert);
+            RequireWssX509Cert assertion = (RequireWssX509Cert) children.get(assIndex);
+            Assert.assertTrue("Assertion targets request", Assertion.isRequest(assertion));
+            Assert.assertEquals("Recipient context", recipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is response encryption", children.get(assIndex) instanceof WssEncryptElement);
+            WssEncryptElement assertion = (WssEncryptElement) children.get(assIndex);
+            Assert.assertTrue("Assertion targets response", Assertion.isResponse(assertion));
+            Assert.assertEquals("Xpath value", "/soapenv:Envelope/soapenv:Body[position()=1]", assertion.getXpathExpression().getExpression());
+            Assert.assertEquals("Encryption type", "http://www.w3.org/2001/04/xmlenc#aes128-cbc", assertion.getXEncAlgorithm());
+            Assert.assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is response encryption", children.get(assIndex) instanceof WssEncryptElement);
+            WssEncryptElement assertion = (WssEncryptElement) children.get(assIndex);
+            Assert.assertTrue("Assertion targets response", Assertion.isResponse(assertion));
+            Assert.assertEquals("Xpath value", "/soapenv:Envelope/soapenv:Body[position()=1]", assertion.getXpathExpression().getExpression());
+            Assert.assertEquals("Encryption type", "http://www.w3.org/2001/04/xmlenc#aes128-cbc", assertion.getXEncAlgorithm());
+            Assert.assertEquals("Recipient context", recipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is response signature", children.get(assIndex) instanceof WssSignElement);
+            WssSignElement assertion = (WssSignElement) children.get(assIndex);
+            Assert.assertTrue("Assertion targets response", Assertion.isResponse(assertion));
+            Assert.assertFalse("Protect tokens", assertion.isProtectTokens());
+            Assert.assertEquals("Key reference type", "BinarySecurityToken", assertion.getKeyReference());
+            Assert.assertTrue("Key is default", assertion.isUsesDefaultKeyStore());
+            Assert.assertEquals("Xpath value", "/soapenv:Envelope/soapenv:Body[position()=1]", assertion.getXpathExpression().getExpression());
+            Assert.assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is response signature", children.get(assIndex) instanceof WssSignElement);
+            WssSignElement assertion = (WssSignElement) children.get(assIndex);
+            Assert.assertTrue("Assertion targets response", Assertion.isResponse(assertion));
+            Assert.assertFalse("Protect tokens", assertion.isProtectTokens());
+            Assert.assertEquals("Key reference type", "BinarySecurityToken", assertion.getKeyReference());
+            Assert.assertFalse("Key is default", assertion.isUsesDefaultKeyStore());
+            Assert.assertEquals("Key alias", "alice", assertion.getKeyAlias());
+            Assert.assertEquals("Xpath value", "/soapenv:Envelope/soapenv:Body[position()=1]", assertion.getXpathExpression().getExpression());
+            Assert.assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is response signature", children.get(assIndex) instanceof WssSignElement);
+            WssSignElement assertion = (WssSignElement) children.get(assIndex);
+            Assert.assertTrue("Assertion targets response", Assertion.isResponse(assertion));
+            Assert.assertFalse("Protect tokens", assertion.isProtectTokens());
+            Assert.assertEquals("Key reference type", "BinarySecurityToken", assertion.getKeyReference());
+            Assert.assertTrue("Key is default", assertion.isUsesDefaultKeyStore());
+            Assert.assertEquals("Xpath value", "/soapenv:Envelope/soapenv:Body[position()=1]", assertion.getXpathExpression().getExpression());
+            Assert.assertEquals("Recipient context", recipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is response security token", children.get(assIndex) instanceof AddWssSecurityToken);
+            AddWssSecurityToken assertion = (AddWssSecurityToken) children.get(assIndex);
+            Assert.assertTrue("Assertion targets response", Assertion.isResponse(assertion));
+            Assert.assertEquals("Token type", SecurityTokenType.WSS_USERNAME, assertion.getTokenType());
+            Assert.assertEquals("Key reference type", "SubjectKeyIdentifier", assertion.getKeyReference());
+            Assert.assertTrue("Key is default", assertion.isUsesDefaultKeyStore());
+            Assert.assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is response security token", children.get(assIndex) instanceof AddWssSecurityToken);
+            AddWssSecurityToken assertion = (AddWssSecurityToken) children.get(assIndex);
+            Assert.assertTrue("Assertion targets response", Assertion.isResponse(assertion));
+            Assert.assertEquals("Token type", SecurityTokenType.WSS_USERNAME, assertion.getTokenType());
+            Assert.assertEquals("Key reference type", "SubjectKeyIdentifier", assertion.getKeyReference());
+            Assert.assertFalse("Key is default", assertion.isUsesDefaultKeyStore());
+            Assert.assertEquals("Key alias", "alice", assertion.getKeyAlias());
+            Assert.assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
+        }
+        
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is response security token", children.get(assIndex) instanceof AddWssSecurityToken);
+            AddWssSecurityToken assertion = (AddWssSecurityToken) children.get(assIndex);
+            Assert.assertTrue("Assertion targets response", Assertion.isResponse(assertion));
+            Assert.assertEquals("Token type", SecurityTokenType.WSS_USERNAME, assertion.getTokenType());
+            Assert.assertEquals("Key reference type", "SubjectKeyIdentifier", assertion.getKeyReference());
+            Assert.assertTrue("Key is default", assertion.isUsesDefaultKeyStore());
+            Assert.assertEquals("Recipient context", recipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is response timestamp", children.get(assIndex) instanceof AddWssTimestamp);
+            AddWssTimestamp assertion = (AddWssTimestamp) children.get(assIndex);
+            Assert.assertTrue("Assertion targets response", Assertion.isResponse(assertion));
+            Assert.assertEquals("Key reference type", "SubjectKeyIdentifier", assertion.getKeyReference());
+            Assert.assertTrue("Key is default", assertion.isUsesDefaultKeyStore());
+            Assert.assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is response timestamp", children.get(assIndex) instanceof AddWssTimestamp);
+            AddWssTimestamp assertion = (AddWssTimestamp) children.get(assIndex);
+            Assert.assertTrue("Assertion targets response", Assertion.isResponse(assertion));
+            Assert.assertEquals("Key reference type", "SubjectKeyIdentifier", assertion.getKeyReference());
+            Assert.assertFalse("Key is default", assertion.isUsesDefaultKeyStore());
+            Assert.assertEquals("Key alias", "alice", assertion.getKeyAlias());
+            Assert.assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
+        }
+
+        assIndex++;
+        {
+            Assert.assertTrue("Assertion is response timestamp", children.get(assIndex) instanceof AddWssTimestamp);
+            AddWssTimestamp assertion = (AddWssTimestamp) children.get(assIndex);
+            Assert.assertTrue("Assertion targets response", Assertion.isResponse(assertion));
+            Assert.assertEquals("Key reference type", "SubjectKeyIdentifier", assertion.getKeyReference());
+            Assert.assertTrue("Key is default", assertion.isUsesDefaultKeyStore());
+            Assert.assertEquals("Recipient context", recipientContext, assertion.getRecipientContext() );
+        }
+    }
+
 
     /* TODO figure out where to put this
     public void testEqualityRename() throws Exception {
@@ -226,6 +529,7 @@ public class WspReaderTest extends TestCase {
     }
     */
 
+    @Test
     public void testUnknownElementGetsPreserved() throws Exception {
 
 
@@ -257,10 +561,11 @@ public class WspReaderTest extends TestCase {
         String parsed2 = p2.toString();
         log.info("After reparsing: " + parsed2);
 
-        assertEquals(parsed1, parsed2);
+        Assert.assertEquals(parsed1, parsed2);
 
     }
 
+    @Test
     public void testPreserveRequestXpathExpressionBug1894() throws Exception {
         final String xp = "//asdfasdf/foo/bar/zort";
         final String ns1 = "urn:fasdfasdfasdaqqthf";
@@ -276,11 +581,12 @@ public class WspReaderTest extends TestCase {
         log.info("Parsed xpath: " + gotXpath);
         final Map gotNsmap = got.getXpathExpression().getNamespaces();
         log.info("Parsed nsmap: " + gotNsmap);
-        assertEquals(xp, gotXpath);
-        assertEquals(ns1, gotNsmap.get("ns1"));
-        assertEquals(ns2, gotNsmap.get("ns2"));
+        Assert.assertEquals(xp, gotXpath);
+        Assert.assertEquals(ns1, gotNsmap.get("ns1"));
+        Assert.assertEquals(ns2, gotNsmap.get("ns2"));
     }
 
+    @Test
     public void testReproBug2215() throws Exception {
         final String policyxml = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "    <wsp:All wsp:Usage=\"Required\">\n" +
@@ -301,10 +607,11 @@ public class WspReaderTest extends TestCase {
 
         Assertion p = wspReader.parsePermissively(policyxml);
         AllAssertion root = (AllAssertion)p;
-        RequestWssIntegrity rwi = (RequestWssIntegrity)root.children().next();
-        assertTrue(rwi.getRecipientContext().getActor().equals("fdsfd"));
+        RequireWssSignedElement rwi = (RequireWssSignedElement)root.children().next();
+        Assert.assertTrue(rwi.getRecipientContext().getActor().equals("fdsfd"));
     }
 
+    @Test
     public void testReproBug2215ForSAML() throws Exception {
         final String policyxml = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
             "    <wsp:All wsp:Usage=\"Required\">\n" +
@@ -337,11 +644,11 @@ public class WspReaderTest extends TestCase {
         Assertion p = wspReader.parsePermissively(policyxml);
         AllAssertion root = (AllAssertion)p;
 
-        RequestWssSaml rwi = (RequestWssSaml)root.children().next();
-        assertTrue(rwi.getRecipientContext().getActor().equals("ppal"));
+        RequireWssSaml rwi = (RequireWssSaml)root.children().next();
+        Assert.assertTrue(rwi.getRecipientContext().getActor().equals("ppal"));
     }
 
-    // TODO reenable this test as soon as we are ready to fix it
+    @Test
     public void testReproBug2214TabsInEmail() throws Exception {
         final String body = "foo\r\nbar baz blah\tbleet blot";
 
@@ -353,20 +660,22 @@ public class WspReaderTest extends TestCase {
         String emXml = WspWriter.getPolicyXml(ema);
         EmailAlertAssertion got = (EmailAlertAssertion)wspReader.parseStrictly(emXml);
 
-        assertEquals(got.messageString(), body);
+        Assert.assertEquals(got.messageString(), body);
     }
 
+    @Test
     public void testSslAssertionOptionChange() throws Exception {
         SslAssertion sa = new SslAssertion(SslAssertion.OPTIONAL);
         String got = WspWriter.getPolicyXml(sa);
-        assertNotNull(got);
-        assertTrue(got.contains("SslAssertion"));
-        assertTrue(got.contains("Optional"));
+        Assert.assertNotNull(got);
+        Assert.assertTrue(got.contains("SslAssertion"));
+        Assert.assertTrue(got.contains("Optional"));
 
         SslAssertion sa2 = (SslAssertion)wspReader.parseStrictly(got);
-        assertEquals(sa2.getOption(), SslAssertion.OPTIONAL);
+        Assert.assertEquals(sa2.getOption(), SslAssertion.OPTIONAL);
     }
 
+    @Test
     public void testXsltFrom35Static() throws Exception {
         String xsl35 = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">" +
                 "<L7p:XslTransformation>\n" +
@@ -396,10 +705,11 @@ public class WspReaderTest extends TestCase {
                 "        </L7p:XslTransformation>" +
                 "</wsp:Policy>";
         XslTransformation xslt = (XslTransformation)wspReader.parseStrictly(xsl35);
-        assertNotNull(xslt);
+        Assert.assertNotNull(xslt);
         System.out.println(WspWriter.getPolicyXml(xslt));
     }
 
+    @Test
     public void testXsltFrom35Fetchingly() throws Exception {
         String xsl35 = "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
                 "        <L7p:XslTransformation>\n" +
@@ -412,10 +722,11 @@ public class WspReaderTest extends TestCase {
                 "        </L7p:XslTransformation>\n" +
                 "</wsp:Policy>";
         XslTransformation xslt = (XslTransformation)wspReader.parseStrictly(xsl35);
-        assertNotNull(xslt);
+        Assert.assertNotNull(xslt);
         System.out.println(WspWriter.getPolicyXml(xslt));
     }
 
+    @Test
     public void testPolicyFromBug2160() throws Exception {
         String policy = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<Policy xmlns=\"http://www.layer7tech.com/ws/policy\">\n" +
@@ -501,10 +812,11 @@ public class WspReaderTest extends TestCase {
                 "</Policy>";
 
         Assertion got = wspReader.parseStrictly(policy);
-        assertNotNull(got);
+        Assert.assertNotNull(got);
         log.info("Parsed policy from Bug #2160: " + WspWriter.getPolicyXml(got));
     }
 
+    @Test
     public void testResourceInfo() throws Exception {
         tryIt(WspWriterTest.makeStaticInfo());
         tryIt(WspWriterTest.makeMessageInfo());
@@ -516,13 +828,14 @@ public class WspReaderTest extends TestCase {
         xslt.setResourceInfo(rinfo);
         String policy = WspWriter.getPolicyXml(xslt);
         XslTransformation newXslt = (XslTransformation) wspReader.parseStrictly(policy);
-        assertTrue(newXslt.getResourceInfo().getType().equals(xslt.getResourceInfo().getType()));
+        Assert.assertTrue(newXslt.getResourceInfo().getType().equals(xslt.getResourceInfo().getType()));
     }
 
+    @Test
     public void testBug3456() throws Exception {
         try {
             WspReader.getDefault().parseStrictly(BUG_3456_POLICY);
-            fail("Expected exception not thrown for invalid attribute Unknown HtmlFormDataType name: 'string (any)'");
+            Assert.fail("Expected exception not thrown for invalid attribute Unknown HtmlFormDataType name: 'string (any)'");
         } catch (InvalidPolicyStreamException e) {
             log.log(Level.INFO, "Caught expected exception: " + ExceptionUtils.getMessage(e), e);
             // Ok
@@ -532,22 +845,24 @@ public class WspReaderTest extends TestCase {
         log.info("Got: " + got);
     }
     
+    @Test
     public void testBug3637SchemaParse() throws Exception {
         AllAssertion all = (AllAssertion)WspReader.getDefault().parsePermissively(BUG_3637_SCHEMA_PARSING_PROBLEM);
         SchemaValidation sv = (SchemaValidation)all.getChildren().iterator().next();
         AssertionResourceInfo ri = sv.getResourceInfo();
-        assertEquals(AssertionResourceType.STATIC, ri.getType());
+        Assert.assertEquals(AssertionResourceType.STATIC, ri.getType());
         StaticResourceInfo sri = (StaticResourceInfo)ri;
-        assertNotNull(sri.getDocument());
+        Assert.assertNotNull(sri.getDocument());
     }
 
+    @Test
     public void testSamlIssuerAssertion() throws Exception {
         SamlIssuerAssertion sia = new SamlIssuerAssertion();
         sia.setNameIdentifierType(NameIdentifierInclusionType.NONE);
         String xml = WspWriter.getPolicyXml(sia);
 
         SamlIssuerAssertion sia2 = (SamlIssuerAssertion) wspReader.parseStrictly(xml);
-        assertEquals(sia2.getNameIdentifierType(), NameIdentifierInclusionType.NONE);
+        Assert.assertEquals(sia2.getNameIdentifierType(), NameIdentifierInclusionType.NONE);
     }
 
     private static final String BUG_3456_POLICY = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -601,11 +916,6 @@ public class WspReaderTest extends TestCase {
     "    </wsp:All>\n" +
     "\n" +
     "</wsp:Policy>";
-
-    public static void main(String[] args) {
-        System.out.println("Heya");
-        junit.textui.TestRunner.run(suite());
-    }
 
     public static final String BUG_3637_SCHEMA_PARSING_PROBLEM =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +

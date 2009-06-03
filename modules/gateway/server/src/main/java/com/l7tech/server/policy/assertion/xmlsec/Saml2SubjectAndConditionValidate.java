@@ -2,7 +2,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.util.ArrayUtils;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import x0Assertion.oasisNamesTcSAML2.*;
 
 import java.util.*;
@@ -22,7 +22,7 @@ class Saml2SubjectAndConditionValidate {
     /**
      * Subject validation for 2.x
      */
-    static void validateSubject(RequestWssSaml requestWssSaml, SubjectType subject, Calendar now, Collection validationResults) {
+    static void validateSubject(RequireWssSaml requestWssSaml, SubjectType subject, Calendar now, Collection validationResults) {
         if (subject == null) {
             validationResults.add(new SamlAssertionValidate.Error("Subject Required", null));
             return; // no point trying to continue validating a null subject
@@ -145,7 +145,7 @@ class Saml2SubjectAndConditionValidate {
     /**
      * Validate the SAML v2 assertion conditions
      */
-    static void validateConditions(RequestWssSaml requestWssSaml, ConditionsType conditionsType, Calendar now, Collection validationResults) {
+    static void validateConditions(RequireWssSaml requestWssSaml, ConditionsType conditionsType, Calendar now, Collection validationResults) {
         if (!requestWssSaml.isCheckAssertionValidity()) {
             logger.finer("No Assertion Validity requested");
         } else {
@@ -191,7 +191,7 @@ class Saml2SubjectAndConditionValidate {
         }
     }
 
-    private static void validateAudienceRestriction(RequestWssSaml requestWssSaml, ConditionsType conditionsType, Collection validationResults) {
+    private static void validateAudienceRestriction(RequireWssSaml requestWssSaml, ConditionsType conditionsType, Collection validationResults) {
         final String audienceRestriction = requestWssSaml.getAudienceRestriction();
         if (audienceRestriction == null || "".equals(audienceRestriction)) {
             logger.finer("No audience restriction requested");

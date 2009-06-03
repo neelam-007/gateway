@@ -39,7 +39,7 @@ public class ServerWssVersionAssertion extends AbstractServerAssertion<WssVersio
         }
 
         List<String> signatureValues = requestWssResults.getValidatedSignatureValues();
-        context.addDeferredAssertion(this, ServerRequestWssIntegrity.deferredSignatureConfirmation(assertion, auditor, signatureValues));
+        context.addDeferredAssertion(this, ServerRequireWssSignedElement.deferredSignatureConfirmation(assertion, auditor, signatureValues));
 
         return AssertionStatus.NONE;
     }

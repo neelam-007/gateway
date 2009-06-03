@@ -99,9 +99,9 @@ class TopLevelAll extends WsspVisitor {
         // Now mix in the state we gathered while doing the conversion
         if (signBody || entireHeaderAndBodySignatures) {
             if (isRequest)
-                all.addChild(new RequestWssIntegrity());
+                all.addChild(new RequireWssSignedElement());
             else
-                all.addChild(new ResponseWssIntegrity());
+                all.addChild(new WssSignElement());
         }
         if (encryptBody) {
             Assertion conf = isRequest ? makeRequestConfidentiality(null) : makeResponseConfidentiality(null);
@@ -109,7 +109,7 @@ class TopLevelAll extends WsspVisitor {
         }
 
         if (isRequest && timestamp) {
-            final RequestWssTimestamp ta = new RequestWssTimestamp();
+            final RequireWssTimestamp ta = new RequireWssTimestamp();
             ta.setSignatureRequired(signBody || entireHeaderAndBodySignatures);
             all.addChild(ta);
         }
@@ -134,7 +134,7 @@ class TopLevelAll extends WsspVisitor {
                     TextUtils.join(" ", (String[])CIPHERS_OUT.keySet().toArray(new String[0])));
         }
 
-        RequestWssConfidentiality conf = xpath == null ? new RequestWssConfidentiality() : new RequestWssConfidentiality(xpath);
+        RequireWssEncryptedElement conf = xpath == null ? new RequireWssEncryptedElement() : new RequireWssEncryptedElement(xpath);
         conf.setXEncAlgorithm(alg);
         return conf;
     }
@@ -147,7 +147,7 @@ class TopLevelAll extends WsspVisitor {
             String alg = (String)CIPHERS_IN.get(localName);
             if (alg != null) {
                 foundOne = true;
-                ResponseWssConfidentiality conf = xpath == null ? new ResponseWssConfidentiality() : new ResponseWssConfidentiality(xpath);
+                WssEncryptElement conf = xpath == null ? new WssEncryptElement() : new WssEncryptElement(xpath);
                 conf.setXEncAlgorithm(alg);
                 crypt.addChild(conf);
             }

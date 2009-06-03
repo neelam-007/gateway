@@ -2,7 +2,7 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
@@ -23,11 +23,11 @@ import java.util.logging.Logger;
  */
 public class ClientRequestWssX509Cert extends ClientAssertion {
     private final static Logger logger = Logger.getLogger(ClientRequestWssX509Cert.class.getName());
-    private RequestWssX509Cert subject;
+    private RequireWssX509Cert subject;
 
     private final String PROP_KEYINFOTYPE = this.getClass().getName() + ".keyInfoInclusionType";
 
-    public ClientRequestWssX509Cert(RequestWssX509Cert subject) {
+    public ClientRequestWssX509Cert(RequireWssX509Cert subject) {
         this.subject = subject;
     }
     

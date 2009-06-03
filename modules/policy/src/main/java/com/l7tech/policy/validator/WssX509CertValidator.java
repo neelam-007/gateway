@@ -6,7 +6,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.IdentityTargetable;
 import com.l7tech.policy.assertion.IdentityTarget;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.wsdl.Wsdl;
 
 /**
@@ -26,7 +26,7 @@ public class WssX509CertValidator implements AssertionValidator {
     /**
      *
      */
-    public WssX509CertValidator( final RequestWssX509Cert assertion ) {
+    public WssX509CertValidator( final RequireWssX509Cert assertion ) {
         this.assertion = assertion;
     }
 
@@ -55,5 +55,5 @@ public class WssX509CertValidator implements AssertionValidator {
 
     //- PRIVATE
 
-    private final RequestWssX509Cert assertion;
+    private final RequireWssX509Cert assertion;
 }

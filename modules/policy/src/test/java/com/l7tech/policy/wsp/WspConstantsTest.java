@@ -37,8 +37,16 @@ public class WspConstantsTest {
 
         // Accepted duplication for backwards compatibility
         Set<String> dupeWhitelist = new HashSet<String>( Arrays.asList(
-            "com.l7tech.policy.wsp.IntegrityMapping/com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity/RequestWssIntegrity",
-            "com.l7tech.policy.wsp.ConfidentialityMapping/com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality/Confidentiality",
+            "com.l7tech.policy.wsp.IntegrityMapping/com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement/RequestWssIntegrity",
+            "com.l7tech.policy.wsp.IntegrityMapping/com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement/Integrity",
+            "com.l7tech.policy.wsp.ConfidentialityMapping/com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement/RequestWssConfidentiality",
+            "com.l7tech.policy.wsp.ConfidentialityMapping/com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement/Confidentiality",
+            "com.l7tech.policy.wsp.AssertionMapping/com.l7tech.policy.assertion.xmlsec.WssSignElement/ResponseWssIntegrity",
+            "com.l7tech.policy.wsp.AssertionMapping/com.l7tech.policy.assertion.xmlsec.WssEncryptElement/ResponseWssConfidentiality",
+            "com.l7tech.policy.wsp.AssertionMapping/com.l7tech.policy.assertion.xmlsec.WssReplayProtection/RequestWssReplayProtection",
+            "com.l7tech.policy.wsp.AssertionMapping/com.l7tech.policy.assertion.xmlsec.AddWssTimestamp/ResponseWssTimestamp",
+            "com.l7tech.policy.wsp.AssertionMapping/com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp/RequestWssTimestamp",
+            "com.l7tech.policy.wsp.AssertionMapping/com.l7tech.policy.assertion.xmlsec.AddWssSecurityToken/ResponseWssSecurityToken",
             "com.l7tech.policy.wsp.ArrayTypeMapping/[Ljava.lang.String;/fieldNames"
         ) );
 

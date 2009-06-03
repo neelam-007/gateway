@@ -53,7 +53,7 @@ class PathValidator {
     private static final Class<? extends Assertion> ASSERTION_HTTPBASIC = HttpBasic.class;
     private static final Class<? extends Assertion> ASSERTION_SECURECONVERSATION = SecureConversation.class;
     private static final Class<? extends Assertion> ASSERTION_XPATHCREDENTIALS = XpathCredentialSource.class;
-    private static final Class<? extends Assertion> ASSERTION_SAMLASSERTION = RequestWssSaml.class;
+    private static final Class<? extends Assertion> ASSERTION_SAMLASSERTION = RequireWssSaml.class;
     private static final Class<? extends Assertion> ASSERTION_WSSUSERNAMETOKENBASIC = WssBasic.class;
     private static final Class<? extends Assertion> ASSERTION_ENCRYPTEDUSERNAMETOKEN = EncryptedUsernameTokenAssertion.class;
     private static final Class<? extends Assertion> ASSERTION_KERBEROSTICKET = RequestWssKerberos.class;
@@ -249,21 +249,21 @@ class PathValidator {
     private boolean isPreRoutingWssSigningOrEncryptionAssertion(Assertion a) {
         //TODO WssKerberos & WssSaml requests won't necessarily be signed
 
-        return (a instanceof RequestWssX509Cert) ||
-                (a instanceof RequestWssIntegrity) ||
+        return (a instanceof RequireWssX509Cert) ||
+                (a instanceof RequireWssSignedElement) ||
                 (a instanceof SecureConversation) ||
                 (a instanceof EncryptedUsernameTokenAssertion) ||
-                (a instanceof RequestWssConfidentiality) ||
+                (a instanceof RequireWssEncryptedElement) ||
                 (a instanceof RequestWssKerberos) ||
-                (a instanceof RequestWssSaml) ||
-                ((a instanceof RequestWssTimestamp) && ((RequestWssTimestamp) a).isSignatureRequired() && ((RequestWssTimestamp) a).getTarget() == TargetMessageType.REQUEST);
+                (a instanceof RequireWssSaml) ||
+                ((a instanceof RequireWssTimestamp) && ((RequireWssTimestamp) a).isSignatureRequired() && ((RequireWssTimestamp) a).getTarget() == TargetMessageType.REQUEST);
     }
 
     private boolean isPostRoutingWssSigningOrEncryptionAssertion(Assertion a) {
-        return (a instanceof ResponseWssIntegrity) ||
-                (a instanceof ResponseWssConfidentiality) ||
-                (a instanceof ResponseWssSecurityToken) ||
-                ((a instanceof ResponseWssTimestamp) && ((ResponseWssTimestamp) a).isSignatureRequired());
+        return (a instanceof WssSignElement) ||
+                (a instanceof WssEncryptElement) ||
+                (a instanceof AddWssSecurityToken) ||
+                ((a instanceof AddWssTimestamp) && ((AddWssTimestamp) a).isSignatureRequired());
     }
 
     private void processXslTransformation(XslTransformation xslt) {
@@ -404,14 +404,14 @@ class PathValidator {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion must occur before routing.", null));
         }
 
-        if (a instanceof RequestWssX509Cert) {
-            String targetName = ((RequestWssX509Cert)a).getTargetName();
+        if (a instanceof RequireWssX509Cert) {
+            String targetName = ((RequireWssX509Cert)a).getTargetName();
             if ( seenWssSignature(a, targetName)) {
                 result.addError(new PolicyValidatorResult.
                   Error(a, assertionPath, "WSS Signature(s) already required for " + targetName, null));
             }
             setSeenWssSignature(a, targetName);
-            if (((RequestWssX509Cert)a).isAllowMultipleSignatures()) {
+            if (((RequireWssX509Cert)a).isAllowMultipleSignatures()) {
                 allowsMultipleSignatures = true;
             }
         }
@@ -424,7 +424,7 @@ class PathValidator {
             }
         }
 
-        if (a instanceof RequestWssSaml) {
+        if (a instanceof RequireWssSaml) {
             if (haveSeen(ASSERTION_SAMLASSERTION)) {
                 result.addError(new PolicyValidatorResult.
                   Error(a,assertionPath,"SAML Assertion already specified.", null));
@@ -437,7 +437,7 @@ class PathValidator {
         }
 
         //
-        if (a instanceof RequestWssSaml)
+        if (a instanceof RequireWssSaml)
             setSeenSamlStatement(a, true);
 
         setSeenCredentials(a, true);
@@ -462,9 +462,9 @@ class PathValidator {
             }
         }
 
-        if (a instanceof RequestWssIntegrity ||
-                    a instanceof ResponseWssConfidentiality ||
-                   (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired() && ((RequestWssTimestamp)a).getTarget() == TargetMessageType.REQUEST) ||
+        if (a instanceof RequireWssSignedElement ||
+                    a instanceof WssEncryptElement ||
+                   (a instanceof RequireWssTimestamp && ((RequireWssTimestamp)a).isSignatureRequired() && ((RequireWssTimestamp)a).getTarget() == TargetMessageType.REQUEST) ||
                    (a instanceof RequestSwAAssertion && ((RequestSwAAssertion)a).requiresSignature()) ||
                    (hasFlag(a, ValidatorFlag.REQUIRE_SIGNATURE))) {
             // REASONS FOR THIS RULE
@@ -496,7 +496,7 @@ class PathValidator {
             }
             // REASON FOR THIS RULE:
             // it makes no sense to check something about the request after it's routed
-            if (a instanceof RequestWssIntegrity || (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).getTarget() == TargetMessageType.REQUEST)) {
+            if (a instanceof RequireWssSignedElement || (a instanceof RequireWssTimestamp && ((RequireWssTimestamp)a).getTarget() == TargetMessageType.REQUEST)) {
                 if (seenRouting && isDefaultActor(a)) {
                     result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                       "This assertion should occur before the request is routed.", null));
@@ -510,7 +510,7 @@ class PathValidator {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
                   "The assertion must be positioned before the routing assertion.", null));
             }
-        } else if (a instanceof RequestWssConfidentiality) {
+        } else if (a instanceof RequireWssEncryptedElement) {
             // REASON FOR THIS RULE:
             // it makes no sense to check something about the request after it's routed
             if (seenRouting && isDefaultActor(a)) {
@@ -547,9 +547,9 @@ class PathValidator {
                       "This assertion should be preceded by a SSL or TLS Transport assertion.", null));
                 }
             }
-        } else if (a instanceof ResponseWssSecurityToken) {
+        } else if (a instanceof AddWssSecurityToken) {
             // bugzilla 2753, 2421
-            if (((ResponseWssSecurityToken)a).isIncludePassword() && !seenUsernamePasswordCredentials()) {
+            if (((AddWssSecurityToken)a).isIncludePassword() && !seenUsernamePasswordCredentials()) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion should be preceded by an assertion that collects a password.", null));
             }
@@ -749,10 +749,10 @@ class PathValidator {
 
     private boolean involvesSignature(Assertion a) {
         return a instanceof SecureConversation ||
-               a instanceof RequestWssIntegrity ||
-               a instanceof RequestWssX509Cert ||
-               a instanceof ResponseWssIntegrity ||
-              (a instanceof RequestWssTimestamp && ((RequestWssTimestamp)a).isSignatureRequired() && ((RequestWssTimestamp)a).getTarget() == TargetMessageType.REQUEST);
+               a instanceof RequireWssSignedElement ||
+               a instanceof RequireWssX509Cert ||
+               a instanceof WssSignElement ||
+              (a instanceof RequireWssTimestamp && ((RequireWssTimestamp)a).isSignatureRequired() && ((RequireWssTimestamp)a).getTarget() == TargetMessageType.REQUEST);
     }
 
     private boolean onlyForSoap(Assertion a) {

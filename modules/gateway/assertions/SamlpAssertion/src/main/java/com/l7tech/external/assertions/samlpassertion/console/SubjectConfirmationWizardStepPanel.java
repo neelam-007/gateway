@@ -5,7 +5,7 @@ package com.l7tech.external.assertions.samlpassertion.console;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.external.assertions.samlpassertion.SamlpRequestBuilderAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.security.saml.SubjectStatement;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.KeyInfoInclusionType;
@@ -127,7 +127,7 @@ public class SubjectConfirmationWizardStepPanel extends SamlpWizardStepPanel {
                     throw new RuntimeException("Unsupported Subject KeyInfoInclusionType: " + ckitype); // Can't happen
             }
         } else {
-            RequestWssSaml requestWssSaml = (RequestWssSaml)settings;
+            RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
             requestWssSaml.getSubjectConfirmations();
             for (JToggleButton jToggleButton : confirmationsMap.values()) {
                 jToggleButton.setSelected(false);
@@ -216,7 +216,7 @@ public class SubjectConfirmationWizardStepPanel extends SamlpWizardStepPanel {
                 assertion.setSubjectConfirmationKeyInfoType(KeyInfoInclusionType.NONE);
             }
         } else {
-            RequestWssSaml requestWssSaml = (RequestWssSaml)settings;
+            RequireWssSaml requestWssSaml = (RequireWssSaml)settings;
             Collection<String> confirmations = new ArrayList<String>();
             for (Map.Entry<String, JToggleButton> entry : confirmationsMap.entrySet()) {
                 JToggleButton jc = entry.getValue();

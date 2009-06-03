@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Policy with variants of the WSS assertions that were renamed in 5.1.
+
+  Assertion values are modified from the defaults and there are variants for
+  WSS Recipient and Private Key selection.
+-->
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:RequestWssConfidentiality>
+            <L7p:XEncAlgorithmList stringListValue="included">
+                <L7p:item stringValue="http://www.w3.org/2001/04/xmlenc#aes128-cbc"/>
+            </L7p:XEncAlgorithmList>
+            <L7p:XpathExpression xpathExpressionValue="included">
+                <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Body[position()=1]"/>
+                <L7p:Namespaces mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="soapenv"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="SOAP-ENV"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsp"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2002/12/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="tns"/>
+                        <L7p:value stringValue="http://warehouse.acme.com/ws"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="L7p"/>
+                        <L7p:value stringValue="http://www.layer7tech.com/ws/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="s12"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsd"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="env"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsi"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                    </L7p:entry>
+                </L7p:Namespaces>
+            </L7p:XpathExpression>
+        </L7p:RequestWssConfidentiality>
+        <L7p:RequestWssConfidentiality>
+            <L7p:RecipientContext xmlSecurityRecipientContext="included">
+                <L7p:Actor stringValue="Alice"/>
+                <L7p:Base64edX509Certificate stringValue="MIIDDDCCAfSgAwIBAgIQM6YEf7FVYx/tZyEXgVComTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQ4wDAYDVQQDDAVBbGljZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAoqi99By1VYo0aHrkKCNT4DkIgPL/SgahbeKdGhrbu3K2XG7arfD9tqIBIKMfrX4Gp90NJa85AV1yiNsEyvq+mUnMpNcKnLXLOjkTmMCqDYbbkehJlXPnaWLzve+mW0pJdPxtf3rbD4PS/cBQIvtpjmrDAU8VsZKT8DN5Kyz+EZsCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8vaW50ZXJvcC5iYnRlc3QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQK4l0TUHZ1QV3V2QtlLNDm+PoxiDAfBgNVHSMEGDAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkqhkiG9w0BAQUFAAOCAQEABTqpOpvW+6yrLXyUlP2xJbEkohXHI5OWwKWleOb9hlkhWntUalfcFOJAgUyH30TTpHldzx1+vK2LPzhoUFKYHE1IyQvokBN2JjFO64BQukCKnZhldLRPxGhfkTdxQgdf5rCK/wh3xVsZCNTfuMNmlAM6lOAg8QduDah3WFZpEA0s2nwQaCNQTNMjJC8tav1CBr6+E5FAmwPXP7pJxn9Fw9OXRyqbRA4v2y7YpbGkG2GI9UvOHw6SGvf4FRSthMMO35YbpikGsLix3vAsXWWi4rwfVOYzQK0OFPNi9RMCUdSH06m9uLWckiCxjos0FQODZE9l4ATGy9s9hNVwryOJTw=="/>
+            </L7p:RecipientContext>
+            <L7p:XEncAlgorithmList stringListValue="included">
+                <L7p:item stringValue="http://www.w3.org/2001/04/xmlenc#aes128-cbc"/>
+            </L7p:XEncAlgorithmList>
+            <L7p:XpathExpression xpathExpressionValue="included">
+                <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Body[position()=1]"/>
+                <L7p:Namespaces mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="soapenv"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="SOAP-ENV"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsp"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2002/12/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="tns"/>
+                        <L7p:value stringValue="http://warehouse.acme.com/ws"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="L7p"/>
+                        <L7p:value stringValue="http://www.layer7tech.com/ws/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="s12"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsd"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="env"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsi"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                    </L7p:entry>
+                </L7p:Namespaces>
+            </L7p:XpathExpression>
+        </L7p:RequestWssConfidentiality>
+        <wsse:Integrity wsp:Usage="wsp:Required" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:MessageParts
+                Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">/soapenv:Envelope/soapenv:Body</wsse:MessageParts>
+        </wsse:Integrity>
+        <wsse:Integrity wsp:Usage="wsp:Required" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <L7p:xmlSecurityRecipientContext xmlSecurityRecipientContext="included">
+                <L7p:Actor stringValue="Alice"/>
+                <L7p:Base64edX509Certificate stringValue="MIIDDDCCAfSgAwIBAgIQM6YEf7FVYx/tZyEXgVComTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQ4wDAYDVQQDDAVBbGljZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAoqi99By1VYo0aHrkKCNT4DkIgPL/SgahbeKdGhrbu3K2XG7arfD9tqIBIKMfrX4Gp90NJa85AV1yiNsEyvq+mUnMpNcKnLXLOjkTmMCqDYbbkehJlXPnaWLzve+mW0pJdPxtf3rbD4PS/cBQIvtpjmrDAU8VsZKT8DN5Kyz+EZsCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8vaW50ZXJvcC5iYnRlc3QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQK4l0TUHZ1QV3V2QtlLNDm+PoxiDAfBgNVHSMEGDAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkqhkiG9w0BAQUFAAOCAQEABTqpOpvW+6yrLXyUlP2xJbEkohXHI5OWwKWleOb9hlkhWntUalfcFOJAgUyH30TTpHldzx1+vK2LPzhoUFKYHE1IyQvokBN2JjFO64BQukCKnZhldLRPxGhfkTdxQgdf5rCK/wh3xVsZCNTfuMNmlAM6lOAg8QduDah3WFZpEA0s2nwQaCNQTNMjJC8tav1CBr6+E5FAmwPXP7pJxn9Fw9OXRyqbRA4v2y7YpbGkG2GI9UvOHw6SGvf4FRSthMMO35YbpikGsLix3vAsXWWi4rwfVOYzQK0OFPNi9RMCUdSH06m9uLWckiCxjos0FQODZE9l4ATGy9s9hNVwryOJTw=="/>
+            </L7p:xmlSecurityRecipientContext>
+            <wsse:MessageParts
+                Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">/soapenv:Envelope/soapenv:Body</wsse:MessageParts>
+        </wsse:Integrity>
+        <L7p:RequestWssReplayProtection/>
+        <L7p:RequestWssReplayProtection>
+            <L7p:RecipientContext xmlSecurityRecipientContext="included">
+                <L7p:Actor stringValue="Alice"/>
+                <L7p:Base64edX509Certificate stringValue="MIIDDDCCAfSgAwIBAgIQM6YEf7FVYx/tZyEXgVComTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQ4wDAYDVQQDDAVBbGljZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAoqi99By1VYo0aHrkKCNT4DkIgPL/SgahbeKdGhrbu3K2XG7arfD9tqIBIKMfrX4Gp90NJa85AV1yiNsEyvq+mUnMpNcKnLXLOjkTmMCqDYbbkehJlXPnaWLzve+mW0pJdPxtf3rbD4PS/cBQIvtpjmrDAU8VsZKT8DN5Kyz+EZsCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8vaW50ZXJvcC5iYnRlc3QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQK4l0TUHZ1QV3V2QtlLNDm+PoxiDAfBgNVHSMEGDAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkqhkiG9w0BAQUFAAOCAQEABTqpOpvW+6yrLXyUlP2xJbEkohXHI5OWwKWleOb9hlkhWntUalfcFOJAgUyH30TTpHldzx1+vK2LPzhoUFKYHE1IyQvokBN2JjFO64BQukCKnZhldLRPxGhfkTdxQgdf5rCK/wh3xVsZCNTfuMNmlAM6lOAg8QduDah3WFZpEA0s2nwQaCNQTNMjJC8tav1CBr6+E5FAmwPXP7pJxn9Fw9OXRyqbRA4v2y7YpbGkG2GI9UvOHw6SGvf4FRSthMMO35YbpikGsLix3vAsXWWi4rwfVOYzQK0OFPNi9RMCUdSH06m9uLWckiCxjos0FQODZE9l4ATGy9s9hNVwryOJTw=="/>
+            </L7p:RecipientContext>
+        </L7p:RequestWssReplayProtection>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>urn:oasis:names:tc:SAML:1.0:assertion#Assertion</wsse:TokenType>
+            <L7p:SamlParams>
+                <L7p:AudienceRestriction stringValue=""/>
+                <L7p:AuthenticationStatement samlAuthenticationInfo="included">
+                    <L7p:AuthenticationMethods stringArrayValue="included">
+                        <L7p:item stringValue="urn:ietf:rfc:3075"/>
+                    </L7p:AuthenticationMethods>
+                </L7p:AuthenticationStatement>
+                <L7p:NameFormats stringArrayValue="included">
+                    <L7p:item stringValue="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"/>
+                </L7p:NameFormats>
+                <L7p:NameQualifier stringValue=""/>
+                <L7p:RequireHolderOfKeyWithMessageSignature booleanValue="true"/>
+                <L7p:SubjectConfirmations stringArrayValue="included">
+                    <L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:cm:holder-of-key"/>
+                </L7p:SubjectConfirmations>
+                <L7p:Version boxedIntegerValue="1"/>
+            </L7p:SamlParams>
+        </wsse:SecurityToken>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>urn:oasis:names:tc:SAML:1.0:assertion#Assertion</wsse:TokenType>
+            <L7p:SamlParams>
+                <L7p:AudienceRestriction stringValue=""/>
+                <L7p:AuthenticationStatement samlAuthenticationInfo="included">
+                    <L7p:AuthenticationMethods stringArrayValue="included">
+                        <L7p:item stringValue="urn:ietf:rfc:3075"/>
+                    </L7p:AuthenticationMethods>
+                </L7p:AuthenticationStatement>
+                <L7p:NameFormats stringArrayValue="included">
+                    <L7p:item stringValue="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"/>
+                </L7p:NameFormats>
+                <L7p:NameQualifier stringValue=""/>
+                <L7p:RecipientContext xmlSecurityRecipientContext="included">
+                    <L7p:Actor stringValue="Alice"/>
+                    <L7p:Base64edX509Certificate stringValue="MIIDDDCCAfSgAwIBAgIQM6YEf7FVYx/tZyEXgVComTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQ4wDAYDVQQDDAVBbGljZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAoqi99By1VYo0aHrkKCNT4DkIgPL/SgahbeKdGhrbu3K2XG7arfD9tqIBIKMfrX4Gp90NJa85AV1yiNsEyvq+mUnMpNcKnLXLOjkTmMCqDYbbkehJlXPnaWLzve+mW0pJdPxtf3rbD4PS/cBQIvtpjmrDAU8VsZKT8DN5Kyz+EZsCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8vaW50ZXJvcC5iYnRlc3QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQK4l0TUHZ1QV3V2QtlLNDm+PoxiDAfBgNVHSMEGDAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkqhkiG9w0BAQUFAAOCAQEABTqpOpvW+6yrLXyUlP2xJbEkohXHI5OWwKWleOb9hlkhWntUalfcFOJAgUyH30TTpHldzx1+vK2LPzhoUFKYHE1IyQvokBN2JjFO64BQukCKnZhldLRPxGhfkTdxQgdf5rCK/wh3xVsZCNTfuMNmlAM6lOAg8QduDah3WFZpEA0s2nwQaCNQTNMjJC8tav1CBr6+E5FAmwPXP7pJxn9Fw9OXRyqbRA4v2y7YpbGkG2GI9UvOHw6SGvf4FRSthMMO35YbpikGsLix3vAsXWWi4rwfVOYzQK0OFPNi9RMCUdSH06m9uLWckiCxjos0FQODZE9l4ATGy9s9hNVwryOJTw=="/>
+                </L7p:RecipientContext>
+                <L7p:RequireHolderOfKeyWithMessageSignature booleanValue="true"/>
+                <L7p:SubjectConfirmations stringArrayValue="included">
+                    <L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:cm:holder-of-key"/>
+                </L7p:SubjectConfirmations>
+                <L7p:Version boxedIntegerValue="1"/>
+            </L7p:SamlParams>
+        </wsse:SecurityToken>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>urn:oasis:names:tc:SAML:2.0:assertion#Assertion</wsse:TokenType>
+            <L7p:SamlParams>
+                <L7p:AudienceRestriction stringValue=""/>
+                <L7p:AuthenticationStatement samlAuthenticationInfo="included">
+                    <L7p:AuthenticationMethods stringArrayValue="included">
+                        <L7p:item stringValue="urn:ietf:rfc:3075"/>
+                    </L7p:AuthenticationMethods>
+                </L7p:AuthenticationStatement>
+                <L7p:NameFormats stringArrayValue="included">
+                    <L7p:item stringValue="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"/>
+                </L7p:NameFormats>
+                <L7p:NameQualifier stringValue=""/>
+                <L7p:RequireHolderOfKeyWithMessageSignature booleanValue="true"/>
+                <L7p:SubjectConfirmations stringArrayValue="included">
+                    <L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:cm:holder-of-key"/>
+                </L7p:SubjectConfirmations>
+            </L7p:SamlParams>
+        </wsse:SecurityToken>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>urn:oasis:names:tc:SAML:2.0:assertion#Assertion</wsse:TokenType>
+            <L7p:SamlParams>
+                <L7p:AudienceRestriction stringValue=""/>
+                <L7p:AuthenticationStatement samlAuthenticationInfo="included">
+                    <L7p:AuthenticationMethods stringArrayValue="included">
+                        <L7p:item stringValue="urn:ietf:rfc:3075"/>
+                    </L7p:AuthenticationMethods>
+                </L7p:AuthenticationStatement>
+                <L7p:NameFormats stringArrayValue="included">
+                    <L7p:item stringValue="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"/>
+                </L7p:NameFormats>
+                <L7p:NameQualifier stringValue=""/>
+                <L7p:RecipientContext xmlSecurityRecipientContext="included">
+                    <L7p:Actor stringValue="Alice"/>
+                    <L7p:Base64edX509Certificate stringValue="MIIDDDCCAfSgAwIBAgIQM6YEf7FVYx/tZyEXgVComTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQ4wDAYDVQQDDAVBbGljZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAoqi99By1VYo0aHrkKCNT4DkIgPL/SgahbeKdGhrbu3K2XG7arfD9tqIBIKMfrX4Gp90NJa85AV1yiNsEyvq+mUnMpNcKnLXLOjkTmMCqDYbbkehJlXPnaWLzve+mW0pJdPxtf3rbD4PS/cBQIvtpjmrDAU8VsZKT8DN5Kyz+EZsCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8vaW50ZXJvcC5iYnRlc3QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQK4l0TUHZ1QV3V2QtlLNDm+PoxiDAfBgNVHSMEGDAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkqhkiG9w0BAQUFAAOCAQEABTqpOpvW+6yrLXyUlP2xJbEkohXHI5OWwKWleOb9hlkhWntUalfcFOJAgUyH30TTpHldzx1+vK2LPzhoUFKYHE1IyQvokBN2JjFO64BQukCKnZhldLRPxGhfkTdxQgdf5rCK/wh3xVsZCNTfuMNmlAM6lOAg8QduDah3WFZpEA0s2nwQaCNQTNMjJC8tav1CBr6+E5FAmwPXP7pJxn9Fw9OXRyqbRA4v2y7YpbGkG2GI9UvOHw6SGvf4FRSthMMO35YbpikGsLix3vAsXWWi4rwfVOYzQK0OFPNi9RMCUdSH06m9uLWckiCxjos0FQODZE9l4ATGy9s9hNVwryOJTw=="/>
+                </L7p:RecipientContext>
+                <L7p:RequireHolderOfKeyWithMessageSignature booleanValue="true"/>
+                <L7p:SubjectConfirmations stringArrayValue="included">
+                    <L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:cm:holder-of-key"/>
+                </L7p:SubjectConfirmations>
+            </L7p:SamlParams>
+        </wsse:SecurityToken>
+        <L7p:RequestWssTimestamp>
+            <L7p:MaxExpiryMilliseconds intValue="3600000"/>
+        </L7p:RequestWssTimestamp>
+        <L7p:RequestWssTimestamp>
+            <L7p:MaxExpiryMilliseconds intValue="3600000"/>
+            <L7p:RecipientContext xmlSecurityRecipientContext="included">
+                <L7p:Actor stringValue="Alice"/>
+                <L7p:Base64edX509Certificate stringValue="MIIDDDCCAfSgAwIBAgIQM6YEf7FVYx/tZyEXgVComTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQ4wDAYDVQQDDAVBbGljZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAoqi99By1VYo0aHrkKCNT4DkIgPL/SgahbeKdGhrbu3K2XG7arfD9tqIBIKMfrX4Gp90NJa85AV1yiNsEyvq+mUnMpNcKnLXLOjkTmMCqDYbbkehJlXPnaWLzve+mW0pJdPxtf3rbD4PS/cBQIvtpjmrDAU8VsZKT8DN5Kyz+EZsCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8vaW50ZXJvcC5iYnRlc3QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQK4l0TUHZ1QV3V2QtlLNDm+PoxiDAfBgNVHSMEGDAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkqhkiG9w0BAQUFAAOCAQEABTqpOpvW+6yrLXyUlP2xJbEkohXHI5OWwKWleOb9hlkhWntUalfcFOJAgUyH30TTpHldzx1+vK2LPzhoUFKYHE1IyQvokBN2JjFO64BQukCKnZhldLRPxGhfkTdxQgdf5rCK/wh3xVsZCNTfuMNmlAM6lOAg8QduDah3WFZpEA0s2nwQaCNQTNMjJC8tav1CBr6+E5FAmwPXP7pJxn9Fw9OXRyqbRA4v2y7YpbGkG2GI9UvOHw6SGvf4FRSthMMO35YbpikGsLix3vAsXWWi4rwfVOYzQK0OFPNi9RMCUdSH06m9uLWckiCxjos0FQODZE9l4ATGy9s9hNVwryOJTw=="/>
+            </L7p:RecipientContext>
+        </L7p:RequestWssTimestamp>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wsse:TokenType>
+            <L7p:Properties/>
+        </wsse:SecurityToken>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wsse:TokenType>
+            <L7p:Properties>
+                <L7p:RecipientContext xmlSecurityRecipientContext="included">
+                    <L7p:Actor stringValue="Alice"/>
+                    <L7p:Base64edX509Certificate stringValue="MIIDDDCCAfSgAwIBAgIQM6YEf7FVYx/tZyEXgVComTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQ4wDAYDVQQDDAVBbGljZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAoqi99By1VYo0aHrkKCNT4DkIgPL/SgahbeKdGhrbu3K2XG7arfD9tqIBIKMfrX4Gp90NJa85AV1yiNsEyvq+mUnMpNcKnLXLOjkTmMCqDYbbkehJlXPnaWLzve+mW0pJdPxtf3rbD4PS/cBQIvtpjmrDAU8VsZKT8DN5Kyz+EZsCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8vaW50ZXJvcC5iYnRlc3QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQK4l0TUHZ1QV3V2QtlLNDm+PoxiDAfBgNVHSMEGDAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkqhkiG9w0BAQUFAAOCAQEABTqpOpvW+6yrLXyUlP2xJbEkohXHI5OWwKWleOb9hlkhWntUalfcFOJAgUyH30TTpHldzx1+vK2LPzhoUFKYHE1IyQvokBN2JjFO64BQukCKnZhldLRPxGhfkTdxQgdf5rCK/wh3xVsZCNTfuMNmlAM6lOAg8QduDah3WFZpEA0s2nwQaCNQTNMjJC8tav1CBr6+E5FAmwPXP7pJxn9Fw9OXRyqbRA4v2y7YpbGkG2GI9UvOHw6SGvf4FRSthMMO35YbpikGsLix3vAsXWWi4rwfVOYzQK0OFPNi9RMCUdSH06m9uLWckiCxjos0FQODZE9l4ATGy9s9hNVwryOJTw=="/>
+                </L7p:RecipientContext>
+            </L7p:Properties>
+        </wsse:SecurityToken>
+        <L7p:ResponseWssConfidentiality>
+            <L7p:XpathExpression xpathExpressionValue="included">
+                <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Body[position()=1]"/>
+                <L7p:Namespaces mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="soapenv"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="SOAP-ENV"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsp"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2002/12/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="tns"/>
+                        <L7p:value stringValue="http://warehouse.acme.com/ws"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="L7p"/>
+                        <L7p:value stringValue="http://www.layer7tech.com/ws/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="s12"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsd"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="env"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsi"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                    </L7p:entry>
+                </L7p:Namespaces>
+            </L7p:XpathExpression>
+        </L7p:ResponseWssConfidentiality>
+        <L7p:ResponseWssConfidentiality>
+            <L7p:RecipientContext xmlSecurityRecipientContext="included">
+                <L7p:Actor stringValue="Alice"/>
+                <L7p:Base64edX509Certificate stringValue="MIIDDDCCAfSgAwIBAgIQM6YEf7FVYx/tZyEXgVComTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQ4wDAYDVQQDDAVBbGljZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAoqi99By1VYo0aHrkKCNT4DkIgPL/SgahbeKdGhrbu3K2XG7arfD9tqIBIKMfrX4Gp90NJa85AV1yiNsEyvq+mUnMpNcKnLXLOjkTmMCqDYbbkehJlXPnaWLzve+mW0pJdPxtf3rbD4PS/cBQIvtpjmrDAU8VsZKT8DN5Kyz+EZsCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8vaW50ZXJvcC5iYnRlc3QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQK4l0TUHZ1QV3V2QtlLNDm+PoxiDAfBgNVHSMEGDAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkqhkiG9w0BAQUFAAOCAQEABTqpOpvW+6yrLXyUlP2xJbEkohXHI5OWwKWleOb9hlkhWntUalfcFOJAgUyH30TTpHldzx1+vK2LPzhoUFKYHE1IyQvokBN2JjFO64BQukCKnZhldLRPxGhfkTdxQgdf5rCK/wh3xVsZCNTfuMNmlAM6lOAg8QduDah3WFZpEA0s2nwQaCNQTNMjJC8tav1CBr6+E5FAmwPXP7pJxn9Fw9OXRyqbRA4v2y7YpbGkG2GI9UvOHw6SGvf4FRSthMMO35YbpikGsLix3vAsXWWi4rwfVOYzQK0OFPNi9RMCUdSH06m9uLWckiCxjos0FQODZE9l4ATGy9s9hNVwryOJTw=="/>
+            </L7p:RecipientContext>
+            <L7p:XpathExpression xpathExpressionValue="included">
+                <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Body[position()=1]"/>
+                <L7p:Namespaces mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="soapenv"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="SOAP-ENV"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsp"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2002/12/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="tns"/>
+                        <L7p:value stringValue="http://warehouse.acme.com/ws"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="L7p"/>
+                        <L7p:value stringValue="http://www.layer7tech.com/ws/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="s12"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsd"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="env"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsi"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                    </L7p:entry>
+                </L7p:Namespaces>
+            </L7p:XpathExpression>
+        </L7p:ResponseWssConfidentiality>
+        <L7p:ResponseWssIntegrity>
+            <L7p:XpathExpression xpathExpressionValue="included">
+                <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Body[position()=1]"/>
+                <L7p:Namespaces mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="soapenv"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="SOAP-ENV"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsp"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2002/12/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="tns"/>
+                        <L7p:value stringValue="http://warehouse.acme.com/ws"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="L7p"/>
+                        <L7p:value stringValue="http://www.layer7tech.com/ws/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="s12"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsd"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="env"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsi"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                    </L7p:entry>
+                </L7p:Namespaces>
+            </L7p:XpathExpression>
+        </L7p:ResponseWssIntegrity>
+        <L7p:ResponseWssIntegrity>
+            <L7p:KeyAlias stringValue="alice"/>
+            <L7p:NonDefaultKeystoreId longValue="2"/>
+            <L7p:UsesDefaultKeyStore booleanValue="false"/>
+            <L7p:XpathExpression xpathExpressionValue="included">
+                <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Body[position()=1]"/>
+                <L7p:Namespaces mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="soapenv"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="SOAP-ENV"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsp"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2002/12/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="tns"/>
+                        <L7p:value stringValue="http://warehouse.acme.com/ws"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="L7p"/>
+                        <L7p:value stringValue="http://www.layer7tech.com/ws/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="s12"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsd"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="env"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsi"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                    </L7p:entry>
+                </L7p:Namespaces>
+            </L7p:XpathExpression>
+        </L7p:ResponseWssIntegrity>
+        <L7p:ResponseWssIntegrity>
+            <L7p:RecipientContext xmlSecurityRecipientContext="included">
+                <L7p:Actor stringValue="Alice"/>
+                <L7p:Base64edX509Certificate stringValue="MIIDDDCCAfSgAwIBAgIQM6YEf7FVYx/tZyEXgVComTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQ4wDAYDVQQDDAVBbGljZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAoqi99By1VYo0aHrkKCNT4DkIgPL/SgahbeKdGhrbu3K2XG7arfD9tqIBIKMfrX4Gp90NJa85AV1yiNsEyvq+mUnMpNcKnLXLOjkTmMCqDYbbkehJlXPnaWLzve+mW0pJdPxtf3rbD4PS/cBQIvtpjmrDAU8VsZKT8DN5Kyz+EZsCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8vaW50ZXJvcC5iYnRlc3QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQK4l0TUHZ1QV3V2QtlLNDm+PoxiDAfBgNVHSMEGDAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkqhkiG9w0BAQUFAAOCAQEABTqpOpvW+6yrLXyUlP2xJbEkohXHI5OWwKWleOb9hlkhWntUalfcFOJAgUyH30TTpHldzx1+vK2LPzhoUFKYHE1IyQvokBN2JjFO64BQukCKnZhldLRPxGhfkTdxQgdf5rCK/wh3xVsZCNTfuMNmlAM6lOAg8QduDah3WFZpEA0s2nwQaCNQTNMjJC8tav1CBr6+E5FAmwPXP7pJxn9Fw9OXRyqbRA4v2y7YpbGkG2GI9UvOHw6SGvf4FRSthMMO35YbpikGsLix3vAsXWWi4rwfVOYzQK0OFPNi9RMCUdSH06m9uLWckiCxjos0FQODZE9l4ATGy9s9hNVwryOJTw=="/>
+            </L7p:RecipientContext>
+            <L7p:XpathExpression xpathExpressionValue="included">
+                <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Body[position()=1]"/>
+                <L7p:Namespaces mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="soapenv"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="SOAP-ENV"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsp"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2002/12/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="tns"/>
+                        <L7p:value stringValue="http://warehouse.acme.com/ws"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="L7p"/>
+                        <L7p:value stringValue="http://www.layer7tech.com/ws/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="s12"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsd"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="env"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsi"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                    </L7p:entry>
+                </L7p:Namespaces>
+            </L7p:XpathExpression>
+        </L7p:ResponseWssIntegrity>
+        <L7p:ResponseWssSecurityToken>
+            <L7p:IncludePassword booleanValue="true"/>
+            <L7p:KeyReference stringValue="SubjectKeyIdentifier"/>
+        </L7p:ResponseWssSecurityToken>
+        <L7p:ResponseWssSecurityToken>
+            <L7p:IncludePassword booleanValue="true"/>
+            <L7p:KeyAlias stringValue="alice"/>
+            <L7p:KeyReference stringValue="SubjectKeyIdentifier"/>
+            <L7p:NonDefaultKeystoreId longValue="2"/>
+            <L7p:UsesDefaultKeyStore booleanValue="false"/>
+        </L7p:ResponseWssSecurityToken>
+        <L7p:ResponseWssSecurityToken>
+            <L7p:IncludePassword booleanValue="true"/>
+            <L7p:KeyReference stringValue="SubjectKeyIdentifier"/>
+            <L7p:RecipientContext xmlSecurityRecipientContext="included">
+                <L7p:Actor stringValue="Alice"/>
+                <L7p:Base64edX509Certificate stringValue="MIIDDDCCAfSgAwIBAgIQM6YEf7FVYx/tZyEXgVComTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQ4wDAYDVQQDDAVBbGljZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAoqi99By1VYo0aHrkKCNT4DkIgPL/SgahbeKdGhrbu3K2XG7arfD9tqIBIKMfrX4Gp90NJa85AV1yiNsEyvq+mUnMpNcKnLXLOjkTmMCqDYbbkehJlXPnaWLzve+mW0pJdPxtf3rbD4PS/cBQIvtpjmrDAU8VsZKT8DN5Kyz+EZsCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8vaW50ZXJvcC5iYnRlc3QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQK4l0TUHZ1QV3V2QtlLNDm+PoxiDAfBgNVHSMEGDAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkqhkiG9w0BAQUFAAOCAQEABTqpOpvW+6yrLXyUlP2xJbEkohXHI5OWwKWleOb9hlkhWntUalfcFOJAgUyH30TTpHldzx1+vK2LPzhoUFKYHE1IyQvokBN2JjFO64BQukCKnZhldLRPxGhfkTdxQgdf5rCK/wh3xVsZCNTfuMNmlAM6lOAg8QduDah3WFZpEA0s2nwQaCNQTNMjJC8tav1CBr6+E5FAmwPXP7pJxn9Fw9OXRyqbRA4v2y7YpbGkG2GI9UvOHw6SGvf4FRSthMMO35YbpikGsLix3vAsXWWi4rwfVOYzQK0OFPNi9RMCUdSH06m9uLWckiCxjos0FQODZE9l4ATGy9s9hNVwryOJTw=="/>
+            </L7p:RecipientContext>
+        </L7p:ResponseWssSecurityToken>
+        <L7p:ResponseWssTimestamp>
+            <L7p:ExpiryMilliseconds intValue="900000"/>
+            <L7p:KeyReference stringValue="SubjectKeyIdentifier"/>
+            <L7p:SignatureRequired booleanValue="false"/>
+        </L7p:ResponseWssTimestamp>
+        <L7p:ResponseWssTimestamp>
+            <L7p:ExpiryMilliseconds intValue="900000"/>
+            <L7p:KeyAlias stringValue="alice"/>
+            <L7p:KeyReference stringValue="SubjectKeyIdentifier"/>
+            <L7p:NonDefaultKeystoreId longValue="2"/>
+            <L7p:SignatureRequired booleanValue="false"/>
+            <L7p:UsesDefaultKeyStore booleanValue="false"/>
+        </L7p:ResponseWssTimestamp>
+        <L7p:ResponseWssTimestamp>
+            <L7p:ExpiryMilliseconds intValue="900000"/>
+            <L7p:KeyReference stringValue="SubjectKeyIdentifier"/>
+            <L7p:RecipientContext xmlSecurityRecipientContext="included">
+                <L7p:Actor stringValue="Alice"/>
+                <L7p:Base64edX509Certificate stringValue="MIIDDDCCAfSgAwIBAgIQM6YEf7FVYx/tZyEXgVComTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQKDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OVowQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQ4wDAYDVQQDDAVBbGljZTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAoqi99By1VYo0aHrkKCNT4DkIgPL/SgahbeKdGhrbu3K2XG7arfD9tqIBIKMfrX4Gp90NJa85AV1yiNsEyvq+mUnMpNcKnLXLOjkTmMCqDYbbkehJlXPnaWLzve+mW0pJdPxtf3rbD4PS/cBQIvtpjmrDAU8VsZKT8DN5Kyz+EZsCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8vaW50ZXJvcC5iYnRlc3QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQK4l0TUHZ1QV3V2QtlLNDm+PoxiDAfBgNVHSMEGDAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkqhkiG9w0BAQUFAAOCAQEABTqpOpvW+6yrLXyUlP2xJbEkohXHI5OWwKWleOb9hlkhWntUalfcFOJAgUyH30TTpHldzx1+vK2LPzhoUFKYHE1IyQvokBN2JjFO64BQukCKnZhldLRPxGhfkTdxQgdf5rCK/wh3xVsZCNTfuMNmlAM6lOAg8QduDah3WFZpEA0s2nwQaCNQTNMjJC8tav1CBr6+E5FAmwPXP7pJxn9Fw9OXRyqbRA4v2y7YpbGkG2GI9UvOHw6SGvf4FRSthMMO35YbpikGsLix3vAsXWWi4rwfVOYzQK0OFPNi9RMCUdSH06m9uLWckiCxjos0FQODZE9l4ATGy9s9hNVwryOJTw=="/>
+            </L7p:RecipientContext>
+            <L7p:SignatureRequired booleanValue="false"/>
+        </L7p:ResponseWssTimestamp>
+    </wsp:All>
+</wsp:Policy>

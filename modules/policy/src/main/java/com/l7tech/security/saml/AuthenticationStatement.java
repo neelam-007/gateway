@@ -7,7 +7,7 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 
 import java.util.Calendar;
@@ -40,7 +40,7 @@ public class AuthenticationStatement extends SubjectStatement {
 
         if (SslAssertion.class.isAssignableFrom(credentialSourceClass)) {
             authMethod = SamlConstants.SSL_TLS_CERTIFICATE_AUTHENTICATION;
-        } else if (RequestWssX509Cert.class.isAssignableFrom(credentialSourceClass)) {
+        } else if (RequireWssX509Cert.class.isAssignableFrom(credentialSourceClass)) {
             authMethod = SamlConstants.XML_DSIG_AUTHENTICATION;
         } else if (HttpCredentialSourceAssertion.class.isAssignableFrom(credentialSourceClass) ||
           WssBasic.class.isAssignableFrom(credentialSourceClass)) {

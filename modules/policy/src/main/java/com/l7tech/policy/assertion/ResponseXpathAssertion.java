@@ -79,4 +79,11 @@ public class ResponseXpathAssertion extends SimpleXpathAssertion implements Uses
             used.add(xmlMsgSrc);
         return used.toArray(new String[used.size()]);
     }
+
+    @Override
+    public AssertionMetadata meta() {
+        DefaultAssertionMetadata meta = defaultMeta();
+        meta.put( AssertionMetadata.CLIENT_ASSERTION_TARGETS, new String[]{"response"} );
+        return meta;
+    }
 }

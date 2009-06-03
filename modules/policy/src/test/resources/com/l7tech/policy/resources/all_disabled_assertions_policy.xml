@@ -106,29 +106,27 @@
                 <L7p:Enabled booleanValue="false"/>
             </L7p:Properties>
         </wsse:SecurityToken>
-        <wsse:Integrity wsp:Usage="wsp:Required" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
-            <wsse:MessageParts
-                Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">/soapenv:Envelope/soapenv:Body</wsse:MessageParts>
+        <L7p:RequireWssSignedElement>
             <L7p:Enabled booleanValue="false"/>
-        </wsse:Integrity>
-        <L7p:RequestWssConfidentiality>
+        </L7p:RequireWssSignedElement>
+        <L7p:RequireWssEncryptedElement>
             <L7p:Enabled booleanValue="false"/>
-        </L7p:RequestWssConfidentiality>
-        <L7p:ResponseWssIntegrity>
+        </L7p:RequireWssEncryptedElement>
+        <L7p:WssSignElement>
             <L7p:Enabled booleanValue="false"/>
-        </L7p:ResponseWssIntegrity>
-        <L7p:ResponseWssConfidentiality>
+        </L7p:WssSignElement>
+        <L7p:WssEncryptElement>
             <L7p:Enabled booleanValue="false"/>
-        </L7p:ResponseWssConfidentiality>
+        </L7p:WssEncryptElement>
         <wsp:MessagePredicate
             Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
             L7p:Enabled="false" wsp:Usage="wsp:Required" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">/soapenv:Envelope</wsp:MessagePredicate>
         <L7p:ResponseXpathAssertion>
             <L7p:Enabled booleanValue="false"/>
         </L7p:ResponseXpathAssertion>
-        <L7p:RequestWssReplayProtection>
+        <L7p:WssReplayProtection>
             <L7p:Enabled booleanValue="false"/>
-        </L7p:RequestWssReplayProtection>
+        </L7p:WssReplayProtection>
         <L7p:RequestSwAAssertion>
             <L7p:Enabled booleanValue="false"/>
         </L7p:RequestSwAAssertion>
@@ -140,12 +138,12 @@
                 <L7p:SubjectConfirmations stringArrayValue="included"/>
             </L7p:SamlParams>
         </wsse:SecurityToken>
-        <L7p:RequestWssTimestamp>
+        <L7p:RequireWssTimestamp>
             <L7p:Enabled booleanValue="false"/>
-        </L7p:RequestWssTimestamp>
-        <L7p:ResponseWssTimestamp>
+        </L7p:RequireWssTimestamp>
+        <L7p:AddWssTimestamp>
             <L7p:Enabled booleanValue="false"/>
-        </L7p:ResponseWssTimestamp>
+        </L7p:AddWssTimestamp>
         <L7p:AuditAssertion>
             <L7p:Enabled booleanValue="false"/>
         </L7p:AuditAssertion>
@@ -245,9 +243,9 @@
         <L7p:HardcodedResponse>
             <L7p:Enabled booleanValue="false"/>
         </L7p:HardcodedResponse>
-        <L7p:ResponseWssSecurityToken>
+        <L7p:RequireWssSecurityToken>
             <L7p:Enabled booleanValue="false"/>
-        </L7p:ResponseWssSecurityToken>
+        </L7p:RequireWssSecurityToken>
         <L7p:SetVariable>
             <L7p:Enabled booleanValue="false"/>
         </L7p:SetVariable>

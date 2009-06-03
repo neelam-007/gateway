@@ -8,7 +8,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.EncryptedUsernameTokenAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 
 import javax.swing.*;
@@ -82,7 +82,7 @@ public class CredentialsLocation {
         if (soap) {
             credentialsLocationMap.put("WS Token Basic", new WssBasic());
             credentialsLocationMap.put("Encrypted UsernameToken", new EncryptedUsernameTokenAssertion());
-            credentialsLocationMap.put("WSS Signature", new RequestWssX509Cert());
+            credentialsLocationMap.put("WSS Signature", new RequireWssX509Cert());
             credentialsLocationMap.put("WS Secure Conversation", new SecureConversation());
             // don't add this (see bug 4691)
             //credentialsLocationMap.put("WSS Kerberos", new RequestWssKerberos());

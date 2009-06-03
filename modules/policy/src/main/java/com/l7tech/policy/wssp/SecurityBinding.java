@@ -8,7 +8,7 @@ package com.l7tech.policy.wssp;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import org.apache.ws.policy.PrimitiveAssertion;
 
 import javax.xml.namespace.QName;
@@ -82,7 +82,7 @@ abstract class SecurityBinding extends WsspVisitor {
         // TODO we currently use this only as a hint to enable X509
         boolean signWithX509 = setContainsQnameWhoseLocalNameStartsWith(initiatorTokenTypes, "WssX509");
         boolean encryptForX509 = setContainsQnameWhoseLocalNameStartsWith(recipientTokenTypes, "WssX509");
-        if (encryptForX509 || signWithX509) all.addChild(new RequestWssX509Cert());
+        if (encryptForX509 || signWithX509) all.addChild(new RequireWssX509Cert());
 
         // TODO we are currently ignoring layouts
 

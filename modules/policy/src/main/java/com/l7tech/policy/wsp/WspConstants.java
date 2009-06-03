@@ -186,13 +186,13 @@ public class WspConstants {
         // Leaf assertions expressible using standard WS-Policy vocabulary
         new SecurityTokenAssertionMapping(new WssBasic(), "WssBasic",
                                           SecurityTokenType.WSS_USERNAME), // freeze WssBasic as SecurityToken or pre32 form; thaw pre32 form
-        new SecurityTokenAssertionMapping(new RequestWssX509Cert(), "RequestWssX509Cert",
+        new SecurityTokenAssertionMapping(new RequireWssX509Cert(), "RequestWssX509Cert",
                                           SecurityTokenType.WSS_X509_BST), // freeze RequestWssX509Cert as SecurityToken or pre32 form; thaw pre32 form
         new SecurityTokenAssertionMapping(new SecureConversation(), "SecureConversation",
                                           SecurityTokenType.WSSC_CONTEXT), // freeze SecureConversation as SecurityToken or pre32 form; thaw pre32 form
-        new SecurityTokenAssertionMapping(new RequestWssSaml(), "RequestWssSaml",
-                                          SecurityTokenType.SAML_ASSERTION),
-        new SecurityTokenAssertionMapping(new RequestWssSaml2(), "RequestWssSaml",
+        new SecurityTokenAssertionMapping(new RequireWssSaml(), "RequestWssSaml",
+                                              SecurityTokenType.SAML_ASSERTION),
+        new SecurityTokenAssertionMapping(new RequireWssSaml2(), "RequestWssSaml",
                                           SecurityTokenType.SAML2_ASSERTION),
         new MessagePredicateMapping(new RequestXpathAssertion(), "MessagePredicate"), // freeze RequestXpathAssertion as MessagePredicate or pre32 form; thaw MessagePredicate
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion") { // thaw pre32 form
@@ -201,10 +201,12 @@ public class WspConstants {
                 super.populateObject(object, source, new WspUpgradeUtilFrom21.RequestXpathAssertionPropertyVisitor(visitor));
             }
         },
-        new IntegrityMapping(new RequestWssIntegrity(), "Integrity"), // freeze RequestWssIntegrity as wsse:Integrity or pre32 form; thaw wsse:Integrity form
-        new IntegrityMapping(new RequestWssIntegrity(), "RequestWssIntegrity"), // thaw pre32 form
-        new ConfidentialityMapping(new RequestWssConfidentiality(), "RequestWssConfidentiality"), // 3.7+ and pre32 form.
-        new ConfidentialityMapping(new RequestWssConfidentiality(), "Confidentiality"), // thaw wsse:Confidentiality (3.2 - 3.6.5)
+        new IntegrityMapping(new RequireWssSignedElement(), "RequireWssSignedElement"), // from 5.1
+        new IntegrityMapping(new RequireWssSignedElement(), "Integrity"), // freeze RequestWssIntegrity as wsse:Integrity or pre32 form; thaw wsse:Integrity form
+        new IntegrityMapping(new RequireWssSignedElement(), "RequestWssIntegrity"), // thaw pre32 form
+        new ConfidentialityMapping(new RequireWssEncryptedElement(), "RequireWssEncryptedElement"), // from 5.1
+        new ConfidentialityMapping(new RequireWssEncryptedElement(), "RequestWssConfidentiality"), // 3.7+ and pre32 form.
+        new ConfidentialityMapping(new RequireWssEncryptedElement(), "Confidentiality"), // thaw wsse:Confidentiality (3.2 - 3.6.5)
 
         // Encrypted username token will use our proprietary vocabulary since it has special semantics
         new AssertionMapping(new EncryptedUsernameTokenAssertion(), "EncryptedUsernameToken"),
@@ -226,10 +228,13 @@ public class WspConstants {
         new AssertionMapping(new TrueAssertion(), "TrueAssertion"),
         new AssertionMapping(new MemberOfGroup(), "MemberOfGroup"),
         new AssertionMapping(new SpecificUser(), "SpecificUser"),
-        new AssertionMapping(new ResponseWssIntegrity(), "ResponseWssIntegrity"),
-        new AssertionMapping(new ResponseWssConfidentiality(), "ResponseWssConfidentiality"),
+        new AssertionMapping(new WssSignElement(), "WssSignElement"), // from 5.1
+        new AssertionMapping(new WssSignElement(), "ResponseWssIntegrity"),
+        new AssertionMapping(new WssEncryptElement(), "WssEncryptElement"), // from 5.1
+        new AssertionMapping(new WssEncryptElement(), "ResponseWssConfidentiality"),
         new AssertionMapping(new RequestSwAAssertion(), "RequestSwAAssertion"),
-        new AssertionMapping(new RequestWssReplayProtection(), "RequestWssReplayProtection"),
+        new AssertionMapping(new WssReplayProtection(), "WssReplayProtection"), // from 5.1
+        new AssertionMapping(new WssReplayProtection(), "RequestWssReplayProtection"),
         new AssertionMapping(new ResponseXpathAssertion(), "ResponseXpathAssertion"),
         new AssertionMapping(new SchemaValidation(), "SchemaValidation") {
             public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
@@ -272,9 +277,12 @@ public class WspConstants {
         new AssertionMapping(new CommentAssertion(), "CommentAssertion"),
         new AssertionMapping(new Operation(), "WSDLOperation"),
         new AssertionMapping(new SqlAttackAssertion(), "SqlAttackProtection"),
-        new AssertionMapping(new ResponseWssTimestamp(), "ResponseWssTimestamp"),
-        new AssertionMapping(new RequestWssTimestamp(), "RequestWssTimestamp"),
-        new AssertionMapping(new ResponseWssSecurityToken(), "ResponseWssSecurityToken"),
+        new AssertionMapping(new AddWssTimestamp(), "AddWssTimestamp"), // from 5.1
+        new AssertionMapping(new AddWssTimestamp(), "ResponseWssTimestamp"),
+        new AssertionMapping(new RequireWssTimestamp(), "RequireWssTimestamp"), // from 5.1
+        new AssertionMapping(new RequireWssTimestamp(), "RequestWssTimestamp"),
+        new AssertionMapping(new AddWssSecurityToken(), "RequireWssSecurityToken"), // from 5.1
+        new AssertionMapping(new AddWssSecurityToken(), "ResponseWssSecurityToken"),
         new AssertionMapping(new RequestWssKerberos(), "Kerberos"),
         new AssertionMapping(new WsiBspAssertion(), "WsiBspAssertion"),
         new AssertionMapping(new WsiSamlAssertion(), "WsiSamlAssertion"),

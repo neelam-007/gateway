@@ -25,6 +25,9 @@ public class CredentialContext {
         return credentials;
     }
 
+    /**
+     * TODO [steve] allow multiple credentials for some types (optionally). 
+     */
     public void addCredentials(LoginCredentials credentials) {
         for (LoginCredentials l : this.credentials) {
             if (l.getCredentialSourceAssertion() == null && credentials.getCredentialSourceAssertion() == null) {

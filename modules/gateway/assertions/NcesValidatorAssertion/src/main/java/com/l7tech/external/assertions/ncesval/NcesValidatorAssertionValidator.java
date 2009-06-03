@@ -7,7 +7,7 @@ import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.wsdl.Wsdl;
 
 /** @author alex */
@@ -24,7 +24,7 @@ public class NcesValidatorAssertionValidator implements AssertionValidator {
         int firstSaml = -1;
         for (int i = 0; i < path.getPath().length; i++) {
             Assertion ass = path.getPath()[i];
-            if (ass instanceof RequestWssSaml) {
+            if (ass instanceof RequireWssSaml) {
                 firstSaml = i;
             } else if (ass instanceof NcesValidatorAssertion) {
                 if (ass != assertion) continue;

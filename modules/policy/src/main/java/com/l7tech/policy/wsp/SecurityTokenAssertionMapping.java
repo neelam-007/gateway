@@ -11,10 +11,10 @@ import com.l7tech.util.DomUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml2;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
 
 import org.w3c.dom.Element;
 
@@ -94,15 +94,15 @@ class SecurityTokenAssertionMapping extends BeanTypeMapping {
 
         final TypedReference ret;
         if (SecurityTokenType.SAML_ASSERTION.equals(tokenType))
-            ret = new TypedReference(RequestWssSaml.class, new RequestWssSaml());
+            ret = new TypedReference(RequireWssSaml.class, new RequireWssSaml());
         else if (SecurityTokenType.SAML2_ASSERTION.equals(tokenType))
-            ret = new TypedReference(RequestWssSaml2.class, new RequestWssSaml2());
+            ret = new TypedReference(RequireWssSaml2.class, new RequireWssSaml2());
         else if (SecurityTokenType.WSS_USERNAME.equals(tokenType))
             ret = new TypedReference(WssBasic.class, new WssBasic());
         else if (SecurityTokenType.WSSC_CONTEXT.equals(tokenType))
             ret = new TypedReference(SecureConversation.class,  new SecureConversation());
         else if (SecurityTokenType.WSS_X509_BST.equals(tokenType))
-            ret = new TypedReference(RequestWssX509Cert.class, new RequestWssX509Cert());
+            ret = new TypedReference(RequireWssX509Cert.class, new RequireWssX509Cert());
         else
             throw new InvalidPolicyStreamException("Unsupported wsse:SecurityToken TokenType " + tokenType);
 

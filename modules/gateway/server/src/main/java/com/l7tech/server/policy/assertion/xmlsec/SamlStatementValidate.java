@@ -6,7 +6,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.security.xml.processor.ProcessorResult;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import org.w3c.dom.Document;
 import org.apache.xmlbeans.XmlObject;
 
@@ -27,7 +27,7 @@ public abstract class SamlStatementValidate {
 
     protected final Logger logger = Logger.getLogger(getClass().getName());
     protected Collection errorCollector = new ArrayList();
-    protected final RequestWssSaml requestWssSaml;
+    protected final RequireWssSaml requestWssSaml;
 
 
     /**
@@ -35,7 +35,7 @@ public abstract class SamlStatementValidate {
      *
      * @param requestWssSaml the saml assertion that specifies constraints
      */
-    public SamlStatementValidate(RequestWssSaml requestWssSaml) {
+    public SamlStatementValidate(RequireWssSaml requestWssSaml) {
         this.requestWssSaml = requestWssSaml;
     }
 

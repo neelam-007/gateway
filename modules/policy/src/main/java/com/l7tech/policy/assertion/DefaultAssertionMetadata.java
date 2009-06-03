@@ -93,6 +93,12 @@ public class DefaultAssertionMetadata implements AssertionMetadata {
         // installed by AssertionRegistry because it relies on non-API classes
         put(CLIENT_ASSERTION_CLASSNAME, null);
 
+        put(CLIENT_ASSERTION_TARGETS,  new MetadataFinder() {
+            public Object get(AssertionMetadata meta, String key) {
+                return cache(meta, key, new String[]{"request"});
+            }
+        });
+
         put(PROPERTIES_ACTION_NAME, new MetadataFinder() {
             public Object get(AssertionMetadata meta, String key) {
                 return cache(meta, key, toTitleCaps((String)meta.get(SHORT_NAME)) + " Properties");

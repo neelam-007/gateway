@@ -1,6 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.processor.ProcessorResult;
@@ -27,7 +27,7 @@ class Saml2AuthenticationStatementValidate extends SamlStatementValidate {
      *
      * @param requestWssSaml the saml statement assertion
      */
-    Saml2AuthenticationStatementValidate(RequestWssSaml requestWssSaml) {
+    Saml2AuthenticationStatementValidate(RequireWssSaml requestWssSaml) {
         super(requestWssSaml);
         authenticationStatementConstraints = requestWssSaml.getAuthenticationStatement();
         if (authenticationStatementConstraints == null) {

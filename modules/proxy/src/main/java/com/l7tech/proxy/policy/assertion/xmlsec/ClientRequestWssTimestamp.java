@@ -8,7 +8,7 @@ import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.xmlsec.RequestWssTimestamp;
+import com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
@@ -26,9 +26,9 @@ import java.util.logging.Logger;
 public class ClientRequestWssTimestamp extends ClientAssertion {
     private static final Logger logger = Logger.getLogger(ClientRequestWssTimestamp.class.getName());
 
-    private final RequestWssTimestamp assertion;
+    private final RequireWssTimestamp assertion;
 
-    public ClientRequestWssTimestamp(RequestWssTimestamp assertion) {
+    public ClientRequestWssTimestamp(RequireWssTimestamp assertion) {
         this.assertion = assertion;
     }
 

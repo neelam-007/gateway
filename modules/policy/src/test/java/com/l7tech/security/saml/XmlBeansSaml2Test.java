@@ -6,7 +6,7 @@ import com.l7tech.common.TestDocuments;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import junit.framework.Test;
@@ -169,7 +169,7 @@ public class XmlBeansSaml2Test  extends TestCase {
      *
      */
     public void testGenerateAuthnStmtDigSig() throws Exception {
-        LoginCredentials creds = LoginCredentials.makeCertificateCredentials(clientCertChain[0], RequestWssX509Cert.class);
+        LoginCredentials creds = LoginCredentials.makeCertificateCredentials(clientCertChain[0], RequireWssX509Cert.class);
         generateAuthenticationStatement(creds);
     }
 

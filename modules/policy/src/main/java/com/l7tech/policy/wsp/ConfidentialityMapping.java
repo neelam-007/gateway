@@ -8,7 +8,7 @@ package com.l7tech.policy.wsp;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.xml.xpath.XpathExpression;
-import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertionBase;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import org.w3c.dom.Element;
@@ -23,10 +23,8 @@ class ConfidentialityMapping extends AssertionMapping {
 
     ConfidentialityMapping(XmlSecurityAssertionBase a, String externalName) {
         super(a, externalName);
-        if (!(a instanceof RequestWssConfidentiality))
-            throw new IllegalArgumentException("Can only map RequestWssConfidentiality");
-        if (!"RequestWssConfidentiality".equals(externalName) && !"Confidentiality".equals(externalName))
-            throw new IllegalArgumentException("oldExternalName must be RequestWssConfidentiality or Confidentiality");
+        if (!(a instanceof RequireWssEncryptedElement))
+            throw new IllegalArgumentException("Can only map RequireWssEncryptedElement");
     }
 
     public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
@@ -34,8 +32,8 @@ class ConfidentialityMapping extends AssertionMapping {
             return super.thaw(source, visitor);
 
         WspUtil.enforceWspUsageRequired(source);
-        RequestWssConfidentiality ass = new RequestWssConfidentiality();
-        TypedReference tr = new TypedReference(RequestWssConfidentiality.class, ass);
+        RequireWssEncryptedElement ass = new RequireWssEncryptedElement();
+        TypedReference tr = new TypedReference(RequireWssEncryptedElement.class, ass);
 
         Element recipContextEl = DomUtils.findFirstChildElementByName(source, (String)null, "xmlSecurityRecipientContext");
         if (recipContextEl != null) {

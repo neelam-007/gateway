@@ -3,7 +3,7 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.security.token.EncryptedElement;
@@ -30,10 +30,10 @@ import java.util.logging.Logger;
  * Date: Aug 26, 2003<br/>
  * $Id$
  */
-public class ClientResponseWssConfidentiality extends ClientDomXpathBasedAssertion<ResponseWssConfidentiality> {
+public class ClientResponseWssConfidentiality extends ClientDomXpathBasedAssertion<WssEncryptElement> {
     private static final Logger log = Logger.getLogger(ClientResponseWssConfidentiality.class.getName());
 
-    public ClientResponseWssConfidentiality(ResponseWssConfidentiality data) {
+    public ClientResponseWssConfidentiality(WssEncryptElement data) {
         super(data);
     }
 

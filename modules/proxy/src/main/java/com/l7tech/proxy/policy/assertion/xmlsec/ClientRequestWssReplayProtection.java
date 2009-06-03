@@ -3,7 +3,7 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
+import com.l7tech.policy.assertion.xmlsec.WssReplayProtection;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
@@ -22,7 +22,7 @@ import java.security.cert.X509Certificate;
  * $Id$
  */
 public class ClientRequestWssReplayProtection extends ClientAssertion {
-    public ClientRequestWssReplayProtection(RequestWssReplayProtection data) {
+    public ClientRequestWssReplayProtection(WssReplayProtection data) {
         this.requestWssReplayProtection = data;
         if (data == null) {
             throw new IllegalArgumentException("security elements is null");
@@ -98,5 +98,5 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
         return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
 
-    protected RequestWssReplayProtection requestWssReplayProtection;
+    protected WssReplayProtection requestWssReplayProtection;
 }

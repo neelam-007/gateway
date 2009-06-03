@@ -5,7 +5,7 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
@@ -32,11 +32,11 @@ import java.util.logging.Logger;
 public class ClientRequestWssSaml extends ClientAssertion {
     private static final Logger logger = Logger.getLogger(ClientRequestWssSaml.class.getName());
     private static final String PROP_SIGN_SAML_SV = "com.l7tech.proxy.signSamlSenderVouchesAssertion";
-    private RequestWssSaml data;
+    private RequireWssSaml data;
     private boolean senderVouches = false;
     private final int samlVersion;
 
-    public ClientRequestWssSaml(RequestWssSaml data) {
+    public ClientRequestWssSaml(RequireWssSaml data) {
         this.data = data;
         for (int i = 0; i < data.getSubjectConfirmations().length; i++) {
             String subjconf = data.getSubjectConfirmations()[i];

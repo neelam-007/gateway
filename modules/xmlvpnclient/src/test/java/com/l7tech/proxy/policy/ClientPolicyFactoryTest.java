@@ -50,7 +50,7 @@ public class ClientPolicyFactoryTest extends TestCase {
         for (int i = 0; i < everything.length; i++) {
             foo = pfac.makeClientPolicy(everything[i]);
             if (!(everything[i] instanceof UnknownAssertion)) {
-                assertFalse(foo instanceof ClientUnknownAssertion);
+                assertFalse("Unknown assertion : " + foo.getName(), foo instanceof ClientUnknownAssertion);
             }
         }
     }

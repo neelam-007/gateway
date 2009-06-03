@@ -5,7 +5,7 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
@@ -38,7 +38,7 @@ public class SamlpRequestBuilderAssertionValidator implements AssertionValidator
                     firstRoute = i;
                 } else if (ass.isCredentialSource()) {
                     firstCreds = i;
-                    if (ass instanceof RequestWssX509Cert || ass instanceof SslAssertion || ass instanceof SecureConversation) {
+                    if (ass instanceof RequireWssX509Cert || ass instanceof SslAssertion || ass instanceof SecureConversation) {
                         firstCertCred = i;
                     }
                 } else if (ass == assertion) {

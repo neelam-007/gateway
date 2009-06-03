@@ -172,18 +172,18 @@ public class WspUpgradeUtilFrom21 {
 
                 final XpathBasedAssertion elementSignatureAss;
                 if (isResponse)
-                    elementSignatureAss = new ResponseWssIntegrity();
+                    elementSignatureAss = new WssSignElement();
                 else
-                    elementSignatureAss = new RequestWssIntegrity();
+                    elementSignatureAss = new RequireWssSignedElement();
                 elementSignatureAss.setXpathExpression(expath);
                 itemAll.addChild(elementSignatureAss);
 
                 if (encryption) {
                     final XpathBasedAssertion elementEncryptionAss;
                     if (isResponse)
-                        elementEncryptionAss = new ResponseWssConfidentiality();
+                        elementEncryptionAss = new WssEncryptElement();
                     else
-                        elementEncryptionAss = new RequestWssConfidentiality();
+                        elementEncryptionAss = new RequireWssEncryptedElement();
                     if (expathIsSoapenv) {
                         // Bug #1310: Head off attempts to encrypt the entire envelope.
                         // In version 2.1, sign+encrypt /soapenv:Envelope actually
@@ -217,7 +217,7 @@ public class WspUpgradeUtilFrom21 {
 
         AllAssertion root = new AllAssertion();
         if (isCredentialSource && !isResponse)
-            root.addChild(new RequestWssX509Cert());
+            root.addChild(new RequireWssX509Cert());
         root.addChild(enforcement);
 
         WspWriter writer = new WspWriter();

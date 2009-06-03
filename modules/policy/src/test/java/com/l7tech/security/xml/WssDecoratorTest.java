@@ -10,7 +10,7 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
@@ -563,7 +563,7 @@ public class WssDecoratorTest extends TestCase {
             // Subject identified by cert
             creds = new LoginCredentials(null, null,
                                          CredentialFormat.CLIENTCERT,
-                                         RequestWssX509Cert.class,
+                                         RequireWssX509Cert.class,
                                          null,
                                          subjectCert);
             confirmationMethod = SubjectStatement.HOLDER_OF_KEY;

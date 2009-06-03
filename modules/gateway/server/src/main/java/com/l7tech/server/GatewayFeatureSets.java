@@ -258,10 +258,10 @@ public class GatewayFeatureSets {
             ass(HttpDigest.class),
             ass(SslAssertion.class), // TODO omit client cert support from this grant (when it is possible to do so)
             ass(XpathCredentialSource.class),
-            ass(RequestWssX509Cert.class),
+            ass(RequireWssX509Cert.class),
             ass(WssBasic.class),
-            ass(RequestWssSaml.class),
-            ass(RequestWssSaml2.class),
+            ass(RequireWssSaml.class),
+            ass(RequireWssSaml2.class),
             ass(EncryptedUsernameTokenAssertion.class),
             ass(WsTrustCredentialExchange.class),
             ass(SamlBrowserArtifact.class),
@@ -280,19 +280,19 @@ public class GatewayFeatureSets {
         GatewayFeatureSet xmlsecAccel =
         fsr("set:XmlSec:Accel", "SecureSpan Accelerator XML security",
             "Element signature and encryption using WSS",
-            ass(ResponseWssTimestamp.class));
+            ass(AddWssTimestamp.class));
 
         GatewayFeatureSet xmlsecFw =
         fsr("set:XmlSec:Firewall", "SecureSpan Firewall XML security",
             "Adds timestamp and token manipulation",
             fs(xmlsecAccel),
-            ass(RequestWssIntegrity.class),
-            ass(RequestWssConfidentiality.class),
-            ass(ResponseWssIntegrity.class),
-            ass(ResponseWssConfidentiality.class),
-            ass(RequestWssReplayProtection.class),
-            ass(RequestWssTimestamp.class),
-            ass(ResponseWssSecurityToken.class),
+            ass(RequireWssSignedElement.class),
+            ass(RequireWssEncryptedElement.class),
+            ass(WssSignElement.class),
+            ass(WssEncryptElement.class),
+            ass(WssReplayProtection.class),
+            ass(RequireWssTimestamp.class),
+            ass(AddWssSecurityToken.class),
             ass(WsSecurity.class),
             ass(WssVersionAssertion.class),
             feat(FEATURE_SIGNED_ATTACHMENTS, "Signed SOAP attachments."));
@@ -437,7 +437,7 @@ public class GatewayFeatureSets {
             fs(threatAccel),
             ass(Regex.class),
             ass(SqlAttackAssertion.class),
-            ass(RequestWssReplayProtection.class));
+            ass(WssReplayProtection.class));
 
         // Custom assertions
         GatewayFeatureSet customFw =

@@ -10,7 +10,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.ldap.LdapIdentity;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -541,7 +541,7 @@ public class ServerVariables {
             public Object get(String name, PolicyEnforcementContext context) {
                 return getOnlyOneClientCertificateForSource(
                         context.getAuthenticationContext(context.getRequest()).getCredentials(),
-                        RequestWssX509Cert.class );
+                        RequireWssX509Cert.class );
             }
         }),
         new Variable("request.wss.signingcertificate.base64", new Getter() {
@@ -549,7 +549,7 @@ public class ServerVariables {
             public Object get(String name, PolicyEnforcementContext context) {
                 final X509Certificate certificate = getOnlyOneClientCertificateForSource(
                         context.getAuthenticationContext(context.getRequest()).getCredentials(),
-                        RequestWssX509Cert.class );
+                        RequireWssX509Cert.class );
                 if ( certificate != null ) {
                     try {
                         return HexUtils.encodeBase64(certificate.getEncoded(), true);//strip whitespaces
@@ -565,7 +565,7 @@ public class ServerVariables {
             public Object get(String name, PolicyEnforcementContext context) {
                 final X509Certificate certificate = getOnlyOneClientCertificateForSource(
                         context.getAuthenticationContext(context.getRequest()).getCredentials(),
-                        RequestWssX509Cert.class );
+                        RequireWssX509Cert.class );
                 if ( certificate != null ) {
                     try {
                         return CertUtils.encodeAsPEM(certificate);

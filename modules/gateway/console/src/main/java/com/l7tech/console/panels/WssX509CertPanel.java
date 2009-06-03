@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.gui.widgets.ValidatedPanel;
 
 import javax.swing.*;
@@ -11,11 +11,11 @@ import java.awt.event.ActionEvent;
 /**
  * Properties editing panel for WSS X.509 certificate assertion.
  */
-public class WssX509CertPanel extends ValidatedPanel<RequestWssX509Cert> {
+public class WssX509CertPanel extends ValidatedPanel<RequireWssX509Cert> {
 
     //- PUBLIC
 
-    public WssX509CertPanel( final RequestWssX509Cert model ) {
+    public WssX509CertPanel( final RequireWssX509Cert model ) {
         this.assertion = model;
         init();
     }
@@ -47,7 +47,7 @@ public class WssX509CertPanel extends ValidatedPanel<RequestWssX509Cert> {
     }
 
     @Override
-    protected RequestWssX509Cert getModel() {
+    protected RequireWssX509Cert getModel() {
         return assertion;
     }
 
@@ -55,5 +55,5 @@ public class WssX509CertPanel extends ValidatedPanel<RequestWssX509Cert> {
 
     private JPanel mainPanel;
     private JCheckBox allowMultipleSignatures;
-    private final RequestWssX509Cert assertion;    
+    private final RequireWssX509Cert assertion;
 }

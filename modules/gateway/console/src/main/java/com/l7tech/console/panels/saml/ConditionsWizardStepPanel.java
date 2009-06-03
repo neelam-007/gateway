@@ -6,7 +6,7 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 import com.l7tech.policy.assertion.SamlIssuerAssertion;
 
@@ -85,7 +85,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
                 sia.setConditionsNotOnOrAfterExpirySeconds(-1);
             }
         } else {
-            ((RequestWssSaml)settings).setCheckAssertionValidity(checkBoxCheckAssertionValidity.isSelected());
+            ((RequireWssSaml)settings).setCheckAssertionValidity(checkBoxCheckAssertionValidity.isSelected());
         }
     }
 
@@ -108,7 +108,7 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
             if (secondsInPast != -1) notBeforeSpinner.setValue(secondsInPast);
             if (onOrAfterExpirySeconds != -1) notOnOrAfterSpinner.setValue(onOrAfterExpirySeconds);
         } else {
-            RequestWssSaml ass = (RequestWssSaml) requestWssSaml;
+            RequireWssSaml ass = (RequireWssSaml) requestWssSaml;
             checkBoxCheckAssertionValidity.setSelected(ass.isCheckAssertionValidity());
         }
     }

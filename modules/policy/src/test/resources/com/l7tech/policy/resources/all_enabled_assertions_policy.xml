@@ -78,18 +78,15 @@
             <wsse:TokenType>http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct</wsse:TokenType>
             <L7p:Properties/>
         </wsse:SecurityToken>
-        <wsse:Integrity wsp:Usage="wsp:Required" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
-            <wsse:MessageParts
-                Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">/soapenv:Envelope/soapenv:Body</wsse:MessageParts>
-        </wsse:Integrity>
-        <L7p:RequestWssConfidentiality/>
-        <L7p:ResponseWssIntegrity/>
-        <L7p:ResponseWssConfidentiality/>
+        <L7p:RequireWssSignedElement/>
+        <L7p:RequireWssEncryptedElement/>
+        <L7p:WssSignElement/>
+        <L7p:WssEncryptElement/>
         <wsp:MessagePredicate
             Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
             wsp:Usage="wsp:Required" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">/soapenv:Envelope</wsp:MessagePredicate>
         <L7p:ResponseXpathAssertion/>
-        <L7p:RequestWssReplayProtection/>
+        <L7p:WssReplayProtection/>
         <L7p:RequestSwAAssertion/>
         <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
             <wsse:TokenType>urn:oasis:names:tc:SAML:1.0:assertion#Assertion</wsse:TokenType>
@@ -98,8 +95,8 @@
                 <L7p:SubjectConfirmations stringArrayValue="included"/>
             </L7p:SamlParams>
         </wsse:SecurityToken>
-        <L7p:RequestWssTimestamp/>
-        <L7p:ResponseWssTimestamp/>
+        <L7p:RequireWssTimestamp/>
+        <L7p:AddWssTimestamp/>
         <L7p:AuditAssertion/>
         <L7p:CustomAssertion>
             <L7p:base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAANMAAhjYXRlZ29yeXQAKkxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0NhdGVnb3J5O0wAD2N1c3RvbUFzc2VydGlvbnQAMUxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0N1c3RvbUFzc2VydGlvbjtMAA9kZXNjcmlwdGlvblRleHR0ABJMamF2YS9sYW5nL1N0cmluZzt4cgAlY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLkFzc2VydGlvbttfY5k8vaKxAgABWgAHZW5hYmxlZHhwAXBwcA==</L7p:base64SerializedValue>
@@ -146,7 +143,7 @@
         </L7p:InverseHttpFormPost>
         <L7p:WSDLOperation/>
         <L7p:HardcodedResponse/>
-        <L7p:ResponseWssSecurityToken/>
+        <L7p:RequireWssSecurityToken/>
         <L7p:SetVariable/>
         <L7p:CookieCredentialSource/>
         <L7p:HtmlFormDataAssertion>

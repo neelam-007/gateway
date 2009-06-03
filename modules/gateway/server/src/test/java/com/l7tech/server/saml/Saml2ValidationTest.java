@@ -22,7 +22,7 @@ import com.l7tech.security.token.SignatureConfirmation;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.server.policy.assertion.xmlsec.SamlAssertionValidate;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
@@ -64,7 +64,7 @@ public class Saml2ValidationTest extends TestCase {
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
         // create validation template
-        RequestWssSaml templateSaml = new RequestWssSaml();
+        RequireWssSaml templateSaml = new RequireWssSaml();
         templateSaml.setVersion(2);
         templateSaml.setCheckAssertionValidity(true);
         templateSaml.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY});
@@ -102,7 +102,7 @@ public class Saml2ValidationTest extends TestCase {
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
         // create validation template
-        RequestWssSaml templateSaml = new RequestWssSaml();
+        RequireWssSaml templateSaml = new RequireWssSaml();
         templateSaml.setVersion(2);
         templateSaml.setCheckAssertionValidity(false);
         templateSaml.setAudienceRestriction("http://restricted.audience.com/");
@@ -139,7 +139,7 @@ public class Saml2ValidationTest extends TestCase {
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
         // create validation template
-        RequestWssSaml templateSaml = new RequestWssSaml();
+        RequireWssSaml templateSaml = new RequireWssSaml();
         templateSaml.setVersion(2);
         templateSaml.setCheckAssertionValidity(false);
         templateSaml.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY});
@@ -173,7 +173,7 @@ public class Saml2ValidationTest extends TestCase {
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
         // create validation template
-        RequestWssSaml templateSaml = new RequestWssSaml();
+        RequireWssSaml templateSaml = new RequireWssSaml();
         templateSaml.setVersion(2);
         templateSaml.setCheckAssertionValidity(false);
         templateSaml.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY});
@@ -208,7 +208,7 @@ public class Saml2ValidationTest extends TestCase {
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
         // create validation template
-        RequestWssSaml templateSaml = new RequestWssSaml();
+        RequireWssSaml templateSaml = new RequireWssSaml();
         templateSaml.setVersion(2);
         templateSaml.setCheckAssertionValidity(false);
         templateSaml.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY});
@@ -271,7 +271,7 @@ public class Saml2ValidationTest extends TestCase {
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
         // create validation template
-        RequestWssSaml templateSaml = new RequestWssSaml();
+        RequireWssSaml templateSaml = new RequireWssSaml();
         templateSaml.setVersion(2);
         templateSaml.setCheckAssertionValidity(false);
         templateSaml.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY});
@@ -309,7 +309,7 @@ public class Saml2ValidationTest extends TestCase {
         SamlAssertion assertion = SamlAssertion.newInstance(assertionDocument.getDocumentElement());
 
         // create validation template
-        RequestWssSaml templateSaml = new RequestWssSaml();
+        RequireWssSaml templateSaml = new RequireWssSaml();
         templateSaml.setVersion(2);
         templateSaml.setCheckAssertionValidity(false);
         templateSaml.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY});

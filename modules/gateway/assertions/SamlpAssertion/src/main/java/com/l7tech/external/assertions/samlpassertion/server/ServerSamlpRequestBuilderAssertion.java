@@ -12,7 +12,7 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -637,7 +637,7 @@ public class ServerSamlpRequestBuilderAssertion extends AbstractServerAssertion<
         if (SslAssertion.class.isAssignableFrom(credentialSourceClass)) {
             authMethod = (ver == 2? SamlConstants.AUTHENTICATION_SAML2_TLS_CERT : SamlConstants.SSL_TLS_CERTIFICATE_AUTHENTICATION );
 
-        } else if (RequestWssX509Cert.class.isAssignableFrom(credentialSourceClass)) {
+        } else if (RequireWssX509Cert.class.isAssignableFrom(credentialSourceClass)) {
             authMethod = (ver == 2? SamlConstants.AUTHENTICATION_SAML2_XMLDSIG : SamlConstants.XML_DSIG_AUTHENTICATION);
 
         } else if (HttpCredentialSourceAssertion.class.isAssignableFrom(credentialSourceClass) ||

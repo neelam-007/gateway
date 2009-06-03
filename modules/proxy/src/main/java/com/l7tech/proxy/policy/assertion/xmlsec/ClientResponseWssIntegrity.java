@@ -4,7 +4,7 @@ import com.l7tech.message.Message;
 import com.l7tech.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.WssSignElement;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
@@ -33,11 +33,11 @@ import java.util.*;
 /**
  * Verifies that a specific element of the soap response was signed by the ssg.
  */
-public class ClientResponseWssIntegrity extends ClientDomXpathBasedAssertion<ResponseWssIntegrity> {
+public class ClientResponseWssIntegrity extends ClientDomXpathBasedAssertion<WssSignElement> {
     private static final Logger log = Logger.getLogger(ClientResponseWssIntegrity.class.getName());
 
 
-    public ClientResponseWssIntegrity(ResponseWssIntegrity data) throws InvalidXpathException {
+    public ClientResponseWssIntegrity(WssSignElement data) throws InvalidXpathException {
         super(data);
     }
 

@@ -5,7 +5,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.*;
 import com.l7tech.security.xml.processor.ProcessorResult;
@@ -36,7 +36,7 @@ public class SamlAssertionValidate {
 
     protected final Logger logger = Logger.getLogger(getClass().getName());
     protected Collection errorCollector = new ArrayList();
-    protected final RequestWssSaml requestWssSaml;
+    protected final RequireWssSaml requestWssSaml;
     private Map<Class, SamlStatementValidate> validators = new HashMap<Class, SamlStatementValidate>();
 
     /**
@@ -44,7 +44,7 @@ public class SamlAssertionValidate {
      *
      * @param requestWssSaml     the saml assertion that specifies constraints
      */
-    public SamlAssertionValidate(RequestWssSaml requestWssSaml) {
+    public SamlAssertionValidate(RequireWssSaml requestWssSaml) {
         this.requestWssSaml = requestWssSaml;
         if (requestWssSaml.getAuthenticationStatement() != null) {
             validators.put(AuthenticationStatementType.class, new SamlAuthenticationStatementValidate(requestWssSaml));

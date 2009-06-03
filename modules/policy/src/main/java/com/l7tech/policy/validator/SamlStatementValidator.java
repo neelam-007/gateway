@@ -9,7 +9,7 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,12 +27,12 @@ import java.util.logging.Logger;
 public class SamlStatementValidator implements AssertionValidator {
     /** @noinspection UnusedDeclaration*/
     private static final Logger logger = Logger.getLogger(SamlStatementValidator.class.getName());
-    private final RequestWssSaml requestWssSaml;
+    private final RequireWssSaml requestWssSaml;
     private boolean hasHok;
     private boolean hasSv;
     private boolean hasBearer;
 
-    public SamlStatementValidator(RequestWssSaml sa) {
+    public SamlStatementValidator(RequireWssSaml sa) {
         requestWssSaml = sa;
         List confirmations = Arrays.asList(requestWssSaml.getSubjectConfirmations());
         hasHok = confirmations.contains(SamlConstants.CONFIRMATION_HOLDER_OF_KEY);

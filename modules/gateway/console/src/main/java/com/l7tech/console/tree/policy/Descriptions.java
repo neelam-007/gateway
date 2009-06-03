@@ -10,8 +10,8 @@ import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
+import com.l7tech.policy.assertion.xmlsec.WssSignElement;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -204,8 +204,8 @@ public class Descriptions {
         descriptionsMap.put(HttpRoutingAssertion.class, RoutingDescription.class);
         descriptionsMap.put(BridgeRoutingAssertion.class, RoutingDescription.class);
         descriptionsMap.put(JmsRoutingAssertion.class, RoutingDescription.class);
-        descriptionsMap.put(RequestWssIntegrity.class, NoParam.class);
-        descriptionsMap.put(ResponseWssIntegrity.class, NoParam.class);
+        descriptionsMap.put(RequireWssSignedElement.class, NoParam.class);
+        descriptionsMap.put(WssSignElement.class, NoParam.class);
         descriptionsMap.put(CookieCredentialSourceAssertion.class, NoParam.class);
     }
 }

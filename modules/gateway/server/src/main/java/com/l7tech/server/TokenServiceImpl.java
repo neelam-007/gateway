@@ -21,9 +21,9 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
@@ -297,11 +297,11 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
 
         AllAssertion msgLvlBranch = new AllAssertion();
         OneOrMoreAssertion validCredsOverMsgLvlSec = new OneOrMoreAssertion();
-        validCredsOverMsgLvlSec.addChild(new RequestWssX509Cert());
-        validCredsOverMsgLvlSec.addChild(new RequestWssSaml());
+        validCredsOverMsgLvlSec.addChild(new RequireWssX509Cert());
+        validCredsOverMsgLvlSec.addChild(new RequireWssSaml());
         validCredsOverMsgLvlSec.addChild(new SecureConversation());
         msgLvlBranch.addChild(validCredsOverMsgLvlSec);
-        msgLvlBranch.addChild(new RequestWssIntegrity());
+        msgLvlBranch.addChild(new RequireWssSignedElement());
 
         AllAssertion sslBranch = new AllAssertion();
         sslBranch.addChild(new SslAssertion());
@@ -310,7 +310,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         validCredsOverSSL.addChild(new WssBasic());
         validCredsOverSSL.addChild(new HttpDigest());
         validCredsOverSSL.addChild(new SslAssertion(true));
-        RequestWssSaml samlBearerToken = new RequestWssSaml();
+        RequireWssSaml samlBearerToken = new RequireWssSaml();
         validCredsOverSSL.addChild(samlBearerToken);
         sslBranch.addChild(validCredsOverSSL);
 

@@ -1,8 +1,8 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml2;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 
 import java.util.logging.Logger;
@@ -41,8 +41,8 @@ public class AccessControlFolderNode extends AbstractPaletteFolderNode {
         insert(new HttpNegotiateAuthNode(), index++);
         insert(new SslTransportNode(true), index++);
         index = insertModularAssertionByType(index, WssBasic.class);
-        index = insertModularAssertionByType(index, RequestWssX509Cert.class);
-        index = insertModularAssertionByType(index, RequestWssSaml2.class); //SAML2 since that is the subclass
+        index = insertModularAssertionByType(index, RequireWssX509Cert.class);
+        index = insertModularAssertionByType(index, RequireWssSaml2.class); //SAML2 since that is the subclass
         insert(new WsTrustCredentialExchangePaletteNode(), index++);
         insert(new WsFederationPassiveTokenRequestPaletteNode(), index++);
         insert(new XpathCredentialSourcePaletteNode(), index++);

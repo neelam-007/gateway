@@ -19,8 +19,8 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.processor.*;
@@ -111,8 +111,8 @@ public class AdminWebServiceFilter implements Filter {
                     new HttpBasic())),
                 new SslAssertion(true), // With client cert
                 new AllAssertion(Arrays.asList(
-                    new RequestWssX509Cert(),
-                    new RequestWssIntegrity())),
+                    new RequireWssX509Cert(),
+                    new RequireWssSignedElement())),
                 new SecureConversation()))));
 
         final ServerPolicyFactory policyFactory = (ServerPolicyFactory) applicationContext.getBean("policyFactory");

@@ -29,8 +29,8 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.server.EntityFinder;
 import com.l7tech.server.communityschemas.SchemaEntryManager;
@@ -148,8 +148,8 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     { // scope
                         boolean foundUsableCredSource = false;
                         for (Assertion credSrc : pathContext.credentialSources) {
-                            if (credSrc instanceof RequestWssSaml ||
-                                credSrc instanceof RequestWssX509Cert ||
+                            if (credSrc instanceof RequireWssSaml ||
+                                credSrc instanceof RequireWssX509Cert ||
                                 credSrc instanceof SecureConversation ||
                                 credSrc instanceof SslAssertion)
                             {
@@ -174,7 +174,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     { // scope
                         boolean foundUsableCredSource = false;
                         for (Assertion credSrc : pathContext.credentialSources) {
-                            if (credSrc instanceof RequestWssSaml || credSrc instanceof SslAssertion) {
+                            if (credSrc instanceof RequireWssSaml || credSrc instanceof SslAssertion) {
                                 foundUsableCredSource = true;
                                 break;
                             }
@@ -197,7 +197,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     { // scope
                         boolean foundUsableCredSource = false;
                         for (Assertion credSrc : pathContext.credentialSources) {
-                            if (credSrc instanceof RequestWssX509Cert ||
+                            if (credSrc instanceof RequireWssX509Cert ||
                                     credSrc instanceof SecureConversation ||
                                     credSrc instanceof SslAssertion) {
                                 foundUsableCredSource = true;

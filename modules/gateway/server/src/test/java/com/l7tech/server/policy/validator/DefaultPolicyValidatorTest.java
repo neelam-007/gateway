@@ -13,8 +13,8 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -127,7 +127,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         List messages = result.messages(specificUser);
         assertTrue("Expected errors/warnings for the " + HttpRoutingAssertion.class + " assertion, got 0 messages.", !messages.isEmpty());
 
-        RequestWssX509Cert xs = new RequestWssX509Cert();
+        RequireWssX509Cert xs = new RequireWssX509Cert();
         kids =
           Arrays.asList(new Assertion[]{
               xs,
@@ -149,7 +149,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
      * @throws Exception
      */
     public void testPartialXmlRequestSecurityAfterRoute() throws Exception {
-        RequestWssX509Cert xs = new RequestWssX509Cert();
+        RequireWssX509Cert xs = new RequireWssX509Cert();
         final List kids =
           Arrays.asList(new Assertion[]{
               new SslAssertion(),
@@ -163,7 +163,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         PolicyValidator dfpv = getValidator();
         PolicyValidatorResult result = dfpv.validate(aa, PolicyType.PRIVATE_SERVICE, getBogusService().parsedWsdl(), getBogusService().isSoap(), new TestLicenseManager());
         List messages = result.messages(xs);
-        assertTrue("Expected errors/warnings for the " + RequestWssIntegrity.class + " assertion, got 0", !messages.isEmpty(), messages);
+        assertTrue("Expected errors/warnings for the " + RequireWssSignedElement.class + " assertion, got 0", !messages.isEmpty(), messages);
     }
 
     /**
@@ -172,11 +172,11 @@ public class DefaultPolicyValidatorTest extends TestCase {
      * @throws Exception
      */
     public void testPartialXmlRequestSecurity() throws Exception {
-        RequestWssIntegrity xs = new RequestWssIntegrity();
+        RequireWssSignedElement xs = new RequireWssSignedElement();
         final List kids =
           Arrays.asList(new Assertion[]{
               new SslAssertion(),
-              new RequestWssX509Cert(),
+              new RequireWssX509Cert(),
               new SpecificUser(),
               xs,
               new HttpRoutingAssertion()

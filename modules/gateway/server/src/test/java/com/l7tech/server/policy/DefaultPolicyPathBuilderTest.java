@@ -13,9 +13,9 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.WssReplayProtection;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.DefaultPolicyPathBuilder;
@@ -201,7 +201,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
 
     public void testBug1022() throws Exception {
         Assertion firstAll = new AllAssertion(Arrays.asList(new Assertion[]{
-            new RequestWssX509Cert(),
+            new RequireWssX509Cert(),
             new SpecificUser(-2, "fred", "fred", "fred")
         }));
         Assertion secondAll = new AllAssertion(Arrays.asList(new Assertion[]{
@@ -221,7 +221,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
 
     public void testBug1334() throws Exception {
         Assertion firstAll = new AllAssertion(Arrays.asList(new Assertion[]{
-            new RequestWssX509Cert(),
+            new RequireWssX509Cert(),
             new OneOrMoreAssertion(Arrays.asList(new Assertion[]{
                 new SpecificUser(-2, "fred", "fred", "fred")
             }))
@@ -262,7 +262,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
 
             Assertion top = new AllAssertion(Arrays.asList(new Assertion[]{
                 firstOr,
-                new RequestWssReplayProtection(),
+                new WssReplayProtection(),
                 secondOr,
                 new HttpRoutingAssertion("http://wheel")
             }));
@@ -281,9 +281,9 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         credentialsLocationList.add(new HttpDigest());
         credentialsLocationList.add(new SslAssertion(true));
         credentialsLocationList.add(new WssBasic());
-        credentialsLocationList.add(new RequestWssX509Cert());
+        credentialsLocationList.add(new RequireWssX509Cert());
         credentialsLocationList.add(new SecureConversation());
-        credentialsLocationList.add(new RequestWssSaml());
+        credentialsLocationList.add(new RequireWssSaml());
         credentialsLocationList.add(new CookieCredentialSourceAssertion());
 
         return credentialsLocationList;

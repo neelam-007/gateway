@@ -20,8 +20,8 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
+import com.l7tech.policy.assertion.xmlsec.WssSignElement;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.util.PolicyServiceClient;
@@ -218,12 +218,12 @@ public class PolicyServiceTest extends TestCase {
 
         AllAssertion branch1 = new AllAssertion();
         branch1.addChild(TESTUSER_IDASSERTION);
-        branch1.addChild(new RequestWssIntegrity(new XpathExpression("/pathForFranco")));
+        branch1.addChild(new RequireWssSignedElement(new XpathExpression("/pathForFranco")));
         branch1.setChildren(branch1.getChildren());
 
         AllAssertion branch2 = new AllAssertion();
         branch2.addChild(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "mike", "111", "mike"));
-        branch2.addChild(new RequestWssIntegrity(new XpathExpression("/pathForMike")));
+        branch2.addChild(new RequireWssSignedElement(new XpathExpression("/pathForMike")));
         branch2.setChildren(branch2.getChildren());
 
         or.addChild(branch1);
@@ -243,14 +243,14 @@ public class PolicyServiceTest extends TestCase {
 
         AllAssertion branch1 = new AllAssertion();
         branch1.addChild(new RequestXpathAssertion(new XpathExpression("/anonymousPath")));
-        branch1.addChild(new ResponseWssIntegrity());
+        branch1.addChild(new WssSignElement());
         branch1.setChildren(branch1.getChildren());
 
         AllAssertion branch2 = new AllAssertion();
         branch2.addChild(new HttpBasic());
         branch2.addChild(new SpecificUser( TestIdentityProvider.PROVIDER_ID, "mike", "111", "mike"));
         branch2.addChild(new RequestXpathAssertion(new XpathExpression("/pathForMikeOnly")));
-        branch2.addChild(new ResponseWssIntegrity());
+        branch2.addChild(new WssSignElement());
         branch2.setChildren(branch2.getChildren());
 
         or.addChild(branch1);
@@ -271,7 +271,7 @@ public class PolicyServiceTest extends TestCase {
 
         AllAssertion branch1 = new AllAssertion();
         branch1.addChild(new RequestXpathAssertion(new XpathExpression("/anonymousPath")));
-        branch1.addChild(new ResponseWssIntegrity());
+        branch1.addChild(new WssSignElement());
         branch1.setChildren(branch1.getChildren());
 
         or.addChild(branch1);
