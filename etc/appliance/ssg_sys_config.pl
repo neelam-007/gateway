@@ -23,7 +23,7 @@ my @ntpServerToUse;
 my $timezone = undef;
 my @filesToDelete;
 
-my $netConfigCommand = "/usr/sbin/netconfig";
+my $netConfigCommand = "/opt/SecureSpan/Appliance/config/netconfig.pl";
 my $netConfigPattern = "/opt/SecureSpan/Appliance/config/configfiles/netconfig_*";
 
 my $inputFh = new FileHandle;

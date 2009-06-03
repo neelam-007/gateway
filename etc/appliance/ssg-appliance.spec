@@ -111,6 +111,7 @@ sed -i -e "s/:autoextend:max:.*$/:autoextend:max:3072M/" %{buildroot}/etc/my.cnf
 # this script does not need to be executable
 /opt/SecureSpan/Appliance/config/ssg_sys_config.pl
 %attr(0755,layer7,layer7) /opt/SecureSpan/Appliance/config/*.sh
+%attr(0755,layer7,layer7) /opt/SecureSpan/Appliance/config/netconfig.pl
 %defattr(0644,layer7,layer7,0775)
 /opt/SecureSpan/Appliance/config/*.properties
 
@@ -186,6 +187,10 @@ echo "layer7 ALL = (gateway) NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /e
 # The gateway user is allowed to update the firewall configuration
 echo "Defaults:gateway env_reset" >> /etc/sudoers
 echo "gateway ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
+
+#disable these features of sudoers on our appliance since we use a lot of scripts that will fail without them
+perl -pi.bak -e 's/^(Defaults.*)(requiretty.*$)/$1\!$2/gs' /etc/sudoers
+perl -pi.bak -e 's/^(Defaults.*)(tty_tickets.*$)/$1\!$2/gs' /etc/sudoers
 
 if grep -q kernel.panic /etc/sysctl.conf; then
 	echo -n ""
@@ -275,6 +280,9 @@ if [ "$1" = "0" ] ; then
         #remove our users from sudoers
         perl -pi.bak -e 's/^(Defaults:)?(ssgconfig|layer7|gateway)\s.*$//gs' /etc/sudoers
     fi
+    
+    perl -pi.bak -e 's/^(Defaults.*)(\!)(requiretty.*$)/$1$3/gs' /etc/sudoers
+    perl -pi.bak -e 's/^(Defaults.*)(\!)(tty_tickets.*$)/$1$3/gs' /etc/sudoers
 
     GETTYS=`grep ^s0:2345:respawn:/sbin/agetty /etc/inittab`
 	if [ -n "${GETTYS}" ]; then

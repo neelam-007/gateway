@@ -2270,6 +2270,7 @@
             <fileset dir="${src.root}/etc/appliance">
                 <include name="ssg_sys_config.pl"/>
                 <include name="systemconfig.sh"/>
+                <include name="netconfig.pl"/>
             </fileset>
         </copy>
 
