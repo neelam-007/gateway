@@ -141,7 +141,7 @@ public class SoapServiceRoutingURIEditor extends JDialog {
         uriField.addKeyListener(new KeyListener() {
             public void keyPressed(KeyEvent e) {
                 //always start with "/" for URI
-                if (!uriField.getText().startsWith("/")) {
+                if (!uriField.getText().startsWith("/") && (e==null || e.getKeyChar() != '/')) {
                     String uri = uriField.getText();
                     uriField.setText("/" + uri);
                 }
