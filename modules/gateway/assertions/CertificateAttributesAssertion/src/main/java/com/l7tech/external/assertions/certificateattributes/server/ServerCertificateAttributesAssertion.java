@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.certificateattributes.server;
 
 import com.l7tech.external.assertions.certificateattributes.CertificateAttributesAssertion;
-import com.l7tech.external.assertions.certificateattributes.CertificateAttributesExtractor;
+import com.l7tech.security.cert.CertificateAttribute;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -13,6 +13,8 @@ import org.springframework.context.ApplicationContext;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -40,24 +42,19 @@ public class ServerCertificateAttributesAssertion extends AbstractServerAssertio
             X509Certificate certificate = result.getAuthenticatedCert();
 
             if ( certificate != null ) {
-                CertificateAttributesExtractor cae = new CertificateAttributesExtractor( certificate );
-
                 String prefix = getAssertion().getVariablePrefix() + ".";
-                Collection<String> certificateAttributes = cae.getAttributeNames();
-                for ( String attribute : CertificateAttributesExtractor.getSimpleCertificateAttributes() ) {
-                    String name = prefix + attribute;
-                    if ( certificateAttributes.contains( attribute ) ) {
-                        context.setVariable( name, cae.getAttributeValue( attribute ) );
-                    } else {
-                        context.setVariable( name, "" ); // Set as empty, no null variables
+                for (CertificateAttribute attribute : EnumSet.allOf(CertificateAttribute.class)) {
+                    for (Map.Entry<String, Collection<Object>> entry : attribute.extractValues(certificate).entrySet()) {
+                        Collection<Object> values = entry.getValue();
+                        if (values == null || values.isEmpty()) {
+                            context.setVariable(prefix + entry.getKey(), ""); // Set as empty, no null variables
+                        } else if (attribute.isMultiValued()) {
+                            context.setVariable(prefix + entry.getKey(), values.toArray());
+                        } else {
+                            context.setVariable(prefix + entry.getKey(), values.iterator().next());
+                        }
                     }
                 }
-
-                for(String attribute : cae.getDynamicKeys()) {
-                    String name = prefix + attribute;
-                    context.setVariable(name, cae.getAttributeValue(attribute));
-                }
-
                 status = AssertionStatus.NONE;
             } else {
                 logger.info( "No certificate in authentication result" );

@@ -297,18 +297,11 @@ public abstract class UserCertPanel extends JPanel {
     }
 
     private X509Certificate getCertForLdapUser(LdapUser luser) throws FindException, CertificateException, IOException, LdapCertsNotEnabledException {
-        X509Certificate theCert = null;
-        IdentityProviderConfig whichLdap = identityAdmin.findIdentityProviderConfigByID(luser.getProviderId());
-        if (whichLdap != null) {
-            if (!whichLdap.isUserCertsEnabled()) throw new LdapCertsNotEnabledException();
-            else {
-                if (luser.getLdapCert() != null) {
-                    byte[] certbytes = luser.getLdapCert();
-                    theCert = CertUtils.decodeCert(certbytes);
-                }
-            }
-        }
-        return theCert;
+        final IdentityProviderConfig whichLdap = identityAdmin.findIdentityProviderConfigByID(luser.getProviderId());
+        if (whichLdap == null) return null;
+        if (!whichLdap.isUserCertsEnabled()) throw new LdapCertsNotEnabledException();
+
+        return luser.getCertificate();
     }
 
     private void saveUserCert(TrustedCert tc) throws IOException, CertificateException, UpdateException {

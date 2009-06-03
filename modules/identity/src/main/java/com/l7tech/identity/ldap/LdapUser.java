@@ -1,9 +1,13 @@
 package com.l7tech.identity.ldap;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 
 import java.io.Serializable;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,6 +36,8 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
     private String department;
     private byte[] ldapCertBytes;
 
+    private transient X509Certificate cachedCert;
+
     public LdapUser() {
         this(IdentityProviderConfig.DEFAULT_OID, null, null);
     }
@@ -40,26 +46,32 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
         super(providerOid, dn, cn);
     }
 
+    @Override
     public String getLogin() {
         return login;
     }
 
+    @Override
     public String getFirstName() {
         return firstName;
     }
 
+    @Override
     public String getLastName() {
         return lastName;
     }
 
+    @Override
     public String getEmail() {
         return email;
     }
 
+    @Override
     public String getDepartment() {
         return department;
     }
 
+    @Override
     public String getSubjectDn() {
         return dn;
     }
@@ -107,6 +119,7 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
         this.department = department;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -124,6 +137,7 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (login != null ? login.hashCode() : 0);
@@ -135,6 +149,7 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
         return result;
     }
 
+    @Override
     public String toString() {
         return "com.l7tech.identity.ldap.LdapUser." +
                 "\n\tName=" + getName() +
@@ -159,14 +174,28 @@ public class LdapUser extends LdapIdentityBase implements User, Serializable {
         setLastName(imp.getLastName());
         setPassword(imp.getPassword());
         setAttributes(imp.getAttributes());
-        setLdapCert(imp.getLdapCert());
+        setLdapCertBytes(imp.getLdapCertBytes());
     }
 
-    public byte[] getLdapCert() {
+    public byte[] getLdapCertBytes() {
         return ldapCertBytes;
     }
 
-    public void setLdapCert(byte[] certbytes) {
+    public void setLdapCertBytes(byte[] certbytes) {
         ldapCertBytes = certbytes;
     }
+
+    public synchronized X509Certificate getCertificate() throws CertificateException {
+        if (cachedCert == null) {
+            if (ldapCertBytes == null) return null;
+            cachedCert = CertUtils.decodeCert(ldapCertBytes);
+        }
+        return cachedCert;
+    }
+
+    public synchronized void setCertificate(X509Certificate cachedCert) throws CertificateEncodingException {
+        this.cachedCert = cachedCert;
+        this.ldapCertBytes = cachedCert.getEncoded();
+    }
+
 }

@@ -97,7 +97,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
                     tmp = LdapUtils.extractOneAttributeValue(attributes, userCertAttrName);
                     if (tmp != null) {
                         if (tmp instanceof byte[]) {
-                            out.setLdapCert((byte[])tmp);
+                            out.setLdapCertBytes((byte[])tmp);
                         } else {
                             logger.warning("User certificate Ldap property populated with " +
                                            "data in an unexpected format " + tmp.getClass());

@@ -3,15 +3,16 @@
  */
 package com.l7tech.policy.variable;
 
+import org.apache.xml.serialize.OutputFormat;
+import org.apache.xml.serialize.XMLSerializer;
+import org.w3c.dom.Element;
+import sun.security.x509.X500Name;
+
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.io.StringWriter;
-import java.io.IOException;
-
-import org.apache.xml.serialize.XMLSerializer;
-import org.apache.xml.serialize.OutputFormat;
-import org.w3c.dom.Element;
 
 /**
  * @author alex
@@ -36,7 +37,7 @@ public abstract class Syntax {
      * in the provided Set, or null if no match can be found.
      * @param name the full name to search for (all leading and trailing spaces will be trimmed)
      * @param names the set of names to search within
-     * @return the longest subset of the provided Name that matches one of the Set members, or null if no match is found 
+     * @return the longest subset of the provided Name that matches one of the Set members, or null if no match is found
      */
     public static String getMatchingName(String name, Set names) {
         return getMatchingName(name, names, false, true);
@@ -78,6 +79,7 @@ public abstract class Syntax {
         add(Integer.TYPE);
         add(Boolean.class);
         add(Boolean.TYPE);
+        add(X500Name.class);
     }});
 
     public static String[] getReferencedNames(String s) {
@@ -150,6 +152,8 @@ public abstract class Syntax {
     public interface SyntaxErrorHandler {
         String handleSuspiciousToString( String remainingName, String className );
         String handleSubscriptOutOfRange( int subscript, String remainingName, int length );
+        String handleBadVariable(String s);
+        String handleBadVariable(String s, Throwable t);
     }
 
     public abstract Object[] filter(Object[] values, SyntaxErrorHandler handler, boolean strict);
@@ -164,10 +168,12 @@ public abstract class Syntax {
             this.delimiterSpecified = delimiterSpecified;
         }
 
+        @Override
         public Object[] filter(Object[] values, SyntaxErrorHandler handler, boolean strict) {
             return values;
         }
 
+        @Override
         public String format(final Object[] values, final Formatter formatter, final SyntaxErrorHandler handler, final boolean strict) {
             if (values == null || values.length == 0) return "";
 
@@ -199,10 +205,18 @@ public abstract class Syntax {
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < values.length; i++) {
                     Object value = values[i];
-                    if (value != null) sb.append(formatter.format(this, value, handler, strict));
+                    String formatted = value == null ? null : formatter.format(this, value, handler, strict);
+                    if (formatted != null) {
+                        if (delimiter.length() == 1 && formatted.contains(delimiter)) {
+                            formatted = formatted.replace("\\", "\\\\");
+                            formatted = formatted.replace(delimiter, "\\" + delimiter);
+                        }
+                        sb.append(formatted);
+                    }
                     if (i < values.length-1) sb.append(delimiter);
                 }
                 return sb.toString();
+
             }
         }
     }
@@ -214,6 +228,7 @@ public abstract class Syntax {
             this.subscript = subscript;
         }
 
+        @Override
         public Object[] filter(Object[] values, SyntaxErrorHandler handler, boolean strict) {
             if (subscript > values.length-1) {
                 String message = handler.handleSubscriptOutOfRange( subscript, remainingName, values.length );
@@ -225,6 +240,7 @@ public abstract class Syntax {
             return new Object[] { values[subscript] };
         }
 
+        @Override
         public String format(Object[] values, Formatter formatter, SyntaxErrorHandler handler, boolean strict) {
             if (values == null || values.length != 1) return "";
 

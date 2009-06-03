@@ -3,11 +3,11 @@
  */
 package com.l7tech.server.policy.variable;
 
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.*;
+import com.l7tech.policy.variable.Syntax;
+import com.l7tech.util.IOUtils;
 
 import java.io.IOException;
 
@@ -23,11 +23,13 @@ class MessageSelector implements ExpandVariables.Selector {
     private static final String MAINPART_NAME = "mainpart";
     // TODO parts?
 
+    @Override
     public Class getContextObjectClass() {
         return Message.class;
     }
 
-    public Object select(Object context, String name, Audit audit, boolean strict) {
+    @Override
+    public Selection select(Object context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
         Message message;
         if (context instanceof Message) {
             message = (Message) context;
@@ -48,39 +50,44 @@ class MessageSelector implements ExpandVariables.Selector {
             selector = mainPartSelector;
         } else {
             // TODO other Message attributes
-            ExpandVariables.badVariable(name + " in "  + context.getClass().getName(), strict, audit);
+            String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
+            if (strict) throw new IllegalArgumentException(msg);
             return null;
         }
 
-        return selector.select(message, name, audit, strict);
+        return selector.select(message, name, handler, strict);
     }
 
     private static interface MessageAttributeSelector {
-        Object select(Message context, String name, Audit audit, boolean strict);
+        Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict);
     }
 
     private static final MessageAttributeSelector statusSelector = new MessageAttributeSelector() {
-        public Object select(Message context, String name, Audit audit, boolean strict) {
-            HttpResponseKnob hrk = (HttpResponseKnob) context.getKnob(HttpResponseKnob.class);
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            HttpResponseKnob hrk = context.getKnob(HttpResponseKnob.class);
             if (hrk == null) {
-                ExpandVariables.badVariable(name, strict, audit);
+                String msg = handler.handleBadVariable(name);
+                if (strict) throw new IllegalArgumentException(msg);
                 return null;
             }
-            return hrk.getStatus();
+            return new Selection(hrk.getStatus());
         }
     };
 
     private final MessageAttributeSelector mainPartSelector = new MessageAttributeSelector() {
-        public Object select(Message context, String name, Audit audit, boolean strict) {
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
             try {
                 final MimeKnob mk = context.getMimeKnob();
                 ContentTypeHeader cth = mk.getFirstPart().getContentType();
                 if (cth.isText() || cth.isXml()) {
                     // TODO maximum size? This could be huge and OOM
                     byte[] bytes = IOUtils.slurpStream(mk.getFirstPart().getInputStream(false));
-                    return new String(bytes, cth.getEncoding());
+                    return new Selection(new String(bytes, cth.getEncoding()));
                 } else {
-                    ExpandVariables.badVariable("Message is not text", strict, audit);
+                    String msg = handler.handleBadVariable("Message is not text");
+                    if (strict) throw new IllegalArgumentException(msg);
                     return null;
                 }
             } catch (IOException e) {
@@ -103,21 +110,24 @@ class MessageSelector implements ExpandVariables.Selector {
             this.multi = multi;
         }
 
-        public Object select(Message context, String name, Audit audit, boolean strict) {
-            HasHeaders hrk = (HasHeaders) context.getKnob(HttpRequestKnob.class);
-            if (hrk == null) hrk = (HasHeaders) context.getKnob(HttpResponseKnob.class);
+        @Override
+        public Selection select(Message context, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
+            HasHeaders hrk = context.getKnob(HttpRequestKnob.class);
+            if (hrk == null) hrk = context.getKnob(HttpResponseKnob.class);
             if (hrk == null) {
-                ExpandVariables.badVariable(name + " in " + context.getClass().getName(), strict, audit);
+                String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
+                if (strict) throw new IllegalArgumentException(msg);
                 return null;
             }
             final String hname = name.substring(prefix.length());
             String[] vals = hrk.getHeaderValues(hname);
             if (vals == null || vals.length == 0) {
-                ExpandVariables.badVariable(hname + " header was empty", strict, audit);
+                String msg = handler.handleBadVariable(hname + " header was empty");
+                if (strict) throw new IllegalArgumentException(msg);
                 return null;
             }
 
-            return multi ? vals : vals[0];
+            return new Selection(multi ? vals : vals[0]);
         }
 
     }

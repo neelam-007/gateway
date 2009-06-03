@@ -1,25 +1,40 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeHeader;
 import com.l7tech.common.mime.MimeHeaders;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.MessagesUtil;
+import com.l7tech.identity.ldap.LdapUser;
 import com.l7tech.message.AbstractHttpResponseKnob;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.AuditDetailAssertion;
+import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
+import com.l7tech.server.policy.assertion.ServerXpathAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IteratorEnumeration;
-import org.junit.*;
-import static org.junit.Assert.*;
+import com.l7tech.xml.xpath.XpathExpression;
+import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
+import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -34,7 +49,7 @@ import java.util.logging.Logger;
  * Class ExpandVariablesTest.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
  */
-public class ExpandVariablesTest {
+public class ExpandVariablesTest extends TestCase {
     private static final Logger logger = Logger.getLogger(ExpandVariablesTest.class.getName());
     private static final Audit audit = new LogOnlyAuditor(logger);
     private static final String TINY_BODY = "<blah/>";
@@ -47,7 +62,7 @@ public class ExpandVariablesTest {
 
     @Test
     public void testSingleVariableExpand() throws Exception {
-        Map variables = new HashMap();
+        Map<String, String> variables = new HashMap<String, String>();
         String value = "value_variable1";
         variables.put("var1", value);
 
@@ -60,7 +75,7 @@ public class ExpandVariablesTest {
 
     @Test
     public void testMultipleVariableExpand() throws Exception {
-        Map variables = new HashMap();
+        Map<String, String> variables = new HashMap<String, String>();
         String value1 = "value_variable1";
         String value2 = "value_variable2";
         variables.put("var1", value1);
@@ -138,9 +153,7 @@ public class ExpandVariablesTest {
         }
     }
 
-    @Ignore("Not yet fixed; for Bug #6455 we worked around this by renaming the variables")
-    @Test
-    @BugNumber(6455)
+    @Test @BugNumber(6455)
     public void testUnrecognizedSuffix() throws Exception {
         Map<String, Object> vars = new HashMap<String, Object>() {{
             put("certificate.subject.cn", new Object[] { "blah" });
@@ -154,8 +167,7 @@ public class ExpandVariablesTest {
         assertEquals("", ExpandVariables.process("${certificate.subject.nonexistent}", vars, audit));
     }
 
-    @Test
-    @BugNumber(6813)
+    @Test @BugNumber(6813)
     public void testBackslashEscaping() throws Exception {
         Map<String, Object> vars = new HashMap<String, Object>() {{
             put("dn", "cn=test\\+1");
@@ -170,7 +182,7 @@ public class ExpandVariablesTest {
     public void testMessageVariableHeader() throws Exception {
         Message foo = makeTinyRequest();
         String ctype = ExpandVariables.process("${foo.http.header.content-type}", makeVars(foo), audit);
-        assertEquals("Unexpected header value", ctype, "application/octet-stream");
+        assertEquals("Unexpected header value", "application/octet-stream", ctype);
     }
 
     @Test
@@ -319,11 +331,116 @@ public class ExpandVariablesTest {
         }
     }
 
+    public void testCertIssuerDnToString() throws Exception {
+        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        u.setCertificate(TestDocuments.getWssInteropAliceCert());
+        Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        vars.put("authenticatedUser", u);
+        assertEquals("CN=OASIS Interop Test CA, O=OASIS", ExpandVariables.process("${authenticatedUser.cert.issuer}", vars, audit, true));
+    }
+
+    public void testCertIssuerDnNoSuchAttribute() throws Exception {
+        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        u.setCertificate(TestDocuments.getWssInteropAliceCert());
+        Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        vars.put("authenticatedUser", u);
+        try {
+            ExpandVariables.process("${authenticatedUser.cert.issuer.what}", vars, audit, true);
+            fail("Expected IAE");
+        } catch (IllegalArgumentException e) {
+            // OK
+        }
+    }
+
+    public void testCertIssuerDnName() throws Exception {
+        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        u.setCertificate(TestDocuments.getWssInteropAliceCert());
+        Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        vars.put("authenticatedUser", u);
+        assertEquals("CN=OASIS Interop Test CA, O=OASIS", ExpandVariables.process("${authenticatedUser.cert.issuer}", vars, audit, true));
+    }
+
+    public void testCertIssuerAttribute() throws Exception {
+        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        u.setCertificate(TestDocuments.getWssInteropAliceCert());
+        Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        vars.put("authenticatedUser", u);
+        assertEquals("OASIS", ExpandVariables.process("${authenticatedUser.cert.issuer.dn.o}", vars, audit, true));
+    }
+
+    public void testCertSubjectAttribute() throws Exception {
+        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        u.setCertificate(TestDocuments.getWssInteropAliceCert());
+        Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        vars.put("authenticatedUser", u);
+        assertEquals("Alice", ExpandVariables.process("${authenticatedUser.cert.subject.dn.cn}", vars, audit, true));
+    }
+
+    public void testMultivaluedDcAttributes() throws Exception {
+        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        u.setCertificate(CertUtils.decodeFromPEM(A_CERT));
+        Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        vars.put("authenticatedUser", u);
+        String got = ExpandVariables.process("${authenticatedUser.cert.subject.dn.dc|,}", vars, audit, true);
+        assertEquals("com,l7tech,locutus", got);
+    }
+
+    public void testMultivaluedDcBttributes() throws Exception {
+        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        u.setCertificate(CertUtils.decodeFromPEM(B_CERT));
+        Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        vars.put("authenticatedUser", u);
+        String got = ExpandVariables.process("${authenticatedUser.cert.subject.dn.dc|,}", vars, audit, true);
+        assertEquals("com,l7tech,hello\\,cutus", got);
+    }
+
     @Test
     public void testResponseStatus() throws Exception {
         Message resp = makeResponse();
         String status = ExpandVariables.process("${foo.http.status}", makeVars(resp), audit, true);
         assertEquals("123", status);
+    }
+
+    /*
+    <soapenv:Envelope
+        xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <soapenv:Body>
+            <ns1:placeOrder
+                soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:ns1="http://warehouse.acme.com/ws">
+                <productid xsi:type="xsd:long">-9206260647417300294</productid>
+                <amount xsi:type="xsd:long">1</amount>
+                <price xsi:type="xsd:float">5.0</price>
+                <accountid xsi:type="xsd:long">228</accountid>
+            </ns1:placeOrder>
+        </soapenv:Body>
+    </soapenv:Envelope>
+    */
+
+    @Test
+    public void testProcessSingleVariableAsDisplayableObject() throws Exception {
+        final ApplicationContext spring = ApplicationContexts.getTestApplicationContext();
+        final Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+        final PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(doc), new Message());
+
+        final RequestXpathAssertion ass = new RequestXpathAssertion(new XpathExpression("/s:Envelope/s:Body/ns1:placeOrder/*", nsmap()));
+        final AllAssertion all = new AllAssertion(Arrays.asList(ass, new AuditDetailAssertion("${requestXpath.elements}")));
+        final ServerXpathAssertion sxa = new ServerRequestXpathAssertion(ass, spring);
+        final AssertionStatus xpathStatus = sxa.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, xpathStatus);
+
+        final Element[] els = (Element[]) context.getVariable("requestXpath.elements");
+        assertEquals(4, els.length);
+        
+        final Object what = ExpandVariables.processSingleVariableAsDisplayableObject("${requestXpath.elements[0]}", context.getVariableMap(new String[] { "requestXpath.elements" }, audit), audit, true);
+        System.out.println(what);
+    }
+
+    private Map<String, String> nsmap() {
+        final Map<String, String> nsmap = new HashMap<String, String>();
+        nsmap.put("ns1", "http://warehouse.acme.com/ws");
+        nsmap.put("s", "http://schemas.xmlsoap.org/soap/envelope/");
+        return nsmap;
     }
 
     private Map<String, Object> makeVars(Message foo) {
@@ -423,7 +540,7 @@ public class ExpandVariablesTest {
                 MimeHeader header = headers.get(i);
                 names.add(header.getName());
             }
-            return names.toArray(new String[0]);
+            return names.toArray(new String[names.size()]);
         }
 
         public String[] getHeaderValues(String name) {
@@ -455,8 +572,8 @@ public class ExpandVariablesTest {
             return params.get(s);
         }
 
-        public Enumeration getParameterNames() throws IOException {
-            return new IteratorEnumeration(params.keySet().iterator());
+        public Enumeration<String> getParameterNames() throws IOException {
+            return new IteratorEnumeration<String>(params.keySet().iterator());
         }
 
         public Object getConnectionIdentifier() {
@@ -483,4 +600,30 @@ public class ExpandVariablesTest {
             return null;
         }
     }
+
+    public static final String A_CERT = "-----BEGIN CERTIFICATE-----\n" +
+        "MIICJTCCAc+gAwIBAgIJAKiXZCjIMvOjMA0GCSqGSIb3DQEBBQUAMFwxFDASBgNVBAMMC0FsZXgg\n" +
+        "Q3J1aXNlMRcwFQYKCZImiZPyLGQBGRYHbG9jdXR1czEWMBQGCgmSJomT8ixkARkWBmw3dGVjaDET\n" +
+        "MBEGCgmSJomT8ixkARkWA2NvbTAeFw0wODExMjQyMjMzMzdaFw0yODExMTkyMjMzMzdaMFwxFDAS\n" +
+        "BgNVBAMMC0FsZXggQ3J1aXNlMRcwFQYKCZImiZPyLGQBGRYHbG9jdXR1czEWMBQGCgmSJomT8ixk\n" +
+        "ARkWBmw3dGVjaDETMBEGCgmSJomT8ixkARkWA2NvbTBcMA0GCSqGSIb3DQEBAQUAA0sAMEgCQQCJ\n" +
+        "P11ezerCfEBJKxXbQO1ZWPTVghwMNCxwEAi067MstcfPnuI9XBwFSVR4ke2ytsEQ7vUSSXyPjqvc\n" +
+        "/TNchtdnAgMBAAGjdDByMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgXgMBIGA1UdJQEB/wQI\n" +
+        "MAYGBFUdJQAwHQYDVR0OBBYEFKPI4R7IsV3ieg87PQGkatHDVIlcMB8GA1UdIwQYMBaAFKPI4R7I\n" +
+        "sV3ieg87PQGkatHDVIlcMA0GCSqGSIb3DQEBBQUAA0EABoI+uX4zLjz9Q0X9wPtat1ZeBgPGoWnn\n" +
+        "P14O3BFXnwFZ3zsk6za9il9HEL8zqmtqNUkmkSTwx4N6f13m82/QGw==\n" +
+        "-----END CERTIFICATE-----";
+
+    public static final String B_CERT = "-----BEGIN CERTIFICATE-----\n" +
+        "MIICLTCCAdegAwIBAgIJAJ2AExZqZJGFMA0GCSqGSIb3DQEBBQUAMGAxFDASBgNVBAMMC0FsZXgg\n" +
+        "Q3J1aXNlMRswGQYKCZImiZPyLGQBGRYLaGVsbG8sY3V0dXMxFjAUBgoJkiaJk/IsZAEZFgZsN3Rl\n" +
+        "Y2gxEzARBgoJkiaJk/IsZAEZFgNjb20wHhcNMDgxMTI0MjI1OTAyWhcNMjgxMTE5MjI1OTAyWjBg\n" +
+        "MRQwEgYDVQQDDAtBbGV4IENydWlzZTEbMBkGCgmSJomT8ixkARkWC2hlbGxvLGN1dHVzMRYwFAYK\n" +
+        "CZImiZPyLGQBGRYGbDd0ZWNoMRMwEQYKCZImiZPyLGQBGRYDY29tMFwwDQYJKoZIhvcNAQEBBQAD\n" +
+        "SwAwSAJBALoIWqNqb3GOwb9nscnZoeqs932ffvYJV+PAL3WyvlYbwDqF/VA9/2LfbLCkXY7Jj5t6\n" +
+        "NOYnOJawXsrbR69B5hsCAwEAAaN0MHIwDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCBeAwEgYD\n" +
+        "VR0lAQH/BAgwBgYEVR0lADAdBgNVHQ4EFgQUEBQl5ZvB9/hTuiv6IEw9KCKBQKwwHwYDVR0jBBgw\n" +
+        "FoAUEBQl5ZvB9/hTuiv6IEw9KCKBQKwwDQYJKoZIhvcNAQEFBQADQQBi6aKbvzKdQ2/PNCch9cIP\n" +
+        "x9zsgyMq0B1YxjRGE3VVdVsH1y2eotOaNTyDF+swZOhP7JjOcBCMFi0Besh+Fs2H\n" +
+        "-----END CERTIFICATE-----";
 }

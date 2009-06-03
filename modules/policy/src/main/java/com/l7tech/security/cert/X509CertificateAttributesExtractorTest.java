@@ -1,7 +1,6 @@
-package com.l7tech.external.assertions.certificateattributes;
+package com.l7tech.security.cert;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.util.HexUtils;
 import static org.junit.Assert.*;
 import org.junit.*;
@@ -11,7 +10,7 @@ import java.security.cert.X509Certificate;
 /**
  *
  */
-public class CertificateAttributesExtractorTest {
+public class X509CertificateAttributesExtractorTest {
     /** Base OID of Layer 7 Technologies (IANA-registered Private Enterprise) */
     private static final String OID_LAYER_7_BASE = "1.3.6.1.4.1.17304";
 
@@ -22,9 +21,9 @@ public class CertificateAttributesExtractorTest {
     public void testEmailFromIssuerDN() throws Exception {
         X509Certificate certificate = CertUtils.decodeCert(HexUtils.decodeBase64(THAWTE_CERT_PEM));
 
-        CertificateAttributesExtractor cae = new CertificateAttributesExtractor(certificate);
-        for ( String name : cae.getAttributeNames() ) {
-            System.out.println( name + " = " + cae.getAttributeValue(name) );
+        X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(certificate);
+        for ( String name : cae.getSuppotedAttributeNames() ) {
+            System.out.println( name + " = " + CertificateAttribute.attributeValueToString(cae.getAttributeValue(name) ));
         }
 
         assertEquals( "Serial Number", "10", cae.getAttributeValue("serial") );
@@ -32,13 +31,14 @@ public class CertificateAttributesExtractorTest {
         assertEquals( "Not After Date", "2013-08-05T23:59:59.000Z", cae.getAttributeValue("notAfter") );
         assertEquals( "Signature Algorithm Name", "SHA1withRSA", cae.getAttributeValue("signatureAlgorithmName") );
         assertEquals( "Signature Algorithm OID", "1.2.840.113549.1.1.5", cae.getAttributeValue("signatureAlgorithmOID") );
-        assertEquals( "Issuer DN", "EMAILADDRESS=premium-server@thawte.com, CN=Thawte Premium Server CA, OU=Certification Services Division, O=Thawte Consulting cc, L=Cape Town, ST=Western Cape, C=ZA", cae.getAttributeValue("issuer.dn") );
-        assertEquals( "Email from Issuer DN", "premium-server@thawte.com", cae.getAttributeValue("issuerEmail") );
-        assertEquals( "Subject DN", "CN=Thawte Code Signing CA, O=Thawte Consulting (Pty) Ltd., C=ZA", cae.getAttributeValue("subject.dn") );
+        assertEquals( "Issuer DN", "EMAILADDRESS=premium-server@thawte.com, CN=Thawte Premium Server CA, OU=Certification Services Division, O=Thawte Consulting cc, L=Cape Town, ST=Western Cape, C=ZA", cae.getAttributeValue("issuer") );
+//        assertEquals( "Email from Issuer DN", "premium-server@thawte.com", cae.getAttributeValue("issuerEmail") );
+        assertEquals( "Subject DN", "CN=Thawte Code Signing CA, O=Thawte Consulting (Pty) Ltd., C=ZA", cae.getAttributeValue("subject") );
         assertEquals( "Subject Public Key Algorithm", "RSA", cae.getAttributeValue("subjectPublicKeyAlgorithm") );
 
-        for ( String name : cae.getAttributeNames() ) {
-            assertNotNull( "Value not null; " + name, cae.getAttributeValue(name) );
+        for ( String name : cae.getSuppotedAttributeNames() ) {
+            CertificateAttribute attribute = CertificateAttribute.fromString(name);
+            assertNotNull( "Unknown attribute for name: " + name, attribute );
         }
     }
 
@@ -69,9 +69,9 @@ public class CertificateAttributesExtractorTest {
 
         X509Certificate certificate = CertUtils.decodeCert(HexUtils.decodeBase64(altNameTest));
 
-        CertificateAttributesExtractor cae = new CertificateAttributesExtractor(certificate);
-        for ( String name : cae.getAttributeNames() ) {
-            System.out.println( name + " = " + cae.getAttributeValue(name) );
+        X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(certificate);
+        for ( String name : cae.getSuppotedAttributeNames() ) {
+            System.out.println( name + " = " + CertificateAttribute.attributeValueToString(cae.getAttributeValue(name)) );
         }
 
         assertEquals( "Serial Number", "2", cae.getAttributeValue("serial") );
@@ -79,14 +79,15 @@ public class CertificateAttributesExtractorTest {
         assertEquals( "Not After Date", "2009-02-14T16:57:35.000Z", cae.getAttributeValue("notAfter") );
         assertEquals( "Signature Algorithm Name", "SHA1withRSA", cae.getAttributeValue("signatureAlgorithmName") );
         assertEquals( "Signature Algorithm OID", "1.2.840.113549.1.1.5", cae.getAttributeValue("signatureAlgorithmOID") );
-        assertEquals( "Issuer DN", "CN=UGRID CA, DC=ugrid, DC=org", cae.getAttributeValue("issuer.dn") );
+        assertEquals( "Issuer DN", "CN=UGRID CA, DC=ugrid, DC=org", cae.getAttributeValue("issuer") );
         assertEquals( "Issuer Alternative Name Email", "ca@ugrid.org", cae.getAttributeValue("issuerAltNameEmail") );
-        assertEquals( "Subject DN", "CN=Sergiy Velichkevych, OU=CA, O=UGRID, O=people, DC=ugrid, DC=org", cae.getAttributeValue("subject.dn") );
+        assertEquals( "Subject DN", "CN=Sergiy Velichkevych, OU=CA, O=UGRID, O=people, DC=ugrid, DC=org", cae.getAttributeValue("subject") );
         assertEquals( "Subject Alternative Name Email", "serg@ugrid.org", cae.getAttributeValue("subjectAltNameEmail") );
         assertEquals( "Subject Public Key Algorithm", "RSA", cae.getAttributeValue("subjectPublicKeyAlgorithm") );
 
-        for ( String name : cae.getAttributeNames() ) {
-            assertNotNull( "Value not null; " + name, cae.getAttributeValue(name) );
+        for ( String name : cae.getSuppotedAttributeNames() ) {
+            CertificateAttribute attribute = CertificateAttribute.fromString(name);
+            assertNotNull( "Unknown attribute for name: " + name, attribute );
         }
     }
 
@@ -95,12 +96,12 @@ public class CertificateAttributesExtractorTest {
         TestCertificateGenerator gen = new TestCertificateGenerator();
         X509Certificate cert = gen.subject("cn=blah, ou=foo, ou=bar, ou=baz, c=ca").generate();
 
-        CertificateAttributesExtractor cae = new CertificateAttributesExtractor(cert);
-        assertEquals("Simple CN", "blah", ((String[])cae.getAttributeValue("subject.cn"))[0]);
+        X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
+        assertEquals("Simple CN", "blah", ((Object[])cae.getAttributeValue("subject.dn.cn"))[0]);
 
-        final Object subjectOu = cae.getAttributeValue("subject.ou");
-        assertTrue("Multiple OU RDNs result in a multivalued subject.ou attribute", subjectOu instanceof String[]);
-        String[] ous = (String[]) subjectOu;
+        final Object subjectOu = cae.getAttributeValue("subject.dn.ou");
+        assertTrue("Multiple OU RDNs result in a multivalued subject.ou attribute", subjectOu instanceof Object[]);
+        Object[] ous = (Object[]) subjectOu;
         assertEquals("OU sizes", 3, ous.length);
         assertEquals("OU value 0", "foo", ous[0]);
         assertEquals("OU value 1", "bar", ous[1]);
@@ -110,28 +111,28 @@ public class CertificateAttributesExtractorTest {
     @Test
     public void testDefaultDn() throws Exception {
         X509Certificate cert = CertUtils.decodeCert(HexUtils.decodeBase64(THAWTE_CERT_PEM));
-        CertificateAttributesExtractor cae = new CertificateAttributesExtractor(cert);
+        X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
         assertEquals("Default form issuer DN",
                 "EMAILADDRESS=premium-server@thawte.com, CN=Thawte Premium Server CA, OU=Certification Services Division, O=Thawte Consulting cc, L=Cape Town, ST=Western Cape, C=ZA",
-                cae.getAttributeValue("issuer.dn"));
+                cae.getAttributeValue("issuer"));
     }
 
     @Test
     public void testCanonicalFormDn() throws Exception {
         X509Certificate cert = CertUtils.decodeCert(HexUtils.decodeBase64(THAWTE_CERT_PEM));
-        CertificateAttributesExtractor cae = new CertificateAttributesExtractor(cert);
+        X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
         assertEquals("Canonical form issuer DN",
                 "1.2.840.113549.1.9.1=#16197072656d69756d2d736572766572407468617774652e636f6d,cn=thawte premium server ca,ou=certification services division,o=thawte consulting cc,l=cape town,st=western cape,c=za",
-                cae.getAttributeValue("issuer.dn.canonical"));
+                cae.getAttributeValue("issuer.canonical"));
     }
 
     @Test
     public void testRfc2253FormDn() throws Exception {
         X509Certificate cert = CertUtils.decodeCert(HexUtils.decodeBase64(THAWTE_CERT_PEM));
-        CertificateAttributesExtractor cae = new CertificateAttributesExtractor(cert);
+        X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
         assertEquals("RFC 2253 form issuer DN",
                 "1.2.840.113549.1.9.1=#16197072656d69756d2d736572766572407468617774652e636f6d,CN=Thawte Premium Server CA,OU=Certification Services Division,O=Thawte Consulting cc,L=Cape Town,ST=Western Cape,C=ZA",
-                cae.getAttributeValue("issuer.dn.rfc2253"));
+                cae.getAttributeValue("issuer.rfc2253"));
     }
 
     @Test
@@ -141,8 +142,8 @@ public class CertificateAttributesExtractorTest {
         String testOid = OID_LAYER_7_TEST + ".1.1";
         X509Certificate cert = gen.subject("cn=blah," + testOid + "=" + thawteEmailBer).generate();
 
-        CertificateAttributesExtractor cae = new CertificateAttributesExtractor(cert);
-        assertEquals("Layer 7-specific DN attribute OID", thawteEmailBer, ((String[])cae.getAttributeValue("subject." + testOid))[0]);
+        X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
+        assertEquals("Layer 7-specific DN attribute OID", thawteEmailBer, ((Object[])cae.getAttributeValue("subject.dn." + testOid))[0]);
     }
 
     @Test
@@ -150,7 +151,7 @@ public class CertificateAttributesExtractorTest {
         TestCertificateGenerator gen = new TestCertificateGenerator();
         X509Certificate cert = gen.countriesOfCitizenship(false, "CA", "US", "FR").generate();
 
-        CertificateAttributesExtractor cae = new CertificateAttributesExtractor(cert);
+        X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
 
         final Object countriesOfCitizenship = cae.getAttributeValue("countryOfCitizenship");
         assertTrue("Countries of citizenship returns an array", countriesOfCitizenship instanceof Object[]);
@@ -166,40 +167,43 @@ public class CertificateAttributesExtractorTest {
         TestCertificateGenerator gen = new TestCertificateGenerator();
 
         X509Certificate cert = gen.reset().noExtensions().keyUsage(false, 22).generate();
-        CertificateAttributesExtractor cae = new CertificateAttributesExtractor(cert);
-        assertEquals("Key usage non-critical", "noncrit", cae.getAttributeValue("keyUsage.criticality"));
+        X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
+        assertEquals("Key usage non-critical", "noncrit", cae.getAttributeValue("keyUsageCriticality"));
         assertFalse("Bit 1 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.digitalSignature"));
         assertFalse("Bit 2 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.nonRepudiation"));
         assertFalse("Bit 3 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.keyEncipherment"));
         assertTrue("Bit 4 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.dataEncipherment"));
         assertFalse("Bit 5 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.keyAgreement"));
         assertTrue("Bit 6 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.keyCertSign"));
-        assertTrue("Bit 7 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.cRLSign"));
-        assertFalse("Bit 8 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.decipherOnly"));
+        assertTrue("Bit 7 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.crlSign"));
+        assertFalse("Bit 8 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.encipherOnly"));
+        assertFalse("Bit 9 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.decipherOnly"));
 
         cert = gen.reset().noExtensions().generate();
-        cae = new CertificateAttributesExtractor(cert);
-        assertEquals("Key usage not present", "none", cae.getAttributeValue("keyUsage.criticality"));
+        cae = new X509CertificateAttributesExtractor(cert);
+        assertEquals("Key usage not present", "none", cae.getAttributeValue("keyUsageCriticality"));
         assertFalse("Bit 1 of the key usage is false if ext not present", (Boolean)cae.getAttributeValue("keyUsage.digitalSignature"));
         assertFalse("Bit 2 of the key usage is false if ext not present", (Boolean)cae.getAttributeValue("keyUsage.nonRepudiation"));
         assertFalse("Bit 3 of the key usage is false if ext not present", (Boolean)cae.getAttributeValue("keyUsage.keyEncipherment"));
         assertFalse("Bit 4 of the key usage is false if ext not present", (Boolean)cae.getAttributeValue("keyUsage.dataEncipherment"));
         assertFalse("Bit 5 of the key usage is false if ext not present", (Boolean)cae.getAttributeValue("keyUsage.keyAgreement"));
         assertFalse("Bit 6 of the key usage is false if ext not present", (Boolean)cae.getAttributeValue("keyUsage.keyCertSign"));
-        assertFalse("Bit 7 of the key usage is false if ext not present", (Boolean)cae.getAttributeValue("keyUsage.cRLSign"));
-        assertFalse("Bit 8 of the key usage is false if ext not present", (Boolean)cae.getAttributeValue("keyUsage.decipherOnly"));
+        assertFalse("Bit 7 of the key usage is false if ext not present", (Boolean)cae.getAttributeValue("keyUsage.crlSign"));
+        assertFalse("Bit 8 of the key usage is false if ext not present", (Boolean)cae.getAttributeValue("keyUsage.encipherOnly"));
+        assertFalse("Bit 9 of the key usage is false if ext not present", (Boolean)cae.getAttributeValue("keyUsage.decipherOnly"));
 
-        cert = gen.reset().noExtensions().keyUsage(true, 23).generate();
-        cae = new CertificateAttributesExtractor(cert);
-        assertEquals("Key usage critical", "critical", cae.getAttributeValue("keyUsage.criticality"));
+        cert = gen.reset().noExtensions().keyUsage(true, 32791).generate();
+        cae = new X509CertificateAttributesExtractor(cert);
+        assertEquals("Key usage critical", "critical", cae.getAttributeValue("keyUsageCriticality"));
         assertFalse("Bit 1 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.digitalSignature"));
         assertFalse("Bit 2 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.nonRepudiation"));
         assertFalse("Bit 3 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.keyEncipherment"));
         assertTrue("Bit 4 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.dataEncipherment"));
         assertFalse("Bit 5 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.keyAgreement"));
         assertTrue("Bit 6 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.keyCertSign"));
-        assertTrue("Bit 7 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.cRLSign"));
-        assertTrue("Bit 8 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.decipherOnly"));
+        assertTrue("Bit 7 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.crlSign"));
+        assertTrue("Bit 8 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.encipherOnly"));
+        assertTrue("Bit 9 of the key usage", (Boolean)cae.getAttributeValue("keyUsage.decipherOnly"));
 
     }
 
@@ -208,9 +212,9 @@ public class CertificateAttributesExtractorTest {
         TestCertificateGenerator gen = new TestCertificateGenerator();
 
         X509Certificate cert = gen.reset().noExtensions().extKeyUsage(false, "1.3.6.1.5.5.7.3.13", "1.3.6.1.5.5.7.3.14").generate();
-        CertificateAttributesExtractor cae = new CertificateAttributesExtractor(cert);
-        assertEquals("Ext Key usage non-critical", "noncrit", cae.getAttributeValue("extendedKeyUsage.criticality"));
-        Object oidsObject = cae.getAttributeValue("extendedKeyUsage");
+        X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
+        assertEquals("Ext Key usage non-critical", "noncrit", cae.getAttributeValue("extendedKeyUsageCriticality"));
+        Object oidsObject = cae.getAttributeValue("extendedKeyUsageValues");
         assertTrue("Extended key usage returns an array", oidsObject instanceof Object[]);
         Object[] oids = (Object[])oidsObject;
         assertEquals("OIDs", 2, oids.length);
@@ -218,9 +222,9 @@ public class CertificateAttributesExtractorTest {
         assertEquals("1.3.6.1.5.5.7.3.14", oids[1]);
 
         cert = gen.reset().noExtensions().extKeyUsage(true, "1.3.6.1.5.5.7.3.13", "1.3.6.1.5.5.7.3.14").generate();
-        cae = new CertificateAttributesExtractor(cert);
-        assertEquals("Ext Key usage critical", "critical", cae.getAttributeValue("extendedKeyUsage.criticality"));
-        oidsObject = cae.getAttributeValue("extendedKeyUsage");
+        cae = new X509CertificateAttributesExtractor(cert);
+        assertEquals("Ext Key usage critical", "critical", cae.getAttributeValue("extendedKeyUsageCriticality"));
+        oidsObject = cae.getAttributeValue("extendedKeyUsageValues");
         assertTrue("Extended key usage returns an array", oidsObject instanceof Object[]);
         oids = (Object[])oidsObject;
         assertEquals("OIDs", 2, oids.length);
@@ -228,9 +232,9 @@ public class CertificateAttributesExtractorTest {
         assertEquals("1.3.6.1.5.5.7.3.14", oids[1]);
 
         cert = gen.reset().noExtensions().generate();
-        cae = new CertificateAttributesExtractor(cert);
-        assertEquals("Ext Key usage not present", "none", cae.getAttributeValue("extendedKeyUsage.criticality"));
-        oidsObject = cae.getAttributeValue("extendedKeyUsage");
+        cae = new X509CertificateAttributesExtractor(cert);
+        assertEquals("Ext Key usage not present", "none", cae.getAttributeValue("extendedKeyUsageCriticality"));
+        oidsObject = cae.getAttributeValue("extendedKeyUsageValues");
         assertTrue("Extended key usage returns an array", oidsObject instanceof Object[]);
         oids = (Object[])oidsObject;
         assertEquals("eku not prsent; OIDs empty", 0, oids.length);

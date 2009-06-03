@@ -565,10 +565,10 @@ public class LdapIdentityProviderImpl
             if (format == CredentialFormat.CLIENTCERT || format == CredentialFormat.SAML) {
 
                     //get the LDAP cert for this user if LDAP certs are enabled for this provider
-                    if (certsAreEnabled() && realUser.getLdapCert() != null) {
+                    if (certsAreEnabled() && realUser.getLdapCertBytes() != null) {
                         try {
                             return certificateAuthenticator.authenticateX509Credentials(pc,
-                                                                             CertUtils.decodeCert(realUser.getLdapCert()),
+                                                                             realUser.getCertificate(),
                                                                              realUser,
                                                                              config.getCertificateValidationType(),
                                                                              auditor, false);
@@ -1217,7 +1217,7 @@ public class LdapIdentityProviderImpl
                 //check where we should be looking for the cert, the cert could reside either in LDAP or gateway
                 if (certsAreEnabled()) {
                     //telling use to search cert through ldap
-                    return ldapUser.getLdapCert() != null;
+                    return ldapUser.getLdapCertBytes() != null;
                 } else {
                     //telling use to search the gateway
                     return clientCertManager.getUserCert(ldapUser) != null;

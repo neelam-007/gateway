@@ -65,15 +65,15 @@ public final class ExpandVariables {
             final Syntax syntax = Syntax.parse(rawName, defaultDelimiter());
             final Object[] newVals = getAndFilter(vars, syntax, audit, strict);
 
-            Syntax.SyntaxErrorHandler handler = new DefaultSyntaxErrorHandler(audit);
+            final Syntax.SyntaxErrorHandler handler = new DefaultSyntaxErrorHandler(audit);
 
             if(newVals == null || newVals.length == 0) {
                 return null;
             } else if(newVals.length == 1) {
                 return syntax.format(new Object[] {newVals[0]}, Syntax.DEFAULT_FORMATTER, handler, strict);
             } else {
-                Object[] retVal = new Object[newVals.length];
-                Object[] dummyObject = new Object[1];
+                final Object[] retVal = new Object[newVals.length];
+                final Object[] dummyObject = new Object[1];
                 for(int i = 0;i < newVals.length;i++) {
                     dummyObject[0] = newVals[i];
                     retVal[i] = syntax.format(dummyObject, Syntax.DEFAULT_FORMATTER, handler, strict);
@@ -97,23 +97,48 @@ public final class ExpandVariables {
         if (strict) throw new IllegalArgumentException(msg);
     }
 
-    static interface Selector {
-        Object select(Object context, String name, Audit audit, boolean strict);
+    static interface Selector<T> {
+        static final Selection NOT_PRESENT = new Selection(null, null);
+        static class Selection {
+            private final Object value;
+            private final String remainingName;
 
-        Class getContextObjectClass();
+            public Selection(Object value) {
+                this(value, null);
+            }
+
+            public Selection(Object value, String remainingName) {
+                this.value = value;
+                this.remainingName = remainingName;
+            }
+
+            public Object getSelectedValue() {
+                return value;
+            }
+
+            public String getRemainingName() {
+                return remainingName;
+            }
+        }
+
+        Selection select(T context, String name, Syntax.SyntaxErrorHandler handler, boolean strict);
+
+        Class<T> getContextObjectClass();
     }
 
     private static final String[] selectors = {
-        "com.l7tech.server.policy.variable.MessageSelector"
+        "com.l7tech.server.policy.variable.MessageSelector",
+        "com.l7tech.server.policy.variable.X509CertificateSelector",
+        "com.l7tech.server.policy.variable.UserSelector",
     };
 
-    private static final Map selectorMap = Collections.unmodifiableMap(new HashMap() {{
+    private static final Map<Class, Selector<Object>> selectorMap = Collections.unmodifiableMap(new HashMap<Class, Selector<Object>>() {{
         //noinspection ForLoopReplaceableByForEach
         for (int i = 0; i < selectors.length; i++) {
             String selectorClassname = selectors[i];
             try {
                 Class clazz = Class.forName(selectorClassname);
-                Selector sel = (Selector) clazz.newInstance();
+                @SuppressWarnings({"unchecked"}) Selector<Object> sel = (Selector<Object>) clazz.newInstance();
                 put(sel.getContextObjectClass(), sel);
             } catch (InstantiationException e) {
                 throw new RuntimeException(e); // Can't happen
@@ -132,36 +157,94 @@ public final class ExpandVariables {
             return null;
         }
 
-        Object got = vars.get(matchingName);
+        Object contextValue = vars.get(matchingName);
+        final Syntax.SyntaxErrorHandler handler = new DefaultSyntaxErrorHandler(audit);
 
+        Selector.Selection selection;
         if (!matchingName.toLowerCase().equals(syntax.remainingName.toLowerCase().trim())) {
             // Get name suffix, it will be used to select a sub-value from the found object
-            assert(syntax.remainingName.toLowerCase().trim().startsWith(matchingName.toLowerCase()));
-            assert(syntax.remainingName.trim().substring(matchingName.length(), matchingName.length()+1).equals("."));
-
-            Selector selector = (Selector) selectorMap.get(got.getClass());
-            if (selector != null) {
-                String remainder = syntax.remainingName.trim().substring(matchingName.length()+1);
-                if (remainder.length() > 0) {
-                    Object newval = selector.select(got, remainder, audit, strict);
-                    if (newval == null) {
-                        badVariable(MessageFormat.format("{0} on {1}", remainder, got.getClass().getName()), strict, audit);
-                    }
-                    got = newval;
-                }
-            }
-        } // else the name is good as-is
-
-        final Object[] vals;
-        if (got instanceof Object[]) {
-            vals = (Object[]) got;
+            assert(syntax.remainingName.toLowerCase().startsWith(matchingName));
+            final int len = matchingName.length();
+            assert(syntax.remainingName.substring(len, len +1).equals("."));
+            selection = selectify(contextValue, syntax.remainingName.substring(len+1), handler, strict);
         } else {
-            vals = new Object[] {got};
+            selection = new Selector.Selection(contextValue);
         }
 
-        Syntax.SyntaxErrorHandler handler = new DefaultSyntaxErrorHandler(audit);
+        // else the name already matches a known variable
+
+        if (selection == null || selection == Selector.NOT_PRESENT) {
+            String msg = handler.handleBadVariable(syntax.remainingName);
+            if (strict) throw new IllegalArgumentException(msg);
+            return null;
+        } else {
+            String name = selection.getRemainingName();
+            if (name != null && name.length() > 0) {
+                String msg = handler.handleBadVariable(name);
+                if (strict) throw new IllegalArgumentException(msg);
+                return null;
+            } else {
+                contextValue = selection.getSelectedValue(); 
+            }
+        }
+
+        final Object[] vals;
+        if (contextValue instanceof Object[]) {
+            vals = (Object[]) contextValue;
+        } else {
+            vals = new Object[] {contextValue};
+        }
+
         return syntax.filter(vals, handler, strict);
     }
+
+    private static Selector.Selection selectify(final Object contextObject, final String name, final Syntax.SyntaxErrorHandler handler, final boolean strict) {
+        Object contextValue = contextObject;
+        String remainingName = name;
+
+        while (remainingName != null && remainingName.length() > 0) {
+            // Try to find a Selector for values of this type
+            Selector<Object> selector = null;
+            for (Map.Entry<Class,Selector<Object>> entry : selectorMap.entrySet()) {
+                Class clazz = entry.getKey();
+                Selector<Object> sel = entry.getValue();
+                if (clazz.isAssignableFrom(contextValue.getClass())) {
+                    selector = sel;
+                    break;
+                }
+            }
+
+            if (selector == null) {
+                // No selector for values of this type; just return it and hope the caller can cope
+                return new Selector.Selection(contextValue, remainingName);
+            }
+
+            final Selector.Selection selection = selector.select(contextValue, remainingName, handler, strict);
+            if (selection == null) {
+                // This name is unknown to the selector
+                String msg = handler.handleBadVariable(MessageFormat.format("{0} on {1}", remainingName, contextObject.getClass().getName()));
+                if (strict) throw new IllegalArgumentException(msg);
+                return Selector.NOT_PRESENT;
+            }
+
+            final String tempRemainder = selection.getRemainingName();
+            if (tempRemainder == null || tempRemainder.length() == 0) {
+                // Done: this selector has fully resolved the remaining name (note that the value may be legitimately null)
+                return selection;
+            }
+
+            if (tempRemainder.length() > 0) {
+                // The selector has selected a sub-object; loop with new remaining name and context object
+                contextValue = selection.getSelectedValue();
+                remainingName = tempRemainder;
+                continue;
+            }
+
+            throw new IllegalStateException("Selector for " + remainingName + " returned " + selection);
+        }
+        throw new IllegalStateException("Unable to select " + name + " from " + contextObject.getClass().getName());
+    }
+
 
     public static String process(String s, Map vars, Audit audit) {
         return process(s, vars, audit, strict(), null);

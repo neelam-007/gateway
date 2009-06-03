@@ -37,17 +37,17 @@ public class ServerCertificateAttributesAssertionTest {
         PolicyEnforcementContext context = pec(cert);
         sass.checkRequest(context);
 
-        Object subject = context.getVariable("certificate.subject.dn");
-        Object cn = context.getVariable("certificate.subject.cn");
-        Object o = context.getVariable("certificate.subject.o");
+        Object subject = context.getVariable("certificate.subject");
+        Object cn = context.getVariable("certificate.subject.dn.cn");
+        Object o = context.getVariable("certificate.subject.dn.o");
         assertEquals("cn=blah, o=foo, dc=deeceeone, dc=deeceetwo", subject.toString().toLowerCase());
-        assertEquals("blah", ((String[])cn)[0]);
-        assertEquals("foo", ((String[])o)[0]);
-        assertEquals("", expand(context, "${certificate.subject.c}"));
-        assertEquals("blah", expand(context, "${certificate.subject.cn}"));
-        assertEquals("deeceeone", expand(context, "${certificate.subject.dc[0]}"));
-        assertEquals("deeceetwo", expand(context, "${certificate.subject.dc[1]}"));
-        assertEquals("deeceeone**(ZERF)**deeceetwo", expand(context, "${certificate.subject.dc|**(ZERF)**}"));
+        assertEquals("blah", ((Object[])cn)[0]);
+        assertEquals("foo", ((Object[])o)[0]);
+        assertEquals("", expand(context, "${certificate.subject.dn.c}"));
+        assertEquals("blah", expand(context, "${certificate.subject.dn.cn}"));
+        assertEquals("deeceeone", expand(context, "${certificate.subject.dn.dc[0]}"));
+        assertEquals("deeceetwo", expand(context, "${certificate.subject.dn.dc[1]}"));
+        assertEquals("deeceeone**(ZERF)**deeceetwo", expand(context, "${certificate.subject.dn.dc|**(ZERF)**}"));
     }
 
     private String expand(PolicyEnforcementContext context, String str) {

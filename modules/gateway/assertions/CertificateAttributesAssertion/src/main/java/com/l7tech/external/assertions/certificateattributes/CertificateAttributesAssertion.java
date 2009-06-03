@@ -5,10 +5,11 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.security.cert.CertificateAttribute;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.EnumSet;
 
 /**
  *
@@ -48,17 +49,13 @@ public class CertificateAttributesAssertion extends Assertion implements SetsVar
      *
      * @return The variables that are set.
      */
+    @Override
     public VariableMetadata[] getVariablesSet() {
         List<VariableMetadata> variables = new ArrayList<VariableMetadata>();
-
-        List<String> attributeNames = new ArrayList<String>(CertificateAttributesExtractor.getSimpleCertificateAttributes());
-        Collections.sort( attributeNames );
-        for ( String attributeName : attributeNames ) {
-            String prefixedName = variablePrefix + "." + attributeName;
-            boolean prefixed = CertificateAttributesExtractor.hasSubcomponents(attributeName);
-            variables.add( new VariableMetadata( prefixedName, prefixed, false, prefixedName, false ) );
+        for (CertificateAttribute attribute : EnumSet.allOf(CertificateAttribute.class)) {
+            String prefixedName = variablePrefix + "." + attribute.toString();
+            variables.add( new VariableMetadata( prefixedName, attribute.isPrefixed(), attribute.isMultiValued(), prefixedName, false ) );
         }
-
         return variables.toArray( new VariableMetadata[variables.size()] );
     }
 
@@ -67,6 +64,7 @@ public class CertificateAttributesAssertion extends Assertion implements SetsVar
      *
      * @return The assertion metadata.
      */
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
