@@ -746,7 +746,7 @@ public class DBActions {
     }
 
     //will return the version of the DB, or null if it cannot be determined
-    private String getDbVersion(Map<String, Set<String>> tableData) {
+    private String getDbVersion(Map<String, Set<String>> tableData, Connection conn) {
         String version = null;
         //make sure we're even dealing with something that smells like an SSG database
         if (ssgDbChecker.doCheck(tableData)) {
@@ -754,6 +754,10 @@ public class DBActions {
             int dbCheckIndex = 0;
             boolean versionFound;
             do {
+                version = checkVersionFromDatabaseVersion(conn);
+                if (version != null) {
+                    return version;
+                }
                 DbVersionChecker checker = dbCheckers[dbCheckIndex++];
                 if (versionFound = checker.doCheck(tableData)) {
                      version = checker.getVersion();
@@ -764,12 +768,32 @@ public class DBActions {
          return version;
      }
 
+    private String checkVersionFromDatabaseVersion(Connection conn) {
+        Statement stmt = null;
+        ResultSet rs = null;
+        String version = null;
+        try {
+            stmt = conn.createStatement();
+
+            rs = stmt.executeQuery("select current_version from ssg_version");
+            while (rs.next()) {
+                version = rs.getString("current_version");
+            }
+        } catch (SQLException e) {
+            logger.warning("Error while checking the version of the ssg in the database: " + ExceptionUtils.getMessage(e));
+        } finally {
+            ResourceUtils.closeQuietly(rs);
+            ResourceUtils.closeQuietly(stmt);
+        }
+        return version;        
+    }
+
     //checks the database version heuristically by looking for table names, columns etc. known to have been introduced
     //in particular versions. The checks are, for the most part, self contained and the code is designed to be extensible.
     private String checkDbVersion(Connection conn) throws SQLException {
         Map<String, Set<String>> tableData = collectMetaInfo(conn);
         //now we have a hashtable of tables and their columns
-        return getDbVersion(tableData);
+        return getDbVersion(tableData, conn);
     }
 
     private Set<String> getTableNames(Connection conn) throws SQLException {
