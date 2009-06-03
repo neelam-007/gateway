@@ -57,17 +57,25 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
         return model;
     }
 
+    private Collection<SsgConnector> loadAllConnectors() {
+        try {
+            final TransportAdmin transportAdmin = Registry.getDefault().getTransportAdmin();
+            return transportAdmin == null ? Collections.<SsgConnector>emptyList() : transportAdmin.findAllSsgConnectors();
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Unable to load connector list to check if interface is in use: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            return Collections.emptyList();
+        }
+    }
+    
     protected void initComponents() {
         Utilities.deuglifySplitPane(splitPane);
         Utilities.equalizeButtonSizes(createTagButton, deleteTagButton, addAddressButton, removeAddressButton);
 
-        try {
-            final TransportAdmin transportAdmin = Registry.getDefault().getTransportAdmin();
-            connectors = transportAdmin == null ? Collections.<SsgConnector>emptyList() : transportAdmin.findAllSsgConnectors();
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to load connector list to check if interface is in use: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            connectors = Collections.emptyList();
-        }
+        connectors = Functions.grep(loadAllConnectors(), new Functions.Unary<Boolean, SsgConnector>() {
+            public Boolean call(SsgConnector ssgConnector) {
+                return ssgConnector.isEnabled();
+            }
+        });
 
         final DefaultListCellRenderer cellRenderer = new DefaultListCellRenderer() {
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
