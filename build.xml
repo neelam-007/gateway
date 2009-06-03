@@ -1695,6 +1695,13 @@
             depends="package.skunkworks">
     </target>
 
+    <!--
+      Package Signer multiple signature utility (Always invoked by hand)
+    -->
+    <target name="package.signer"
+            depends="package.skunkworks">
+    </target>
+
     <target name="package.internal" depends="prepare.base">
         <ivy:buildlist reference="module-build-path-internal" onMissingDescriptor="skip" root="layer7-internal">
             <fileset dir="modules" includes="**/build.xml"/>

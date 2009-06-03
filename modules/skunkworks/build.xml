@@ -6,7 +6,7 @@
 
     <import file="../../etc/build/build-common.xml"/>
 
-    <target name="package.custom.post" depends="package.randomxmlgenerator, package.gclient, package.udditool"/>
+    <target name="package.custom.post" depends="package.randomxmlgenerator, package.gclient, package.udditool, package.signer"/>
 
     <!--
       Package the RandomXmlGenerator
@@ -110,6 +110,51 @@
             <attribute name="Main-Class" value="com.l7tech.skunkworks.uddi.UDDIPolicyTool"/>
             <attribute name="Class-Path" value="${module.classpath.text}"/>
         </manifest>
+        </jar>
+    </target>
+
+    <!--
+      Package Multiple Signature Utility
+    -->
+    <target name="package.signer">
+        <property name="package.classes.dir" value="${classes.main.dir}"/>
+        <property name="signer.classes" value="${build.dir}/signer/classes"/>
+        <mkdir dir="${signer.classes}"/>
+
+        <jar-include dir="${signer.classes}" name="layer7-policy"/>
+        <jar-include dir="${signer.classes}" name="layer7-common"/>
+        <jar-include dir="${signer.classes}" name="layer7-gateway-console"/>
+        <jar-include dir="${signer.classes}" name="layer7-gui"/>
+        <jar-include dir="${signer.classes}" name="layer7-utility"/>
+
+        <echo level="info">Creating Signer.jar</echo>
+        <jar jarfile="${build.dir}/Signer.jar">
+            <fileset dir="${signer.classes}"/>
+            <fileset dir="${package.classes.dir}">
+                <include name="com/l7tech/skunkworks/signer/**/*"/>
+            </fileset>
+            <manifest>
+                <attribute name="Implementation-Title" value="Signer Test Utility"/>
+                <attribute name="Implementation-Version" value="${build.version}"/>
+                <attribute name="Implementation-Vendor" value="${build.vendor}"/>
+                <attribute name="Implementation-Vendor-Id" value="${build.vendor.id}"/>
+                <attribute name="Built-By" value="${build.user}"/>
+                <attribute name="Build-Jdk" value="${java.version}"/>
+                <attribute name="Build-Timestamp" value="${build.timestamp}"/>
+                <attribute name="Main-Class" value="com.l7tech.skunkworks.signer.Signer"/>
+                <attribute name="Class-Path" value="${module.classpath.text}"/>
+            </manifest>
+        </jar>
+
+        <jar destfile="${jar.file}" manifest="${build.etc.dir}/MANIFEST.MF" index="${module.jar.index}">
+            <fileset dir="${package.classes.dir}"/>
+            <!-- Index element is ignored unless index is true for the jar task -->
+            <indexjars>
+                <path refid="module.classpath"/>
+            </indexjars>
+            <manifest>
+                <attribute name="Implementation-Title" value="${ivy.extra.title}"/>
+            </manifest>
         </jar>
     </target>
 </project>
