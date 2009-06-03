@@ -16,7 +16,7 @@ import com.l7tech.server.management.api.monitoring.BuiltinMonitorables;
 import com.l7tech.server.management.api.node.EventSubscription;
 import com.l7tech.server.management.api.node.NodeApi;
 import com.l7tech.server.transport.SsgConnectorManager;
-import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.audit.AuditRecordManager;
 
@@ -81,7 +81,7 @@ public class NodeApiImpl implements NodeApi {
             if ( !InetAddress.getByName(hsr.getRemoteAddr()).isLoopbackAddress()) {
                 throw new IllegalStateException("Request denied for non-local address.");
             }
-        } catch (TransportModule.ListenerException e) {
+        } catch (ListenerException e) {
             // TODO come up with a friendlier way to throw a SOAP fault here
             throw new IllegalStateException(e);
         } catch (UnknownHostException uhe) {

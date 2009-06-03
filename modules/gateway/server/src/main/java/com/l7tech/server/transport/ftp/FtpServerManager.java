@@ -9,8 +9,8 @@ import com.l7tech.server.*;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.cluster.ClusterPropertyCache;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
+import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.server.transport.TransportModule;
 import com.l7tech.server.util.EventChannel;
@@ -57,10 +57,9 @@ public class FtpServerManager extends TransportModule implements ApplicationList
                             final SsgKeyStoreManager ssgKeyStoreManager,
                             final DefaultKey defaultKeystore,
                             final SsgConnectorManager ssgConnectorManager,
-                            final ClusterPropertyManager clusterPropertyManager,
                             final EventChannel messageProcessingEventChannel,
                             final Timer timer) {
-        super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, clusterPropertyManager);
+        super("FTP Server Manager", logger, GatewayFeatureSets.SERVICE_FTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager);
 
         this.auditContext = auditContext;
         this.clusterPropertyCache = clusterPropertyCache;
@@ -204,7 +203,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
         }
 
         String address = connector.getProperty(SsgConnector.PROP_BIND_ADDRESS);
-        address = translateBindAddress(address, connector.getPort());
+        address = ssgConnectorManager.translateBindAddress(address, connector.getPort());
         if (address == null) address = "0.0.0.0";
 
         int portStart = toInt(connector.getProperty(SsgConnector.PROP_PORT_RANGE_START), "FTP port range start");
@@ -246,7 +245,7 @@ public class FtpServerManager extends TransportModule implements ApplicationList
      *
      * @param connector SsgConnector instance describing the control port, the passive port range, and the SSL settings (if any).  Required.
      * @return a new FtpServer instance.  Never null.
-     * @throws com.l7tech.server.transport.TransportModule.ListenerException if there is a problem creating the specified FTP server
+     * @throws com.l7tech.server.transport.ListenerException if there is a problem creating the specified FTP server
      */
     private FtpServer createFtpServer(SsgConnector connector) throws ListenerException {
         final CommandFactory ftpCommandFactory = new FtpCommandFactory();

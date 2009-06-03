@@ -21,7 +21,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.tomcat.ResponseKillerValve;
-import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.HttpClientFactory;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.web.context.WebApplicationContext;
@@ -189,7 +189,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
                         _logger.fine("Failed to authenticate request: " + e.getMessage());
                     }
                     return;
-                } catch (TransportModule.ListenerException e) {
+                } catch (ListenerException e) {
                     _logger.warning("Ping service is not enabled for this port; returning " + HttpServletResponse.SC_SERVICE_UNAVAILABLE + ".");
                     respondError(response, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Connector not enabled");
                     return;
@@ -278,7 +278,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
             return false;
         } catch ( LicenseException e) {
             return false;
-        } catch (TransportModule.ListenerException e) {
+        } catch (ListenerException e) {
             return false;
         }
         if (results.length <= 0) return false;

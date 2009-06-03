@@ -21,7 +21,7 @@ import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.system.CertificateSigningServiceEvent;
 import com.l7tech.server.identity.AuthenticationResult;
-import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.ListenerException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -91,7 +91,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
             response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Gateway CA service not enabled by license");
             return;
-        } catch (TransportModule.ListenerException e) {
+        } catch (ListenerException e) {
             logger.log(Level.WARNING, "Request not permitted on this port, returning 500", e);
             response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Gateway CA service not enabled on this port");
             return;

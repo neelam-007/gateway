@@ -248,12 +248,17 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
         });
     }
 
+    private boolean isSelectedInRange(JList list) {
+        int index = list.getMinSelectionIndex();
+        return !(index < 0 || index >= list.getModel().getSize());
+    }
+
     private InterfaceTag getSelectedTag() {
-        return (InterfaceTag)tagList.getSelectedValue();
+        return isSelectedInRange(tagList) ? (InterfaceTag)tagList.getSelectedValue() : null;
     }
 
     private String getSelectedAddress() {
-        return (String)patternList.getSelectedValue();
+        return isSelectedInRange(patternList) ? (String)patternList.getSelectedValue() : null;
     }
 
     private void populatePatternList(InterfaceTag tag) {

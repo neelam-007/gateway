@@ -38,7 +38,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.policy.filter.FilteringException;
-import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.gateway.common.service.PublishedService;
 import org.springframework.beans.BeansException;
@@ -288,7 +288,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
             returnError(res, "Gateway policy discovery service not enabled by license");
             return;
-        } catch (TransportModule.ListenerException e) {
+        } catch (ListenerException e) {
             logger.log(Level.WARNING, "Service is not permitted on this port, returning 500", e);
             returnError(res, "Gateway policy discovery service not enabled on this port");
             return;

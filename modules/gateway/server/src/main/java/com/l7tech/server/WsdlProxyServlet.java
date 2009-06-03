@@ -30,7 +30,7 @@ import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.policy.filter.IdentityRule;
 import com.l7tech.server.service.ServiceDocumentManager;
 import com.l7tech.server.service.resolution.*;
-import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.ListenerException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.SoapConstants;
@@ -176,7 +176,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             res.getOutputStream().print("Gateway WSDL proxy service not enabled by license");
             res.flushBuffer();
             return;
-        } catch (TransportModule.ListenerException e) {
+        } catch (ListenerException e) {
             logger.log(Level.WARNING, "Service not permitted on this port, returning 500", e);
             res.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             res.getOutputStream().print("Gateway WSDL proxy service not permitted on this port");

@@ -26,7 +26,7 @@ import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.tomcat.ResponseKillerValve;
-import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.DelegatingServletInputStream;
 import com.l7tech.server.util.EventChannel;
@@ -137,7 +137,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             logger.log(Level.WARNING, "Published service message input is not licensed '"+ExceptionUtils.getMessage(e)+"'.");
             hresponse.sendError(503);
             return;
-        } catch (TransportModule.ListenerException e) {
+        } catch (ListenerException e) {
             logger.log(Level.WARNING, "Published service message input is not enabled on this port, " + hrequest.getServerPort());
             hresponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             return;

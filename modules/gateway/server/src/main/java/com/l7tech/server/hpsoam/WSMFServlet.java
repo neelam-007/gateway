@@ -14,7 +14,7 @@ import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.ListenerException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -195,7 +195,7 @@ public class WSMFServlet extends AuthenticatableHttpServlet {
                 logger.warning("Request blocked: feature not licensed: " + e.toString());
                 returnError(res, "Unlicensed", HttpServletResponse.SC_FORBIDDEN);
                 return false;
-            } catch (TransportModule.ListenerException e) {
+            } catch (ListenerException e) {
                 logger.warning("Request blocked: request did not arrive over a connector configured for this purpose: " + e.toString());
                 returnError(res, "Connector not enabled", HttpServletResponse.SC_FORBIDDEN);
                 return false;

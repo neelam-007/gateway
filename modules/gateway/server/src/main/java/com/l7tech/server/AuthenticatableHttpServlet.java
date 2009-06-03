@@ -23,7 +23,7 @@ import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.service.ServiceManager;
-import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.ServletUtils;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -124,7 +124,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try {
             requireEndpoint(req);
-        } catch (TransportModule.ListenerException e) {
+        } catch (ListenerException e) {
             resp.sendError(404, "Service unavailable on this port");
             return;
         }
@@ -146,12 +146,12 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      *                                          SSL handshake.
      * @throws LicenseException   if the currently installed license does not enable use of the feature set
                                   whose name is returned by {@link #getFeature}
-     * @throws com.l7tech.server.transport.TransportModule.ListenerException if this request could not be
+     * @throws com.l7tech.server.transport.ListenerException if this request could not be
      *                            verified as having arrived over a connector that is configured to allow
      *                            access to the {@link SsgConnector.Endpoint} returned by {@link #getRequiredEndpoint}.
      */
     protected AuthenticationResult[] authenticateRequestBasic(HttpServletRequest req)
-            throws BadCredentialsException, MissingCredentialsException, IssuedCertNotPresentedException, LicenseException, TransportModule.ListenerException {
+            throws BadCredentialsException, MissingCredentialsException, IssuedCertNotPresentedException, LicenseException, ListenerException {
 
         licenseManager.requireFeature(getFeature());
 
@@ -330,12 +330,12 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      *                            if this user is known to have a client cert, and had the opportunity to present it
      *                            in an SSL handshake, but failed to do so
      * @throws LicenseException   if the currently installed license does not enable use of auxilary servlets.
-     * @throws com.l7tech.server.transport.TransportModule.ListenerException if this request could not be
+     * @throws com.l7tech.server.transport.ListenerException if this request could not be
      *                            verified as having arrived over a connector that is configured to allow
      *                            access to the {@link SsgConnector.Endpoint} returned by {@link #getRequiredEndpoint}.
      */
     protected AuthenticationResult[] authenticateRequestBasic(HttpServletRequest req, PublishedService service)
-            throws IOException, BadCredentialsException, MissingCredentialsException, IssuedCertNotPresentedException, LicenseException, TransportModule.ListenerException {
+            throws IOException, BadCredentialsException, MissingCredentialsException, IssuedCertNotPresentedException, LicenseException, ListenerException {
         licenseManager.requireFeature(getFeature());
         requireEndpoint(req);
 
@@ -385,7 +385,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             throw new MissingCredentialsException();
     }
 
-    private void requireEndpoint(HttpServletRequest req) throws TransportModule.ListenerException {
+    private void requireEndpoint(HttpServletRequest req) throws ListenerException {
         final SsgConnector.Endpoint endpoint = getRequiredEndpoint();
         if (endpoint != null)
             HttpTransportModule.requireEndpoint(req, endpoint);

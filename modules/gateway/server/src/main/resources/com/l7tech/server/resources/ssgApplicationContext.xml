@@ -106,6 +106,8 @@
 
                         <entry key="messageSummaryAuditFactory"><list><value>customerMapping.addToGatewayAuditEvents</value></list></entry>
 
+                        <entry key="ssgConnectorManager"><list><value>interfaceTags</value></list></entry>
+
                         <entry key="certValidationProcessor"><list><value>pkixTrust.useDefaultAnchors</value></list></entry>
                         <entry key="jmsBootProcess">
                             <list>
@@ -1108,7 +1110,6 @@
         <constructor-arg ref="ssgKeyStoreManager"/>
         <constructor-arg ref="defaultKey"/>
         <constructor-arg ref="ssgConnectorManager"/>
-        <constructor-arg ref="clusterPropertyManager"/>
         <constructor-arg ref="messageProcessingEventChannel"/>
         <constructor-arg ref="managedBackgroundTimer"/>
     </bean>
@@ -1156,7 +1157,6 @@
         <constructor-arg ref="ssgKeyStoreManager"/>
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="ssgConnectorManager"/>
-        <constructor-arg ref="clusterPropertyManager"/>
         <constructor-arg>
             <set>
                 <bean class="com.l7tech.server.util.ClusterNodeSsgConnectorActivationListener">

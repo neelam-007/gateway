@@ -18,7 +18,7 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.internal.InternalUserManager;
 import com.l7tech.server.security.PasswordEnforcerManager;
-import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.ListenerException;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
@@ -81,7 +81,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             logger.log(Level.WARNING, "Service is unlicensed, returning 500", e);
             sendBackError(res, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Gateway auxiliary service not enabled by license");
             return;
-        } catch (TransportModule.ListenerException e) {
+        } catch (ListenerException e) {
             logger.log(Level.WARNING, "Service is not enabled on this port, returning 500", e);
             sendBackError(res, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Gateway auxiliary service not enabled on this port");
             return;

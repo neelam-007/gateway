@@ -25,7 +25,7 @@ import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.event.system.BackupEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.security.rbac.RoleManager;
-import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.HttpClientFactory;
 import com.l7tech.util.ResourceUtils;
 import org.springframework.web.context.WebApplicationContext;
@@ -121,7 +121,7 @@ public class BackupServlet extends AuthenticatableHttpServlet {
             logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_NOT_LICENSED, e);
             respondError(response, HttpServletResponse.SC_FORBIDDEN, "Unlicensed");
             return;
-        } catch (TransportModule.ListenerException e) {
+        } catch (ListenerException e) {
             logAndAudit(getOriginalClientAddr(request), null, "Backup request blocked", ServiceMessages.BACKUP_BAD_CONNECTOR, e);
             respondError(response, HttpServletResponse.SC_FORBIDDEN, "Connector not enabled");
             return;
