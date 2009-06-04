@@ -189,8 +189,17 @@ echo "Defaults:gateway env_reset" >> /etc/sudoers
 echo "gateway ALL = NOPASSWD: /opt/SecureSpan/Appliance/libexec/" >> /etc/sudoers
 
 #disable these features of sudoers on our appliance since we use a lot of scripts that will fail without them
-perl -pi.bak -e 's/^(Defaults.*)(requiretty.*$)/$1\!$2/gs' /etc/sudoers
-perl -pi.bak -e 's/^(Defaults.*)(tty_tickets.*$)/$1\!$2/gs' /etc/sudoers
+if grep -q requiretty /etc/sudoers; then
+    perl -pi.bak -e 's/^(Defaults.*)((?<!\!)requiretty.*$)/$1\!$2/gs' /etc/sudoers
+else
+    echo "Defaults    !requiretty" >> /etc/sudoers
+fi
+
+if grep -q tty_tickets /etc/sudoers; then
+    perl -pi.bak -e 's/^(Defaults.*)((?<!\!)tty_tickets.*$)/$1\!$2/gs' /etc/sudoers
+else
+    echo "Defaults    !tty_tickets" >> /etc/sudoers
+fi
 
 if grep -q kernel.panic /etc/sysctl.conf; then
 	echo -n ""
