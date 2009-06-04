@@ -72,7 +72,8 @@ public class AllAssertions {
         new RequireWssSaml(),
         new RequireWssSaml2(),
         new PreemptiveCompression(),
-        new RemoteDomainIdentityInjection()
+        new RemoteDomainIdentityInjection(),
+        new RequireWssTimestamp(),
     };
 
     /**
