@@ -2,6 +2,7 @@ package com.l7tech.policy.wsp;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.lang.reflect.Type;
 
 /**
  * A TypeMappingFinder that delegates searches to one or more other TypeMappingFinder instances.
@@ -52,8 +53,7 @@ public class TypeMappingFinderWrapper implements TypeMappingFinder {
         return null;
     }
 
-    @Override
-    public TypeMapping getTypeMapping(Class unrecognizedType, String version) {
+    public TypeMapping getTypeMapping(Type unrecognizedType, String version) {
         if (delegate != null)
             return delegate.getTypeMapping(unrecognizedType, version);
 

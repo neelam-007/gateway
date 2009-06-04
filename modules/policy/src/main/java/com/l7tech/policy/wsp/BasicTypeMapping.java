@@ -55,8 +55,11 @@ public class BasicTypeMapping implements TypeMapping {
             throw new IllegalArgumentException("a non-null TypedReference must be provided");
         if (container == null)
             throw new IllegalArgumentException("a non-null container must be provided");
-        if (!object.type.equals(clazz))
-            throw new IllegalArgumentException("this TypeMapper is only for " + clazz + "; can't use with " + object.type);
+
+        Class typeClass =TypeMappingUtils.getClassForType(object.type);
+        if(!typeClass.equals(clazz) )
+            throw new IllegalArgumentException("this TypeMapper is only for " + clazz + "; can't use with " + typeClass);
+
         Element elm = object.name == null ? freezeAnonymous(wspWriter, object, container) : freezeNamed(wspWriter, object, container);
         container.appendChild(elm);
         return elm;

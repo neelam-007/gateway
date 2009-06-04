@@ -9,9 +9,7 @@ package com.l7tech.policy.wsp;
 import com.l7tech.util.SyspropUtil;
 import org.w3c.dom.Element;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -94,17 +92,18 @@ public class BeanTypeMapping extends ComplexTypeMapping {
             throws InvalidPolicyStreamException
     {
         Object[] parameter = new Object[] { value.target };
-        Class tryType = value.type;
+        Type tryType = value.type;
         String methodName = "set" + parm;
         log.finest("Trying to set property: " + target.getClass() + ".set" + parm + "(" +
                       (value.target == null ? "null" : value.target.getClass().getName()) + ")");
         try {
             Method setter = null;
             do {
+                Class clazz =TypeMappingUtils.getClassForType(tryType);
                 try {
-                    setter = target.getClass().getMethod(methodName, new Class[]{tryType});
+                    setter = target.getClass().getMethod(methodName, new Class[]{clazz});
                 } catch (NoSuchMethodException e) {
-                    tryType = tryType.getSuperclass();
+                    tryType = clazz.getSuperclass();
                     if (tryType == null) {
                         // out of superclasses; buck stops here
                         visitor.unknownProperty(targetSource, propertySource, target, parm, value, null);
@@ -162,16 +161,18 @@ public class BeanTypeMapping extends ComplexTypeMapping {
             if (getter == null)
                 throw new InvalidPolicyTreeException("Internal error"); // can't happen
 
-            Method setter = (Method)setters.get(parm + ":" + getter.getReturnType());
+            Method setter = setters.get(parm + ":" + getter.getGenericReturnType());
             if (setter == null) {
                 // if getter does not have corresponding setter, then it's not a bean property that should be serialized
                 // fla fix for bugzilla #2215
                 continue;
-                //throw new InvalidPolicyTreeException("WspWriter: Warning: class " + bean.getClass() + ": no setter found for parameter " + parm);
             }
-            Class returnType = getter.getReturnType();
-            if (!setter.getParameterTypes()[0].equals(returnType))
-                throw new InvalidPolicyTreeException("class has getter and setter for " + parm + " which disagree about its type");
+            Type returnType = getter.getGenericReturnType();
+            if (!setter.getGenericParameterTypes()[0].equals(returnType))
+                throw new InvalidPolicyTreeException("class has getter and setter for " + parm + " which disagree " +
+                        "about its type. Getter declares: " +returnType+" " +
+                        "Setter declares: "+setter.getGenericParameterTypes()[0]);
+
             TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(returnType, wspWriter);
             if (tm == null)
                 throw new InvalidPolicyTreeException("class " + bean.getClass() + " has property \"" + parm + "\" with unsupported type " + returnType);
@@ -204,7 +205,7 @@ public class BeanTypeMapping extends ComplexTypeMapping {
             else if (name.startsWith("get") && name.length() > 3)
                 getters.put(name.substring(3), method);
             else if (name.startsWith("set") && name.length() > 3)
-                setters.put(name.substring(3) + ":" + method.getParameterTypes()[0], method);
+                setters.put(name.substring(3) + ":" + method.getGenericParameterTypes()[0], method);
         }
     }
 }

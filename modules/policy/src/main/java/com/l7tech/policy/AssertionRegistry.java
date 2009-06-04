@@ -8,10 +8,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.MetadataFinder;
-import com.l7tech.policy.wsp.AssertionMapping;
-import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.policy.wsp.TypeMappingFinder;
-import com.l7tech.policy.wsp.WspConstants;
+import com.l7tech.policy.wsp.*;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.DisposableBean;
@@ -28,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.lang.reflect.Type;
 
 /**
  * An AssertionRegistry keeps track of a set of Assertion classes, each represented by a single prototype
@@ -65,7 +63,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
         onApplicationContextSet();
     }
 
-    protected void onApplicationContextSet() {        
+    protected void onApplicationContextSet() {
     }
 
     public ApplicationContext getApplicationContext() {
@@ -193,10 +191,11 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
         return null;
     }
 
-    public TypeMapping getTypeMapping(Class unrecognizedType, String version) {
-        if (Assertion.class.isAssignableFrom(unrecognizedType)) {
+    public TypeMapping getTypeMapping(Type unrecognizedType, String version) {
+        Class clazz = TypeMappingUtils.getClassForType(unrecognizedType);
+        if (Assertion.class.isAssignableFrom(clazz)) {
             try {
-                Assertion instance = (Assertion)unrecognizedType.newInstance();
+                Assertion instance = (Assertion)clazz.newInstance();
                 return (TypeMapping)instance.meta().get(WSP_TYPE_MAPPING_INSTANCE);
             } catch (InstantiationException e) {
                 throw new RuntimeException(e); // broken bean

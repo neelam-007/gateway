@@ -39,13 +39,13 @@ public class RequestSwAAssertion extends SwAAssertion {
     public static final int UNBOUND_ATTACHMENT_POLICY_PASS = 2;
 
     private int unboundAttachmentPolicy;
-    private Map<String,BindingInfo> bindings = new LinkedHashMap();     // map of binding name (String) to binding info (BindingInfo)
-    private Map<String,String> namespaceMap = new LinkedHashMap(); // map of prefix (String) to uri (String)
+    private Map<String, BindingInfo> bindings = new LinkedHashMap<String, BindingInfo>();     // map of binding name (String) to binding info (BindingInfo);
+    private Map<String, String> namespaceMap = new LinkedHashMap<String, String>(); // map of prefix (String) to uri (String);
 
     public RequestSwAAssertion() {
     }
 
-    public RequestSwAAssertion(final Map bindings) {
+    public RequestSwAAssertion(final Map<String,BindingInfo> bindings) {
         this.bindings = bindings;
     }
 

@@ -15,8 +15,12 @@ import org.w3c.dom.NodeList;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collection;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,21 +51,20 @@ public class TypeMappingUtils {
     /**
      * Find a TypeMapping capable of serializing the specified class.
      *
-     * @param clazz The class to look up
+     * @param type The class to look up
      * @param writer  WspWriter context we are operating in, for locating context-specific type mappings,
      *                or null to find only global or Assertion-specific type mappings.
      * @return The TypeMapping for this class, or null if not found.
      */
-    public static TypeMapping findTypeMappingByClass(Class clazz, WspWriter writer) {
+    public static TypeMapping findTypeMappingByClass(Type type, WspWriter writer) {
         final TypeMapping[] tms = WspConstants.typeMappings;
         final String targetVersion = writer!=null ? writer.getTargetVersion() : null;
-        for (TypeMapping typeMapping : tms) {
-            if (typeMapping.getMappedClass().equals(clazz) && versionMatch( targetVersion, typeMapping.getSinceVersion() ))
-                return typeMapping;
-        }
+        TypeMapping tm = findTypeMapping(type, Arrays.asList(tms), targetVersion);
+        if (tm != null) return tm;
 
         // Check for assertion
-        if (Assertion.class.isAssignableFrom(clazz)) {
+        if (type instanceof Class && Assertion.class.isAssignableFrom((Class)type)) {
+            Class clazz = (Class)type;
             try {
                 Assertion prototype = (Assertion)clazz.newInstance();
                 return (TypeMapping) prototype.meta().get(AssertionMetadata.WSP_TYPE_MAPPING_INSTANCE);
@@ -75,10 +78,71 @@ public class TypeMappingUtils {
         // Check for globals
         if (writer != null) {
             TypeMappingFinder tmf = writer.getTypeMappingFinder();
-            if (tmf != null)
-                return tmf.getTypeMapping(clazz, writer.getTargetVersion());
+            if (tmf != null){
+                return tmf.getTypeMapping(type, writer.getTargetVersion());
+            }
         }
 
+        return null;
+    }
+
+    /**
+     * Find the Class for the supplied Type
+     * @param type the Type we want Class information for. Type's implementation must be Class or an implementation of
+     * ParameterizedType
+     * @return The Class which represents this type, never null
+     */
+    public static Class getClassForType(Type type){
+        if(type == null) throw new NullPointerException("type cannot be null");
+        //Not assuming below that if the type is not a Class that it must be a ParameterizedType
+        if(!((type instanceof Class) || (type instanceof ParameterizedType)))
+            throw new IllegalArgumentException("Type Implementation must either be a Class " +
+                    "or an implementation of ParameterizedType");
+
+        return (type instanceof Class) ? (Class) type : (Class) ((ParameterizedType) type).getRawType();
+    }
+
+    /**
+     * Find the TypeMapping for a type in the supplied Collection
+     * @param type the Type we want to find a TypeMapping for. Cannot be null
+     * @param typeMappings the Collection of TypeMappings to search. Cannot be null
+     * @param version the target software version (may be null)
+     * @return TypeMapping which can map the param type, or null if no matching TypeMapping is found
+     */
+    static TypeMapping findTypeMapping(Type type, Collection<TypeMapping> typeMappings, String version){
+        if(type == null) throw new NullPointerException("type cannot be null");
+        if(typeMappings == null) throw new NullPointerException("typeMappings cannot be null");
+
+        for (TypeMapping typeMapping : typeMappings) {
+            if(type instanceof ParameterizedType && typeMapping instanceof ParameterizedMapping){
+                ParameterizedMapping parameterizedMapping = (ParameterizedMapping)typeMapping;
+                ParameterizedType parameterizedType = (ParameterizedType)type;
+
+                if(!typeMapping.getMappedClass().equals(parameterizedType.getRawType())) continue;
+
+                if (!versionMatch(version, typeMapping.getSinceVersion())) continue;
+
+                Type [] paramTypeTypes = parameterizedType.getActualTypeArguments();
+                Type [] paramMapTypes = parameterizedMapping.getMappedObjectsParameterizedClasses();
+
+                if(paramTypeTypes.length != paramMapTypes.length) continue;
+
+                //both arrays are the same length. Can interate over both with the index from one
+                boolean paramsTypesDontMatch = false;
+                for(int i = 0; i < paramTypeTypes.length; i++){
+                    if(!paramTypeTypes[i].equals(paramMapTypes[i])) paramsTypesDontMatch = true;
+                }
+                if(paramsTypesDontMatch) continue;
+
+                return typeMapping;
+
+            }else{
+                Class clazz = getClassForType(type);
+                if (typeMapping.getMappedClass().equals(clazz) && versionMatch(version, typeMapping.getSinceVersion())) {
+                    return typeMapping;
+                }
+            }
+        }
         return null;
     }
 
@@ -120,7 +184,7 @@ public class TypeMappingUtils {
             try {
                 version[i] = Integer.parseInt( versionStrings[i] );
             } catch ( NumberFormatException nfe ) {
-                // 0            
+                // 0
             }
         }
 

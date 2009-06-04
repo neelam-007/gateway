@@ -16,7 +16,7 @@ import java.util.List;
  * TypeMapping that knows how to serialize collections.  This superclass will always use the prototype class
  * when deserializing.
  */
-public class CollectionTypeMapping extends ComplexTypeMapping {
+public class CollectionTypeMapping extends ComplexTypeMapping implements ParameterizedMapping{
     private final Constructor implConstructor;
     private final Class valueType;
     private final Class implClass;
@@ -61,6 +61,10 @@ public class CollectionTypeMapping extends ComplexTypeMapping {
             throw new IllegalArgumentException("Class " + clazz + ": c'tor didn't make Collection"); // can't happen
     }
 
+    public Class [] getMappedObjectsParameterizedClasses() {
+        return new Class[]{valueType};
+    }
+    
     protected void populateElement(WspWriter wspWriter, Element newElement, TypedReference object) throws InvalidPolicyTreeException {
         Collection collection = (Collection)object.target;
         Object[] array = collection.toArray();
@@ -71,7 +75,7 @@ public class CollectionTypeMapping extends ComplexTypeMapping {
     }
 
     protected TypedReference createObject(Element element, String value, WspVisitor visitor) throws InvalidPolicyStreamException {
-        Collection objects = null;
+        Collection objects;
         try {
             objects = (Collection)implConstructor.newInstance(new Object[0]);
         } catch (Exception e) {

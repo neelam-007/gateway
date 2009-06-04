@@ -6,15 +6,17 @@
 
 package com.l7tech.policy.wsp;
 
+import java.lang.reflect.Type;
+
 /**
  * A reference that knows the nominal type of its target, even when it is null.
  */
 public class TypedReference {
-    public final Class type;
+    public final Type type;
     public final Object target;
     public final String name;
 
-    TypedReference(Class type, Object target, String name) {
+    TypedReference(Type type, Object target, String name) {
         this.type = type;
         this.target = target;
         this.name = name;

@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  * Maps an {@link EnumSet} to a String with comma-delimited enum names.
  * @author alex
  */
-public class Java5EnumSetTypeMapping<ET extends Enum<ET>> extends BasicTypeMapping {
+public class Java5EnumSetTypeMapping<ET extends Enum<ET>> extends BasicTypeMapping implements ParameterizedMapping{
     private static final Logger logger = Logger.getLogger(Java5EnumSetTypeMapping.class.getName());
 
     private final Class<ET> enumClass;
@@ -68,5 +68,9 @@ public class Java5EnumSetTypeMapping<ET extends Enum<ET>> extends BasicTypeMappi
             if (iterator.hasNext()) sb.append(",");
         }
         return sb.toString();
+    }
+
+    public Class [] getMappedObjectsParameterizedClasses() {
+        return new Class[]{enumClass};
     }
 }
