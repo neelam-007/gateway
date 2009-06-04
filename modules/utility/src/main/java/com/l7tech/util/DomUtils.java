@@ -13,7 +13,6 @@ import java.text.MessageFormat;
 /**
  * DomUtils collects helper methods for DOM manipulation.
  */
-@SuppressWarnings({"unchecked", "ForLoopReplaceableByForEach"})
 public class DomUtils {
     private static final Logger logger = Logger.getLogger(DomUtils.class.getName());
 
@@ -72,7 +71,7 @@ public class DomUtils {
     public static Map getAncestorNamespaces(Node n) {
         Node current = n;
         int dflt = 0;
-        Map namespaces = new HashMap();
+        Map<String,String> namespaces = new HashMap<String,String>();
         while (current != null) {
             if (current instanceof Element) {
                 Element el = (Element)current;
@@ -141,9 +140,9 @@ public class DomUtils {
             Node n = children.item(i);
             if ( n.getNodeType() == Node.ELEMENT_NODE &&
                  name.equals( n.getLocalName()) ) {
-                for ( int j = 0; j < nsuris.length; j++) {
-                    if (nsuris[j].equals(n.getNamespaceURI()))
-                        return (Element)n;
+                for (String nsuri : nsuris) {
+                    if (nsuri.equals(n.getNamespaceURI()))
+                        return (Element) n;
                 }
             }
         }
@@ -212,8 +211,8 @@ public class DomUtils {
      * same as findOnlyOneChildElementByName but allows for different namespaces
      */
     public static Element findOnlyOneChildElementByName(Element parent, String[] namespaces, String name) throws TooManyChildElementsException {
-        for (int i = 0; i < namespaces.length; i++) {
-            Element res = findOnlyOneChildElementByName(parent, namespaces[i], name);
+        for (String namespace : namespaces) {
+            Element res = findOnlyOneChildElementByName(parent, namespace, name);
             if (res != null) return res;
         }
         return null;
@@ -273,7 +272,7 @@ public class DomUtils {
      */
     public static List<Element> findChildElementsByName( Element parent, String nsuri, String name ) {
         if ( name == null ) throw new IllegalArgumentException( "name must be non-null!" );
-        List found = new ArrayList<Element>();
+        List<Element> found = new ArrayList<Element>();
 
         NodeList children = parent.getChildNodes();
         for ( int i = 0; i < children.getLength(); i++ ) {
@@ -281,7 +280,7 @@ public class DomUtils {
             if ((n.getNodeType() == Node.ELEMENT_NODE) &&
                 name.equals(n.getLocalName()) &&
                 (((nsuri == null) && (n.getNamespaceURI() == null)) || ((nsuri != null) && nsuri.equals(n.getNamespaceURI()))))
-                found.add( n );
+                found.add( (Element) n );
         }
 
         return found;
@@ -302,8 +301,7 @@ public class DomUtils {
         for ( int i = 0; i < children.getLength(); i++ ) {
             Node n = children.item(i);
             if ( n.getNodeType() == Node.ELEMENT_NODE && name.equals( n.getLocalName()) ) {
-                for (int j = 0; j < namespaces.length; j++) {
-                    String namespace = namespaces[j];
+                for ( String namespace : namespaces ) {
                     if (namespace.equals(n.getNamespaceURI()))
                         found.add((Element) n);
                 }
@@ -354,8 +352,8 @@ public class DomUtils {
      * @param document the document
      * @return the immutable list of processing instructions (org.w3c.dom.ProcessingInstruction)
      */
-    public static List findProcessingInstructions(Document document) {
-        List piList = Collections.EMPTY_LIST;
+    public static List<ProcessingInstruction> findProcessingInstructions(Document document) {
+        List<ProcessingInstruction> piList = Collections.emptyList();
 
         if(document!=null) {
             NodeList nodes = document.getChildNodes();
@@ -367,11 +365,11 @@ public class DomUtils {
                 }
             }
             if(piCount>0) {
-                List piNodes = new ArrayList(piCount);
+                List<ProcessingInstruction> piNodes = new ArrayList<ProcessingInstruction>(piCount);
                 for(int n=0; n<nodes.getLength(); n++) {
                     Node node = nodes.item(n);
                     if(node.getNodeType()==Node.PROCESSING_INSTRUCTION_NODE) {
-                        piNodes.add(node);
+                        piNodes.add((ProcessingInstruction)node);
                     }
                 }
                 piList = Collections.unmodifiableList(piNodes);
@@ -393,10 +391,9 @@ public class DomUtils {
      * @param name the name of the elements to find.  Must be non-null.
      */
     public static void removeChildElementsByName( Element parent, String nsuri, String name ) {
-        List found = findChildElementsByName( parent, nsuri, name );
-        for (Iterator i = found.iterator(); i.hasNext();) {
-            Node node = (Node)i.next();
-            parent.removeChild(node);
+        List<Element> found = findChildElementsByName( parent, nsuri, name );
+        for (Element element : found) {
+            parent.removeChild(element);
         }
     }
 
@@ -502,7 +499,7 @@ public class DomUtils {
      */
     public static String findUnusedNamespacePrefix(Node element, String desiredPrefix) {
         // Find all used prefixes
-        Set usedPrefixes = new HashSet();
+        Set<String> usedPrefixes = new HashSet<String>();
         while (element != null) {
             NamedNodeMap attrs = element.getAttributes();
             if (attrs != null) {
@@ -564,9 +561,8 @@ public class DomUtils {
         // check default ns
         String elementDefaultNamespaceURI = element.getNamespaceURI();
         if(elementDefaultNamespaceURI!=null) {
-            for (int i = 0; i < namespaceUris.length; i++) {
-                String namespaceUri = namespaceUris[i];
-                if(elementDefaultNamespaceURI.equals(namespaceUri)) {
+            for (String namespaceUri : namespaceUris) {
+                if (elementDefaultNamespaceURI.equals(namespaceUri)) {
                     foundNamespaceURI = namespaceUri;
                     break;
                 }
@@ -575,9 +571,8 @@ public class DomUtils {
 
         // check ns declarations
         if(foundNamespaceURI==null) {
-            for (int i = 0; i < namespaceUris.length; i++) {
-                String namespaceUri = namespaceUris[i];
-                if(findActivePrefixForNamespace(element, namespaceUri)!=null) {
+            for (String namespaceUri : namespaceUris) {
+                if (findActivePrefixForNamespace(element, namespaceUri) != null) {
                     foundNamespaceURI = namespaceUri;
                     break;
                 }
@@ -809,8 +804,8 @@ public class DomUtils {
         }
     }
 
-    public static Map findAllNamespaces(Element element) {
-        Map entries = new HashMap();
+    public static Map<String,String> findAllNamespaces(Element element) {
+        Map<String,String> entries = new HashMap<String,String>();
         NamedNodeMap foo = element.getAttributes();
         // Find xmlns:foo, xmlns=
         for (int j = 0; j < foo.getLength(); j++) {
@@ -858,11 +853,10 @@ public class DomUtils {
             }
         }
 
-        Map result = new HashMap();
+        Map<String,String> result = new HashMap<String,String>();
         int ns = 1;
-        for (Iterator i = entries.keySet().iterator(); i.hasNext();) {
-            String uri = (String)i.next();
-            String prefix = (String)entries.get(uri);
+        for (String uri : entries.keySet()) {
+            String prefix = entries.get(uri);
             if (prefix == null) prefix = "ns" + ns++;
             result.put(prefix, uri);
         }
@@ -881,14 +875,13 @@ public class DomUtils {
     public static boolean elementInNamespace(Element el, String[] possibleNamespaces) {
         boolean hasNamespace = false;
         String ns = el.getNamespaceURI();
-        for (int i = 0; i < possibleNamespaces.length; i++) {
-            if (ns==null) {
-                if(possibleNamespaces[i]==null) {
+        for (String possibleNamespace : possibleNamespaces) {
+            if (ns == null) {
+                if (possibleNamespace == null) {
                     hasNamespace = true;
                     break;
                 }
-            }
-            else if (ns.equals(possibleNamespaces[i])) {
+            } else if (ns.equals(possibleNamespace)) {
                 hasNamespace = true;
                 break;
             }
@@ -951,22 +944,21 @@ public class DomUtils {
             // attributes
             if (node.getNodeType() == Node.ELEMENT_NODE) {
                 NamedNodeMap nodeAttrs = node.getAttributes();
-                List attrsForRemoval = new ArrayList();
+                List<Attr> attrsForRemoval = new ArrayList<Attr>();
                 for (int n=0; n<nodeAttrs.getLength(); n++) {
                     Attr attribute = (Attr) nodeAttrs.item(n);
                     if (namespace.equals(attribute.getNamespaceURI())) {
                         attrsForRemoval.add(attribute);
                     }
                 }
-                for (Iterator iterator = attrsForRemoval.iterator(); iterator.hasNext();) {
-                    Attr attribute = (Attr) iterator.next();
-                    ((Element)node).removeAttributeNode(attribute);
+                for (Attr attribute : attrsForRemoval) {
+                    ((Element) node).removeAttributeNode(attribute);
                 }
             }
 
             // children
             NodeList nodes = node.getChildNodes();
-            List nodesForRemoval = new ArrayList();
+            List<Node> nodesForRemoval = new ArrayList<Node>();
             for (int n=0; n<nodes.getLength(); n++) {
                 Node child = nodes.item(n);
                 if (namespace.equals(child.getNamespaceURI())) {
@@ -976,9 +968,8 @@ public class DomUtils {
                     stripNamespace(child, namespace);
                 }
             }
-            for (Iterator iterator = nodesForRemoval.iterator(); iterator.hasNext();) {
-                Node nodeToRemove = (Node) iterator.next();
-                node.removeChild(nodeToRemove);                
+            for (Node nodeToRemove : nodesForRemoval) {
+                node.removeChild(nodeToRemove);
             }
         }
     }
@@ -994,11 +985,11 @@ public class DomUtils {
         // (need a set to track unique)
         // First, build map of all namespace URI -> unique prefix
 
-        Map lastPrefixToUri = new HashMap();
-        Map lastUriToPrefix = new HashMap();
-        Map uniquePrefixToUri = new HashMap();
-        Map uniqueUriToPrefix = new HashMap();
-        Map prefixOldToNew = new HashMap();
+        Map<String,String> lastPrefixToUri = new HashMap<String,String>();
+        Map<String,String> lastUriToPrefix = new HashMap<String,String>();
+        Map<String,String> uniquePrefixToUri = new HashMap<String,String>();
+        Map<String,String> uniqueUriToPrefix = new HashMap<String,String>();
+        Map<String,String> prefixOldToNew = new HashMap<String,String>();
         normalizeNamespacesRecursively(element,
                 lastUriToPrefix,
                 lastPrefixToUri,
@@ -1007,8 +998,8 @@ public class DomUtils {
                 prefixOldToNew);
 
         // Element tree has been translated -- now just add namespace decls back onto root element.
-        for (Iterator i = uniqueUriToPrefix.entrySet().iterator(); i.hasNext();) {
-            Map.Entry entry = (Map.Entry) i.next();
+        for (Object o : uniqueUriToPrefix.entrySet()) {
+            Map.Entry entry = (Map.Entry) o;
             String uri = (String) entry.getKey();
             String prefix = (String) entry.getValue();
             if (uri == null || prefix == null) throw new IllegalStateException();
@@ -1025,7 +1016,7 @@ public class DomUtils {
      * Add the specified element's namespace declarations to the specified map(prefix -> namespace).
      * The default namespace is represented with the prefix "" (empty string).
      */
-    private static void addToNamespaceMap(Element element, Map nsmap) {
+    private static void addToNamespaceMap(Element element, Map<String,String> nsmap) {
         NamedNodeMap attrs = element.getAttributes();
         int numAttr = attrs.getLength();
         for (int i = 0; i < numAttr; ++i) {
@@ -1043,15 +1034,15 @@ public class DomUtils {
      * @param uriToPrefix  a Map(namespace uri => last seen prefix).
      */
     private static void normalizeNamespacesRecursively(Element element,
-                                                       Map uriToPrefix,
-                                                       Map prefixToUri,
-                                                       Map uniqueUriToPrefix,
-                                                       Map uniquePrefixToUri,
-                                                       Map prefixOldToNew)
+                                                       Map<String,String> uriToPrefix,
+                                                       Map<String,String> prefixToUri,
+                                                       Map<String,String> uniqueUriToPrefix,
+                                                       Map<String,String> uniquePrefixToUri,
+                                                       Map<String,String> prefixOldToNew)
     {
-        uriToPrefix = new HashMap(uriToPrefix);
-        prefixToUri = new HashMap(prefixToUri);
-        prefixOldToNew = new HashMap(prefixOldToNew);
+        uriToPrefix = new HashMap<String,String>(uriToPrefix);
+        prefixToUri = new HashMap<String,String>(prefixToUri);
+        prefixOldToNew = new HashMap<String,String>(prefixOldToNew);
 
         // Update uriToPrefix and prefixToUri maps for the scope of the current element
         NamedNodeMap attrs = element.getAttributes();
@@ -1066,10 +1057,10 @@ public class DomUtils {
                 nsUri = nsUri.trim();
                 if ("xmlns".equals(attPrefix) && DomUtils.XMLNS_NS.equals(attNsUri)) {
                     String uniquePrefix = nsPrefix;
-                    String existingUri = (String) uniquePrefixToUri.get(nsPrefix);
+                    String existingUri = uniquePrefixToUri.get(nsPrefix);
                     if (existingUri != null && !(existingUri.equals(nsUri))) {
                         // Redefinition of namespace.  First see, if we already have some other prefix pointing at it
-                        uniquePrefix = (String) uniqueUriToPrefix.get(nsUri);
+                        uniquePrefix = uniqueUriToPrefix.get(nsUri);
                         if (uniquePrefix == null) {
                             int n = 0;
                             do {
@@ -1097,7 +1088,7 @@ public class DomUtils {
         // Translate this element's own prefix, if required
         String oldPrefix = element.getPrefix();
         if (oldPrefix != null) {
-            String newPrefix = (String) prefixOldToNew.get(oldPrefix);
+            String newPrefix = prefixOldToNew.get(oldPrefix);
             if (newPrefix != null) {
                 if (logger.isLoggable(Level.FINEST))
                     logger.finest("Changing element prefix from " + oldPrefix + "to " + newPrefix);
@@ -1112,7 +1103,7 @@ public class DomUtils {
         // - and recursing to child elements.
 
         // Collect list first, so we don't have a NodeList open as we modify it
-        Set kids = new LinkedHashSet();
+        Set<Node> kids = new LinkedHashSet<Node>();
         NamedNodeMap attrList = element.getAttributes();
         for (int i = 0; i < attrList.getLength(); ++i)
             kids.add(attrList.item(i));
@@ -1120,11 +1111,10 @@ public class DomUtils {
         for (int i = 0; i < kidNodeList.getLength(); ++i)
             kids.add(kidNodeList.item(i));
 
-        KIDLOOP: for (Iterator i = kids.iterator(); i.hasNext();) {
-            Node n = (Node) i.next();
+        KIDLOOP: for (Node n : kids) {
             switch (n.getNodeType()) {
                 case Node.ELEMENT_NODE:
-                    normalizeNamespacesRecursively((Element)n, uriToPrefix, prefixToUri, uniqueUriToPrefix, uniquePrefixToUri, prefixOldToNew);
+                    normalizeNamespacesRecursively((Element) n, uriToPrefix, prefixToUri, uniqueUriToPrefix, uniquePrefixToUri, prefixOldToNew);
                     continue KIDLOOP;
                 case Node.ATTRIBUTE_NODE:
                     // Check if it's an obsolete namespace decl
@@ -1145,7 +1135,7 @@ public class DomUtils {
                     }
 
                     // Translate prefix if necessary
-                    String newPrefix = (String) prefixOldToNew.get(attPrefix);
+                    String newPrefix = prefixOldToNew.get(attPrefix);
                     if (newPrefix != null) {
                         if (logger.isLoggable(Level.FINEST))
                             logger.finest("Changing attr prefix from " + oldPrefix + " to " + newPrefix);
@@ -1163,7 +1153,7 @@ public class DomUtils {
                         String pfx = textMatcher.group(1);
                         String postfix = textMatcher.group(2);
                         if (prefixToUri.get(pfx) != null) {
-                            newPrefix = (String) prefixOldToNew.get(pfx);
+                            newPrefix = prefixOldToNew.get(pfx);
                             if (newPrefix != null) {
                                 // Looks like a qname that needs translating.  Translate it.
                                 String newText = MATCH_QNAME.matcher(value).replaceFirst(newPrefix + ":" + postfix);
