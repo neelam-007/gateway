@@ -6,6 +6,7 @@ import com.l7tech.console.xmlviewer.ExchangerElement;
 import com.l7tech.console.xmlviewer.XmlTree;
 import com.l7tech.gui.util.GuiCertUtil;
 import com.l7tech.gui.util.GuiPasswordCallbackHandler;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.ExceptionUtils;
@@ -14,6 +15,7 @@ import com.l7tech.util.NamespaceContextImpl;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.message.Message;
 
 import javax.swing.*;
@@ -25,9 +27,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.event.KeyEvent;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.DataFlavor;
@@ -63,6 +62,7 @@ public class Signer extends JDialog {
     private JList signList;
     private JButton clearSigningListButton;
     private JCheckBox protectTokensCheckBox;
+    private JComboBox keyReferenceType;
 
     private Viewer viewer;
     private Set<String> elementsToSign = new LinkedHashSet<String>();
@@ -73,30 +73,18 @@ public class Signer extends JDialog {
         setTitle("WS-Security Signing Utility 0.2");
         setContentPane(contentPane);
         setModal(true);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        Utilities.setEscKeyStrokeDisposes(this);
+
+        keyReferenceType.setModel(new DefaultComboBoxModel( KeyInfoInclusionType.values() ));
+        keyReferenceType.setSelectedItem( KeyInfoInclusionType.CERT );
 
         buttonClose.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                onClose();
+                dispose();
             }
         });
-
-        // call onClose() when cross is clicked
-        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                onClose();
-            }
-        });
-
-        // call onClose() on ESCAPE
-        contentPane.registerKeyboardAction(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                onClose();
-            }
-        }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
         selectButton.addActionListener(new ActionListener(){
             @Override
@@ -220,10 +208,6 @@ public class Signer extends JDialog {
         }
     }
 
-    private void onClose() {
-        dispose();
-    }
-
     private void onClearSigningList() {
         elementsToSign.clear();
         signList.setModel( new DefaultListModel() );
@@ -252,7 +236,14 @@ public class Signer extends JDialog {
 
             onClearSigningList();
 
-            signDocument( document, signTimestampCheckBox.isSelected(), protectTokensCheckBox.isSelected(), elements, clientCertificate, clientPrivateKey );
+            signDocument(
+                    document,
+                    signTimestampCheckBox.isSelected(),
+                    protectTokensCheckBox.isSelected(),
+                    elements,
+                    clientCertificate,
+                    clientPrivateKey,
+                    (KeyInfoInclusionType) keyReferenceType.getSelectedObjects()[0] );
 
             viewer.setContent( XmlUtil.nodeToString(document) );
         } catch (Exception e) {
@@ -265,14 +256,12 @@ public class Signer extends JDialog {
                                final boolean protectTokens,
                                final Set<Element> elements,
                                final X509Certificate clientCertificate,
-                               final PrivateKey clientPrivateKey) throws Exception {
+                               final PrivateKey clientPrivateKey,
+                               final KeyInfoInclusionType keyInfoInclusionType ) throws Exception {
         DecorationRequirements decReq = new DecorationRequirements();
         decReq.setTimestampTimeoutMillis(3600000);
+        decReq.setKeyInfoInclusionType(keyInfoInclusionType);
         decReq.setIncludeTimestamp(signTimeStamp);
-//        if ( !signTimeStamp )
-//            decReq.setSignTimestamp(DecorationRequirements.SigningRequirement.FORBIDDEN);
-//        else
-//            decReq.setSignTimestamp(DecorationRequirements.SigningRequirement.REQUIRED);
         decReq.getElementsToSign().addAll(elements);
         decReq.setProtectTokens(protectTokens);
         decReq.setSenderMessageSigningCertificate(clientCertificate);
