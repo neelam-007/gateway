@@ -67,6 +67,7 @@ public class SoapConstants {
     public static final String L7_MESSAGEID_NAMESPACE = "http://www.layer7tech.com/ws/addr";
     public static final String L7_MESSAGEID_PREFIX = "L7a";
     public static final String L7_SERVICEID_ELEMENT = "ServiceId";
+    public static final String L7_CLIENTVERSION_ELEMENT = "ClientVersion";
     public static final String L7_POLICYVERSION_ELEMENT = "PolicyVersion";
     public static final String L7_SOAP_ACTOR = "secure_span";
     // This is a URI actor/role value, sent by default by version 4.6 SSBs and SSGs.  See Bug #5829

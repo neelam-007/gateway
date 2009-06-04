@@ -150,6 +150,7 @@ public class PolicyService extends ApplicationObjectSupport {
      * Handle a policy download request and return a policy XML document (as a DOM tree).
      *
      * @param policyId                 the ID of the policy to download.
+     * @param clientVersion            the client software version (may be null)
      * @param preAuthenticatedUser     the already-authenticated User that wishes to download this policy.
      * @param policyGetter             a PolicyGetter implementation that can be used to look up the policy.
      * @param isFullDoc                if true, we will not filter out any non-client-visible assertions from the policy
@@ -162,13 +163,15 @@ public class PolicyService extends ApplicationObjectSupport {
      * @throws java.io.IOException if an exception occurs while serializing policy XML
      * @throws org.xml.sax.SAXException if an exception occurs while parsing policy XML
      */
-    public Document respondToPolicyDownloadRequest(String policyId,
-                                                   User preAuthenticatedUser,
-                                                   PolicyGetter policyGetter,
-                                                   boolean isFullDoc)
+    public Document respondToPolicyDownloadRequest( final String policyId,
+                                                    final String clientVersion,
+                                                    final User preAuthenticatedUser,
+                                                    final PolicyGetter policyGetter,
+                                                    final boolean isFullDoc )
             throws FilteringException, IOException, SAXException, PolicyAssertionException {
         // prepare writer, get policy
         WspWriter wspWriter = new WspWriter();
+        wspWriter.setTargetVersion(clientVersion);
         final ServiceInfo gotPolicy = policyGetter.getPolicy(policyId);
         Assertion targetPolicy = gotPolicy != null ? gotPolicy.getPolicy() : null;
         if (targetPolicy == null) {
@@ -239,9 +242,11 @@ public class PolicyService extends ApplicationObjectSupport {
         }
 
         // Which policy is requested?
+        String clientVersion;
         String policyId;
         String relatesTo;
         try {
+            clientVersion = getRequestClientVersion(requestDoc);
             policyId = getRequestedPolicyId(requestDoc);
             relatesTo = SoapUtil.getL7aMessageId(requestDoc);
         } catch (InvalidDocumentFormatException e) {
@@ -249,7 +254,7 @@ public class PolicyService extends ApplicationObjectSupport {
             context.setPolicyResult(AssertionStatus.BAD_REQUEST);
             return;
         }
-        logger.finest("Policy requested is " + policyId);
+        logger.finest("Policy requested is " + policyId + " for client version " + clientVersion);
 
         // get target
         ServiceInfo si = policyGetter.getPolicy(policyId);
@@ -310,7 +315,7 @@ public class PolicyService extends ApplicationObjectSupport {
         if (canSkipMetaPolicyStep || status == AssertionStatus.NONE) {
             try {
                 User user = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
-                policyDoc = respondToPolicyDownloadRequest(policyId, user, policyGetter, false);
+                policyDoc = respondToPolicyDownloadRequest(policyId, clientVersion, user, policyGetter, false);
             } catch (FilteringException e) {
                 response.initialize(exceptionToFault(soapVersion, e));
                 logger.log(Level.WARNING, "problem preparing response: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -439,6 +444,23 @@ public class PolicyService extends ApplicationObjectSupport {
         } catch (IOException e) {
             throw new RuntimeException(e); 
         }
+    }
+
+    private String getRequestClientVersion(Document requestDoc) throws InvalidDocumentFormatException {
+        String clientVersion;
+
+        Element header = SoapUtil.getHeaderElement(requestDoc);
+        if (header == null) throw new MissingRequiredElementException("No SOAP Header was found in the request.");
+        Element cverEl = DomUtils.findOnlyOneChildElementByName(header, SoapConstants.L7_MESSAGEID_NAMESPACE, SoapConstants.L7_CLIENTVERSION_ELEMENT);
+        if (cverEl == null) {
+            clientVersion = "5.0"; // 5.0 or earlier does not pass a version
+        } else {
+            clientVersion = DomUtils.getTextValue(cverEl).trim();
+        }
+        if (clientVersion.length() < 1) throw new InvalidDocumentFormatException( SoapConstants.L7_CLIENTVERSION_ELEMENT +
+                                                           " element was empty.");
+
+        return clientVersion;
     }
 
     private String getRequestedPolicyId(Document requestDoc) throws InvalidDocumentFormatException {

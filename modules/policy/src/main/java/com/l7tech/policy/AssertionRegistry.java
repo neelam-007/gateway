@@ -193,7 +193,7 @@ public class AssertionRegistry implements AssertionFinder, TypeMappingFinder, Ap
         return null;
     }
 
-    public TypeMapping getTypeMapping(Class unrecognizedType) {
+    public TypeMapping getTypeMapping(Class unrecognizedType, String version) {
         if (Assertion.class.isAssignableFrom(unrecognizedType)) {
             try {
                 Assertion instance = (Assertion)unrecognizedType.newInstance();

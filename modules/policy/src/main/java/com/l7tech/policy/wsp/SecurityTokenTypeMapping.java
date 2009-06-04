@@ -18,14 +18,22 @@ import java.util.regex.Pattern;
  * elements into the appropriate SecurityTokenType instance.
  */
 class SecurityTokenTypeMapping implements TypeMapping {
+    @Override
     public Class getMappedClass() {
         return SecurityTokenType.class;
     }
 
+    @Override
+    public String getSinceVersion() {
+        return null;
+    }
+
+    @Override
     public String getExternalName() {
         return "TokenType";
     }
 
+    @Override
     public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
         if (object == null || object.target == null)
             throw new InvalidPolicyTreeException("Unable to freeze a null SecurityToken");
@@ -47,6 +55,7 @@ class SecurityTokenTypeMapping implements TypeMapping {
     private final Pattern PSAML = Pattern.compile("[:#]Assertion$|^SAML$");
     private final Pattern PKERB = Pattern.compile("[:#]GSS_Kerberosv5_AP_REQ$");
 
+    @Override
     public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         String uri = DomUtils.getTextValue(source).trim();
 
@@ -68,6 +77,7 @@ class SecurityTokenTypeMapping implements TypeMapping {
         throw new InvalidPolicyStreamException("wsse:SecurityToken has unsupported TokenType: " + uri);
     }
 
+    @Override
     public TypeMappingFinder getSubtypeFinder() {
         return null;
     }

@@ -16,6 +16,7 @@ import java.util.ArrayList;
  */
 public class WspWriter {
     private Document document = null;
+    private String targetVersion = null;
     private List<TypeMappingFinder> typeMappingFinders = new ArrayList<TypeMappingFinder>();
     private TypeMappingFinder metaTmf = new TypeMappingFinderWrapper(typeMappingFinders);
 
@@ -173,5 +174,13 @@ public class WspWriter {
 
     public TypeMappingFinder getTypeMappingFinder() {
         return metaTmf;
+    }
+
+    public String getTargetVersion() {
+        return targetVersion;
+    }
+
+    public void setTargetVersion(String targetVersion) {
+        this.targetVersion = targetVersion;
     }
 }

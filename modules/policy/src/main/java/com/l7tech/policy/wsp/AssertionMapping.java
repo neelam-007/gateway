@@ -18,7 +18,11 @@ public class AssertionMapping extends BeanTypeMapping {
     private final Assertion prototype;
 
     public AssertionMapping(Assertion a, String externalName) {
-        super(a.getClass(), externalName);
+        this( a, externalName, null );
+    }
+
+    public AssertionMapping(Assertion a, String externalName, String version) {
+        super(a.getClass(), externalName, version);
         prototype = newPrototype(a.getClass());
     }
 

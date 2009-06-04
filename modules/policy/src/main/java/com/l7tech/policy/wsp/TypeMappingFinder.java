@@ -16,7 +16,8 @@ public interface TypeMappingFinder {
      * Find a TypeMapping for the specified type encountered while freezing a property.
      *
      * @param unrecognizedType  the type to look up.  Required.
+     * @param version the target software version (may be null)
      * @return a TypeMapping that can serialize instances of this class, or null if it was not recognized.
      */
-    TypeMapping getTypeMapping(Class unrecognizedType);
+    TypeMapping getTypeMapping(Class unrecognizedType, String version);
 }

@@ -17,6 +17,7 @@ public class SimpleTypeMappingFinder implements TypeMappingFinder {
         this.mappings = mappings;
     }
 
+    @Override
     public TypeMapping getTypeMapping(String externalName) {
         for (TypeMapping tm : mappings) {
             if (tm.getExternalName().equals(externalName))
@@ -25,7 +26,8 @@ public class SimpleTypeMappingFinder implements TypeMappingFinder {
         return null;
     }
 
-    public TypeMapping getTypeMapping(Class unrecognizedType) {
+    @Override
+    public TypeMapping getTypeMapping(Class unrecognizedType, String version) {
         for (TypeMapping tm : mappings) {
             if (tm.getMappedClass().equals(unrecognizedType))
                 return tm;

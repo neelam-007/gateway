@@ -323,10 +323,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         try {
             switch (results.length) {
                 case 0:
-                    response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter(isFullDocAndInlined), isFullDoc);
+                    response = service.respondToPolicyDownloadRequest(str_oid, null, null, this.normalPolicyGetter(isFullDocAndInlined), isFullDoc);
                     break;
                 case 1:
-                    response = service.respondToPolicyDownloadRequest(str_oid, results[0].getUser(), this.normalPolicyGetter(isFullDocAndInlined), isFullDoc);
+                    response = service.respondToPolicyDownloadRequest(str_oid, null, results[0].getUser(), this.normalPolicyGetter(isFullDocAndInlined), isFullDoc);
                     break;
                 default:
                     // todo use the best response (?)

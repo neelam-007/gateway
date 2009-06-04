@@ -37,6 +37,7 @@ public class TypeMappingFinderWrapper implements TypeMappingFinder {
         this.delegates = Collections.emptyList();
     }
 
+    @Override
     public TypeMapping getTypeMapping(String externalName) {
         if (delegate != null)
             return delegate.getTypeMapping(externalName);
@@ -51,13 +52,14 @@ public class TypeMappingFinderWrapper implements TypeMappingFinder {
         return null;
     }
 
-    public TypeMapping getTypeMapping(Class unrecognizedType) {
+    @Override
+    public TypeMapping getTypeMapping(Class unrecognizedType, String version) {
         if (delegate != null)
-            return delegate.getTypeMapping(unrecognizedType);
+            return delegate.getTypeMapping(unrecognizedType, version);
 
         for (TypeMappingFinder tmf : delegates) {
             if (tmf == null) continue;
-            TypeMapping typeMapping = tmf.getTypeMapping(unrecognizedType);
+            TypeMapping typeMapping = tmf.getTypeMapping(unrecognizedType, version);
             if (typeMapping != null)
                 return typeMapping;
         }

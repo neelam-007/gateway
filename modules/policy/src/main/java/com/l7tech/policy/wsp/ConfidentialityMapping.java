@@ -22,7 +22,11 @@ class ConfidentialityMapping extends AssertionMapping {
     private final XpathExpressionMapping xpathMapper = new XpathExpressionMapping("MessageParts", SoapConstants.SECURITY_NAMESPACE, "wsse");
 
     ConfidentialityMapping(XmlSecurityAssertionBase a, String externalName) {
-        super(a, externalName);
+        this( a, externalName, null );
+    }
+
+    ConfidentialityMapping(XmlSecurityAssertionBase a, String externalName, String version) {
+        super(a, externalName, version);
         if (!(a instanceof RequireWssEncryptedElement))
             throw new IllegalArgumentException("Can only map RequireWssEncryptedElement");
     }

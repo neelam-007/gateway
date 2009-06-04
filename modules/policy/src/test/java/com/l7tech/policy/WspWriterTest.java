@@ -13,6 +13,14 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml2;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.policy.assertion.xmlsec.RequireWssSignedElement;
+import com.l7tech.policy.assertion.xmlsec.WssSignElement;
+import com.l7tech.policy.assertion.xmlsec.WssReplayProtection;
+import com.l7tech.policy.assertion.xmlsec.RequireWssTimestamp;
+import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
+import com.l7tech.policy.assertion.xmlsec.RequireWssEncryptedElement;
+import com.l7tech.policy.assertion.xmlsec.AddWssTimestamp;
+import com.l7tech.policy.assertion.xmlsec.AddWssSecurityToken;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.security.cert.TestCertificateGenerator;
@@ -214,22 +222,22 @@ public class WspWriterTest extends TestCase {
         final CustomAssertionHolder custom = new CustomAssertionHolder();
         custom.setCategory(Category.ACCESS_CONTROL);
         custom.setCustomAssertion(new TestCustomAssertion(22, "foo bar baz", new HashMap()));
-        Assertion policy = new ExactlyOneAssertion(Arrays.asList(new Assertion[]{
-            new AllAssertion(Arrays.asList(new Assertion[]{
+        Assertion policy = new ExactlyOneAssertion(Arrays.asList(
+            new AllAssertion(Arrays.asList(
                 new TrueAssertion(),
-                new OneOrMoreAssertion(Arrays.asList(AllAssertions.SERIALIZABLE_EVERYTHING)),
-            })),
-            new ExactlyOneAssertion(Arrays.asList(new Assertion[]{
+                new OneOrMoreAssertion(Arrays.asList(AllAssertions.SERIALIZABLE_EVERYTHING))
+            )),
+            new ExactlyOneAssertion(Arrays.asList(
                 new TrueAssertion(),
                 new FalseAssertion(),
                 new HttpRoutingAssertion("http://floomp.boomp.foomp/", "bob&joe", "james;bloo=foo&goo\"poo\"\\sss\\", "", -5),
                 rxa,
-                createSoapWithAttachmentsPolicy(),
-            })),
+                createSoapWithAttachmentsPolicy()
+            )),
             new TrueAssertion(),
             new FalseAssertion(),
             custom
-        }));
+        ));
         return policy;
     }
 
@@ -246,11 +254,11 @@ public class WspWriterTest extends TestCase {
 
     public void testUnknownAssertionPreservesOriginalElement() throws Exception {
         UnknownAssertion uk = new UnknownAssertion(null, "<FooAssertion/>");
-        AllAssertion aa = new AllAssertion(Arrays.asList(new Assertion[] {
+        AllAssertion aa = new AllAssertion(Arrays.asList(
             new TrueAssertion(),
             uk,
-            new FalseAssertion(),
-        }));
+            new FalseAssertion()
+        ));
         String got = WspWriter.getPolicyXml(aa);
         Document doc = XmlUtil.stringToDocument(got);
         assertTrue(doc.getDocumentElement().getFirstChild().getNextSibling().getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNodeName().equals("FooAssertion"));
@@ -259,11 +267,11 @@ public class WspWriterTest extends TestCase {
 
     public void testUnknownAssertionPreservesOriginalElementIgnoringSurroundingText() throws Exception {
         UnknownAssertion uk = new UnknownAssertion(null, "asdf\n\nasdfq  <FooBarBazAssertion/>qgrqegr");
-        AllAssertion aa = new AllAssertion(Arrays.asList(new Assertion[] {
+        AllAssertion aa = new AllAssertion(Arrays.asList(
             new TrueAssertion(),
             uk,
-            new FalseAssertion(),
-        }));
+            new FalseAssertion()
+        ));
         String got = WspWriter.getPolicyXml(aa);
         Document doc = XmlUtil.stringToDocument(got);
         assertTrue(doc.getDocumentElement().getFirstChild().getNextSibling().getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNodeName().equals("FooBarBazAssertion"));
@@ -272,11 +280,11 @@ public class WspWriterTest extends TestCase {
 
     public void testUnknownAssertionFallbackOnBadForm() throws Exception {
         UnknownAssertion uk = new UnknownAssertion(null, "foo>blah<>not<well<formed/>");
-        AllAssertion aa = new AllAssertion(Arrays.asList(new Assertion[] {
+        AllAssertion aa = new AllAssertion(Arrays.asList(
             new TrueAssertion(),
             uk,
-            new FalseAssertion(),
-        }));
+            new FalseAssertion()
+        ));
 
         String got = WspWriter.getPolicyXml(aa);
         log.info("Got result: " + got);
@@ -287,11 +295,11 @@ public class WspWriterTest extends TestCase {
 
     public void testUnknownAssertionFallbackOnMultipleElements() throws Exception {
         UnknownAssertion uk = new UnknownAssertion(null, "<foo/>blahblah<bar/>");
-        AllAssertion aa = new AllAssertion(Arrays.asList(new Assertion[] {
+        AllAssertion aa = new AllAssertion(Arrays.asList(
             new TrueAssertion(),
             uk,
-            new FalseAssertion(),
-        }));
+            new FalseAssertion()
+        ));
 
         String got = WspWriter.getPolicyXml(aa);
         Document doc = XmlUtil.stringToDocument(got);
@@ -301,11 +309,11 @@ public class WspWriterTest extends TestCase {
 
     public void testUnknownAssertionFallbackOnNoElement() throws Exception {
         UnknownAssertion uk = new UnknownAssertion(null, "asdf asdhfkajsl laskfh");
-        AllAssertion aa = new AllAssertion(Arrays.asList(new Assertion[] {
+        AllAssertion aa = new AllAssertion(Arrays.asList(
             new TrueAssertion(),
             uk,
-            new FalseAssertion(),
-        }));
+            new FalseAssertion()
+        ));
 
         String got = WspWriter.getPolicyXml(aa);
         Document doc = XmlUtil.stringToDocument(got);
@@ -346,9 +354,9 @@ public class WspWriterTest extends TestCase {
 
         Map bindings = new HashMap();
         bindings.put(bindingInfo.getBindingName(), bindingInfo);
-        Assertion policy = new AllAssertion(Arrays.asList(new Assertion[] {
-            new RequestSwAAssertion(bindings),
-        }));
+        Assertion policy = new AllAssertion(Arrays.asList(
+            new RequestSwAAssertion(bindings)
+        ));
         return policy;
     }
 
@@ -402,12 +410,12 @@ public class WspWriterTest extends TestCase {
         XslTransformation xsl2 = new XslTransformation();
         xsl2.setResourceInfo(new StaticResourceInfo("<static xsl/>"));
         HttpRoutingAssertion http = new HttpRoutingAssertion();
-        AllAssertion all = new AllAssertion(Arrays.asList(new Assertion[] {
+        AllAssertion all = new AllAssertion(Arrays.asList(
             sv,
             xsl2,
             xsl1,
-            http,
-        }));
+            http
+        ));
         System.out.println(WspWriter.getPolicyXml(all));
     }
 
@@ -416,6 +424,35 @@ public class WspWriterTest extends TestCase {
         tryIt(new XslTransformation(), makeSingleInfo());
         tryIt(new XslTransformation(), makeMessageInfo());
         tryIt(new XslTransformation(), null);
+    }
+
+    public void testWrite50Policy() throws Exception {
+        AllAssertion all = new AllAssertion(Arrays.asList(
+            new RequireWssSignedElement(),
+            new RequireWssEncryptedElement(),
+            new WssSignElement(),
+            new WssEncryptElement(),
+            new WssReplayProtection(),
+            new AddWssTimestamp(),
+            new RequireWssTimestamp(),
+            new AddWssSecurityToken()
+        ));
+
+        WspWriter writer = new WspWriter();
+        writer.setTargetVersion("5.0");
+        writer.setPolicy(all);
+        String value = writer.getPolicyXmlAsString();
+        System.out.println("Got policy xml (for 5.0)\n" + value);
+        System.out.println("Got policy xml\n" + WspWriter.getPolicyXml(all));
+
+        assertFalse( "5.0 format request signature", value.contains(":RequireWssSignedElement") );
+        assertFalse( "5.0 format request encryption", value.contains(":RequireWssEncryptedElement") );
+        assertFalse( "5.0 format response signature", value.contains(":WssSignElement") );
+        assertFalse( "5.0 format response encryption", value.contains(":WssEncryptElement") );
+        assertFalse( "5.0 format request wss replay protection", value.contains(":WssReplayProtection") );
+        assertFalse( "5.0 format response wss timestamp", value.contains(":AddWssTimestamp") );
+        assertFalse( "5.0 format request wss timestamp", value.contains(":RequireWssTimestamp") );
+        assertFalse( "5.0 format wss security token", value.contains(":RequireWssSecurityToken") );
     }
 
     private void tryIt(XslTransformation xsl, AssertionResourceInfo rinfo) {

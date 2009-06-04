@@ -23,7 +23,11 @@ public class BeanTypeMapping extends ComplexTypeMapping {
     static boolean checkForNonPublicAccessors = SyspropUtil.getBoolean("com.l7tech.policy.wsp.checkAccessors");
 
     public BeanTypeMapping(Class clazz, String externalName) {
-        super(clazz, externalName);
+        this(clazz, externalName, null);
+    }
+
+    public BeanTypeMapping(Class clazz, String externalName, String version) {
+        super(clazz, externalName, version);
         if (checkForNonPublicAccessors) doCheckForNonPublicAccessors();
     }
 

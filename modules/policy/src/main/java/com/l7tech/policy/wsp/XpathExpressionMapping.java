@@ -34,6 +34,10 @@ class XpathExpressionMapping implements TypeMapping {
         return XpathExpression.class;
     }
 
+    public String getSinceVersion() {
+        return null;
+    }
+
     public String getExternalName() {
         return elementName;
     }

@@ -65,10 +65,16 @@ class CompositeAssertionMapping implements TypeMapping {
         cass.setChildren(convertedKids);
     }
 
+    @Override
     public Class getMappedClass() { return clazz; }
 
+    @Override
+    public String getSinceVersion() { return null; }
+
+    @Override
     public String getExternalName() { return externalName; }
 
+    @Override
     public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
         Element element;
         element = DomUtils.createAndAppendElementNS(container, externalName, WspConstants.WSP_POLICY_NS, "wsp");
@@ -81,6 +87,7 @@ class CompositeAssertionMapping implements TypeMapping {
         return element;
     }
 
+    @Override
     public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         CompositeAssertion cass = makeAssertion(externalName);
         cass.setEnabled(getDisableAttribute(source));
@@ -101,6 +108,7 @@ class CompositeAssertionMapping implements TypeMapping {
         return Boolean.parseBoolean(attribute_enabled);
     }
 
+    @Override
     public TypeMappingFinder getSubtypeFinder() {
         return (TypeMappingFinder)prototype.meta().get(AssertionMetadata.WSP_SUBTYPE_FINDER);
     }

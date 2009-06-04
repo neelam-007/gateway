@@ -21,6 +21,13 @@ public interface TypeMapping {
     Class getMappedClass();
 
     /**
+     * Get the first version of the software in which this mapping was available.
+     *
+     * @return The version, or null for none.
+     */
+    String getSinceVersion();
+
+    /**
      * Get the name that is used for this type inside serialized XML documents.
      *
      * @return  the name for this type, ie "All".  Never null.

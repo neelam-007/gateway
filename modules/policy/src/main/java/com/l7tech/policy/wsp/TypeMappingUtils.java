@@ -54,8 +54,9 @@ public class TypeMappingUtils {
      */
     public static TypeMapping findTypeMappingByClass(Class clazz, WspWriter writer) {
         final TypeMapping[] tms = WspConstants.typeMappings;
+        final String targetVersion = writer!=null ? writer.getTargetVersion() : null;
         for (TypeMapping typeMapping : tms) {
-            if (typeMapping.getMappedClass().equals(clazz))
+            if (typeMapping.getMappedClass().equals(clazz) && versionMatch( targetVersion, typeMapping.getSinceVersion() ))
                 return typeMapping;
         }
 
@@ -75,10 +76,55 @@ public class TypeMappingUtils {
         if (writer != null) {
             TypeMappingFinder tmf = writer.getTypeMappingFinder();
             if (tmf != null)
-                return tmf.getTypeMapping(clazz);
+                return tmf.getTypeMapping(clazz, writer.getTargetVersion());
         }
 
         return null;
+    }
+
+    /**
+     * Check if the given target version is greater than or equal to the since version.
+     *
+     * Version numbers are expected to be in the form "4.3" or "5.1.0", any extra version
+     * digits are ignored, so "1.2.3.4" is the same as "1.2.3" as far as this test is concerned.
+     */
+    static boolean versionMatch( final String targetVersion, final String sinceVersion ) {
+        boolean match = false;
+
+        if ( targetVersion == null || sinceVersion == null ) {
+            match = true;
+        } else if ( targetVersion.equals(sinceVersion) ) {
+            match = true;
+        } else {
+            int[] targetVersionValues = parseVersion( targetVersion );
+            int[] sinceVersionValues = parseVersion( sinceVersion );
+
+            if ( (targetVersionValues[0] > sinceVersionValues[0]) ||
+                 (targetVersionValues[0] == sinceVersionValues[0] && targetVersionValues[1] > sinceVersionValues[1]) ||
+                 (targetVersionValues[0] == sinceVersionValues[0] && targetVersionValues[1] == sinceVersionValues[1] && targetVersionValues[2] >= sinceVersionValues[2]) ) {
+                match = true;
+            }
+        }
+
+        return match;
+    }
+
+    /**
+     * Parse a version number in to a int array of length 3 ("5.1.0").
+     */
+    private static int[] parseVersion( final String versionString ) {
+        int[] version = new int[3];
+
+        String[] versionStrings = versionString.split("\\.");
+        for ( int i=0; i<versionStrings.length && i<version.length; i++ ) {
+            try {
+                version[i] = Integer.parseInt( versionStrings[i] );
+            } catch ( NumberFormatException nfe ) {
+                // 0            
+            }
+        }
+
+        return version;
     }
 
     /**

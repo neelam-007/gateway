@@ -25,6 +25,7 @@ import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.MissingRequiredElementException;
+import com.l7tech.util.BuildInfo;
 import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.common.protocol.SecureSpanConstants;
@@ -133,14 +134,17 @@ public class PolicyServiceClient {
         Document msg;
         try {
             msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
-                                           "<soap:Header>" +
-                                           "<L7a:" + SoapUtil.L7_SERVICEID_ELEMENT + " " +
-                                           "xmlns:L7a=\"" + SoapUtil.L7_MESSAGEID_NAMESPACE + "\"/>" +
+                                           "<soap:Header xmlns:L7a=\"" + SoapUtil.L7_MESSAGEID_NAMESPACE + "\">" +
+                                           "<L7a:" + SoapUtil.L7_CLIENTVERSION_ELEMENT + "/>" +
+                                           "<L7a:" + SoapUtil.L7_SERVICEID_ELEMENT + "/>" +
                                            "</soap:Header>" +
                                            "<soap:Body>" +
                                            "<wsx:GetPolicy xmlns:wsx=\"" + SoapUtil.WSX_NAMESPACE + "\"/>" +
                                            "</soap:Body></soap:Envelope>");
             Element header = SoapUtil.getHeaderElement(msg);
+            Element cver = DomUtils.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE,
+                                                                SoapUtil.L7_CLIENTVERSION_ELEMENT);
+            cver.appendChild(DomUtils.createTextNode(msg, BuildInfo.getFormalProductVersion()));
             Element sid = DomUtils.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE,
                                                                 SoapUtil.L7_SERVICEID_ELEMENT);
             sid.appendChild(DomUtils.createTextNode(msg, serviceId));
@@ -171,6 +175,7 @@ public class PolicyServiceClient {
      *                                     a boolean representing true iff. the the timestamp returned in outTimestampCreated
      *                                     was signed.  Not meaningful unless outTimestampCreate was passed.
      * @return the Policy retrieved from the policy service
+     * @throws ServerCertificateUntrustedException if the server certificate is not trusted
      * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
      * @throws BadCredentialsException if the policy service denies access to this policy to your credentials
      */
@@ -182,8 +187,7 @@ public class PolicyServiceClient {
                                                 boolean signedResponseRequired,
                                                 Date[] outTimestampCreated,
                                                 boolean[] outTimestampCreatedWasSigned)
-            throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException,
-                   ServerCertificateUntrustedException, BadCredentialsException
+            throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException, BadCredentialsException
     {
         {
             // check for fault message from server
@@ -208,10 +212,9 @@ public class PolicyServiceClient {
 
         XmlSecurityToken[] tokens = result.getXmlSecurityTokens();
         X509Certificate signingCert = null;
-        for (int i = 0; i < tokens.length; i++) {
-            XmlSecurityToken token = tokens[i];
+        for (XmlSecurityToken token : tokens) {
             if (token instanceof X509SecurityToken) {
-                X509SecurityToken x509Token = (X509SecurityToken)token;
+                X509SecurityToken x509Token = (X509SecurityToken) token;
                 if (x509Token.isPossessionProved()) {
                     if (signingCert != null)
                         throw new InvalidDocumentFormatException("Policy server response contained multiple proved X509 security tokens.");
@@ -289,7 +292,7 @@ public class PolicyServiceClient {
         if (payload == null) throw new MissingRequiredElementException("Policy server response is missing wsx:GetPolicyResponse");
         Element policy = DomUtils.findOnlyOneChildElementByName(payload, WspConstants.POLICY_NAMESPACES, "Policy");
         if (policy == null) throw new MissingRequiredElementException("Policy server response is missing Policy element");
-        Assertion assertion = null;
+        Assertion assertion;
         try {
             assertion = WspReader.getDefault().parsePermissively(policy);
         } catch (InvalidPolicyStreamException e) {
@@ -368,7 +371,7 @@ public class PolicyServiceClient {
             final long millisAfter = System.currentTimeMillis();
             final long roundTripMillis = millisAfter - millisBefore;
             log.log(Level.FINER, "Policy download took " + roundTripMillis + "ms");
-            Policy result = null;
+            Policy result;
             Date ssgTime = null; // Trusted timestamp from the SSG
 
             String certStatus = conn.getHeaders().getOnlyOneValue(SecureSpanConstants.HttpHeaders.CERT_STATUS);

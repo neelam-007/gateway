@@ -201,11 +201,11 @@ public class WspConstants {
                 super.populateObject(object, source, new WspUpgradeUtilFrom21.RequestXpathAssertionPropertyVisitor(visitor));
             }
         },
-        new IntegrityMapping(new RequireWssSignedElement(), "RequireWssSignedElement"), // from 5.1
-        new IntegrityMapping(new RequireWssSignedElement(), "Integrity"), // freeze RequestWssIntegrity as wsse:Integrity or pre32 form; thaw wsse:Integrity form
-        new IntegrityMapping(new RequireWssSignedElement(), "RequestWssIntegrity"), // thaw pre32 form
-        new ConfidentialityMapping(new RequireWssEncryptedElement(), "RequireWssEncryptedElement"), // from 5.1
-        new ConfidentialityMapping(new RequireWssEncryptedElement(), "RequestWssConfidentiality"), // 3.7+ and pre32 form.
+        new IntegrityMapping(new RequireWssSignedElement(), "RequireWssSignedElement", false, "5.1.0"),
+        new IntegrityMapping(new RequireWssSignedElement(), "Integrity", true, "3.2.0"), // freeze RequestWssIntegrity as wsse:Integrity or pre32 form; thaw wsse:Integrity form
+        new IntegrityMapping(new RequireWssSignedElement(), "RequestWssIntegrity", false, null), // thaw pre32 form
+        new ConfidentialityMapping(new RequireWssEncryptedElement(), "RequireWssEncryptedElement", "5.1.0"),
+        new ConfidentialityMapping(new RequireWssEncryptedElement(), "RequestWssConfidentiality", "3.2.0"), // 3.7+ and pre32 form.
         new ConfidentialityMapping(new RequireWssEncryptedElement(), "Confidentiality"), // thaw wsse:Confidentiality (3.2 - 3.6.5)
 
         // Encrypted username token will use our proprietary vocabulary since it has special semantics
@@ -228,12 +228,12 @@ public class WspConstants {
         new AssertionMapping(new TrueAssertion(), "TrueAssertion"),
         new AssertionMapping(new MemberOfGroup(), "MemberOfGroup"),
         new AssertionMapping(new SpecificUser(), "SpecificUser"),
-        new AssertionMapping(new WssSignElement(), "WssSignElement"), // from 5.1
+        new AssertionMapping(new WssSignElement(), "WssSignElement", "5.1.0"),
         new AssertionMapping(new WssSignElement(), "ResponseWssIntegrity"),
-        new AssertionMapping(new WssEncryptElement(), "WssEncryptElement"), // from 5.1
+        new AssertionMapping(new WssEncryptElement(), "WssEncryptElement", "5.1.0"),
         new AssertionMapping(new WssEncryptElement(), "ResponseWssConfidentiality"),
         new AssertionMapping(new RequestSwAAssertion(), "RequestSwAAssertion"),
-        new AssertionMapping(new WssReplayProtection(), "WssReplayProtection"), // from 5.1
+        new AssertionMapping(new WssReplayProtection(), "WssReplayProtection", "5.1.0"),
         new AssertionMapping(new WssReplayProtection(), "RequestWssReplayProtection"),
         new AssertionMapping(new ResponseXpathAssertion(), "ResponseXpathAssertion"),
         new AssertionMapping(new SchemaValidation(), "SchemaValidation") {
@@ -277,11 +277,11 @@ public class WspConstants {
         new AssertionMapping(new CommentAssertion(), "CommentAssertion"),
         new AssertionMapping(new Operation(), "WSDLOperation"),
         new AssertionMapping(new SqlAttackAssertion(), "SqlAttackProtection"),
-        new AssertionMapping(new AddWssTimestamp(), "AddWssTimestamp"), // from 5.1
+        new AssertionMapping(new AddWssTimestamp(), "AddWssTimestamp", "5.1.0"),
         new AssertionMapping(new AddWssTimestamp(), "ResponseWssTimestamp"),
-        new AssertionMapping(new RequireWssTimestamp(), "RequireWssTimestamp"), // from 5.1
+        new AssertionMapping(new RequireWssTimestamp(), "RequireWssTimestamp", "5.1.0"),
         new AssertionMapping(new RequireWssTimestamp(), "RequestWssTimestamp"),
-        new AssertionMapping(new AddWssSecurityToken(), "RequireWssSecurityToken"), // from 5.1
+        new AssertionMapping(new AddWssSecurityToken(), "RequireWssSecurityToken", "5.1.0"),
         new AssertionMapping(new AddWssSecurityToken(), "ResponseWssSecurityToken"),
         new AssertionMapping(new RequestWssKerberos(), "Kerberos"),
         new AssertionMapping(new WsiBspAssertion(), "WsiBspAssertion"),

@@ -19,11 +19,44 @@ import org.w3c.dom.Element;
  */
 class IntegrityMapping extends AssertionMapping {
     private final XpathExpressionMapping xpathMapper = new XpathExpressionMapping("MessageParts", SoapConstants.SECURITY_NAMESPACE, "wsse");
+    private final XmlSecurityAssertionBase templateAssertion;
+    private final boolean freeze;
 
-    IntegrityMapping(XmlSecurityAssertionBase a, String externalName) {
-        super(a, externalName);
+    IntegrityMapping(XmlSecurityAssertionBase a, String externalName, boolean freeze, String version) {
+        super(a, externalName, version);
+        this.templateAssertion = a;
+        this.freeze = freeze;
         if (!(a instanceof RequireWssSignedElement))
             throw new IllegalArgumentException("Can only map RequireWssSignedElement");
+    }
+
+    @Override
+    public Element freeze(WspWriter wspWriter, TypedReference object, Element container) {
+        if (!freeze || object.target == null)
+            return super.freeze(wspWriter, object, container);
+
+        if (!(object.target instanceof RequireWssSignedElement))
+            throw new InvalidPolicyTreeException("IntegrityMapping is unable to freeze object of type " + object.target.getClass());
+
+        RequireWssSignedElement ass = (RequireWssSignedElement)object.target;
+        Element integrity = DomUtils.createAndAppendElementNS(container, "Integrity", SoapConstants.SECURITY_NAMESPACE, "wsse");
+
+        if (ass.getRecipientContext() != null && !ass.getRecipientContext().equals(templateAssertion.getRecipientContext())) {
+            TypeMapping rctm = new BeanTypeMapping(XmlSecurityRecipientContext.class, "xmlSecurityRecipientContext");
+            rctm.freeze(wspWriter, new TypedReference(XmlSecurityRecipientContext.class, ass.getRecipientContext(), "xmlSecurityRecipientContext"), integrity);
+        }
+
+        TypedReference xpathTr = new TypedReference(XpathExpression.class, ass.getXpathExpression());
+        xpathMapper.freeze(wspWriter, xpathTr, integrity);
+        WspUtil.setWspUsageRequired(integrity, "wsp", SoapConstants.WSP_NAMESPACE);
+
+        boolean enabled = ass.isEnabled();
+        if (!enabled) {
+            TypeMapping booleanTm = new BasicTypeMapping(boolean.class, "booleanValue");
+            booleanTm.freeze(wspWriter, new TypedReference(boolean.class, enabled, "Enabled"), integrity);
+        }
+
+        return integrity;
     }
 
     @Override

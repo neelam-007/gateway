@@ -35,6 +35,10 @@ public class WspUpgradeUtilFrom21 {
             return Object.class;
         }
 
+        public String getSinceVersion() {
+            return null;
+        }
+
         public String getExternalName() {
             return externalName;
         }

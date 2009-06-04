@@ -18,14 +18,20 @@ import java.lang.reflect.Constructor;
 public class BasicTypeMapping implements TypeMapping {
     protected final String externalName;
     protected final Class clazz;
+    protected final String sinceVersion;
     protected final boolean isNullable;
     protected final Constructor stringConstructor;  // constructor-from-string, if this type has one
     protected final String nsPrefix;
     protected final String nsUri;
 
     public BasicTypeMapping(Class clazz, String externalName) {
+        this( clazz, externalName, null );
+    }
+
+    public BasicTypeMapping(Class clazz, String externalName, String version) {
         this.clazz = clazz;
         this.externalName = externalName;
+        this.sinceVersion = version;
         this.isNullable = TypeMappingUtils.isNullableType(clazz);
         this.nsUri = WspConstants.L7_POLICY_NS;
         this.nsPrefix = "L7p:";
@@ -39,6 +45,8 @@ public class BasicTypeMapping implements TypeMapping {
     }
 
     public Class getMappedClass() { return clazz; }
+
+    public String getSinceVersion() { return sinceVersion; }
 
     public String getExternalName() { return externalName; }
 

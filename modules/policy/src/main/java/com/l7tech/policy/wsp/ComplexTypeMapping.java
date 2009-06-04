@@ -17,7 +17,23 @@ public class ComplexTypeMapping extends BasicTypeMapping {
     protected final Constructor constructor; // default, no-arguments constructor for this type
 
     public ComplexTypeMapping(Class clazz, String externalName) {
-        super(clazz, externalName);
+        this(clazz, externalName, getConstructor(clazz), null);
+    }
+
+    public ComplexTypeMapping(Class clazz, String externalName, String version ) {
+        this(clazz, externalName, getConstructor(clazz), version);
+    }
+
+    public ComplexTypeMapping(Class clazz, String externalName, Constructor constructor) {
+        this(clazz, externalName, constructor, null);
+    }
+
+    public ComplexTypeMapping(Class clazz, String externalName, Constructor constructor, String version) {
+        super(clazz, externalName, version);
+        this.constructor = constructor;
+    }
+
+    private static Constructor getConstructor( final Class clazz ) {
         Constructor ctor;
         try {
             // Try to find the default constructor
@@ -25,12 +41,7 @@ public class ComplexTypeMapping extends BasicTypeMapping {
         } catch (Exception e) {
             ctor = null;
         }
-        constructor = ctor;
-    }
-
-    public ComplexTypeMapping(Class clazz, String externalName, Constructor constructor) {
-        super(clazz, externalName);
-        this.constructor = constructor;
+        return ctor;
     }
 
     protected Element freezeAnonymous(WspWriter wspWriter, TypedReference object, Element container) {
