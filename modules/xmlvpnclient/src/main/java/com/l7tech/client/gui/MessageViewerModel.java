@@ -145,7 +145,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
         void processMessageTruncation(String message) {
             int messageSize = 0;
             try {                              
-                 messageSize = message.getBytes("UTF-8").length * 2;
+                messageSize = message == null ? 0 : message.getBytes("UTF-8").length * 2;
                 if (messageSize  > getTruncateSize()) {
                     setMessageTruncated(true);
                     log.info("Message was truncated");
