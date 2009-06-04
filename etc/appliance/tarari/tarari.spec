@@ -67,6 +67,7 @@ if [ -e "/etc/init.d/tarari" ]; then
 fi
 
 %preun
+/sbin/chkconfig --del tarari
 
 %changelog
 * Thu Oct 5 2006 MJE
