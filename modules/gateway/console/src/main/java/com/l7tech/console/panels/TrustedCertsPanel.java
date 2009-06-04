@@ -31,8 +31,7 @@ import java.util.logging.Logger;
 /**
  * Component for selection of Trusted Certificates.
  *
- * <p>Can be reused in JDialogs for managing a list of selected trusted
- * certificates.</p>
+ * <p>Can be reused for managing a list of selected trusted certificates.</p>
  *
  * <p>This can be used with a listener to veto add/remove events and for
  * notification of any errors..</p>
@@ -173,6 +172,7 @@ public class TrustedCertsPanel extends JPanel {
          * @param trustedCert The trusted certificate
          * @return True
          */
+        @Override
         public boolean addTrustedCert(final TrustedCert trustedCert) {
             return true;
         }
@@ -183,6 +183,7 @@ public class TrustedCertsPanel extends JPanel {
          * @param trustedCert The trusted certificate
          * @return True
          */
+        @Override
         public boolean removeTrustedCert(final TrustedCert trustedCert) {
             return true;
         }
@@ -190,6 +191,7 @@ public class TrustedCertsPanel extends JPanel {
         /**
          * This implementation displays an error message.
          */
+        @Override
         public void notifyError() {
             JOptionPane.showMessageDialog( component,
                         resources.getString(RES_ERROR_LOAD_TEXT),
@@ -200,6 +202,7 @@ public class TrustedCertsPanel extends JPanel {
         /**
          * This implementation displays a warning message.
          */
+        @Override
         public void notifyMaximum() {
             JOptionPane.showMessageDialog( component,
                         resources.getString(RES_ERROR_MAX_TEXT),
@@ -254,24 +257,28 @@ public class TrustedCertsPanel extends JPanel {
         this.add( mainPanel, BorderLayout.CENTER );
 
         addCertButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed( ActionEvent event) {
                 onAdd();
             }
         });
 
         removeCertButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 onRemove();
             }
         });
 
         propertiesCertButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 onProperties();
             }
         });
 
         createCertButton.setAction(new NewTrustedCertificateAction(new CertListener(){
+            @Override
             public void certSelected( CertEvent ce) {
                 addTrustedCert(ce.getCert());
                 enableOrDisableControls();
@@ -282,6 +289,7 @@ public class TrustedCertsPanel extends JPanel {
         trustedCertsTable.getTableHeader().setReorderingAllowed(false);
         trustedCertsTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         trustedCertsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+            @Override
             public void valueChanged( ListSelectionEvent e) {
                 enableOrDisableControls();
             }
@@ -306,6 +314,7 @@ public class TrustedCertsPanel extends JPanel {
         final List<TrustedCert> certs = new ArrayList<TrustedCert>();
         CertSearchPanel sp = new CertSearchPanel( getWindowParent() );
         sp.addCertListener(new CertListener(){
+            @Override
             public void certSelected(CertEvent ce) {
                 certs.add(ce.getCert());
             }
@@ -313,6 +322,7 @@ public class TrustedCertsPanel extends JPanel {
         sp.pack();
         Utilities.centerOnScreen(sp);
         DialogDisplayer.display(sp, new Runnable() {
+            @Override
             public void run() {
                 int totalSize = certificates.size() + certs.size();
                 if (maximumItems > 0 && totalSize > maximumItems) {
@@ -377,17 +387,9 @@ public class TrustedCertsPanel extends JPanel {
      * Is the given trustedCert one of the given certificateInfos
      */
     private boolean isTrusted( final CertificateInfo[] certificateInfos, final TrustedCert trustedCert ) {
-        boolean trusted = false;
-
-        for ( CertificateInfo info : certificateInfos ) {
-            if ( info != null && info.getSubjectDn().equals( trustedCert.getSubjectDn() )) {
-                trusted = true;
-                break;
-            }
-        }
-
-        return trusted;
-    }   
+        CertificateInfo newInfo = new CertificateInfo( trustedCert.getCertificate() );
+        return ArrayUtils.contains( certificateInfos, newInfo );
+    }
 
     /**
      * Get CertificateInfos from a list of trusted certs
@@ -422,6 +424,7 @@ public class TrustedCertsPanel extends JPanel {
     @SuppressWarnings( { "unchecked" } )
     private void sortTrustedCerts() {
         Comparator comparator = new ResolvingComparator(new Resolver<TrustedCert, String>(){
+            @Override
             public String resolve(TrustedCert key) {
                 String name = key.getName();
                 if (name == null)
@@ -465,7 +468,9 @@ public class TrustedCertsPanel extends JPanel {
                             Collection<TrustedCert> certsWithDn = tca.findCertsBySubjectDn( info.getSubjectDn() );
                             if (certsWithDn != null) {
                                 for (TrustedCert cert : certsWithDn) {
-                                    certs.add(cert);
+                                    if ( ArrayUtils.contains( certificateInfos, new CertificateInfo(cert.getCertificate()) ) ) {
+                                        certs.add(cert);
+                                    }
                                 }
                             }
                         }
@@ -569,10 +574,12 @@ public class TrustedCertsPanel extends JPanel {
             this.trustedCertificates = trustedCertificates;
         }
 
+        @Override
         public int getColumnCount() {
             return 3;
         }
 
+        @Override
         public int getRowCount() {
             return trustedCertificates.size();
         }
@@ -582,6 +589,7 @@ public class TrustedCertsPanel extends JPanel {
             return columnNames[column];
         }
 
+        @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
             TrustedCert trustedCert = trustedCertificates.get(rowIndex);
             Object value = null;

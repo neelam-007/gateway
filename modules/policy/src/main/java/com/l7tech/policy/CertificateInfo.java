@@ -45,6 +45,30 @@ public class CertificateInfo {
         this.subjectDn = subjectDn;
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        CertificateInfo that = (CertificateInfo) o;
+
+        if (issuerDn != null ? !issuerDn.equals(that.issuerDn) : that.issuerDn != null) return false;
+        if (serialNumber != null ? !serialNumber.equals(that.serialNumber) : that.serialNumber != null) return false;
+        if (subjectDn != null ? !subjectDn.equals(that.subjectDn) : that.subjectDn != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result;
+        result = (issuerDn != null ? issuerDn.hashCode() : 0);
+        result = 31 * result + (serialNumber != null ? serialNumber.hashCode() : 0);
+        result = 31 * result + (subjectDn != null ? subjectDn.hashCode() : 0);
+        return result;
+    }
+
     //- PRIVATE
 
     private String issuerDn;
