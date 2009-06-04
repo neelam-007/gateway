@@ -112,6 +112,14 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
     }
 
     /**
+     * Check if the option "Invasive SQL Injection Attack Protection" is enabled in this assertion.
+     * @return true if the option is enabled.
+     */
+    public boolean isSqlMetaEnabled() {
+        return (protections != null) && (! protections.isEmpty()) && protections.contains(PROT_META);
+    }
+
+    /**
      * Get the human-readable label, as for a checkbox, for the specified protection name.
      *
      * @param protection  the protection name whose label to look up.

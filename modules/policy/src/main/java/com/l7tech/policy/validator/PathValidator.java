@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
@@ -299,7 +300,75 @@ class PathValidator {
             if (sqlAttackAssertion.getProtections().isEmpty()) {
                 result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion, assertionPath, "No SQL protections have been specified", null));
             }
+            // Check if any WSS Token Assertions violate the option "Invasive SQL Injection Attack Protection" or not.
+            else if (sqlAttackAssertion.isSqlMetaEnabled()) {
+                boolean foundError = false;
+                boolean foundWarning = false;
+
+                for (Assertion assertion: assertionPath.getPath()) {
+                    // Check if there exists an enabled WSS Token Assertion.
+                    if (assertion.isEnabled() && isWssTokenAssertion(assertion)) {
+                        // Check if both assertions are in all possible paths in the policy.
+                        if (isInAnyPaths(assertion) && isInAnyPaths(sqlAttackAssertion)) {
+                            foundError = true;
+                            break;
+                        } else {
+                            foundWarning = true;
+                        }
+                    }
+                }
+
+                if (foundError) {
+                    result.addError(new PolicyValidatorResult.Error(sqlAttackAssertion, new AssertionPath(sqlAttackAssertion.getPath()),
+                        "WS-Security message decoration violates the option \"Invasive SQL Injection Attack Protection\" so that consuming this policy will fail.", null));
+                } else if (foundWarning) {
+                    result.addWarning(new PolicyValidatorResult.Warning(sqlAttackAssertion, assertionPath,
+                        "WS-Security message decoration would violate the option \"Invasive SQL Injection Attack Protection\".", null));
+                }
+            }
         }
+    }
+
+    /**
+     * Check if the assertion is one of WSS Token assertions which violate the option "Invasive SQL Injection Attack Protection" in SQL Attack Protection assertion.
+     *
+     * @param assertion: the assertion to check
+     * @return true if the assertion is such WSS Token assertion.
+     */
+    private boolean isWssTokenAssertion(Assertion assertion) {
+        return (assertion instanceof RequireWssX509Cert) || (assertion instanceof WssBasic) || (assertion instanceof RequireWssSaml);
+    }
+
+    /**
+     * Check if the assertion is in any possible paths in the policy.
+     *
+     * @param assertion: the assertion to check
+     * @return true if the assertion is in any paths.
+     */
+    private boolean isInAnyPaths(Assertion assertion) {
+        Assertion[] path = assertion.getPath();
+
+        if (path.length <= 2) { // this means the assertion is in the first level path in the policy.
+            return true;
+        } else {
+            for (int i = path.length - 2; i >= 0; i--) {
+                CompositeAssertion parent = (CompositeAssertion)path[i];
+                // We won't check a parent assertion as AllAssertion, because surely the assertion has only a path if it is in an AllAssertion.
+                if ((parent != null) && (parent instanceof OneOrMoreAssertion) && (parent.getChildren().size() > 1)) {
+                    // Filter out all disabled assertions.
+                    int numOfEnabledAssertion = 0;
+                    for (Object child: parent.getChildren()) {
+                        if (((Assertion)child).isEnabled()) numOfEnabledAssertion++;
+                    }
+                    // Check if there exist multiple branches in the parent assertion.
+                    if (numOfEnabledAssertion > 1) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
     private void processHtmlFormDataAssertion(HtmlFormDataAssertion htmlFormDataAssertion) {
