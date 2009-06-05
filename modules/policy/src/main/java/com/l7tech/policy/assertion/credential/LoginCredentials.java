@@ -5,7 +5,6 @@
  */
 package com.l7tech.policy.assertion.credential;
 
-import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.common.io.CertUtils;
@@ -30,7 +29,7 @@ import java.util.Map;
  *
  * @author alex
  */
-public class LoginCredentials implements SecurityToken {
+public class LoginCredentials {
 
     /**
      * Build LoginCredentials for the given certificate and source
@@ -281,7 +280,6 @@ public class LoginCredentials implements SecurityToken {
         return null;
     }
 
-    @Override
     public SecurityTokenType getType() {
         // Use given type if available
         SecurityTokenType securityTokenType = type;

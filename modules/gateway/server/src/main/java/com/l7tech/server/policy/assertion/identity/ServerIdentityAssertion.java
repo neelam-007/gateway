@@ -100,8 +100,35 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
             return AssertionStatus.AUTH_FAILED;
         }
 
+        // Check if already authenticated
+        if ( assertion.getIdentityTag() == null ) {
+            //TODO [steve] should we match tagged authentication results?
+            for ( AuthenticationResult authResult : authContext.getAllAuthenticationResults() ) {
+                if ( authResult.getUser().getProviderId() == assertion.getIdentityProviderOid() ) {
+                    lastStatus = checkUser(authResult);
+                    if (lastStatus.equals(AssertionStatus.NONE)) {
+                        // successful output point
+                        return lastStatus;
+                    }
+                }
+            }
+        } else {
+            AuthenticationResult authResult = authContext.getAuthenticationResultForTag( assertion.getIdentityTag() );
+            if ( authResult != null && authResult.getUser().getProviderId() == assertion.getIdentityProviderOid() ) {
+                lastStatus = checkUser(authResult);
+                if (lastStatus.equals(AssertionStatus.NONE)) {
+                    // successful output point
+                    return lastStatus;
+                }
+            }
+        }
+
+        // Try available credentials
         for (LoginCredentials pc : pCredentials) {
             try {
+                if ( authContext.isLoginCredentialConsumed(pc) ) {
+                    continue; // don't attempt to authenticate twice with the same credential
+                }
                 lastStatus = validateCredentials(provider, pc, context, authContext);
                 if (lastStatus.equals(AssertionStatus.NONE)) {
                     // successful output point
@@ -159,7 +186,7 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
         if (name == null) name = user.getId();
 
         // Authentication success
-        authContext.addAuthenticationResult(authResult);
+        authContext.addAuthenticationResult(authResult, pc, assertion.getIdentityTag());
         auditor.logAndAudit(AssertionMessages.IDENTITY_AUTHENTICATED, name);
 
         // Make sure this guy matches our criteria

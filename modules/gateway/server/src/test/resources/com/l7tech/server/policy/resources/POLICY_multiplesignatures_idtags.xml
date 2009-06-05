@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Policy that tests multiple signatures using ID tags and multiple "Authenticate" assertions.
+
+  This policy uses an XPath assertion to pick the credential that we want to use as the first
+  token when authenticating. This allow the the right "role" to be assigned to the desired id
+  tag when there is no other way to separate the users (such as their group memberships)
+-->
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:CommentAssertion>
+            <L7p:Comment stringValue="Pick the signature we want for the first user"/>
+        </L7p:CommentAssertion>
+        <wsp:MessagePredicate
+            Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
+            L7p:variablePrefix="endorsingsignature"
+            wsp:Usage="wsp:Required"
+            xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+            xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
+            xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+            xmlns:s12="http://www.w3.org/2003/05/soap-envelope"
+            xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+            xmlns:tns="http://warehouse.acme.com/ws"
+            xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
+            xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">/soapenv:Envelope/soapenv:Header/wsse:Security/ds:Signature[contains(concat('#',string(/soapenv:Envelope/soapenv:Header/wsse:Security/ds:Signature/@Id)),ds:SignedInfo/ds:Reference[1]/@URI)]</wsp:MessagePredicate>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wsse:TokenType>
+            <L7p:Properties>
+                <L7p:AllowMultipleSignatures booleanValue="true"/>
+                <L7p:SignatureElementVariable stringValue="endorsingsignature.elements"/>
+            </L7p:Properties>
+        </wsse:SecurityToken>
+        <L7p:Authentication>
+            <L7p:IdentityProviderOid longValue="9898"/>
+            <L7p:IdentityTag stringValue="id2"/>
+        </L7p:Authentication>
+        <L7p:CommentAssertion>
+            <L7p:Comment stringValue="Grab any remaining X.509 tokens"/>
+        </L7p:CommentAssertion>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wsse:TokenType>
+            <L7p:Properties>
+                <L7p:AllowMultipleSignatures booleanValue="true"/>
+            </L7p:Properties>
+        </wsse:SecurityToken>
+        <L7p:Authentication>
+            <L7p:IdentityProviderOid longValue="9898"/>
+            <L7p:IdentityTag stringValue="id1"/>
+        </L7p:Authentication>
+        <L7p:RequireWssSignedElement>
+            <L7p:IdentityTarget IdentityTarget="included">
+                <L7p:IdentityId stringValue="id1"/>
+                <L7p:TargetIdentityType identityType="TAG"/>
+            </L7p:IdentityTarget>
+            <L7p:VariablePrefix stringValue="signature"/>
+        </L7p:RequireWssSignedElement>
+        <L7p:RequireWssSignedElement>
+            <L7p:IdentityTarget IdentityTarget="included">
+                <L7p:IdentityId stringValue="id2"/>
+                <L7p:TargetIdentityType identityType="TAG"/>
+            </L7p:IdentityTarget>
+            <L7p:XpathExpression xpathExpressionValue="included">
+                <L7p:Expression stringValue="$signature.element"/>
+            </L7p:XpathExpression>
+        </L7p:RequireWssSignedElement>
+        <L7p:HttpRoutingAssertion>
+            <L7p:ProtectedServiceUrl stringValue="http://hugh/ACMEWarehouseWS/Service1.asmx"/>
+            <L7p:RequestHeaderRules httpPassthroughRuleSet="included">
+                <L7p:Rules httpPassthroughRules="included">
+                    <L7p:item httpPassthroughRule="included">
+                        <L7p:Name stringValue="Cookie"/>
+                    </L7p:item>
+                    <L7p:item httpPassthroughRule="included">
+                        <L7p:Name stringValue="SOAPAction"/>
+                    </L7p:item>
+                </L7p:Rules>
+            </L7p:RequestHeaderRules>
+            <L7p:RequestParamRules httpPassthroughRuleSet="included">
+                <L7p:ForwardAll booleanValue="true"/>
+                <L7p:Rules httpPassthroughRules="included"/>
+            </L7p:RequestParamRules>
+            <L7p:ResponseHeaderRules httpPassthroughRuleSet="included">
+                <L7p:Rules httpPassthroughRules="included">
+                    <L7p:item httpPassthroughRule="included">
+                        <L7p:Name stringValue="Set-Cookie"/>
+                    </L7p:item>
+                </L7p:Rules>
+            </L7p:ResponseHeaderRules>
+            <L7p:SamlAssertionVersion intValue="2"/>
+        </L7p:HttpRoutingAssertion>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wsse:TokenType>
+            <L7p:Properties>
+                <L7p:AllowMultipleSignatures booleanValue="true"/>
+                <L7p:Target target="RESPONSE"/>
+            </L7p:Properties>
+        </wsse:SecurityToken>
+        <L7p:Authentication>
+            <L7p:IdentityProviderOid longValue="9898"/>
+            <L7p:Target target="RESPONSE"/>
+        </L7p:Authentication>
+        <L7p:RequireWssSignedElement>
+            <L7p:IdentityTarget IdentityTarget="included">
+                <L7p:IdentityId stringValue="4718592"/>
+                <L7p:IdentityInfo stringValue="Alice"/>
+                <L7p:IdentityProviderOid longValue="9898"/>
+                <L7p:TargetIdentityType identityType="USER"/>
+            </L7p:IdentityTarget>
+            <L7p:Target target="RESPONSE"/>
+            <L7p:VariablePrefix stringValue="responseSig"/>
+        </L7p:RequireWssSignedElement>
+    </wsp:All>
+</wsp:Policy>

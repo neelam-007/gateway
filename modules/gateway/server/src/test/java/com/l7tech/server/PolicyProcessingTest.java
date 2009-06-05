@@ -112,6 +112,7 @@ public class PolicyProcessingTest extends TestCase {
         {"/x509token", "POLICY_wss_x509credssignedbody.xml"},
         {"/multiplesignatures", "POLICY_multiplesignatures.xml"},
         {"/multiplesignaturesnoid", "POLICY_multiplesignature_noidentity.xml"},
+        {"/multiplesignaturestags", "POLICY_multiplesignatures_idtags.xml"},
         {"/wssDecoration1", "POLICY_requestdecoration1.xml"},
         {"/wssDecoration2", "POLICY_requestdecoration2.xml"},
         {"/threatprotections", "POLICY_threatprotections.xml"}
@@ -519,6 +520,18 @@ public class PolicyProcessingTest extends TestCase {
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
         processMessage("/multiplesignatures", new String(loadResource("REQUEST_multiplesignatures2.xml")), 600);
+    }
+
+    /**
+     * Test multiple request/response signatures with identity tags
+     */
+    public void testMultipleSignaturesWithIdTags() throws Exception {
+        byte[] responseMessage1 = loadResource("REQUEST_multiplesignatures.xml");
+
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        processMessage("/multiplesignaturestags", new String(loadResource("REQUEST_multiplesignatures.xml")), 0);
     }
 
     /**

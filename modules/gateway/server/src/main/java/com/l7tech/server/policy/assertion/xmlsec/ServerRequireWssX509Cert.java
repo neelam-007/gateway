@@ -6,8 +6,10 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.token.X509SigningSecurityToken;
 import com.l7tech.security.token.XmlSecurityToken;
+import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.server.audit.Auditor;
@@ -16,6 +18,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.message.Message;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -96,11 +99,26 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
             return result;
         }
 
+        Element[] requiredSignatureElements = null;
+        if ( assertion.getSignatureElementVariable() != null ) {
+            requiredSignatureElements = new Element[0]; // fail if we don't match anything
+            try {
+                Object variable = context.getVariable( assertion.getSignatureElementVariable() );
+                if ( variable instanceof Element ) {
+                    requiredSignatureElements = new Element[]{ (Element) variable };
+                } else if ( variable instanceof Element[] ) {
+                    requiredSignatureElements = (Element[]) variable;                        
+                }
+            } catch (NoSuchVariableException e) {
+                // so we won't find any creds
+            }
+        }
+
         Element processedSignatureElement = null;
         for (XmlSecurityToken tok : tokens) {
             if (tok instanceof X509SigningSecurityToken) {
                 X509SigningSecurityToken x509Tok = (X509SigningSecurityToken)tok;
-                if (x509Tok.isPossessionProved()) {
+                if (x509Tok.isPossessionProved() && isTargetSignature(requiredSignatureElements,x509Tok)) {
 
                     // Check for a single signature element, not token or certificate (bug 7157)
                     final X509Certificate signingCertificate = x509Tok.getMessageSigningCertificate();
@@ -158,5 +176,36 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
         }
 
         return status;
+    }
+
+    /**
+     * If particular signature(s) are desired, check that the token matches.
+     */
+    private boolean isTargetSignature( final Element[] targets, final X509SigningSecurityToken token ) {
+        boolean match = false;
+
+        if ( targets == null ) {
+            match = true;
+        } else {
+            final SignedElement[] signedElements = token.getSignedElements();
+            if ( signedElements.length > 0 ) {
+                final Element signatureElement = signedElements[0].getSignatureElement();
+                if ( signatureElement != null ) {
+                    if ( ArrayUtils.contains( targets, signatureElement )) {
+                        match = true;
+                    } else {
+                        // we'll have to try a slower DOM comparison
+                        for ( Element targetElement : targets ) {
+                            if ( signatureElement.isEqualNode( targetElement ) ) {
+                                match = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return match;
     }
 }

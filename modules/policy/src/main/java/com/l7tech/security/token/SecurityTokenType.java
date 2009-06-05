@@ -136,21 +136,20 @@ public class SecurityTokenType implements Serializable {
         X509_ISSUER_SERIAL
     };
 
-    private SecurityTokenType(int num, String name, String tokenTypeUri, String prototypeElementNs, String prototypeElementName, Class interfaceClass) {
+    private SecurityTokenType(int num, String name, String tokenTypeUri, String prototypeElementNs, String prototypeElementName, Class<? extends SecurityToken> interfaceClass) {
         this.num = num;
         this.name = name;
         this.wstTokenTypeUri = tokenTypeUri;
         this.wstPrototypeElementNs = prototypeElementNs;
         this.wstPrototypeElementName = prototypeElementName;
         this.interfaceClass = interfaceClass;
-        if (!SecurityToken.class.isAssignableFrom(interfaceClass))
-            throw new IllegalArgumentException("interfaceClass must be derived from " + SecurityToken.class.getName());
     }
 
     protected Object readResolve() throws ObjectStreamException {
         return VALUES[num];
     }
 
+    @Override
     public String toString() {
         return getName();
     }

@@ -63,6 +63,14 @@ public class RequireWssX509Cert extends SecurityHeaderAddressableSupport impleme
         this.allowMultipleSignatures = allowMultipleSignatures;
     }
 
+    public String getSignatureElementVariable() {
+        return signatureElementVariable;
+    }
+
+    public void setSignatureElementVariable( final String signatureElementVariable ) {
+        this.signatureElementVariable = signatureElementVariable;
+    }
+
     @Override
     public TargetMessageType getTarget() {
         return messageTargetableSupport.getTarget();
@@ -91,12 +99,20 @@ public class RequireWssX509Cert extends SecurityHeaderAddressableSupport impleme
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return messageTargetableSupport.getVariablesUsed();
+        String[] used = messageTargetableSupport.getVariablesUsed();
+        if ( signatureElementVariable != null ) {
+            String[] allUsed = new String[used.length+1];
+            System.arraycopy( used, 0, allUsed, 0, used.length );
+            allUsed[used.length] = signatureElementVariable;
+            used = allUsed;
+        }
+        return used;
     }
 
     //- PRIVATE
 
     private boolean allowMultipleSignatures = false;
+    private String signatureElementVariable;
     private final MessageTargetableSupport messageTargetableSupport
             = new MessageTargetableSupport(TargetMessageType.REQUEST);
 }

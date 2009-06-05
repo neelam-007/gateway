@@ -116,7 +116,8 @@ public class IdentityTargetSelector extends OkCancelDialog<IdentityTarget> {
             }
 
             if ( assertion instanceof IdentityTagable &&
-                 AssertionUtils.isSameTargetMessage( identityTargetableAssertion, messageTargetable ) ) {
+                 AssertionUtils.isSameTargetMessage( identityTargetableAssertion, messageTargetable ) &&
+                 ((IdentityTagable)assertion).getIdentityTag() != null ) {
                 targetOptions.add( new IdentityTarget(((IdentityTagable)assertion).getIdentityTag()) );
             }
         }

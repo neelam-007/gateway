@@ -5,6 +5,8 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import javax.swing.*;
 import java.util.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 /**
  * Properties dialog for the WSS X.509 certificate assertion.
@@ -22,13 +24,21 @@ public class WssX509CertPropertiesDialog extends AssertionPropertiesOkCancelSupp
     @Override
     public RequireWssX509Cert getData( final RequireWssX509Cert assertion ) throws ValidationException {
         assertion.setAllowMultipleSignatures( allowMultipleSignatures.isSelected() );
+        if ( assertion.isAllowMultipleSignatures() ) {
+            // TODO [steve] Fix the variable name the user enters (as per TargetMessagePanel.getVariableName), and ensure that we do this everywhere the user enters a variable
+            assertion.setSignatureElementVariable( signatureElementVariableTextField.getText().trim() );
+        } else {
+            assertion.setSignatureElementVariable( null );
+        }
         return assertion;
     }
 
     @Override
     public void setData( final RequireWssX509Cert assertion ) {
-        this.allowMultipleSignatures.setSelected( assertion.isAllowMultipleSignatures() );
+        allowMultipleSignatures.setSelected( assertion.isAllowMultipleSignatures() );
+        signatureElementVariableTextField.setText( assertion.getSignatureElementVariable() );
         doValidation();
+        doUpdateEnabledState();
     }
 
     public static void main( String[] args ) {
@@ -39,6 +49,13 @@ public class WssX509CertPropertiesDialog extends AssertionPropertiesOkCancelSupp
 
     @Override
     protected JPanel createPropertyPanel() {
+        allowMultipleSignatures.addActionListener( new ActionListener(){
+            @Override
+            public void actionPerformed( final ActionEvent e ) {
+                doUpdateEnabledState();
+            }
+        } );
+
         return mainPanel;
     }
 
@@ -48,8 +65,16 @@ public class WssX509CertPropertiesDialog extends AssertionPropertiesOkCancelSupp
 
     private JPanel mainPanel;
     private JCheckBox allowMultipleSignatures;
+    private JTextField signatureElementVariableTextField;
+    private JLabel signatureElementVariableLabel;
 
     private void doValidation() {
         getOkButton().setEnabled( !isReadOnly() );
+    }
+
+    private void doUpdateEnabledState() {
+        boolean enabled = allowMultipleSignatures.isSelected();
+        signatureElementVariableTextField.setEnabled( enabled );
+        signatureElementVariableLabel.setEnabled( enabled );
     }
 }

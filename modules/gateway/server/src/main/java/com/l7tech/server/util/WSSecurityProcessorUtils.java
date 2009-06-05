@@ -7,7 +7,6 @@ import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.token.ParsedElement;
 import com.l7tech.security.token.SecurityToken;
-import com.l7tech.security.token.X509SigningSecurityToken;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.util.ExceptionUtils;
@@ -323,46 +322,50 @@ public class WSSecurityProcessorUtils {
 
     /**
      * Find the (single) security token for the given identity.
-     *
-     * TODO [steve] support for identity based multiple signatures for other token types (kerberos, etc)
      */
     private static SigningSecurityToken getTokenForIdentityTarget( final AuthenticationContext context,
                                                                    final Collection<SigningSecurityToken> tokens,
                                                                    final IdentityTarget target ) {
         SigningSecurityToken signingSecurityToken = null;
 
-        for ( SigningSecurityToken token : tokens ) {
-            if ( token instanceof X509SigningSecurityToken) {
-                X509SigningSecurityToken x509Token = (X509SigningSecurityToken) token;
-                AuthenticationResult result = context.getAuthenticationResultForX509Certificate( x509Token.getMessageSigningCertificate() );
-                if ( result != null ) {
-                    User user = result.getUser();
+        String tag = null;
+        if ( target.getTargetIdentityType() == IdentityTarget.TargetIdentityType.TAG ) {
+            tag = target.getIdentityId();            
+        }
 
-                    if ( target.getTargetIdentityType() != null ) {
-                        switch ( target.getTargetIdentityType() ) {
-                            case USER:
-                                if ( target.getIdentityProviderOid() == user.getProviderId() &&
-                                     user.getId().equals(target.getIdentityId()) ) {
-                                    if ( signingSecurityToken != null ) throw new IllegalStateException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
-                                    signingSecurityToken = token;
-                                }
-                                break;
-                            case GROUP:
-                                GroupBean group = new GroupBean();
-                                group.setProviderId(target.getIdentityProviderOid());
-                                group.setUniqueIdentifier(target.getIdentityId());
-                                if ( result.getCachedGroupMembership(group) ) {
-                                    if ( signingSecurityToken != null ) throw new IllegalStateException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
-                                    signingSecurityToken = token;
-                                }
-                                break;
-                            case PROVIDER:
-                                if ( target.getIdentityProviderOid() == user.getProviderId() ) {
-                                    if ( signingSecurityToken != null ) throw new IllegalStateException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
-                                    signingSecurityToken = token;
-                                }
-                                break;
-                        }
+        for ( SigningSecurityToken token : tokens ) {
+            final AuthenticationResult result = context.getAuthenticationResultForSigningSecurityToken( token, tag );
+            if ( result != null ) {
+                final User user = result.getUser();
+
+                if ( target.getTargetIdentityType() != null ) {
+                    switch ( target.getTargetIdentityType() ) {
+                        case USER:
+                            if ( target.getIdentityProviderOid() == user.getProviderId() &&
+                                 user.getId().equals(target.getIdentityId()) ) {
+                                if ( signingSecurityToken != null ) throw new IllegalStateException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
+                                signingSecurityToken = token;
+                            }
+                            break;
+                        case GROUP:
+                            GroupBean group = new GroupBean();
+                            group.setProviderId(target.getIdentityProviderOid());
+                            group.setUniqueIdentifier(target.getIdentityId());
+                            if ( result.getCachedGroupMembership(group) ) {
+                                if ( signingSecurityToken != null ) throw new IllegalStateException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
+                                signingSecurityToken = token;
+                            }
+                            break;
+                        case PROVIDER:
+                            if ( target.getIdentityProviderOid() == user.getProviderId() ) {
+                                if ( signingSecurityToken != null ) throw new IllegalStateException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
+                                signingSecurityToken = token;
+                            }
+                            break;
+                        case TAG:
+                            if ( signingSecurityToken != null ) throw new IllegalStateException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
+                            signingSecurityToken = token;
+                            break;
                     }
                 }
             }

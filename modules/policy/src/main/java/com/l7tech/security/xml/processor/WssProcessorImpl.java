@@ -112,6 +112,7 @@ public class WssProcessorImpl implements WssProcessor {
         this.message = message;
     }
 
+    @Override
     public ProcessorResult undecorateMessage(Message message,
                                              X509Certificate senderCertificate,
                                              SecurityContextFinder securityContextFinder,
@@ -422,6 +423,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         try {
             DomUtils.visitChildElements(header, new Functions.UnaryVoid<Element>() {
+                @Override
                 public void call(Element element) {
                     if (element == releventSecurityHeader)
                         return;
@@ -495,6 +497,7 @@ public class WssProcessorImpl implements WssProcessor {
         if (messageX509TokenResolver != null)
             return messageX509TokenResolver;
         messageX509TokenResolver = new Resolver<String,X509Certificate>() {
+            @Override
             public X509Certificate resolve(String id) {
                 X509Certificate resolved = null;
                 Object token = x509TokensById.get(id);
@@ -664,26 +667,32 @@ public class WssProcessorImpl implements WssProcessor {
 
     private ProcessorResult produceResult() {
         ProcessorResult processorResult = new ProcessorResult() {
+            @Override
             public SignedElement[] getElementsThatWereSigned() {
                 return elementsThatWereSigned.toArray(new SignedElement[elementsThatWereSigned.size()]);
             }
 
+            @Override
             public EncryptedElement[] getElementsThatWereEncrypted() {
                 return elementsThatWereEncrypted.toArray(new EncryptedElement[elementsThatWereEncrypted.size()]);
             }
 
+            @Override
             public SignedPart[] getPartsThatWereSigned() {
                 return partsThatWereSigned.toArray(new SignedPart[partsThatWereSigned.size()]);
             }
 
+            @Override
             public XmlSecurityToken[] getXmlSecurityTokens() {
                 return securityTokens.toArray(new XmlSecurityToken[securityTokens.size()]);
             }
 
+            @Override
             public WssTimestamp getTimestamp() {
                 return timestamp;
             }
 
+            @Override
             public String getSecurityNS() {
                 if (releventSecurityHeader != null) {
                     return releventSecurityHeader.getNamespaceURI();
@@ -691,6 +700,7 @@ public class WssProcessorImpl implements WssProcessor {
                 return null;
             }
 
+            @Override
             public String getWSUNS() {
                 // look for the wsu namespace somewhere
                 if (timestamp != null && timestamp.asElement() != null) {
@@ -712,30 +722,37 @@ public class WssProcessorImpl implements WssProcessor {
                 return null;
             }
 
+            @Override
             public SecurityActor getProcessedActor() {
                 return secHeaderActor;
             }
 
+            @Override
             public String getProcessedActorUri() {
                 return secHeaderActorUri;
             }
 
+            @Override
             public List<String> getValidatedSignatureValues() {
                 return validatedSignatureValues;
             }
 
+            @Override
             public List<SignatureConfirmation> getSignatureConfirmationValues() {
                 return signatureConfirmationValues;
             }
 
+            @Override
             public String getLastKeyEncryptionAlgorithm() {
                 return lastKeyEncryptionAlgorithm;
             }
 
+            @Override
             public boolean isWsse11Seen() {
                 return isWsse11Seen;
             }
 
+            @Override
             public boolean isDerivedKeySeen() {
                 return isDerivedKeySeen;
             }
@@ -744,6 +761,7 @@ public class WssProcessorImpl implements WssProcessor {
              * @param element the element to find the signing tokens for
              * @return the array if tokens that signed the element or empty array if none
              */
+            @Override
             public SigningSecurityToken[] getSigningTokens(Element element) {
                 if (element == null) {
                     throw new IllegalArgumentException();
@@ -1141,6 +1159,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         // override getEncryptionEngine to collect the encryptionmethod algorithm
         AlgorithmFactoryExtn af = new AlgorithmFactoryExtn() {
+            @Override
             public EncryptionEngine getEncryptionEngine(EncryptionMethod encryptionMethod)
                     throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException, StructureException  {
                 final String alguri = encryptionMethod.getAlgorithm();
@@ -1457,7 +1476,7 @@ public class WssProcessorImpl implements WssProcessor {
         return null;
     }
 
-    private X509IssuerSerialSecurityToken handleX509Data(final Element str) throws InvalidDocumentFormatException, GeneralSecurityException {
+    private X509SigningSecurityTokenImpl handleX509Data(final Element str) throws InvalidDocumentFormatException, GeneralSecurityException {
         final Element x509data = XmlUtil.findFirstChildElementByName(str, DsigUtil.DIGSIG_URI, "X509Data");
         if (x509data == null) return null;
 
@@ -1500,10 +1519,11 @@ public class WssProcessorImpl implements WssProcessor {
             }
 
             logger.fine("Certificate found");
-            final X509IssuerSerialSecurityToken issuerSerialSecurityToken = new X509IssuerSerialSecurityToken(x509data, certificate);
-            securityTokens.add(issuerSerialSecurityToken);
-            strToTarget.put( str, X509BinarySecurityTokenImpl.createBinarySecurityToken(str.getOwnerDocument(), certificate, str.getPrefix(), str.getNamespaceURI()).asElement() );
-            return issuerSerialSecurityToken;
+            final X509SigningSecurityTokenImpl signingSecurityToken =
+                    X509BinarySecurityTokenImpl.createBinarySecurityToken(str.getOwnerDocument(), certificate, str.getPrefix(), str.getNamespaceURI(), SecurityTokenType.X509_ISSUER_SERIAL);
+            securityTokens.add( signingSecurityToken );
+            strToTarget.put( str, signingSecurityToken.asElement() );
+            return signingSecurityToken;
         }
         return null;
     }
@@ -1634,6 +1654,7 @@ public class WssProcessorImpl implements WssProcessor {
                         super(null);
                     }
 
+                    @Override
                     public X509Certificate getCertificate() {
                         return samlToken.getIssuerCertificate();
                     }
@@ -1642,6 +1663,7 @@ public class WssProcessorImpl implements WssProcessor {
                      * @return true if the sender has proven its possession of the private key corresponding to this security token.
                      *         This is done by signing one or more elements of the message with it.
                      */
+                    @Override
                     public boolean isPossessionProved() {
                         return false;
                     }
@@ -1649,16 +1671,20 @@ public class WssProcessorImpl implements WssProcessor {
                     /**
                      * @return An array of elements signed by this signing security token.  May be empty but never null.
                      */
+                    @Override
                     public SignedElement[] getSignedElements() {
                         SignedElement se = new SignedElement() {
+                            @Override
                             public SigningSecurityToken getSigningSecurityToken() {
                                 return EmbeddedSamlSignatureToken.this;
                             }
 
+                            @Override
                             public Element getSignatureElement() {
                                 return samlToken.getEmbeddedIssuerSignature();
                             }
 
+                            @Override
                             public Element asElement() {
                                 return samlToken.asElement();
                             }
@@ -1667,14 +1693,17 @@ public class WssProcessorImpl implements WssProcessor {
                         return new SignedElement[]{se};
                     }
 
+                    @Override
                     public SecurityTokenType getType() {
                         return SecurityTokenType.WSS_X509_BST;
                     }
 
+                    @Override
                     public String getElementId() {
                         return samlToken.getElementId();
                     }
 
+                    @Override
                     public Element asElement() {
                         return samlToken.asElement();
                     }
@@ -1774,12 +1803,13 @@ public class WssProcessorImpl implements WssProcessor {
 
         // Validate signature
         SignatureContext sigContext = new SignatureContext();
-        MimeKnob mimeKnob = (MimeKnob) message.getKnob(MimeKnob.class);
+        MimeKnob mimeKnob = message.getKnob(MimeKnob.class);
         PartIterator iterator;
         iterator = mimeKnob == null ? null : mimeKnob.getParts();
         Map<String,PartInfo> partMap = new HashMap<String,PartInfo>();
         sigContext.setEntityResolver(new AttachmentEntityResolver(iterator, XmlUtil.getXss4jEntityResolver(), partMap, signedAttachmentSizeLimit));
         sigContext.setIDResolver(new IDResolver() {
+            @Override
             public Element resolveID(Document doc, String s) {
                 Element found = elementsByWsuId.get(s);
                 if (found != null) {
@@ -1942,10 +1972,12 @@ public class WssProcessorImpl implements WssProcessor {
             date = ISO8601Date.parse(dateString);
         }
 
+        @Override
         public long asTime() {
             return date.getTime();
         }
 
+        @Override
         public String asIsoString() {
             return dateString;
         }
@@ -1954,7 +1986,6 @@ public class WssProcessorImpl implements WssProcessor {
     private static class TimestampImpl extends ParsedElementImpl implements WssTimestamp {
         private final TimestampDate createdTimestampDate;
         private final TimestampDate expiresTimestampDate;
-        private boolean signed = false;
 
         public TimestampImpl(TimestampDate createdTimestampDate, TimestampDate expiresTimestampDate, Element timestampElement) {
             super(timestampElement);
@@ -1962,10 +1993,12 @@ public class WssProcessorImpl implements WssProcessor {
             this.expiresTimestampDate = expiresTimestampDate;
         }
 
+        @Override
         public com.l7tech.security.xml.processor.WssTimestampDate getCreated() {
             return createdTimestampDate;
         }
 
+        @Override
         public com.l7tech.security.xml.processor.WssTimestampDate getExpires() {
             return expiresTimestampDate;
         }
@@ -1982,14 +2015,17 @@ public class WssProcessorImpl implements WssProcessor {
             this.signatureElement = signatureElement;
         }
 
+        @Override
         public SigningSecurityToken getSigningSecurityToken() {
             return signingToken;
         }
 
+        @Override
         public Element asElement() {
             return element;
         }
 
+        @Override
         public Element getSignatureElement() {
             return signatureElement;
         }
@@ -2004,10 +2040,12 @@ public class WssProcessorImpl implements WssProcessor {
             this.partInfo = partInfo;
         }
 
+        @Override
         public SigningSecurityToken getSigningSecurityToken() {
             return signingToken;
         }
 
+        @Override
         public PartInfo getPartInfo() {
             return partInfo;
         }
