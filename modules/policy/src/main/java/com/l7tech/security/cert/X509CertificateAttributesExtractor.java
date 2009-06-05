@@ -46,10 +46,13 @@ public class X509CertificateAttributesExtractor {
      */
     public Object getAttributeValue( final String attributeName ) {
         CertificateAttribute attribute = CertificateAttribute.fromString(attributeName);
-        Map<String, Collection<Object>> entries = attribute == null ? null : attribute.extractValuesIncludingLegacyNames(certificate);
-        Collection<Object> values = entries == null ? null : entries.get(attributeName);
 
-        if (values == null && attribute != null && attribute.isPrefixed())
+        Map<String, Collection<Object>> entries = attribute == null ? null : new TreeMap<String, Collection<Object>>(String.CASE_INSENSITIVE_ORDER);
+        if (entries != null)
+            entries.putAll(attribute.extractValuesIncludingLegacyNames(certificate));
+
+        Collection<Object> values = entries == null ? null : entries.get(attributeName);
+        if (values == null && attribute != null && attribute.isPrefixed()) // valid attribute, but sub-component not found
             values = new ArrayList<Object>();
 
         if (values == null)

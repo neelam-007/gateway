@@ -775,10 +775,11 @@ public enum CertificateAttribute {
      * @return the CertificateAttribute corresponding to the provided name, or null if the attribute name is not supported
      */
     public static CertificateAttribute fromString(String attrName) {
-        return attrName == null ? null :
-               stringToEnum.containsKey(attrName.toLowerCase()) ? stringToEnum.get(attrName.toLowerCase()) :
-               attrName.startsWith( ISSUER_DN.toString() + "." ) || attrName.startsWith( "issuer." ) ? ISSUER_DN :
-               attrName.startsWith( SUBJECT_DN.toString() + "." ) || attrName.startsWith( "subject." ) ? SUBJECT_DN : null;
+        String attrNameLowerCase = attrName == null ? null : attrName.toLowerCase();
+        return attrNameLowerCase == null ? null :
+               stringToEnum.containsKey(attrNameLowerCase) ? stringToEnum.get(attrNameLowerCase.toLowerCase()) :
+               attrNameLowerCase.startsWith( ISSUER_DN.toString() + "." ) || attrNameLowerCase.startsWith( "issuer." ) ? ISSUER_DN :
+               attrNameLowerCase.startsWith( SUBJECT_DN.toString() + "." ) || attrNameLowerCase.startsWith( "subject." ) ? SUBJECT_DN : null;
     }
 
     /**

@@ -363,6 +363,14 @@ public class ExpandVariablesTest extends TestCase {
         assertEquals("Alice", ExpandVariables.process("${authenticatedUser.cert.subject.dn.cn}", vars, audit, true));
     }
 
+    public void testMixedCaseCertAttributeName() throws Exception {
+        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
+        u.setCertificate(TestDocuments.getWssInteropAliceCert());
+        Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
+        vars.put("authenticatedUser", u);
+        assertEquals("Alice", ExpandVariables.process("${auTheNticAtedUser.cert.suBjeCt.dN.CN}", vars, audit, true));
+    }
+
     public void testMultivaluedDcAttributes() throws Exception {
         LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(CertUtils.decodeFromPEM(A_CERT));
