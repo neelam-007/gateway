@@ -27,7 +27,7 @@ public abstract class CompilableXpath {
      *
      * @return the namespace map, or null if the expression does not contain any qualified names.
      */
-    public abstract Map getNamespaces();
+    public abstract Map<String,String> getNamespaces();
 
     /**
      * Get the version of this expression that is specially for use with Jaxen.  By default this is the same

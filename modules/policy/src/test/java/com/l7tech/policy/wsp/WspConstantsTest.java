@@ -9,11 +9,9 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.AllAssertions;
 
 import java.util.logging.Logger;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 import org.junit.Test;
 import org.junit.Assert;
@@ -83,4 +81,61 @@ public class WspConstantsTest {
             Assert.fail("At least one assertion mapping was found for an assertion class not represented in AllAssertions.SERIALIZABLE_EVERYTHING");
         }
     }
+
+    /**
+     * Test for a generic getter with regular setter and vice versa
+     */
+    @Test
+    public void testGenericsMismatch() {
+        TypeMapping[] mappings = WspConstants.typeMappings;
+        for (TypeMapping typeMapping : mappings) {
+            List<String> genericgetters = new ArrayList<String>();
+            List<String> getters = new ArrayList<String>();
+            List<String> genericsetters = new ArrayList<String>();
+            List<String> setters = new ArrayList<String>();
+
+            if ( !(typeMapping instanceof BeanTypeMapping) ) continue;
+
+            for ( Method method : typeMapping.getMappedClass().getMethods() ) {
+                if (Modifier.isStatic(method.getModifiers()))
+                    continue;
+
+                String name = method.getName();
+                Class returnType = method.getReturnType();
+                Class[] parameterTypes = method.getParameterTypes();
+
+                if ( name.startsWith("get") &&
+                     !( Collection.class.isAssignableFrom(returnType) || Map.class.isAssignableFrom(returnType) )) {
+                    continue;
+                }
+
+                if ( name.startsWith("set") &&
+                     (parameterTypes.length != 1 ||
+                      !( Collection.class.isAssignableFrom(parameterTypes[0]) || Map.class.isAssignableFrom(parameterTypes[0]) ))) {
+                    continue;
+                }
+
+                if (name.startsWith("get") && name.length() > 3) {
+                    genericgetters.add(name.substring(3) + ":" + method.getGenericReturnType());
+                    getters.add(name.substring(3) + ":" + method.getReturnType());
+                } else if (name.startsWith("set") && name.length() > 3) {
+                    genericsetters.add(name.substring(3) + ":" + method.getGenericParameterTypes()[0]);
+                    setters.add(name.substring(3) + ":" + method.getParameterTypes()[0]);
+                }
+            }
+
+            for ( int i=0; i< genericgetters.size(); i++ ) {
+                String genericGetter = genericgetters.get(i);
+                String getter = getters.get(i);
+                Assert.assertFalse("TypeMapping '"+typeMapping+"' for '"+typeMapping.getMappedClass()+"' has mismatched getter/setter : " + genericGetter, !genericsetters.contains(genericGetter) && genericsetters.contains(getter));
+            }
+
+            for ( int i=0; i< genericsetters.size(); i++ ) {
+                String genericSetter = genericsetters.get(i);
+                String setter = setters.get(i);
+                Assert.assertFalse("TypeMapping '"+typeMapping+"' for '"+typeMapping.getMappedClass()+"' has mismatched getter/setter : " + genericSetter, !genericgetters.contains(genericSetter) && genericgetters.contains(setter));
+            }
+        }
+    }
+
 }

@@ -59,6 +59,7 @@ public class XpathExpression extends CompilableXpath implements Serializable {
     /**
      * @return the XPath expression
      */
+    @Override
     public String getExpression() {
         return expression;
     }
@@ -67,7 +68,8 @@ public class XpathExpression extends CompilableXpath implements Serializable {
      * @return the namespace map, never <b>null</b>, note that the
      *         this is the reference, not safe copy
      */
-    public Map<String, String> getNamespaces() {
+    @Override
+    public Map<String,String> getNamespaces() {
         return namespaces;
     }
 
@@ -85,7 +87,7 @@ public class XpathExpression extends CompilableXpath implements Serializable {
      *
      * @param namespaces namespace map of prefix to namespace URI
      */
-    public void setNamespaces(Map namespaces) {
+    public void setNamespaces(Map<String,String> namespaces) {
         if (namespaces != null) {
             this.namespaces.clear();
             //noinspection unchecked
@@ -94,6 +96,7 @@ public class XpathExpression extends CompilableXpath implements Serializable {
     }
 
     /** @noinspection RedundantIfStatement*/
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof XpathExpression)) return false;
@@ -106,6 +109,7 @@ public class XpathExpression extends CompilableXpath implements Serializable {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result;
         result = (expression != null ? expression.hashCode() : 0);
