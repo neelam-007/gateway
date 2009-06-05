@@ -16,9 +16,9 @@ public class X509CertificateSelector implements ExpandVariables.Selector<X509Cer
 
         X509CertificateAttributesExtractor extractor = new X509CertificateAttributesExtractor(cert);
 
-        if (extractor.isSupportedAttribute(name)) {
+        try {
             return new Selection(extractor.getAttributeValue(name));
-        } else {
+        } catch (IllegalArgumentException e) {
             String msg = handler.handleBadVariable(name + " in "  + cert.getClass().getName());
             if (strict) throw new IllegalArgumentException(msg);
             return null;

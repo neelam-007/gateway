@@ -240,6 +240,29 @@ public class X509CertificateAttributesExtractorTest {
         assertEquals("eku not prsent; OIDs empty", 0, oids.length);
     }
 
+    @Test
+    public void testLegacyNames() throws Exception {
+        X509Certificate cert = CertUtils.decodeCert(HexUtils.decodeBase64(THAWTE_CERT_PEM));
+        X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
+        for(String legacyName : OLD_NAMES) {
+            CertificateAttribute attr = CertificateAttribute.fromString(legacyName);
+            assertNotNull("No certificate attribute found for previously supported name: " + legacyName, attr);
+
+            Object legacyValues = cae.getAttributeValue(legacyName);
+            Object newValues = cae.getAttributeValue(attr.getNewName(legacyName));
+
+            if (attr.isMultiValued()) {
+                assertEquals("Different values extracted for legacy/new attribute name: "+ legacyName, legacyValues == null, newValues == null);
+                assertTrue("Expected Object[] value for: " + legacyName, legacyValues == null || legacyValues instanceof Object[]);
+                assertTrue("Expected Object[] value for: " + attr.toString(), newValues == null || newValues instanceof Object[]);
+                if (legacyValues != null && newValues != null)
+                    assertArrayEquals("Different values extracted for legacy/new attribute name: " + legacyName, (Object[])legacyValues, (Object[])newValues);
+            } else {
+                assertEquals("Different values extracted for legacy/new attribute name: " + legacyName, newValues, legacyValues);
+            }
+        }
+    }
+
     private static final String THAWTE_CERT_PEM =
             "MIIDTjCCAregAwIBAgIBCjANBgkqhkiG9w0BAQUFADCBzjELMAkGA1UEBhMCWkEx\n" +
             "FTATBgNVBAgTDFdlc3Rlcm4gQ2FwZTESMBAGA1UEBxMJQ2FwZSBUb3duMR0wGwYD\n" +
@@ -259,4 +282,45 @@ public class X509CertificateAttributesExtractorTest {
             "gQB2spzuE58b9i00kpRFczTcjmsuXPxMfYnrw2jx15kPLh0XyLUWi77NigUG8hlJ\n" +
             "OgNbBckgjm1S4XaBoMNliiJn5BxTUzdGv7zXL+t7ntAURWxAIQjiXXV2ZjAe9N+C\n" +
             "ii+986IMvx3bnxSimnI3TbB3SOhKPwnOVRks7+YHJOGv7A==";
+
+    /**
+     * Certificate attribute names exposed as context variables before 5.1 / multiple signature support.
+     */
+    private static final String[] OLD_NAMES = new String[]{
+        "certificatePolicies",
+        "countryOfCitizenship",
+        "extendedKeyUsage",
+        "extendedKeyUsage.criticality",
+        "issuer",
+        "issuerAltNameDNS",
+        "issuerAltNameEmail",
+        "issuerAltNameURI",
+        "issuer.dn",
+        "issuer.dn.canonical",
+        "issuer.dn.rfc2253",
+        "issuerEmail",
+        "keyUsage.criticality",
+        "keyUsage.cRLSign",
+        "keyUsage.dataEncipherment",
+        "keyUsage.decipherOnly",
+        "keyUsage.digitalSignature",
+        "keyUsage.keyAgreement",
+        "keyUsage.keyCertSign",
+        "keyUsage.keyEncipherment",
+        "keyUsage.nonRepudiation",
+        "notAfter",
+        "notBefore",
+        "serial",
+        "signatureAlgorithmName",
+        "signatureAlgorithmOID",
+        "subject",
+        "subjectAltNameDNS",
+        "subjectAltNameEmail",
+        "subjectAltNameURI",
+        "subject.dn",
+        "subject.dn.canonical",
+        "subject.dn.rfc2253",
+        "subjectEmail",
+        "subjectPublicKeyAlgorithm",
+    };
 }

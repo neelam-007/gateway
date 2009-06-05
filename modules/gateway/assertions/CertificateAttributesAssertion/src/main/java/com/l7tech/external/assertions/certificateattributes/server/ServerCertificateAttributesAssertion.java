@@ -44,7 +44,7 @@ public class ServerCertificateAttributesAssertion extends AbstractServerAssertio
             if ( certificate != null ) {
                 String prefix = getAssertion().getVariablePrefix() + ".";
                 for (CertificateAttribute attribute : EnumSet.allOf(CertificateAttribute.class)) {
-                    for (Map.Entry<String, Collection<Object>> entry : attribute.extractValues(certificate).entrySet()) {
+                    for (Map.Entry<String, Collection<Object>> entry : attribute.extractValuesIncludingLegacyNames(certificate).entrySet()) {
                         Collection<Object> values = entry.getValue();
                         if (values == null || values.isEmpty()) {
                             context.setVariable(prefix + entry.getKey(), ""); // Set as empty, no null variables

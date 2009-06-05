@@ -339,19 +339,6 @@ public class ExpandVariablesTest extends TestCase {
         assertEquals("CN=OASIS Interop Test CA, O=OASIS", ExpandVariables.process("${authenticatedUser.cert.issuer}", vars, audit, true));
     }
 
-    public void testCertIssuerDnNoSuchAttribute() throws Exception {
-        LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
-        u.setCertificate(TestDocuments.getWssInteropAliceCert());
-        Map<String, Object> vars = new TreeMap<String, Object>(String.CASE_INSENSITIVE_ORDER);
-        vars.put("authenticatedUser", u);
-        try {
-            ExpandVariables.process("${authenticatedUser.cert.issuer.what}", vars, audit, true);
-            fail("Expected IAE");
-        } catch (IllegalArgumentException e) {
-            // OK
-        }
-    }
-
     public void testCertIssuerDnName() throws Exception {
         LdapUser u = new LdapUser(1234, "cn=Alice,dc=l7tech,dc=com", "Alice");
         u.setCertificate(TestDocuments.getWssInteropAliceCert());

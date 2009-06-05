@@ -32,6 +32,9 @@ import sun.security.util.DerValue;
 /**
  * Enum representing the supported certificate attributes. Each attribute can extract
  * its corresponding value from the certificate passed to the extractValue() method.
+ *
+ * Attribute name lookups are case insensitive.
+ *
  */
 public enum CertificateAttribute {
 
@@ -138,7 +141,7 @@ public enum CertificateAttribute {
      * The Issuer DN in canonical format: for comparisons; limited subset of OID names;
      * strict sorting, whitespace, and case rules
      */
-    ISSUER_CANONICAL("issuer.canonical", false, false) {
+    ISSUER_CANONICAL("issuer.canonical", false, false, "issuer.dn.canonical") {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             return makeMap(this.toString(), certificate.getIssuerX500Principal().getName(X500Principal.CANONICAL));
@@ -148,20 +151,23 @@ public enum CertificateAttribute {
      * The Issuer DN in RFC 2253 format: for correct but still reasonably pretty output
      * (only includes RFC 2253 OID names)
      */
-    ISSUER_RFC2253("issuer.rfc2253", false, false) {
+    ISSUER_RFC2253("issuer.rfc2253", false, false, "issuer.dn.rfc2253") {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             return makeMap(this.toString(), certificate.getIssuerX500Principal().getName(X500Principal.RFC2253));
         }},
 
     /**
-     * An array of values for the Issuer DN parts corresponding to the attrNameWithKey parameter
-     * given to the extractValue method.
+     * An array of values for the Issuer DN parts corresponding the requested attribute name subcomponent(s).
      */
-    ISSUER_DN("issuer.dn", true, true) {
+    ISSUER_DN("issuer.dn", true, true, "issuerEmail") {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             return getValuesFromsX500Principal(certificate.getIssuerX500Principal(), this.toString());
+        }
+        @Override
+        String getNewName(String legacyName) {
+            return "issuerEmail".equals(legacyName) ? "issuer.dn.email" : ISSUER_DN.toString();
         }},
 
     /**
@@ -204,7 +210,7 @@ public enum CertificateAttribute {
      * The Subject DN in canonical format: for comparisons; limited subset of OID names;
      * strict sorting, whitespace, and case rules
      */
-    SUBJECT_CANONICAL("suject.canonical", false, false) {
+    SUBJECT_CANONICAL("suject.canonical", false, false, "subject.dn.canonical") {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             return makeMap(this.toString(), certificate.getSubjectX500Principal().getName(X500Principal.CANONICAL));
@@ -214,7 +220,7 @@ public enum CertificateAttribute {
      * The Subject DN in RFC 2253 format: for correct but still reasonably pretty output
      * (only includes RFC 2253 OID names)
      */
-    SUBJECT_RFC2253("subject.rfc2253", false, false) {
+    SUBJECT_RFC2253("subject.rfc2253", false, false, "subject.dn.rfc2253") {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             return makeMap(this.toString(), certificate.getSubjectX500Principal().getName(X500Principal.RFC2253));
@@ -224,10 +230,14 @@ public enum CertificateAttribute {
      * An array of values for the Subject DN parts corresponding to the attrNameWithKey parameter
      * given to the extractValue method.
      */
-    SUBJECT_DN("subject.dn", true, true) {
+    SUBJECT_DN("subject.dn", true, true, "subjectEmail") {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             return getValuesFromsX500Principal(certificate.getSubjectX500Principal(), this.toString());
+        }
+        @Override
+        String getNewName(String legacyName) {
+            return "subjectEmail".equals(legacyName) ? "subject.dn.email" : SUBJECT_DN.toString();
         }},
 
     /**
@@ -303,7 +313,7 @@ public enum CertificateAttribute {
     /**
      * Criticality of the key usage field (none, noncrit, critical)
      */
-    KEY_USAGE_CRITICALITY("keyUsageCriticality", false, false) {
+    KEY_USAGE_CRITICALITY("keyUsageCriticality", false, false, "keyUsage.criticality") {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             boolean[] usages = certificate.getKeyUsage();
@@ -373,7 +383,7 @@ public enum CertificateAttribute {
     /**
      * CRL Sign (true/false)
      */
-    KEY_USAGE_CRL_SIGN("keyUsage.crlSign", false, false) {
+    KEY_USAGE_CRL_SIGN("keyUsage.crlSign", false, false, "keyUsage.cRLSign") {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             boolean[] usages = certificate.getKeyUsage();
@@ -403,7 +413,7 @@ public enum CertificateAttribute {
     /**
      * Extended key usage extension presence and criticality.  The value is either null, "noncrit", or "critical".
      */
-    EXTENDED_KEY_USAGE_CRITICALITY("extendedKeyUsageCriticality", false, false) {
+    EXTENDED_KEY_USAGE_CRITICALITY("extendedKeyUsageCriticality", false, false, "extendedKeyUsage.criticality") {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             List<String> usages = null;
@@ -419,7 +429,7 @@ public enum CertificateAttribute {
     /**
      * The key usage information. Each value is an OID.
      */
-    EXTENDED_KEY_USAGE_VALUES("extendedKeyUsageValues", false, true) {
+    EXTENDED_KEY_USAGE_VALUES("extendedKeyUsageValues", false, true, "extendedKeyUsage") {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             List<String> usages = new ArrayList<String>();
@@ -456,20 +466,36 @@ public enum CertificateAttribute {
 
     private static final Pattern OID_PATTERN = Pattern.compile("^(?:\\d+)(?:\\.\\d+)$");
 
-    private String attributeName;
-    private boolean prefixed;
-    private boolean multiValued;
+    private final String attributeName;
+    private final List<String> legacyNames;
+    private final boolean prefixed;
+    private final boolean multiValued;
 
     private CertificateAttribute(String name, boolean prefixed, boolean multiValued) {
+        this(name, prefixed, multiValued, new String[0]);
+    }
+
+    private CertificateAttribute(String name, boolean prefixed, boolean multiValued, String... legacyNames) {
         this.attributeName = name;
         this.prefixed = prefixed;
         this.multiValued = multiValued;
+        this.legacyNames = Collections.unmodifiableList(Arrays.asList(legacyNames));
+    }
+
+    /**
+     * Previous "legacyName" is now supported by the returned name.
+     */
+    String getNewName(String legacyName) {
+        return attributeName;
     }
 
     private static final Map<String,CertificateAttribute> stringToEnum = new HashMap<String, CertificateAttribute>();
     static {
         for (CertificateAttribute a : values()) {
-            stringToEnum.put(a.toString(), a);
+            stringToEnum.put(a.toString().toLowerCase(), a);
+            for(String legacyName : a.legacyNames) {
+                stringToEnum.put(legacyName.toLowerCase(), a);
+            }
         }
     }
 
@@ -510,10 +536,9 @@ public enum CertificateAttribute {
     private static Map<String,Collection<Object>> makeMap(final String key, final Object value) {
         Map<String,Collection<Object>> result = new HashMap<String, Collection<Object>>();
 
-        if (key == null || value == null)
-            return result;
+        if (key == null) return result;
 
-        if (value.getClass().isArray() && Object.class.isAssignableFrom(value.getClass().getComponentType())) {
+        if (value != null && value.getClass().isArray() && Object.class.isAssignableFrom(value.getClass().getComponentType())) {
             result.put(key, new ArrayList<Object>() {{ addAll(Arrays.asList((Object[])value)); }});
         } else if (value instanceof Collection) {
             result.put(key, new ArrayList<Object>() {{ addAll(((Collection<?>)value)); }});
@@ -538,6 +563,7 @@ public enum CertificateAttribute {
         Map<String,Collection<Object>> result = new HashMap<String, Collection<Object>>();
         try {
             if (x500Principal != null) {
+                addToMap(result, attrName, x500Principal.toString());
                 int rdnPos = 0;
                 List<Rdn> rdns = new ArrayList<Rdn>(new LdapName(x500Principal.getName(X500Principal.RFC2253)).getRdns());
                 Collections.reverse(rdns);
@@ -656,6 +682,7 @@ public enum CertificateAttribute {
          */
         private static Map<String, Collection<Object>> extractCitizenshipCountries(final X509Certificate cert, String attrName) {
             Map<String, Collection<Object>> citizenshipCountries = new HashMap<String, Collection<Object>>();
+            citizenshipCountries.put(attrName, new ArrayList<Object>());
             try {
                 byte[] extensionBytes = cert.getExtensionValue(X509Extensions.SubjectDirectoryAttributes.getId());
                 if(extensionBytes == null || extensionBytes.length == 0) {
@@ -708,30 +735,74 @@ public enum CertificateAttribute {
 
     // - PUBLIC
 
+    /**
+     * Extracts the value(s) of the attribute from the provided X509 certificate.
+     *
+     * @param certificate The X095 certificate to extract attributes from
+     * @return map of attribute names to a collection of attribute values
+     */
     public abstract Map<String,Collection<Object>> extractValues(X509Certificate certificate);
+
+    public Map<String,Collection<Object>> extractValuesIncludingLegacyNames(X509Certificate certificate) {
+        Map<String, Collection<Object>> values = extractValues(certificate);
+        Map<String, Collection<Object>> legacyValues = new HashMap<String, Collection<Object>>();
+        for(String legacyName : legacyNames) {
+            boolean hasValue = false;
+            String newName = getNewName(legacyName); // legacyName replaced by newName, which can have sub-components
+            for(String name : values.keySet()) {
+                if (name.startsWith(newName)) {
+                    hasValue = true;
+                    legacyValues.put( legacyName + name.substring(newName.length()), values.get(name));
+                }
+            }
+            if (! hasValue)
+                legacyValues.put(legacyName, new ArrayList<Object>());
+        }
+
+        values.putAll(legacyValues);
+        return values;
+    }
 
     @Override
     public String toString() {
         return attributeName;
     }
 
+    /**
+     * Looks up certificate attributes by name (case insensitive).
+     *
+     * @param attrName Attribute name to look up  
+     * @return the CertificateAttribute corresponding to the provided name, or null if the attribute name is not supported
+     */
     public static CertificateAttribute fromString(String attrName) {
-        if (attrName == null)
-            return null;
-        else if (attrName.startsWith( ISSUER_DN.toString() + ".") )
-            return ISSUER_DN;
-        else if (attrName.startsWith( SUBJECT_DN.toString() + ".") )
-            return SUBJECT_DN;
-        else
-            return stringToEnum.get(attrName);
+        return attrName == null ? null :
+               stringToEnum.containsKey(attrName.toLowerCase()) ? stringToEnum.get(attrName.toLowerCase()) :
+               attrName.startsWith( ISSUER_DN.toString() + "." ) || attrName.startsWith( "issuer." ) ? ISSUER_DN :
+               attrName.startsWith( SUBJECT_DN.toString() + "." ) || attrName.startsWith( "subject." ) ? SUBJECT_DN : null;
     }
 
+    /**
+     * @return true if the declared attribute name is in fact a prefix and the attribute can have sub-components
+     * @see com.l7tech.policy.variable.VariableMetadata#isPrefixed()
+     */
     public boolean isPrefixed() {
         return prefixed;
     }
 
+    /**
+     * @return true if the attribute can have multiple values, false otherwise
+     */
     public boolean isMultiValued() {
         return multiValued;
+    }
+
+    /**
+     * @param name Attribute name to check
+     * @return true if the provided attribute name is a legacy name, false otherwise
+     */
+    public boolean isLegacyName(String name) {
+        CertificateAttribute attr = fromString(name);
+        return attr != null && ! attr.toString().equals(name);
     }
 
     public static String attributeValueToString(Object value) {

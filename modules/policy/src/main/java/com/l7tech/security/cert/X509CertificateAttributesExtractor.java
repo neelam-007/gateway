@@ -46,20 +46,16 @@ public class X509CertificateAttributesExtractor {
      */
     public Object getAttributeValue( final String attributeName ) {
         CertificateAttribute attribute = CertificateAttribute.fromString(attributeName);
-        if (attribute == null) return null;
+        Map<String, Collection<Object>> entries = attribute == null ? null : attribute.extractValuesIncludingLegacyNames(certificate);
+        Collection<Object> values = entries == null ? null : entries.get(attributeName);
 
-        Map<String, Collection<Object>> entries = attribute.extractValues(certificate);
-        if (entries == null) return null;
+        if (values == null && attribute != null && attribute.isPrefixed())
+            values = new ArrayList<Object>();
 
-        Collection<Object> values = entries.get(attributeName);
-        if (values == null) return null;
+        if (values == null)
+            throw new IllegalArgumentException("Unknown certificate attribute name: " + attributeName);
 
-        if (attribute.isMultiValued())
-            return values.toArray();
-        else if (values.isEmpty())
-            return null;
-        else
-            return values.iterator().next();
+        return attribute.isMultiValued() ? values.toArray() : values.isEmpty() ? null : values.iterator().next();
     }
 
     //- PRIVATE
