@@ -221,6 +221,8 @@ public class ServerConfig implements ClusterPropertyListener, Config {
             ? "/ssg/etc/conf/serverconfig_override.properties"
             : System.getProperty("com.l7tech.server.home") + File.separator + "etc" + File.separator + "conf" + File.separator + "serverconfig_override.properties";
 
+    public static final String MAX_FOLDER_DEPTH_PROPERTY = "policyorganization.maxFolderDepth";
+
     public static final String PARAM_SYSTEM_MONITORING_SETUP_SETTINGS = "system.monitoring.setup.settings";
 
     public static final String PARAM_MONITORING_TRIGGER_AUDITSIZE = "trigger.auditSize";

@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
  */
 public class FolderAdminImpl implements FolderAdmin {
     private static final int MAX_FOLDER_NAME_LENGTH = 128;
-    public static final String MAX_FOLDER_DEPTH_PROPERTY = "policyorganization.maxFolderDepth";
+    private static final int MAX_FOLDER_DEPTH = ServerConfig.getInstance().getIntProperty(ServerConfig.MAX_FOLDER_DEPTH_PROPERTY, 8);
 
     private static final Pattern replaceRoleName =
             Pattern.compile(MessageFormat.format(RbacAdmin.RENAME_REGEX_PATTERN, ROLE_NAME_TYPE_SUFFIX));
@@ -58,6 +58,14 @@ public class FolderAdminImpl implements FolderAdmin {
         return folderManager.findAllHeaders();
     }
 
+    /**
+     *  Save a new folder
+     * @param folder: the new folder to be saved
+     * @return oid of the new folder if successful.
+     * @throws UpdateException
+     * @throws SaveException
+     * @throws ConstraintViolationException
+     */
     @Override
     public long saveFolder( final Folder folder ) throws UpdateException, SaveException, ConstraintViolationException {
         final String name = folder.getName();
@@ -74,12 +82,17 @@ public class FolderAdminImpl implements FolderAdmin {
 
         try {
             long oid;
+            Folder rootFolder = folderManager.findRootFolder();
+
             if (folder.getOid() == Folder.DEFAULT_OID) {
-                final int maxDepth = ServerConfig.getInstance().getIntProperty(MAX_FOLDER_DEPTH_PROPERTY, 8);
-                validateFolders( folder, maxDepth, 1, new Functions.Binary<SaveException,String,Throwable>() {
+                Folder targetFolder = folderManager.findByPrimaryKey(folder.getFolder().getOid()); // the  parent folder might be changed in other places.
+                final int targetMaxDepth = MAX_FOLDER_DEPTH - rootFolder.getNesting(targetFolder);
+                validateFolders( folder, targetMaxDepth, 1, new Functions.Binary<SaveException,String,Throwable>() {
                     @Override
                     @SuppressWarnings({"ThrowableInstanceNeverThrown"})
                     public SaveException call(String s, Throwable throwable) {
+                        // Overwrite the message, s.
+                        s = "The maximum folder depth is " + MAX_FOLDER_DEPTH + ".\nTarget folder cannot be nested further.";
                         return new SaveException(s, throwable);
                     }
                 }  );
@@ -112,12 +125,20 @@ public class FolderAdminImpl implements FolderAdmin {
                 //rethrow the exception
                 throw ue;
             }
+        } catch (FindException fe) {
+            throw new SaveException("Error finding a folder.", fe);
         }
     }
 
+    /**
+     * Move an entity  into a folder
+     * @param folder: the folder which the entity will move to.
+     * @param entity: the entity to be moved.
+     * @throws UpdateException
+     */
     @SuppressWarnings({"unchecked"})
     @Override
-    public void moveEntityToFolder( final Folder folder, final PersistentEntity entity ) throws UpdateException {
+    public void moveEntityToFolder( final Folder folder, PersistentEntity entity ) throws UpdateException {
         if ( entity == null ) throw new UpdateException( "Entity is required." );
 
         Folder rootFolder;
@@ -136,12 +157,12 @@ public class FolderAdminImpl implements FolderAdmin {
             try {
                 if (((Folder)entity).isParentOf(targetFolder))
                     throw new UpdateException("The destination folder is a subfolder of the source folder");
-                final int allowedDepthFromTarget = ServerConfig.getInstance().getIntProperty(MAX_FOLDER_DEPTH_PROPERTY, 8) - rootFolder.getNesting(targetFolder);
-                final int depthOfMovedEntity = rootFolder.getNesting(folderManager.findByPrimaryKey(entity.getOid()));
+
+                final int targetMaxDepth = MAX_FOLDER_DEPTH - rootFolder.getNesting(targetFolder);
                 for(Folder maybeChild : folderManager.findAll()) {
                     int relativeChildDepth = ((Folder) entity).getNesting(maybeChild);
                     if (relativeChildDepth >= 0) // it's a child of the moved folder
-                        validateFolders(maybeChild, allowedDepthFromTarget,  depthOfMovedEntity, new Functions.Binary<UpdateException, String, Throwable>() {
+                        validateFolders(maybeChild, targetMaxDepth, relativeChildDepth + 1, new Functions.Binary<UpdateException, String, Throwable>() {
                             @Override
                             @SuppressWarnings({"ThrowableInstanceNeverThrown"})
                             public UpdateException call(String s, Throwable throwable) {
@@ -176,18 +197,11 @@ public class FolderAdminImpl implements FolderAdmin {
                                                         final Functions.Binary<T,String,Throwable> exceptionBuilder ) throws T {
         Long parentFolderId = folder.getFolder() != null ? folder.getFolder().getOid() : null;
         if (parentFolderId != null) {
-            try {
-                if ( parentFolderId == folder.getOid() )
-                    throw exceptionBuilder.call("Parent folder cannot be the same as folder id", null);
+            if (parentFolderId == folder.getOid())
+                throw exceptionBuilder.call("Parent folder cannot be the same as folder id", null);
 
-                int allowedParentDepth = targetMaxDepth + referenceFolderDepth -1;
-                if( folderManager.findRootFolder().getNesting(folderManager.findByPrimaryKey(parentFolderId)) +1 > allowedParentDepth )
-                    throw exceptionBuilder.call("Target folder can accept a folder hierarchy at most " + targetMaxDepth + " levels deep", null);
-
-            } catch (FindException e) {
-                throw exceptionBuilder.call("Could not find parent folder", e);
-            }
+            if (referenceFolderDepth > targetMaxDepth)
+                throw exceptionBuilder.call("The maximum folder depth is " + MAX_FOLDER_DEPTH + ".\nTarget folder can accept a folder hierarchy at most " + targetMaxDepth + " levels deep.", null);
         }
     }
-
 }
