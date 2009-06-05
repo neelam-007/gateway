@@ -101,17 +101,10 @@ public class WspConstantsTest {
                     continue;
 
                 String name = method.getName();
-                Class returnType = method.getReturnType();
                 Class[] parameterTypes = method.getParameterTypes();
 
-                if ( name.startsWith("get") &&
-                     !( Collection.class.isAssignableFrom(returnType) || Map.class.isAssignableFrom(returnType) )) {
-                    continue;
-                }
-
                 if ( name.startsWith("set") &&
-                     (parameterTypes.length != 1 ||
-                      !( Collection.class.isAssignableFrom(parameterTypes[0]) || Map.class.isAssignableFrom(parameterTypes[0]) ))) {
+                     parameterTypes.length != 1 ) {
                     continue;
                 }
 
