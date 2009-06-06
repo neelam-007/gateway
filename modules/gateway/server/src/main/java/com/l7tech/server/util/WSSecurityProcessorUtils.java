@@ -302,6 +302,43 @@ public class WSSecurityProcessorUtils {
     }
 
     /**
+     * Check the signing tokens signed elements are covered by the same signature.
+     *
+     * <p>This check prevents a signaure combination attack where multiple 
+     * signatures are altered to reference a single signing token
+     * (e.g. 2 signatures and 1 BST).</p>
+     *
+     * @param signingSecurityTokens The tokens to check
+     * @return True if the tokens are used by a single signature.
+     */
+    public static boolean isSameSignature( final SigningSecurityToken... signingSecurityTokens ) {
+        boolean sameSignature = true;
+
+        Element signatureElement = null;
+        for ( SigningSecurityToken signingSecurityToken : signingSecurityTokens ) {
+            SignedElement[] signedElements = signingSecurityToken.getSignedElements();
+            if ( signedElements.length == 0 ) {
+                sameSignature = false;
+                break;
+            }
+
+            if ( signatureElement == null ) {
+                signatureElement = signedElements[0].getSignatureElement();
+            }
+
+            for ( SignedElement signedElement : signedElements ) {
+                if ( signatureElement != signedElement.getSignatureElement() ) {
+                    sameSignature = false;
+                    break;
+                }
+            }
+        }
+
+        return sameSignature;
+    }
+
+
+    /**
      * Find all the tokens that signed the given Element.
      */
     private static Set<SigningSecurityToken> getSigningSecurityTokens( final Element signedElement,

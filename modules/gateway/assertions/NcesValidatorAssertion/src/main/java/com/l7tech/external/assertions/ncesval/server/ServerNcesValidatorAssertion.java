@@ -26,6 +26,7 @@ import com.l7tech.util.DomUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.SoapConstants;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import org.springframework.context.ApplicationContext;
@@ -50,14 +51,32 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
     private final CertValidationProcessor certValidationProcessor;
     private final SecurityTokenResolver securityTokenResolver;
     private final TrustedCertServices trustedCertServices;
+    private final boolean checkSingleSignature;
 
     public ServerNcesValidatorAssertion( final NcesValidatorAssertion assertion,
                                          final ApplicationContext context ) throws PolicyAssertionException {
+        this( assertion,
+              context,
+              null,
+              (CertValidationProcessor) context.getBean("certValidationProcessor"),
+              (SecurityTokenResolver)context.getBean("securityTokenResolver"),
+              (TrustedCertServices)context.getBean("trustedCertServices"),
+              SyspropUtil.getBoolean(ServerNcesValidatorAssertion.class.getName() + ".checkSingleSigner", true) );
+    }
+
+    protected ServerNcesValidatorAssertion( final NcesValidatorAssertion assertion,
+                                            final ApplicationContext context,
+                                            final Auditor auditor,
+                                            final CertValidationProcessor certValidationProcessor,
+                                            final SecurityTokenResolver securityTokenResolver,
+                                            final TrustedCertServices trustedCertServices,
+                                            final boolean checkSingleSignature ) throws PolicyAssertionException {
         super(assertion);
-        this.auditor = new Auditor(this, context, logger);
-        this.certValidationProcessor = (CertValidationProcessor)context.getBean("certValidationProcessor");
-        this.securityTokenResolver = (SecurityTokenResolver)context.getBean("securityTokenResolver");
-        this.trustedCertServices = (TrustedCertServices)context.getBean("trustedCertServices");
+        this.auditor = auditor!=null ? auditor : new Auditor(this, context, logger);        
+        this.certValidationProcessor = certValidationProcessor;
+        this.securityTokenResolver = securityTokenResolver;
+        this.trustedCertServices = trustedCertServices;
+        this.checkSingleSignature = checkSingleSignature;
     }
 
     @Override
@@ -155,9 +174,11 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
 
         boolean ok;
         if (assertion.isSamlRequired()) {
-            ok = samlSigner == timestampSigner && timestampSigner == messageIdSigner && messageIdSigner == bodySigner;
+            ok = samlSigner == timestampSigner && timestampSigner == messageIdSigner && messageIdSigner == bodySigner &&
+                 (!checkSingleSignature || WSSecurityProcessorUtils.isSameSignature( samlSigner, timestampSigner, messageIdSigner, bodySigner ));
         } else {
-            ok = timestampSigner == messageIdSigner && messageIdSigner == bodySigner;
+            ok = timestampSigner == messageIdSigner && messageIdSigner == bodySigner &&
+                 (!checkSingleSignature || WSSecurityProcessorUtils.isSameSignature( timestampSigner, messageIdSigner, bodySigner ));
         }
 
         if (!ok) {
