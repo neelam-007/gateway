@@ -559,6 +559,9 @@ public class WssProcessorTest {
                         blarg.setAttribute("actor", SoapUtil.ACTOR_VALUE_NEXT);
                         return true;
                     }
+                    public String toString() {
+                        return "mustUnderstand=1, actor="+SoapUtil.ACTOR_VALUE_NEXT;
+                    }
                 },
                 new Configurer() {
                     public boolean configure(Document placeOrder, Element blarg) throws IOException {
@@ -569,6 +572,9 @@ public class WssProcessorTest {
                         blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "1");
                         blarg.setAttributeNS(soapns, "soapenv:actor", SoapUtil.ACTOR_VALUE_NEXT);
                         return true;
+                    }
+                    public String toString() {
+                        return "mustUnderstand=1, soapenv:actor="+SoapUtil.ACTOR_VALUE_NEXT;
                     }
                 },
                 new Configurer() {
@@ -581,14 +587,20 @@ public class WssProcessorTest {
                         blarg.setAttributeNS(soapns, "soapenv:role", SoapUtil.ROLE_VALUE_NEXT);
                         return true;
                     }
+                    public String toString() {
+                        return "mustUnderstand=true, soapenv:role="+SoapUtil.ROLE_VALUE_NEXT;
+                    }
                 },
                 new Configurer() {
                     public boolean configure(Document placeOrder, Element blarg) throws IOException {
                         // Same as #1 but with SecureSpan actor
                         blarg.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:blarg", blargns);
                         blarg.setAttribute("mustUnderstand", "1");
-                        blarg.setAttribute("actor", "SecureSpan");
+                        blarg.setAttribute("actor", "secure_span");
                         return true;
+                    }
+                    public String toString() {
+                        return "mustUnderstand=1, actor=secure_span";
                     }
                 },
                 new Configurer() {
@@ -598,8 +610,11 @@ public class WssProcessorTest {
                         final String soapns = SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE;
                         blarg.getOwnerDocument().getDocumentElement().setAttribute("xmlns:soapenv", soapns);
                         blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "1");
-                        blarg.setAttributeNS(soapns, "soapenv:actor", "SecureSpan");
+                        blarg.setAttributeNS(soapns, "soapenv:actor", "secure_span");
                         return true;
+                    }
+                    public String toString() {
+                        return "mustUnderstand=1, soapenv:actor=secure_span";
                     }
                 },
                 new Configurer() {
@@ -609,8 +624,11 @@ public class WssProcessorTest {
                         final String soapns = SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE;
                         blarg.getOwnerDocument().getDocumentElement().setAttribute("xmlns:soapenv", soapns);
                         blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "true");
-                        blarg.setAttributeNS(soapns, "soapenv:role", "SecureSpan");
+                        blarg.setAttributeNS(soapns, "soapenv:role", "secure_span");
                         return true;
+                    }
+                    public String toString() {
+                        return "mustUnderstand=true, soapenv:role=secure_span";
                     }
                 },
                 new Configurer() {
@@ -618,16 +636,22 @@ public class WssProcessorTest {
                         // Not rejected for mustUndestand=false
                         blarg.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:blarg", blargns);
                         blarg.setAttribute("mustUnderstand", "false");
-                        blarg.setAttribute("actor", "SecureSpan");
+                        blarg.setAttribute("actor", "secure_span");
                         return false;
+                    }
+                    public String toString() {
+                        return "mustUnderstand=false, soapenv:actor=secure_span";
                     }
                 },
                 new Configurer() {
                     public boolean configure(Document placeOrder, Element blarg) throws IOException {
                         // Not rejected for no mustUnderstand
                         blarg.setAttributeNS(DomUtils.XMLNS_NS, "xmlns:blarg", blargns);
-                        blarg.setAttribute("actor", "SecureSpan");
+                        blarg.setAttribute("actor", "secure_span");
                         return false;
+                    }
+                    public String toString() {
+                        return "soapenv:actor=secure_span";
                     }
                 },
                 new Configurer() {
@@ -639,6 +663,9 @@ public class WssProcessorTest {
                         blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "1");
                         return false;
                     }
+                    public String toString() {
+                        return "soapenv:mustUnderstand=1";
+                    }
                 },
                 new Configurer() {
                     public boolean configure(Document placeOrder, Element blarg) throws IOException {
@@ -649,6 +676,9 @@ public class WssProcessorTest {
                         blarg.setAttributeNS(soapns, "soapenv:mustUnderstand", "true");
                         blarg.setAttributeNS(soapns, "soapenv:role", "");
                         return false;
+                    }
+                    public String toString() {
+                        return "soapenv:mustUnderstand=true, soapenv:role=";
                     }
                 }
         ));
@@ -662,6 +692,9 @@ public class WssProcessorTest {
             header.appendChild(blarg);
             boolean shouldReject = test.configure(placeOrder, blarg);
 
+            // Round trip doc to fix modified namespaces
+            placeOrder = XmlUtil.parse(XmlUtil.nodeToString(placeOrder));
+
             {
                 WssProcessorImpl processor = new WssProcessorImpl(new Message(placeOrder));
                 processor.setRejectOnMustUnderstand(false);
@@ -673,10 +706,10 @@ public class WssProcessorTest {
                 processor.setRejectOnMustUnderstand(shouldReject);
                 processor.processMessage();
                 if (shouldReject)
-                    fail("failed to reject message with mustUnderstand=1");
+                    fail("failed to reject message with mustUnderstand=1 : " + test);
             } catch (InvalidDocumentFormatException e) {
                 if (!shouldReject)
-                    fail("rejected a document that should have passed");
+                    fail("rejected a document that should have passed : " + test);
                 assertTrue(e.getMessage().contains("mustUnderstand"));
             }
         }

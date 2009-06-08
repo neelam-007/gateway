@@ -71,7 +71,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Set;
 import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
@@ -96,7 +96,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final TrafficLogger trafficLogger;
     private SoapFaultManager soapFaultManager;
     private final ArrayList<TrafficMonitor> trafficMonitors = new ArrayList<TrafficMonitor>();
-    private final AtomicLong signedAttachmentMaxSize = new AtomicLong();
+    private final AtomicReference<WssSettings> wssSettingsReference = new AtomicReference<WssSettings>();
     private final ApplicationEventPublisher messageProcessingEventChannel;
 
     /**
@@ -160,7 +160,11 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         long maxBytes = serverConfig.getLongPropertyCached(ServerConfig.PARAM_IO_XML_PART_MAX_BYTES, 0, period - 1);
         MimeBody.setFirstPartXmlMaxBytes(maxBytes);
 
-        signedAttachmentMaxSize.set(serverConfig.getLongPropertyCached(ServerConfig.PARAM_SIGNED_PART_MAX_BYTES, 0, period - 1));
+        wssSettingsReference.set( new WssSettings(
+            serverConfig.getLongPropertyCached(ServerConfig.PARAM_SIGNED_PART_MAX_BYTES, 0, period - 1),
+            serverConfig.getBooleanProperty(ServerConfig.PARAM_SOAP_REJECT_MUST_UNDERSTAND, true),
+            serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_ALLOW_MULTIPLE_TIMESTAMP_SIGNATURES, false)
+        ) );
     }
 
     public AssertionStatus processMessage(PolicyEnforcementContext context)
@@ -686,8 +690,10 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             if (performSecurityProcessing && isSoap && hasSecurity) {
                 WssProcessorImpl trogdor = new WssProcessorImpl(); // no need for locator
-                trogdor.setSignedAttachmentSizeLimit(signedAttachmentMaxSize.get());
-                trogdor.setRejectOnMustUnderstand(serverConfig.getBooleanProperty(ServerConfig.PARAM_SOAP_REJECT_MUST_UNDERSTAND, true));
+                WssSettings settings = wssSettingsReference.get();
+                trogdor.setSignedAttachmentSizeLimit(settings.signedAttachmentMaxSize);
+                trogdor.setRejectOnMustUnderstand(settings.rejectOnMustUnderstand);
+                trogdor.setPermitMultipleTimestampSignatures(settings.permitMultipleTimestampSignatures);
                 try {
                     final Message request = context.getRequest();
                     final SecurityKnob reqSec = request.getSecurityKnob();
@@ -818,6 +824,20 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             } finally {
                 mutex.readLock().unlock();
             }
+        }
+    }
+
+    private static final class WssSettings {
+        private final long signedAttachmentMaxSize;
+        private final boolean rejectOnMustUnderstand;
+        private final boolean permitMultipleTimestampSignatures;
+
+        private WssSettings( final long signedAttachmentMaxSize,
+                             final boolean rejectOnMustUnderstand,
+                             final boolean permitMultipleTimestampSignatures ) {
+            this.signedAttachmentMaxSize = signedAttachmentMaxSize;
+            this.rejectOnMustUnderstand = rejectOnMustUnderstand;
+            this.permitMultipleTimestampSignatures = permitMultipleTimestampSignatures;
         }
     }
 }

@@ -69,11 +69,14 @@ public class WssProcessorImpl implements WssProcessor {
     public final List<SignatureConfirmation> signatureConfirmationValues = new ArrayList<SignatureConfirmation>();
     public final List<String> validatedSignatureValues = new ArrayList<String>();
 
+    // WARNING : Settings must be copied in undecorateMessage
     private X509Certificate senderCertificate = null;
     private SecurityTokenResolver securityTokenResolver = null;
     private SecurityContextFinder securityContextFinder = null;
     private long signedAttachmentSizeLimit = 0;
     private boolean rejectOnMustUnderstand = true;
+    private boolean permitMultipleTimestampSignatures = false;
+    // WARNING : Settings must be copied in undecorateMessage
 
     private Document processedDocument;
     private Map<String,Element> elementsByWsuId = null;
@@ -124,6 +127,8 @@ public class WssProcessorImpl implements WssProcessor {
         context.setSecurityContextFinder(securityContextFinder);
         context.setSecurityTokenResolver(securityTokenResolver);
         context.setSignedAttachmentSizeLimit(signedAttachmentSizeLimit);
+        context.setPermitMultipleTimestampSignatures(permitMultipleTimestampSignatures);
+        context.setRejectOnMustUnderstand(rejectOnMustUnderstand);
         return context.processMessage();
     }
 
@@ -173,6 +178,19 @@ public class WssProcessorImpl implements WssProcessor {
      */
     public void setRejectOnMustUnderstand(boolean rejectOnMustUnderstand) {
         this.rejectOnMustUnderstand = rejectOnMustUnderstand;
+    }
+
+    /**
+     * Set whether multiple signatures over the timestamp are permitted.
+     *
+     * <p>This setting is "false" by default, but should be set to "true" if
+     * messages are expected to contain multiple signatures that cover the
+     * timestamp.</p> 
+     *
+     * @param permitMultipleTimestampSignatures True to permit multiple signatures covering the timestamp.
+     */
+    public void setPermitMultipleTimestampSignatures(boolean permitMultipleTimestampSignatures) {
+        this.permitMultipleTimestampSignatures = permitMultipleTimestampSignatures;
     }
 
     /**
@@ -440,7 +458,9 @@ public class WssProcessorImpl implements WssProcessor {
 
                         // Is it addressed to us?
                         String actor = SoapUtil.getActorValue(element);
-                        if ("SecureSpan".equals(actor) || SoapConstants.ACTOR_VALUE_NEXT.equals(actor))
+                        if ( SoapConstants.ACTOR_VALUE_NEXT.equals(actor) ||
+                             SoapConstants.ROLE_VALUE_NEXT.equals(actor) ||
+                             SoapUtil.isElementForL7(element) )
                             throw new MustUnderstandException(element);
 
                         // For role we can use a strict match since, for SOAP 1.2, they specified the role attr's namespace
@@ -787,7 +807,7 @@ public class WssProcessorImpl implements WssProcessor {
                 return tokens.toArray(new SigningSecurityToken[tokens.size()]);
             }
         };
-        if (timestamp != null) {
+        if ( timestamp != null && !permitMultipleTimestampSignatures) {
             Element timeElement = timestamp.asElement();
             SigningSecurityToken[] signingTokens = processorResult.getSigningTokens(timeElement);
             if (signingTokens.length > 1) {

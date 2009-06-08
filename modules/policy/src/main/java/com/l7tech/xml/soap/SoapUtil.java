@@ -541,6 +541,42 @@ public class SoapUtil extends SoapConstants {
         return l7secheader;
     }
 
+    /**
+     * Is the given element addressed to the Layer7 actor/role.
+     *
+     * <p>Note that this method does not validate that the given element is a
+     * child of the SOAP header.</p>
+     *
+     * <p>An element with the "next" role/actor is NOT counted as addressed to
+     * layer 7.</p>
+     *
+     * @param element The element to check.
+     * @return true if the element is for Layer7
+     */
+    public static boolean isElementForL7( final Element element ) {
+        boolean isL7ActorOrRole = false;
+
+        Document document = element.getOwnerDocument();
+        if ( document != null ) {
+            final String actorValue = getActorValue( element );
+            if ( actorValue != null ) {
+                SoapVersion soapVersion = SoapVersion.namespaceToSoapVersion( document.getDocumentElement().getNamespaceURI() );
+                String actors = soapVersion == SoapVersion.SOAP_1_1 || soapVersion == SoapVersion.UNKNOWN ?
+                        SyspropUtil.getString( "com.l7tech.xml.soap.actors", SoapUtil.L7_SOAP_ACTORS ) :
+                        SyspropUtil.getString( "com.l7tech.xml.soap.roles", SoapUtil.L7_SOAP_ACTORS );
+
+                for ( String actor : actors.split("\\s{1,1024}") ) {
+                    if ( actor.equals(actorValue) ) {
+                        isL7ActorOrRole = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return isL7ActorOrRole;
+    }
+
     public static void nukeActorAttribute(Element el) {
         String attrName = SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE.equals(el.getOwnerDocument().getDocumentElement().getNamespaceURI()) ? SoapUtil.ROLE_ATTR_NAME : SoapUtil.ACTOR_ATTR_NAME;
         el.removeAttribute(attrName);
