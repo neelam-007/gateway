@@ -258,7 +258,7 @@ public class SetVariableAssertionDialog extends JDialog {
         } else if ((validateNameResult = VariableMetadata.validateName(variableName)) != null) {
             ok = false;
             _variableNameStatusLabel.setIcon(WARNING_ICON);
-            _variableNameStatusLabel.setText(validateNameResult);
+            _variableNameStatusLabel.setText(reconstructLongStringByAddingLineBreakTags(validateNameResult, 58));
         } else {
             final VariableMetadata meta = BuiltinVariables.getMetadata(variableName);
             if (meta == null) {
@@ -339,6 +339,63 @@ public class SetVariableAssertionDialog extends JDialog {
         }
 
         _okButton.setEnabled(!readOnly && ok);
+    }
+
+    /**
+     * Reconstruct a string by adding line break (<br>) tags into it.  The length of each row in the modified string is up to maxLength.
+     *
+     * @param longString: the string to reconstrctured.
+     * @param maxLength: the maximum length for each row of the string.
+     * @return a html string composed by the original string with line break tags.
+     */
+    private String reconstructLongStringByAddingLineBreakTags(String longString, int maxLength) {
+        if (longString == null) return null;
+
+        StringBuilder sb = new StringBuilder(longString.length());
+        while (longString.length() > maxLength) {
+            char lastChar = longString.charAt(maxLength - 1);
+            char charInMaxLength = longString.charAt(maxLength);
+            if (lastChar == ' ') {
+                sb.append(longString.substring(0, maxLength - 1)).append("<br>");
+                longString = longString.substring(maxLength);
+            } else if (lastChar == ',' || lastChar == '.') {
+                sb.append(longString.substring(0, maxLength)).append("<br>");
+                if (longString.charAt(maxLength) == ' ')
+                    longString = longString.substring(maxLength + 1);
+                else
+                    longString = longString.substring(maxLength);
+            } else if (charInMaxLength == ' ' || charInMaxLength == ',' || charInMaxLength == '.') {
+                if (charInMaxLength == ' ') {
+                    sb.append(longString.substring(0, maxLength)).append("<br>");
+                } else {
+                    sb.append(longString.substring(0, maxLength + 1)).append("<br>");
+                }
+                try {
+                    longString = longString.substring(maxLength + 1);
+                } catch (IndexOutOfBoundsException e) {
+                    longString = "";
+                }
+            } else {
+                String tmp = longString.substring(0, maxLength);
+                int lastSpaceIdx = tmp.lastIndexOf(' ');
+                int lastCommaIdx = tmp.lastIndexOf(',');
+                int lastPeriodIdx = tmp.lastIndexOf('.');
+                int maxIdx = Math.max(Math.max(lastSpaceIdx, lastCommaIdx), lastPeriodIdx);
+                if (maxIdx < 0)  maxIdx = maxLength - 1;
+
+                char tmpChar = tmp.charAt(maxIdx);
+                if (tmpChar == ' ') {
+                    sb.append(longString.substring(0, maxIdx)).append("<br>");
+                } else {
+                    sb.append(longString.substring(0, maxIdx + 1)).append("<br>");
+                }
+                longString = longString.substring(maxIdx + 1);
+            }
+        }
+        sb.append(longString);
+        sb.insert(0, "<html><body>").append("</body></html>");
+
+        return sb.toString();
     }
 
     public boolean isAssertionModified() {
