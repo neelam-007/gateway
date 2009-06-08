@@ -3,14 +3,14 @@
  */
 package com.l7tech.example.manager.apidemo;
 
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
-import com.l7tech.console.MainWindow;
-import com.l7tech.console.SsmApplication;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.HeavySsmPreferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.SsmApplication;
+import com.l7tech.console.MainWindow;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -47,15 +47,15 @@ public class SsgAdminSession {
         applicationContext = createApplicationContext();
         SecurityProvider credentialManager = Registry.getDefault().getSecurityProvider();
 
-        SsmApplication app = new SsmApplication() {
-            public void showHelpTopicsRoot() {}
-            public void run() {}
-            public boolean isApplet() {
-                return false;
-            }
-        };
-        app.setApplicationContext(applicationContext);
-        TopComponents.getInstance().registerComponent("mainWindow", new MainWindow(app));
+//        SsmApplication app = new SsmApplication() {
+//            public void showHelpTopicsRoot() {}
+//            public void run() {}
+//            public boolean isApplet() {
+//                return false;
+//            }
+//        };
+//        app.setApplicationContext(applicationContext);
+//        TopComponents.getInstance().registerComponent("mainWindow", new MainWindow(app));
 
         try {
             credentialManager.getAuthenticationProvider().login(new PasswordAuthentication(this.adminLogin, this.adminPass.toCharArray()), this.ssgHost, false, null);
@@ -70,7 +70,11 @@ public class SsgAdminSession {
             ctxName = "com/l7tech/console/resources/beans-context.xml";
         }
         String ctxHeavy = "com/l7tech/console/resources/beans-application.xml";
-        return new ClassPathXmlApplicationContext(new String[]{ctxHeavy, ctxName});
+
+        ApplicationContext context = new ClassPathXmlApplicationContext(new String[]{ctxHeavy, ctxName});
+        Registry.setDefault( (Registry) context.getBean("registry", Registry.class) );
+
+        return context;
     }
 
     public ClusterStatusAdmin getClusterStatusAdmin() {

@@ -174,9 +174,11 @@
         <include name="com/l7tech/console/security/InvalidHostCertificateException.java"/>
         <include name="com/l7tech/console/security/InvalidHostNameException.java"/>
         <include name="com/l7tech/console/security/LogonListener.java"/>
+        <include name="com/l7tech/console/policy/exporter/*.java"/>
         <include name="com/l7tech/gateway/common/**/*.java"/>
         <include name="com/l7tech/identity/**/*.java"/>
         <include name="com/l7tech/objectmodel/**/*.java"/>
+        <include name="com/l7tech/policy/**/*.java"/>
     </patternset>
 
     <!--
@@ -2394,6 +2396,18 @@
                 maxmemory="1024m">
 
             <fileset dir="${src.root}/modules/gateway/console/src/main/java" defaultexcludes="yes">
+                <patternset refid="managerapi.sources"/>
+            </fileset>
+
+            <fileset dir="${src.root}/modules/gateway/common/src/main/java" defaultexcludes="yes">
+                <patternset refid="managerapi.sources"/>
+            </fileset>
+
+            <fileset dir="${src.root}/modules/identity/src/main/java" defaultexcludes="yes">
+                <patternset refid="managerapi.sources"/>
+            </fileset>
+
+            <fileset dir="${src.root}/modules/policy/src/main/java" defaultexcludes="yes">
                 <patternset refid="managerapi.sources"/>
             </fileset>
 

@@ -7,7 +7,7 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
-import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 
 /**
  * A class that bulk creates users in an internal identity provider
- * of a SecureSpan Gateway version 3.5.
+ * of a SecureSpan Gateway.
  */
 public class IdentityProvider {
     public static final String BULKUSERS_NAMEPREFIX = "nohcolber";
@@ -152,7 +152,7 @@ public class IdentityProvider {
     }
 
     private User constructUser(final String login, final String passwd) {
-        InternalUser u = new InternalUser();
+        UserBean u = new UserBean();
         u.setProviderId(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         u.setLogin(login);
         String passwdenc = HexUtils.encodePasswd(u.getLogin(), passwd, HttpDigest.REALM);

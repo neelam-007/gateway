@@ -17,8 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A class that displays the service usage statistics for a SecureSpan Gateway cluster for
- * version 3.5.
+ * A class that displays the service usage statistics for a SecureSpan Gateway cluster.
  */
 public class ShowClusterStatistics {
     private static Logger logger = Logger.getLogger(ShowClusterStatistics.class.getName());

@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 public class Main {
     // todo, change these settings to make them relevent to your situation
     // this is the host name where the ssg is deployed (must be same host name as one declared in ssl cert)
-    public static final String SSGHOST =  "samplessg.layer7tech.com";
+    public static final String SSGHOST =  "bieksa.l7tech.com";
     // administrator account name valid on that ssg
     public static final String ADMINACCOUNT_NAME = "admin";
     // associated password for the abovementioned administrator account name

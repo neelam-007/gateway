@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
+import com.l7tech.gateway.common.service.ServiceHeader;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
@@ -20,7 +21,7 @@ import java.util.logging.Logger;
 
 /**
  * This class is a sample demonstrating operations on Published Service
- * on a SecureSpan Gateway version 3.5.
+ * on a SecureSpan Gateway.
  */
 public class ServicePublication {
     private SsgAdminSession session;
@@ -154,11 +155,13 @@ public class ServicePublication {
      */
     public String[] listPublishedServices() throws RemoteException, FindException {
         ServiceAdmin serviceAdmin = session.getServiceAdmin();
-        EntityHeader[] res = serviceAdmin.findAllPublishedServices();
+        com.l7tech.gateway.common.service.ServiceHeader[] res = serviceAdmin.findAllPublishedServices();
         String[] output = new String[res.length];
         for (int i = 0; i < res.length; i++) {
-            EntityHeader header = res[i];
-            output[i] = "Service Name: " + header.getName() + " Service ID: " + header.getOid();
+            ServiceHeader header = res[i];
+            PublishedService ps = serviceAdmin.findServiceByID(Long.toString(header.getOid()));
+            output[i] = "Service Name: " + header.getName() + " Service ID: " + header.getOid() + "\n\n" + ps.getPolicy().getXml() + "\n\n";
+            
         }
         return output;
     }
