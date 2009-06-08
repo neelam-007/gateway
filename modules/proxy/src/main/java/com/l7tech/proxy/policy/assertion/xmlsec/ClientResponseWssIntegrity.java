@@ -113,15 +113,17 @@ public class ClientResponseWssIntegrity extends ClientDomXpathBasedAssertion<Wss
         }
 
         final Map<String, String> props = context.getSsg().getProperties();
-        final boolean requireSingleToken = !"false".equalsIgnoreCase(props.get("response.security.validateSingleSignature"));
+        final boolean requireSingleSignature = !"false".equalsIgnoreCase(props.get("response.security.validateSingleSignature"));
         final boolean validateSigner = !"false".equalsIgnoreCase(props.get("response.security.validateSigningToken"));
         SigningSecurityToken signingToken = null;
+        Element signatureElement = null;
         if ( wereSigned != null ) {
             for ( SignedElement signedElement : wereSigned ) {
-                if ( signingToken == null ) {
+                if ( signatureElement == null ) {
                     signingToken = signedElement.getSigningSecurityToken();
-                } else if ( requireSingleToken && signingToken != signedElement.getSigningSecurityToken() ){
-                    throw new ResponseValidationException("Response included multiple signing tokens.");
+                    signatureElement = signedElement.getSignatureElement();
+                } else if ( requireSingleSignature && signatureElement != signedElement.getSignatureElement() ){
+                    throw new ResponseValidationException("Response included multiple signatures.");
                 }
             }
         }
