@@ -540,7 +540,7 @@ public class FindIdentitiesDialog extends JDialog {
     private void showSearchResult(SearchInfo info) {
         final EntityType[] types = info.getSearchType().getTypes();
         String searchName = info.getSearchName();
-        if (!info.isExactName()) {
+        if (!info.isExactName() && !searchName.endsWith("*")) {
             searchName += "*";
         }
         if ("".equals(searchName)) {
