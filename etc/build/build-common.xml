@@ -198,7 +198,7 @@
       Modules JAR signing task with presets
     -->
     <presetdef name="sign-jar">
-        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer2" storepass="password" jar="${jar.file}">
+        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer3" storepass="password" jar="${jar.file}">
             <path>
                 <fileset dir="${build.dir}" includes="${jar.sign.pattern}" />
             </path>
