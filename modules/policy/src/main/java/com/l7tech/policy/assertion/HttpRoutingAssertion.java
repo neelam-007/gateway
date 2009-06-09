@@ -142,6 +142,17 @@ public class HttpRoutingAssertion extends RoutingAssertion implements UsesVariab
         this.setNonDefaultKeystoreId(source.getNonDefaultKeystoreId());
     }
 
+    @Override
+    public HttpRoutingAssertion clone() {
+        HttpRoutingAssertion hra = (HttpRoutingAssertion) super.clone();
+
+        hra.responseHeaderRules = responseHeaderRules.clone();
+        hra.requestHeaderRules = requestHeaderRules.clone();
+        hra.requestParamRules = requestParamRules.clone();
+
+        return hra;
+    }
+
     /**
      * Full constructor.
      *

@@ -44,6 +44,13 @@ public abstract class MessageTargetableAssertion extends Assertion implements Me
         return targetSupport.getVariablesUsed();
     }
 
+    @Override
+    public MessageTargetableAssertion clone() {
+        MessageTargetableAssertion mta = (MessageTargetableAssertion) super.clone();
+        mta.targetSupport = new MessageTargetableSupport( targetSupport );
+        return mta;
+    }
+
     //- PROTECTED
 
     protected MessageTargetableAssertion() {

@@ -165,6 +165,13 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion implements Uses
         }
     }
 
+    @Override
+    public BridgeRoutingAssertion clone() {
+        BridgeRoutingAssertion bra = (BridgeRoutingAssertion) super.clone();
+        bra.setClientPolicyProperties( new LinkedHashMap<String,String>(clientPolicyProperties) );
+        return bra;
+    }
+
     //- PRIVATE
 
     private Map<String,String> clientPolicyProperties = new LinkedHashMap<String,String>();

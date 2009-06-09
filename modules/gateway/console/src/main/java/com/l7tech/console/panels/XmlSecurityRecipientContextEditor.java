@@ -316,16 +316,16 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                                               "Invalid Selection", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            XmlSecurityRecipientContext newRecipientContext = new XmlSecurityRecipientContext();
-            newRecipientContext.setActor((String)actorComboBox.getSelectedItem());
-            X509Certificate cert = null;
-            if (newRecipientContext.getActor().equals(locallyDefinedActor)) {
+            String actor = (String) actorComboBox.getSelectedItem();
+            X509Certificate cert;
+            if (actor.equals(locallyDefinedActor)) {
                 cert = locallyDefinedRecipient;
             } else {
-                cert = (X509Certificate)xmlSecRecipientsFromOtherAssertions.get(newRecipientContext.getActor());
+                cert = (X509Certificate)xmlSecRecipientsFromOtherAssertions.get(actor);
             }
+            XmlSecurityRecipientContext newRecipientContext;
             try {
-                newRecipientContext.setBase64edX509Certificate(HexUtils.encodeBase64(cert.getEncoded(), true));
+                newRecipientContext = new XmlSecurityRecipientContext( actor, HexUtils.encodeBase64(cert.getEncoded(), true) );
             } catch (CertificateEncodingException e) {
                 throw new RuntimeException("could not encode cert", e);
             }

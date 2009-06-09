@@ -141,6 +141,8 @@ public class RequestSwAAssertion extends SwAAssertion {
             entry.setValue(((BindingInfo)entry.getValue()).clone());
         }
 
+        clone.namespaceMap = (Map) ((LinkedHashMap)namespaceMap).clone();
+
         return clone;
     }
 

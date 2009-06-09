@@ -7,8 +7,6 @@ package com.l7tech.policy.assertion;
 import java.util.*;
 import java.io.ObjectInputStream;
 import java.io.ByteArrayInputStream;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -181,51 +179,5 @@ public class AssertionTest {
         //should not find or contain the disabled assertion
         Assert.assertFalse("Disabled false assertion is NOT found (ignored)", Assertion.contains(rootAssertion, FalseAssertion.class, true));
         Assert.assertFalse("Disabled false assertion is NOT found (ignored)", Assertion.find(rootAssertion, FalseAssertion.class, true) != null);
-    }
-
-    /**
-     * Test for a generic getter with regular setter and vice versa
-     */
-    @Test
-    public void testGenericsMismatch() {
-        for ( Assertion assertion : AllAssertions.GATEWAY_EVERYTHING ) {
-            List<String> genericgetters = new ArrayList<String>();
-            List<String> getters = new ArrayList<String>();
-            List<String> genericsetters = new ArrayList<String>();
-            List<String> setters = new ArrayList<String>();
-
-            for ( Method method : assertion.getClass().getMethods() ) {
-                if (Modifier.isStatic(method.getModifiers()))
-                    continue;
-
-                String name = method.getName();
-                Class[] parameterTypes = method.getParameterTypes();
-
-                if ( name.startsWith("set") &&
-                     parameterTypes.length != 1 ) {
-                    continue;
-                }
-
-                if (name.startsWith("get") && name.length() > 3) {
-                    genericgetters.add(name.substring(3) + ":" + method.getGenericReturnType());
-                    getters.add(name.substring(3) + ":" + method.getReturnType());
-                } else if (name.startsWith("set") && name.length() > 3) {
-                    genericsetters.add(name.substring(3) + ":" + method.getGenericParameterTypes()[0]);
-                    setters.add(name.substring(3) + ":" + method.getParameterTypes()[0]);
-                }
-            }
-
-            for ( int i=0; i< genericgetters.size(); i++ ) {
-                String genericGetter = genericgetters.get(i);
-                String getter = getters.get(i);
-                Assert.assertFalse("Assertion '"+assertion.getClass()+"' has mismatched getter/setter : " + genericGetter, !genericsetters.contains(genericGetter) && genericsetters.contains(getter));
-            }
-
-            for ( int i=0; i< genericsetters.size(); i++ ) {
-                String genericSetter = genericsetters.get(i);
-                String setter = setters.get(i);
-                Assert.assertFalse("Assertion '"+assertion.getClass()+"' has mismatched getter/setter : " + genericSetter, !genericgetters.contains(genericSetter) && genericgetters.contains(setter));
-            }
-        }
     }
 }

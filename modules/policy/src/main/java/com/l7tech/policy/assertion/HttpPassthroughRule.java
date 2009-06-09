@@ -12,7 +12,7 @@ import java.io.Serializable;
  * User: flascell<br/>
  * Date: Jan 5, 2007<br/>
  */
-public class HttpPassthroughRule implements Serializable {
+public class HttpPassthroughRule implements Cloneable, Serializable {
 
 
     public HttpPassthroughRule() {
@@ -46,6 +46,11 @@ public class HttpPassthroughRule implements Serializable {
 
     public void setCustomizeValue(String customizeValue) {
         this.customizeValue = customizeValue;
+    }
+
+    @Override
+    protected HttpPassthroughRule clone() throws CloneNotSupportedException {
+        return (HttpPassthroughRule) super.clone();
     }
 
     private String name;

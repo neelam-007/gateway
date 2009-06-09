@@ -28,7 +28,8 @@ public class XmlSecurityRecipientContext implements Serializable {
 
     public XmlSecurityRecipientContext(String actor, String base64edX509Certificate) {
         this.actor = actor;
-        setBase64edX509Certificate(base64edX509Certificate);
+        this.base64edX509Certificate = base64edX509Certificate;
+        processCertificate();
     }
 
     /**
@@ -54,6 +55,10 @@ public class XmlSecurityRecipientContext implements Serializable {
         return actor;
     }
 
+    /**
+     * @deprecated For serialization only
+     */
+    @Deprecated
     public void setActor(String actor) {
         this.actor = actor;
     }
@@ -62,21 +67,21 @@ public class XmlSecurityRecipientContext implements Serializable {
         return base64edX509Certificate;
     }
 
+    /**
+     * @deprecated For serialization only
+     */
+    @Deprecated
     public void setBase64edX509Certificate(String base64edX509Certificate) {
         this.base64edX509Certificate = base64edX509Certificate;
-        try {
-            this.x509Certificate = base64edX509Certificate == null
-                                       ? null
-                                       : CertUtils.decodeCert(HexUtils.decodeBase64(base64edX509Certificate, true));
-        } catch (CertificateException e) {
-            throw new IllegalArgumentException("Bad certificate", e);
-        }
+        processCertificate();
     }
 
     public X509Certificate getX509Certificate() {
         return this.x509Certificate;
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof XmlSecurityRecipientContext)) return false;
@@ -89,10 +94,21 @@ public class XmlSecurityRecipientContext implements Serializable {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result;
         result = (actor != null ? actor.hashCode() : 0);
         result = 29 * result + (base64edX509Certificate != null ? base64edX509Certificate.hashCode() : 0);
         return result;
+    }
+
+    private void processCertificate() {
+        try {
+            this.x509Certificate = base64edX509Certificate == null
+                                       ? null
+                                       : CertUtils.decodeCert(HexUtils.decodeBase64(base64edX509Certificate, true));
+        } catch (CertificateException e) {
+            throw new IllegalArgumentException("Bad certificate", e);
+        }
     }
 }

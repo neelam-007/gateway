@@ -59,8 +59,15 @@ public abstract class WssCredentialSourceAssertion extends SecurityHeaderAddress
     public String[] getVariablesUsed() {
         return messageTargetableSupport.getVariablesUsed();
     }
-    
+
+    @Override
+    public WssCredentialSourceAssertion clone() {
+        WssCredentialSourceAssertion wssca = (WssCredentialSourceAssertion) super.clone();
+        wssca.messageTargetableSupport = new MessageTargetableSupport( messageTargetableSupport );
+        return wssca;
+    }
+
     //- PRIVATE
 
-    private final MessageTargetableSupport messageTargetableSupport = new MessageTargetableSupport();
+    private MessageTargetableSupport messageTargetableSupport = new MessageTargetableSupport();
 }

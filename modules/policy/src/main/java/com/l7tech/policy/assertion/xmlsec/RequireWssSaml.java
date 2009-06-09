@@ -243,6 +243,8 @@ public class RequireWssSaml extends SamlPolicyAssertion implements MessageTarget
             assertion.setAuthorizationStatement((SamlAuthorizationStatement)assertion.getAuthorizationStatement().clone());
         }
 
+        assertion.messageTargetableSupport = new MessageTargetableSupport( messageTargetableSupport );        
+
         return assertion;
     }
 

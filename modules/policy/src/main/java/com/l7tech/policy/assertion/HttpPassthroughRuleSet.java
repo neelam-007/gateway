@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.util.ExceptionUtils;
+
 import java.io.Serializable;
 
 /**
@@ -14,7 +16,7 @@ import java.io.Serializable;
  * User: flascell<br/>
  * Date: Jan 8, 2007<br/>
  */
-public class HttpPassthroughRuleSet implements Serializable  {
+public class HttpPassthroughRuleSet implements Cloneable, Serializable  {
 
     public static final int ORIGINAL_PASSTHROUGH = 0;
     public static final int CUSTOM_PASSTHROUGH = 1;
@@ -112,5 +114,22 @@ public class HttpPassthroughRuleSet implements Serializable  {
             }
         }
         return BLOCK;
+    }
+
+    @SuppressWarnings({"CloneDoesntDeclareCloneNotSupportedException"})
+    @Override
+    protected HttpPassthroughRuleSet clone() {
+        try {
+            HttpPassthroughRuleSet hprs = (HttpPassthroughRuleSet) super.clone();
+
+            hprs.rules = new HttpPassthroughRule[ rules.length ];
+            for ( int i=0; i<rules.length; i++ ) {
+                hprs.rules[i] = rules[i].clone();
+            }
+
+            return hprs;
+        } catch (CloneNotSupportedException e) {
+            throw ExceptionUtils.wrap(e);
+        }
     }
 }
