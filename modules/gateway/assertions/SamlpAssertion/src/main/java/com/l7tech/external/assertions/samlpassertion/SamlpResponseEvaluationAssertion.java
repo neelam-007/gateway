@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.variable.DataType;
@@ -123,7 +124,7 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
         }
 
         // TODO how could one parameterize the authentication statement at all?
-        return varNames.toArray(new String[0]);
+        return varNames.toArray(new String[varNames.size()]);
     }
 
     private void collectVars(Set<String> varNames, String s) {
@@ -170,6 +171,7 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.samlpassertion.console.SamlpResponseEvaluationAssertionPropertiesEditor");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, SamlpResponseEvaluationAssertion>() {
+            @Override
             public String call(SamlpResponseEvaluationAssertion assertion) {
                 StringBuilder sb = new StringBuilder("SAMLP Evaluator");
 
@@ -180,7 +182,7 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
                 else if (assertion.getAttributeStatement() != null)
                     sb.append(" (Attribute Query)");
 
-                return sb.toString();
+                return AssertionUtils.decorateName(assertion, sb);
             }
         });
 
@@ -201,6 +203,7 @@ public class SamlpResponseEvaluationAssertion extends SamlProtocolAssertion impl
         return meta;
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
 
         ArrayList<VariableMetadata> varList = new ArrayList<VariableMetadata>();

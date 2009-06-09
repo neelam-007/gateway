@@ -100,8 +100,7 @@ public class WsSecurity extends MessageTargetableAssertion {
                 nameBuilder.append("WS-Security ");
                 nameBuilder.append(wsSecurity.getWsSecurityVersion());
                 
-                AssertionUtils.decorateName( wsSecurity, nameBuilder );
-                return nameBuilder.toString();
+                return AssertionUtils.decorateName( wsSecurity, nameBuilder );
             }
         });
 

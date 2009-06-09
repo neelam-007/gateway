@@ -225,7 +225,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         }
 
         // TODO how could one parameterize the authentication statement at all?
-        return varNames.toArray(new String[0]);
+        return varNames.toArray(new String[varNames.size()]);
     }
 
     private void collectVars(Set<String> varNames, String s) {
@@ -286,26 +286,32 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
     protected long nonDefaultKeystoreId;
     protected String keyId;
 
+    @Override
     public boolean isUsesDefaultKeyStore() {
         return usesDefaultKeyStore;
     }
 
+    @Override
     public void setUsesDefaultKeyStore(boolean usesDefault) {
         this.usesDefaultKeyStore = usesDefault;
     }
 
+    @Override
     public long getNonDefaultKeystoreId() {
         return nonDefaultKeystoreId;
     }
 
+    @Override
     public void setNonDefaultKeystoreId(long nonDefaultId) {
         this.nonDefaultKeystoreId = nonDefaultId;
     }
 
+    @Override
     public String getKeyAlias() {
         return keyId;
     }
 
+    @Override
     public void setKeyAlias(String keyid) {
         this.keyId = keyid;
     }
@@ -323,6 +329,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.samlpassertion.console.SamlpRequestBuilderAssertionPropertiesEditor");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, SamlpRequestBuilderAssertion>() {
+            @Override
             public String call(SamlpRequestBuilderAssertion assertion) {
                 StringBuilder sb = new StringBuilder("SAMLP Builder");
 
@@ -333,7 +340,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
                 else if (assertion.getAttributeStatement() != null)
                     sb.append(" (Attribute Query)");
 
-                return sb.toString();
+                return AssertionUtils.decorateName(assertion, sb);
             }
         });
 
@@ -357,6 +364,7 @@ public class SamlpRequestBuilderAssertion extends SamlProtocolAssertion implemen
         return meta;
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         if (getTarget() == TargetMessageType.OTHER && getOtherTargetMessageVariable() != null) {
             return new VariableMetadata[] { new VariableMetadata(getOtherTargetMessageVariable(), false, false, null, false, DataType.MESSAGE) };

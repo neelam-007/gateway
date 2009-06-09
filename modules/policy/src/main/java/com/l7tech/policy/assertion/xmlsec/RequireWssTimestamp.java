@@ -106,6 +106,7 @@ public class RequireWssTimestamp extends MessageTargetableAssertion implements I
         meta.put(DESCRIPTION, "The message must contain a Timestamp.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
+        meta.put(PALETTE_NODE_SORT_PRIORITY, 68000);
         meta.put(POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, RequireWssTimestamp>() {
             @Override
             public String call(RequireWssTimestamp assertion) {

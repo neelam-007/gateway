@@ -7,31 +7,25 @@ import com.l7tech.console.action.HttpRoutingAssertionPropertiesAction;
 import com.l7tech.console.action.EditKeyAliasForAssertion;
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
-import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode {
+public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode<HttpRoutingAssertion> {
 
-    public HttpRoutingAssertionTreeNode(RoutingAssertion assertion) {
+    public HttpRoutingAssertionTreeNode(HttpRoutingAssertion assertion) {
         super(assertion);
     }
 
     /**
      * @return the node name that is displayed
      */
+    @Override
     public String getName() {
-        HttpRoutingAssertion assertion = ((HttpRoutingAssertion)getUserObject());
-        String actor = SecurityHeaderAddressableSupport.getActorSuffix(assertion);
-        String url = assertion.getProtectedServiceUrl();
-        if (url != null) {
-            return "Route to " + url + actor;
-        }
-        return "Route" + actor;
+        return getName(null);
     }
 
     /**
@@ -40,6 +34,7 @@ public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode {
      *
      * @return actions appropriate to the node
      */
+    @Override
     public Action[] getActions() {
         EditKeyAliasForAssertion privateKeyAction = new EditKeyAliasForAssertion(this);
         if (!isUsingPrivateKey()) {
@@ -53,7 +48,7 @@ public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode {
             list.add(new EditXmlSecurityRecipientContextAction(this));
         }
         list.addAll(Arrays.asList(super.getActions()));
-        return list.toArray(new Action[0]);
+        return list.toArray(new Action[list.size()]);
     }
 
     protected boolean isUsingPrivateKey() {
@@ -64,11 +59,26 @@ public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode {
         return url != null && !url.toLowerCase().startsWith("http:");
     }
 
+    protected String getName( final String suffix ) {
+        String name;
+        String url = assertion.getProtectedServiceUrl();
+        if ( url != null ) {
+            name = "Route to " + url;
+        } else {
+            name = "Route";
+        }
+        if ( suffix != null ) {
+            name += suffix;            
+        }
+        return AssertionUtils.decorateName( assertion, name );
+    }
+
     /**
      * Gets the default action for this node.
      * 
      * @return <code>null</code> indicating there should be none default action
      */
+    @Override
     public Action getPreferredAction() {
         return new HttpRoutingAssertionPropertiesAction(this);
     }
@@ -78,6 +88,7 @@ public class HttpRoutingAssertionTreeNode extends LeafAssertionTreeNode {
      * 
      * @param open for nodes that can be opened, can have children
      */
+    @Override
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/server16.gif";
     }

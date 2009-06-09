@@ -37,20 +37,25 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
 
         assertion.setReplaceSecurityHeader( recreateSecurityHeaderCheckBox.isSelected() );
         assertion.setRemoveUnmatchedSecurityHeaders( removeUnmatchedSecurityHeadersCheckBox.isSelected( ) );
-         assertion.setUseSecurityHeaderMustUnderstand( useMustUnderstandCheckBox.isSelected() );
+        assertion.setUseSecurityHeaderMustUnderstand( useMustUnderstandCheckBox.isSelected() );
 
         assertion.setUseSecureSpanActor( actorSecureSpanDefaultRadioButton.isSelected() );
 
-        assertion.setWsSecurityVersion( (String)wssVersionComboBox.getSelectedItem() );
+        if ( applyWsSecurityCheckBox.isSelected() ) {
+            assertion.setWsSecurityVersion( (String)wssVersionComboBox.getSelectedItem() );
 
-        assertion.setRecipientTrustedCertificateOid( 0L );
-        assertion.setRecipientTrustedCertificateName( null );
-        if ( selectedRecipientCertificateRadioButton.isSelected() ) {
-            assertion.setRecipientTrustedCertificateOid( recipientCertificateOid );
-        } else if ( namedRecipientCertificateRadioButton.isSelected() ) {
-            assertion.setRecipientTrustedCertificateName( lookupCertificateTextField.getText().trim() );
+            assertion.setRecipientTrustedCertificateOid( 0L );
+            assertion.setRecipientTrustedCertificateName( null );
+            if ( selectedRecipientCertificateRadioButton.isSelected() ) {
+                assertion.setRecipientTrustedCertificateOid( recipientCertificateOid );
+            } else if ( namedRecipientCertificateRadioButton.isSelected() ) {
+                assertion.setRecipientTrustedCertificateName( lookupCertificateTextField.getText().trim() );
+            }
+        } else {
+            assertion.setWsSecurityVersion( "1.0" );
+            assertion.setRecipientTrustedCertificateOid( 0L );
+            assertion.setRecipientTrustedCertificateName( null );
         }
-
         return assertion;
     }
 
@@ -84,6 +89,8 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         } else {
             defaultRecipientCertificateRadioButton.setSelected( true );
         }
+
+        updateState();
     }
 
     //- PROTECTED
@@ -103,6 +110,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         selectedRecipientCertificateRadioButton.addActionListener( stateUpdateListener );
         namedRecipientCertificateRadioButton.addActionListener( stateUpdateListener );
         defaultRecipientCertificateRadioButton.addActionListener( stateUpdateListener );
+        applyWsSecurityCheckBox.addActionListener( stateUpdateListener );
 
         selectButton.addActionListener( new ActionListener(){
             @Override
@@ -144,11 +152,12 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     private JRadioButton defaultRecipientCertificateRadioButton;
     private JTextField selectedCertificateSubjectTextField;
     private JTextField selectedCertificateIssuerTextField;
+    private JPanel applySecuritySettingsPanel;
 
     private long recipientCertificateOid;
 
     private void doSelectRecipientTrustedCertificate() {
-        CertSearchPanel sp = new CertSearchPanel(this);
+        CertSearchPanel sp = new CertSearchPanel(this, false, true);
         sp.addCertListener( new CertListenerAdapter(){
             @Override
             public void certSelected( final CertEvent ce ) {
@@ -165,6 +174,9 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     }
 
     private void updateState() {
+        boolean enableApplySettings = applyWsSecurityCheckBox.isSelected();
+        Utilities.setEnabled(applySecuritySettingsPanel, enableApplySettings );
+
         boolean enableSelection = selectedRecipientCertificateRadioButton.isSelected();
         selectButton.setEnabled( !isReadOnly() && enableSelection );        
     }

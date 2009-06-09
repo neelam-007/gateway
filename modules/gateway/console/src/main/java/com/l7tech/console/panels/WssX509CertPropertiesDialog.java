@@ -26,7 +26,12 @@ public class WssX509CertPropertiesDialog extends AssertionPropertiesOkCancelSupp
         assertion.setAllowMultipleSignatures( allowMultipleSignatures.isSelected() );
         if ( assertion.isAllowMultipleSignatures() ) {
             // TODO [steve] Fix the variable name the user enters (as per TargetMessagePanel.getVariableName), and ensure that we do this everywhere the user enters a variable
-            assertion.setSignatureElementVariable( signatureElementVariableTextField.getText().trim() );
+            String variable = signatureElementVariableTextField.getText().trim();
+            if ( variable.length() > 0 ) {
+                assertion.setSignatureElementVariable( variable );
+            } else {
+                assertion.setSignatureElementVariable( null );
+            }
         } else {
             assertion.setSignatureElementVariable( null );
         }

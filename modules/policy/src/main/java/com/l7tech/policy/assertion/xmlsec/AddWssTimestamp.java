@@ -12,6 +12,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_FOLDERS;
 import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FACTORY;
 import static com.l7tech.policy.assertion.AssertionMetadata.DESCRIPTION;
 import static com.l7tech.policy.assertion.AssertionMetadata.ASSERTION_FACTORY;
+import static com.l7tech.policy.assertion.AssertionMetadata.PALETTE_NODE_SORT_PRIORITY;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.security.xml.KeyReference;
 import com.l7tech.util.TimeUnit;
@@ -179,6 +180,7 @@ public class AddWssTimestamp extends MessageTargetableAssertion implements Respo
         meta.put(DESCRIPTION, "Add a Timestamp to the message with an optional signature.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });
+        meta.put(PALETTE_NODE_SORT_PRIORITY, 66000);
         meta.put(ASSERTION_FACTORY, new Functions.Unary<AddWssTimestamp, AddWssTimestamp>(){
             @Override
             public AddWssTimestamp call( final AddWssTimestamp responseWssTimestamp ) {

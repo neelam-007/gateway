@@ -77,26 +77,32 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
         this.authorizationStatement = authzStmt;
     }
 
+    @Override
     public boolean isUsesDefaultKeyStore() {
         return usesDefaultKeyStore;
     }
 
+    @Override
     public void setUsesDefaultKeyStore(boolean usesDefaultKeyStore) {
         this.usesDefaultKeyStore = usesDefaultKeyStore;
     }
 
+    @Override
     public long getNonDefaultKeystoreId() {
         return nonDefaultKeystoreId;
     }
 
+    @Override
     public void setNonDefaultKeystoreId(long nonDefaultKeystoreId) {
         this.nonDefaultKeystoreId = nonDefaultKeystoreId;
     }
 
+    @Override
     public String getKeyAlias() {
         return keyAlias;
     }
 
+    @Override
     public void setKeyAlias(String keyAlias) {
         this.keyAlias = keyAlias;
     }
@@ -150,6 +156,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
         this.decorationTypes = decorationTypes;
     }
 
+    @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
         Set<String> varNames = new HashSet<String>();
@@ -174,7 +181,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
         }
 
         // TODO how could one parameterize the authentication statement at all?
-        return varNames.toArray(new String[0]);
+        return varNames.toArray(new String[varNames.size()]);
     }
 
     private void collectVars(Set<String> varNames, String s) {
@@ -238,6 +245,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.saml.SamlIssuerAssertionPropertiesEditor");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.console.tree.policy.advice.AddSamlIssuerAssertionAdvice");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new Functions.Unary<String, SamlIssuerAssertion>() {
+            @Override
             public String call(SamlIssuerAssertion sia) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("Issue ");
@@ -254,7 +262,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
                 }
                 sb.append("SAML Assertion");
                 EnumSet<DecorationType> dts = sia.getDecorationTypes();
-                if (dts == null || dts.isEmpty()) return sb.toString();
+                if (dts == null || dts.isEmpty()) return AssertionUtils.decorateName(sia, sb);
 
                 if (dts.contains(DecorationType.ADD_ASSERTION)) {
                     sb.append(" and add to ");
@@ -264,7 +272,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
                     else
                         sb.append("response");
                 }
-                return sb.toString();
+                return AssertionUtils.decorateName(sia, sb);
             }
         });
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
@@ -277,6 +285,7 @@ public class SamlIssuerAssertion extends SamlPolicyAssertion implements PrivateK
         return meta;
     }
 
+    @Override
     public VariableMetadata[] getVariablesSet() {
         return new VariableMetadata[] { new VariableMetadata("issuedSamlAssertion", false, false, null, false, DataType.STRING) };
     }

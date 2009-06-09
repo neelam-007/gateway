@@ -58,7 +58,6 @@ public class CertSearchPanel extends JDialog {
     private final static String STARTS_WITH = "Starts with";
     private final static String EQUALS = "Equals";
     private final static int SEARCH_SELECTION_STARTS_WITH = 0;
-    private final static int SEARCH_SELECTION_EQUALS = 1;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertSearchPanel.class.getName());
@@ -66,26 +65,38 @@ public class CertSearchPanel extends JDialog {
     /**
      * Constructor
      *
-     * @param owner The parent component.
+     * @param owner The parent window.
      */
     public CertSearchPanel(Window owner) {
-        this(owner, false);
+        this(owner, false, false);
     }
 
     /**
      * Constructor
      *
-     * @param owner The parent component.
+     * @param owner The parent window.
+     * @param keyRequired True if searching for certificates related to private keys
      */
     public CertSearchPanel(Window owner, boolean keyRequired) {
+        this(owner, keyRequired, false);
+    }
+
+    /**
+     * Constructor
+     *
+     * @param owner The parent window.
+     * @param keyRequired True if searching for certificates related to private keys
+     * @param singleSelection True if a single certificate is required
+     */
+    public CertSearchPanel(Window owner, boolean keyRequired, boolean singleSelection ) {
         super(owner, resources.getString(getPrefix(keyRequired) + "cert.search.dialog.title"), CertSearchPanel.DEFAULT_MODALITY_TYPE);
         this.keyRequired = keyRequired; 
-        initialize();
+        initialize(singleSelection);
         pack();
         Utilities.centerOnParentWindow(this);
     }
 
-    private void initialize() {
+    private void initialize( boolean singleSelection ) {
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         Utilities.setEscKeyStrokeDisposes(this);
 
@@ -109,7 +120,11 @@ public class CertSearchPanel extends JDialog {
 
         // Hide the cert usage data column
         trustedCertTable.hideColumn(TrustedCertTableSorter.CERT_TABLE_CERT_USAGE_COLUMN_INDEX);
-        trustedCertTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        if ( singleSelection ) {
+            trustedCertTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);            
+        } else {
+            trustedCertTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        }
 
         trustedCertTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             /**
@@ -117,6 +132,7 @@ public class CertSearchPanel extends JDialog {
              *
              * @param e the event that characterizes the change.
              */
+            @Override
             public void valueChanged(ListSelectionEvent e) {
 
                 enableOrDisableButtons();
@@ -129,6 +145,7 @@ public class CertSearchPanel extends JDialog {
                * This fine grain notification tells listeners the exact range
                * of cells, rows, or columns that changed.
                */
+              @Override
               public void tableChanged(TableModelEvent e) {
                   if (e.getType() == TableModelEvent.INSERT) {
                       resultCounter.setText("[ " + trustedCertTable.getTableSorter().getRealModel().getRowCount() + " objects found]");
@@ -137,6 +154,7 @@ public class CertSearchPanel extends JDialog {
           });
 
         searchButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 cancelled = false;
                 searchButton.setEnabled(false);
@@ -146,12 +164,14 @@ public class CertSearchPanel extends JDialog {
         });
 
         stopButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                  cancelled = true;
             }
         });
 
         selectButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 int row[] = trustedCertTable.getSelectedRows();
                 if (row.length > 0) {
@@ -168,6 +188,7 @@ public class CertSearchPanel extends JDialog {
         });
 
         viewButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 CertPropertiesWindow cpw;
                 int row = trustedCertTable.getSelectedRow();
@@ -187,12 +208,13 @@ public class CertSearchPanel extends JDialog {
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
-
                 dispose();
             }
         });
 
+        Utilities.setDoubleClickAction( trustedCertTable, selectButton );
     }
 
     /**
@@ -239,6 +261,7 @@ public class CertSearchPanel extends JDialog {
      */
     private void fireEventCertSelected(final TrustedCert[] certs) {
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
                 for (TrustedCert tc : certs) {
                     CertEvent event = new CertEvent(this, tc);
@@ -257,6 +280,7 @@ public class CertSearchPanel extends JDialog {
     private void loadTrustedCerts() {
 
         SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
 
                 java.util.List<TrustedCert> certList;
@@ -312,7 +336,7 @@ public class CertSearchPanel extends JDialog {
      * Load the certs from the SSG
      */
     private java.util.List<TrustedCert> findPrivateKeyCerts() throws FindException {
-        java.util.List<TrustedCert> certList = new ArrayList();
+        java.util.List<TrustedCert> certList = new ArrayList<TrustedCert>();
         try {
             TrustedCert sslCertHolder = new TrustedCert();
             sslCertHolder.setCertificate(getTrustedCertAdmin().getSSGSslCert());
