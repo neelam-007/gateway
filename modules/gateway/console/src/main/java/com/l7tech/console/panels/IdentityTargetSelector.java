@@ -110,6 +110,11 @@ public class IdentityTargetSelector extends OkCancelDialog<IdentityTarget> {
             if ( assertion == identityTargetableAssertion ) {
                 break;
             }
+
+            if ( !assertion.isEnabled() ) {
+                continue; 
+            }
+
             if ( assertion instanceof IdentityAssertion &&
                  AssertionUtils.isSameTargetMessage( identityTargetableAssertion, messageTargetable ) ) {
                 targetOptions.add( ((IdentityAssertion)assertion).getIdentityTarget() );
