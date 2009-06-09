@@ -36,15 +36,14 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
+import com.l7tech.server.policy.filter.HideDisabledAssertions;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
-import com.l7tech.util.DomUtils;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.util.SoapConstants;
-import com.l7tech.util.MissingRequiredElementException;
+import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultDetail;
 import com.l7tech.xml.SoapFaultLevel;
-import com.l7tech.xml.soap.*;
+import com.l7tech.xml.soap.SoapFaultUtils;
+import com.l7tech.xml.soap.SoapUtil;
+import com.l7tech.xml.soap.SoapVersion;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -538,14 +537,14 @@ public class PolicyService extends ApplicationObjectSupport {
     }
 
     private boolean atLeastOnePathIsAnonymous(Assertion rootAssertion) throws InterruptedException, PolicyAssertionException {
+        rootAssertion = new HideDisabledAssertions().filter(null, rootAssertion);
+        if (rootAssertion == null) return false; // normally can't happen
         PolicyPathResult paths = policyPathBuilderFactory.makePathBuilder().generate(rootAssertion);
         for (Object o : paths.paths()) {
             AssertionPath assertionPath = (AssertionPath) o;
             Assertion[] path = assertionPath.getPath();
             boolean pathContainsIdAssertion = false;
             for (Assertion a : path) {
-                if (!a.isEnabled())
-                    continue;
                 if (a instanceof IdentityAssertion) {
                     pathContainsIdAssertion = true;
                 }

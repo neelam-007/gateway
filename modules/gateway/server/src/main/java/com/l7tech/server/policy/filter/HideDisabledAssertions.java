@@ -14,14 +14,14 @@ import java.util.List;
  * not have to worry about disabled assertions.
  */
 public class HideDisabledAssertions implements Filter {
-    public Assertion filter(User policyRequestor, Assertion assertionTree) throws FilteringException {
+    public Assertion filter(User policyRequestor, Assertion assertionTree) {
         applyRules(assertionTree, new EmptyIterator() {
             public void remove() { }
         });
         return assertionTree;
     }
 
-    private void applyRules(Assertion arg, Iterator parentIterator) throws FilteringException {
+    private void applyRules(Assertion arg, Iterator parentIterator) {
         if (arg == null || !arg.isEnabled()) {
             parentIterator.remove();
             return;
