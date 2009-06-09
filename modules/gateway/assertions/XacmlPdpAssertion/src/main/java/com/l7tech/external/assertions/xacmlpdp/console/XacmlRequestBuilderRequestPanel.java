@@ -95,6 +95,8 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
             case MESSAGE_VARIABLE:
                 outputMessageComboBox.setSelectedIndex(2);
                 break;
+            default:
+                throw new IllegalStateException("Unsupported output message destination found");//only happen if enum changes
         }
 
         if(assertion.getOutputMessageDestination() != XacmlRequestBuilderAssertion.MessageTarget.MESSAGE_VARIABLE) {
