@@ -29,7 +29,7 @@ public class WssTimestampWrapper implements WssTimestamp {
     public WssTimestampDate getCreated() {
         if (created != null)
             return created;
-        if (dateTranslator != null)
+        if (dateTranslator != null && delegate.getCreated() != null)
             return created = new WssTimestampDateWrapper(delegate.getCreated(),
                                                          dateTranslator.translate(delegate.getCreated().asTime()));
         return delegate.getCreated();
@@ -39,7 +39,7 @@ public class WssTimestampWrapper implements WssTimestamp {
     public WssTimestampDate getExpires() {
         if (expires != null)
             return expires;
-        if (dateTranslator != null)
+        if (dateTranslator != null &&  delegate.getExpires() != null)
             return expires = new WssTimestampDateWrapper(delegate.getExpires(),
                                                          dateTranslator.translate(delegate.getExpires().asTime()));
         return delegate.getExpires();

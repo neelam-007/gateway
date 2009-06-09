@@ -499,7 +499,11 @@ public class RequestHandler extends AbstractHandler {
                 // Fallthrough and generate a new fault from our own exception, ignoring the SSG response
             }
             if (!haveFault) {
-                context.getResponse().initialize(exceptionToFault(e, null, context.getOriginalUrl()));
+                Message response = context.getResponse();
+                response.initialize(exceptionToFault(e, null, context.getOriginalUrl()));
+                // For some errors the MessageProcessor will not have set a status code which causes
+                // Jetty to fail writing the response with an EOF exception.
+                response.getHttpResponseKnob().setStatus(500);
             }
         } finally {
             CurrentSslPeer.clear();

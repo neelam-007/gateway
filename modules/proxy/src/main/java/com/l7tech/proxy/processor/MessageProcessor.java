@@ -87,6 +87,10 @@ public class MessageProcessor {
     public static final String PROPERTY_REFORMATLOGGEDXML = "com.l7tech.proxy.processor.reformatLoggedXml";
     public static final String PROPERTY_TIMESTAMP_EXPIRY = "com.l7tech.proxy.processor.timestampExpiryMillis";
     public static final String PROPERTY_LOGPOLICIES    = "com.l7tech.proxy.datamodel.logPolicies";
+
+    public static final String SSGPROP_TIMESTAMP_CREATEDGRACE = "response.security.createdFutureGrace"; // time in millis
+    public static final String SSGPROP_TIMESTAMP_EXPIRESGRACE = "response.security.expiresPastGrace"; // time in millis
+
     private static final Policy SSL_POLICY = new Policy(new SslAssertion(), null);
     private static Pattern findServiceid = Pattern.compile("^.*\\&?serviceoid=(.+?)(\\&.*|)", Pattern.DOTALL);
     private static Pattern findPolicyServiceFile = Pattern.compile("(/[^?#]*)");
@@ -732,7 +736,9 @@ public class MessageProcessor {
                     log.info("Running SSG response through WS-Security undecorator");
                     SecurityContextFinder scf = makeResponseSecurityContextFinder(context);
                     try {
-                        return wssProcessResponse(context, ssg, response, scf);
+                        final ProcessorResult pr = wssProcessResponse(context, ssg, response, scf);
+                        validateProcessorResult( pr, ssg );
+                        return pr;
                     } catch(IOException e) {
                         throw e;
                     } catch(SAXException e) {
@@ -1076,13 +1082,58 @@ public class MessageProcessor {
         final WssTimestamp wssTimestampRaw = processorResultRaw.getTimestamp();
         processorResult = new ProcessorResultWrapper(processorResultRaw) {
             public WssTimestamp getTimestamp() {
-                return new WssTimestampWrapper(wssTimestampRaw, ssg.getRuntime().getDateTranslatorFromSsg());
+                return wssTimestampRaw==null ? null : new WssTimestampWrapper(wssTimestampRaw, ssg.getRuntime().getDateTranslatorFromSsg());
             }
         };
         maybeStripSecurityHeader(ssg, response, processorResult);
 
 
         return processorResult;
+    }
+
+    private long getLongProperty( final Ssg ssg, final String propertyName, final long defaultValue ) {
+        long value = defaultValue;
+
+        Map<String,String> properties = ssg.getProperties();
+        String propValueStr = properties.get( propertyName );
+        if ( propValueStr != null ) {
+            try {
+                value = Long.parseLong( propValueStr );
+            } catch ( NumberFormatException nfe ) {
+                // default
+            }
+        }
+
+        return value;
+    }
+
+    /**
+     * Validate the given processor result.
+     */
+    private void validateProcessorResult( final ProcessorResult processorResult,
+                                          final Ssg ssg ) throws ResponseValidationException {
+        final WssTimestamp timestamp = processorResult.getTimestamp();
+        if ( timestamp != null ) {
+            final long now = System.currentTimeMillis();
+
+            final WssTimestampDate wtdCreated = timestamp.getCreated();
+            final long createdSkew = getLongProperty(ssg, SSGPROP_TIMESTAMP_CREATEDGRACE, TimeUnit.MINUTES.toMillis(1));
+            final boolean checkCreated = createdSkew >= 0;
+            if ( checkCreated && wtdCreated != null ) {
+                if ( (now+createdSkew) < wtdCreated.asTime() ) {
+                    throw new ResponseValidationException("Timestamp is created in the future.");
+                }
+            }
+
+            final WssTimestampDate wtdExpires = timestamp.getExpires();
+            final long expiresSkew = getLongProperty(ssg, SSGPROP_TIMESTAMP_EXPIRESGRACE, TimeUnit.MINUTES.toMillis(1));
+            final boolean checkExpires = expiresSkew >= 0;
+            if ( checkExpires && wtdCreated != null ) {
+                if ( (now-expiresSkew) >= wtdExpires.asTime() ) {
+                    throw new ResponseValidationException("Timestamp expired.");
+                }
+            }
+        }
     }
 
     private void maybeStripSecurityHeader(Ssg ssg, Message response, ProcessorResult processorResult) throws InvalidDocumentFormatException, SAXException, IOException {
