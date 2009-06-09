@@ -58,7 +58,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         } catch(ParserConfigurationException pce) {
             return AssertionStatus.FAILED;
         }
-        
+
         Document doc = builder.newDocument();
 
         Element rootParent = null;
@@ -141,6 +141,8 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 Message message = new Message(doc);
                 context.setVariable(assertion.getOutputMessageVariableName(), message);
                 break;
+            default:
+                throw new IllegalStateException("Unsupported message output destination found");//only happen if enum changes
         }
 
         return AssertionStatus.NONE;
@@ -301,18 +303,20 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             return;
         }
 
-        Document inputDoc = null;
+        Document inputDoc;
         try {
             switch(xpathMultiAttr.getMessageSource()) {
                 case REQUEST:
                     inputDoc = context.getRequest().getXmlKnob().getDocumentReadOnly();
                     break;
                 case RESPONSE:
-                    inputDoc = context.getRequest().getXmlKnob().getDocumentReadOnly();
+                    inputDoc = context.getResponse().getXmlKnob().getDocumentReadOnly();
                     break;
                 case CONTEXT_VARIABLE:
                     inputDoc = ((Message)context.getVariable(xpathMultiAttr.getMessageSourceContextVar())).getXmlKnob().getDocumentReadOnly();
                     break;
+                default:
+                    throw new IllegalStateException("Unsupported message source found");//only happen if enum changes
             }
         } catch(SAXException saxe) {
             return;
