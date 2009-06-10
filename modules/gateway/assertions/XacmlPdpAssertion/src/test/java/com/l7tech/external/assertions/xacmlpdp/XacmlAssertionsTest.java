@@ -57,7 +57,7 @@ public class XacmlAssertionsTest {
         resourceList.add(resource);
         assertion.setResources(resourceList);
 
-        assertion.setSoapEncapsulation(XacmlRequestBuilderAssertion.SoapEncapsulationType.v1_1);
+        assertion.setSoapEncapsulation(XacmlAssertionEnums.SoapVersion.v1_1);
 
         XacmlRequestBuilderAssertion.Environment environment = new XacmlRequestBuilderAssertion.Environment();
         setAttributeHolderTag(environment, "ENV",STRING_DATA_TYPE, "", "EnvValue");
@@ -270,7 +270,7 @@ public class XacmlAssertionsTest {
         StaticResourceInfo sri = new StaticResourceInfo(PDP_POLICY_XML);
         assertion.setResourceInfo(sri);
 
-        assertion.setSoapEncapsulation(XacmlPdpAssertion.SOAP_ENCAPSULATION_VALUES[1]);
+        assertion.setSoapEncapsulation(XacmlPdpAssertion.SoapEncapsulationType.REQUEST);
 
         AssertionRegistry registry = new AssertionRegistry();
         registry.registerAssertion(XacmlPdpAssertion.class);
@@ -301,9 +301,9 @@ public class XacmlAssertionsTest {
         Assert.assertNotNull("doc should not be null", doc);
         Assert.assertEquals("Resource document should match canned xml policy", PDP_POLICY_XML, doc);
 
-        String soapEnc = assertion.getSoapEncapsulation();
+        XacmlPdpAssertion.SoapEncapsulationType soapEnc = assertion.getSoapEncapsulation();
         Assert.assertNotNull("Soap encoding should not be null", soapEnc);
-        Assert.assertEquals("Incorrect soap encoding", XacmlPdpAssertion.SOAP_ENCAPSULATION_VALUES[1], soapEnc);
+        Assert.assertEquals("Incorrect soap encoding", XacmlPdpAssertion.SoapEncapsulationType.REQUEST, soapEnc);
     }
 
     /**
@@ -464,7 +464,7 @@ public class XacmlAssertionsTest {
             "        <L7p:ResourceInfo staticResourceInfo=\"included\">\n" +
             "            <L7p:Document stringValueReference=\"inline\"><![CDATA["+PDP_POLICY_XML+"]]></L7p:Document>\n" +
             "        </L7p:ResourceInfo>\n" +
-            "        <L7p:SoapEncapsulation stringValue=\"Request\"/>\n" +
+            "        <L7p:SoapEncapsulation soapEncapsulation=\"REQUEST\"/>\n" +
             "    </L7p:XacmlPdpAssertion>\n" +
             "</wsp:Policy>";
     

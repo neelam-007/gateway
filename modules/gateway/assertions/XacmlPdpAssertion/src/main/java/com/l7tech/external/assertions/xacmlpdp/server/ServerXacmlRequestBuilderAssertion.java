@@ -6,6 +6,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
+import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
@@ -62,7 +63,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         Document doc = builder.newDocument();
 
         Element rootParent = null;
-        if(assertion.getSoapEncapsulation() != XacmlRequestBuilderAssertion.SoapEncapsulationType.NONE) {
+        if(assertion.getSoapEncapsulation() != XacmlAssertionEnums.SoapVersion.NONE) {
             String uri = assertion.getSoapEncapsulation().getUri();
             String prefix = assertion.getSoapEncapsulation().getPrefix();
 
@@ -137,7 +138,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             case RESPONSE_MESSAGE:
                 context.getResponse().initialize(doc);
                 break;
-            case MESSAGE_VARIABLE:
+            case CONTEXT_VARIABLE:
                 Message message = new Message(doc);
                 context.setVariable(assertion.getOutputMessageVariableName(), message);
                 break;
@@ -162,7 +163,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             attributeElement.setAttribute("Issuer", ExpandVariables.process(attribute.getIssuer(), vars, auditor, true));
         }
 
-        if(assertion.getXacmlVersion() == XacmlRequestBuilderAssertion.XacmlVersionType.V1_0) {
+        if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V1_0) {
             if(attribute.getIssueInstant().length() > 0) {
                 attributeElement.setAttribute("IssueInstant", ExpandVariables.process(attribute.getIssueInstant(), vars, auditor, true));
             }
@@ -238,7 +239,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     valueElement.appendChild(doc.createTextNode(ExpandVariables.process(content, vars, auditor, true)));
 
                     // For XACML 1.0 and 1.1, there cannot be more than one attribute value
-                    if(assertion.getXacmlVersion() != XacmlRequestBuilderAssertion.XacmlVersionType.V2_0) {
+                    if(assertion.getXacmlVersion() != XacmlAssertionEnums.XacmlVersionType.V2_0) {
                         break;
                     }
                 }
@@ -290,7 +291,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 attributeElement.setAttribute("Issuer", ExpandVariables.process(xpathMultiAttr.getIssuerField().getValue(), vars, auditor, true));
             }
 
-            if(assertion.getXacmlVersion() == XacmlRequestBuilderAssertion.XacmlVersionType.V1_0) {
+            if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V1_0) {
                 if(xpathMultiAttr.getIssueInstantField().getValue() != null && xpathMultiAttr.getIssueInstantField().getValue().length() > 0) {
                     attributeElement.setAttribute("IssueInstant", ExpandVariables.process(xpathMultiAttr.getIssueInstantField().getValue(), vars, auditor, true));
                 }
@@ -330,7 +331,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         String dataTypeValue = getXpathFieldValue(xpathMultiAttr.getDataTypeField(), vars, inputDoc, xpathMultiAttr.getNamespaces());
         String issuerValue = getXpathFieldValue(xpathMultiAttr.getIssuerField(), vars, inputDoc, xpathMultiAttr.getNamespaces());
         String issueInstantValue = "";
-        if(assertion.getXacmlVersion() == XacmlRequestBuilderAssertion.XacmlVersionType.V1_0) {
+        if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V1_0) {
             getXpathFieldValue(xpathMultiAttr.getIssueInstantField(), vars, inputDoc, xpathMultiAttr.getNamespaces());
         }
         String valueValue = getXpathFieldValue(xpathMultiAttr.getValueField(), vars, inputDoc, xpathMultiAttr.getNamespaces());
@@ -426,7 +427,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 }
             }
 
-            if(assertion.getXacmlVersion() == XacmlRequestBuilderAssertion.XacmlVersionType.V1_0) {
+            if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V1_0) {
                 if(issueInstantValue != null) {
                     if(issueInstantValue.length() > 0) {
                         attributeElement.setAttribute("IssueInstant", issueInstantValue);
@@ -450,7 +451,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     valueElement.appendChild(doc.createTextNode(valueValues.get(i).get(j)));
 
                     // XACML 1.0 and 1.1 only allow one AttributeValue for each Attribute element
-                    if(assertion.getXacmlVersion() != XacmlRequestBuilderAssertion.XacmlVersionType.V2_0) {
+                    if(assertion.getXacmlVersion() != XacmlAssertionEnums.XacmlVersionType.V2_0) {
                         break;
                     }
                 }

@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.xacmlpdp.console;
 
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
+import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.gui.util.Utilities;
 
 import javax.swing.*;
@@ -45,7 +46,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
     private JDialog window;
 
     public XacmlRequestBuilderXpathMultiAttrPanel(XacmlRequestBuilderAssertion.XpathMultiAttr xpathMultiAttr,
-                                                  XacmlRequestBuilderAssertion.XacmlVersionType version,
+                                                  XacmlAssertionEnums.XacmlVersionType version,
                                                   JDialog window)
     {
         this.xpathMultiAttr = xpathMultiAttr;
@@ -70,7 +71,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         dataTypeField.setText(xpathMultiAttr.getDataTypeField().getValue());
         issuerField.setText(xpathMultiAttr.getIssuerField().getValue());
 
-        if(version == XacmlRequestBuilderAssertion.XacmlVersionType.V1_0) {
+        if(version == XacmlAssertionEnums.XacmlVersionType.V1_0) {
             issueInstantField.setText(xpathMultiAttr.getIssueInstantField().getValue());
         }
 
@@ -85,7 +86,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         return mainPanel;
     }
 
-    public void init(XacmlRequestBuilderAssertion.XacmlVersionType version) {
+    public void init(XacmlAssertionEnums.XacmlVersionType version) {
         messageSourceComboBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 if("Default Request".equals(messageSourceComboBox.getSelectedItem())) {
@@ -204,7 +205,7 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
             }
         });
 
-        if(version != XacmlRequestBuilderAssertion.XacmlVersionType.V1_0) {
+        if(version != XacmlAssertionEnums.XacmlVersionType.V1_0) {
             issueInstantLabel.setVisible(false);
             issueInstantFieldsPanel.setVisible(false);
         } else {

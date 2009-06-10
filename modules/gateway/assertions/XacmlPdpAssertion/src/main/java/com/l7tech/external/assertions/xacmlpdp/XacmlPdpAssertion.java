@@ -14,6 +14,13 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_EXTERNAL_NAME;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
+import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -23,21 +30,49 @@ import com.l7tech.policy.StaticResourceInfo;
  * To change this template use File | Settings | File Templates.
  */
 public class XacmlPdpAssertion extends Assertion implements SetsVariables {
-    public static final int REQUEST_MESSAGE = 1;
-    public static final int RESPONSE_MESSAGE = 2;
-    public static final int MESSAGE_VARIABLE = 3;
-    public static final String[] SOAP_ENCAPSULATION_VALUES = new String[] {
-            "None",
-            "Request",
-            "Response",
-            "Request and Response"
-    };
 
-    private int inputMessageSource = REQUEST_MESSAGE;
+    public enum SoapEncapsulationType {
+        NONE("None"),
+        REQUEST("Request"),
+        RESPONSE("Response"),
+        REQUEST_AND_RESPONSE("Request and Response");
+
+        private SoapEncapsulationType(String encapType){
+            this.encapType = encapType;
+        }
+
+        public String getEncapType() {
+            return encapType;
+        }
+
+        public String toString(){
+            return encapType;
+        }
+
+        public static SoapEncapsulationType findEncapsulationType(String type){
+            for(SoapEncapsulationType aType: values()){
+                if(aType.toString().equals(type)) return aType;
+            }
+            throw new IllegalArgumentException("Unknown type requested: '"+type+"'");
+        }
+
+        public static String [] allTypesAsStrings(){
+            List<String> allTypes = new ArrayList<String>();
+            for(SoapEncapsulationType aType: values()){
+                allTypes.add(aType.toString());
+            }
+            
+            return allTypes.toArray(new String[]{});
+        }
+
+        private final String encapType;
+    }
+
+    private XacmlAssertionEnums.MessageTarget inputMessageSource = XacmlAssertionEnums.MessageTarget.REQUEST_MESSAGE;
     private String inputMessageVariableName;
-    private int outputMessageTarget = RESPONSE_MESSAGE;
+    private XacmlAssertionEnums.MessageTarget outputMessageTarget = XacmlAssertionEnums.MessageTarget.RESPONSE_MESSAGE;
     private String outputMessageVariableName;
-    private String soapEncapsulation = SOAP_ENCAPSULATION_VALUES[0];
+    private SoapEncapsulationType soapEncapsulation = SoapEncapsulationType.NONE;
     private AssertionResourceInfo resourceInfo = new StaticResourceInfo();
     private boolean failIfNotPermit = false;
 
@@ -45,18 +80,18 @@ public class XacmlPdpAssertion extends Assertion implements SetsVariables {
     }
 
     public VariableMetadata[] getVariablesSet() {
-        if(outputMessageTarget == MESSAGE_VARIABLE) {
+        if(outputMessageTarget == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
             return new VariableMetadata[] {new VariableMetadata(outputMessageVariableName, false, false, null, false)};
         } else {
             return new VariableMetadata[0];
         }
     }
 
-    public int getInputMessageSource() {
+    public XacmlAssertionEnums.MessageTarget getInputMessageSource() {
         return inputMessageSource;
     }
 
-    public void setInputMessageSource(int inputMessageSource) {
+    public void setInputMessageSource(XacmlAssertionEnums.MessageTarget inputMessageSource) {
         this.inputMessageSource = inputMessageSource;
     }
 
@@ -68,11 +103,11 @@ public class XacmlPdpAssertion extends Assertion implements SetsVariables {
         this.inputMessageVariableName = inputMessageVariableName;
     }
 
-    public int getOutputMessageTarget() {
+    public XacmlAssertionEnums.MessageTarget getOutputMessageTarget() {
         return outputMessageTarget;
     }
 
-    public void setOutputMessageTarget(int outputMessageTarget) {
+    public void setOutputMessageTarget(XacmlAssertionEnums.MessageTarget outputMessageTarget) {
         this.outputMessageTarget = outputMessageTarget;
     }
 
@@ -84,11 +119,11 @@ public class XacmlPdpAssertion extends Assertion implements SetsVariables {
         this.outputMessageVariableName = outputMessageVariableName;
     }
 
-    public String getSoapEncapsulation() {
+    public SoapEncapsulationType getSoapEncapsulation() {
         return soapEncapsulation;
     }
 
-    public void setSoapEncapsulation(String soapEncapsulation) {
+    public void setSoapEncapsulation(SoapEncapsulationType soapEncapsulation) {
         this.soapEncapsulation = soapEncapsulation;
     }
 
@@ -125,6 +160,11 @@ public class XacmlPdpAssertion extends Assertion implements SetsVariables {
         meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.xacmlpdp.server.ServerXacmlPdpAssertion");
 
         meta.put(WSP_EXTERNAL_NAME, "XacmlPdpAssertion"); // keep same WSP name as pre-3.7 (Bug #3605)
+
+        Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
+        othermappings.add(new Java5EnumTypeMapping(XacmlAssertionEnums.MessageTarget.class, "messageTarget"));
+        othermappings.add(new Java5EnumTypeMapping(SoapEncapsulationType.class, "soapEncapsulation"));
+        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:EchoRouting" rather than "set:modularAssertions"

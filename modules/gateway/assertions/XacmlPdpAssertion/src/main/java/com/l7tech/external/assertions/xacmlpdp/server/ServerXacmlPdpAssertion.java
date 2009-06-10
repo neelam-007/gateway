@@ -10,6 +10,7 @@ import com.l7tech.server.util.res.ResourceGetter;
 import com.l7tech.server.util.res.ResourceObjectFactory;
 import com.l7tech.server.util.res.UrlFinder;
 import com.l7tech.external.assertions.xacmlpdp.XacmlPdpAssertion;
+import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -53,7 +54,6 @@ import javax.xml.soap.SOAPConstants;
  * User: njordan
  * Date: 13-Mar-2009
  * Time: 11:33:42 PM
- * To change this template use File | Settings | File Templates.
  */
 public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAssertion> {
     public ServerXacmlPdpAssertion(XacmlPdpAssertion ea, ApplicationContext applicationContext) throws ServerPolicyException {
@@ -115,9 +115,9 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
 
             Element rootElement;
             try {
-                if(assertion.getInputMessageSource() == XacmlPdpAssertion.RESPONSE_MESSAGE) {
+                if(assertion.getInputMessageSource() == XacmlAssertionEnums.MessageTarget.RESPONSE_MESSAGE) {
                     rootElement = context.getResponse().getXmlKnob().getDocumentReadOnly().getDocumentElement();
-                } else if(assertion.getInputMessageSource() == XacmlPdpAssertion.MESSAGE_VARIABLE) {
+                } else if(assertion.getInputMessageSource() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
                     try {
                         rootElement = ((Message)context.getVariable(assertion.getInputMessageVariableName())).getXmlKnob().getDocumentReadOnly().getDocumentElement();
                     } catch(NoSuchVariableException nsve) {
@@ -130,19 +130,26 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                 return AssertionStatus.FAILED;
             }
 
-            if(assertion.getSoapEncapsulation().equals(XacmlPdpAssertion.SOAP_ENCAPSULATION_VALUES[1]) ||
-                    assertion.getSoapEncapsulation().equals(XacmlPdpAssertion.SOAP_ENCAPSULATION_VALUES[3]))
+            if(assertion.getSoapEncapsulation().equals(XacmlPdpAssertion.SoapEncapsulationType.REQUEST) ||
+                    assertion.getSoapEncapsulation().equals(XacmlPdpAssertion.SoapEncapsulationType.REQUEST_AND_RESPONSE))
             {
                 rootElement = XmlUtil.findFirstChildElementByName(rootElement, rootElement.getNamespaceURI(), "Body");
                 if(rootElement == null) {
                     return AssertionStatus.FAILED;
                 }
-                rootElement = XmlUtil.findFirstChildElementByName(rootElement, "urn:oasis:names:tc:xacml:2.0:context", "Request");
+                //the namespace varies with the version, do not check namespace here, it is checked below
+                rootElement = XmlUtil.findFirstChildElementByName(rootElement, (String) null, "Request");
                 if(rootElement == null) {
                     return AssertionStatus.FAILED;
                 }
             }
 
+            //check the namespace on rootElement is valid. The namespace represents the xacml request version
+            String nameSpace = rootElement.getNamespaceURI();
+            if(!XacmlAssertionEnums.XacmlVersionType.isValidXacmlVersionType(nameSpace)){
+                return AssertionStatus.FAILED;
+            }
+            
             RequestCtx requestCtx = RequestCtx.getInstance(rootElement);
             ResponseCtx responseCtx = pdp.evaluate(requestCtx);
 
@@ -163,8 +170,8 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
             byte[] messageBytes;
-            if(assertion.getSoapEncapsulation().equals(XacmlPdpAssertion.SOAP_ENCAPSULATION_VALUES[2]) ||
-                    assertion.getSoapEncapsulation().equals(XacmlPdpAssertion.SOAP_ENCAPSULATION_VALUES[3]))
+            if(assertion.getSoapEncapsulation().equals(XacmlPdpAssertion.SoapEncapsulationType.RESPONSE) ||
+                    assertion.getSoapEncapsulation().equals(XacmlPdpAssertion.SoapEncapsulationType.REQUEST_AND_RESPONSE))
             {
                 responseCtx.encode(baos, new Indenter() {
                     private String spaces = "    ";
@@ -199,7 +206,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
             ByteArrayInputStream bais = new ByteArrayInputStream(messageBytes);
 
             ContentTypeHeader cth = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
-            if(assertion.getOutputMessageTarget() == XacmlPdpAssertion.MESSAGE_VARIABLE) {
+            if(assertion.getOutputMessageTarget() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
                 Message m = new Message(stashManagerFactory.createStashManager(),
                         cth,
                         bais);

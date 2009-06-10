@@ -1,11 +1,10 @@
 package com.l7tech.external.assertions.xacmlpdp.console;
 
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
+import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.policy.variable.VariableMetadata;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
@@ -18,13 +17,13 @@ import java.awt.event.ActionEvent;
  */
 public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequestBuilderNodePanel {
     public static class MessageOutputEntry {
-        private XacmlRequestBuilderAssertion.MessageTarget messageTarget;
+        private XacmlAssertionEnums.MessageTarget messageTarget;
 
-        public MessageOutputEntry(XacmlRequestBuilderAssertion.MessageTarget messageTarget) {
+        public MessageOutputEntry(XacmlAssertionEnums.MessageTarget messageTarget) {
             this.messageTarget = messageTarget;
         }
 
-        public XacmlRequestBuilderAssertion.MessageTarget getMessageTarget() {
+        public XacmlAssertionEnums.MessageTarget getMessageTarget() {
             return messageTarget;
         }
 
@@ -34,7 +33,7 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
                     return "Default Request";
                 case RESPONSE_MESSAGE:
                     return "Default Response";
-                case MESSAGE_VARIABLE:
+                case CONTEXT_VARIABLE:
                     return "Message Variable:";
             }
             throw new IllegalStateException("Unknown messge target");
@@ -59,30 +58,30 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
     }
 
     public void init() {
-        DefaultComboBoxModel model = new DefaultComboBoxModel(XacmlRequestBuilderAssertion.XacmlVersionType.values());
+        DefaultComboBoxModel model = new DefaultComboBoxModel(XacmlAssertionEnums.XacmlVersionType.values());
         versionComboBox.setModel(model);
         versionComboBox.setSelectedItem(assertion.getXacmlVersion());
 
         versionComboBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                assertion.setXacmlVersion((XacmlRequestBuilderAssertion.XacmlVersionType)versionComboBox.getSelectedItem());
+                assertion.setXacmlVersion((XacmlAssertionEnums.XacmlVersionType)versionComboBox.getSelectedItem());
             }
         });
 
-        model = new DefaultComboBoxModel(XacmlRequestBuilderAssertion.SoapEncapsulationType.values());
+        model = new DefaultComboBoxModel(XacmlAssertionEnums.SoapVersion.values());
         encapsulationComboBox.setModel(model);
         encapsulationComboBox.setSelectedItem(assertion.getSoapEncapsulation());
 
         encapsulationComboBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                assertion.setSoapEncapsulation((XacmlRequestBuilderAssertion.SoapEncapsulationType)encapsulationComboBox.getSelectedItem());
+                assertion.setSoapEncapsulation((XacmlAssertionEnums.SoapVersion)encapsulationComboBox.getSelectedItem());
             }
         });
 
         model = new DefaultComboBoxModel();
-        model.addElement(new MessageOutputEntry(XacmlRequestBuilderAssertion.MessageTarget.REQUEST_MESSAGE));
-        model.addElement(new MessageOutputEntry(XacmlRequestBuilderAssertion.MessageTarget.RESPONSE_MESSAGE));
-        model.addElement(new MessageOutputEntry(XacmlRequestBuilderAssertion.MessageTarget.MESSAGE_VARIABLE));
+        model.addElement(new MessageOutputEntry(XacmlAssertionEnums.MessageTarget.REQUEST_MESSAGE));
+        model.addElement(new MessageOutputEntry(XacmlAssertionEnums.MessageTarget.RESPONSE_MESSAGE));
+        model.addElement(new MessageOutputEntry(XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE));
         outputMessageComboBox.setModel(model);
 
         switch(assertion.getOutputMessageDestination()) {
@@ -92,14 +91,14 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
             case RESPONSE_MESSAGE:
                 outputMessageComboBox.setSelectedIndex(1);
                 break;
-            case MESSAGE_VARIABLE:
+            case CONTEXT_VARIABLE:
                 outputMessageComboBox.setSelectedIndex(2);
                 break;
             default:
                 throw new IllegalStateException("Unsupported output message destination found");//only happen if enum changes
         }
 
-        if(assertion.getOutputMessageDestination() != XacmlRequestBuilderAssertion.MessageTarget.MESSAGE_VARIABLE) {
+        if(assertion.getOutputMessageDestination() != XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
             outputMessageContextVarField.setEnabled(false);
         } else {
             outputMessageContextVarField.setEnabled(true);
@@ -109,7 +108,7 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
         outputMessageComboBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 MessageOutputEntry entry = (MessageOutputEntry)outputMessageComboBox.getSelectedItem();
-                outputMessageContextVarField.setEnabled(entry.getMessageTarget() == XacmlRequestBuilderAssertion.MessageTarget.MESSAGE_VARIABLE);
+                outputMessageContextVarField.setEnabled(entry.getMessageTarget() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE);
                 assertion.setOutputMessageDestination(entry.getMessageTarget());
             }
         });
@@ -131,7 +130,7 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
 
     public boolean handleDispose() {
         if(((MessageOutputEntry)outputMessageComboBox.getSelectedItem()).getMessageTarget()
-                != XacmlRequestBuilderAssertion.MessageTarget.MESSAGE_VARIABLE) {
+                != XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
             return true;
         }
 

@@ -1,12 +1,11 @@
 package com.l7tech.external.assertions.xacmlpdp.console;
 
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
+import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
@@ -24,16 +23,16 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
     private JPanel mainPanel;
 
     private XacmlRequestBuilderAssertion.Attribute attribute;
-    private XacmlRequestBuilderAssertion.XacmlVersionType xacmlVersion;
+    private XacmlAssertionEnums.XacmlVersionType xacmlVersion;
 
-    public XacmlRequestBuilderAttributePanel(XacmlRequestBuilderAssertion.Attribute attribute, XacmlRequestBuilderAssertion.XacmlVersionType version) {
+    public XacmlRequestBuilderAttributePanel(XacmlRequestBuilderAssertion.Attribute attribute, XacmlAssertionEnums.XacmlVersionType version) {
         this.attribute = attribute;
         this.xacmlVersion = version;
         idField.setText(attribute.getId());
         dataTypeField.setText(attribute.getDataType());
         issuerField.setText(attribute.getIssuer());
 
-        if(xacmlVersion == XacmlRequestBuilderAssertion.XacmlVersionType.V1_0) {
+        if(xacmlVersion == XacmlAssertionEnums.XacmlVersionType.V1_0) {
             issueInstantField.setText(attribute.getIssueInstant());
         }
 
@@ -87,7 +86,7 @@ public class XacmlRequestBuilderAttributePanel extends JPanel implements XacmlRe
             }
         });
 
-        if(xacmlVersion != XacmlRequestBuilderAssertion.XacmlVersionType.V1_0) {
+        if(xacmlVersion != XacmlAssertionEnums.XacmlVersionType.V1_0) {
             issueInstantLabel.setVisible(false);
             issueInstantField.setVisible(false);
         } else {

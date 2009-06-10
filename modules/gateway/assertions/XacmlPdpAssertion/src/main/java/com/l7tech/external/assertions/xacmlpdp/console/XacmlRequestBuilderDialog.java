@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.xacmlpdp.console;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.external.assertions.xacmlpdp.XacmlRequestBuilderAssertion;
+import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 
 import javax.swing.*;
@@ -90,7 +91,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                     } else if(item instanceof XacmlRequestBuilderAssertion.XmlTag) {
                         XacmlRequestBuilderXmlContentPanel panel = new XacmlRequestBuilderXmlContentPanel(
                                 (XacmlRequestBuilderAssertion.XmlTag)item,
-                                item instanceof XacmlRequestBuilderAssertion.Value && assertion.getXacmlVersion() == XacmlRequestBuilderAssertion.XacmlVersionType.V2_0,
+                                item instanceof XacmlRequestBuilderAssertion.Value && assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V2_0,
                                 XacmlRequestBuilderDialog.this);
                         lastNodePanel = panel;
                         nodeSettingsPanel.add(panel.getPanel());
@@ -244,7 +245,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         });
         popupMenu.add(item);
 
-        if(assertion.getXacmlVersion() == XacmlRequestBuilderAssertion.XacmlVersionType.V2_0) {
+        if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V2_0) {
             item = new JMenuItem("Add Resource");
             item.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {
@@ -374,7 +375,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     private void addEnvironmentMenuItems(final DefaultMutableTreeNode node) {
         addAttributeHolderMenuItems(node);
 
-        if(assertion.getXacmlVersion() != XacmlRequestBuilderAssertion.XacmlVersionType.V2_0) {
+        if(assertion.getXacmlVersion() != XacmlAssertionEnums.XacmlVersionType.V2_0) {
             popupMenu.add(new JPopupMenu.Separator());
             JMenuItem item = new JMenuItem("Remove Environment");
             item.addActionListener(new ActionListener() {
@@ -572,7 +573,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         assertion.setXacmlVersion(this.assertion.getXacmlVersion());
         assertion.setSoapEncapsulation(this.assertion.getSoapEncapsulation());
         assertion.setOutputMessageDestination(this.assertion.getOutputMessageDestination());
-        if(this.assertion.getOutputMessageDestination() == XacmlRequestBuilderAssertion.MessageTarget.MESSAGE_VARIABLE) {
+        if(this.assertion.getOutputMessageDestination() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
             assertion.setOutputMessageVariableName(this.assertion.getOutputMessageVariableName());
         } else {
             assertion.setOutputMessageVariableName(null);
@@ -614,16 +615,16 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         }
 
         if(resourceCount == 0) {
-            if(assertion.getXacmlVersion() == XacmlRequestBuilderAssertion.XacmlVersionType.V2_0) {
+            if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V2_0) {
                 messages.add("There must be at least one Resource element");
             } else {
                 messages.add("The Resource element is mandatory");
             }
-        } else if(assertion.getXacmlVersion() != XacmlRequestBuilderAssertion.XacmlVersionType.V2_0 && resourceCount > 1) {
+        } else if(assertion.getXacmlVersion() != XacmlAssertionEnums.XacmlVersionType.V2_0 && resourceCount > 1) {
             messages.add("There cannot be more than one Resource element");
         }
 
-        if(assertion.getXacmlVersion() == XacmlRequestBuilderAssertion.XacmlVersionType.V2_0 && environmentCount < 1) {
+        if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V2_0 && environmentCount < 1) {
             messages.add("The Environment element is mandatory");
         }
 
@@ -644,11 +645,11 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         }
 
         if(haveAttributeValueErrors) {
-            if(assertion.getXacmlVersion() == XacmlRequestBuilderAssertion.XacmlVersionType.V1_0) {
+            if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V1_0) {
                 messages.add("There cannot be more than one AttributeValue element for each Attribute element");
-            } else if(assertion.getXacmlVersion() == XacmlRequestBuilderAssertion.XacmlVersionType.V1_1) {
+            } else if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V1_1) {
                 messages.add("The must be one and only one AttributeValue element for each Attribute element");
-            } else if(assertion.getXacmlVersion() == XacmlRequestBuilderAssertion.XacmlVersionType.V2_0) {
+            } else if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V2_0) {
                 messages.add("There must be at least one AttributeValue element for each Attribute element");
             }
         }

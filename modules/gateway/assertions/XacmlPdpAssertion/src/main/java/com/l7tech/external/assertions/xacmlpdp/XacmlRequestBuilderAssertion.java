@@ -25,8 +25,6 @@ import java.io.Serializable;
  */
 public class XacmlRequestBuilderAssertion extends Assertion implements UsesVariables, SetsVariables, Cloneable {
 
-    public enum MessageTarget{REQUEST_MESSAGE, RESPONSE_MESSAGE, MESSAGE_VARIABLE}
-
     public static class XmlTag {
         private Map<String, String> attributes = new HashMap<String, String>();
         private String content = "";
@@ -511,59 +509,9 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         }
     }
 
-    public static enum XacmlVersionType {
-        V1_0("1.0", "urn:oasis:names:tc:xacml:1.0:context"),
-        V1_1("1.1", "urn:oasis:names:tc:xacml:1.0:context"),
-        V2_0("2.0", "urn:oasis:names:tc:xacml:2.0:context");
-
-        private String displayName;
-        private String namespace;
-
-        private XacmlVersionType(String displayName, String namespace) {
-            this.displayName = displayName;
-            this.namespace = namespace;
-        }
-
-        public String getNamespace() {
-            return namespace;
-        }
-
-        public String toString() {
-            return displayName;
-        }
-    }
-
-    public static enum SoapEncapsulationType {
-        NONE("None", null, null),
-        v1_1("SOAP 1.1", "http://schemas.xmlsoap.org/soap/envelope/", "soapenv"),
-        v1_2("SOAP 1.2", "http://www.w3.org/2003/05/soap-envelope", "s12");
-
-        private String displayName;
-        private String uri;
-        private String prefix;
-
-        private SoapEncapsulationType(String displayName, String uri, String prefix) {
-            this.displayName = displayName;
-            this.uri = uri;
-            this.prefix = prefix;
-        }
-
-        public String getUri() {
-            return uri;
-        }
-
-        public String getPrefix() {
-            return prefix;
-        }
-
-        public String toString() {
-            return displayName;
-        }
-    }
-
-    private XacmlVersionType xacmlVersion = XacmlVersionType.V2_0;
-    private SoapEncapsulationType soapEncapsulation = SoapEncapsulationType.NONE;
-    private MessageTarget outputMessageDestination = MessageTarget.REQUEST_MESSAGE;
+    private XacmlAssertionEnums.XacmlVersionType xacmlVersion = XacmlAssertionEnums.XacmlVersionType.V2_0;
+    private XacmlAssertionEnums.SoapVersion soapEncapsulation = XacmlAssertionEnums.SoapVersion.NONE;
+    private XacmlAssertionEnums.MessageTarget outputMessageDestination = XacmlAssertionEnums.MessageTarget.REQUEST_MESSAGE;
     private String outputMessageVariableName;
     private List<Subject> subjects = new ArrayList<Subject>();
     private List<Resource> resources = new ArrayList<Resource>();
@@ -725,34 +673,34 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
     }
 
     public VariableMetadata[] getVariablesSet() {
-        if(outputMessageDestination == MessageTarget.MESSAGE_VARIABLE) {
+        if(outputMessageDestination == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
             return new VariableMetadata[] {new VariableMetadata(outputMessageVariableName, false, false, null, true, DataType.MESSAGE)};
         } else {
             return new VariableMetadata[0];
         }
     }
 
-    public XacmlVersionType getXacmlVersion() {
+    public XacmlAssertionEnums.XacmlVersionType getXacmlVersion() {
         return xacmlVersion;
     }
 
-    public void setXacmlVersion(XacmlVersionType xacmlVersion) {
+    public void setXacmlVersion(XacmlAssertionEnums.XacmlVersionType xacmlVersion) {
         this.xacmlVersion = xacmlVersion;
     }
 
-    public SoapEncapsulationType getSoapEncapsulation() {
+    public XacmlAssertionEnums.SoapVersion getSoapEncapsulation() {
         return soapEncapsulation;
     }
 
-    public void setSoapEncapsulation(SoapEncapsulationType soapEncapsulation) {
+    public void setSoapEncapsulation(XacmlAssertionEnums.SoapVersion soapEncapsulation) {
         this.soapEncapsulation = soapEncapsulation;
     }
 
-    public MessageTarget getOutputMessageDestination() {
+    public XacmlAssertionEnums.MessageTarget getOutputMessageDestination() {
         return outputMessageDestination;
     }
 
-    public void setOutputMessageDestination(MessageTarget outputMessageDestination) {
+    public void setOutputMessageDestination(XacmlAssertionEnums.MessageTarget outputMessageDestination) {
         this.outputMessageDestination = outputMessageDestination;
     }
 
@@ -819,9 +767,9 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         meta.put(WSP_EXTERNAL_NAME, "XacmlRequestBuilderAssertion"); // keep same WSP name as pre-3.7 (Bug #3605)
 
         Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
-        othermappings.add(new Java5EnumTypeMapping(XacmlVersionType.class, "xacmlVersion"));
-        othermappings.add(new Java5EnumTypeMapping(MessageTarget.class, "messageTarget"));
-        othermappings.add(new Java5EnumTypeMapping(SoapEncapsulationType.class, "soapEncapsulation"));
+        othermappings.add(new Java5EnumTypeMapping(XacmlAssertionEnums.XacmlVersionType.class, "xacmlVersion"));
+        othermappings.add(new Java5EnumTypeMapping(XacmlAssertionEnums.MessageTarget.class, "messageTarget"));
+        othermappings.add(new Java5EnumTypeMapping(XacmlAssertionEnums.SoapVersion.class, "soapEncapsulation"));
         othermappings.add(new BeanTypeMapping(Subject.class, "subject"));
         othermappings.add(new CollectionTypeMapping(List.class, Subject.class, ArrayList.class, "subjectList"));
         othermappings.add(new BeanTypeMapping(Resource.class, "resource"));

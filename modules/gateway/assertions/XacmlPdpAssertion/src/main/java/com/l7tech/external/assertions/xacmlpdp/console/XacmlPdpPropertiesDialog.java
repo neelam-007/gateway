@@ -4,6 +4,7 @@ import com.l7tech.console.panels.AssertionPropertiesEditorSupport;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.xacmlpdp.XacmlPdpAssertion;
+import com.l7tech.external.assertions.xacmlpdp.XacmlAssertionEnums;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -57,17 +58,19 @@ import org.xml.sax.SAXException;
  */
 public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<XacmlPdpAssertion> {
     public static class MessageSourceEntry {
-        private int messageSource;
+        private XacmlAssertionEnums.MessageTarget messageSource;
         private String messageVariableName;
         private String displayName;
 
-        public MessageSourceEntry(int messageSource, String messageVariableName, String displayName) {
+        public MessageSourceEntry(XacmlAssertionEnums.MessageTarget messageSource,
+                                  String messageVariableName,
+                                  String displayName) {
             this.messageSource = messageSource;
             this.messageVariableName = messageVariableName;
             this.displayName = displayName;
         }
 
-        public int getMessageSource() {
+        public XacmlAssertionEnums.MessageTarget getMessageSource() {
             return messageSource;
         }
 
@@ -81,26 +84,26 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
     }
 
     public static class MessageOutputEntry {
-        private int messageTarget;
+        private XacmlAssertionEnums.MessageTarget messageTarget;
 
-        public MessageOutputEntry(int messageTarget) {
+        public MessageOutputEntry(XacmlAssertionEnums.MessageTarget messageTarget) {
             this.messageTarget = messageTarget;
         }
 
-        public int getMessageTarget() {
+        public XacmlAssertionEnums.MessageTarget getMessageTarget() {
             return messageTarget;
         }
 
         public String toString() {
             switch(messageTarget) {
-                case XacmlPdpAssertion.REQUEST_MESSAGE:
+                case REQUEST_MESSAGE:
                     return "Default Request";
-                case XacmlPdpAssertion.RESPONSE_MESSAGE:
+                case RESPONSE_MESSAGE:
                     return "Default Response";
-                case XacmlPdpAssertion.MESSAGE_VARIABLE:
+                case CONTEXT_VARIABLE:
                     return "Message Variable:";
                 default:
-                    return "Can't happen";
+                    throw new IllegalStateException("Invalid messageTarget found");//can only happen if enum changes
             }
         }
     }
@@ -143,27 +146,36 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         DefaultComboBoxModel comboBoxModel = new DefaultComboBoxModel();
-        comboBoxModel.addElement(new MessageSourceEntry(XacmlPdpAssertion.REQUEST_MESSAGE, null, "Default Request"));
-        comboBoxModel.addElement(new MessageSourceEntry(XacmlPdpAssertion.RESPONSE_MESSAGE, null, "Default Response"));
+        comboBoxModel.addElement(
+                new MessageSourceEntry(
+                        XacmlAssertionEnums.MessageTarget.REQUEST_MESSAGE, null, "Default Request"));
+        comboBoxModel.addElement(
+                new MessageSourceEntry(
+                        XacmlAssertionEnums.MessageTarget.RESPONSE_MESSAGE, null, "Default Response"));
 
         Map<String, VariableMetadata> predecessorVariables = PolicyVariableUtils.getVariablesSetByPredecessors(assertion);
         SortedSet<String> predecessorVariableNames = new TreeSet<String>(predecessorVariables.keySet());
         for (String variableName: predecessorVariableNames) {
             if (predecessorVariables.get(variableName).getType() == DataType.MESSAGE) {
-                final MessageSourceEntry item = new MessageSourceEntry(XacmlPdpAssertion.MESSAGE_VARIABLE, variableName, "Context Variable: " + Syntax.SYNTAX_PREFIX + variableName + Syntax.SYNTAX_SUFFIX);
+                final MessageSourceEntry item =
+                        new MessageSourceEntry(
+                                XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE,
+                                variableName,
+                                "Context Variable: " + Syntax.SYNTAX_PREFIX + variableName + Syntax.SYNTAX_SUFFIX);
                 comboBoxModel.addElement(item);
             }
         }
         messageSourceComboBox.setModel(comboBoxModel);
 
         comboBoxModel = new DefaultComboBoxModel();
-        comboBoxModel.addElement(new MessageOutputEntry(XacmlPdpAssertion.RESPONSE_MESSAGE));
-        comboBoxModel.addElement(new MessageOutputEntry(XacmlPdpAssertion.MESSAGE_VARIABLE));
+        comboBoxModel.addElement(new MessageOutputEntry(XacmlAssertionEnums.MessageTarget.RESPONSE_MESSAGE));
+        comboBoxModel.addElement(new MessageOutputEntry(XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE));
         messageOutputComboBox.setModel(comboBoxModel);
 
         outputMessageVariableNameField.setEnabled(false);
 
-        messageFormatComboBox.setModel(new DefaultComboBoxModel(XacmlPdpAssertion.SOAP_ENCAPSULATION_VALUES));
+        messageFormatComboBox.setModel(
+                new DefaultComboBoxModel(XacmlPdpAssertion.SoapEncapsulationType.allTypesAsStrings()));
 
         policyLocationComboBox.setModel(new DefaultComboBoxModel(new String[] {CONFIGURED_IN_ADVANCE, "Monitor URL for latest value"}));
         monitorUrlPolicyPanel.setVisible(false);
@@ -446,7 +458,8 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
 
     private void enableDisableComponents() {
         MessageOutputEntry outputEntry = (MessageOutputEntry)messageOutputComboBox.getSelectedItem();
-        if(uiAccessibility.getEditor().getText().trim().length() == 0 || outputEntry.getMessageTarget() == XacmlPdpAssertion.MESSAGE_VARIABLE &&
+        if(uiAccessibility.getEditor().getText().trim().length() == 0
+                || outputEntry.getMessageTarget() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE &&
                 outputMessageVariableNameField.getText().trim().length() == 0)
         {
             okButton.setEnabled(false);
@@ -454,7 +467,8 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
             okButton.setEnabled(true);
         }
 
-        outputMessageVariableNameField.setEnabled(outputEntry.getMessageTarget() == XacmlPdpAssertion.MESSAGE_VARIABLE);
+        outputMessageVariableNameField.setEnabled(
+                outputEntry.getMessageTarget() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE);
     }
 
     public boolean isConfirmed() {
@@ -467,7 +481,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         boolean foundItem = false;
         for(int i = 0;i < messageSourceComboBox.getItemCount();i++) {
             MessageSourceEntry entry = (MessageSourceEntry)messageSourceComboBox.getItemAt(i);
-            if(entry.getMessageSource() != XacmlPdpAssertion.MESSAGE_VARIABLE) {
+            if(entry.getMessageSource() != XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
                 if(assertion.getInputMessageSource() == entry.getMessageSource()) {
                     messageSourceComboBox.setSelectedItem(entry);
                     foundItem = true;
@@ -480,17 +494,25 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
             }
         }
 
-        if(!foundItem && assertion.getInputMessageSource() == XacmlPdpAssertion.MESSAGE_VARIABLE) {
+        if(!foundItem && assertion.getInputMessageSource() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
             int position = -1;
             for(int i = 0;i < messageSourceComboBox.getItemCount();i++) {
                 MessageSourceEntry entry = (MessageSourceEntry)messageSourceComboBox.getItemAt(i);
-                if(entry.getMessageSource() == XacmlPdpAssertion.MESSAGE_VARIABLE && assertion.getInputMessageVariableName().compareTo(entry.getMessageVariableName()) < 0) {
+                if(entry.getMessageSource() ==
+                        XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE
+                        && assertion.getInputMessageVariableName().compareTo(entry.getMessageVariableName()) < 0) {
                     position = i;
                     break;
                 }
             }
 
-            MessageSourceEntry newEntry = new MessageSourceEntry(XacmlPdpAssertion.MESSAGE_VARIABLE, assertion.getInputMessageVariableName(), "Context Variable: " + Syntax.SYNTAX_PREFIX + assertion.getInputMessageVariableName() + Syntax.SYNTAX_SUFFIX);
+            MessageSourceEntry newEntry =
+                    new MessageSourceEntry(
+                            XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE,
+                            assertion.getInputMessageVariableName(),
+                            "Context Variable: " +
+                                    Syntax.SYNTAX_PREFIX +
+                                    assertion.getInputMessageVariableName() + Syntax.SYNTAX_SUFFIX);
             if(position == -1) {
                 messageSourceComboBox.addItem(newEntry);
             } else {
@@ -505,11 +527,11 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
                 break;
             }
         }
-        if(assertion.getOutputMessageTarget() == XacmlPdpAssertion.MESSAGE_VARIABLE) {
+        if(assertion.getOutputMessageTarget() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
             outputMessageVariableNameField.setText(assertion.getOutputMessageVariableName());
         }
 
-        messageFormatComboBox.setSelectedItem(assertion.getSoapEncapsulation());
+        messageFormatComboBox.setSelectedItem(assertion.getSoapEncapsulation().toString());
 
         if(assertion.getResourceInfo() instanceof StaticResourceInfo) {
             StaticResourceInfo sri = (StaticResourceInfo)assertion.getResourceInfo();
@@ -533,7 +555,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
     public XacmlPdpAssertion getData(XacmlPdpAssertion assertion) {
         MessageSourceEntry messageSourceEntry = (MessageSourceEntry)messageSourceComboBox.getSelectedItem();
         assertion.setInputMessageSource(messageSourceEntry.getMessageSource());
-        if(messageSourceEntry.getMessageSource() == XacmlPdpAssertion.MESSAGE_VARIABLE) {
+        if(messageSourceEntry.getMessageSource() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
             assertion.setInputMessageVariableName(messageSourceEntry.getMessageVariableName());
         } else {
             assertion.setInputMessageVariableName(null);
@@ -541,11 +563,12 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
 
         MessageOutputEntry outputEntry = (MessageOutputEntry)messageOutputComboBox.getSelectedItem();
         assertion.setOutputMessageTarget(outputEntry.getMessageTarget());
-        if(outputEntry.getMessageTarget() == XacmlPdpAssertion.MESSAGE_VARIABLE) {
+        if(outputEntry.getMessageTarget() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
             assertion.setOutputMessageVariableName(outputMessageVariableNameField.getText().trim());
         }
 
-        assertion.setSoapEncapsulation((String)messageFormatComboBox.getSelectedItem());
+        String type = (String) messageFormatComboBox.getSelectedItem();
+        assertion.setSoapEncapsulation(XacmlPdpAssertion.SoapEncapsulationType.findEncapsulationType(type));
 
         try {
             if(CONFIGURED_IN_ADVANCE.equals(policyLocationComboBox.getSelectedItem())) {
