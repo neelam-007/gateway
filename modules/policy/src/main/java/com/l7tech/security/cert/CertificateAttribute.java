@@ -210,7 +210,7 @@ public enum CertificateAttribute {
      * The Subject DN in canonical format: for comparisons; limited subset of OID names;
      * strict sorting, whitespace, and case rules
      */
-    SUBJECT_CANONICAL("suject.canonical", false, false, "subject.dn.canonical") {
+    SUBJECT_CANONICAL("subject.canonical", false, false, "subject.dn.canonical") {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             return makeMap(this.toString(), certificate.getSubjectX500Principal().getName(X500Principal.CANONICAL));

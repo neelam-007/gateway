@@ -35,6 +35,16 @@ public class VariablePrefixesTest extends TestCase {
 
         var = ServerVariables.getVariable("gateway.asdfasdf");
         assertEquals(var.getName(), "gateway");
+
+        // make sure the legacy wss message attribute variables are retrieved correctly
+        var = ServerVariables.getVariable("request.wss.signingcertificate");
+        assertEquals("request.wss.signingcertificate", var.getName());
+
+        var = ServerVariables.getVariable("request.wss.signingcertificate.base64");
+        assertEquals("request.wss.signingcertificate.base64", var.getName());
+
+        var = ServerVariables.getVariable("request.wss.signingcertificate.pem");
+        assertEquals("request.wss.signingcertificate.pem", var.getName());
     }
 
     public void testBuiltinPrefixes() throws Exception {

@@ -18,6 +18,7 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
@@ -535,7 +536,6 @@ public class ServerVariables {
                 return null;
             }
         }),
-        //TODO [steve] add new WSS variables and deprecate these
         new Variable("request.wss.signingcertificate", new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {
@@ -576,6 +576,21 @@ public class ServerVariables {
                 return null;
             }
         }),
+
+        new Variable("request.wss", new Getter() {
+            @Override
+            public Object get(String name, final PolicyEnforcementContext context) {
+                return ExpandVariables.process(name, new HashMap() {{ put("request", context.getRequest()); }}, new LogOnlyAuditor(logger));
+            }
+        }),
+
+        new Variable("response.wss", new Getter() {
+            @Override
+            public Object get(String name, final PolicyEnforcementContext context) {
+                return ExpandVariables.process(name, new HashMap() {{ put("response", context.getResponse()); }}, new LogOnlyAuditor(logger));
+            }
+        }),
+
         new Variable("request.compression.gzip.found", new Getter() {
             @Override
             public Object get(String name, PolicyEnforcementContext context) {

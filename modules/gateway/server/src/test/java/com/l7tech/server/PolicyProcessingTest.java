@@ -4,7 +4,6 @@ import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpHeaders;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpHeader;
-import com.l7tech.util.IOUtils;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -14,8 +13,10 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.security.MockGenericHttpClient;
+import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.TestIdentityProvider;
@@ -25,11 +26,10 @@ import com.l7tech.server.tomcat.ResponseKillerValve;
 import com.l7tech.server.transport.http.ConnectionId;
 import com.l7tech.server.util.SoapFaultManager;
 import com.l7tech.server.util.TestingHttpClientFactory;
+import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.server.policy.assertion.credential.DigestSessions;
-import com.l7tech.util.CausedIOException;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.TimeUnit;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContext;
@@ -47,10 +47,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.net.PasswordAuthentication;
@@ -508,6 +505,54 @@ public class PolicyProcessingTest extends TestCase {
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
         processMessage("/multiplesignatures", new String(loadResource("REQUEST_multiplesignatures.xml")), 0);
+    }
+
+    public void testWssMessageAttributes() throws Exception {
+        // build test request and run WSS processor on it
+        String message = new String(loadResource("REQUEST_multiplesignatures.xml"));
+        final Message request = new Message();
+        request.initialize(ContentTypeHeader.XML_DEFAULT, message.getBytes());
+        request.getSecurityKnob().setProcessorResult(
+            WSSecurityProcessorUtils.getWssResults(request, "multiple signatures test request", new SimpleSecurityTokenResolver(), new LogOnlyAuditor(logger))
+        );
+
+        assertEquals("2", getRequestAttribute(request, "request.wss.certificates.count", null));
+        assertEquals("CN=OASIS Interop Test CA, O=OASIS", getRequestAttribute(request, "request.wss.certificates.value.1.issuer", null));
+        assertEquals("cn=oasis interop test ca,o=oasis", getRequestAttribute(request, "request.wss.certificates.value.1.issuer.canonical", null));
+        assertEquals("O=OASIS", getRequestAttribute(request, "request.wss.certificates.value.1.issuer.dn.2", null));
+        assertEquals("OASIS Interop Test CA", getRequestAttribute(request, "request.wss.certificates.value.2.issuer.dn.cn", null));
+        assertEquals("", getRequestAttribute(request, "request.wss.certificates.value.2.issuerAltNameEmail", null));
+        assertEquals("NQM0IBvuplAtETQvk+6gn8C13wE=", getRequestAttribute(request, "request.wss.certificates.value.2.thumbprintSHA1", null));
+
+        assertEquals("2", getRequestAttribute(request, "request.wss.signingcertificates.count", null));
+        assertEquals("CN=Bob, OU=OASIS Interop Test Cert, O=OASIS", getRequestAttribute(request, "request.wss.signingcertificates.value.2.subject", null));
+        assertEquals("cn=bob,ou=oasis interop test cert,o=oasis", getRequestAttribute(request, "request.wss.signingcertificates.value.2.subject.canonical", null));
+        assertEquals("OU=OASIS Interop Test Cert", getRequestAttribute(request, "request.wss.signingcertificates.value.2.subject.dn.2", null));
+        assertEquals("OASIS Interop Test Cert", getRequestAttribute(request, "request.wss.signingcertificates.value.1.subject.dn.ou", null));
+        assertEquals("", getRequestAttribute(request, "request.wss.signingcertificates.value.1.subjectAltNameEmail", null));
+        assertEquals("bg6I8267h0TUcPYvYE0D6k6+UJQ=", getRequestAttribute(request, "request.wss.signingcertificates.value.1.thumbprintSHA1", null));
+
+
+        // test extraction of legacy wss attribute names (manually added instead of RequireWssX509Cert assertion)
+        Object firstCert = getRequestAttribute(request, "request.wss.signingcertificates.value.1", null);
+        assertEquals(firstCert, getRequestAttribute(request, "request.wss.signingcertificate", new Pair<String,Object>("request.wss.signingcertificate", firstCert)));
+
+        Object firstCertBase64 = getRequestAttribute(request, "request.wss.signingcertificates.value.1.base64", null);
+        assertEquals(firstCertBase64, getRequestAttribute(request, "request.wss.signingcertificate.base64", new Pair<String,Object>("request.wss.signingcertificate.base64", firstCertBase64)));
+
+        Object firstCertPem = getRequestAttribute(request, "request.wss.signingcertificates.value.1.pem", null);
+        assertEquals(firstCertPem, getRequestAttribute(request, "request.wss.signingcertificate.pem", new Pair<String,Object>("request.wss.signingcertificate.pem", firstCertPem)));
+    }
+
+    private Object getRequestAttribute(final Message request, String attributeName, Pair<String,Object> extraVars) {
+        Map<String,Object> vars = new HashMap<String, Object>();
+        vars.put("request", request);
+        if (extraVars != null) {
+            vars.put(extraVars.getKey(), extraVars.getValue());
+        }
+        Object result = ExpandVariables.processSingleVariableAsDisplayableObject("${" + attributeName + "}", vars, new LogOnlyAuditor(logger));
+        System.out.println("\n-----------------------------------\n" + attributeName + ": " + result);
+        return result;
     }
 
     /**

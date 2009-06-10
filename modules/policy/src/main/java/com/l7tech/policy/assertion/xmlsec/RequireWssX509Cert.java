@@ -13,11 +13,11 @@ import com.l7tech.objectmodel.migration.PropertyResolver;
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
- * This assertion verifies that the soap request contained
+ * This assertion verifies that the soap message contained
  * an xml digital signature but does not care about which
  * elements were signed. The cert used for the signature is
  * remembered to identify the user. This cert can later
- * be used for comparaison in an identity assertion.
+ * be used for comparison in an identity assertion.
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -45,7 +45,7 @@ public class RequireWssX509Cert extends SecurityHeaderAddressableSupport impleme
         DefaultAssertionMetadata meta = defaultMeta();
 
         meta.put(AssertionMetadata.SHORT_NAME, "WSS Signature");
-        meta.put(AssertionMetadata.DESCRIPTION, "The soap request must contain a WSS signature with an X509 SecurityToken");
+        meta.put(AssertionMetadata.DESCRIPTION, "The soap message must contain a WSS signature with an X509 SecurityToken");
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME, "Require WSS Signature");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.WssX509CertPropertiesDialog");

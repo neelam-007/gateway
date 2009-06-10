@@ -139,9 +139,12 @@ public class BuiltinVariables {
         new VariableMetadata("request.ssl.clientcertificate.base64", false, false, null, false, DataType.STRING),
         new VariableMetadata("request.ssl.clientcertificate.pem", false, false, null, false, DataType.STRING),
 
-        new VariableMetadata("request.wss.signingcertificate", false, false, null, false, DataType.CERTIFICATE),
-        new VariableMetadata("request.wss.signingcertificate.base64", false, false, null, false, DataType.STRING),
-        new VariableMetadata("request.wss.signingcertificate.pem", false, false, null, false, DataType.STRING),
+        new VariableMetadata("request.wss.signingcertificate", false, false, null, false, DataType.CERTIFICATE, true),
+        new VariableMetadata("request.wss.signingcertificate.base64", false, false, null, false, DataType.STRING, true),
+        new VariableMetadata("request.wss.signingcertificate.pem", false, false, null, false, DataType.STRING, true),
+
+        new VariableMetadata("request.wss", true, false, null, false),
+        new VariableMetadata("response.wss", true, false, null, false),
 
         new VariableMetadata("request.compression.gzip.found", false, false, null, true, DataType.BOOLEAN),
     };
