@@ -91,6 +91,23 @@ public abstract class AbstractMessageTargetableServerAssertion<AT extends Assert
      */
     protected abstract Audit getAuditor();
 
+    /**
+     * Get the assertion status for a bad message.
+     *
+     * @return The AssertionStatus to use for the target message.
+     */
+    protected AssertionStatus getBadMessageStatus() {
+        AssertionStatus status = AssertionStatus.FALSIFIED;
+
+        if ( isRequest() ) {
+            status = AssertionStatus.BAD_REQUEST;
+        } else if ( isResponse() ) {
+            status = AssertionStatus.BAD_RESPONSE;
+        }
+
+        return status;
+    }
+
     //- PRIVATE
 
     private final MessageTargetable messageTargetable;

@@ -46,7 +46,6 @@ import java.util.logging.Logger;
  * Date: Aug 26, 2003<br/>
  *
  * TODO [steve] add decoration requirements even if certificate is not currently available
- * TODO [steve] auditing for target message
  */
 public class ServerWssEncryptElement extends AbstractMessageTargetableServerAssertion<WssEncryptElement> {
 
@@ -110,7 +109,7 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
                     X509SecurityToken x509token = (X509SecurityToken)token;
                     if (x509token.isPossessionProved()) {
                         if (clientCert != null) {
-                            auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN);
+                            auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MORE_THAN_ONE_TOKEN);
                             return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work
                         }
                         clientCert = x509token.getCertificate();
@@ -120,7 +119,7 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
                     SamlSecurityToken samlToken = (SamlSecurityToken)token;
                     if (samlToken.isPossessionProved()) {
                         if (clientCert != null) {
-                            auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN);
+                            auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MORE_THAN_ONE_TOKEN);
                             return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work
                         }
                         clientCert = samlToken.getSubjectCertificate();
@@ -128,7 +127,7 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
                 } else if (token instanceof KerberosSecurityToken) {
                     KerberosSecurityToken kerberosSecurityToken = (KerberosSecurityToken)token;
                     if (kerberosServiceTicket != null) {
-                        auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN);
+                        auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MORE_THAN_ONE_TOKEN);
                         return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work
                     }
                     kerberosServiceTicket = kerberosSecurityToken.getTicket().getServiceTicket();
@@ -139,7 +138,7 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
                     }
                 } else if (token instanceof EncryptedKey) {
                     if (encryptedKey != null) {
-                        auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN);
+                        auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MORE_THAN_ONE_TOKEN);
                         return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work
                     }
                     encryptedKey = (EncryptedKey)token;
@@ -147,7 +146,7 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
             }
 
             if (clientCert == null && secConvContext == null && encryptedKey == null && kerberosServiceTicket==null) {
-                auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_NO_CERT_OR_SC_TOKEN);
+                auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_NO_CERT_OR_SC_TOKEN);
                 context.setAuthenticationMissing(); // todo is it really, though?
                 context.setRequestPolicyViolated();
                 return AssertionStatus.FAILED; // todo verify that this return value is appropriate
@@ -159,6 +158,7 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
 
         return addDecorationRequirements(
                                  message,
+                                 messageDescription,
                                  clientCert,
                                  kerberosServiceTicket,
                                  secConvContext,
@@ -189,6 +189,7 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
      */
     private AssertionStatus addDecorationRequirements(
                                               final Message message,
+                                              final String messageDescription,
                                               final X509Certificate clientCert,
                                               final KerberosServiceTicket kerberosServiceTicket,
                                               final SecurityContextToken secConvTok,
@@ -200,7 +201,7 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
     {
         try {
             if (!message.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_RESPONSE_NOT_SOAP);
+                auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MESSAGE_NOT_SOAP, messageDescription);
                 return AssertionStatus.NOT_APPLICABLE;
             }
         } catch (SAXException e) {
@@ -223,7 +224,7 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
             }
 
             if (selectedElements == null || selectedElements.size() < 1) {
-                auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_RESPONSE_NOT_ENCRYPTED);
+                auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MESSAGE_NOT_ENCRYPTED, messageDescription);
                 return AssertionStatus.FALSIFIED;
             }
             DecorationRequirements wssReq;
@@ -259,7 +260,7 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
                 wssReq.setKerberosTicket(kerberosServiceTicket);
             }
 
-            auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_RESPONSE_ENCRYPTED, String.valueOf(selectedElements.size()));
+            auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MESSAGE_ENCRYPTED, messageDescription, String.valueOf(selectedElements.size()));
             return AssertionStatus.NONE;
         } catch (SAXException e) {
             String msg = "cannot get an xml document from the response to encrypt";

@@ -34,8 +34,6 @@ import java.util.logging.Logger;
 
 /**
  * Code shared between ServerRequestWssConfidentiality and ServerRequestWssIntegrity.
- *
- * TODO [steve] auditing for message target
  */
 public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionBase> extends AbstractMessageTargetableServerAssertion<AT> implements ServerAssertion<AT> {
     protected final Auditor auditor;
@@ -91,9 +89,9 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
         ProcessorResult wssResults;
         try {
             if (!message.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.REQUESTWSS_NONSOAP);
+                auditor.logAndAudit(AssertionMessages.REQUIREWSS_NONSOAP, messageDescription);
 
-                return AssertionStatus.BAD_REQUEST;
+                return getBadMessageStatus();
             }
 
             if ( isRequest() ) {
@@ -119,7 +117,7 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
             soapmsg = message.getXmlKnob().getDocumentReadOnly();
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {"Cannot get payload document."}, e);
-            return AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         }
 
         ParsedElement[] elements = getElementsFoundByProcessor(wssResults);

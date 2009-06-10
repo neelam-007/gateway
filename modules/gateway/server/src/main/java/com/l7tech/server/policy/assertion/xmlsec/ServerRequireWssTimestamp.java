@@ -69,12 +69,12 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
                                               final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
         try {
             if (!msg.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_NOTAPPLICABLE, what);
+                auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_NOTAPPLICABLE, what);
                 return AssertionStatus.NOT_APPLICABLE;
             }
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, ExceptionUtils.getMessage(e));
-            return AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         }
 
         final ProcessorResult processorResult = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, auditor);
@@ -82,16 +82,16 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
 
         final WssTimestamp wssTimestamp = processorResult.getTimestamp();
         if (wssTimestamp == null) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_NOTIMESTAMP, what);
-            return AssertionStatus.BAD_REQUEST;
+            auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_NOTIMESTAMP, what);
+            return getBadMessageStatus();
         }
 
         if ( assertion.isSignatureRequired() ) {
             final ParsedElement element = ProcessorResultUtil.getParsedElementForNode( wssTimestamp.asElement(), processorResult.getElementsThatWereSigned() );
             if ( new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
                 if ( element==null || !WSSecurityProcessorUtils.isValidSingleSigner(processorResult, new ParsedElement[]{element}) ) {
-                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_NOT_SIGNED, what);
-                    return AssertionStatus.BAD_REQUEST;
+                    auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_NOT_SIGNED, what);
+                    return getBadMessageStatus();
                 }
             } else {
                 // Ensure signed with the required identity
@@ -101,8 +101,8 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
                              assertion.getIdentityTarget(),
                              processorResult,
                              new ParsedElement[]{element} ) ) {
-                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_NOT_SIGNED, what);
-                    return AssertionStatus.BAD_REQUEST;
+                    auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_NOT_SIGNED, what);
+                    return getBadMessageStatus();
                 }
             }
         }
@@ -110,15 +110,15 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
         final long now = System.currentTimeMillis();
         WssTimestampDate createdEl = wssTimestamp.getCreated();
         if (createdEl == null) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_NO_CREATED, what); // Created is required according to BSP 1.0
-            return AssertionStatus.BAD_REQUEST;
+            auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_NO_CREATED, what); // Created is required according to BSP 1.0
+            return getBadMessageStatus();
         }
 
         long createdFutureFuzz = serverConfig.getLongPropertyCached(ServerConfig.PARAM_TIMESTAMP_CREATED_FUTURE_GRACE, DEFAULT_GRACE, PROP_CACHE_AGE);
         final long created = createdEl.asTime();
         if (created - createdFutureFuzz > now) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_CREATED_FUTURE, what);
-            return AssertionStatus.BAD_REQUEST;
+            auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_CREATED_FUTURE, what);
+            return getBadMessageStatus();
         }
 
         final WssTimestampDate expiresEl = wssTimestamp.getExpires();
@@ -133,7 +133,7 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
         boolean constrain = false;
         long originalExpires = expires;
         if (window > assertion.getMaxExpiryMilliseconds()) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_EXPIRES_TOOLATE, what);
+            auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_EXPIRES_TOOLATE, what);
             constrain = true;
             expires = created + assertion.getMaxExpiryMilliseconds();
         }
@@ -142,12 +142,12 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
         if (expires + expiresPastFuzz < now) {
             if (constrain && (!(originalExpires + expiresPastFuzz < now))) {
                 // then this only expired because we constrained the expiry time so audit that
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_EXPIRED_TRUNC, what);
-                return AssertionStatus.BAD_REQUEST;
+                auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_EXPIRED_TRUNC, what);
+                return getBadMessageStatus();
             } else {
                 // the timestamp as it came in was expired so just audit that
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_TIMESTAMP_EXPIRED, what);
-                return AssertionStatus.BAD_REQUEST;
+                auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_EXPIRED, what);
+                return getBadMessageStatus();
             }
         }
 

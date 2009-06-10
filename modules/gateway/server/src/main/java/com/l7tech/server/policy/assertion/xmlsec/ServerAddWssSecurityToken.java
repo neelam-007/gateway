@@ -56,13 +56,13 @@ public class ServerAddWssSecurityToken extends ServerAddWssSignature<AddWssSecur
             }
 
             if (name == null) {
-                auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_TOKEN_NO_USERNAME);
+                auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NO_USERNAME);
                 return -1;
             }
 
             if (assertion.isIncludePassword()) {
                 if (pass == null) {
-                    auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_TOKEN_NO_PASSWORD);
+                    auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_NO_PASSWORD);
                     return -1;
                 }
             } else {
@@ -72,7 +72,7 @@ public class ServerAddWssSecurityToken extends ServerAddWssSignature<AddWssSecur
             wssReq.setSignUsernameToken(true);
             return 1;
         } else {
-            auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_TOKEN_UNSUPPORTED_TYPE, assertion.getTokenType().getName());
+            auditor.logAndAudit(AssertionMessages.ADD_WSS_TOKEN_UNSUPPORTED_TYPE, assertion.getTokenType().getName());
             return -1;
         }
     }

@@ -37,7 +37,7 @@ import java.security.KeyStoreException;
 import java.util.logging.Logger;
 
 /**
- * TODO [steve] auditing for message target
+ * Server assertion for Signing
  *
  * @author alex
  */
@@ -71,7 +71,7 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
         if ( isResponse() ) {
             try {
                 if (!context.getRequest().isSoap()) {
-                    auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_REQUEST_NOT_SOAP);
+                    auditor.logAndAudit(AssertionMessages.ADD_WSS_SIGNATURE_REQUEST_NOT_SOAP);
                     return AssertionStatus.NOT_APPLICABLE;
                 }
                 processorResult = context.getRequest().getSecurityKnob().getProcessorResult();
@@ -86,7 +86,7 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
 
         try {
             if (!message.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_NOT_SOAP);
+                auditor.logAndAudit(AssertionMessages.ADD_WSS_SIGNATURE_MESSAGE_NOT_SOAP, messageDescription);
                 return AssertionStatus.NOT_APPLICABLE;
             }
         } catch (SAXException e) {
@@ -115,7 +115,7 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
         if (howMany < 0) {
             return AssertionStatus.FAILED;
         } else if (howMany == 0) {
-            auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_NO_MATCHING_EL);
+            auditor.logAndAudit(AssertionMessages.ADD_WSS_SIGNATURE_MESSAGE_NO_MATCHING_EL, messageDescription);
             return AssertionStatus.FALSIFIED;
         }
 
@@ -166,7 +166,7 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
             wssReq.setKeyInfoInclusionType(KeyInfoInclusionType.STR_SKI);
         }
 
-        auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_SIGNED, String.valueOf(howMany));
+        auditor.logAndAudit(AssertionMessages.ADD_WSS_SIGNATURE_MESSAGE_SIGNED, messageDescription, String.valueOf(howMany));
 
         return AssertionStatus.NONE;
     }

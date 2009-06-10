@@ -39,7 +39,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jul 14, 2004<br/>
- * $Id$<br/>
  */
 public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAssertion<RequireWssX509Cert> {
 
@@ -72,7 +71,7 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
         try {
             if (!message.isSoap()) {
                 auditor.logAndAudit(AssertionMessages.WSS_X509_NON_SOAP, messageDesc);
-                return isRequest() ? AssertionStatus.BAD_REQUEST : AssertionStatus.FALSIFIED;
+                return getBadMessageStatus();
             }
 
             if ( isRequest() ) {
@@ -126,7 +125,7 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
                          processedSignatureElement != x509Tok.getSignedElements()[0].getSignatureElement() &&
                          !assertion.isAllowMultipleSignatures() ) {
                         auditor.logAndAudit(AssertionMessages.WSS_X509_TOO_MANY_VALID_SIG, messageDesc);
-                        return isRequest() ? AssertionStatus.BAD_REQUEST : AssertionStatus.FALSIFIED;
+                        return getBadMessageStatus();
                     }
 
                     processedSignatureElement = x509Tok.getSignedElements()[0].getSignatureElement();

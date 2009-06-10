@@ -76,7 +76,7 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
 
                 try {
                     if (!context.getResponse().isSoap()) {
-                        auditor.logAndAudit(AssertionMessages.REQUEST_WSS_INT_RESPONSE_NOT_SOAP);
+                        auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_SIGNATURE_RESPONSE_NOT_SOAP);
                         // FALLTHROUGH: We'll still send the response; it just won't contain a SignatureConfirmation
                     } else if(context.getResponse().getSecurityKnob().getDecorationRequirements().length > 0){
                         wssReq = context.getResponse().getSecurityKnob().getOrMakeDecorationRequirements();

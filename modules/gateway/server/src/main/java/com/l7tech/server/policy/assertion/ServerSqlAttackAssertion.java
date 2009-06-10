@@ -22,14 +22,14 @@ import java.util.logging.Logger;
  * Server side implementation of the SqlAttackAssertion all-in-one convenience assertion.
  * Internally this is implemented, essentially, as just zero or more regexp assertions.
  */
-public class ServerSqlAttackAssertion extends AbstractServerAssertion<SqlAttackAssertion> {
+public class ServerSqlAttackAssertion extends AbstractMessageTargetableServerAssertion<SqlAttackAssertion> {
     private static final Logger logger = Logger.getLogger(ServerSqlAttackAssertion.class.getName());
     private final Auditor auditor;
-    private final ArrayList<AbstractServerAssertion<? extends MessageTargetableAssertion>> children =
-                                    new ArrayList<AbstractServerAssertion<? extends MessageTargetableAssertion>>();
+    private final ArrayList<AbstractServerAssertion<? extends Assertion>> children =
+                                    new ArrayList<AbstractServerAssertion<? extends Assertion>>();
 
     public ServerSqlAttackAssertion(SqlAttackAssertion assertion, ApplicationContext springContext) {
-        super(assertion);
+        super(assertion, assertion);
         auditor = new Auditor(this, springContext, logger);
         boolean abort = false;
 
@@ -61,24 +61,40 @@ public class ServerSqlAttackAssertion extends AbstractServerAssertion<SqlAttackA
         }
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws PolicyAssertionException, IOException
     {
-        TargetMessageType target = getAssertion().getTarget();
-        if (TargetMessageType.REQUEST == target && context.isPostRouting()) {
+        if ( isRequest() && context.isPostRouting() ) {
             auditor.logAndAudit(AssertionMessages.SQLATTACK_ALREADY_ROUTED);
             return AssertionStatus.FAILED;
         }
-        for (AbstractServerAssertion<? extends MessageTargetableAssertion> mtServerAssertion : children) {
-            mtServerAssertion.getAssertion().setTarget(target);
-            mtServerAssertion.getAssertion().setOtherTargetMessageVariable(getAssertion().getOtherTargetMessageVariable());
-            AssertionStatus result = mtServerAssertion.checkRequest(context);
+
+        if ( isResponse() && !context.isPostRouting() ) {
+            auditor.logAndAudit(AssertionMessages.SQLATTACK_SKIP_RESPONSE_NOT_ROUTED);
+            return AssertionStatus.NONE;
+        }
+
+        TargetMessageType target = getAssertion().getTarget();
+        for (AbstractServerAssertion<? extends Assertion> serverAssertion : children) {
+            Assertion assertion = serverAssertion.getAssertion();
+            if ( assertion instanceof MessageTargetable ) {
+                MessageTargetable messageTargetable = (MessageTargetable) assertion;
+                messageTargetable.setTarget(target);
+                messageTargetable.setOtherTargetMessageVariable(getAssertion().getOtherTargetMessageVariable());
+            }
+            AssertionStatus result = serverAssertion.checkRequest(context);
             if (AssertionStatus.NONE != result) {
                 auditor.logAndAudit(AssertionMessages.SQLATTACK_REJECTED, getAssertion().getTargetName());
-                return AssertionStatus.BAD_REQUEST;
+                return getBadMessageStatus();
             }
         }
 
         return AssertionStatus.NONE;
+    }
+
+    @Override
+    protected Auditor getAuditor() {
+        return auditor;
     }
 }

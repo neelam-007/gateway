@@ -185,7 +185,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
                     } catch (SAXException e) {
                         auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE,
                                 new String[]{where, "text/xml"}, e);
-                        return isResponse() ? AssertionStatus.BAD_RESPONSE : AssertionStatus.BAD_REQUEST;
+                        return getBadMessageStatus();
                     }
                 } else {
                     auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROJECTION_SCANNING_ATTACHMENT_TEXT, where);
@@ -203,14 +203,14 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
                     } catch (NoSuchPartException e) {
                         auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE,
                                 new String[]{where, "text"}, e);
-                        return  isResponse() ? AssertionStatus.BAD_RESPONSE : AssertionStatus.BAD_REQUEST;
+                        return getBadMessageStatus();
                     }
                 }
             }
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE,
                     new String[]{messageDesc + " message body", "multipart/form-data"}, e);
-            return isResponse() ? AssertionStatus.BAD_RESPONSE : AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         }
 
         return AssertionStatus.NONE;
@@ -227,7 +227,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE,
                     new String[]{where, "text/xml"}, e);
-            return isResponse() ? AssertionStatus.BAD_RESPONSE : AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         }
 
         return AssertionStatus.NONE;
@@ -250,7 +250,7 @@ public class ServerCodeInjectionProtectionAssertion extends AbstractMessageTarge
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE,
                     new String[]{where, "text"}, e);
-            return isResponse() ? AssertionStatus.BAD_RESPONSE : AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         }
 
         return AssertionStatus.NONE;

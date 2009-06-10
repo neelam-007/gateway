@@ -107,10 +107,13 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
             return AssertionStatus.FAILED;
         }
 
-        // TODO [steve] handling for response processing before routing
+        if ( isResponse() && !context.isPostRouting() ) {
+            auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_SKIP_RESPONSE_NOT_ROUTED);
+            return AssertionStatus.NONE;
+        }
 
         if (!msg.isXml()) {
-            auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NOT_XML);
+            auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NOT_XML, targetName);
             return AssertionStatus.NOT_APPLICABLE;
         }
 
@@ -120,17 +123,17 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
 
             if (matchBigText != null && cursor.matches(matchBigText)) {
                 auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NODE_OR_ATTRIBUTE, targetName);
-                return AssertionStatus.BAD_REQUEST;
+                return getBadMessageStatus();
             }
 
             if ((attrLimit >= 0 || attrNameLimit >= 0) && exceedsAttrLimit(cursor, attrLimit, attrNameLimit)) {
                 auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NODE_OR_ATTRIBUTE, targetName);
-                return AssertionStatus.BAD_REQUEST;
+                return getBadMessageStatus();
             }
 
             if (matchOverdeepNesting != null && cursor.matches(matchOverdeepNesting)) {
                 auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_XML_NESTING_DEPTH_EXCEEDED, targetName);
-                return AssertionStatus.BAD_REQUEST;
+                return getBadMessageStatus();
             }
 
             return checkAllNonTarariSpecific(msg, targetName, cursor, auditor);
@@ -142,7 +145,7 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
                 auditor.logAndAudit(AssertionMessages.XPATH_RESPONSE_NOT_XML);
             else 
                 auditor.logAndAudit(AssertionMessages.XPATH_MESSAGE_NOT_XML, targetName);
-            return AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         } catch (XPathExpressionException e) {
             auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
             return AssertionStatus.FAILED;
@@ -150,7 +153,7 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO,
                                 new String[] {ExceptionUtils.getMessage(e)},
                                 e);
-            return AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         }
     }
 
@@ -205,14 +208,14 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
         if (requireValidSoap) {
             if (!request.isSoap()) {
                 auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NOT_SOAP, targetName);
-                return AssertionStatus.BAD_REQUEST;
+                return getBadMessageStatus();
             }
 
             String problem = SoapValidator.validateSoapMessage(cursor);
             if (problem != null) {
                 if (logger.isLoggable(Level.INFO)) logger.info("Request not valid SOAP: " + problem);
                 auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NOT_SOAP, targetName);
-                return AssertionStatus.BAD_REQUEST;
+                return getBadMessageStatus();
             }
         }
 
@@ -220,7 +223,7 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
 
         if (matchExtraPayload != null && cursor.matches(matchExtraPayload)) {
             auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_EXTRA_PAYLOAD_ELEMENTS, targetName);
-            return AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         }
 
         // Everything looks good.

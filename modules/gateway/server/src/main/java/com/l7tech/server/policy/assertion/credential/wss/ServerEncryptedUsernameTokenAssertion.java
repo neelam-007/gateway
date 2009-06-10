@@ -37,8 +37,6 @@ import java.security.GeneralSecurityException;
 /**
  * Ensures that a UsernameToken was present in the request, was encrypted, and was signed with the same token that
  * signed the timestamp.
- *
- * TODO [steve] auditing for message target
  */
 public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTargetableServerAssertion<EncryptedUsernameTokenAssertion> {
 
@@ -72,7 +70,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
         ProcessorResult wssResults;
         try {
             if (!message.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP);
+                auditor.logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP, messageDescription);
                 return AssertionStatus.NOT_APPLICABLE;
             }
             wssResults = message.getSecurityKnob().getProcessorResult();
@@ -80,7 +78,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
             throw new CausedIOException("Request declared as XML but is not well-formed", e);
         }
         if (wssResults == null) {
-            auditor.logAndAudit(AssertionMessages.WSS_BASIC_NO_CREDENTIALS);
+            auditor.logAndAudit(AssertionMessages.WSS_BASIC_NO_CREDENTIALS, messageDescription);
             if ( isRequest() ) {
                 context.setAuthenticationMissing();
                 context.setRequestPolicyViolated();
@@ -125,20 +123,23 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
                 LoginCredentials creds = LoginCredentials.makePasswordCredentials(user, pass, WssBasic.class);
                 authContext.addCredentials(creds);
 
-                // Configure the eventual response to reuse this EncryptedKey
-                try {
-                    // Since it's a signing token it must already have been unwrapped
-                    final String encryptedKeySha1 = signingToken.getEncryptedKeySHA1();
-                    addDeferredAssertion(context, encryptedKeySha1, signingToken.getSecretKey());
-                } catch (InvalidDocumentFormatException e) {
-                    throw new IllegalStateException(e); // can't happen -- it's a signing token
-                } catch (GeneralSecurityException e) {
-                    throw new IllegalStateException(e); // can't happen -- it's a signing token
+                if ( isRequest() ) {
+                    // Configure the eventual response to reuse this EncryptedKey
+                    try {
+                        // Since it's a signing token it must already have been unwrapped
+                        final String encryptedKeySha1 = signingToken.getEncryptedKeySHA1();
+                        addDeferredAssertion(context, encryptedKeySha1, signingToken.getSecretKey());
+                    } catch (InvalidDocumentFormatException e) {
+                        throw new IllegalStateException(e); // can't happen -- it's a signing token
+                    } catch (GeneralSecurityException e) {
+                        throw new IllegalStateException(e); // can't happen -- it's a signing token
+                    }
                 }
+                
                 return AssertionStatus.NONE;
             }
         }
-        auditor.logAndAudit(AssertionMessages.WSS_BASIC_CANNOT_FIND_ENC_CREDENTIALS);
+        auditor.logAndAudit(AssertionMessages.WSS_BASIC_CANNOT_FIND_ENC_CREDENTIALS, messageDescription);
         // we get here because there were no credentials found in the format we want
         // therefore this assertion was violated
         if ( isRequest() ) {

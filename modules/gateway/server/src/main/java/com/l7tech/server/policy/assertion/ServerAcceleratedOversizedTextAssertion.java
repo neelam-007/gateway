@@ -116,7 +116,10 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractMessageTarg
             return AssertionStatus.FAILED;
         }
 
-        //TODO [steve] fail if target is resonse and not routed
+        if ( isResponse() && !context.isPostRouting() ) {
+            auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_SKIP_RESPONSE_NOT_ROUTED);
+            return AssertionStatus.NONE;
+        }
 
         if (!msg.isXml()) {
             auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NOT_XML, targetName);
@@ -160,13 +163,13 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractMessageTarg
                     boolean brokeText = assertion.isLimitTextChars() && longestText > assertion.getMaxTextChars();
                     if (brokeAttrValue || brokeAttrName || brokeText) {
                         auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_NODE_OR_ATTRIBUTE, targetName);
-                        return AssertionStatus.BAD_REQUEST;
+                        return getBadMessageStatus();
                     }
                 }
 
                 if (assertion.isLimitNestingDepth() && raxDocument.getStatistics().getMaxElementDepth() > assertion.getMaxNestingDepth()) {
                     auditor.logAndAudit(AssertionMessages.OVERSIZEDTEXT_XML_NESTING_DEPTH_EXCEEDED, targetName);
-                    return AssertionStatus.BAD_REQUEST;
+                    return getBadMessageStatus();
                 }
             }
 
@@ -179,10 +182,10 @@ public class ServerAcceleratedOversizedTextAssertion extends AbstractMessageTarg
                 auditor.logAndAudit(AssertionMessages.XPATH_RESPONSE_NOT_XML);
             else
                 auditor.logAndAudit(AssertionMessages.XPATH_MESSAGE_NOT_XML, targetName);
-            return AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {"The required attachment " + e.getWhatWasMissing() + "was not found in the request"}, e);
-            return AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         } catch (XPathExpressionException e) {
             auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
             return AssertionStatus.FAILED;

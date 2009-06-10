@@ -83,9 +83,9 @@ public class AssertionMessages extends Messages {
     public static final M HTTPCLIENTCERT_FOUND           = m(4114, Level.INFO, "Found client certificate for {0}");
 
     // ServerIdentityAssertion
-    public static final M IDENTITY_AUTHENTICATED_NO_CREDS = m(4200, Level.WARNING, "Request is authenticated but request has no login credentials!");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_IDENTITY_AUTHENTICATED_NO_CREDS = m(4200, Level.WARNING, "Request is authenticated but request has no login credentials!");
     public static final M IDENTITY_NO_CREDS               = m(4201, Level.WARNING, "No credentials found!");
-    public static final M IDENTITY_ALREADY_AUTHENTICATED  = m(4202, Level.FINEST, "Request already authenticated");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_IDENTITY_ALREADY_AUTHENTICATED  = m(4202, Level.FINEST, "Request already authenticated");
     public static final M IDENTITY_PROVIDER_NOT_SET       = m(4203, Level.WARNING, "Cannot call checkRequest() when no valid identity provider OID has been set!");
     public static final M IDENTITY_PROVIDER_NOT_FOUND     = m(4204, Level.WARNING, "Could not find identity provider! ");
     public static final M IDENTITY_PROVIDER_NOT_EXIST     = m(4205, Level.WARNING, "Identity assertion refers to a non-existent identity provider");
@@ -99,12 +99,14 @@ public class AssertionMessages extends Messages {
     public static final M MEMBEROFGROUP_GROUP_NOT_EXIST   = m(4213, Level.WARNING, "Assertions refer to a nonexistent group; policy may be corrupted");
     public static final M MEMBEROFGROUP_USER_NOT_MEMBER   = m(4214, Level.FINE, "User not member of group");
     public static final M MEMBEROFGROUP_USING_CACHED_FAIL = m(4215, Level.FINE, "Reusing cached group membership failure");
+    public static final M IDENTITY_AUTHENTICATED_NO_CREDS = m(4216, Level.WARNING, "{0} message is authenticated but has no login credentials!");
 
     // ServerRequestWssOperation messages
     public static final M REQUESTWSS_NOT_FOR_US  = m(4300, Level.FINE, "Intended for another recipient; nothing to validate");
-    public static final M REQUESTWSS_NONSOAP     = m(4301, Level.INFO, "Request not SOAP; cannot verify WS-Security contents");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_REQUIREWSS_NONSOAP     = m(4301, Level.INFO, "Request not SOAP; cannot verify WS-Security contents");
     // Move the below message to the top "Generic Assersion Message"
     //public static final M REQUESTWSS_NO_SECURITY = m(4302, Level.INFO, "Request did not contain any WSS level security");
+    public static final M REQUIREWSS_NONSOAP     = m(4303, Level.INFO, "{0} message not SOAP; cannot verify WS-Security contents");
 
     // ServerRequestSwAAssertion messages
     public static final M SWA_NOT_SOAP                    = m(4400, Level.WARNING, "Request not SOAP; cannot validate attachments");
@@ -224,11 +226,14 @@ public class AssertionMessages extends Messages {
 
     // ServerWssBasic
     public static final M WSS_BASIC_FOR_ANOTHER_RECIPIENT                   = m(5200, Level.FINE, "This is intended for another recipient: nothing to validate");
-    public static final M WSS_BASIC_NOT_SOAP                                = m(5201, Level.INFO, "Request not SOAP; cannot check for WS-Security UsernameToken");
-    public static final M WSS_BASIC_NO_CREDENTIALS                          = m(5202, Level.INFO, "Request did not include WSS Basic credentials");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_WSS_BASIC_NOT_SOAP = m(5201, Level.INFO, "Request not SOAP; cannot check for WS-Security UsernameToken");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_WSS_BASIC_NO_CREDENTIALS = m(5202, Level.INFO, "Request did not include WSS Basic credentials");
     public static final M WSS_BASIC_CANNOT_FIND_CREDENTIALS                 = m(5203, Level.INFO, "Cannot find credentials");
-    public static final M WSS_BASIC_CANNOT_FIND_ENC_CREDENTIALS             = m(5204, Level.INFO,  "Request did not include an encrypted UsernameToken");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_WSS_BASIC_CANNOT_FIND_ENC_CREDENTIALS = m(5204, Level.INFO,  "Request did not include an encrypted UsernameToken");
     public static final M WSS_BASIC_UNABLE_TO_ATTACH_TOKEN                  = m(5205, Level.WARNING, false, true, "Response not SOAP; unable to use WS-Security EncryptedUsernameToken");
+    public static final M WSS_BASIC_NOT_SOAP                                = m(5206, Level.INFO, "{0} message is not SOAP; cannot check for WS-Security UsernameToken");
+    public static final M WSS_BASIC_NO_CREDENTIALS                          = m(5207, Level.INFO, "{0} message did not include WSS Basic credentials");
+    public static final M WSS_BASIC_CANNOT_FIND_ENC_CREDENTIALS             = m(5208, Level.INFO,  "{0} message did not include an encrypted UsernameToken");
 
     // ServerSslAssertion
     public static final M SSL_REQUIRED_PRESENT                              = m(5300, Level.FINE, "SSL required and present");
@@ -239,23 +244,29 @@ public class AssertionMessages extends Messages {
     public static final M SSL_OPTIONAL_ABSENT                               = m(5305, Level.FINE, "SSL optional and not present");
 
     // ServerResponseWssConfidentiality
-    /** @deprecated */ @Deprecated public static final M RESPONSE_WSS_CONF_REQUEST_NOT_SOAP        = m(5400, Level.INFO, "Request not SOAP; unable to check for WS-Security encrypted elements");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_CONF_REQUEST_NOT_SOAP = m(5400, Level.INFO, "Request not SOAP; unable to check for WS-Security encrypted elements");
     /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_CONF_NO_WSS_SECURITY = m(5401, Level.INFO, "Request did not contain any WSS level security");
-    public static final M RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN             = m(5402, Level.WARNING, true, false, "Request included more than one X509 security token whose key ownership was proven");
-    public static final M RESPONSE_WSS_CONF_NO_CERT_OR_SC_TOKEN             = m(5403, Level.WARNING, "Unable to encrypt response; request did not include X509 token or SecureConversation");
-    public static final M RESPONSE_WSS_CONF_RESPONSE_NOT_SOAP               = m(5404, Level.WARNING, false, true, "Response not SOAP; unable to encrypt response elements");
-    public static final M RESPONSE_WSS_CONF_RESPONSE_NOT_ENCRYPTED          = m(5405, Level.INFO, "No matching elements to encrypt in response: Assertion therefore fails");
-    public static final M RESPONSE_WSS_CONF_RESPONSE_ENCRYPTED              = m(5406, Level.FINEST, "Designated {0} response elements for encryption");
+    public static final M WSS_ENCRYPT_MORE_THAN_ONE_TOKEN   = m(5402, Level.WARNING, true, false, "Request included more than one X509 security token whose key ownership was proven");
+    public static final M WSS_ENCRYPT_NO_CERT_OR_SC_TOKEN   = m(5403, Level.WARNING, "Unable to encrypt response; request did not include X509 token or SecureConversation");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_CONF_RESPONSE_NOT_SOAP               = m(5404, Level.WARNING, false, true, "Response not SOAP; unable to encrypt response elements");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_CONF_RESPONSE_NOT_ENCRYPTED          = m(5405, Level.INFO, "No matching elements to encrypt in response: Assertion therefore fails");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_CONF_RESPONSE_ENCRYPTED              = m(5406, Level.FINEST, "Designated {0} response elements for encryption");
+    public static final M WSS_ENCRYPT_MESSAGE_NOT_SOAP      = m(5407, Level.WARNING, false, true, "{0} message not SOAP; unable to encrypt message elements");
+    public static final M WSS_ENCRYPT_MESSAGE_NOT_ENCRYPTED = m(5408, Level.INFO, "No matching elements to encrypt in {0} message: Assertion therefore fails");
+    public static final M WSS_ENCRYPT_MESSAGE_ENCRYPTED     = m(5409, Level.FINEST, "Designated {1} {0} message elements for encryption");
 
     // ServerResponseWssIntegrity
-    public static final M RESPONSE_WSS_INT_REQUEST_NOT_SOAP                 = m(5500, Level.INFO, "Request not SOAP; cannot sign response");
-    public static final M RESPONSE_WSS_INT_RESPONSE_NOT_SOAP                = m(5501, Level.WARNING, false, true, "Response not SOAP; cannot apply WS-Security signature");
-    public static final M RESPONSE_WSS_INT_RESPONSE_NO_MATCHING_EL          = m(5502, Level.INFO, "No matching elements to sign in response: Assertion therefore fails");
-    public static final M RESPONSE_WSS_INT_RESPONSE_SIGNED                  = m(5503, Level.FINE, "Designated {0} response elements for signing");
+    public static final M ADD_WSS_SIGNATURE_REQUEST_NOT_SOAP          = m(5500, Level.INFO, "Request not SOAP; cannot sign response");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_INT_RESPONSE_NOT_SOAP = m(5501, Level.WARNING, false, true, "Response not SOAP; cannot apply WS-Security signature");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_INT_RESPONSE_NO_MATCHING_EL = m(5502, Level.INFO, "No matching elements to sign in response: Assertion therefore fails");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_INT_RESPONSE_SIGNED                  = m(5503, Level.FINE, "Designated {0} response elements for signing");
+    public static final M ADD_WSS_SIGNATURE_MESSAGE_NOT_SOAP          = m(5504, Level.WARNING, false, true, "{0} message not SOAP; cannot apply WS-Security signature");
+    public static final M ADD_WSS_SIGNATURE_MESSAGE_NO_MATCHING_EL    = m(5505, Level.INFO, "No matching elements to sign in {0} message: Assertion therefore fails");
+    public static final M ADD_WSS_SIGNATURE_MESSAGE_SIGNED            = m(5506, Level.FINE, "Designated {1} {0} message elements for signing");
 
     // ServerRequestWssIntegrity
-    public static final M REQUEST_WSS_INT_RESPONSE_NOT_SOAP                 = m(5550, Level.FINE, "Response not SOAP; cannot return SignatureConfirmation");
-    public static final M REQUEST_WSS_INT_REQUEST_MULTI_SIGNED              = m(5551, Level.WARNING, true, false, "Request has multiple signers; failing");
+    public static final M REQUIRE_WSS_SIGNATURE_RESPONSE_NOT_SOAP      = m(5550, Level.FINE, "Response not SOAP; cannot return SignatureConfirmation");
+    public static final M REQUIRE_WSS_SIGNATURE_REQUEST_MULTI_SIGNED   = m(5551, Level.WARNING, true, false, "Request has multiple signers; failing");
 
     // ServerSchemaValidation
     /** @deprecated */ @Deprecated public static final M _UNUSED_SCHEMA_VALIDATION_VALIDATE_REQUEST                = m(5600, Level.FINEST, "Validating request document");
@@ -335,11 +346,14 @@ public class AssertionMessages extends Messages {
     public static final M FTP_ROUTING_PASSTHRU_NO_USERNAME = m(6054, Level.WARNING, "No user name found for passing through to FTP server");
 
     // ServerRequestWssSaml
-    public static final M SAML_AUTHN_STMT_REQUEST_NOT_SOAP                     = m(6100, Level.FINEST, "Request not SOAP; cannot validate SAML statement");
-    public static final M SAML_AUTHN_STMT_NO_TOKENS_PROCESSED                  = m(6101, Level.INFO, "No tokens were processed from this request: Returning AUTH_REQUIRED");
-    public static final M SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED = m(6102, Level.WARNING, true, false, "Request contained more than one SAML assertion");
+    @Deprecated public static final M __UNUSED_SAML_AUTHN_STMT_REQUEST_NOT_SOAP                     = m(6100, Level.FINEST, "Request not SOAP; cannot validate SAML statement");
+    @Deprecated public static final M __UNUSED_SAML_AUTHN_STMT_NO_TOKENS_PROCESSED                  = m(6101, Level.INFO, "No tokens were processed from this request: Returning AUTH_REQUIRED");
+    @Deprecated public static final M __UNUSED_SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED = m(6102, Level.WARNING, true, false, "Request contained more than one SAML assertion");
     public static final M SAML_AUTHN_STMT_NO_ACCEPTABLE_SAML_ASSERTION         = m(6103, Level.INFO, "Assertion did not find an acceptable SAML assertion to use as credentials");
     public static final M SAML_STMT_VALIDATE_FAILED                            = m(6104, Level.WARNING, "SAML assertion validation errors: {0}");
+    public static final M SAML_AUTHN_STMT_REQUEST_NOT_SOAP                     = m(6105, Level.FINEST, "{0} message not SOAP; cannot validate SAML statement");
+    public static final M SAML_AUTHN_STMT_NO_TOKENS_PROCESSED                  = m(6106, Level.INFO, "No tokens were processed from {0} message: Returning AUTH_REQUIRED");
+    public static final M SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED = m(6107, Level.WARNING, true, false, "{0} message contained more than one SAML assertion");
 
     // ServerWsTrustCredentialExchange
     public static final M WSTRUST_NO_SUITABLE_CREDENTIALS = m(6200, Level.INFO, "The current request did not contain credentials of any supported type");
@@ -471,10 +485,11 @@ public class AssertionMessages extends Messages {
     public static final M CODEINJECTIONPROJECTION_ALREADY_ROUTED            = m(7163, Level.WARNING, "Unable to protect against code injection attacks - the request has already been routed");
 
     // SqlAttackAssertion
-    public static final M SQLATTACK_UNRECOGNIZED_PROTECTION = m(7200, Level.WARNING, "Unrecognized protection name: {0}.  Assertion will always fail.");
+    public static final M SQLATTACK_UNRECOGNIZED_PROTECTION  = m(7200, Level.WARNING, "Unrecognized protection name: {0}.  Assertion will always fail.");
     /** @deprecated */ @Deprecated public static final M _UNUSED_SQLATTACK_REQUEST_REJECTED        = m(7201, Level.WARNING, true, false, "Request was flagged by SQL attack protection assertion");
-    public static final M SQLATTACK_ALREADY_ROUTED          = m(7203, Level.WARNING, "Unable to protect against SQL attacks - the request has already been routed");
-    public static final M SQLATTACK_REJECTED                = m(7204, Level.WARNING, true, false, "{0} was flagged by SQL attack protection assertion");
+    public static final M SQLATTACK_ALREADY_ROUTED           = m(7203, Level.WARNING, "Unable to protect against SQL attacks - the request has already been routed");
+    public static final M SQLATTACK_REJECTED                 = m(7204, Level.WARNING, true, false, "{0} was flagged by SQL attack protection assertion");
+    public static final M SQLATTACK_SKIP_RESPONSE_NOT_ROUTED = m(7205, Level.FINE, "No response body to check because request has not been routed yet.");
 
     // RequestSizeLimit
     public static final M REQUEST_BODY_TOO_LARGE            = m(7220, Level.WARNING,  "Request body size exceeds configured limit");
@@ -482,10 +497,10 @@ public class AssertionMessages extends Messages {
 
     // OversizedTextAssertion
     public static final M OVERSIZEDTEXT_ALREADY_ROUTED      = m(7230, Level.WARNING, "Unable to protect against document structure threats -- the request has already been routed");
-    /** @deprecated */ @Deprecated public static final M OVERSIZEDTEXT_OVERSIZED_TEXT      = m(7231, Level.WARNING, "Request includes an oversized text node or attribute value");
-    /** @deprecated */ @Deprecated public static final M XML_NESTING_DEPTH_EXCEEDED        = m(7232, Level.WARNING, "Request XML nesting depth exceeds the policy limit");
-    /** @deprecated */ @Deprecated public static final M OVERSIZEDTEXT_EXTRA_PAYLOAD       = m(7233, Level.WARNING, "Request message SOAP Body has too many children");
-    /** @deprecated */ @Deprecated public static final M REQUEST_NOT_SOAP                  = m(7234, Level.WARNING, "Request message does not have a valid SOAP Envelope");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_OVERSIZEDTEXT_OVERSIZED_TEXT      = m(7231, Level.WARNING, "Request includes an oversized text node or attribute value");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_XML_NESTING_DEPTH_EXCEEDED        = m(7232, Level.WARNING, "Request XML nesting depth exceeds the policy limit");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_OVERSIZEDTEXT_EXTRA_PAYLOAD       = m(7233, Level.WARNING, "Request message SOAP Body has too many children");
+    public static final M REQUEST_NOT_SOAP                              = m(7234, Level.WARNING, "Request message does not have a valid SOAP Envelope");
     public static final M REQUEST_BAD_XML                               = m(7235, Level.WARNING, "Request message is not well-formed XML");
     public static final M RESPONSE_BAD_XML                              = m(7236, Level.WARNING, "Response message is not well-formed XML");
     public static final M MESSAGE_BAD_XML                               = m(7237, Level.WARNING, "Message is not well-formed XML");
@@ -494,6 +509,7 @@ public class AssertionMessages extends Messages {
     public static final M OVERSIZEDTEXT_EXTRA_PAYLOAD_ELEMENTS          = m(7240, Level.WARNING, "{0} message SOAP Body has too many children");
     public static final M OVERSIZEDTEXT_NOT_SOAP                        = m(7241, Level.WARNING, "{0} message does not have a valid SOAP Envelope");
     public static final M OVERSIZEDTEXT_NOT_XML                         = m(7242, Level.WARNING, "{0} is not XML.");
+    public static final M OVERSIZEDTEXT_SKIP_RESPONSE_NOT_ROUTED        = m(7243, Level.FINE, "No response body to check because request has not been routed yet.");
 
     // ServerWsTrustCredentialExchange
     public static final M WSFEDPASS_NO_SUITABLE_CREDENTIALS = m(7300, Level.INFO, "The current request did not contain credentials of any supported type");
@@ -552,20 +568,20 @@ public class AssertionMessages extends Messages {
     public static final M WSI_SAML_RESPONSE_FAIL          = m(7705, Level.INFO, "Failing non WS-I SAML Token Profile compliant response");
     public static final M WSI_SAML_XPATH_ERROR            = m(7706, Level.WARNING, "Server WS-I SAML Token Profile rules are incorrect");
 
-    public static final M REQUEST_WSS_TIMESTAMP_NOTAPPLICABLE   = m(7800, Level.INFO, true, false, "The assertion is not applicable because {0} is not XML or SOAP");
-    public static final M REQUEST_WSS_TIMESTAMP_NOTIMESTAMP     = m(7801, Level.INFO, "No Timestamp found in {0}");
-    public static final M REQUEST_WSS_TIMESTAMP_NOT_SIGNED      = m(7802, Level.WARNING, "Timestamp found in {0}, but was not signed");
-    public static final M REQUEST_WSS_TIMESTAMP_CREATED_FUTURE  = m(7803, Level.WARNING, "Timestamp found in {0}, but Created time was too far in the future");
-    public static final M REQUEST_WSS_TIMESTAMP_EXPIRED         = m(7804, Level.WARNING, "Timestamp found in {0}, but expired too long ago");
-    public static final M REQUEST_WSS_TIMESTAMP_NO_EXPIRES      = m(7805, Level.WARNING, "Timestamp found in {0}, but has no Expires time");
-    public static final M REQUEST_WSS_TIMESTAMP_EXPIRES_TOOLATE = m(7806, Level.FINE, "Timestamp found in {0} exceeds maximimum allowed lifetime, constraining to maximum");
-    public static final M REQUEST_WSS_TIMESTAMP_NO_CREATED      = m(7807, Level.WARNING, "Timestamp found in {0}, but has no Created time");
-    public static final M REQUEST_WSS_TIMESTAMP_EXPIRED_TRUNC   = m(7809, Level.WARNING, "Timestamp found in {0}, but is expired when constrained to maximum allowed lifetime");
+    public static final M REQUIRE_WSS_TIMESTAMP_NOTAPPLICABLE   = m(7800, Level.INFO, true, false, "The assertion is not applicable because {0} is not XML or SOAP");
+    public static final M REQUIRE_WSS_TIMESTAMP_NOTIMESTAMP     = m(7801, Level.INFO, "No Timestamp found in {0}");
+    public static final M REQUIRE_WSS_TIMESTAMP_NOT_SIGNED      = m(7802, Level.WARNING, "Timestamp found in {0}, but was not signed");
+    public static final M REQUIRE_WSS_TIMESTAMP_CREATED_FUTURE  = m(7803, Level.WARNING, "Timestamp found in {0}, but Created time was too far in the future");
+    public static final M REQUIRE_WSS_TIMESTAMP_EXPIRED         = m(7804, Level.WARNING, "Timestamp found in {0}, but expired too long ago");
+    public static final M REQUIRE_WSS_TIMESTAMP_NO_EXPIRES      = m(7805, Level.WARNING, "Timestamp found in {0}, but has no Expires time");
+    public static final M REQUIRE_WSS_TIMESTAMP_EXPIRES_TOOLATE = m(7806, Level.FINE, "Timestamp found in {0} exceeds maximimum allowed lifetime, constraining to maximum");
+    public static final M REQUIRE_WSS_TIMESTAMP_NO_CREATED      = m(7807, Level.WARNING, "Timestamp found in {0}, but has no Created time");
+    public static final M REQUIRE_WSS_TIMESTAMP_EXPIRED_TRUNC   = m(7809, Level.WARNING, "Timestamp found in {0}, but is expired when constrained to maximum allowed lifetime");
 
-    public static final M RESPONSE_WSS_TOKEN_UNSUPPORTED_TYPE = m(7900, Level.WARNING, "Unsupported security token type: {0}");
-    public static final M RESPONSE_WSS_TOKEN_NO_CREDS         = m(7901, Level.WARNING, true, false, "No credentials were available from the request");
-    public static final M RESPONSE_WSS_TOKEN_NO_USERNAME      = m(7902, Level.WARNING, true, false, "Credentials were available, but no username could be found");
-    public static final M RESPONSE_WSS_TOKEN_NO_PASSWORD      = m(7903, Level.WARNING, true, false, "Password inclusion was requested, but no password could be found");
+    public static final M ADD_WSS_TOKEN_UNSUPPORTED_TYPE = m(7900, Level.WARNING, "Unsupported security token type: {0}");
+    public static final M ADD_WSS_TOKEN_NO_CREDS         = m(7901, Level.WARNING, true, false, "No credentials were available from the request");
+    public static final M ADD_WSS_TOKEN_NO_USERNAME      = m(7902, Level.WARNING, true, false, "Credentials were available, but no username could be found");
+    public static final M ADD_WSS_TOKEN_NO_PASSWORD      = m(7903, Level.WARNING, true, false, "Password inclusion was requested, but no password could be found");
 
     public static final M CUSTOM_ASSERTION_INFO               = m(8000, Level.INFO, "Assertion ''{0}''; {1}");
     public static final M CUSTOM_ASSERTION_WARN               = m(8001, Level.WARNING, "Assertion ''{0}''; {1}");

@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.policy.assertion.credential.wss;
@@ -27,10 +25,9 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 /**
- * TODO [steve] auditing for target message
+ * Server assertion for WS-Security UsernameToken authentication.
  *
  * @author alex
- * @version $Revision$
  */
 public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<WssBasic> {
 
@@ -62,7 +59,7 @@ public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<Wss
         ProcessorResult wssResults;
         try {
             if (!message.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP);
+                auditor.logAndAudit(AssertionMessages.WSS_BASIC_NOT_SOAP, messageDescription);
                 return AssertionStatus.NOT_APPLICABLE;
             }
             wssResults = message.getSecurityKnob().getProcessorResult();
@@ -70,7 +67,7 @@ public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<Wss
             throw new CausedIOException("Message '"+messageDescription+"' declared as XML but is not well-formed", e);
         }
         if (wssResults == null) {
-            auditor.logAndAudit(AssertionMessages.WSS_BASIC_NO_CREDENTIALS);
+            auditor.logAndAudit(AssertionMessages.WSS_BASIC_NO_CREDENTIALS, messageDescription);
             
             if ( isRequest() ) {
                 context.setAuthenticationMissing();

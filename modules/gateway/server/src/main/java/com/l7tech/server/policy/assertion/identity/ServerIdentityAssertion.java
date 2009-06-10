@@ -34,8 +34,6 @@ import java.util.logging.Logger;
  * Subclasses of ServerIdentityAssertion are responsible for verifying that the entity
  * making a <code>Request</code> (as previously found using a CredentialSourceAssertion)
  * is authorized to do so.
- *
- * TODO [steve] auditing for message target
  */
 public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> extends AbstractMessageTargetableServerAssertion<AT> {
     private final Logger logger = Logger.getLogger(ServerIdentityAssertion.class.getName());
@@ -69,7 +67,7 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
         if (pCredentials.size() < 1 && authContext.getLastAuthenticatedUser() == null) {
             // No credentials have been found yet
             if (authContext.isAuthenticated()) {
-                auditor.logAndAudit(AssertionMessages.IDENTITY_AUTHENTICATED_NO_CREDS);
+                auditor.logAndAudit(AssertionMessages.IDENTITY_AUTHENTICATED_NO_CREDS, messageDescription);
                 throw new IllegalStateException("Request is authenticated but request has no LoginCredentials!");
             }
 

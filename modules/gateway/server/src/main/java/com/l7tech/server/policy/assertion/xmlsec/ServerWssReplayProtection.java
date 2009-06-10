@@ -110,7 +110,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
             if (DomUtils.elementInNamespace(el, SoapConstants.WSA_NAMESPACE_ARRAY) && SoapConstants.MESSAGEID_EL_NAME.equals(el.getLocalName())) {
                 if (wsaMessageId != null) {
                     auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_MULTIPLE_MESSAGE_IDS, targetName);
-                    return AssertionStatus.BAD_REQUEST;
+                    return getBadMessageStatus();
                 } else {
                     wsaMessageId = DomUtils.getTextValue(el);
                     auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_GOT_SIGNED_MESSAGE_ID, targetName, wsaMessageId);
@@ -128,17 +128,17 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
             if ( isRequest() )
                 context.setRequestPolicyViolated();
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_TIMESTAMP, targetName);
-            return AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         }
         if (null==ProcessorResultUtil.getParsedElementForNode(timestamp.asElement(), signedElements)) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NOT_SIGNED, targetName);
-            return AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         }
 
         final WssTimestampDate createdTimestamp = timestamp.getCreated();
         if (createdTimestamp == null) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NO_CREATED_ELEMENT, targetName);
-            return AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         }
 
         final String createdIsoString = createdTimestamp.asIsoString().trim();
@@ -154,7 +154,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
 
         if (expires <= (now - EXPIRY_GRACE_TIME_MILLIS)) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_STALE_TIMESTAMP, targetName);
-            return AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         }
 
         if (created > now)
@@ -162,14 +162,14 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
 
         if (created <= (now - MAXIMUM_MESSAGE_AGE_MILLIS)) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_CREATED_TOO_OLD, targetName);
-            return AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         }
 
         final String messageIdStr;
         if ( wsaMessageId != null ) {
             if ( wsaMessageId.length() > MAX_WSA_MESSAGEID_MAXLENGTH ) {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_MESSAGE_ID_TOO_LARGE, Integer.toString(wsaMessageId.length()));
-                return AssertionStatus.BAD_REQUEST;
+                return getBadMessageStatus();
             }
 
             // hash if id is too large to store natively
@@ -181,11 +181,11 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
         } else {
             try {
                 String senderId = getSenderId(wssResults.getSigningTokens(timestamp.asElement()), createdIsoString, null);
-                if (senderId == null) return AssertionStatus.BAD_REQUEST;
+                if (senderId == null) return getBadMessageStatus();
                 messageIdStr = senderId;
             } catch (MultipleSenderIdException e) {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_MULTIPLE_SENDER_IDS, targetName);
-                return AssertionStatus.BAD_REQUEST;
+                return getBadMessageStatus();
             }
         }
 
@@ -195,7 +195,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, messageIdStr, targetName);
         } catch (MessageIdManager.DuplicateMessageIdException e) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_REPLAY, messageIdStr, targetName);
-            return AssertionStatus.BAD_REQUEST;
+            return getBadMessageStatus();
         }
 
         return AssertionStatus.NONE;

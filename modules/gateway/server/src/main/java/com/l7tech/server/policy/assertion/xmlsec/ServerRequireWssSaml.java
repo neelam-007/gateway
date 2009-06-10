@@ -37,8 +37,6 @@ import java.util.logging.Logger;
  * Class <code>ServerRequestWssSaml</code> represents the server
  * side saml Assertion that validates the SAML requestWssSaml.
  *
- * TODO [steve] auditing for message target
- *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMessageTargetableServerAssertion<AT> {
@@ -96,7 +94,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
         try {
             final XmlKnob xmlKnob = message.getXmlKnob();
             if (!message.isSoap()) {
-                auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_REQUEST_NOT_SOAP);
+                auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_REQUEST_NOT_SOAP, messageDesc);
                 return AssertionStatus.NOT_APPLICABLE;
             }
 
@@ -107,22 +105,26 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                 wssResults = WSSecurityProcessorUtils.getWssResults(message, messageDesc, securityTokenResolver, auditor);
             }
             if (wssResults == null) {
-                auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_TOKENS_PROCESSED);
-                return getBadAuthStatus(context);
+                auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_TOKENS_PROCESSED, messageDesc);
+                if (isRequest())
+                    context.setAuthenticationMissing();
+                return AssertionStatus.AUTH_REQUIRED;
             }
 
             XmlSecurityToken[] tokens = wssResults.getXmlSecurityTokens();
             if (tokens == null) {
-                auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_TOKENS_PROCESSED);
-                return getBadAuthStatus(context);
+                auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_TOKENS_PROCESSED, messageDesc);
+                if (isRequest())
+                    context.setAuthenticationMissing();
+                return AssertionStatus.AUTH_REQUIRED;
             }
             SamlSecurityToken samlAssertion = null;
             for (XmlSecurityToken tok : tokens) {
                 if (tok instanceof SamlSecurityToken) {
                     SamlSecurityToken samlToken = (SamlSecurityToken) tok;
                     if (samlAssertion != null) {
-                        auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED);
-                        return isRequest() ? AssertionStatus.BAD_REQUEST : AssertionStatus.FALSIFIED;
+                        auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED, messageDesc);
+                        return getBadMessageStatus();
                     }
                     samlAssertion = samlToken;
                 }
@@ -139,10 +141,12 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
             }
             if (samlAssertion==null || !correctVersion) {
                 auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_ACCEPTABLE_SAML_ASSERTION);
-                return getBadAuthStatus(context);
+                if (isRequest())
+                    context.setAuthenticationMissing();
+                return AssertionStatus.AUTH_REQUIRED;
             }
             Collection validateResults = new ArrayList();
-            LoginCredentials credentials = context.getAuthenticationContext(message).getLastCredentials();
+            LoginCredentials credentials = authContext.getLastCredentials();
             assertionValidate.validate(xmlKnob.getDocumentReadOnly(), credentials, wssResults, validateResults);
             if (validateResults.size() > 0) {
                 StringBuffer sb2 = new StringBuffer();
@@ -188,7 +192,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
               nameIdentifier = samlAssertion.getNameIdentifierValue();
             }
 
-            context.getAuthenticationContext(message).addCredentials(
+            authContext.addCredentials(
                     new LoginCredentials(nameIdentifier,
                                         null,
                                         CredentialFormat.SAML,
@@ -204,18 +208,5 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
     @Override
     protected Auditor getAuditor() {
         return auditor;
-    }
-
-    private AssertionStatus getBadAuthStatus( final PolicyEnforcementContext context ) {
-        AssertionStatus status;
-
-        if ( isRequest() ) {
-            status = AssertionStatus.AUTH_REQUIRED;
-            context.setAuthenticationMissing();
-        } else {
-            status = AssertionStatus.FALSIFIED;
-        }
-
-        return status;
     }
 }
