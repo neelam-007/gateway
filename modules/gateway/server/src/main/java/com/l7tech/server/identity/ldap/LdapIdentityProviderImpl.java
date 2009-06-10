@@ -124,6 +124,14 @@ public class LdapIdentityProviderImpl
             ldapConnectionTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_CONNECTION_TIMEOUT, DEFAULT_LDAP_CONNECTION_TIMEOUT, MAX_CACHE_AGE_VALUE);
             ldapReadTimeout = serverConfig.getTimeUnitPropertyCached(ServerConfig.PARAM_LDAP_READ_TIMEOUT, DEFAULT_LDAP_READ_TIMEOUT, MAX_CACHE_AGE_VALUE);
         }
+
+        rebuildTask = new RebuildTask(this);
+        cleanupTask = new CleanupTask(this);
+
+        getTaskPeriods();
+        scheduleTasks(
+                new Pair<ManagedTimerTask, Long>(rebuildTask, rebuildTimerLength.get()),
+                new Pair<ManagedTimerTask, Long>(cleanupTask, cleanupTimerLength.get()));
     }
 
     /**
@@ -268,21 +276,6 @@ public class LdapIdentityProviderImpl
                 ldapProv.cleanupCertCache();
             }
         }
-    }
-
-    public LdapIdentityProviderImpl(IdentityProviderConfig config) {
-        this.config = (LdapIdentityProviderConfig)config;
-        if (this.config.getLdapUrl() == null || this.config.getLdapUrl().length < 1) {
-            throw new IllegalArgumentException("This config does not contain an ldap url"); // should not happen
-        }
-
-        rebuildTask = new RebuildTask(this);
-        cleanupTask = new CleanupTask(this);
-
-        getTaskPeriods();
-        scheduleTasks(
-                new Pair<ManagedTimerTask, Long>(rebuildTask, rebuildTimerLength.get()),
-                new Pair<ManagedTimerTask, Long>(cleanupTask, cleanupTimerLength.get()));
     }
 
     private boolean wasRemoved() {
