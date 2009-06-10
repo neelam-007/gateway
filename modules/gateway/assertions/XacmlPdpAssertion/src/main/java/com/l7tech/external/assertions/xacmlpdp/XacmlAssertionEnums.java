@@ -22,7 +22,7 @@ public class XacmlAssertionEnums {
     public static enum XacmlVersionType {
         V1_0("1.0", "urn:oasis:names:tc:xacml:1.0:context"),
         V1_1("1.1", "urn:oasis:names:tc:xacml:1.0:context"),
-        V2_0("2.0", "urn:oasis:names:tc:xacml:2.0:context");
+        V2_0("2.0", "urn:oasis:names:tc:xacml:2.0:context:schema:os");
 
         private String displayName;
         private String namespace;

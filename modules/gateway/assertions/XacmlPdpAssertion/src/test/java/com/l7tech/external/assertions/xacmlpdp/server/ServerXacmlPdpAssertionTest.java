@@ -179,7 +179,7 @@ public class ServerXacmlPdpAssertionTest {
 
     /**
      * Note: it's possible this test should not succeed. Were sending a request saying its 2.0 to a PDP which
-     * is using an implementation from Sun which is pre 2.0
+     * is using an implementation from Sun which does not claim XACML 2.0 support
      * @throws Exception
      */
     @Test
@@ -335,7 +335,7 @@ public class ServerXacmlPdpAssertionTest {
             "            <Environment/>\n" +
             "        </Request>\n" ;
 
-    private final static String XACML_REQUEST_2_0_NOSOAP_XML = "<Request xmlns=\"urn:oasis:names:tc:xacml:2.0:context\">\n" +
+    private final static String XACML_REQUEST_2_0_NOSOAP_XML = "<Request xmlns=\"urn:oasis:names:tc:xacml:2.0:context:schema:os\">\n" +
             "            <Subject>\n" +
             "                <Attribute\n" +
             "                    AttributeId=\"urn:oasis:names:tc:xacml:1.0:subject:subject-id\" DataType=\"urn:oasis:names:tc:xacml:1.0:data-type:rfc822Name\">\n" +
@@ -361,7 +361,7 @@ public class ServerXacmlPdpAssertionTest {
             "            <Environment/>\n" +
             "        </Request>\n" ;
 
-    private final static String XACML_REQUEST_2_0_ONLY_NOSOAP_XML = "<Request xmlns=\"urn:oasis:names:tc:xacml:2.0:context\">\n" +
+    private final static String XACML_REQUEST_2_0_ONLY_NOSOAP_XML = "<Request xmlns=\"urn:oasis:names:tc:xacml:2.0:context:schema:os\">\n" +
             "            <Subject>\n" +
             "                <Attribute\n" +
             "                    AttributeId=\"urn:oasis:names:tc:xacml:1.0:subject:subject-id\" DataType=\"urn:oasis:names:tc:xacml:1.0:data-type:rfc822Name\">\n" +

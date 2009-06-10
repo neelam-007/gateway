@@ -75,7 +75,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         }
 
         public String toString() {
-            return "Value";
+            return "AttributeValue";
         }
 
         public Object clone() {

@@ -388,7 +388,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     }
 
     private void addAttributeMenuItems(final DefaultMutableTreeNode node) {
-        JMenuItem item = new JMenuItem("Add Value");
+        JMenuItem item = new JMenuItem("Add Attribute Value");
         item.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 treeModel.insertNodeInto(buildValueNode(new XacmlRequestBuilderAssertion.Value()), node, node.getChildCount());
@@ -407,7 +407,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     }
 
     private void addValueMenuItems(final DefaultMutableTreeNode node) {
-        JMenuItem item = new JMenuItem("Remove Value");
+        JMenuItem item = new JMenuItem("Remove Attribute Value");
         item.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 treeModel.removeNodeFromParent(node);
