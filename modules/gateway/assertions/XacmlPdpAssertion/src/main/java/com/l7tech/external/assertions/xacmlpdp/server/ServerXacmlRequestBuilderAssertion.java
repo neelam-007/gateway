@@ -508,7 +508,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         try {
             XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xpath, namespaces).compile(), null, true);
             if(xpathResult.getType() == XpathResult.TYPE_NODESET) {
-                if(xpathResult.getNodeSet().size() < 1) {
+                if (xpathResult.getNodeSet().size() < 1 || xpathResult.getNodeSet().getType(0) == XpathResult.TYPE_NODESET) {
                     return "";
                 } else {
                     return xpathResult.getNodeSet().getNodeValue(0);
