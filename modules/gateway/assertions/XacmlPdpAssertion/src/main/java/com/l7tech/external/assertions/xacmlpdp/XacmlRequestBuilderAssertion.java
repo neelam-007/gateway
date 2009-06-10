@@ -234,7 +234,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         private MessageSource messageSource = MessageSource.REQUEST;
         private String messageSourceContextVar = "";
         private String xpathBase = "";
-        private Map<String, String> namespaces;
+        private Map<String, String> namespaces = new HashMap<String, String>();
         private XpathMultiAttrField idField = new XpathMultiAttrField("id");
         private XpathMultiAttrField dataTypeField = new XpathMultiAttrField("dataType");
         private XpathMultiAttrField issuerField = new XpathMultiAttrField("issuer");
