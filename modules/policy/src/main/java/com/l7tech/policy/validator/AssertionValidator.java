@@ -14,7 +14,7 @@ import com.l7tech.wsdl.Wsdl;
  * <code>AssertionValidator</code> implementations validate the assertion.
  * The <code>AssertionValidator</code> implementations are associated with
  * the <code>Assertion</code> in the {@link ValidatorFactory }. The validator
- * iimplementation is required to implement the constructor with the assertion
+ * implementation is required to implement the constructor with the assertion
  * they validate as the argument.
  *
  * @author mike

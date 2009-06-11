@@ -22,6 +22,7 @@ public class VariableUseValidator implements AssertionValidator {
 
     //- PUBLIC
 
+    @Override
     public void validate( AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result ) {
         for ( String warnString : warnStrings )
             result.addWarning(new PolicyValidatorResult.Warning(assertion, path, warnString, null));
@@ -53,6 +54,10 @@ public class VariableUseValidator implements AssertionValidator {
                                 var +
                                 "', which is neither predefined " +
                                 "nor set in the policy so far." );
+                    }
+
+                    if (BuiltinVariables.isDeprecated(var)) {
+                        warningStrings.add("Deprecated variable '" + var + "' should be replaced by '" + BuiltinVariables.getMetadata(var).getReplacedBy());
                     }
                 }
             } catch (IllegalArgumentException iae) {

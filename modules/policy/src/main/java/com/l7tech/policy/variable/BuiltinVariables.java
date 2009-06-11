@@ -80,6 +80,11 @@ public class BuiltinVariables {
         return meta != null && meta.isMultivalued();
     }
 
+    public static boolean isDeprecated(String name) {
+        VariableMetadata meta = getMetadata(name);
+        return meta != null && meta.isDeprecated();
+    }
+        
     public static Map getAllMetadata() {
         return Collections.unmodifiableMap(metadataByName);
     }
@@ -139,9 +144,9 @@ public class BuiltinVariables {
         new VariableMetadata("request.ssl.clientcertificate.base64", false, false, null, false, DataType.STRING),
         new VariableMetadata("request.ssl.clientcertificate.pem", false, false, null, false, DataType.STRING),
 
-        new VariableMetadata("request.wss.signingcertificate", false, false, null, false, DataType.CERTIFICATE, true),
-        new VariableMetadata("request.wss.signingcertificate.base64", false, false, null, false, DataType.STRING, true),
-        new VariableMetadata("request.wss.signingcertificate.pem", false, false, null, false, DataType.STRING, true),
+        new VariableMetadata("request.wss.signingcertificate", false, false, null, false, DataType.CERTIFICATE, "request.wss.signingcertificates.value.1"),
+        new VariableMetadata("request.wss.signingcertificate.base64", false, false, null, false, DataType.STRING, "request.wss.signingcertificates.value.1.base64"),
+        new VariableMetadata("request.wss.signingcertificate.pem", false, false, null, false, DataType.STRING, "request.wss.signingcertificates.value.1.pem"),
 
         new VariableMetadata("request.wss", true, false, null, false),
         new VariableMetadata("response.wss", true, false, null, false),

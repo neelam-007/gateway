@@ -18,9 +18,9 @@ public class VariableMetadata implements Serializable {
     private final String canonicalName;
     private final boolean settable;
     private final DataType type;
-    private final boolean deprecated;
+    private final String replacedBy;
 
-    public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable, DataType type, boolean deprecated)
+    public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable, DataType type, String replacedBy)
         throws VariableNameSyntaxException
     {
         assertNameIsValid(name);
@@ -30,12 +30,12 @@ public class VariableMetadata implements Serializable {
         this.canonicalName = canonicalName == null ? name : canonicalName;
         this.settable = settable;
         this.type = type;
-        this.deprecated = deprecated;
+        this.replacedBy = replacedBy;
     }
 
     public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable, DataType type)
         throws VariableNameSyntaxException {
-        this(name, prefixed, multivalued, canonicalName, settable, type, false);
+        this(name, prefixed, multivalued, canonicalName, settable, type, null);
     }
 
     public VariableMetadata(String name, boolean prefixed, boolean multivalued, String canonicalName, boolean settable) {
@@ -101,7 +101,14 @@ public class VariableMetadata implements Serializable {
      * @return true if the variable is deprecated (should trigger a warning in policies when used), false otherwise
      */
     public boolean isDeprecated() {
-        return deprecated;
+        return replacedBy != null;
+    }
+
+    /**
+     * @return the name of the new variable that deprecates this variable
+     */
+    public String getReplacedBy() {
+        return replacedBy;
     }
 
     public String toString() {
