@@ -276,6 +276,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         };
         uiAccessibility.getEditor().getDocument().addDocumentListener(documentListener);
         outputMessageVariableNameField.getDocument().addDocumentListener(documentListener);
+        urlToMonitorField.getDocument().addDocumentListener(documentListener);
 
         messageOutputComboBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
@@ -458,17 +459,32 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
 
     private void enableDisableComponents() {
         MessageOutputEntry outputEntry = (MessageOutputEntry)messageOutputComboBox.getSelectedItem();
-        if(uiAccessibility.getEditor().getText().trim().length() == 0
-                || outputEntry.getMessageTarget() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE &&
-                outputMessageVariableNameField.getText().trim().length() == 0)
-        {
-            okButton.setEnabled(false);
-        } else {
-            okButton.setEnabled(true);
+
+
+        //first check the message variable, and manage setting the context variable text field to be enabled or not
+        if(outputEntry.getMessageTarget() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE){
+            outputMessageVariableNameField.setEnabled(true);
+
+            if(outputMessageVariableNameField.getText().trim().length() == 0){
+                okButton.setEnabled(false);
+                return;
+            }
+        }else{
+            outputMessageVariableNameField.setEnabled(false);
         }
 
-        outputMessageVariableNameField.setEnabled(
-                outputEntry.getMessageTarget() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE);
+        //Check the PDP policy locations
+        boolean enableOkButton;
+        //is a remote url being used?
+        if(monitorUrlPolicyPanel.isVisible()){
+            //we need the url value
+            enableOkButton = urlToMonitorField.getText().trim().length() != 0;
+        }else{
+            //otherwise we need the policy in the xml editor
+            enableOkButton = uiAccessibility.getEditor().getText().trim().length() != 0;            
+        }
+        okButton.setEnabled(enableOkButton);
+        
     }
 
     public boolean isConfirmed() {
