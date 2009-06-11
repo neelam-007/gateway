@@ -104,7 +104,6 @@ public class VariableMetadata implements Serializable {
         return deprecated;
     }
 
-    @Override
     public String toString() {
         if (prefixed) {
             return name + ".*";
