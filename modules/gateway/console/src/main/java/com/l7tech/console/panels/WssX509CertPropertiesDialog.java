@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
+import com.l7tech.console.util.VariablePrefixUtil;
 
 import javax.swing.*;
 import java.util.*;
@@ -25,8 +26,7 @@ public class WssX509CertPropertiesDialog extends AssertionPropertiesOkCancelSupp
     public RequireWssX509Cert getData( final RequireWssX509Cert assertion ) throws ValidationException {
         assertion.setAllowMultipleSignatures( allowMultipleSignatures.isSelected() );
         if ( assertion.isAllowMultipleSignatures() ) {
-            // TODO [steve] Fix the variable name the user enters (as per TargetMessagePanel.getVariableName), and ensure that we do this everywhere the user enters a variable
-            String variable = signatureElementVariableTextField.getText().trim();
+            String variable = VariablePrefixUtil.fixVariableName(signatureElementVariableTextField.getText());
             if ( variable.length() > 0 ) {
                 assertion.setSignatureElementVariable( variable );
             } else {

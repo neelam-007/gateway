@@ -11,12 +11,15 @@ import com.l7tech.gui.util.ImageCache;
 
 import javax.swing.*;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * @auther: ghuang
  */
-
 public final class VariablePrefixUtil {
+
+    //- PUBLIC
+    
     /**
      * Validate the variable prefix against the name convention of context variables.
      * Note: the method also checks if the name is overlapped with other user defined context variables.
@@ -81,4 +84,27 @@ public final class VariablePrefixUtil {
         variablePrefixStatusLabel.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16.png")));
         variablePrefixStatusLabel.setText(null);
     }
+
+    /**
+     * Fix a variable name by trimming space and removing any surrounding ${...}
+     *
+     * @param variableName The name to fix.
+     * @return The fixed name.
+     */
+    public static String fixVariableName( final String variableName ) {
+        String varname = variableName;
+        if ( varname != null ) {
+            varname = varname.trim();
+            varname = FIXSTART.matcher(varname).replaceAll("");
+            varname = FIXEND.matcher(varname).replaceAll("");
+        }
+        return varname;
+        
+    }
+
+    //- PRIVATE
+
+    private static final Pattern FIXSTART = Pattern.compile("\\s*(?:\\$\\{)?\\s*");
+    private static final Pattern FIXEND = Pattern.compile("\\s*(?:\\})?\\s*");
+
 }

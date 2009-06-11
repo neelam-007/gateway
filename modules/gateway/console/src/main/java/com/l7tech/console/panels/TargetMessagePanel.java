@@ -7,6 +7,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.console.util.VariablePrefixUtil;
 
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
@@ -15,13 +16,9 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.regex.Pattern;
 
 /** @author alex */
 public class TargetMessagePanel extends JPanel {
-    private static final Pattern FIXSTART = Pattern.compile("\\s*(?:\\$\\{)?\\s*");
-    private static final Pattern FIXEND = Pattern.compile("\\s*(?:\\})?\\s*");
-
     private JPanel mainPanel;
     private JRadioButton requestRadioButton;
     private JRadioButton responseRadioButton;
@@ -142,11 +139,7 @@ public class TargetMessagePanel extends JPanel {
     }
 
     private String getVariableName() {
-        String varname = otherMessageVariableTextfield.getText().trim();
-        // As a convenience to our poor confused users, we'll remove any ${ } surrounding the variable name
-        varname = FIXSTART.matcher(varname).replaceAll("");
-        varname = FIXEND.matcher(varname).replaceAll("");
-        return varname;
+        return VariablePrefixUtil.fixVariableName(otherMessageVariableTextfield.getText());
     }
 
     private void setExtra(JPanel panel, JComponent extra) {

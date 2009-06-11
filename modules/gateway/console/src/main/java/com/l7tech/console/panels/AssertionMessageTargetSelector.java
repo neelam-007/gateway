@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.console.util.VariablePrefixUtil;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -95,7 +96,7 @@ public class AssertionMessageTargetSelector extends JDialog {
             messageTargetable.setOtherTargetMessageVariable(null);
         } else {
             messageTargetable.setTarget(TargetMessageType.OTHER);
-            messageTargetable.setOtherTargetMessageVariable(_contextVarName.getText().trim());
+            messageTargetable.setOtherTargetMessageVariable(VariablePrefixUtil.fixVariableName(_contextVarName.getText()));
         }
         wasOKed = true;
         dispose();
