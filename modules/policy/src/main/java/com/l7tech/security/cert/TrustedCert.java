@@ -91,6 +91,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
     }
 
     public void setName(String name) {
+        mutate();
         this.name = name;
     }
 
@@ -234,6 +235,7 @@ public class TrustedCert extends X509Entity implements NamedEntity, Cloneable {
      * @param verifyHostname True to verify hostnames
      */
     public void setVerifyHostname(boolean verifyHostname) {
+        mutate();
         this.verifyHostname = verifyHostname;
     }
 

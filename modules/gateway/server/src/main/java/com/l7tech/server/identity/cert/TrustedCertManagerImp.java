@@ -45,7 +45,6 @@ import java.util.logging.Logger;
 
 /**
  * @author alex
- * @version $Revision$
  */
 @Transactional(propagation=Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class TrustedCertManagerImp
@@ -187,15 +186,6 @@ public class TrustedCertManagerImp
     @Override
     public EntityType getEntityType() {
         return EntityType.TRUSTED_CERT;
-    }
-
-    @Override
-    @Transactional(readOnly=true)
-    public Collection<TrustedCert> getCachedCertsBySubjectDn(final String dn) throws FindException {
-        Collection<TrustedCert> certs = findBySubjectDn(dn);
-        for (TrustedCert cert : certs)
-            cert.setReadOnly();
-        return certs;
     }
 
     @Override

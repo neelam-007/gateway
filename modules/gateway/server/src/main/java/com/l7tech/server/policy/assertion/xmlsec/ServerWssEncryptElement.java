@@ -44,8 +44,6 @@ import java.util.logging.Logger;
  * <p/>
  * User: flascell<br/>
  * Date: Aug 26, 2003<br/>
- *
- * TODO [steve] add decoration requirements even if certificate is not currently available
  */
 public class ServerWssEncryptElement extends AbstractMessageTargetableServerAssertion<WssEncryptElement> {
 
@@ -94,23 +92,22 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
             clientCert = recipientContextCert;
             recipientContext = assertion.getRecipientContext();
         } else if ( isResponse() ) {
-            ProcessorResult wssResult = context.getRequest().getSecurityKnob().getProcessorResult();
-            if (wssResult == null) {
-                auditor.logAndAudit(AssertionMessages.REQUESTWSS_NO_SECURITY);
-                context.setRequestPolicyViolated();
-                return AssertionStatus.FAILED;
+            final ProcessorResult wssResult = context.getRequest().getSecurityKnob().getProcessorResult();
+            final XmlSecurityToken[] tokens;
+            if ( wssResult != null ) {
+                tokens = wssResult.getXmlSecurityTokens();
+            } else {
+                tokens = new XmlSecurityToken[0];
             }
 
             // Ecrypting the Response will require either the presence of a client cert (to encrypt the symmetric key)
             // or a SecureConversation in progress or an Encrypted Key or Kerberos Session
-            XmlSecurityToken[] tokens = wssResult.getXmlSecurityTokens();
             for (XmlSecurityToken token : tokens) {
                 if (token instanceof X509SecurityToken) {
                     X509SecurityToken x509token = (X509SecurityToken)token;
                     if (x509token.isPossessionProved()) {
                         if (clientCert != null) {
-                            auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MORE_THAN_ONE_TOKEN);
-                            return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work
+                            return doMultipleTokenFailure();
                         }
                         clientCert = x509token.getCertificate();
                         keyEncryptionAlgorithm = wssResult.getLastKeyEncryptionAlgorithm();
@@ -119,16 +116,14 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
                     SamlSecurityToken samlToken = (SamlSecurityToken)token;
                     if (samlToken.isPossessionProved()) {
                         if (clientCert != null) {
-                            auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MORE_THAN_ONE_TOKEN);
-                            return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work
+                            return doMultipleTokenFailure();
                         }
                         clientCert = samlToken.getSubjectCertificate();
                     }
                 } else if (token instanceof KerberosSecurityToken) {
                     KerberosSecurityToken kerberosSecurityToken = (KerberosSecurityToken)token;
                     if (kerberosServiceTicket != null) {
-                        auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MORE_THAN_ONE_TOKEN);
-                        return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work
+                        return doMultipleTokenFailure();
                     }
                     kerberosServiceTicket = kerberosSecurityToken.getTicket().getServiceTicket();
                 } else if (token instanceof SecurityContextToken) {
@@ -138,8 +133,7 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
                     }
                 } else if (token instanceof EncryptedKey) {
                     if (encryptedKey != null) {
-                        auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MORE_THAN_ONE_TOKEN);
-                        return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work
+                        return doMultipleTokenFailure();
                     }
                     encryptedKey = (EncryptedKey)token;
                 }
@@ -147,13 +141,7 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
 
             if (clientCert == null && secConvContext == null && encryptedKey == null && kerberosServiceTicket==null) {
                 auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_NO_CERT_OR_SC_TOKEN);
-                context.setAuthenticationMissing(); // todo is it really, though?
-                context.setRequestPolicyViolated();
-                return AssertionStatus.FAILED; // todo verify that this return value is appropriate
             }
-
-        } else {
-            return AssertionStatus.FALSIFIED;
         }
 
         return addDecorationRequirements(
@@ -166,6 +154,11 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
                                  keyEncryptionAlgorithm,
                                  recipientContext,
                                  context);
+    }
+
+    private AssertionStatus doMultipleTokenFailure() {
+        auditor.logAndAudit(AssertionMessages.WSS_ENCRYPT_MORE_THAN_ONE_TOKEN);
+        return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work
     }
 
     /**

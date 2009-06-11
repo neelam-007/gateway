@@ -17,7 +17,11 @@ import java.util.logging.Logger;
  * Factory for creating caching proxies.
  *
  * <p>Interface methods should be annotated to allow caching.</p>
- *  
+ *
+ * <p>WARNING : This factory does not do anything unless you add Cacheable
+ * annotations to your beans. You MUST ensure that the cached data is
+ * immutable.</p>
+ *
  * @see com.l7tech.util.Cacheable
  * @author Steve Jones
  */
@@ -64,6 +68,7 @@ public class EntityCachingFactoryBean extends AbstractFactoryBean {
      *
      * @return The serviceInterface class.
      */
+    @Override
     public Class getObjectType() {
         return serviceInterface;
     }
@@ -76,6 +81,7 @@ public class EntityCachingFactoryBean extends AbstractFactoryBean {
      * @return The proxy object
      * @throws Exception if an error occurs
      */
+    @Override
     protected Object createInstance() throws Exception {
         if (cache == null) {
             cache = WhirlycacheFactory.createCache(name + "-" + serviceInterface.getName(), 1000, 63, WhirlycacheFactory.POLICY_LRU);
@@ -89,6 +95,7 @@ public class EntityCachingFactoryBean extends AbstractFactoryBean {
 
     //- PRIVATE
 
+    @SuppressWarnings({"FieldNameHidesFieldInSuperclass"})
     private static final Logger logger = Logger.getLogger(EntityCachingFactoryBean.class.getName());
 
     private final TimeSource timeSource;
@@ -99,6 +106,7 @@ public class EntityCachingFactoryBean extends AbstractFactoryBean {
 
     private InvocationHandler getInvocationHandler() {
         return new InvocationHandler(){
+            @Override
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                 Object result;
 
@@ -182,6 +190,7 @@ public class EntityCachingFactoryBean extends AbstractFactoryBean {
             this.methodArguments = methodArguments;
         }
 
+        @Override
         @SuppressWarnings({"RedundantIfStatement"})
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -195,6 +204,7 @@ public class EntityCachingFactoryBean extends AbstractFactoryBean {
             return true;
         }
 
+        @Override
         public int hashCode() {
             int result;
             result = method.hashCode();

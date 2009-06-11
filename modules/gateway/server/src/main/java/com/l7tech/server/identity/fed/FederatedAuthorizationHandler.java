@@ -32,14 +32,12 @@ import java.util.Set;
 public class FederatedAuthorizationHandler {
     
     FederatedAuthorizationHandler(final FederatedIdentityProvider provider,
-                                  final TrustedCertManager trustedCertManager,
                                   final TrustedCertServices trustedCertServices,
                                   final ClientCertManager clientCertManager,
                                   final CertValidationProcessor certValidationProcessor,
                                   final Auditor auditor,
                                   final Set certOidSet) {
         this.provider = provider;
-        this.trustedCertManager = trustedCertManager;
         this.trustedCertServices = trustedCertServices;
         this.clientCertManager = clientCertManager;
         this.certValidationProcessor = certValidationProcessor;
@@ -99,7 +97,6 @@ public class FederatedAuthorizationHandler {
     }
 
     protected final FederatedIdentityProvider provider;
-    protected final TrustedCertManager trustedCertManager;
     protected final TrustedCertServices trustedCertServices;
     protected final CertValidationProcessor certValidationProcessor;
     protected final Auditor auditor;

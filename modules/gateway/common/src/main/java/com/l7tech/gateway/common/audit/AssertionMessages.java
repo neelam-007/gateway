@@ -247,13 +247,14 @@ public class AssertionMessages extends Messages {
     /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_CONF_REQUEST_NOT_SOAP = m(5400, Level.INFO, "Request not SOAP; unable to check for WS-Security encrypted elements");
     /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_CONF_NO_WSS_SECURITY = m(5401, Level.INFO, "Request did not contain any WSS level security");
     public static final M WSS_ENCRYPT_MORE_THAN_ONE_TOKEN   = m(5402, Level.WARNING, true, false, "Request included more than one X509 security token whose key ownership was proven");
-    public static final M WSS_ENCRYPT_NO_CERT_OR_SC_TOKEN   = m(5403, Level.WARNING, "Unable to encrypt response; request did not include X509 token or SecureConversation");
+    /** @deprecated */ @Deprecated public static final M _UNUSED_WSS_ENCRYPT_NO_CERT_OR_SC_TOKEN                   = m(5403, Level.WARNING, "Unable to encrypt response; request did not include X509 token or SecureConversation");
     /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_CONF_RESPONSE_NOT_SOAP               = m(5404, Level.WARNING, false, true, "Response not SOAP; unable to encrypt response elements");
     /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_CONF_RESPONSE_NOT_ENCRYPTED          = m(5405, Level.INFO, "No matching elements to encrypt in response: Assertion therefore fails");
     /** @deprecated */ @Deprecated public static final M _UNUSED_RESPONSE_WSS_CONF_RESPONSE_ENCRYPTED              = m(5406, Level.FINEST, "Designated {0} response elements for encryption");
     public static final M WSS_ENCRYPT_MESSAGE_NOT_SOAP      = m(5407, Level.WARNING, false, true, "{0} message not SOAP; unable to encrypt message elements");
     public static final M WSS_ENCRYPT_MESSAGE_NOT_ENCRYPTED = m(5408, Level.INFO, "No matching elements to encrypt in {0} message: Assertion therefore fails");
     public static final M WSS_ENCRYPT_MESSAGE_ENCRYPTED     = m(5409, Level.FINEST, "Designated {1} {0} message elements for encryption");
+    public static final M WSS_ENCRYPT_NO_CERT_OR_SC_TOKEN   = m(5410, Level.INFO, "Request did not include a token suitable for response encryption.");
 
     // ServerResponseWssIntegrity
     public static final M ADD_WSS_SIGNATURE_REQUEST_NOT_SOAP          = m(5500, Level.INFO, "Request not SOAP; cannot sign response");
@@ -648,8 +649,11 @@ public class AssertionMessages extends Messages {
 
     public static final M REMOVE_ELEMENT_NOT_XML = m(8800, Level.WARNING, "Message is not XML.");
 
-    public static final M WSS_DECORATION_NON_SOAP = m(8850, Level.WARNING, "Message is not SOAP.");
-    public static final M WSS_DECORATION_ERROR    = m(8851, Level.WARNING, "Unable to decorate {0}: {1}");
+    public static final M WSSECURITY_NON_SOAP         = m(8850, Level.WARNING, "Message is not SOAP.");
+    public static final M WSSECURITY_ERROR            = m(8851, Level.WARNING, "Unable to decorate {0}: {1}");
+    public static final M WSSECURITY_RECIP_NO_CERT    = m(8852, Level.WARNING, "Could not find trusted certificate {0}");
+    public static final M WSSECURITY_RECIP_CERT_ERROR = m(8853, Level.WARNING, "Error when finding trusted certificate {0}: {1}");
+    public static final M WSSECURITY_RECIP_CERT_EXP   = m(8854, Level.INFO, "Error checking certificate expiry for {0}");
 
     public static final M MCM_VARIABLE_NOT_FOUND = m(9001, Level.WARNING, "Message context mapping variable not found {0}.");
     public static final M MCM_MAPPING_OVERRIDDEN = m(9002, Level.INFO, "Message context mapping overridden {0}.");

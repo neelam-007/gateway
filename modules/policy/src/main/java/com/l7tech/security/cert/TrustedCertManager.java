@@ -6,7 +6,6 @@ package com.l7tech.security.cert;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.util.Cacheable;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -26,18 +25,6 @@ public interface TrustedCertManager extends EntityManager<TrustedCert, EntityHea
      * @throws FindException if the retrieval fails for any reason other than nonexistence
      */
     Collection<TrustedCert> findBySubjectDn(String dn) throws FindException;
-
-    /**
-     * Retrieves the TrustedCert instances with the specified subject DN.  Only different from
-     * {@link #findBySubjectDn(String)} in that this version is {@link Cacheable} and the instances it returns are 
-     * immutable.
-     *
-     * @param dn the Subject DN to search by
-     * @return the TrustedCert with the specified Subject DN, or null if no such cert exists.
-     * @throws FindException if the TrustedCert cannot be found.
-     */
-    @Cacheable(relevantArg=0,maxAge=5000)
-    Collection<TrustedCert> getCachedCertsBySubjectDn(String dn) throws FindException;
 
     /**
      * @return {@link TrustedCert}s with the matching base64'd SHA-1 thumbprint. Never null, but may be empty.

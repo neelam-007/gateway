@@ -75,6 +75,16 @@ public class AuthenticationContext extends CredentialContext {
         return authResults;
     }
 
+    public List<AuthenticationResult> getUntaggedAuthenticationResults() {
+        List<AuthenticationResult> authResults = new ArrayList<AuthenticationResult>();
+        for ( Pair<AuthenticationResult,String> taggedResult : authenticationResults ) {
+            if ( taggedResult.right==null && !authResults.contains(taggedResult.left) ) {
+                authResults.add(taggedResult.left);
+            }
+        }
+        return authResults;
+    }
+
     /**
      * Get the authentication result for the given identity tag.
      *
@@ -110,6 +120,7 @@ public class AuthenticationContext extends CredentialContext {
      * Get the authentication result for the given token and tag.
      *
      * TODO [steve] support for lookup by other signing token types (kerberos, etc)
+     * TODO [steve] it is essential that this method finds the AR that matched the given token (not certificate) else signature combination attacks will succeed
      *
      * @param token The signing authentication token
      * @param identityTag The identity tag

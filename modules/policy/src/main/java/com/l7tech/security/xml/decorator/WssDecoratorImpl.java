@@ -94,6 +94,7 @@ public class WssDecoratorImpl implements WssDecorator {
      *
      * @param message the soap message to decorate
      */
+    @Override
     public DecorationResult decorateMessage(Message message, DecorationRequirements dreq)
       throws InvalidDocumentFormatException, GeneralSecurityException, DecoratorException, SAXException, IOException {
         final Context c = new Context();
@@ -289,7 +290,7 @@ public class WssDecoratorImpl implements WssDecorator {
             if (sct != null) {
                 // No BST; must be WS-SecureConversation
                 if (session == null)
-                    throw new IllegalArgumentException("Signing is requested with SecureConversationSession, but session is null");
+                    throw new DecoratorException("Signing is requested with SecureConversationSession, but session is null");
                 DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, null, session, sct);
                 String dktId = getOrCreateWsuId(c, derivedKeyToken.dkt, "DerivedKey-Sig");
                 senderSigningKey = new AesKey(derivedKeyToken.derivedKey, derivedKeyToken.derivedKey.length * 8);
@@ -370,15 +371,15 @@ public class WssDecoratorImpl implements WssDecorator {
                 senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
                 senderSigningCert = senderCertKeyInfo.left;
                 if (senderSigningKey == null)
-                    throw new IllegalArgumentException("Signing is requested with sender cert, but senderPrivateKey is null");
+                    throw new DecoratorException("Signing is requested with sender cert, but senderPrivateKey is null");
                 if (senderSigningCert == null)
-                    throw new IllegalArgumentException("Signing is requested with sender cert, but senderSigningCert is null"); // can't happen
+                    throw new DecoratorException("Signing is requested with sender cert, but senderSigningCert is null"); // can't happen
                 signatureKeyInfo = senderCertKeyInfo.right;
             } else if (saml != null) {
                 // sign with SAML token
                 senderSigningKey = dreq.getSenderMessageSigningPrivateKey();
                 if (senderSigningKey == null)
-                    throw new IllegalArgumentException("Signing is requested with saml:Assertion, but senderPrivateKey is null");
+                    throw new DecoratorException("Signing is requested with saml:Assertion, but senderPrivateKey is null");
                 senderSigningCert = saml.getMessageSigningCertificate();
 
                 final boolean saml11 = SamlConstants.NS_SAML.equals(samlElement.getNamespaceURI());
@@ -447,13 +448,13 @@ public class WssDecoratorImpl implements WssDecorator {
                     signatureKeyInfo = KeyInfoDetails.makeUriReference(encKeyId, SoapConstants.VALUETYPE_ENCRYPTED_KEY);
                 }
             } else
-                throw new IllegalArgumentException("Signing is requested, but there is no senderCertificate or WS-SecureConversation session");
+                throw new DecoratorException("Signing is requested, but there is no key available.");
 
             signature = addSignature(c,
                 senderSigningKey,
                 senderSigningCert,
-                signList.toArray(new Element[0]),
-                signPartList.toArray(new String[0]),
+                signList.toArray(new Element[signList.size()]),
+                signPartList.toArray(new String[signPartList.size()]),
                 dreq.isSignPartHeaders(),
                 securityHeader,
                 signatureKeyInfo,
@@ -463,10 +464,11 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         if (cryptList.size() > 0) {
+            final Element[] elementsToEncrypt = cryptList.toArray(new Element[cryptList.size()]);
             if (sct != null) {
                 // Encrypt using Secure Conversation session
                 if (session == null)
-                    throw new IllegalArgumentException("Encryption is requested with SecureConversationSession, but session is null");
+                    throw new DecoratorException("Encryption is requested with SecureConversationSession, but session is null");
                 DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, xencDesiredNextSibling, session, sct);
                 XencUtil.XmlEncKey encKey;
                 if (derivedKeyToken.derivedKey.length == 32) {
@@ -482,14 +484,14 @@ public class WssDecoratorImpl implements WssDecorator {
                     addEncryptedReferenceList(c,
                                               securityHeader,
                                               xencDesiredNextSibling,
-                                              cryptList.toArray(new Element[0]),
+                                              elementsToEncrypt,
                                               encKey,
                                               KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2));
                 } else {
                     addEncryptedReferenceList(c,
                                               securityHeader,
                                               xencDesiredNextSibling,
-                                              cryptList.toArray(new Element[0]),
+                                              elementsToEncrypt,
                                               encKey,
                                               KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY));
                 }
@@ -509,14 +511,14 @@ public class WssDecoratorImpl implements WssDecorator {
                         addEncryptedReferenceList(c,
                                                   securityHeader,
                                                   xencDesiredNextSibling,
-                                                  cryptList.toArray(new Element[0]),
+                                                  elementsToEncrypt,
                                                   dktEncKey,
                                                   KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2));
                     } else {
                         addEncryptedReferenceList(c,
                                                   securityHeader,
                                                   xencDesiredNextSibling,
-                                                  cryptList.toArray(new Element[0]),
+                                                  elementsToEncrypt,
                                                   dktEncKey,
                                                   KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY));
                     }
@@ -526,7 +528,7 @@ public class WssDecoratorImpl implements WssDecorator {
                     addEncryptedReferenceList(c,
                                               addedEncKey,
                                               xencDesiredNextSibling,
-                                              cryptList.toArray(new Element[0]),
+                                              elementsToEncrypt,
                                               addedEncKeyXmlEncKey,
                                               KeyInfoDetails.makeUriReference(encKeyId, SoapConstants.VALUETYPE_ENCRYPTED_KEY));
                 }
@@ -553,14 +555,14 @@ public class WssDecoratorImpl implements WssDecorator {
                         addEncryptedReferenceList(c,
                                                   securityHeader,
                                                   xencDesiredNextSibling,
-                                                  cryptList.toArray(new Element[0]),
+                                                  elementsToEncrypt,
                                                   dktEncKey,
                                                   KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2));
                     } else {
                         addEncryptedReferenceList(c,
                                                   securityHeader,
                                                   xencDesiredNextSibling,
-                                                  cryptList.toArray(new Element[0]),
+                                                  elementsToEncrypt,
                                                   dktEncKey,
                                                   KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY));
                     }
@@ -574,7 +576,7 @@ public class WssDecoratorImpl implements WssDecorator {
                     addEncryptedReferenceList(c,
                                               securityHeader,
                                               xencDesiredNextSibling,
-                                              cryptList.toArray(new Element[0]),
+                                              elementsToEncrypt,
                                               encKey,
                                               keyInfoDetails);
                 }
@@ -596,7 +598,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 addEncryptedReferenceList(c,
                                           securityHeader,
                                           xencDesiredNextSibling,
-                                          cryptList.toArray(new Element[0]),
+                                          elementsToEncrypt,
                                           dktEncKey,
                                           KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2));
             } else if (dreq.getKerberosTicket() != null) {
@@ -616,7 +618,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 addEncryptedReferenceList(c,
                                           securityHeader,
                                           xencDesiredNextSibling,
-                                          cryptList.toArray(new Element[0]),
+                                          elementsToEncrypt,
                                           dktEncKey,
                                           KeyInfoDetails.makeUriReference(dktId, SoapConstants.VALUETYPE_DERIVEDKEY2));
 
@@ -628,12 +630,12 @@ public class WssDecoratorImpl implements WssDecorator {
                 addEncryptedKey(c,
                                 securityHeader,
                                 dreq.getRecipientCertificate(),
-                                cryptList.toArray(new Element[0]),
+                                elementsToEncrypt,
                                 encKey,
                                 dreq.getKeyEncryptionAlgorithm(),
                                 xencDesiredNextSibling);
             } else
-                throw new IllegalArgumentException("Encryption is requested, but there is no recipientCertificate or SecureConversation session.");
+                throw new DecoratorException("Encryption is requested, but there is no recipient key.");
 
             // Transform any encrypted username token into the correct form and position
             if (addedUsernameTokenHolder != null) {
@@ -661,6 +663,7 @@ public class WssDecoratorImpl implements WssDecorator {
         return new DecorationResult() {
             private String encryptedKeySha1 = null;
 
+            @Override
             public String getEncryptedKeySha1() {
                 if (encryptedKeySha1 != null)
                     return encryptedKeySha1;
@@ -669,6 +672,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 return encryptedKeySha1 = XencUtil.computeEncryptedKeySha1(c.lastEncryptedKeyBytes);
             }
 
+            @Override
             public SecretKey getEncryptedKeySecretKey() {
                 return c.lastEncryptedKeySecretKey;
             }
@@ -724,7 +728,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                Element desiredNextSibling,
                                                DecorationRequirements.SecureConversationSession session,
                                                Element securityContextToken)
-      throws NoSuchAlgorithmException, InvalidKeyException
+      throws DecoratorException, NoSuchAlgorithmException, InvalidKeyException
     {
         // fla 18 Aug, 2004
         // NOTE This method of reffering to the SCT uses a Reference URI that contains the Identifier value
@@ -998,6 +1002,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
         SignatureContext sigContext = new SignatureContext();
         sigContext.setIDResolver(new IDResolver() {
+            @Override
             public Element resolveID(Document doc, String s) {
                 Element e = c.idToElementCache.get(s);
                 if (e != null)
@@ -1230,7 +1235,7 @@ public class WssDecoratorImpl implements WssDecorator {
      * @param element
      * @param basename Optional.  If non-null, will be used as the start of the Id string
      */
-    private String getOrCreateWsuId(Context c, Element element, String basename) {
+    private String getOrCreateWsuId(Context c, Element element, String basename) throws DecoratorException {
         String id = SoapUtil.getElementWsuId(element, false);
         if (id == null) {
             id = createWsuId(c, element, basename == null ? element.getLocalName() : basename);
@@ -1245,13 +1250,13 @@ public class WssDecoratorImpl implements WssDecorator {
      * @param c
      * @param element
      */
-    private String createWsuId(Context c, Element element, String basename) {
+    private String createWsuId(Context c, Element element, String basename) throws DecoratorException {
         byte[] randbytes = new byte[16];
         c.rand.nextBytes(randbytes);
         String id = basename + "-" + c.count++ + "-" + HexUtils.hexDump(randbytes);
 
         if (c.idToElementCache.get(id) != null)
-            throw new IllegalStateException("Duplicate wsu:ID generated: " + id); // can't happen
+            throw new DecoratorException("Duplicate wsu:ID generated: " + id); // can't happen
 
         c.idToElementCache.put(id, element);
 
@@ -1267,7 +1272,7 @@ public class WssDecoratorImpl implements WssDecorator {
         // only get MIME knob if we'll need it
         MimeKnob mimeKnob = decorationRequirements.getPartsToSign().isEmpty() ?
             null :
-            (MimeKnob) context.message.getKnob(MimeKnob.class);
+            context.message.getKnob(MimeKnob.class);
 
         PartIterator iterator = mimeKnob==null ? null : mimeKnob.getParts();
 

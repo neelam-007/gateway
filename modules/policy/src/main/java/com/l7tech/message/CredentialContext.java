@@ -3,7 +3,6 @@ package com.l7tech.message;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * Context for credential information.
@@ -26,21 +25,11 @@ public class CredentialContext {
     }
 
     /**
-     * TODO [steve] allow multiple credentials for some types (optionally). 
+     *
      */
-    public void addCredentials(LoginCredentials credentials) {
-        for (LoginCredentials l : this.credentials) {
-            if (l.getCredentialSourceAssertion() == null && credentials.getCredentialSourceAssertion() == null) {
-                logger.warning("A credential of type null was already added in this context");
-                return;
-            } else if (l.getCredentialSourceAssertion().equals(credentials.getCredentialSourceAssertion().getClass())) {
-                logger.warning("A credential of type " + l.getCredentialSourceAssertion().getName() +
-                               " was already added in this context");
-                return;
-            }
-        }
-        this.credentials.add(credentials);
-        lastCredentials = credentials;
+    public void addCredentials( final LoginCredentials credential ) {
+        credentials.add( credential );
+        lastCredentials = credential;
     }
 
     /**
@@ -62,8 +51,6 @@ public class CredentialContext {
     }
 
     //- PRIVATE
-
-    private static final Logger logger = Logger.getLogger(CredentialContext.class.getName());
 
     private final List<LoginCredentials> credentials = new ArrayList<LoginCredentials>();
     private LoginCredentials lastCredentials;

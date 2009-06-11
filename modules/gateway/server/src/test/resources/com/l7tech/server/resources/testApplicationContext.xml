@@ -65,11 +65,11 @@
     </bean>
 
     <!-- server side trusted cert manager -->
-    <bean id="trustedCertManager" class="com.l7tech.server.identity.cert.TestTrustedCertManager">
+    <bean id="trustedCertManager" name="trustedCertCache" class="com.l7tech.server.identity.cert.TestTrustedCertManager">
     </bean>
 
     <bean id="trustedCertServices" class="com.l7tech.server.identity.cert.TrustedCertServicesImpl">
-        <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg ref="trustedCertCache"/>
     </bean>
     
     <!-- server side custom assertions registrar -->

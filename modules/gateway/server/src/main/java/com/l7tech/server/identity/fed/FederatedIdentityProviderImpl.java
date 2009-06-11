@@ -174,8 +174,8 @@ public class FederatedIdentityProviderImpl
         }
 
         Auditor auditor = new Auditor(this, applicationContext, logger);
-        this.x509Handler = new X509AuthorizationHandler(this, trustedCertManager, trustedCertServices, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);
-        this.samlHandler = new SamlAuthorizationHandler(this, trustedCertManager, trustedCertServices, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);        
+        this.x509Handler = new X509AuthorizationHandler(this, trustedCertServices, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);
+        this.samlHandler = new SamlAuthorizationHandler(this, trustedCertServices, clientCertManager, certValidationProcessor, auditor, validTrustedCertOids);
     }
 
     public void setUserManager(FederatedUserManager userManager) {

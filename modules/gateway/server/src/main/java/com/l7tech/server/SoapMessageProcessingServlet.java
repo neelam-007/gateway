@@ -36,6 +36,7 @@ import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapVersion;
+import com.l7tech.security.xml.decorator.DecoratorException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.context.ApplicationEventPublisher;
@@ -327,7 +328,13 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     if (ExceptionUtils.causedBy(e, LicenseException.class)) {
                         // Unlicensed assertion; suppress stack trace (Bug #5499)
                         logger.log(Level.SEVERE, e.getMessage());
-                    } else {
+                    } else if (ExceptionUtils.causedBy(e, DecoratorException.class)) {
+                        DecoratorException decoratorException =
+                                ExceptionUtils.getCauseIfCausedBy(e, DecoratorException.class);
+                        logger.log(Level.WARNING,
+                                ExceptionUtils.getMessage(e) + ": " + ExceptionUtils.getMessage(decoratorException),
+                                ExceptionUtils.getDebugException(e));
+                    }  else {
                         logger.log(Level.SEVERE, e.getMessage(), e);
                     }
                     sendExceptionFault(context, e, hrequest, hresponse, status);

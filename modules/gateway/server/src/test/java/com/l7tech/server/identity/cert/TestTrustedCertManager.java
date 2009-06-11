@@ -16,13 +16,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,EntityHeader> implements TrustedCertManager {
+public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,EntityHeader> implements TrustedCertManager, TrustedCertCache {
+    @Override
     public Collection<TrustedCert> findBySubjectDn(String dn) throws FindException {
         throw new UnsupportedOperationException();
-    }
-
-    public Collection<TrustedCert> getCachedCertsBySubjectDn(String dn) throws FindException {
-        return findBySubjectDn(dn);
     }
 
     @Override
@@ -35,22 +32,27 @@ public class TestTrustedCertManager extends EntityManagerStub<TrustedCert,Entity
         return tcs;
     }
 
+    @Override
     public List<TrustedCert> findByThumbprint(String thumbprint) throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public List<TrustedCert> findBySki(String ski) throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Collection<TrustedCert> findByName(String name) throws FindException {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Class<TrustedCert> getImpClass() {
         return TrustedCert.class;
     }
 
+    @Override
     public Class<TrustedCert> getInterfaceClass() {
         return TrustedCert.class;
     }

@@ -297,7 +297,7 @@
     </bean>
     <bean id="federatedIdentityProvider" class="com.l7tech.server.identity.fed.FederatedIdentityProviderImpl" scope="prototype">
         <property name="clientCertManager" ref="clientCertManager"/>
-        <property name="trustedCertManager" ref="cachingTrustedCertManager"/>
+        <property name="trustedCertManager" ref="trustedCertManager"/>
         <property name="trustedCertServices" ref="trustedCertServices"/>
         <property name="certValidationProcessor" ref="certValidationProcessor"/>
         <property name="userManager" ref="federatedUserManager"/>
@@ -611,16 +611,20 @@
         </constructor-arg>
         <constructor-arg ref="clusterInfoManager"/>
     </bean>
-    <bean id="cachingTrustedCertManager" class="com.l7tech.server.util.EntityCachingFactoryBean">
+    <bean id="trustedCertCache" class="com.l7tech.server.util.EntityCachingFactoryBean">
         <constructor-arg><null/></constructor-arg>
-        <constructor-arg value="TrustedCertManagerCache"/>
-        <constructor-arg value="com.l7tech.security.cert.TrustedCertManager"/>
-        <constructor-arg ref="trustedCertManager"/>
+        <constructor-arg value="TrustedCertCache"/>
+        <constructor-arg value="com.l7tech.server.identity.cert.TrustedCertCache"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.identity.cert.TrustedCertCacheImpl">
+                <constructor-arg ref="trustedCertManager"/>
+            </bean>
+        </constructor-arg>
     </bean>
 
     <!-- server side TrustedCert services layer -->
     <bean id="trustedCertServices" class="com.l7tech.server.identity.cert.TrustedCertServicesImpl">
-        <constructor-arg ref="cachingTrustedCertManager"/>
+        <constructor-arg ref="trustedCertCache"/>
     </bean>
 
     <!-- server side revocation check policy manager -->
@@ -657,7 +661,7 @@
         <property name="identityProviderFactory" ref='identityProviderFactory'/>
         <property name="schemaEntryManager" ref='schemaEntryManager'/>
         <property name="clientCertManager" ref='clientCertManager'/>
-        <property name="entityFinder" ref="cachingEntityFinder"/>
+        <property name="entityFinder" ref="entityFinder"/>
         <property name="ssgKeyStoreManager" ref="ssgKeyStoreManager"/>
     </bean>
 
@@ -1190,13 +1194,6 @@
 
     <bean id="folderManager" class="com.l7tech.server.folder.FolderManagerImpl" parent="hibernateBean">
         <constructor-arg ref="roleManager"/>        
-    </bean>
-
-    <bean id="cachingEntityFinder" class="com.l7tech.server.util.EntityCachingFactoryBean">
-        <constructor-arg><null/></constructor-arg>
-        <constructor-arg value="EntityFinderCache"/>
-        <constructor-arg value="com.l7tech.server.EntityFinder"/>
-        <constructor-arg ref="entityFinder"/>
     </bean>
 
     <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">

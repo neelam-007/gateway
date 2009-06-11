@@ -23,12 +23,13 @@ import java.util.logging.Logger;
 public class TrustedCertServicesImpl implements TrustedCertServices {
     private static final Logger logger = Logger.getLogger(TrustedCertServicesImpl.class.getName());
 
-    private final TrustedCertManager trustedCertManager;
+    private final TrustedCertCache trustedCertCache;
 
-    public TrustedCertServicesImpl(TrustedCertManager trustedCertManager) {
-        this.trustedCertManager = trustedCertManager;
+    public TrustedCertServicesImpl( final TrustedCertCache trustedCertCache ) {
+        this.trustedCertCache = trustedCertCache;
     }
 
+    @Override
     @Transactional(readOnly=true)
     public void checkSslTrust(X509Certificate[] serverCertChain) throws CertificateException {
         String issuerDn = serverCertChain[0].getIssuerDN().getName();
@@ -49,8 +50,9 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
         }
     }
 
+    @Override
     public Collection<TrustedCert> getCertsBySubjectDnFiltered(String subjectDn, boolean omitExpired, Set<TrustedCert.TrustedFor> requiredTrustFlags, Set<Long> requiredOids) throws FindException {
-        Collection<TrustedCert> trustedsWithDn = trustedCertManager.getCachedCertsBySubjectDn(subjectDn);
+        Collection<TrustedCert> trustedsWithDn = trustedCertCache.findBySubjectDn(subjectDn);
         List<TrustedCert> ret = new ArrayList<TrustedCert>();
         for (TrustedCert trusted : trustedsWithDn) {
             if (omitExpired && !CertUtils.isValid(trusted.getCertificate()))
@@ -70,7 +72,7 @@ public class TrustedCertServicesImpl implements TrustedCertServices {
 
         if (caTrusts.isEmpty()) {
             String subjectDn = serverCertChain[0].getSubjectDN().getName();
-            if ( trustedCertManager.getCachedCertsBySubjectDn(subjectDn).isEmpty() ) {
+            if ( trustedCertCache.findBySubjectDn(subjectDn).isEmpty() ) {
                 throw new TrustedCertManager.UnknownCertificateException("Couldn't find CA cert with DN '" + issuerDn + "'");
             } else {
                 throw new CertificateException("Server cert '" + subjectDn + "' found but not trusted for SSL.");

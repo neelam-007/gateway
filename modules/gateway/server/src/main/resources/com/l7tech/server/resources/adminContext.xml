@@ -105,7 +105,7 @@
 
     <bean id="rbacAdvice" class="com.l7tech.server.security.rbac.SecuredMethodInterceptor">
         <constructor-arg ref="rbacServices"/>
-        <constructor-arg ref="cachingEntityFinder"/>
+        <constructor-arg ref="entityFinder"/>
     </bean>
 
     <bean id="rbacAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
@@ -320,7 +320,7 @@
     <!-- RBAC admin impl -->
     <bean id="rbacAdmin" class="com.l7tech.server.security.rbac.RbacAdminImpl">
         <constructor-arg ref="roleManager"/>
-        <constructor-arg ref="cachingEntityFinder"/>
+        <constructor-arg ref="entityFinder"/>
     </bean>
 
     <!-- Policy admin impl -->

@@ -100,8 +100,7 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
 
         // Check if already authenticated
         if ( assertion.getIdentityTag() == null ) {
-            //TODO [steve] should we match tagged authentication results?
-            for ( AuthenticationResult authResult : authContext.getAllAuthenticationResults() ) {
+            for ( AuthenticationResult authResult : authContext.getUntaggedAuthenticationResults() ) {
                 if ( authResult.getUser().getProviderId() == assertion.getIdentityProviderOid() ) {
                     lastStatus = checkUser(authResult);
                     if (lastStatus.equals(AssertionStatus.NONE)) {

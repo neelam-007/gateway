@@ -35,13 +35,12 @@ import java.util.logging.Logger;
  */
 public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
     SamlAuthorizationHandler(FederatedIdentityProvider provider,
-                             TrustedCertManager trustedCertManager,
                              TrustedCertServices trustedCertServices,
                              ClientCertManager clientCertManager,
                              CertValidationProcessor certValidationProcessor,
                              Auditor auditor,
                              Set certOidSet) {
-        super(provider, trustedCertManager, trustedCertServices, clientCertManager, certValidationProcessor, auditor, certOidSet);
+        super(provider, trustedCertServices, clientCertManager, certValidationProcessor, auditor, certOidSet);
     }
 
     User authorize(LoginCredentials pc) throws AuthenticationException {

@@ -16,7 +16,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
@@ -34,13 +33,12 @@ import java.util.logging.Logger;
  */
 public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
     X509AuthorizationHandler(FederatedIdentityProvider provider,
-                             TrustedCertManager trustedCertManager,
                              TrustedCertServices trustedCertServices,
                              ClientCertManager clientCertManager,
                              CertValidationProcessor certValidationProcessor,
                              Auditor auditor,
                              Set certOidSet) {
-        super(provider, trustedCertManager, trustedCertServices, clientCertManager, certValidationProcessor, auditor, certOidSet);
+        super(provider, trustedCertServices, clientCertManager, certValidationProcessor, auditor, certOidSet);
     }
 
     User authorize( LoginCredentials pc ) throws IOException, AuthenticationException, FindException {
