@@ -82,7 +82,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
                             }
                         });
                     } catch (IOException e) {
-                        throw (ParseException)new ParseException("Unable to parse stylesheet: " +
+                        throw (ParseException)new ParseException("Unable to parse: " +
                                 ExceptionUtils.getMessage(e), 0).initCause(e);
                     }
                 }
@@ -97,8 +97,15 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
             }
         };
 
+        //fyi if assertion.getResourceInfo() returns a SingleUrlResourceGetter then the above ResourceObjectFactory
+        //will NEVER be used by the ResourceGetter
         resourceGetter = ResourceGetter.createResourceGetter(
-            assertion, assertion.getResourceInfo(), resourceObjectfactory, urlFinder, getCache(applicationContext), auditor);
+                assertion,
+                assertion.getResourceInfo(),
+                resourceObjectfactory,
+                urlFinder,
+                getCache(applicationContext),
+                auditor);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
@@ -248,9 +255,12 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
         if (clientFactory == null) throw new IllegalStateException("No httpClientFactory bean");
 
         httpObjectCache = new HttpObjectCache<PolicyFinder>(
-                    ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_ENTRIES, 10000),
-                    ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XSLT_CACHE_MAX_AGE, 300000),
-                    clientFactory, cacheObjectFactory, HttpObjectCache.WAIT_INITIAL);
+                1/*A PDP Assertion only has 1 policy*/,
+                /*300000 is the default of 5 minutes*/
+                ServerConfig.getInstance().getIntProperty(ServerConfig.PARAM_XACML_POLICY_CACHE_MAX_AGE, 300000),
+                clientFactory,
+                cacheObjectFactory,
+                HttpObjectCache.WAIT_INITIAL);
 
         return httpObjectCache;
     }

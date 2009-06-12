@@ -54,7 +54,6 @@ import org.xml.sax.SAXException;
  * User: njordan
  * Date: 13-Mar-2009
  * Time: 5:29:48 PM
- * To change this template use File | Settings | File Templates.
  */
 public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<XacmlPdpAssertion> {
     public static class MessageSourceEntry {
@@ -80,31 +79,6 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
 
         public String toString() {
             return displayName;
-        }
-    }
-
-    public static class MessageOutputEntry {
-        private XacmlAssertionEnums.MessageTarget messageTarget;
-
-        public MessageOutputEntry(XacmlAssertionEnums.MessageTarget messageTarget) {
-            this.messageTarget = messageTarget;
-        }
-
-        public XacmlAssertionEnums.MessageTarget getMessageTarget() {
-            return messageTarget;
-        }
-
-        public String toString() {
-            switch(messageTarget) {
-                case REQUEST_MESSAGE:
-                    return "Default Request";
-                case RESPONSE_MESSAGE:
-                    return "Default Response";
-                case CONTEXT_VARIABLE:
-                    return "Message Variable:";
-                default:
-                    throw new IllegalStateException("Invalid messageTarget found");//can only happen if enum changes
-            }
         }
     }
 
@@ -168,8 +142,8 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         messageSourceComboBox.setModel(comboBoxModel);
 
         comboBoxModel = new DefaultComboBoxModel();
-        comboBoxModel.addElement(new MessageOutputEntry(XacmlAssertionEnums.MessageTarget.RESPONSE_MESSAGE));
-        comboBoxModel.addElement(new MessageOutputEntry(XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE));
+        comboBoxModel.addElement(XacmlAssertionEnums.MessageTarget.RESPONSE_MESSAGE);
+        comboBoxModel.addElement(XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE);
         messageOutputComboBox.setModel(comboBoxModel);
 
         outputMessageVariableNameField.setEnabled(false);
@@ -304,7 +278,7 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
             }
         });
 
-        // Initialize the XML editor to the XSL from the assertion, if any, else to an identity transform
+        // Initialize the XML editor to the XACML policy from the assertion, if any, else to an identity transform
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 if(assertion.getResourceInfo() instanceof StaticResourceInfo) {
@@ -351,10 +325,8 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         ByteOrderMarkInputStream bomis = null;
         String filename = dlg.getSelectedFile().getAbsolutePath();
         try {
-            String encoding;
             try {
                 bomis = new ByteOrderMarkInputStream(new FileInputStream(dlg.getSelectedFile()));
-                encoding = bomis.getEncoding();
             } catch (FileNotFoundException e) {
                 log.log(Level.FINE, "cannot open file" + filename, e);
                 return;
@@ -368,18 +340,22 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
             byte[] bytes;
             try {
                 bytes = IOUtils.slurpStream(bomis);
-                doc = (encoding != null) ? XmlUtil.parse(new ByteArrayInputStream(bytes), encoding)
-                        : XmlUtil.parse(new ByteArrayInputStream(bytes));
+                doc = XmlUtil.parse(new ByteArrayInputStream(bytes));
             } catch (SAXException e) {
-                JOptionPane.showMessageDialog(this, "Cannot parse the XML from that URL. " + filename, "XACML Policy Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Cannot parse the XML from file '" + filename+"'",
+                        "XACML Policy Error",
+                        JOptionPane.ERROR_MESSAGE);
                 log.log(Level.FINE, "cannot parse " + filename, e);
                 return;
             } catch (IOException e) {
-                JOptionPane.showMessageDialog(this, "Cannot parse the XML from that URL. " + filename, "XACML Policy Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Cannot parse the XML from file '" + filename+"'",
+                        "XACML Policy Error",
+                        JOptionPane.ERROR_MESSAGE);
                 log.log(Level.FINE, "cannot parse " + filename, e);
                 return;
             }
-            // check if it's a xslt
 
             try {
                 docIsXacmlPolicy(doc);
@@ -389,7 +365,10 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
 
                 enableDisableComponents();
             } catch (SAXException e) {
-                JOptionPane.showMessageDialog(this, "The document at URL is not a valid XSLT. " + filename + ": " + ExceptionUtils.getMessage(e), "XACML Policy Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "The file '" + filename + "' is not a valid XACML Policy: " + ExceptionUtils.getMessage(e),
+                        "XACML Policy Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
         } finally {
             ResourceUtils.closeQuietly(bomis);
@@ -404,12 +383,9 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         InputStream httpStream = null;
         try {
             URLConnection conn = new URL(urlstr).openConnection();
-            String ctype = conn.getContentType();
-            encoding = ctype == null ? null : ContentTypeHeader.parseValue(ctype).getEncoding();
             httpStream = conn.getInputStream();
             bytes = IOUtils.slurpStream(httpStream);
             bomis = new ByteOrderMarkInputStream(new ByteArrayInputStream(bytes));
-            if (encoding == null) encoding = bomis.getEncoding();
         } catch (AccessControlException ace) {
             TopComponents.getInstance().showNoPrivilegesErrorMessage();
             return;
@@ -423,20 +399,24 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
 
         Document doc;
         try {
-            doc = (encoding != null) ? XmlUtil.parse(new ByteArrayInputStream(bytes), encoding)
-                    : XmlUtil.parse(new ByteArrayInputStream(bytes));
+            doc = XmlUtil.parse(new ByteArrayInputStream(bytes));
 
         } catch (SAXException e) {
-            JOptionPane.showMessageDialog(this, "Cannot parse the XML from that URL. " + urlstr, "XACML Policy Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Cannot parse the XML from URL '" + urlstr+ "' due to error: " + e.getMessage(),
+                    "XACML Policy Error",
+                    JOptionPane.ERROR_MESSAGE);
             log.log(Level.FINE, "cannot parse " + urlstr, e);
             return;
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Cannot parse the XML from that URL. " + urlstr, "XACML Policy Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "Cannot parse the XML from URL '" + urlstr+"'",
+                    "XACML Policy Error",
+                    JOptionPane.ERROR_MESSAGE);
             log.log(Level.FINE, "cannot parse " + urlstr, e);
             return;
         }
 
-        // check if it's a xslt
         try {
             docIsXacmlPolicy(doc);
 
@@ -453,16 +433,17 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         try {
             Policy.getInstance(doc.getDocumentElement());
         } catch (Exception e) {
-            throw new SAXException("Document is not valid XSLT: " + ExceptionUtils.getMessage(e), e);
+            throw new SAXException("Document is not a valid XACML policy: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
     private void enableDisableComponents() {
-        MessageOutputEntry outputEntry = (MessageOutputEntry)messageOutputComboBox.getSelectedItem();
+        XacmlAssertionEnums.MessageTarget outputEntry =
+                (XacmlAssertionEnums.MessageTarget)messageOutputComboBox.getSelectedItem();
 
 
         //first check the message variable, and manage setting the context variable text field to be enabled or not
-        if(outputEntry.getMessageTarget() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE){
+        if(outputEntry == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE){
             outputMessageVariableNameField.setEnabled(true);
 
             if(outputMessageVariableNameField.getText().trim().length() == 0){
@@ -537,8 +518,9 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
         }
 
         for(int i = 0;i < messageOutputComboBox.getItemCount();i++) {
-            MessageOutputEntry entry = (MessageOutputEntry)messageOutputComboBox.getItemAt(i);
-            if(entry.getMessageTarget() == assertion.getOutputMessageTarget()) {
+            XacmlAssertionEnums.MessageTarget entry =
+                    (XacmlAssertionEnums.MessageTarget)messageOutputComboBox.getItemAt(i);
+            if(entry == assertion.getOutputMessageTarget()) {
                 messageOutputComboBox.setSelectedItem(entry);
                 break;
             }
@@ -577,25 +559,22 @@ public class XacmlPdpPropertiesDialog extends AssertionPropertiesEditorSupport<X
             assertion.setInputMessageVariableName(null);
         }
 
-        MessageOutputEntry outputEntry = (MessageOutputEntry)messageOutputComboBox.getSelectedItem();
-        assertion.setOutputMessageTarget(outputEntry.getMessageTarget());
-        if(outputEntry.getMessageTarget() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
+        XacmlAssertionEnums.MessageTarget outputEntry =
+                (XacmlAssertionEnums.MessageTarget)messageOutputComboBox.getSelectedItem();
+        assertion.setOutputMessageTarget(outputEntry);
+        if(outputEntry == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
             assertion.setOutputMessageVariableName(outputMessageVariableNameField.getText().trim());
         }
 
         String type = (String) messageFormatComboBox.getSelectedItem();
         assertion.setSoapEncapsulation(XacmlPdpAssertion.SoapEncapsulationType.findEncapsulationType(type));
 
-        try {
-            if(CONFIGURED_IN_ADVANCE.equals(policyLocationComboBox.getSelectedItem())) {
-                String policyText = uiAccessibility.getEditor().getText();
-                StaticResourceInfo sri = new StaticResourceInfo(policyText);
-                assertion.setResourceInfo(sri);
-            } else if(MONITOR_URL.equals(policyLocationComboBox.getSelectedItem())) {
-                assertion.setResourceInfo(new SingleUrlResourceInfo(urlToMonitorField.getText().trim()));
-            }
-        } catch(NullPointerException npe) {
-            // Ignore
+        if(CONFIGURED_IN_ADVANCE.equals(policyLocationComboBox.getSelectedItem())) {
+            String policyText = uiAccessibility.getEditor().getText();
+            StaticResourceInfo sri = new StaticResourceInfo(policyText);
+            assertion.setResourceInfo(sri);
+        } else if(MONITOR_URL.equals(policyLocationComboBox.getSelectedItem())) {
+            assertion.setResourceInfo(new SingleUrlResourceInfo(urlToMonitorField.getText().trim()));
         }
         
         assertion.setFailIfNotPermit(failCheckBox.isSelected());

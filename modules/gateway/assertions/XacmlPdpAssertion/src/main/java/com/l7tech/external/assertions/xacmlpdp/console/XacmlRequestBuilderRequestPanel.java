@@ -28,15 +28,7 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
         }
 
         public String toString() {
-            switch(messageTarget) {
-                case REQUEST_MESSAGE:
-                    return "Default Request";
-                case RESPONSE_MESSAGE:
-                    return "Default Response";
-                case CONTEXT_VARIABLE:
-                    return "Message Variable:";
-            }
-            throw new IllegalStateException("Unknown messge target");
+            return messageTarget.getTargetName();
         }
     }
 
@@ -79,9 +71,9 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
         });
 
         model = new DefaultComboBoxModel();
-        model.addElement(new MessageOutputEntry(XacmlAssertionEnums.MessageTarget.REQUEST_MESSAGE));
-        model.addElement(new MessageOutputEntry(XacmlAssertionEnums.MessageTarget.RESPONSE_MESSAGE));
-        model.addElement(new MessageOutputEntry(XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE));
+        model.addElement(XacmlAssertionEnums.MessageTarget.REQUEST_MESSAGE);
+        model.addElement(XacmlAssertionEnums.MessageTarget.RESPONSE_MESSAGE);
+        model.addElement(XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE);
         outputMessageComboBox.setModel(model);
 
         switch(assertion.getOutputMessageDestination()) {
@@ -107,9 +99,10 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
 
         outputMessageComboBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                MessageOutputEntry entry = (MessageOutputEntry)outputMessageComboBox.getSelectedItem();
-                outputMessageContextVarField.setEnabled(entry.getMessageTarget() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE);
-                assertion.setOutputMessageDestination(entry.getMessageTarget());
+                XacmlAssertionEnums.MessageTarget entry =
+                        (XacmlAssertionEnums.MessageTarget)outputMessageComboBox.getSelectedItem();
+                outputMessageContextVarField.setEnabled(entry == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE);
+                assertion.setOutputMessageDestination(entry);
             }
         });
 
@@ -129,8 +122,7 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
     }
 
     public boolean handleDispose() {
-        if(((MessageOutputEntry)outputMessageComboBox.getSelectedItem()).getMessageTarget()
-                != XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
+        if(outputMessageComboBox.getSelectedItem()!= XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
             return true;
         }
 

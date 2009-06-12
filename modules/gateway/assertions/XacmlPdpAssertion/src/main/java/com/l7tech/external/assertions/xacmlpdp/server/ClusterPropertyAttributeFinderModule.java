@@ -16,7 +16,6 @@ import java.net.URI;
  * User: njordan
  * Date: 18-Mar-2009
  * Time: 9:29:53 PM
- * To change this template use File | Settings | File Templates.
  */
 public class ClusterPropertyAttributeFinderModule extends AttributeFinderModule {
     public static final String PREFIX = "urn:layer7tech.com:clusterProperty:";
