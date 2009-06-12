@@ -86,7 +86,7 @@ public class ServerXacmlPdpAssertionTest {
         xacmlPdpAssertion.setResourceInfo(sri);
 
         xacmlPdpAssertion.setSoapEncapsulation(XacmlPdpAssertion.SoapEncapsulationType.REQUEST);
-        xacmlPdpAssertion.setInputMessageSource(XacmlAssertionEnums.MessageTarget.RESPONSE_MESSAGE);
+        xacmlPdpAssertion.setInputMessageSource(XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE);
 
         ServerXacmlPdpAssertion serverPdpAssertion =
                 new ServerXacmlPdpAssertion(xacmlPdpAssertion, ApplicationContexts.getTestApplicationContext());
@@ -108,7 +108,7 @@ public class ServerXacmlPdpAssertionTest {
         StaticResourceInfo sri = new StaticResourceInfo(PDP_POLICY_XML);
         xacmlPdpAssertion.setResourceInfo(sri);
 
-        xacmlPdpAssertion.setInputMessageSource(XacmlAssertionEnums.MessageTarget.RESPONSE_MESSAGE);
+        xacmlPdpAssertion.setInputMessageSource(XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE);
 
         ServerXacmlPdpAssertion serverPdpAssertion =
                 new ServerXacmlPdpAssertion(xacmlPdpAssertion, ApplicationContexts.getTestApplicationContext());
@@ -133,7 +133,7 @@ public class ServerXacmlPdpAssertionTest {
         xacmlPdpAssertion.setResourceInfo(sri);
 
         xacmlPdpAssertion.setSoapEncapsulation(XacmlPdpAssertion.SoapEncapsulationType.REQUEST);
-        xacmlPdpAssertion.setInputMessageSource(XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE);
+        xacmlPdpAssertion.setInputMessageSource(XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE);
         String messageVariableName = "CONTEXT_VARIABLE_NAME";
         xacmlPdpAssertion.setInputMessageVariableName(messageVariableName);
 
@@ -157,7 +157,7 @@ public class ServerXacmlPdpAssertionTest {
         StaticResourceInfo sri = new StaticResourceInfo(PDP_POLICY_XML);
         xacmlPdpAssertion.setResourceInfo(sri);
 
-        xacmlPdpAssertion.setInputMessageSource(XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE);
+        xacmlPdpAssertion.setInputMessageSource(XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE);
         String messageVariableName = "CONTEXT_VARIABLE_NAME";
         xacmlPdpAssertion.setInputMessageVariableName(messageVariableName);
 
@@ -188,7 +188,7 @@ public class ServerXacmlPdpAssertionTest {
         StaticResourceInfo sri = new StaticResourceInfo(PDP_POLICY_XML);
         xacmlPdpAssertion.setResourceInfo(sri);
 
-        xacmlPdpAssertion.setInputMessageSource(XacmlAssertionEnums.MessageTarget.REQUEST_MESSAGE);
+        xacmlPdpAssertion.setInputMessageSource(XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST);
 
         ServerXacmlPdpAssertion serverPdpAssertion =
                 new ServerXacmlPdpAssertion(xacmlPdpAssertion, ApplicationContexts.getTestApplicationContext());
@@ -210,7 +210,7 @@ public class ServerXacmlPdpAssertionTest {
         StaticResourceInfo sri = new StaticResourceInfo(PDP_ANY_RESOURCE_POLICY_XML);
         xacmlPdpAssertion.setResourceInfo(sri);
 
-        xacmlPdpAssertion.setInputMessageSource(XacmlAssertionEnums.MessageTarget.REQUEST_MESSAGE);
+        xacmlPdpAssertion.setInputMessageSource(XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST);
 
         ServerXacmlPdpAssertion serverPdpAssertion =
                 new ServerXacmlPdpAssertion(xacmlPdpAssertion, ApplicationContexts.getTestApplicationContext());

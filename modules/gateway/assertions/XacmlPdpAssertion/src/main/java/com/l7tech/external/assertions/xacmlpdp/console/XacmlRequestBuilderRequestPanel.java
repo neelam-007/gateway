@@ -13,25 +13,8 @@ import java.awt.event.ActionEvent;
  * User: njordan
  * Date: 14-Apr-2009
  * Time: 8:50:24 PM
- * To change this template use File | Settings | File Templates.
- */
+  */
 public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequestBuilderNodePanel {
-    public static class MessageOutputEntry {
-        private XacmlAssertionEnums.MessageTarget messageTarget;
-
-        public MessageOutputEntry(XacmlAssertionEnums.MessageTarget messageTarget) {
-            this.messageTarget = messageTarget;
-        }
-
-        public XacmlAssertionEnums.MessageTarget getMessageTarget() {
-            return messageTarget;
-        }
-
-        public String toString() {
-            return messageTarget.getTargetName();
-        }
-    }
-
     private JComboBox versionComboBox;
     private JPanel mainPanel;
     private JComboBox encapsulationComboBox;
@@ -71,16 +54,16 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
         });
 
         model = new DefaultComboBoxModel();
-        model.addElement(XacmlAssertionEnums.MessageTarget.REQUEST_MESSAGE);
-        model.addElement(XacmlAssertionEnums.MessageTarget.RESPONSE_MESSAGE);
-        model.addElement(XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE);
+        model.addElement(XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST.getLocationName());
+        model.addElement(XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE.getLocationName());
+        model.addElement(XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE.getLocationName());
         outputMessageComboBox.setModel(model);
 
         switch(assertion.getOutputMessageDestination()) {
-            case REQUEST_MESSAGE:
+            case DEFAULT_REQUEST:
                 outputMessageComboBox.setSelectedIndex(0);
                 break;
-            case RESPONSE_MESSAGE:
+            case DEFAULT_RESPONSE:
                 outputMessageComboBox.setSelectedIndex(1);
                 break;
             case CONTEXT_VARIABLE:
@@ -90,7 +73,7 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
                 throw new IllegalStateException("Unsupported output message destination found");//only happen if enum changes
         }
 
-        if(assertion.getOutputMessageDestination() != XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
+        if(assertion.getOutputMessageDestination() != XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
             outputMessageContextVarField.setEnabled(false);
         } else {
             outputMessageContextVarField.setEnabled(true);
@@ -99,9 +82,9 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
 
         outputMessageComboBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                XacmlAssertionEnums.MessageTarget entry =
-                        (XacmlAssertionEnums.MessageTarget)outputMessageComboBox.getSelectedItem();
-                outputMessageContextVarField.setEnabled(entry == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE);
+                XacmlAssertionEnums.MessageLocation entry =
+                        (XacmlAssertionEnums.MessageLocation)outputMessageComboBox.getSelectedItem();
+                outputMessageContextVarField.setEnabled(entry == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE);
                 assertion.setOutputMessageDestination(entry);
             }
         });
@@ -122,7 +105,7 @@ public class XacmlRequestBuilderRequestPanel extends JPanel implements XacmlRequ
     }
 
     public boolean handleDispose() {
-        if(outputMessageComboBox.getSelectedItem()!= XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
+        if(outputMessageComboBox.getSelectedItem()!= XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
             return true;
         }
 

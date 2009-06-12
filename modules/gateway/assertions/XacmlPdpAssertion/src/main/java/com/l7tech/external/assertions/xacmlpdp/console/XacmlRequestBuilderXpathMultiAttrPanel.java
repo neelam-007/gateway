@@ -41,41 +41,46 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
     private JButton removeNamespaceButton;
     private JPanel mainPanel;
 
-    private XacmlRequestBuilderAssertion.XpathMultiAttr xpathMultiAttr;
+    private XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig;
     private DefaultTableModel tableModel;
     private JDialog window;
 
-    public XacmlRequestBuilderXpathMultiAttrPanel(XacmlRequestBuilderAssertion.XpathMultiAttr xpathMultiAttr,
+    public XacmlRequestBuilderXpathMultiAttrPanel(XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig,
                                                   XacmlAssertionEnums.XacmlVersionType version,
                                                   JDialog window)
     {
-        this.xpathMultiAttr = xpathMultiAttr;
+        this.multipleAttributeConfig = multipleAttributeConfig;
 
-        messageSourceComboBox.setModel(new DefaultComboBoxModel(new Object[] {"Default Request", "Default Response"}));
-        if(xpathMultiAttr.getMessageSource() == XacmlRequestBuilderAssertion.XpathMultiAttr.MessageSource.REQUEST) {
+        messageSourceComboBox.setModel(
+                new DefaultComboBoxModel(
+                        new Object[] {
+                                XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST.getLocationName(),
+                                XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE.getLocationName()}));
+        
+        if(multipleAttributeConfig.getMessageSource() == XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST) {
             messageSourceComboBox.setSelectedIndex(0);
-        } else if(xpathMultiAttr.getMessageSource() == XacmlRequestBuilderAssertion.XpathMultiAttr.MessageSource.RESPONSE) {
+        } else if(multipleAttributeConfig.getMessageSource() == XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE) {
             messageSourceComboBox.setSelectedIndex(1);
         }
 
         tableModel = new DefaultTableModel(new String[] {"Prefix", "URI"}, 0);
-        if(xpathMultiAttr.getNamespaces() != null) {
-            for(Map.Entry<String, String> entry : xpathMultiAttr.getNamespaces().entrySet()) {
+        if(multipleAttributeConfig.getNamespaces() != null) {
+            for(Map.Entry<String, String> entry : multipleAttributeConfig.getNamespaces().entrySet()) {
                 tableModel.addRow(new String[] {entry.getKey(), entry.getValue()});
             }
         }
         namespacesTable.setModel(tableModel);
 
-        xpathBaseField.setText(xpathMultiAttr.getXpathBase());
-        idField.setText(xpathMultiAttr.getIdField().getValue());
-        dataTypeField.setText(xpathMultiAttr.getDataTypeField().getValue());
-        issuerField.setText(xpathMultiAttr.getIssuerField().getValue());
+        xpathBaseField.setText(multipleAttributeConfig.getXpathBase());
+        idField.setText(multipleAttributeConfig.getIdField().getValue());
+        dataTypeField.setText(multipleAttributeConfig.getDataTypeField().getValue());
+        issuerField.setText(multipleAttributeConfig.getIssuerField().getValue());
 
         if(version == XacmlAssertionEnums.XacmlVersionType.V1_0) {
-            issueInstantField.setText(xpathMultiAttr.getIssueInstantField().getValue());
+            issueInstantField.setText(multipleAttributeConfig.getIssueInstantField().getValue());
         }
 
-        valueField.setText(xpathMultiAttr.getValueField().getValue());
+        valueField.setText(multipleAttributeConfig.getValueField().getValue());
 
         this.window = window;
 
@@ -89,10 +94,11 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
     public void init(XacmlAssertionEnums.XacmlVersionType version) {
         messageSourceComboBox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                if("Default Request".equals(messageSourceComboBox.getSelectedItem())) {
-                    xpathMultiAttr.setMessageSource(XacmlRequestBuilderAssertion.XpathMultiAttr.MessageSource.REQUEST);
-                } else if("Default Response".equals(messageSourceComboBox.getSelectedItem())) {
-                    xpathMultiAttr.setMessageSource(XacmlRequestBuilderAssertion.XpathMultiAttr.MessageSource.RESPONSE);
+                String selectedItem = messageSourceComboBox.getSelectedItem().toString();
+                if(XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST.getLocationName().equals(selectedItem)) {
+                    multipleAttributeConfig.setMessageSource(XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST);
+                } else if(XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE.getLocationName().equals(selectedItem)) {
+                    multipleAttributeConfig.setMessageSource(XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE);
                 }
             }
         });
@@ -105,10 +111,10 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
                 if(dialog.isConfirmed()) {
                     tableModel.addRow(new String[] {dialog.getPrefix(), dialog.getUri()});
-                    if(xpathMultiAttr.getNamespaces() == null) {
-                        xpathMultiAttr.setNamespaces(new HashMap<String, String>(1));
+                    if(multipleAttributeConfig.getNamespaces() == null) {
+                        multipleAttributeConfig.setNamespaces(new HashMap<String, String>(1));
                     }
-                    xpathMultiAttr.getNamespaces().put(dialog.getPrefix(), dialog.getUri());
+                    multipleAttributeConfig.getNamespaces().put(dialog.getPrefix(), dialog.getUri());
                 }
             }
         });
@@ -130,9 +136,9 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                     tableModel.setValueAt(dialog.getUri(), namespacesTable.getSelectedRow(), 1);
 
                     if(!prefix.equals(dialog.getPrefix())) {
-                        xpathMultiAttr.getNamespaces().remove(prefix);
+                        multipleAttributeConfig.getNamespaces().remove(prefix);
                     }
-                    xpathMultiAttr.getNamespaces().put(prefix, dialog.getUri());
+                    multipleAttributeConfig.getNamespaces().put(prefix, dialog.getUri());
                 }
             }
         });
@@ -144,64 +150,64 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
                 }
 
                 String ns = namespacesTable.getValueAt(namespacesTable.getSelectedRow(), 0).toString();
-                xpathMultiAttr.getNamespaces().remove(ns);
+                multipleAttributeConfig.getNamespaces().remove(ns);
                 tableModel.removeRow(namespacesTable.getSelectedRow());
             }
         });
 
         xpathBaseField.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent evt) {
-                xpathMultiAttr.setXpathBase(xpathBaseField.getText().trim());
+                multipleAttributeConfig.setXpathBase(xpathBaseField.getText().trim());
             }
 
             public void insertUpdate(DocumentEvent evt) {
-                xpathMultiAttr.setXpathBase(xpathBaseField.getText().trim());
+                multipleAttributeConfig.setXpathBase(xpathBaseField.getText().trim());
             }
 
             public void removeUpdate(DocumentEvent evt) {
-                xpathMultiAttr.setXpathBase(xpathBaseField.getText().trim());
+                multipleAttributeConfig.setXpathBase(xpathBaseField.getText().trim());
             }
         });
 
         idField.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent evt) {
-                xpathMultiAttr.getIdField().setValue(idField.getText().trim());
+                multipleAttributeConfig.getIdField().setValue(idField.getText().trim());
             }
 
             public void insertUpdate(DocumentEvent evt) {
-                xpathMultiAttr.getIdField().setValue(idField.getText().trim());
+                multipleAttributeConfig.getIdField().setValue(idField.getText().trim());
             }
 
             public void removeUpdate(DocumentEvent evt) {
-                xpathMultiAttr.getIdField().setValue(idField.getText().trim());
+                multipleAttributeConfig.getIdField().setValue(idField.getText().trim());
             }
         });
 
         dataTypeField.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent evt) {
-                xpathMultiAttr.getDataTypeField().setValue(dataTypeField.getText().trim());
+                multipleAttributeConfig.getDataTypeField().setValue(dataTypeField.getText().trim());
             }
 
             public void insertUpdate(DocumentEvent evt) {
-                xpathMultiAttr.getDataTypeField().setValue(dataTypeField.getText().trim());
+                multipleAttributeConfig.getDataTypeField().setValue(dataTypeField.getText().trim());
             }
 
             public void removeUpdate(DocumentEvent evt) {
-                xpathMultiAttr.getDataTypeField().setValue(dataTypeField.getText().trim());
+                multipleAttributeConfig.getDataTypeField().setValue(dataTypeField.getText().trim());
             }
         });
 
         issuerField.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent evt) {
-                xpathMultiAttr.getIssuerField().setValue(issuerField.getText().trim());
+                multipleAttributeConfig.getIssuerField().setValue(issuerField.getText().trim());
             }
 
             public void insertUpdate(DocumentEvent evt) {
-                xpathMultiAttr.getIssuerField().setValue(issuerField.getText().trim());
+                multipleAttributeConfig.getIssuerField().setValue(issuerField.getText().trim());
             }
 
             public void removeUpdate(DocumentEvent evt) {
-                xpathMultiAttr.getIssuerField().setValue(issuerField.getText().trim());
+                multipleAttributeConfig.getIssuerField().setValue(issuerField.getText().trim());
             }
         });
 
@@ -211,27 +217,27 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
         } else {
             issueInstantField.getDocument().addDocumentListener(new DocumentListener() {
                 public void changedUpdate(DocumentEvent evt) {
-                    xpathMultiAttr.getIssueInstantField().setValue(issueInstantField.getText().trim());
+                    multipleAttributeConfig.getIssueInstantField().setValue(issueInstantField.getText().trim());
                 }
 
                 public void insertUpdate(DocumentEvent evt) {
-                    xpathMultiAttr.getIssueInstantField().setValue(issueInstantField.getText().trim());
+                    multipleAttributeConfig.getIssueInstantField().setValue(issueInstantField.getText().trim());
                 }
 
                 public void removeUpdate(DocumentEvent evt) {
-                    xpathMultiAttr.getIssueInstantField().setValue(issueInstantField.getText().trim());
+                    multipleAttributeConfig.getIssueInstantField().setValue(issueInstantField.getText().trim());
                 }
             });
 
             issueInstantOptionsButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {
-                    XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Issue Instant", xpathMultiAttr.getIssueInstantField());
+                    XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Issue Instant", multipleAttributeConfig.getIssueInstantField());
                     Utilities.centerOnScreen(dialog);
                     dialog.setVisible(true);
 
                     if(dialog.isConfirmed()) {
-                        xpathMultiAttr.getIssueInstantField().setIsXpath(dialog.getXpathIsExpression());
-                        xpathMultiAttr.getIssueInstantField().setIsRelative(dialog.getRelativeToXpath());
+                        multipleAttributeConfig.getIssueInstantField().setIsXpath(dialog.getXpathIsExpression());
+                        multipleAttributeConfig.getIssueInstantField().setIsRelative(dialog.getRelativeToXpath());
                     }
                 }
             });
@@ -239,66 +245,66 @@ public class XacmlRequestBuilderXpathMultiAttrPanel extends JPanel implements Xa
 
         valueField.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent evt) {
-                xpathMultiAttr.getValueField().setValue(valueField.getText().trim());
+                multipleAttributeConfig.getValueField().setValue(valueField.getText().trim());
             }
 
             public void insertUpdate(DocumentEvent evt) {
-                xpathMultiAttr.getValueField().setValue(valueField.getText().trim());
+                multipleAttributeConfig.getValueField().setValue(valueField.getText().trim());
             }
 
             public void removeUpdate(DocumentEvent evt) {
-                xpathMultiAttr.getValueField().setValue(valueField.getText().trim());
+                multipleAttributeConfig.getValueField().setValue(valueField.getText().trim());
             }
         });
 
         idOptionsButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "ID", xpathMultiAttr.getIdField());
+                XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "ID", multipleAttributeConfig.getIdField());
                 Utilities.centerOnScreen(dialog);
                 dialog.setVisible(true);
 
                 if(dialog.isConfirmed()) {
-                    xpathMultiAttr.getIdField().setIsXpath(dialog.getXpathIsExpression());
-                    xpathMultiAttr.getIdField().setIsRelative(dialog.getRelativeToXpath());
+                    multipleAttributeConfig.getIdField().setIsXpath(dialog.getXpathIsExpression());
+                    multipleAttributeConfig.getIdField().setIsRelative(dialog.getRelativeToXpath());
                 }
             }
         });
 
         dataTypeOptionsButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Data Type", xpathMultiAttr.getDataTypeField());
+                XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Data Type", multipleAttributeConfig.getDataTypeField());
                 Utilities.centerOnScreen(dialog);
                 dialog.setVisible(true);
 
                 if(dialog.isConfirmed()) {
-                    xpathMultiAttr.getDataTypeField().setIsXpath(dialog.getXpathIsExpression());
-                    xpathMultiAttr.getDataTypeField().setIsRelative(dialog.getRelativeToXpath());
+                    multipleAttributeConfig.getDataTypeField().setIsXpath(dialog.getXpathIsExpression());
+                    multipleAttributeConfig.getDataTypeField().setIsRelative(dialog.getRelativeToXpath());
                 }
             }
         });
 
         issuerOptionsButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Issuer", xpathMultiAttr.getIssuerField());
+                XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Issuer", multipleAttributeConfig.getIssuerField());
                 Utilities.centerOnScreen(dialog);
                 dialog.setVisible(true);
 
                 if(dialog.isConfirmed()) {
-                    xpathMultiAttr.getIssuerField().setIsXpath(dialog.getXpathIsExpression());
-                    xpathMultiAttr.getIssuerField().setIsRelative(dialog.getRelativeToXpath());
+                    multipleAttributeConfig.getIssuerField().setIsXpath(dialog.getXpathIsExpression());
+                    multipleAttributeConfig.getIssuerField().setIsRelative(dialog.getRelativeToXpath());
                 }
             }
         });
 
         valueOptionsButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Value", xpathMultiAttr.getValueField());
+                XacmlRequestBuilderMultiAttrOptionsDialog dialog = new XacmlRequestBuilderMultiAttrOptionsDialog(window, "Value", multipleAttributeConfig.getValueField());
                 Utilities.centerOnScreen(dialog);
                 dialog.setVisible(true);
 
                 if(dialog.isConfirmed()) {
-                    xpathMultiAttr.getValueField().setIsXpath(dialog.getXpathIsExpression());
-                    xpathMultiAttr.getValueField().setIsRelative(dialog.getRelativeToXpath());
+                    multipleAttributeConfig.getValueField().setIsXpath(dialog.getXpathIsExpression());
+                    multipleAttributeConfig.getValueField().setIsRelative(dialog.getRelativeToXpath());
                 }
             }
         });

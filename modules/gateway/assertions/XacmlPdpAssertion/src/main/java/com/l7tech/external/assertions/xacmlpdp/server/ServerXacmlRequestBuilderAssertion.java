@@ -36,7 +36,6 @@ import java.io.IOException;
  * User: njordan
  * Date: 31-Mar-2009
  * Time: 9:05:35 PM
- * To change this template use File | Settings | File Templates.
  */
 public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<XacmlRequestBuilderAssertion> {
     public ServerXacmlRequestBuilderAssertion(XacmlRequestBuilderAssertion ea, ApplicationContext applicationContext) {
@@ -96,10 +95,11 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             root.appendChild(subjectElement);
 
             if(subject.getSubjectCategory().length() > 0) {
-                subjectElement.setAttribute("SubjectCategory", ExpandVariables.process(subject.getSubjectCategory(), vars, auditor, true));
+                subjectElement.setAttribute("SubjectCategory",
+                        ExpandVariables.process(subject.getSubjectCategory(), vars, auditor, true));
             }
 
-            addAttributes(doc, subjectElement, subject.getAttributes(), vars, context);
+            addAttributes(doc, subjectElement, subject.getAttributes(), vars, context, assertion.getXacmlVersion());
         }
 
         for(XacmlRequestBuilderAssertion.Resource resource : assertion.getResources()) {
@@ -107,7 +107,8 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             root.appendChild(resourceElement);
 
             if(resource.getResourceContent() != null) {
-                Element resourceContentElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "ResourceContent");
+                Element resourceContentElement = doc.createElementNS(
+                        assertion.getXacmlVersion().getNamespace(), "ResourceContent");
                 resourceElement.appendChild(resourceContentElement);
 
                 for(Map.Entry<String, String> entry : resource.getResourceContent().getAttributes().entrySet()) {
@@ -117,25 +118,34 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 resourceContentElement.appendChild(doc.createTextNode(resource.getResourceContent().getContent()));
             }
 
-            addAttributes(doc, resourceElement, resource.getAttributes(), vars, context);
+            addAttributes(doc, resourceElement, resource.getAttributes(), vars, context, assertion.getXacmlVersion());
         }
 
         Element actionElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Action");
         root.appendChild(actionElement);
-        addAttributes(doc, actionElement, assertion.getAction().getAttributes(), vars, context);
+        addAttributes(doc,
+                actionElement,
+                assertion.getAction().getAttributes(),
+                vars,
+                context,
+                assertion.getXacmlVersion());
 
         Element environmentElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Environment");
         root.appendChild(environmentElement);
 
         if(assertion.getEnvironment() != null) {
-            addAttributes(doc, environmentElement, assertion.getEnvironment().getAttributes(), vars, context);
+            addAttributes(doc,
+                    environmentElement,
+                    assertion.getEnvironment().getAttributes(),
+                    vars, context,
+                    assertion.getXacmlVersion());
         }
 
         switch(assertion.getOutputMessageDestination()) {
-            case REQUEST_MESSAGE:
+            case DEFAULT_REQUEST:
                 context.getRequest().initialize(doc);
                 break;
-            case RESPONSE_MESSAGE:
+            case DEFAULT_RESPONSE:
                 context.getResponse().initialize(doc);
                 break;
             case CONTEXT_VARIABLE:
@@ -152,7 +162,8 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
     private void addAttribute(Document doc,
                               Element parent,
                               XacmlRequestBuilderAssertion.Attribute attribute,
-                              Map<String, Object> vars)
+                              Map<String, Object> vars,
+                              XacmlAssertionEnums.XacmlVersionType xacmlVersion)
     {
         Element attributeElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Attribute");
         attributeElement.setAttribute("AttributeId", ExpandVariables.process(attribute.getId(), vars, auditor, true));
@@ -169,17 +180,19 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             }
         }
 
-        for(XacmlRequestBuilderAssertion.Value value : attribute.getValues()) {
-            HashSet<String> multiValuedVars = valueContainsMultiValuedVars(value, vars);
-            if(value.getRepeat() && multiValuedVars.size() > 0) {
+        for(XacmlRequestBuilderAssertion.AttributeValue attributeValue : attribute.getValues()) {
+            HashSet<String> multiValuedVars = valueContainsMultiValuedVars(attributeValue, vars);
+            if(attributeValue.isCanElementHaveSameTypeSibilings()
+                    && multiValuedVars.size() > 0
+                    && xacmlVersion == XacmlAssertionEnums.XacmlVersionType.V2_0) {
                 HashMap<String, String> variableMap = new HashMap<String, String>();
                 int i = 1;
                 for(String s : multiValuedVars) {
                     variableMap.put(s, "ssg.internal.xacml.request.var" + i++);
                 }
 
-                HashMap<String, String> updatedAttributes = new HashMap<String, String>(value.getAttributes().size());
-                for(Map.Entry<String, String> entry : value.getAttributes().entrySet()) {
+                HashMap<String, String> updatedAttributes = new HashMap<String, String>(attributeValue.getAttributes().size());
+                for(Map.Entry<String, String> entry : attributeValue.getAttributes().entrySet()) {
                     String k = entry.getKey();
                     String v = entry.getValue();
 
@@ -191,7 +204,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     updatedAttributes.put(k, v);
                 }
 
-                String content = value.getContent();
+                String content = attributeValue.getContent();
                 for(Map.Entry<String, String> entry : variableMap.entrySet()) {
                     content = content.replaceAll("\\Q${" + entry.getKey() + "}\\E", "\\$\\{" + entry.getValue() + "\\}");
                 }
@@ -251,70 +264,71 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 Element valueElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "AttributeValue");
                 attributeElement.appendChild(valueElement);
 
-                for(Map.Entry<String, String> entry : value.getAttributes().entrySet()) {
+                for(Map.Entry<String, String> entry : attributeValue.getAttributes().entrySet()) {
                     valueElement.setAttribute(entry.getKey(), entry.getValue());
                 }
 
-                valueElement.appendChild(doc.createTextNode(ExpandVariables.process(value.getContent(), vars, auditor, true)));
+                valueElement.appendChild(doc.createTextNode(ExpandVariables.process(attributeValue.getContent(), vars, auditor, true)));
             }
         }
     }
 
     private void addAttributes(Document doc,
                                Element parent,
-                               List<XacmlRequestBuilderAssertion.AttributeType> attributeTypes,
+                               List<XacmlRequestBuilderAssertion.AttributeTreeNodeTag> attributeTreeNodeTags,
                                Map<String, Object> vars,
-                               PolicyEnforcementContext context)
+                               PolicyEnforcementContext context,
+                               XacmlAssertionEnums.XacmlVersionType xacmlVersion)
     {
-        for(XacmlRequestBuilderAssertion.AttributeType attributeType : attributeTypes) {
-            if(attributeType instanceof XacmlRequestBuilderAssertion.Attribute) {
-                XacmlRequestBuilderAssertion.Attribute attribute = (XacmlRequestBuilderAssertion.Attribute)attributeType;
-                addAttribute(doc, parent, attribute, vars);
-            } else if(attributeType instanceof XacmlRequestBuilderAssertion.XpathMultiAttr) {
-                addXpathAttributes(doc, parent, (XacmlRequestBuilderAssertion.XpathMultiAttr)attributeType, vars, context);
+        for(XacmlRequestBuilderAssertion.AttributeTreeNodeTag attributeTreeNodeTag : attributeTreeNodeTags) {
+            if(attributeTreeNodeTag instanceof XacmlRequestBuilderAssertion.Attribute) {
+                XacmlRequestBuilderAssertion.Attribute attribute = (XacmlRequestBuilderAssertion.Attribute) attributeTreeNodeTag;
+                addAttribute(doc, parent, attribute, vars, xacmlVersion);
+            } else if(attributeTreeNodeTag instanceof XacmlRequestBuilderAssertion.MultipleAttributeConfig) {
+                addXpathAttributes(doc, parent, (XacmlRequestBuilderAssertion.MultipleAttributeConfig) attributeTreeNodeTag, vars, context);
             }
         }
     }
 
-    private void addXpathAttributes(Document doc, Element parent, XacmlRequestBuilderAssertion.XpathMultiAttr xpathMultiAttr,
+    private void addXpathAttributes(Document doc, Element parent, XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig,
                                     Map<String, Object> vars, PolicyEnforcementContext context)
     {
-        if(!xpathMultiAttr.getIdField().getIsXpath() && !xpathMultiAttr.getDataTypeField().getIsXpath() &&
-                !xpathMultiAttr.getIssuerField().getIsXpath() && !xpathMultiAttr.getIssueInstantField().getIsXpath() &&
-                !xpathMultiAttr.getValueField().getIsXpath())
+        if(!multipleAttributeConfig.getIdField().getIsXpath() && !multipleAttributeConfig.getDataTypeField().getIsXpath() &&
+                !multipleAttributeConfig.getIssuerField().getIsXpath() && !multipleAttributeConfig.getIssueInstantField().getIsXpath() &&
+                !multipleAttributeConfig.getValueField().getIsXpath())
         {
             Element attributeElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Attribute");
             parent.appendChild(attributeElement);
-            attributeElement.setAttribute("AttributeID", ExpandVariables.process(xpathMultiAttr.getIdField().getValue(), vars, auditor, true));
-            attributeElement.setAttribute("DataType", ExpandVariables.process(xpathMultiAttr.getDataTypeField().getValue(), vars, auditor, true));
-            if(xpathMultiAttr.getIssuerField().getValue() != null && xpathMultiAttr.getIssuerField().getValue().length() > 0) {
-                attributeElement.setAttribute("Issuer", ExpandVariables.process(xpathMultiAttr.getIssuerField().getValue(), vars, auditor, true));
+            attributeElement.setAttribute("AttributeID", ExpandVariables.process(multipleAttributeConfig.getIdField().getValue(), vars, auditor, true));
+            attributeElement.setAttribute("DataType", ExpandVariables.process(multipleAttributeConfig.getDataTypeField().getValue(), vars, auditor, true));
+            if(multipleAttributeConfig.getIssuerField().getValue() != null && multipleAttributeConfig.getIssuerField().getValue().length() > 0) {
+                attributeElement.setAttribute("Issuer", ExpandVariables.process(multipleAttributeConfig.getIssuerField().getValue(), vars, auditor, true));
             }
 
             if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V1_0) {
-                if(xpathMultiAttr.getIssueInstantField().getValue() != null && xpathMultiAttr.getIssueInstantField().getValue().length() > 0) {
-                    attributeElement.setAttribute("IssueInstant", ExpandVariables.process(xpathMultiAttr.getIssueInstantField().getValue(), vars, auditor, true));
+                if(multipleAttributeConfig.getIssueInstantField().getValue() != null && multipleAttributeConfig.getIssueInstantField().getValue().length() > 0) {
+                    attributeElement.setAttribute("IssueInstant", ExpandVariables.process(multipleAttributeConfig.getIssueInstantField().getValue(), vars, auditor, true));
                 }
             }
 
             Element valueElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "AttributeValue");
             attributeElement.appendChild(valueElement);
-            valueElement.appendChild(doc.createTextNode(ExpandVariables.process(xpathMultiAttr.getValueField().getValue(), vars, auditor, true)));
+            valueElement.appendChild(doc.createTextNode(ExpandVariables.process(multipleAttributeConfig.getValueField().getValue(), vars, auditor, true)));
 
             return;
         }
 
         Document inputDoc;
         try {
-            switch(xpathMultiAttr.getMessageSource()) {
-                case REQUEST:
+            switch(multipleAttributeConfig.getMessageSource()) {
+                case DEFAULT_REQUEST:
                     inputDoc = context.getRequest().getXmlKnob().getDocumentReadOnly();
                     break;
-                case RESPONSE:
+                case DEFAULT_RESPONSE:
                     inputDoc = context.getResponse().getXmlKnob().getDocumentReadOnly();
                     break;
                 case CONTEXT_VARIABLE:
-                    inputDoc = ((Message)context.getVariable(xpathMultiAttr.getMessageSourceContextVar())).getXmlKnob().getDocumentReadOnly();
+                    inputDoc = ((Message)context.getVariable(multipleAttributeConfig.getMessageSourceContextVar())).getXmlKnob().getDocumentReadOnly();
                     break;
                 default:
                     throw new IllegalStateException("Unsupported message source found");//only happen if enum changes
@@ -327,14 +341,14 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             return;
         }
 
-        String idValue = getXpathFieldValue(xpathMultiAttr.getIdField(), vars, inputDoc, xpathMultiAttr.getNamespaces());
-        String dataTypeValue = getXpathFieldValue(xpathMultiAttr.getDataTypeField(), vars, inputDoc, xpathMultiAttr.getNamespaces());
-        String issuerValue = getXpathFieldValue(xpathMultiAttr.getIssuerField(), vars, inputDoc, xpathMultiAttr.getNamespaces());
+        String idValue = getXpathFieldValue(multipleAttributeConfig.getIdField(), vars, inputDoc, multipleAttributeConfig.getNamespaces());
+        String dataTypeValue = getXpathFieldValue(multipleAttributeConfig.getDataTypeField(), vars, inputDoc, multipleAttributeConfig.getNamespaces());
+        String issuerValue = getXpathFieldValue(multipleAttributeConfig.getIssuerField(), vars, inputDoc, multipleAttributeConfig.getNamespaces());
         String issueInstantValue = "";
         if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V1_0) {
-            getXpathFieldValue(xpathMultiAttr.getIssueInstantField(), vars, inputDoc, xpathMultiAttr.getNamespaces());
+            getXpathFieldValue(multipleAttributeConfig.getIssueInstantField(), vars, inputDoc, multipleAttributeConfig.getNamespaces());
         }
-        String valueValue = getXpathFieldValue(xpathMultiAttr.getValueField(), vars, inputDoc, xpathMultiAttr.getNamespaces());
+        String valueValue = getXpathFieldValue(multipleAttributeConfig.getValueField(), vars, inputDoc, multipleAttributeConfig.getNamespaces());
 
         List<String> idValues = new ArrayList<String>();
         List<String> dataTypeValues = new ArrayList<String>();
@@ -348,7 +362,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 ElementCursor cursor = new DomElementCursor(inputDoc);
                 cursor.moveToRoot();
 
-                XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(xpathMultiAttr.getXpathBase(), xpathMultiAttr.getNamespaces()).compile(),null, true);
+                XpathResult xpathResult = cursor.getXpathResult(new XpathExpression(multipleAttributeConfig.getXpathBase(), multipleAttributeConfig.getNamespaces()).compile(),null, true);
                 if(xpathResult.getType() != XpathResult.TYPE_NODESET) {
                     return;
                 }
@@ -357,20 +371,20 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     ElementCursor resultCursor = it.nextElementAsCursor();
 
                     if(idValue == null) {
-                        idValues.add(addXpathMatchValueForField(resultCursor, xpathMultiAttr.getIdField().getValue(), xpathMultiAttr.getNamespaces()));
+                        idValues.add(addXpathMatchValueForField(resultCursor, multipleAttributeConfig.getIdField().getValue(), multipleAttributeConfig.getNamespaces()));
                     }
                     if(dataTypeValue == null) {
-                        dataTypeValues.add(addXpathMatchValueForField(resultCursor, xpathMultiAttr.getDataTypeField().getValue(), xpathMultiAttr.getNamespaces()));
+                        dataTypeValues.add(addXpathMatchValueForField(resultCursor, multipleAttributeConfig.getDataTypeField().getValue(), multipleAttributeConfig.getNamespaces()));
                     }
                     if(issuerValue == null) {
-                        issuerValues.add(addXpathMatchValueForField(resultCursor, xpathMultiAttr.getIssuerField().getValue(), xpathMultiAttr.getNamespaces()));
+                        issuerValues.add(addXpathMatchValueForField(resultCursor, multipleAttributeConfig.getIssuerField().getValue(), multipleAttributeConfig.getNamespaces()));
                     }
                     if(issueInstantValue == null) {
-                        issueInstantValues.add(addXpathMatchValueForField(resultCursor, xpathMultiAttr.getIssueInstantField().getValue(), xpathMultiAttr.getNamespaces()));
+                        issueInstantValues.add(addXpathMatchValueForField(resultCursor, multipleAttributeConfig.getIssueInstantField().getValue(), multipleAttributeConfig.getNamespaces()));
                     }
 
                     if(valueValue == null) {
-                        valueValues.add(addXpathMatchValuesForField(resultCursor, xpathMultiAttr.getValueField().getValue(), xpathMultiAttr.getNamespaces()));
+                        valueValues.add(addXpathMatchValuesForField(resultCursor, multipleAttributeConfig.getValueField().getValue(), multipleAttributeConfig.getNamespaces()));
                     }
                 }
             } catch(XPathExpressionException xee) {
@@ -461,7 +475,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         }
     }
 
-    private String getXpathFieldValue(XacmlRequestBuilderAssertion.XpathMultiAttrField field,
+    private String getXpathFieldValue(XacmlRequestBuilderAssertion.MultipleAttributeConfigField field,
                                       Map<String, Object> vars,
                                       Document inputDoc,
                                       Map<String, String> namespaces)
@@ -556,10 +570,10 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         return values;
     }
 
-    private HashSet<String> valueContainsMultiValuedVars(XacmlRequestBuilderAssertion.Value value, Map<String, Object> vars) {
+    private HashSet<String> valueContainsMultiValuedVars(XacmlRequestBuilderAssertion.AttributeValue attributeValue, Map<String, Object> vars) {
         HashSet<String> multiValuedVars = new HashSet<String>();
 
-        for(Map.Entry<String, String> entry : value.getAttributes().entrySet()) {
+        for(Map.Entry<String, String> entry : attributeValue.getAttributes().entrySet()) {
             String[] v = Syntax.getReferencedNames(entry.getKey());
             for(String s : v) {
                 if(vars.containsKey(s) && (vars.get(s) instanceof Object[] || vars.get(s) instanceof List)) {
@@ -575,7 +589,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
             }
         }
 
-        String[] v = Syntax.getReferencedNames(value.getContent());
+        String[] v = Syntax.getReferencedNames(attributeValue.getContent());
         for(String s : v) {
             if(vars.containsKey(s) && (vars.get(s) instanceof Object[] || vars.get(s) instanceof List)) {
                 multiValuedVars.add(s);

@@ -42,6 +42,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
 
     private XacmlRequestBuilderNodePanel lastNodePanel = null;
     private XacmlRequestBuilderNodePanel lastErrorNodePanel = null;
+    private static final String XACML_REQUEST_ELEMENT = "Request";
 
     public XacmlRequestBuilderDialog(Window owner, XacmlRequestBuilderAssertion a) {
         super(owner, "XACML Request Builder");
@@ -77,36 +78,40 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
 
                 nodeSettingsPanel.removeAll();
                 // The request node does not have any properties
-                if(node.getUserObject() instanceof XacmlRequestBuilderAssertion.RequestTag) {
-                    XacmlRequestBuilderAssertion.RequestTag item = (XacmlRequestBuilderAssertion.RequestTag)node.getUserObject();
+                Object item = node.getUserObject();
 
-                    if(item instanceof XacmlRequestBuilderAssertion.Subject) {
-                        XacmlRequestBuilderSubjectPanel panel = new XacmlRequestBuilderSubjectPanel((XacmlRequestBuilderAssertion.Subject)item);
-                        lastNodePanel = panel;
-                        nodeSettingsPanel.add(panel.getPanel());
-                    } else if(item instanceof XacmlRequestBuilderAssertion.Attribute) {
-                        XacmlRequestBuilderAttributePanel panel = new XacmlRequestBuilderAttributePanel((XacmlRequestBuilderAssertion.Attribute)item, assertion.getXacmlVersion());
-                        lastNodePanel = panel;
-                        nodeSettingsPanel.add(panel.getPanel());
-                    } else if(item instanceof XacmlRequestBuilderAssertion.XmlTag) {
-                        XacmlRequestBuilderXmlContentPanel panel = new XacmlRequestBuilderXmlContentPanel(
-                                (XacmlRequestBuilderAssertion.XmlTag)item,
-                                item instanceof XacmlRequestBuilderAssertion.Value && assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V2_0,
-                                XacmlRequestBuilderDialog.this);
-                        lastNodePanel = panel;
-                        nodeSettingsPanel.add(panel.getPanel());
-                    } else if(item instanceof XacmlRequestBuilderAssertion.XpathMultiAttr) {
-                        XacmlRequestBuilderXpathMultiAttrPanel panel = new XacmlRequestBuilderXpathMultiAttrPanel((XacmlRequestBuilderAssertion.XpathMultiAttr)item, assertion.getXacmlVersion(), XacmlRequestBuilderDialog.this);
-                        lastNodePanel = panel;
-                        nodeSettingsPanel.add(panel.getPanel());
-                    }
-                } else if(node.getUserObject() instanceof String && "Request".equals(node.getUserObject())) {
+                if(item instanceof XacmlRequestBuilderAssertion.Subject) {
+                    XacmlRequestBuilderSubjectPanel panel = new XacmlRequestBuilderSubjectPanel((XacmlRequestBuilderAssertion.Subject)item);
+                    lastNodePanel = panel;
+                    nodeSettingsPanel.add(panel.getPanel());
+                } else if(item instanceof XacmlRequestBuilderAssertion.Attribute) {
+                    XacmlRequestBuilderAttributePanel panel = new XacmlRequestBuilderAttributePanel((XacmlRequestBuilderAssertion.Attribute)item, assertion.getXacmlVersion());
+                    lastNodePanel = panel;
+                    nodeSettingsPanel.add(panel.getPanel());
+                } else if(item instanceof XacmlRequestBuilderAssertion.GenericXmlElementHolder) {
+                    //this currently covers both AttributeValue and ResourceContent
+                    XacmlRequestBuilderXmlContentPanel panel = new XacmlRequestBuilderXmlContentPanel(
+                            (XacmlRequestBuilderAssertion.GenericXmlElementHolder)item,
+                            assertion.getXacmlVersion(),
+                            XacmlRequestBuilderDialog.this);
+                    lastNodePanel = panel;
+                    nodeSettingsPanel.add(panel.getPanel());
+                } else if(item instanceof XacmlRequestBuilderAssertion.MultipleAttributeConfig) {
+                    XacmlRequestBuilderXpathMultiAttrPanel panel =
+                            new XacmlRequestBuilderXpathMultiAttrPanel(
+                                    (XacmlRequestBuilderAssertion.MultipleAttributeConfig)item,
+                                    assertion.getXacmlVersion(),
+                                    XacmlRequestBuilderDialog.this);
+                    lastNodePanel = panel;
+                    nodeSettingsPanel.add(panel.getPanel());
+                }else if(item instanceof String && XACML_REQUEST_ELEMENT.equals(node.getUserObject())) {
                     XacmlRequestBuilderRequestPanel panel = new XacmlRequestBuilderRequestPanel(assertion);
                     lastNodePanel = panel;
                     nodeSettingsPanel.add(panel.getPanel());
                 } else {
                     lastNodePanel = null;
                 }
+                //todo [Donal] what about ResourceContent?
                 nodeSettingsPanel.repaint();
                 
                 XacmlRequestBuilderDialog.this.pack();
@@ -197,10 +202,10 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         if(node != null) {
             popupMenu.removeAll();
 
-            if(node.getUserObject() instanceof String && "Request".equals(node.getUserObject())) {
+            if(node.getUserObject() instanceof String && XACML_REQUEST_ELEMENT.equals(node.getUserObject())) {
                 addRequestMenuItems(node);
             } else {
-                XacmlRequestBuilderAssertion.RequestTag nodeSettings = (XacmlRequestBuilderAssertion.RequestTag)node.getUserObject();
+                Object nodeSettings = node.getUserObject();
                 if(nodeSettings instanceof XacmlRequestBuilderAssertion.Subject || nodeSettings instanceof XacmlRequestBuilderAssertion.Action)
                 {
                     addAttributeHolderMenuItems(node);
@@ -210,9 +215,9 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                     addResourceMenuItems(node);
                 } else if(nodeSettings instanceof XacmlRequestBuilderAssertion.Attribute) {
                     addAttributeMenuItems(node);
-                } else if(nodeSettings instanceof XacmlRequestBuilderAssertion.Value) {
+                } else if(nodeSettings instanceof XacmlRequestBuilderAssertion.AttributeValue) {
                     addValueMenuItems(node);
-                } else if(nodeSettings instanceof XacmlRequestBuilderAssertion.XpathMultiAttr) {
+                } else if(nodeSettings instanceof XacmlRequestBuilderAssertion.MultipleAttributeConfig) {
                     addXpathMultiAttrMenuItems(node);
                 } else if(nodeSettings instanceof XacmlRequestBuilderAssertion.ResourceContent) {
                     addResourceContentMenuItems(node);
@@ -232,7 +237,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                 int index = 0;
                 for(int i = 0;i < node.getChildCount();i++) {
                     DefaultMutableTreeNode child = (DefaultMutableTreeNode)node.getChildAt(i);
-                    XacmlRequestBuilderAssertion.AttributeHolderTag nodeObj = (XacmlRequestBuilderAssertion.AttributeHolderTag)child.getUserObject();
+                    XacmlRequestBuilderAssertion.RequestChildElement nodeObj = (XacmlRequestBuilderAssertion.RequestChildElement)child.getUserObject();
 
                     if(nodeObj instanceof XacmlRequestBuilderAssertion.Resource || nodeObj instanceof XacmlRequestBuilderAssertion.Action) {
                         index = i;
@@ -295,7 +300,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
                 for(int i = 0;i < node.getChildCount();i++) {
                     DefaultMutableTreeNode child = (DefaultMutableTreeNode)node.getChildAt(i);
 
-                    if(child.getUserObject() instanceof XacmlRequestBuilderAssertion.XpathMultiAttr) {
+                    if(child.getUserObject() instanceof XacmlRequestBuilderAssertion.MultipleAttributeConfig) {
                         index = i;
                         break;
                     }
@@ -309,7 +314,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         item = new JMenuItem("Add XPath Multiple Attributes");
         item.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                treeModel.insertNodeInto(buildXpathMultiAttrNode(new XacmlRequestBuilderAssertion.XpathMultiAttr()), node, node.getChildCount());
+                treeModel.insertNodeInto(buildXpathMultiAttrNode(new XacmlRequestBuilderAssertion.MultipleAttributeConfig()), node, node.getChildCount());
             }
         });
         popupMenu.add(item);
@@ -391,7 +396,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         JMenuItem item = new JMenuItem("Add Attribute Value");
         item.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                treeModel.insertNodeInto(buildValueNode(new XacmlRequestBuilderAssertion.Value()), node, node.getChildCount());
+                treeModel.insertNodeInto(buildValueNode(new XacmlRequestBuilderAssertion.AttributeValue()), node, node.getChildCount());
             }
         });
         popupMenu.add(item);
@@ -437,7 +442,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     }
 
     private TreeNode buildInitialTree() {
-        DefaultMutableTreeNode root = new DefaultMutableTreeNode("Request", true);
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode(XACML_REQUEST_ELEMENT, true);
         root.add(buildAttributeHolderNode(new XacmlRequestBuilderAssertion.Subject()));
         root.add(buildResourceNode(new XacmlRequestBuilderAssertion.Resource()));
         root.add(buildAttributeHolderNode(new XacmlRequestBuilderAssertion.Action()));
@@ -446,34 +451,34 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         return root;
     }
 
-    private DefaultMutableTreeNode buildValueNode(XacmlRequestBuilderAssertion.Value value) {
-        return new DefaultMutableTreeNode(value, false);
+    private DefaultMutableTreeNode buildValueNode(XacmlRequestBuilderAssertion.AttributeValue attributeValue) {
+        return new DefaultMutableTreeNode(attributeValue, false);
     }
 
     private DefaultMutableTreeNode buildAttributeNode(XacmlRequestBuilderAssertion.Attribute attribute) {
         DefaultMutableTreeNode attributeNode = new DefaultMutableTreeNode(attribute, true);
-        for(XacmlRequestBuilderAssertion.Value value : attribute.getValues()) {
-            attributeNode.add(buildValueNode(value));
+        for(XacmlRequestBuilderAssertion.AttributeValue attributeValue : attribute.getValues()) {
+            attributeNode.add(buildValueNode(attributeValue));
         }
 
         return attributeNode;
     }
 
-    private DefaultMutableTreeNode buildXpathMultiAttrNode(XacmlRequestBuilderAssertion.XpathMultiAttr xpathMultiAttr) {
-        return new DefaultMutableTreeNode(xpathMultiAttr, false);
+    private DefaultMutableTreeNode buildXpathMultiAttrNode(XacmlRequestBuilderAssertion.MultipleAttributeConfig multipleAttributeConfig) {
+        return new DefaultMutableTreeNode(multipleAttributeConfig, false);
     }
 
     private DefaultMutableTreeNode buildResourceContentNode(XacmlRequestBuilderAssertion.ResourceContent resourceContent) {
         return new DefaultMutableTreeNode(resourceContent, false);
     }
 
-    private DefaultMutableTreeNode buildAttributeHolderNode(XacmlRequestBuilderAssertion.AttributeHolderTag attributeHolderTag) {
-        DefaultMutableTreeNode node = new DefaultMutableTreeNode(attributeHolderTag, true);
-        for(XacmlRequestBuilderAssertion.AttributeType attribute : attributeHolderTag.getAttributes()) {
-            if(attribute instanceof XacmlRequestBuilderAssertion.Attribute) {
-                node.add(buildAttributeNode((XacmlRequestBuilderAssertion.Attribute)attribute));
-            } else if(attribute instanceof XacmlRequestBuilderAssertion.XpathMultiAttr) {
-                node.add(buildXpathMultiAttrNode((XacmlRequestBuilderAssertion.XpathMultiAttr)attribute));
+    private DefaultMutableTreeNode buildAttributeHolderNode(XacmlRequestBuilderAssertion.RequestChildElement requestChildElement) {
+        DefaultMutableTreeNode node = new DefaultMutableTreeNode(requestChildElement, true);
+        for(XacmlRequestBuilderAssertion.AttributeTreeNodeTag attributeTreeNode : requestChildElement.getAttributes()) {
+            if(attributeTreeNode instanceof XacmlRequestBuilderAssertion.Attribute) {
+                node.add(buildAttributeNode((XacmlRequestBuilderAssertion.Attribute) attributeTreeNode));
+            } else if(attributeTreeNode instanceof XacmlRequestBuilderAssertion.MultipleAttributeConfig) {
+                node.add(buildXpathMultiAttrNode((XacmlRequestBuilderAssertion.MultipleAttributeConfig) attributeTreeNode));
             }
         }
 
@@ -496,7 +501,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
     public void setData(XacmlRequestBuilderAssertion assertion) {
         this.assertion = (XacmlRequestBuilderAssertion)assertion.clone();
 
-        DefaultMutableTreeNode root = new DefaultMutableTreeNode("Request", true);
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode(XACML_REQUEST_ELEMENT, true);
         for(XacmlRequestBuilderAssertion.Subject subject : this.assertion.getSubjects()) {
             root.add(buildAttributeHolderNode(subject));
         }
@@ -521,27 +526,27 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         attribute.getValues().clear();
         for(int i = 0;i < node.getChildCount();i++) {
             DefaultMutableTreeNode child = (DefaultMutableTreeNode)node.getChildAt(i);
-            if(child.getUserObject() instanceof XacmlRequestBuilderAssertion.Value) {
-                attribute.getValues().add((XacmlRequestBuilderAssertion.Value)child.getUserObject());
+            if(child.getUserObject() instanceof XacmlRequestBuilderAssertion.AttributeValue) {
+                attribute.getValues().add((XacmlRequestBuilderAssertion.AttributeValue)child.getUserObject());
             }
         }
 
         return attribute;
     }
 
-    private XacmlRequestBuilderAssertion.AttributeHolderTag extractAttributeHolder(DefaultMutableTreeNode node) {
-        if(!(node.getUserObject() instanceof XacmlRequestBuilderAssertion.AttributeHolderTag)) {
+    private XacmlRequestBuilderAssertion.RequestChildElement extractAttributeHolder(DefaultMutableTreeNode node) {
+        if(!(node.getUserObject() instanceof XacmlRequestBuilderAssertion.RequestChildElement)) {
             return null;
         }
 
-        XacmlRequestBuilderAssertion.AttributeHolderTag attributeHolder = (XacmlRequestBuilderAssertion.AttributeHolderTag)node.getUserObject();
+        XacmlRequestBuilderAssertion.RequestChildElement attributeHolder = (XacmlRequestBuilderAssertion.RequestChildElement)node.getUserObject();
         attributeHolder.getAttributes().clear();
         for(int i = 0;i < node.getChildCount();i++) {
             DefaultMutableTreeNode child = (DefaultMutableTreeNode)node.getChildAt(i);
             if(child.getUserObject() instanceof XacmlRequestBuilderAssertion.Attribute) {
                 attributeHolder.getAttributes().add(extractAttribute(child));
-            } else if(child.getUserObject() instanceof XacmlRequestBuilderAssertion.XpathMultiAttr) {
-                attributeHolder.getAttributes().add((XacmlRequestBuilderAssertion.XpathMultiAttr)child.getUserObject());
+            } else if(child.getUserObject() instanceof XacmlRequestBuilderAssertion.MultipleAttributeConfig) {
+                attributeHolder.getAttributes().add((XacmlRequestBuilderAssertion.MultipleAttributeConfig)child.getUserObject());
             }
         }
 
@@ -573,7 +578,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         assertion.setXacmlVersion(this.assertion.getXacmlVersion());
         assertion.setSoapEncapsulation(this.assertion.getSoapEncapsulation());
         assertion.setOutputMessageDestination(this.assertion.getOutputMessageDestination());
-        if(this.assertion.getOutputMessageDestination() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
+        if(this.assertion.getOutputMessageDestination() == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
             assertion.setOutputMessageVariableName(this.assertion.getOutputMessageVariableName());
         } else {
             assertion.setOutputMessageVariableName(null);
@@ -661,7 +666,7 @@ public class XacmlRequestBuilderDialog extends AssertionPropertiesEditorSupport<
         int valueCount = 0;
         for(int i = 0;i < attributeNode.getChildCount();i++) {
             DefaultMutableTreeNode child = (DefaultMutableTreeNode)attributeNode.getChildAt(i);
-            if(child.getUserObject() instanceof XacmlRequestBuilderAssertion.Value) {
+            if(child.getUserObject() instanceof XacmlRequestBuilderAssertion.AttributeValue) {
                 valueCount++;
             }
         }

@@ -122,9 +122,9 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
 
             Element rootElement;
             try {
-                if(assertion.getInputMessageSource() == XacmlAssertionEnums.MessageTarget.RESPONSE_MESSAGE) {
+                if(assertion.getInputMessageSource() == XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE) {
                     rootElement = context.getResponse().getXmlKnob().getDocumentReadOnly().getDocumentElement();
-                } else if(assertion.getInputMessageSource() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
+                } else if(assertion.getInputMessageSource() == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
                     try {
                         rootElement = ((Message)context.getVariable(assertion.getInputMessageVariableName())).getXmlKnob().getDocumentReadOnly().getDocumentElement();
                     } catch(NoSuchVariableException nsve) {
@@ -213,7 +213,7 @@ public class ServerXacmlPdpAssertion extends AbstractServerAssertion<XacmlPdpAss
             ByteArrayInputStream bais = new ByteArrayInputStream(messageBytes);
 
             ContentTypeHeader cth = ContentTypeHeader.parseValue("text/xml; charset=UTF-8");
-            if(assertion.getOutputMessageTarget() == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
+            if(assertion.getOutputMessageTarget() == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
                 Message m = new Message(stashManagerFactory.createStashManager(),
                         cth,
                         bais);

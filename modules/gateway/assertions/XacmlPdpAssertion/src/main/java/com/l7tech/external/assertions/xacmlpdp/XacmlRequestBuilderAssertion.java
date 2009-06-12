@@ -14,35 +14,37 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.DataType;
 
 import java.util.*;
-import java.io.Serializable;
 
 /**
  * Copyright (C) 2009, Layer 7 Technologies Inc.
  * User: njordan
  * Date: 31-Mar-2009
  * Time: 7:42:45 PM
- * To change this template use File | Settings | File Templates.
  */
-public class XacmlRequestBuilderAssertion extends Assertion implements UsesVariables, SetsVariables, Cloneable {
+public class XacmlRequestBuilderAssertion extends Assertion implements UsesVariables, SetsVariables{
+    /**
+     * A GenericXmlElement is off the form <elementname attribute1="avlaue"...>Content, might just be a string, or
+     * an xml fragment</elementname>
+     *
+     * Every instance of this class representing an xml Element can have a Map<String, String> of attributes and a
+     * String content, which may be xml
+     */
+    public static class GenericXmlElement{
+        private Map<String, String> attributes;
+        private String content="";//I might be xml
 
-    public static class XmlTag {
-        private Map<String, String> attributes = new HashMap<String, String>();
-        private String content = "";
-        private boolean repeat = false;
-
-        public XmlTag() {
-        }
-
-        public XmlTag(Map<String, String> attributes, String content) {
-            this.attributes = attributes;
-            this.content = content;
+        public GenericXmlElement() {
         }
 
         public Map<String, String> getAttributes() {
+            if(attributes == null){
+                 attributes = new HashMap<String, String>();
+            }
             return attributes;
         }
 
         public void setAttributes(Map<String, String> attributes) {
+            if(attributes == null) throw new NullPointerException("attributes cannot be null");
             this.attributes = attributes;
         }
 
@@ -51,60 +53,115 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         }
 
         public void setContent(String content) {
+            if(content == null) throw new NullPointerException("content cannot be null");
             this.content = content;
         }
+    }
 
-        public boolean getRepeat() {
-            return repeat;
+    /**
+     * XmlElementCanRepeatTag is implemented by any class which uses the generic AttributeValue dialog.
+     * This dialog collects attributes for a single xml element, it's attributes and content, but can also allow
+     * multi valued context variables to be entered, so that it can dynamically generate <AttributeValue>
+     * elements. A class which is the model for this dialog can implement this interface to let the dialog know
+     * it has this capability
+     * <Attribute> can have more than 1 <AttributeValue> children
+     * <Resource> can have 1 and only 1 <ResourceContent> children
+     */
+    public static interface XmlElementCanRepeatTag{
+        public boolean isCanElementHaveSameTypeSibilings();
+
+        public void setCanElementHaveSameTypeSibilings(boolean canElementHaveSameTypeSibilings);
+    }
+
+    /**
+     * Convenience class to wrap a GenericXmlElement. Not limiting Elements like <AttributeValue>
+     * or <ResourceContent> by subclassing GenericXmlElement, this class delegates to a GenericXmlElement,
+     * providing subclasses the conveneince of not having to do this delegation.
+     * The 'not limiting' happens as AttributeValue and ResourceContent should not share a type hierarchy, as they
+     * are both goverened by different schema types and could change in the future
+     */
+    public static abstract class GenericXmlElementHolder {
+        private final GenericXmlElement xmlElement = new GenericXmlElement();
+
+        protected GenericXmlElementHolder() {
         }
 
-        public void setRepeat(boolean repeat) {
-            this.repeat = repeat;
+        public void setAttributes(Map<String, String> attributes){
+            xmlElement.setAttributes(attributes);
+        }
+
+        public Map<String, String> getAttributes(){
+            return xmlElement.getAttributes();
+        }
+
+        public void setContent(String content) {
+            xmlElement.setContent(content);
+        }
+
+        public String getContent(){
+            return xmlElement.getContent();
         }
     }
 
-    public static interface RequestTag extends Serializable {
-    }
+    /**
+     * AttributeValue represents the <AttributeValue> element in a XACML request. This element can belong
+     * to any Subject, Action, Resource or Environment.
+     *
+     * Presently AttributeValue does not care about what version of XACML the request is for. It's schema has not
+     * changed yet, but it could and this can be dealt with later. It is a fundemental child element of <Attribute>
+     * , which itself can be achild of any of the 4 major xacml request components
+     */
+    public static class AttributeValue extends GenericXmlElementHolder implements XmlElementCanRepeatTag{
 
-    public static class Value extends XmlTag implements RequestTag, Cloneable {
-        public Value() {
-        }
+        private boolean canElementHaveSameTypeSibilings;
 
-        public Value(Map<String, String> attributes, String content) {
-            super(attributes, content);
+        public AttributeValue() {
         }
 
         public String toString() {
             return "AttributeValue";
         }
 
-        public Object clone() {
-            Value retVal = new Value(new HashMap<String, String>(getAttributes()), getContent());
-            retVal.setRepeat(getRepeat());
+        /**
+         * Ideally AttributeValue would not care about whether it can have siblings or not. Currently only Xacml 2.0
+         * supports this. However the dialog for a single AttributeValue and multiple is shared, and so is the model
+         * so we are ok with this for the moment
+         * @return true if this AttributeValue has been configured to be able to have siblings
+         */
+        public boolean isCanElementHaveSameTypeSibilings() {
+            return canElementHaveSameTypeSibilings;
+        }
 
-            return retVal;
+        public void setCanElementHaveSameTypeSibilings(boolean canElementHaveSameTypeSibilings) {
+            this.canElementHaveSameTypeSibilings = canElementHaveSameTypeSibilings; 
         }
     }
 
-    public static interface AttributeType extends RequestTag, Cloneable {
-        public Object clone();
+    public static class ResourceContent extends GenericXmlElementHolder {
+        public ResourceContent() {
+        }
+
+        public String toString() {
+            return "ResourceContent";
+        }
     }
 
-    public static class Attribute implements AttributeType {
+    /**
+     * AttributeTreeNodeTag is implemented by both Attribute and MultipleAttributeConfig. The implementations are
+     * listed here as the reason for this interface is to allow all nodes, which will end up as <Attribute> nodes,
+     * to exist in the XACML Request Builder tree, as a direct child of either Subject, Request, Action or
+     * Environment. The UI can process all these nodes generically with this interface
+     */
+    public static interface AttributeTreeNodeTag{}
+
+    public static class Attribute implements AttributeTreeNodeTag{
         private String id = "";
         private String dataType = "";
         private String issuer = "";
         private String issueInstant = "";
-        private List<Value> values = new ArrayList<Value>();
+        private List<AttributeValue> attributeValues = new ArrayList<AttributeValue>();
 
         public Attribute() {
-        }
-
-        public Attribute(String id, String dataType, String issuer, List<Value> values) {
-            this.id = id;
-            this.dataType = dataType;
-            this.issuer = issuer;
-            this.values = values;
         }
 
         public String getId() {
@@ -139,46 +196,30 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             this.issueInstant = issueInstant;
         }
 
-        public List<Value> getValues() {
-            return values;
+        public List<AttributeValue> getValues() {
+            return attributeValues;
         }
 
-        public void setValues(List<Value> values) {
-            this.values = values;
+        public void setValues(List<AttributeValue> attributeValues) {
+            this.attributeValues = attributeValues;
         }
 
         public String toString() {
             return "Attribute";
         }
+   }
 
-        public Object clone() {
-            List<Value> clonedValues = new ArrayList<Value>(values.size());
-            for(Value value : values) {
-                clonedValues.add((Value)value.clone());
-            }
-            
-            return new Attribute(id, dataType, issuer, clonedValues);
-        }
-    }
-
-    public static class XpathMultiAttrField implements Serializable, Cloneable {
+    public static class MultipleAttributeConfigField {
         private String name;
         private String value = "";
         private boolean isXpath;
         private boolean isRelative;
 
-        public XpathMultiAttrField() {
+        public MultipleAttributeConfigField() {
         }
 
-        public XpathMultiAttrField(String name) {
+        public MultipleAttributeConfigField(String name) {
             this.name = name;
-        }
-
-        public XpathMultiAttrField(String name, String value, boolean isXpath, boolean isRelative) {
-            this.name = name;
-            this.value = value;
-            this.isXpath = isXpath;
-            this.isRelative = isRelative;
         }
 
         public String getName() {
@@ -212,64 +253,36 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         public void setIsRelative(boolean isRelative) {
             this.isRelative = isRelative;
         }
-
-        public Object clone() {
-            XpathMultiAttrField clone = new XpathMultiAttrField();
-            clone.setName(name);
-            clone.setValue(value);
-            clone.setIsXpath(isXpath);
-            clone.setIsRelative(isRelative);
-
-            return clone;
-        }
     }
 
-    public static class XpathMultiAttr implements AttributeType {
-        public static enum MessageSource {
-            REQUEST,
-            RESPONSE,
-            CONTEXT_VARIABLE
-        }
+    /**
+     * MultipleAttributeConfig stores the configuration which clients can use to build multiple Attribute elements
+     * This configuration contains a base Xpath expression, and absolute or relative xpath expressions,  or single
+     * string valued context variables for all the attributes and values an <Attribute> element can accept.
+     *
+     * MultipleAttributeConfig can appear as the User Object in the XACML Request Builder tree, as a sibling of
+     * Attribute only. As a result it needs to be identifiable and processed differently when found in the tree
+     */
+    public static class MultipleAttributeConfig implements AttributeTreeNodeTag{
+        private XacmlAssertionEnums.MessageLocation messageSource = XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST;
 
-        private MessageSource messageSource = MessageSource.REQUEST;
         private String messageSourceContextVar = "";
         private String xpathBase = "";
         private Map<String, String> namespaces = new HashMap<String, String>();
-        private XpathMultiAttrField idField = new XpathMultiAttrField("id");
-        private XpathMultiAttrField dataTypeField = new XpathMultiAttrField("dataType");
-        private XpathMultiAttrField issuerField = new XpathMultiAttrField("issuer");
-        private XpathMultiAttrField issueInstantField = new XpathMultiAttrField("issueInstant");
-        private XpathMultiAttrField valueField = new XpathMultiAttrField("value");
+        private MultipleAttributeConfigField idField = new MultipleAttributeConfigField("id");
+        private MultipleAttributeConfigField dataTypeField = new MultipleAttributeConfigField("dataType");
+        private MultipleAttributeConfigField issuerField = new MultipleAttributeConfigField("issuer");
+        private MultipleAttributeConfigField issueInstantField = new MultipleAttributeConfigField("issueInstant");
+        private MultipleAttributeConfigField valueField = new MultipleAttributeConfigField("value");
 
-        public XpathMultiAttr() {
+        public MultipleAttributeConfig() {
         }
 
-        public XpathMultiAttr(MessageSource messageSource,
-                              String messageSourceContextVar,
-                              String xpathBase,
-                              Map<String, String> namespaces,
-                              XpathMultiAttrField idField,
-                              XpathMultiAttrField dataTypeField,
-                              XpathMultiAttrField issuerField,
-                              XpathMultiAttrField issueInstantField,
-                              XpathMultiAttrField valueField)
-        {
-            this.messageSource = messageSource;
-            this.messageSourceContextVar = messageSourceContextVar;
-            this.xpathBase = xpathBase;
-            this.namespaces = namespaces;
-            this.idField = idField;
-            this.dataTypeField = dataTypeField;
-            this.issuerField = issuerField;
-            this.issueInstantField = issueInstantField;
-            this.valueField = valueField;
-        }
-
-        public MessageSource getMessageSource() {
+        public XacmlAssertionEnums.MessageLocation getMessageSource() {
             return messageSource;
         }
 
-        public void setMessageSource(MessageSource messageSource) {
+        public void setMessageSource(XacmlAssertionEnums.MessageLocation messageSource) {
             this.messageSource = messageSource;
         }
 
@@ -297,99 +310,93 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
             this.namespaces = namespaces;
         }
 
-        public XpathMultiAttrField getIdField() {
+        public MultipleAttributeConfigField getIdField() {
             return idField;
         }
 
-        public void setIdField(XpathMultiAttrField idField) {
+        public void setIdField(MultipleAttributeConfigField idField) {
             this.idField = idField;
         }
 
-        public XpathMultiAttrField getDataTypeField() {
+        public MultipleAttributeConfigField getDataTypeField() {
             return dataTypeField;
         }
 
-        public void setDataTypeField(XpathMultiAttrField dataTypeField) {
+        public void setDataTypeField(MultipleAttributeConfigField dataTypeField) {
             this.dataTypeField = dataTypeField;
         }
 
-        public XpathMultiAttrField getIssuerField() {
+        public MultipleAttributeConfigField getIssuerField() {
             return issuerField;
         }
 
-        public void setIssuerField(XpathMultiAttrField issuerField) {
+        public void setIssuerField(MultipleAttributeConfigField issuerField) {
             this.issuerField = issuerField;
         }
 
-        public XpathMultiAttrField getIssueInstantField() {
+        public MultipleAttributeConfigField getIssueInstantField() {
             return issueInstantField;
         }
 
-        public void setIssueInstantField(XpathMultiAttrField issueInstantField) {
+        public void setIssueInstantField(MultipleAttributeConfigField issueInstantField) {
             this.issueInstantField = issueInstantField;
         }
 
-        public XpathMultiAttrField getValueField() {
+        public MultipleAttributeConfigField getValueField() {
             return valueField;
         }
 
-        public void setValueField(XpathMultiAttrField valueField) {
+        public void setValueField(MultipleAttributeConfigField valueField) {
             this.valueField = valueField;
         }
 
         public String toString() {
             return "XPath Multiple Attributes";
         }
+    }
 
-        public Object clone() {
-            XpathMultiAttr clone = new XpathMultiAttr();
-            clone.setMessageSource(messageSource);
-            clone.setMessageSourceContextVar(messageSourceContextVar);
-            clone.setXpathBase(xpathBase);
-            clone.setNamespaces(new HashMap<String, String>(namespaces));
-            clone.setIdField((XpathMultiAttrField)idField.clone());
-            clone.setDataTypeField((XpathMultiAttrField)dataTypeField.clone());
-            clone.setIssuerField((XpathMultiAttrField)issuerField.clone());
-            clone.setValueField((XpathMultiAttrField)valueField.clone());
+    /**
+     * <p>
+     * The direct children of the <Request> element are: Subject, Resource, Action and Environment.
+     * </p>
+     * <p>
+     * Each of these elements share a common part of their schema - the ability to have an unbounded amount of
+     * <Attribute> child elements. All other differences are realised in the concrete implementations of each of
+     * these child nodes
+     * </p>
+     * <p>
+     * This class deals with AttributeTreeNodeTag's, as each child of request can have an unbounded amount of
+     * Attributes. This marker / tag interface allows the difference to be detected
+     * </p>
+     */
+    public static abstract class RequestChildElement{
+        private List<AttributeTreeNodeTag> attributeTreeNodes = new ArrayList<AttributeTreeNodeTag>();
 
-            return clone;
+        public RequestChildElement() {
+        }
+
+        public RequestChildElement(List<AttributeTreeNodeTag> attributeTreeNodes) {
+            this.attributeTreeNodes = attributeTreeNodes;
+        }
+
+        public List<AttributeTreeNodeTag> getAttributes() {
+            return attributeTreeNodes;
+        }
+
+        public void setAttributes(List<AttributeTreeNodeTag> attributeTreeNodes) {
+            this.attributeTreeNodes = attributeTreeNodes;
         }
     }
 
-    public static abstract class AttributeHolderTag implements RequestTag {
-        private List<AttributeType> attributes = new ArrayList<AttributeType>();
-
-        public AttributeHolderTag() {
-        }
-
-        public AttributeHolderTag(List<AttributeType> attributes) {
-            this.attributes = attributes;
-        }
-
-        public List<AttributeType> getAttributes() {
-            return attributes;
-        }
-
-        public void setAttributes(List<AttributeType> attributes) {
-            this.attributes = attributes;
-        }
-
-        protected void copyFields(AttributeHolderTag receiver) {
-            for(AttributeType attributeType : attributes) {
-                receiver.getAttributes().add((AttributeType)attributeType.clone());
-            }
-        }
-    }
-
-    public static class Subject extends AttributeHolderTag implements Cloneable {
+    public static class Subject extends RequestChildElement {
         private String subjectCategory = "";
 
         public Subject() {
             super();
         }
 
-        public Subject(String subjectCategory, List<AttributeType> attributes) {
-            super(attributes);
+        public Subject(String subjectCategory, List<AttributeTreeNodeTag> attributeTreeNodes) {
+            super(attributeTreeNodes);
             this.subjectCategory = subjectCategory;
         }
 
@@ -404,45 +411,17 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         public String toString() {
             return "Subject";
         }
-
-        public Object clone() {
-            Subject clone = new Subject();
-            clone.setSubjectCategory(subjectCategory);
-            copyFields(clone);
-
-            return clone;
-        }
     }
 
-    public static class ResourceContent extends XmlTag implements RequestTag {
-        public ResourceContent() {
-        }
-
-        public ResourceContent(Map<String, String> attributes, String content) {
-            super(attributes, content);
-        }
-
-        public String toString() {
-            return "ResourceContent";
-        }
-
-        public Object clone() {
-            ResourceContent retVal = new ResourceContent(new HashMap<String, String>(getAttributes()), getContent());
-            retVal.setRepeat(getRepeat());
-
-            return retVal;
-        }
-    }
-
-    public static class Resource extends AttributeHolderTag implements Cloneable {
+    public static class Resource extends RequestChildElement{
         private ResourceContent resourceContent;
 
         public Resource() {
             super();
         }
 
-        public Resource(ResourceContent resourceContent, List<AttributeType> attributes) {
-            super(attributes);
+        public Resource(ResourceContent resourceContent, List<AttributeTreeNodeTag> attributeTreeNodes) {
+            super(attributeTreeNodes);
             this.resourceContent = resourceContent;
         }
 
@@ -457,61 +436,40 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         public String toString() {
             return "Resource";
         }
-
-        public Object clone() {
-            Resource clone = new Resource();
-            clone.setResourceContent(resourceContent);
-            copyFields(clone);
-
-            return clone;
-        }
     }
 
-    public static class Action extends AttributeHolderTag implements Cloneable {
+    public static class Action extends RequestChildElement{
         public Action() {
             super();
         }
 
-        public Action(List<AttributeType> attributes) {
-            super(attributes);
+        public Action(List<AttributeTreeNodeTag> attributeTreeNodes) {
+            super(attributeTreeNodes);
         }
 
         public String toString() {
             return "Action";
         }
-
-        public Object clone() {
-            Action clone = new Action();
-            copyFields(clone);
-
-            return clone;
-        }
     }
 
-    public static class Environment extends AttributeHolderTag implements Cloneable {
+    public static class Environment extends RequestChildElement{
         public Environment() {
             super();
         }
 
-        public Environment(List<AttributeType> attributes) {
-            super(attributes);
+        public Environment(List<AttributeTreeNodeTag> attributeTreeNodes) {
+            super(attributeTreeNodes);
         }
 
         public String toString() {
             return "Environment";
         }
-
-        public Object clone() {
-            Environment clone = new Environment();
-            copyFields(clone);
-
-            return clone;
-        }
     }
 
     private XacmlAssertionEnums.XacmlVersionType xacmlVersion = XacmlAssertionEnums.XacmlVersionType.V2_0;
     private XacmlAssertionEnums.SoapVersion soapEncapsulation = XacmlAssertionEnums.SoapVersion.NONE;
-    private XacmlAssertionEnums.MessageTarget outputMessageDestination = XacmlAssertionEnums.MessageTarget.REQUEST_MESSAGE;
+    private XacmlAssertionEnums.MessageLocation outputMessageDestination =
+            XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST;
     private String outputMessageVariableName;
     private List<Subject> subjects = new ArrayList<Subject>();
     private List<Resource> resources = new ArrayList<Resource>();
@@ -523,24 +481,6 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         resources.add(new Resource());
         action = new Action();
         environment = new Environment();
-    }
-
-    public XacmlRequestBuilderAssertion(XacmlRequestBuilderAssertion assertion) {
-        xacmlVersion = assertion.getXacmlVersion();
-        soapEncapsulation = assertion.getSoapEncapsulation();
-        outputMessageDestination = assertion.getOutputMessageDestination();
-        outputMessageVariableName = assertion.getOutputMessageVariableName();
-
-        for(Subject subject : assertion.getSubjects()) {
-            subjects.add((Subject)subject.clone());
-        }
-
-        for(Resource resource : assertion.getResources()) {
-            resources.add((Resource)resource.clone());
-        }
-
-        action = (assertion.getAction() == null) ? null : (Action)assertion.getAction().clone();
-        environment = (assertion.getEnvironment() == null) ? null : (Environment)assertion.getEnvironment().clone();
     }
 
     public String[] getVariablesUsed() {
@@ -598,10 +538,10 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         return variablesUsed;
     }
 
-    private void addAttributeTypeVariables(List<AttributeType> attributeTypes, List<String[]> variables) {
-        for(AttributeType attributeType : attributeTypes) {
-            if(attributeType instanceof Attribute) {
-                Attribute attribute = (Attribute)attributeType;
+    private void addAttributeTypeVariables(List<AttributeTreeNodeTag> attributeTreeNodeTags, List<String[]> variables) {
+        for(AttributeTreeNodeTag attributeTreeNodeTag : attributeTreeNodeTags) {
+            if(attributeTreeNodeTag instanceof Attribute) {
+                Attribute attribute = (Attribute) attributeTreeNodeTag;
 
                 String[] v = Syntax.getReferencedNames(attribute.getId());
                 if(v.length > 0) {
@@ -623,8 +563,8 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
                     variables.add(v);
                 }
 
-                for(Value value : attribute.getValues()) {
-                    for(Map.Entry<String, String> entry : value.getAttributes().entrySet()) {
+                for(AttributeValue attributeValue : attribute.getValues()) {
+                    for(Map.Entry<String, String> entry : attributeValue.getAttributes().entrySet()) {
                         v = Syntax.getReferencedNames(entry.getKey());
                         if(v.length > 0) {
                             variables.add(v);
@@ -636,13 +576,13 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
                         }
                     }
 
-                    v = Syntax.getReferencedNames(value.getContent());
+                    v = Syntax.getReferencedNames(attributeValue.getContent());
                     if(v.length > 0) {
                         variables.add(v);
                     }
                 }
-            } else if(attributeType instanceof XpathMultiAttr) {
-                XpathMultiAttr multiAttr = (XpathMultiAttr)attributeType;
+            } else if(attributeTreeNodeTag instanceof MultipleAttributeConfig) {
+                MultipleAttributeConfig multiAttr = (MultipleAttributeConfig) attributeTreeNodeTag;
 
                 String[] v = Syntax.getReferencedNames(multiAttr.getXpathBase());
                 if(v.length > 0) {
@@ -673,7 +613,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
     }
 
     public VariableMetadata[] getVariablesSet() {
-        if(outputMessageDestination == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
+        if(outputMessageDestination == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
             return new VariableMetadata[] {new VariableMetadata(outputMessageVariableName, false, false, null, true, DataType.MESSAGE)};
         } else {
             return new VariableMetadata[0];
@@ -696,11 +636,11 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         this.soapEncapsulation = soapEncapsulation;
     }
 
-    public XacmlAssertionEnums.MessageTarget getOutputMessageDestination() {
+    public XacmlAssertionEnums.MessageLocation getOutputMessageDestination() {
         return outputMessageDestination;
     }
 
-    public void setOutputMessageDestination(XacmlAssertionEnums.MessageTarget outputMessageDestination) {
+    public void setOutputMessageDestination(XacmlAssertionEnums.MessageLocation outputMessageDestination) {
         this.outputMessageDestination = outputMessageDestination;
     }
 
@@ -744,10 +684,6 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         this.environment = environment;
     }
 
-    public Object clone() {
-        return new XacmlRequestBuilderAssertion(this);
-    }
-
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
 
@@ -768,7 +704,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
 
         Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
         othermappings.add(new Java5EnumTypeMapping(XacmlAssertionEnums.XacmlVersionType.class, "xacmlVersion"));
-        othermappings.add(new Java5EnumTypeMapping(XacmlAssertionEnums.MessageTarget.class, "messageTarget"));
+        othermappings.add(new Java5EnumTypeMapping(XacmlAssertionEnums.MessageLocation.class, "messageTarget"));
         othermappings.add(new Java5EnumTypeMapping(XacmlAssertionEnums.SoapVersion.class, "soapEncapsulation"));
         othermappings.add(new BeanTypeMapping(Subject.class, "subject"));
         othermappings.add(new CollectionTypeMapping(List.class, Subject.class, ArrayList.class, "subjectList"));
@@ -777,12 +713,11 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         othermappings.add(new BeanTypeMapping(Action.class, "action"));
         othermappings.add(new BeanTypeMapping(Environment.class, "environment"));
         othermappings.add(new BeanTypeMapping(Attribute.class, "attribute"));
-        othermappings.add(new BeanTypeMapping(Value.class, "attributeValue"));
-        othermappings.add(new BeanTypeMapping(XpathMultiAttrField.class, "xpathMultipleAttributesField"));
-        othermappings.add(new BeanTypeMapping(XpathMultiAttr.class, "xpathMultipleAttributes"));
-        othermappings.add(new Java5EnumTypeMapping(XpathMultiAttr.MessageSource.class, "messageSource"));
-        othermappings.add(new CollectionTypeMapping(List.class, AttributeType.class, ArrayList.class, "attributeList"));
-        othermappings.add(new CollectionTypeMapping(List.class, Value.class, ArrayList.class, "valueList"));
+        othermappings.add(new BeanTypeMapping(AttributeValue.class, "attributeValue"));
+        othermappings.add(new BeanTypeMapping(MultipleAttributeConfigField.class, "xpathMultipleAttributesField"));
+        othermappings.add(new BeanTypeMapping(MultipleAttributeConfig.class, "multipleAttributeConfig"));
+        othermappings.add(new CollectionTypeMapping(List.class, AttributeTreeNodeTag.class, ArrayList.class, "attributeList"));
+        othermappings.add(new CollectionTypeMapping(List.class, AttributeValue.class, ArrayList.class, "valueList"));
         othermappings.add(new BeanTypeMapping(ResourceContent.class, "resourceContent"));
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
         // request default feature set name for our class name, since we are a known optional module

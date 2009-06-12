@@ -23,17 +23,17 @@ public class XacmlRequestBuilderMultiAttrOptionsDialog extends JDialog {
 
     private boolean confirmed = false;
 
-    public XacmlRequestBuilderMultiAttrOptionsDialog(Frame owner, String propertyName, XacmlRequestBuilderAssertion.XpathMultiAttrField field) {
+    public XacmlRequestBuilderMultiAttrOptionsDialog(Frame owner, String propertyName, XacmlRequestBuilderAssertion.MultipleAttributeConfigField field) {
         super(owner, propertyName + " Options", true);
         initComponents(field);
     }
 
-    public XacmlRequestBuilderMultiAttrOptionsDialog(Dialog owner, String propertyName, XacmlRequestBuilderAssertion.XpathMultiAttrField field) {
+    public XacmlRequestBuilderMultiAttrOptionsDialog(Dialog owner, String propertyName, XacmlRequestBuilderAssertion.MultipleAttributeConfigField field) {
         super(owner, propertyName + " Options", true);
         initComponents(field);
     }
 
-    private void initComponents(XacmlRequestBuilderAssertion.XpathMultiAttrField field) {
+    private void initComponents(XacmlRequestBuilderAssertion.MultipleAttributeConfigField field) {
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 confirmed = true;

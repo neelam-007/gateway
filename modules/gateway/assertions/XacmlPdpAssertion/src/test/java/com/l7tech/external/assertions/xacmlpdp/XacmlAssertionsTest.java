@@ -91,42 +91,42 @@ public class XacmlAssertionsTest {
 
         XacmlRequestBuilderAssertion.Subject subject = subjects.get(0);
 
-        List<XacmlRequestBuilderAssertion.AttributeType> attributes = subject.getAttributes();
-        Assert.assertNotNull("attributes should not be null", attributes);
+        List<XacmlRequestBuilderAssertion.AttributeTreeNodeTag> attributeTreeNodes = subject.getAttributes();
+        Assert.assertNotNull("attributes should not be null", attributeTreeNodes);
 
-        Assert.assertEquals("There should be 2 attributes", 2, attributes.size());
+        Assert.assertEquals("There should be 2 attributes", 2, attributeTreeNodes.size());
 
         //Test the subjects first attribute and it's value
-        XacmlRequestBuilderAssertion.Attribute attribute = (XacmlRequestBuilderAssertion.Attribute) attributes.get(0);
+        XacmlRequestBuilderAssertion.Attribute attribute = (XacmlRequestBuilderAssertion.Attribute) attributeTreeNodes.get(0);
         Assert.assertEquals("Invalid ID found", SUBJECT_ID, attribute.getId());
         Assert.assertEquals("Invalid data type found", SUBJECT_DATA_TYPE, attribute.getDataType());
         Assert.assertEquals("Empty issuer expected", "", attribute.getIssuer());
 
-        List<XacmlRequestBuilderAssertion.Value> values = attribute.getValues();
-        Assert.assertNotNull("values should not be null", values);
-        Assert.assertEquals("values should contain 1 value", 1, values.size());
+        List<XacmlRequestBuilderAssertion.AttributeValue> attributeValues = attribute.getValues();
+        Assert.assertNotNull("values should not be null", attributeValues);
+        Assert.assertEquals("values should contain 1 value", 1, attributeValues.size());
 
-        XacmlRequestBuilderAssertion.Value value = values.get(0);
-        Assert.assertNotNull("value should not be null", value);
+        XacmlRequestBuilderAssertion.AttributeValue attributeValue = attributeValues.get(0);
+        Assert.assertNotNull("value should not be null", attributeValue);
 
-        String content = value.getContent();
+        String content = attributeValue.getContent();
         Assert.assertNotNull("content should not be null", content);
         Assert.assertEquals("Incorrect content found", "darmstrong@layer7tech.com", content);
 
         //Test the subjects second attribute and it's value
-        attribute = (XacmlRequestBuilderAssertion.Attribute) attributes.get(1);
+        attribute = (XacmlRequestBuilderAssertion.Attribute) attributeTreeNodes.get(1);
         Assert.assertEquals("Invalid ID found", "group", attribute.getId());
         Assert.assertEquals("Invalid data type found", STRING_DATA_TYPE, attribute.getDataType());
         Assert.assertEquals("Empty issuer expected", "admin@layer7tech.com", attribute.getIssuer());
 
-        values = attribute.getValues();
-        Assert.assertNotNull("values should not be null", values);
-        Assert.assertEquals("values should contain 1 value", 1, values.size());
+        attributeValues = attribute.getValues();
+        Assert.assertNotNull("values should not be null", attributeValues);
+        Assert.assertEquals("values should contain 1 value", 1, attributeValues.size());
 
-        value = values.get(0);
-        Assert.assertNotNull("value should not be null", value);
+        attributeValue = attributeValues.get(0);
+        Assert.assertNotNull("value should not be null", attributeValue);
 
-        content = value.getContent();
+        content = attributeValue.getContent();
         Assert.assertNotNull("content should not be null", content);
         Assert.assertEquals("Incorrect content found", "developers", content);        
 
@@ -147,25 +147,25 @@ public class XacmlAssertionsTest {
 
         XacmlRequestBuilderAssertion.Resource resource = resources.get(0);
 
-        List<XacmlRequestBuilderAssertion.AttributeType> attributes = resource.getAttributes();
-        Assert.assertNotNull("attributes should not be null", attributes);
+        List<XacmlRequestBuilderAssertion.AttributeTreeNodeTag> attributeTreeNodes = resource.getAttributes();
+        Assert.assertNotNull("attributes should not be null", attributeTreeNodes);
 
-        Assert.assertEquals("There should be 1 attribute", 1, attributes.size());
+        Assert.assertEquals("There should be 1 attribute", 1, attributeTreeNodes.size());
 
         //Test the resources attribute and it's value
-        XacmlRequestBuilderAssertion.Attribute attribute = (XacmlRequestBuilderAssertion.Attribute) attributes.get(0);
+        XacmlRequestBuilderAssertion.Attribute attribute = (XacmlRequestBuilderAssertion.Attribute) attributeTreeNodes.get(0);
         Assert.assertEquals("Invalid ID found", RESOURCE_ID, attribute.getId());
         Assert.assertEquals("Invalid data type found", ANY_URI, attribute.getDataType());
         Assert.assertEquals("Empty issuer expected", "", attribute.getIssuer());
 
-        List<XacmlRequestBuilderAssertion.Value> values = attribute.getValues();
-        Assert.assertNotNull("values should not be null", values);
-        Assert.assertEquals("values should contain 1 value", 1, values.size());
+        List<XacmlRequestBuilderAssertion.AttributeValue> attributeValues = attribute.getValues();
+        Assert.assertNotNull("values should not be null", attributeValues);
+        Assert.assertEquals("values should contain 1 value", 1, attributeValues.size());
 
-        XacmlRequestBuilderAssertion.Value value = values.get(0);
-        Assert.assertNotNull("value should not be null", value);
+        XacmlRequestBuilderAssertion.AttributeValue attributeValue = attributeValues.get(0);
+        Assert.assertNotNull("value should not be null", attributeValue);
 
-        String content = value.getContent();
+        String content = attributeValue.getContent();
         Assert.assertNotNull("content should not be null", content);
         Assert.assertEquals("Incorrect content found", "http://sarek.l7tech.com/mediawiki/index.php?title=Buzzcut_XACML", content);
     }
@@ -182,25 +182,25 @@ public class XacmlAssertionsTest {
         XacmlRequestBuilderAssertion.Action action = assertion.getAction();
         Assert.assertNotNull("action should not be null", action);
 
-        List<XacmlRequestBuilderAssertion.AttributeType> attributes = action.getAttributes();
-        Assert.assertNotNull("attributes should not be null", attributes);
+        List<XacmlRequestBuilderAssertion.AttributeTreeNodeTag> attributeTreeNodes = action.getAttributes();
+        Assert.assertNotNull("attributes should not be null", attributeTreeNodes);
 
-        Assert.assertEquals("There should be 1 attribute", 1, attributes.size());
+        Assert.assertEquals("There should be 1 attribute", 1, attributeTreeNodes.size());
 
         //Test the resources attribute and it's value
-        XacmlRequestBuilderAssertion.Attribute attribute = (XacmlRequestBuilderAssertion.Attribute) attributes.get(0);
+        XacmlRequestBuilderAssertion.Attribute attribute = (XacmlRequestBuilderAssertion.Attribute) attributeTreeNodes.get(0);
         Assert.assertEquals("Invalid ID found", ACTION_ID, attribute.getId());
         Assert.assertEquals("Invalid data type found", STRING_DATA_TYPE, attribute.getDataType());
         Assert.assertEquals("Empty issuer expected", "", attribute.getIssuer());
 
-        List<XacmlRequestBuilderAssertion.Value> values = attribute.getValues();
-        Assert.assertNotNull("values should not be null", values);
-        Assert.assertEquals("values should contain 1 value", 1, values.size());
+        List<XacmlRequestBuilderAssertion.AttributeValue> attributeValues = attribute.getValues();
+        Assert.assertNotNull("values should not be null", attributeValues);
+        Assert.assertEquals("values should contain 1 value", 1, attributeValues.size());
 
-        XacmlRequestBuilderAssertion.Value value = values.get(0);
-        Assert.assertNotNull("value should not be null", value);
+        XacmlRequestBuilderAssertion.AttributeValue attributeValue = attributeValues.get(0);
+        Assert.assertNotNull("value should not be null", attributeValue);
 
-        String content = value.getContent();
+        String content = attributeValue.getContent();
         Assert.assertNotNull("content should not be null", content);
         Assert.assertEquals("Incorrect content found", "read", content);
     }
@@ -217,25 +217,25 @@ public class XacmlAssertionsTest {
         XacmlRequestBuilderAssertion.Environment environment = assertion.getEnvironment();
         Assert.assertNotNull("environment should not be null", environment);
 
-        List<XacmlRequestBuilderAssertion.AttributeType> attributes = environment.getAttributes();
-        Assert.assertNotNull("attributes should not be null", attributes);
+        List<XacmlRequestBuilderAssertion.AttributeTreeNodeTag> attributeTreeNodes = environment.getAttributes();
+        Assert.assertNotNull("attributes should not be null", attributeTreeNodes);
 
-        Assert.assertEquals("There should be 1 attribute", 1, attributes.size());
+        Assert.assertEquals("There should be 1 attribute", 1, attributeTreeNodes.size());
 
         //Test the resources attribute and it's value
-        XacmlRequestBuilderAssertion.Attribute attribute = (XacmlRequestBuilderAssertion.Attribute) attributes.get(0);
+        XacmlRequestBuilderAssertion.Attribute attribute = (XacmlRequestBuilderAssertion.Attribute) attributeTreeNodes.get(0);
         Assert.assertEquals("Invalid ID found", "ENV", attribute.getId());
         Assert.assertEquals("Invalid data type found", STRING_DATA_TYPE, attribute.getDataType());
         Assert.assertEquals("Empty issuer expected", "", attribute.getIssuer());
 
-        List<XacmlRequestBuilderAssertion.Value> values = attribute.getValues();
-        Assert.assertNotNull("values should not be null", values);
-        Assert.assertEquals("values should contain 1 value", 1, values.size());
+        List<XacmlRequestBuilderAssertion.AttributeValue> attributeValues = attribute.getValues();
+        Assert.assertNotNull("values should not be null", attributeValues);
+        Assert.assertEquals("values should contain 1 value", 1, attributeValues.size());
 
-        XacmlRequestBuilderAssertion.Value value = values.get(0);
-        Assert.assertNotNull("value should not be null", value);
+        XacmlRequestBuilderAssertion.AttributeValue attributeValue = attributeValues.get(0);
+        Assert.assertNotNull("value should not be null", attributeValue);
 
-        String content = value.getContent();
+        String content = attributeValue.getContent();
         Assert.assertNotNull("content should not be null", content);
         Assert.assertEquals("Incorrect content found", "EnvValue", content);
     }
@@ -315,22 +315,27 @@ public class XacmlAssertionsTest {
      * @param issuer
      * @param attributeValue
      */
-    private void setAttributeHolderTag(XacmlRequestBuilderAssertion.AttributeHolderTag holder, String ids,
+    private void setAttributeHolderTag(XacmlRequestBuilderAssertion.RequestChildElement holder, String ids,
                                        String dataType,
                                        String issuer,
                                        String attributeValue){
 
         //AttributeHolderTag creates a new AttributeList with object creation, no need to create a new one
-        List<XacmlRequestBuilderAssertion.AttributeType> attributeList = holder.getAttributes();
-        Assert.assertNotNull("holder.getAttributes() should always return non null List", attributeList);
+        List<XacmlRequestBuilderAssertion.AttributeTreeNodeTag> attributeListTreeNode = holder.getAttributes();
+        Assert.assertNotNull("holder.getAttributes() should always return non null List", attributeListTreeNode);
 
-        List<XacmlRequestBuilderAssertion.Value> valueList = new ArrayList<XacmlRequestBuilderAssertion.Value>();
-        XacmlRequestBuilderAssertion.Value value = new XacmlRequestBuilderAssertion.Value();
+        List<XacmlRequestBuilderAssertion.AttributeValue> attributeValueList = new ArrayList<XacmlRequestBuilderAssertion.AttributeValue>();
+        XacmlRequestBuilderAssertion.AttributeValue value = new XacmlRequestBuilderAssertion.AttributeValue();
         value.setContent(attributeValue);
-        valueList.add(value);
-        attributeList.add(new XacmlRequestBuilderAssertion.Attribute(ids, dataType, issuer, valueList));
+        attributeValueList.add(value);
+        XacmlRequestBuilderAssertion.Attribute attribute = new XacmlRequestBuilderAssertion.Attribute();
+        attribute.setId(ids);
+        attribute.setDataType(dataType);
+        attribute.setIssuer(issuer);
+        attribute.setValues(attributeValueList);
+        attributeListTreeNode.add(attribute);
 
-        holder.setAttributes(attributeList);
+        holder.setAttributes(attributeListTreeNode);
     }
     
     private String fixLines(String input) {

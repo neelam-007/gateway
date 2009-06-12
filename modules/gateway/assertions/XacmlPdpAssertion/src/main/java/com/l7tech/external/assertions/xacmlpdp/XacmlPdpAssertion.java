@@ -68,9 +68,9 @@ public class XacmlPdpAssertion extends Assertion implements SetsVariables {
         private final String encapType;
     }
 
-    private XacmlAssertionEnums.MessageTarget inputMessageSource = XacmlAssertionEnums.MessageTarget.REQUEST_MESSAGE;
+    private XacmlAssertionEnums.MessageLocation inputMessageSource = XacmlAssertionEnums.MessageLocation.DEFAULT_REQUEST;
     private String inputMessageVariableName;
-    private XacmlAssertionEnums.MessageTarget outputMessageTarget = XacmlAssertionEnums.MessageTarget.RESPONSE_MESSAGE;
+    private XacmlAssertionEnums.MessageLocation outputMessageLocation = XacmlAssertionEnums.MessageLocation.DEFAULT_RESPONSE;
     private String outputMessageVariableName;
     private SoapEncapsulationType soapEncapsulation = SoapEncapsulationType.NONE;
     private AssertionResourceInfo resourceInfo = new StaticResourceInfo();
@@ -80,18 +80,18 @@ public class XacmlPdpAssertion extends Assertion implements SetsVariables {
     }
 
     public VariableMetadata[] getVariablesSet() {
-        if(outputMessageTarget == XacmlAssertionEnums.MessageTarget.CONTEXT_VARIABLE) {
+        if(outputMessageLocation == XacmlAssertionEnums.MessageLocation.CONTEXT_VARIABLE) {
             return new VariableMetadata[] {new VariableMetadata(outputMessageVariableName, false, false, null, false)};
         } else {
             return new VariableMetadata[0];
         }
     }
 
-    public XacmlAssertionEnums.MessageTarget getInputMessageSource() {
+    public XacmlAssertionEnums.MessageLocation getInputMessageSource() {
         return inputMessageSource;
     }
 
-    public void setInputMessageSource(XacmlAssertionEnums.MessageTarget inputMessageSource) {
+    public void setInputMessageSource(XacmlAssertionEnums.MessageLocation inputMessageSource) {
         this.inputMessageSource = inputMessageSource;
     }
 
@@ -103,12 +103,12 @@ public class XacmlPdpAssertion extends Assertion implements SetsVariables {
         this.inputMessageVariableName = inputMessageVariableName;
     }
 
-    public XacmlAssertionEnums.MessageTarget getOutputMessageTarget() {
-        return outputMessageTarget;
+    public XacmlAssertionEnums.MessageLocation getOutputMessageTarget() {
+        return outputMessageLocation;
     }
 
-    public void setOutputMessageTarget(XacmlAssertionEnums.MessageTarget outputMessageTarget) {
-        this.outputMessageTarget = outputMessageTarget;
+    public void setOutputMessageTarget(XacmlAssertionEnums.MessageLocation outputMessageLocation) {
+        this.outputMessageLocation = outputMessageLocation;
     }
 
     public String getOutputMessageVariableName() {
@@ -162,7 +162,7 @@ public class XacmlPdpAssertion extends Assertion implements SetsVariables {
         meta.put(WSP_EXTERNAL_NAME, "XacmlPdpAssertion"); // keep same WSP name as pre-3.7 (Bug #3605)
 
         Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
-        othermappings.add(new Java5EnumTypeMapping(XacmlAssertionEnums.MessageTarget.class, "messageTarget"));
+        othermappings.add(new Java5EnumTypeMapping(XacmlAssertionEnums.MessageLocation.class, "messageLocation"));
         othermappings.add(new Java5EnumTypeMapping(SoapEncapsulationType.class, "soapEncapsulation"));
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
 

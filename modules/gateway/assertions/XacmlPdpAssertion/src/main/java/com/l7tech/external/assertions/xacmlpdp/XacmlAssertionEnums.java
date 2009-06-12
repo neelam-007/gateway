@@ -16,20 +16,20 @@ public class XacmlAssertionEnums {
      * * Knowing where to find the XACML request
      * * knowing where to write the PDP decision response to 
      */
-    public enum MessageTarget{
-        REQUEST_MESSAGE("Default Request"),
-        RESPONSE_MESSAGE("Default Response"),
+    public enum MessageLocation {
+        DEFAULT_REQUEST("Default Request"),
+        DEFAULT_RESPONSE("Default Response"),
         CONTEXT_VARIABLE("Message Variable");
 
-        MessageTarget(String targetName) {
-            this.targetName = targetName;
+        MessageLocation(String locationName) {
+            this.locationName = locationName;
         }
 
-        public String getTargetName() {
-            return targetName;
+        public String getLocationName() {
+            return locationName;
         }
 
-        private final String targetName;
+        private final String locationName;
     }
 
     public static enum XacmlVersionType {
