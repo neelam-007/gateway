@@ -4,11 +4,10 @@ import com.l7tech.external.assertions.certificateattributes.CertificateAttribute
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.cert.TestCertificateGenerator;
-import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -59,8 +58,9 @@ public class ServerCertificateAttributesAssertionTest {
         Message req = new Message();
         Message resp = new Message();
         PolicyEnforcementContext context = new PolicyEnforcementContext(req, resp);
-        context.getDefaultAuthenticationContext().addCredentials(new LoginCredentials(null, null, CredentialFormat.CLIENTCERT, SslAssertion.class, null, cert, SecurityTokenType.HTTP_CLIENT_CERT));
-        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new UserBean(), cert, false));
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(cert), SslAssertion.class);
+        context.getDefaultAuthenticationContext().addCredentials(creds);
+        context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(new UserBean(), creds.getSecurityToken(), cert, false));
         return context;
     }
 

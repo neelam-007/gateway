@@ -6,9 +6,10 @@ import com.l7tech.common.TestDocuments;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.security.token.http.HttpClientCertToken;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -153,7 +154,7 @@ public class XmlBeansSaml2Test  extends TestCase {
      *
      */
     public void testGenerateAuthnStmtPasswordl() throws Exception {
-        LoginCredentials creds = LoginCredentials.makePasswordCredentials("test", "pass".toCharArray(), HttpBasic.class);
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(new HttpBasicToken("test", "pass".toCharArray()), HttpBasic.class);
         generateAuthenticationStatement(creds);
     }
 
@@ -161,7 +162,7 @@ public class XmlBeansSaml2Test  extends TestCase {
      *
      */
     public void testGenerateAuthnStmtTLS() throws Exception {
-        LoginCredentials creds = LoginCredentials.makeCertificateCredentials(clientCertChain[0], SslAssertion.class);
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(clientCertChain[0]), SslAssertion.class);
         generateAuthenticationStatement(creds);
     }
 
@@ -169,7 +170,7 @@ public class XmlBeansSaml2Test  extends TestCase {
      *
      */
     public void testGenerateAuthnStmtDigSig() throws Exception {
-        LoginCredentials creds = LoginCredentials.makeCertificateCredentials(clientCertChain[0], RequireWssX509Cert.class);
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(clientCertChain[0]), SslAssertion.class);
         generateAuthenticationStatement(creds);
     }
 

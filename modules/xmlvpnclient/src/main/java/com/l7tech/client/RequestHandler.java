@@ -12,7 +12,6 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.HttpHeadersKnob;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.proxy.Constants;
 import com.l7tech.proxy.NullRequestInterceptor;
@@ -164,6 +163,7 @@ public class RequestHandler extends AbstractHandler {
     /*
      * Handle an HTTP request.
      */
+    @Override
     public void handle(String target, HttpServletRequest servRequest, HttpServletResponse servResponse, int dispatch) throws IOException, ServletException {
         final Request httpRequest = (Request)servRequest;
         final Response httpResponse = (Response)servResponse;
@@ -267,10 +267,8 @@ public class RequestHandler extends AbstractHandler {
                 context.setClientSocket((Socket)httpRequest.getConnection().getEndPoint().getTransport());
 
                 if (ssg.isChainCredentialsFromClient() && reqUsername != null && reqPassword != null)
-                    context.setRequestCredentials(new LoginCredentials(reqUsername,
-                            reqPassword.toCharArray(),
-                            CredentialFormat.CLEARTEXT,
-                            null));
+                    context.setRequestCredentials(LoginCredentials.makeLoginCredentials(
+                            new HttpBasicToken(reqUsername, reqPassword.toCharArray()), null) );
                 interceptor.onFrontEndRequest(context);
             } catch (Exception e) {
                 interceptor.onMessageError(e);
@@ -288,7 +286,7 @@ public class RequestHandler extends AbstractHandler {
             }
 
             int status = 200;
-            HttpResponseKnob respHttp = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
+            HttpResponseKnob respHttp = context.getResponse().getKnob(HttpResponseKnob.class);
             if (respHttp != null && respHttp.getStatus() > 0)
                 status = respHttp.getStatus();
             if (respHttp != null)
@@ -359,7 +357,7 @@ public class RequestHandler extends AbstractHandler {
             httpResponse.setContentType(response.getMimeKnob().getOuterContentType().getFullValue());
 
             if (copyHeaders) {
-                HttpHeadersKnob headerKnob = (HttpHeadersKnob)response.getKnob(HttpHeadersKnob.class);
+                HttpHeadersKnob headerKnob = response.getKnob(HttpHeadersKnob.class);
                 if (headerKnob != null) {
                     HttpHeader[] headers = headerKnob.getHeaders().toArray();
                     for (HttpHeader header : headers) {
@@ -503,7 +501,11 @@ public class RequestHandler extends AbstractHandler {
                 response.initialize(exceptionToFault(e, null, context.getOriginalUrl()));
                 // For some errors the MessageProcessor will not have set a status code which causes
                 // Jetty to fail writing the response with an EOF exception.
-                response.getHttpResponseKnob().setStatus(500);
+                try {
+                    response.getHttpResponseKnob().setStatus(500);
+                } catch ( IllegalStateException ise ) {
+                    // don't set status
+                }
             }
         } finally {
             CurrentSslPeer.clear();

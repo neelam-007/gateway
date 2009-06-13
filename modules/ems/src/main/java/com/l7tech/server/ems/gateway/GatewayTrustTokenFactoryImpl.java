@@ -4,12 +4,13 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.security.saml.Attribute;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SubjectStatement;
 import com.l7tech.security.xml.KeyInfoInclusionType;
+import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ems.ui.EsmSecurityManager;
 import com.l7tech.server.ems.user.UserPropertyManager;
@@ -90,7 +91,7 @@ public class GatewayTrustTokenFactoryImpl implements GatewayTrustTokenFactory {
             };
 
             SubjectStatement statement = SubjectStatement.createAttributeStatement(
-                    LoginCredentials.makePasswordCredentials( user.getLogin(), new char[0], Assertion.class ),  // credentials are required but not used
+                    LoginCredentials.makeLoginCredentials( new HttpBasicToken(user.getLogin(), new char[0]), HttpBasic.class ),  // credentials are required but not used
                     SubjectStatement.BEARER,
                     attributes,
                     KeyInfoInclusionType.CERT,

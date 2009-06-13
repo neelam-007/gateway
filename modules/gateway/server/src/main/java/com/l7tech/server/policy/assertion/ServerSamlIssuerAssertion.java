@@ -13,7 +13,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SamlIssuerAssertion;
 import static com.l7tech.policy.assertion.SamlIssuerAssertion.DecorationType.*;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
@@ -26,6 +25,7 @@ import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecorator;
+import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -101,6 +101,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
             authMethodUri = null;
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // Generate the SAML assertion
         final TcpKnob tcpKnob = context.getRequest().getKnob(TcpKnob.class);
@@ -174,7 +175,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
                 }
                 nameFormat = assertion.getNameIdentifierFormat();
                 if (creds == null)
-                    creds = new LoginCredentials(null, nameValue == null ? null : nameValue.toCharArray(), CredentialFormat.OPAQUETOKEN, SamlIssuerAssertion.class);
+                    creds = LoginCredentials.makeLoginCredentials(new OpaqueSecurityToken(nameValue == null ? "" : nameValue, null), SamlIssuerAssertion.class);
                 break;
             case NONE:
             default:
@@ -202,7 +203,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         }
 
         try {
-            final Element assertionEl = samlAssertionGenerator.createAssertion(statements.toArray(new SubjectStatement[0]), options).getDocumentElement();
+            final Element assertionEl = samlAssertionGenerator.createAssertion(statements.toArray(new SubjectStatement[statements.size()]), options).getDocumentElement();
             context.setVariable("issuedSamlAssertion", XmlUtil.nodeToString(assertionEl));
 
             EnumSet<SamlIssuerAssertion.DecorationType> dts = assertion.getDecorationTypes();
@@ -361,7 +362,7 @@ public class ServerSamlIssuerAssertion extends AbstractServerAssertion<SamlIssue
         }
 
         return SubjectStatement.createAttributeStatement(
-                creds, confirmationMethod, outAtts.toArray(new Attribute[0]),
+                creds, confirmationMethod, outAtts.toArray(new Attribute[outAtts.size()]),
                 assertion.getSubjectConfirmationKeyInfoType(), assertion.getNameIdentifierType(), overrideNameValue, overrideNameFormat, nameQualifier);
     }
 }

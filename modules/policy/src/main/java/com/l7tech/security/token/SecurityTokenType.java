@@ -1,12 +1,13 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.security.token;
 
 import com.l7tech.util.SoapConstants;
+import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.security.token.http.HttpDigestToken;
+import com.l7tech.security.token.http.HttpClientCertToken;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
@@ -76,7 +77,7 @@ public class SecurityTokenType implements Serializable {
                     "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3",
                     SoapConstants.SECURITY_NAMESPACE,
                     "BinarySecurityToken",
-                    X509SecurityToken.class);// TODO look up proper token type URI
+                    X509SigningSecurityToken.class);// TODO look up proper token type URI
 
     public static final SecurityTokenType WSS_ENCRYPTEDKEY =
             new SecurityTokenType(n++, "WS-S EncryptedKey", SoapConstants.XMLENC_NS + "EncryptedKey", SoapConstants.XMLENC_NS,  "EncryptedKey", EncryptedKey.class);
@@ -86,14 +87,14 @@ public class SecurityTokenType implements Serializable {
                     SoapConstants.VALUETYPE_KERBEROS_GSS_AP_REQ,
                     SoapConstants.SECURITY_NAMESPACE,
                     "BinarySecurityToken",
-                    KerberosSecurityToken.class);
+                    KerberosSigningSecurityToken.class);
 
     public static final SecurityTokenType HTTP_BASIC =
-            new SecurityTokenType(n++, "HTTP Basic", null, null, null, UsernameToken.class);
+            new SecurityTokenType(n++, "HTTP Basic", null, null, null, HttpBasicToken.class);
     public static final SecurityTokenType HTTP_DIGEST =
-            new SecurityTokenType(n++, "HTTP Digest", null, null, null, UsernameToken.class);
+            new SecurityTokenType(n++, "HTTP Digest", null, null, null, HttpDigestToken.class);
     public static final SecurityTokenType HTTP_CLIENT_CERT =
-            new SecurityTokenType(n++, "HTTPS Client Cert", null, null, null, X509SecurityToken.class);
+            new SecurityTokenType(n++, "HTTPS Client Cert", null, null, null, HttpClientCertToken.class);
 
     public static final SecurityTokenType UNKNOWN =
             new SecurityTokenType(n++, "Unknown", null, null, null, SecurityToken.class);
@@ -111,7 +112,7 @@ public class SecurityTokenType implements Serializable {
             new SecurityTokenType(n++, "FTP Credentials", null, null, null, UsernameToken.class);
 
     public static final SecurityTokenType X509_ISSUER_SERIAL =
-                new SecurityTokenType(n++, "X509 Issuer Serial", null, null, null, X509SecurityToken.class);
+                new SecurityTokenType(n++, "X509 Issuer Serial", null, null, null, X509SigningSecurityToken.class);
 
     /**
      * NOTE: Order MUST equal declaration order above (see readResolve/getByNum)

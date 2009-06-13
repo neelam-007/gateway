@@ -9,7 +9,7 @@ public class KerberosSecurityTokenMapping extends SecurityTokenMapping {
     public Object[] extractValues(SecurityToken creds) {
         if (creds instanceof KerberosSecurityToken) {
             KerberosSecurityToken kerberosSecurityToken = (KerberosSecurityToken) creds;
-            KerberosServiceTicket ticket = kerberosSecurityToken.getTicket().getServiceTicket();
+            KerberosServiceTicket ticket = kerberosSecurityToken.getServiceTicket();
             if (ticket != null) {
                 return new String[] { ticket.getClientPrincipalName() };
             }

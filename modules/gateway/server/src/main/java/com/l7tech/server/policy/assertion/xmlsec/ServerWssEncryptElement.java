@@ -103,16 +103,7 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
             // Ecrypting the Response will require either the presence of a client cert (to encrypt the symmetric key)
             // or a SecureConversation in progress or an Encrypted Key or Kerberos Session
             for (XmlSecurityToken token : tokens) {
-                if (token instanceof X509SecurityToken) {
-                    X509SecurityToken x509token = (X509SecurityToken)token;
-                    if (x509token.isPossessionProved()) {
-                        if (clientCert != null) {
-                            return doMultipleTokenFailure();
-                        }
-                        clientCert = x509token.getCertificate();
-                        keyEncryptionAlgorithm = wssResult.getLastKeyEncryptionAlgorithm();
-                    }
-                } else if (token instanceof SamlSecurityToken) {
+                if (token instanceof SamlSecurityToken) {
                     SamlSecurityToken samlToken = (SamlSecurityToken)token;
                     if (samlToken.isPossessionProved()) {
                         if (clientCert != null) {
@@ -120,12 +111,21 @@ public class ServerWssEncryptElement extends AbstractMessageTargetableServerAsse
                         }
                         clientCert = samlToken.getSubjectCertificate();
                     }
-                } else if (token instanceof KerberosSecurityToken) {
-                    KerberosSecurityToken kerberosSecurityToken = (KerberosSecurityToken)token;
+                } else if (token instanceof X509SigningSecurityToken) {
+                    X509SigningSecurityToken x509token = (X509SigningSecurityToken)token;
+                    if (x509token.isPossessionProved()) {
+                        if (clientCert != null) {
+                            return doMultipleTokenFailure();
+                        }
+                        clientCert = x509token.getMessageSigningCertificate();
+                        keyEncryptionAlgorithm = wssResult.getLastKeyEncryptionAlgorithm();
+                    }
+                } else if (token instanceof KerberosSigningSecurityToken) {
+                    KerberosSigningSecurityToken kerberosSecurityToken = (KerberosSigningSecurityToken)token;
                     if (kerberosServiceTicket != null) {
                         return doMultipleTokenFailure();
                     }
-                    kerberosServiceTicket = kerberosSecurityToken.getTicket().getServiceTicket();
+                    kerberosServiceTicket = kerberosSecurityToken.getServiceTicket();
                 } else if (token instanceof SecurityContextToken) {
                     SecurityContextToken secConvTok = (SecurityContextToken)token;
                     if (secConvTok.isPossessionProved()) {

@@ -9,5 +9,5 @@ package com.l7tech.security.token;
 /**
  * @author mike
  */
-public interface X509SecurityToken extends SigningSecurityToken, HasCertificate {
+public interface X509SecurityToken extends SecurityToken, HasCertificate {
 }

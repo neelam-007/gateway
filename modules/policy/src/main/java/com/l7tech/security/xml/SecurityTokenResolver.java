@@ -5,7 +5,7 @@
 
 package com.l7tech.security.xml;
 
-import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.KerberosSigningSecurityToken;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.cert.X509Certificate;
@@ -106,5 +106,5 @@ public interface SecurityTokenResolver {
      * @param kerberosSha1  the base64-encoded Kerberosv5APREQSHA1 identifier to look up
      * @return the matching already-known Kerberos token, or null if no match was found.
      */
-    KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1);
+    KerberosSigningSecurityToken getKerberosTokenBySha1(String kerberosSha1);
 }

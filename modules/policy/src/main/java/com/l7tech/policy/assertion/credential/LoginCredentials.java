@@ -1,11 +1,17 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 package com.l7tech.policy.assertion.credential;
 
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.token.SecurityToken;
+import com.l7tech.security.token.HasUsernameAndPassword;
+import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.security.token.X509SigningSecurityToken;
+import com.l7tech.security.token.OpaqueSecurityToken;
+import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.http.HttpDigestToken;
+import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.ArrayUtils;
@@ -29,22 +35,88 @@ import java.util.Map;
  *
  * @author alex
  */
-public class LoginCredentials {
+public final class LoginCredentials {
 
     /**
-     * Build LoginCredentials for the given certificate and source
+     * Create a LoginCredentials for the given SecurityToken.
      *
-     * <p>The login for the credentials will be the certificates common name.</p>
-     *
-     * @param cert The client certificate (proven, must not be null)
-     * @param credentialSource The source credential assertion (must not be null)
-     * @return The new LoginCredentials
+     * @param securityToken The token for the credentials.
+     * @param credentialSource The source assertion
+     * @return The LoginCredentials or null.
      */
-    public static LoginCredentials makeCertificateCredentials( final X509Certificate cert,
-                                                               final Class<? extends Assertion> credentialSource ) {
-        String login = CertUtils.extractFirstCommonNameFromCertificate(cert);
+    public static LoginCredentials makeLoginCredentials( final SecurityToken securityToken,
+                                                         final Class<? extends Assertion> credentialSource ) {
+        LoginCredentials loginCredentials;
 
-        return new LoginCredentials(login, null, CredentialFormat.CLIENTCERT, credentialSource, null, cert);
+        if ( securityToken instanceof HasUsernameAndPassword ) {
+            HasUsernameAndPassword huap = (HasUsernameAndPassword) securityToken;
+            char[] password = huap.getPassword();
+            if (password == null) password = new char[0];
+            loginCredentials = LoginCredentials.makePasswordCredentials(
+                    huap.getUsername(),
+                    password,
+                    securityToken,
+                    credentialSource );
+        } else if ( securityToken instanceof HttpClientCertToken ) {
+            HttpClientCertToken sxst = (HttpClientCertToken) securityToken;
+            loginCredentials = new LoginCredentials(
+                    sxst.getCertCn(),
+                    null,
+                    CredentialFormat.CLIENTCERT,
+                    securityToken,
+                    credentialSource,
+                    null,
+                    sxst.getCertificate() );
+        } else if ( securityToken instanceof SamlAssertion ) {
+            SamlAssertion samlAssertion = (SamlAssertion) securityToken;
+            loginCredentials = makeSamlCredentials(
+                    samlAssertion,
+                    credentialSource );
+        } else if ( securityToken instanceof X509SigningSecurityToken ) {
+            X509SigningSecurityToken xsst = (X509SigningSecurityToken) securityToken;
+            if ( !xsst.isPossessionProved() ) throw new IllegalArgumentException("Credential with unproved certificate!");
+            String certCN = CertUtils.extractFirstCommonNameFromCertificate(xsst.getMessageSigningCertificate());
+            loginCredentials = new LoginCredentials(
+                    certCN,
+                    null,
+                    CredentialFormat.CLIENTCERT,
+                    securityToken,
+                    credentialSource,
+                    null,
+                    xsst.getMessageSigningCertificate() );
+        } else if ( securityToken instanceof OpaqueSecurityToken ) {
+            OpaqueSecurityToken ost = (OpaqueSecurityToken) securityToken;
+            loginCredentials = new LoginCredentials(
+                    ost.getUsername(),
+                    ost.getCredential(),
+                    CredentialFormat.OPAQUETOKEN,
+                    securityToken,
+                    credentialSource, null, null );
+        } else if ( securityToken instanceof HttpDigestToken ) {
+            HttpDigestToken hdt = (HttpDigestToken) securityToken;
+            loginCredentials = new LoginCredentials(
+                    hdt.getUsername(),
+                    hdt.getHa1Hex().toCharArray(),
+                    CredentialFormat.DIGEST,
+                    securityToken,
+                    credentialSource,
+                    hdt.getRealm(),
+                    hdt.getParams() );
+         } else if ( securityToken instanceof KerberosSecurityToken ) {
+            KerberosSecurityToken kst = (KerberosSecurityToken) securityToken;
+            loginCredentials = new LoginCredentials(
+                    null,
+                    null,
+                    CredentialFormat.KERBEROSTICKET,
+                    securityToken,
+                    credentialSource,
+                    null,
+                    kst.getServiceTicket() );
+         } else {
+            throw new IllegalArgumentException("Unsupported security token '"+securityToken.getClass()+"' of type '"+securityToken.getType()+"'");
+        }
+
+        return loginCredentials;    
     }
 
     /**
@@ -53,20 +125,23 @@ public class LoginCredentials {
      * <p>The login for the credentials will be the certificates common name if
      * one is available, else the SAML assertions name identifier value.</p>
      *
-     * @param assertion The SAML assertion (must not be null)
+     * @param samlAssertion The SAML assertion (must not be null)
      * @param credentialSource The source credential assertion (must not be null)
      * @return The new LoginCredentials
      */
-    public static LoginCredentials makeSamlCredentials( final SamlAssertion assertion,
-                                                        final Class<? extends Assertion> credentialSource ) {
+    private static LoginCredentials makeSamlCredentials( final SamlAssertion samlAssertion,
+                                                         final Class<? extends Assertion> credentialSource ) {
         String login;
-        X509Certificate cert = assertion.getSubjectCertificate();
+        X509Certificate cert = samlAssertion.getSubjectCertificate();
         if (cert != null) {
             login = CertUtils.extractFirstCommonNameFromCertificate(cert);
+        } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(samlAssertion.getNameIdentifierFormat())) {
+            login = CertUtils.extractFirstCommonNameFromDN(samlAssertion.getNameIdentifierValue());
         } else {
-            login = assertion.getNameIdentifierValue();
+            login = samlAssertion.getNameIdentifierValue();
         }
-        return new LoginCredentials(login, null, CredentialFormat.SAML, credentialSource, null, assertion);
+
+        return new LoginCredentials(login, null, CredentialFormat.SAML, samlAssertion, credentialSource, null, samlAssertion);
     }
 
     /**
@@ -77,26 +152,11 @@ public class LoginCredentials {
      * @param credentialSource The source credential assertion (must not be null)
      * @return The new LoginCredentials
      */
-    public static LoginCredentials makePasswordCredentials( final String login,
-                                                            final char[] credentials,
-                                                            final Class<? extends Assertion> credentialSource ) {
-        return new LoginCredentials(login, credentials, CredentialFormat.CLEARTEXT, credentialSource, null);
-    }
-
-    /**
-     * Build LoginCredentials for the given username/password digest and source.
-     *
-     * @param login The users login
-     * @param credentials The users password digest
-     * @param realm The users authentication realm
-     * @param credentialSource The source credential assertion (must not be null)
-     * @return The new LoginCredentials
-     */
-    public static LoginCredentials makeDigestCredentials( final String login,
-                                                          final char[] credentials,
-                                                          final String realm,
-                                                          final Class<? extends Assertion> credentialSource ) {
-        return new LoginCredentials(login, credentials, CredentialFormat.DIGEST, credentialSource, realm, null);
+    private static LoginCredentials makePasswordCredentials( final String login,
+                                                             final char[] credentials,
+                                                             final SecurityToken securityToken,
+                                                             final Class<? extends Assertion> credentialSource ) {
+        return new LoginCredentials(login, credentials, CredentialFormat.CLEARTEXT, securityToken, credentialSource, null, null);
     }
 
     /**
@@ -108,89 +168,24 @@ public class LoginCredentials {
      * @param credentialSource The source credential assertion (must not be null)
      * @param realm The users authentication realm
      * @param payload The credential payload
-     * @param type The type of the security token for these credentials
      */
-    public LoginCredentials( final String login,
-                             final char[] credentials,
-                             final CredentialFormat format,
-                             final Class<? extends Assertion> credentialSource,
-                             final String realm,
-                             final Object payload,
-                             final SecurityTokenType type ) {
+    private LoginCredentials( final String login,
+                              final char[] credentials,
+                              final CredentialFormat format,
+                              final SecurityToken securityToken,
+                              final Class<? extends Assertion> credentialSource,
+                              final String realm,
+                              final Object payload ) {
         this.login = login;
         this.credentials = credentials;
         this.realm = realm;
         this.format = format;
+        this.securityToken = securityToken;
         this.credentialSourceAssertion = credentialSource;
         this.payload = payload;
-        this.type = type;
 
         if (format.isClientCert() && !(payload instanceof X509Certificate))
             throw new IllegalArgumentException("Must provide a certificate when creating client cert credentials");
-    }
-
-    /**
-     * Construct a new LoginCredentials.
-     *
-     * @param login The users login
-     * @param credentials The users credentials
-     * @param format The credential format.
-     * @param credentialSource The source credential assertion (must not be null)
-     * @param realm The users authentication realm
-     * @param payload The credential payload
-     */
-    public LoginCredentials( final String login,
-                             final char[] credentials,
-                             final CredentialFormat format,
-                             final Class<? extends Assertion> credentialSource,
-                             final String realm,
-                             final Object payload) {
-        this(login, credentials, format, credentialSource, realm, payload, null);
-    }
-
-    /**
-     * Construct a new LoginCredentials.
-     *
-     * @param login The users login
-     * @param credentials The users credentials
-     * @param format The credential format.
-     * @param credentialSource The source credential assertion (must not be null)
-     * @param realm The users authentication realm
-     */
-    public LoginCredentials( final String login,
-                             final char[] credentials,
-                             final CredentialFormat format,
-                             final Class<? extends Assertion> credentialSource,
-                             final String realm ) {
-        this(login, credentials, format, credentialSource, realm, null);
-    }
-
-    /**
-     * Construct a new LoginCredentials.
-     *
-     * @param login The users login
-     * @param credentials The users credentials
-     * @param format The credential format.
-     * @param credentialSource The source credential assertion (must not be null)
-     */
-    public LoginCredentials( final String login,
-                             final char[] credentials,
-                             final CredentialFormat format,
-                             final Class<? extends Assertion> credentialSource ) {
-        this(login, credentials, format, credentialSource, null);
-    }
-
-    /**
-     * Construct a new LoginCredentials.
-     *
-     * @param login The users login
-     * @param credentials The users password
-     * @param credentialSource The source credential assertion (must not be null)
-     */
-    public LoginCredentials( final String login,
-                             final char[] credentials,
-                             final Class<? extends Assertion> credentialSource ) {
-        this(login, credentials, CredentialFormat.CLEARTEXT, credentialSource, null);
     }
 
     /** @return the login name, or null if there isn't one. */
@@ -224,6 +219,15 @@ public class LoginCredentials {
      */
     public CredentialFormat getFormat() {
         return format;
+    }
+
+    /**
+     * Get the security token use to generate these credentials.
+     *
+     * @return The security token
+     */
+    public SecurityToken getSecurityToken() {
+        return securityToken;
     }
 
     /**
@@ -280,15 +284,15 @@ public class LoginCredentials {
         return null;
     }
 
+    /**
+     * This method SecurityTokenType for this credential
+     *
+     * @return a feasible token type for the credential.
+     */
     public SecurityTokenType getType() {
-        // Use given type if available
-        SecurityTokenType securityTokenType = type;
-
         // Check for specific type based on source assertion
-        if (securityTokenType == null) {
-            securityTokenType =
+        SecurityTokenType securityTokenType =
                     (SecurityTokenType) CREDENTIAL_SOURCE_TO_TOKEN_TYPE.get(credentialSourceAssertion);
-        }
 
         // Else use default type for format
         if (securityTokenType == null) {
@@ -373,10 +377,10 @@ public class LoginCredentials {
     private final String realm;
     private final CredentialFormat format;
     private final Object payload;
-    private final SecurityTokenType type;
 
+    private transient final SecurityToken securityToken; // Not part of equality since that would break auth caching
     private transient final char[] credentials;
     private transient final Class<? extends Assertion> credentialSourceAssertion;
 
-    private transient volatile String cachedToString;
+    private volatile String cachedToString;
 }

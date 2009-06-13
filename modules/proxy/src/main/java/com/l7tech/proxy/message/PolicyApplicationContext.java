@@ -33,9 +33,10 @@ import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.security.token.X509SigningSecurityToken;
-import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.security.token.SecurityContextToken;
 import com.l7tech.security.token.EncryptedKey;
+import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.wstrust.TokenServiceClient;
 import com.l7tech.security.wstrust.WsTrustConfig;
 import com.l7tech.security.wstrust.WsTrustConfigFactory;
@@ -450,7 +451,7 @@ public class PolicyApplicationContext extends ProcessingContext<CredentialContex
         if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null) {
             pw = ssg.getRuntime().getCredentialManager().getCredentials(trusted);
             if (pw != null)
-                getDefaultAuthenticationContext().addCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
+                getDefaultAuthenticationContext().addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken(pw.getUserName(), pw.getPassword()), HttpBasic.class));
         }
         return pw;
     }
@@ -470,7 +471,7 @@ public class PolicyApplicationContext extends ProcessingContext<CredentialContex
     public PasswordAuthentication getNewCredentials() throws OperationCanceledException, HttpChallengeRequiredException {
         PasswordAuthentication pw = ssg.getRuntime().getCredentialManager().getNewCredentials(ssg, true);
         if (pw != null)
-            getDefaultAuthenticationContext().addCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
+            getDefaultAuthenticationContext().addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken(pw.getUserName(), pw.getPassword()), HttpBasic.class));
         return pw;
     }
 
@@ -494,7 +495,7 @@ public class PolicyApplicationContext extends ProcessingContext<CredentialContex
         if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null) {
             pw = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
             if (pw != null)
-                getDefaultAuthenticationContext().addCredentials(LoginCredentials.makePasswordCredentials(pw.getUserName(), pw.getPassword(), HttpBasic.class));
+                getDefaultAuthenticationContext().addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken(pw.getUserName(), pw.getPassword()), HttpBasic.class));
         }
         return pw;
     }
@@ -528,8 +529,8 @@ public class PolicyApplicationContext extends ProcessingContext<CredentialContex
             if ( serverCertificate != null && CertUtils.certsAreEqual( serverCertificate, x509Token.getMessageSigningCertificate() ) ) {
                 trusted = true;
             }
-        } else if ( signingToken instanceof KerberosSecurityToken ) {
-            KerberosSecurityToken kerberosToken = (KerberosSecurityToken) signingToken;
+        } else if ( signingToken instanceof KerberosSigningSecurityToken) {
+            KerberosSigningSecurityToken kerberosToken = (KerberosSigningSecurityToken) signingToken;
             KerberosServiceTicket ticket = getKerberosServiceTicketId()==null ? null : getExistingKerberosServiceTicket();
             if ( ticket != null && ticket.getGSSAPReqTicket() == kerberosToken.getTicket() ) {
                 trusted = true;

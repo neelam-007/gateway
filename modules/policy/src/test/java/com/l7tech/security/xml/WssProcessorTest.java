@@ -105,8 +105,8 @@ public class WssProcessorTest {
                 if (token instanceof SamlSecurityToken) {
                     log.info("Possession proved: " + ((SamlSecurityToken)token).isPossessionProved());
                     log.info("  " + ((SamlSecurityToken)token).getSubjectCertificate());
-                } else if (token instanceof X509SecurityToken) {
-                    log.info("Possession proved: " + ((X509SecurityToken)token).isPossessionProved());
+                } else if (token instanceof X509SigningSecurityToken) {
+                    log.info("Possession proved: " + ((X509SigningSecurityToken)token).isPossessionProved());
                     log.info("  " + token);
                 } else {
                     log.info("  " + token);

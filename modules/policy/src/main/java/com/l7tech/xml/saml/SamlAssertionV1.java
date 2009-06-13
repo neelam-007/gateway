@@ -233,6 +233,15 @@ public class SamlAssertionV1 extends SamlAssertion {
         return embeddedSignatureElement;
     }
 
+    /**
+     * Get the subject certificate.
+     *
+     * <p>This will only be available when using holder of key. A HOK SAML
+     * assertion should only be considered valid once possession of the
+     * subject key has been proven.</p>
+     *
+     * @return The certificate or null if not holder of key
+     */
     public X509Certificate getSubjectCertificate() {
         return subjectCertificate;
     }

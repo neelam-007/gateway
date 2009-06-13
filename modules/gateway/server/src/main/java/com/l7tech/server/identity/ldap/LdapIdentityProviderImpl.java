@@ -553,7 +553,7 @@ public class LdapIdentityProviderImpl
         } else if (format == CredentialFormat.DIGEST) {
             return DigestAuthenticator.authenticateDigestCredentials(pc, realUser);
         } else if (format  == CredentialFormat.KERBEROSTICKET) {
-            return new AuthenticationResult( realUser );
+            return new AuthenticationResult( realUser, pc.getSecurityToken() );
         } else {
             if (format == CredentialFormat.CLIENTCERT || format == CredentialFormat.SAML) {
 
@@ -613,7 +613,7 @@ public class LdapIdentityProviderImpl
         boolean res = userManager.authenticateBasic(realUser.getDn(), new String(pc.getCredentials()));
         if (res) {
             // success
-            return new AuthenticationResult(realUser);
+            return new AuthenticationResult(realUser, pc.getSecurityToken());
         }
         logger.info("credentials did not authenticate for " + pc.getLogin());
         throw new BadCredentialsException("credentials did not authenticate");

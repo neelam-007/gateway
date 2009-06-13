@@ -6,7 +6,6 @@ package com.l7tech.policy.variable;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.Element;
-import sun.security.x509.X500Name;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -79,7 +78,6 @@ public abstract class Syntax {
         add(Integer.TYPE);
         add(Boolean.class);
         add(Boolean.TYPE);
-        add(X500Name.class);
     }});
 
     public static String[] getReferencedNames(String s) {

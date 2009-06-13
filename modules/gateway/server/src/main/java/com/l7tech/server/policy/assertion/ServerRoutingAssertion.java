@@ -17,7 +17,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SubjectStatement;
-import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.security.token.SecurityContextToken;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.KeyInfoInclusionType;
@@ -337,8 +337,8 @@ public abstract class ServerRoutingAssertion<RAT extends RoutingAssertion> exten
             }
 
             for (XmlSecurityToken tok : tokens) {
-                if (tok instanceof KerberosSecurityToken) {
-                    kerberosServiceTicket = ((KerberosSecurityToken) tok).getTicket().getServiceTicket();
+                if (tok instanceof KerberosSigningSecurityToken) {
+                    kerberosServiceTicket = ((KerberosSigningSecurityToken) tok).getServiceTicket();
                 } else if (tok instanceof SecurityContextToken) {
                     SecurityContext securityContext = ((SecurityContextToken) tok).getSecurityContext();
                     if (securityContext instanceof SecureConversationSession) {

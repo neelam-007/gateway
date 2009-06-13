@@ -43,25 +43,7 @@ public final class KerberosGSSAPReqTicket {
     }
 
     public byte[] getSPNEGO() {
-        return GSSSpnego.addSpnegoWrapper(ticketBytes);
-    }
-
-    /**
-     * Get the decrypted ticket (if any)
-     *
-     * @return the ticket if available (may be null)
-     */
-    public KerberosServiceTicket getServiceTicket() {
-        return serviceTicket;
-    }
-
-    /**
-     * Set the decrypted ticket.
-     *
-     * @param kerberosServiceTicket the ticket
-     */
-    public void setServiceTicket(KerberosServiceTicket kerberosServiceTicket) {
-        this.serviceTicket = kerberosServiceTicket;
+        return GSSSpnego.addSpnegoWrapper(toByteArray());
     }
 
     //- PACKAGE
@@ -104,10 +86,5 @@ public final class KerberosGSSAPReqTicket {
      * The GSS wrapped request ticket / packet
      */
     private final byte[] ticketBytes;
-
-    /**
-     * The decrypted ticket
-     */
-    private KerberosServiceTicket serviceTicket;
 
 }

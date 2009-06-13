@@ -29,6 +29,8 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.token.UsernamePasswordSecurityToken;
 
 import javax.security.auth.login.LoginException;
 import javax.security.auth.login.CredentialExpiredException;
@@ -271,7 +273,8 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
         }
 
         if ( identityProvider != null ) {
-            LoginCredentials creds = new LoginCredentials(user.getLogin(), password.toCharArray() , null);
+            LoginCredentials creds = LoginCredentials.makeLoginCredentials(
+                    new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, user.getLogin(), password.toCharArray()) , null);
             try {
                 AuthenticationResult authResult = ((AuthenticatingIdentityProvider)identityProvider).authenticate(creds);
                 User authenticatedUser = authResult == null ? null : authResult.getUser();

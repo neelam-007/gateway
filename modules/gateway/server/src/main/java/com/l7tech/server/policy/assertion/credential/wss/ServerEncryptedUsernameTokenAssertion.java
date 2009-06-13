@@ -117,10 +117,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
                 }
 
                 // We're happy with this username token.  Proceed.
-                String user = utok.getUsername();
-                char[] pass = utok.getPassword();
-                if (pass == null) pass = new char[0];
-                LoginCredentials creds = LoginCredentials.makePasswordCredentials(user, pass, WssBasic.class);
+                LoginCredentials creds = LoginCredentials.makeLoginCredentials(utok, WssBasic.class);
                 authContext.addCredentials(creds);
 
                 if ( isRequest() ) {
@@ -160,10 +157,10 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
     private final EncryptedUsernameTokenAssertion data;
     private final Auditor auditor;
 
-    private void addDeferredAssertion(PolicyEnforcementContext context,
+    private void addDeferredAssertion(final PolicyEnforcementContext policyEnforcementContext,
                                       final String encryptedKeySha1,
                                       final byte[] secretKey) {
-        context.addDeferredAssertion(this, new AbstractServerAssertion<EncryptedUsernameTokenAssertion>(data) {
+        policyEnforcementContext.addDeferredAssertion(this, new AbstractServerAssertion<EncryptedUsernameTokenAssertion>(data) {
             @Override
             public AssertionStatus checkRequest(final PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException

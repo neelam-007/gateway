@@ -5,16 +5,17 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.InetAddressUtil;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
-import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
+import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.util.DomUtils;
 import com.l7tech.xml.saml.SamlAssertion;
 import junit.framework.Test;
@@ -71,7 +72,9 @@ public class SignedSamlTest extends TestCase {
     }
 
     private Document getUnsignedHolderOfKeyAssertion(String id, boolean useThumbprintForSubject, int samlVersion) throws CertificateException, SignatureException {
-        LoginCredentials creds = new LoginCredentials(null, null, CredentialFormat.CLIENTCERT, RequireWssX509Cert.class, null, clientCertChain[0]);
+        X509BinarySecurityTokenImpl token = new X509BinarySecurityTokenImpl(clientCertChain[0], null);
+        token.onPossessionProved();
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(token, RequireWssX509Cert.class);
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setClientAddress(InetAddressUtil.getLocalHost());
         samlOptions.setSignAssertion(false);
@@ -84,7 +87,9 @@ public class SignedSamlTest extends TestCase {
     }
 
     private Document getUnsignedHolderOfKeyAssertionTwoStatements(String id, boolean useThumbprintForSubject, int samlVersion) throws CertificateException, SignatureException {
-        LoginCredentials creds = new LoginCredentials(null, null, CredentialFormat.CLIENTCERT, RequireWssX509Cert.class, null, clientCertChain[0]);
+        X509BinarySecurityTokenImpl token = new X509BinarySecurityTokenImpl(clientCertChain[0], null);
+        token.onPossessionProved();
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(token, RequireWssX509Cert.class);
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setClientAddress(InetAddressUtil.getLocalHost());
         samlOptions.setVersion(samlVersion);
@@ -110,7 +115,6 @@ public class SignedSamlTest extends TestCase {
                 getUnsignedHolderOfKeyAssertionTwoStatements(assertionId, useThumbprintForSubject, samlVersion) :
                 getUnsignedHolderOfKeyAssertion(assertionId, useThumbprintForSubject, samlVersion);
 
-        String s2 = XmlUtil.nodeToFormattedString(assertionDoc);
         final SamlAssertionGenerator.Options opts = new SamlAssertionGenerator.Options();
         opts.setId(assertionId);
         opts.setSignAssertion(true);
@@ -156,8 +160,7 @@ public class SignedSamlTest extends TestCase {
         samlOptions.setExpiryMinutes(5);
         samlOptions.setProofOfPosessionRequired(false);
         SubjectStatement statement =
-          SubjectStatement.createAuthenticationStatement(LoginCredentials.makeCertificateCredentials(clientCertChain[0],
-                                                                                                     RequireWssX509Cert.class),
+          SubjectStatement.createAuthenticationStatement(LoginCredentials.makeLoginCredentials(new HttpClientCertToken(clientCertChain[0]), SslAssertion.class),
                                                          SubjectStatement.HOLDER_OF_KEY, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         ag.attachStatement(request, statement, samlOptions);
         return request;
@@ -169,7 +172,7 @@ public class SignedSamlTest extends TestCase {
         samlOptions.setExpiryMinutes(5);
         samlOptions.setProofOfPosessionRequired(false);
         samlOptions.setId("TestAssertionId-001");
-        final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(clientCertChain[0], RequireWssSaml.class);
+        final LoginCredentials credentials = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(clientCertChain[0]), SslAssertion.class);
         SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         SamlAssertionGenerator generator = new SamlAssertionGenerator(new SignerInfo(caPrivateKey, caCertChain));
         Document samlsvAssertion = generator.createAssertion(subjectStatement, samlOptions);

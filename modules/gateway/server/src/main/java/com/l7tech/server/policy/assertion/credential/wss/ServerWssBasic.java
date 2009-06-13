@@ -80,11 +80,7 @@ public class ServerWssBasic extends AbstractMessageTargetableServerAssertion<Wss
         for (XmlSecurityToken token : tokens) {
             if (token instanceof UsernameToken) {
                 UsernameToken ut = (UsernameToken) token;
-
-                String user = ut.getUsername();
-                char[] pass = ut.getPassword();
-                if (pass == null) pass = new char[0];
-                LoginCredentials creds = LoginCredentials.makePasswordCredentials(user, pass, WssBasic.class);
+                LoginCredentials creds = LoginCredentials.makeLoginCredentials(ut, WssBasic.class);
                 authContext.addCredentials(creds);
                 return AssertionStatus.NONE;
             }

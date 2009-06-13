@@ -8,11 +8,11 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.util.HexUtils;
+import com.l7tech.security.token.http.HttpBasicToken;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -73,7 +73,7 @@ public class ServerHttpBasic extends ServerHttpCredentialSource<HttpBasic> {
 
             auditor.logAndAudit(AssertionMessages.HTTPCREDS_FOUND_USER, login);
 
-            return new LoginCredentials(login, pass.toCharArray(), CredentialFormat.CLEARTEXT, assertion.getClass(), null);
+            return LoginCredentials.makeLoginCredentials(new HttpBasicToken(login, pass.toCharArray()), assertion.getClass());
         } else {
             // No colons
             auditor.logAndAudit(AssertionMessages.HTTPCREDS_BAD_AUTHN_HEADER, "no colon");

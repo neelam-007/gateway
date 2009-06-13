@@ -105,14 +105,14 @@ public class CertificateAuthenticator {
                 // remember that this cert was used at least once successfully
                 try {
                     clientCertManager.forbidCertReset(user);
-                    return new AuthenticationResult(user, requestCert,
+                    return new AuthenticationResult(user, pc.getSecurityToken(), requestCert,
                                                     clientCertManager.isCertPossiblyStale(requestCert));
                 } catch (ObjectModelException e) {
                     logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
                     return null;
                 }
             } else {
-                return new AuthenticationResult(user, requestCert, false);
+                return new AuthenticationResult(user, pc.getSecurityToken(), requestCert, false);
             }
         } else {
             String err = "Failed to authenticate user " + userLabel + " using a client certificate " +

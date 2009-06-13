@@ -554,7 +554,7 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     // @return a new DerivedKeyToken.  Never null.
-    private static DerivedKeyToken deriveKeyFromKerberosToken(Element derivedKeyEl, KerberosSecurityToken kst)
+    private static DerivedKeyToken deriveKeyFromKerberosToken(Element derivedKeyEl, KerberosSigningSecurityToken kst)
             throws InvalidDocumentFormatException
     {
         assert derivedKeyEl != null;
@@ -562,7 +562,7 @@ public class WssProcessorImpl implements WssProcessor {
         try {
             SecureConversationKeyDeriver keyDeriver = new SecureConversationKeyDeriver();
             final byte[] resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl,
-                                                                        kst.getTicket().getServiceTicket().getKey());
+                                                                        kst.getServiceTicket().getKey());
             return new DerivedKeyTokenImpl(derivedKeyEl, resultingKey, kst);
         } catch (NoSuchAlgorithmException e) {
             throw new InvalidDocumentFormatException(e);
@@ -1013,8 +1013,8 @@ public class WssProcessorImpl implements WssProcessor {
             derivedKeyTokens.add(deriveKeyFromEncryptedKey(derivedKeyEl,
                                                            (EncryptedKey)derivationSource));
             isDerivedKeySeen = true;
-        } else if (derivationSource instanceof KerberosSecurityToken) {
-            derivedKeyTokens.add(deriveKeyFromKerberosToken(derivedKeyEl, (KerberosSecurityToken)derivationSource));
+        } else if (derivationSource instanceof KerberosSigningSecurityToken) {
+            derivedKeyTokens.add(deriveKeyFromKerberosToken(derivedKeyEl, (KerberosSigningSecurityToken)derivationSource));
             isDerivedKeySeen = true;
         } else
             logger.info("Unsupported DerivedKeyToken reference target '" + derivationSource.getType() + "', ignoring this derived key.");

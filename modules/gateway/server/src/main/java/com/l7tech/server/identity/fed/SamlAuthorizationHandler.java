@@ -13,7 +13,6 @@ import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.server.audit.Auditor;
@@ -43,10 +42,10 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
         super(provider, trustedCertServices, clientCertManager, certValidationProcessor, auditor, certOidSet);
     }
 
-    User authorize(LoginCredentials pc) throws AuthenticationException {
+        User authorize(LoginCredentials pc) throws AuthenticationException {
         if (!providerConfig.isSamlSupported())
             throw new BadCredentialsException("This identity provider is not configured to support SAML credentials");
-        Object maybeAssertion = pc.getPayload();
+        Object maybeAssertion = pc.getSecurityToken();
 
         if (!(maybeAssertion instanceof SamlAssertion))
             throw new BadCredentialsException("SAML Assertion contained unsupported Subject/ConfirmationMethod");

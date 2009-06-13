@@ -4,7 +4,8 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.security.token.ParsedElement;
 import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.security.token.SignedElement;
-import com.l7tech.security.token.X509SecurityToken;
+import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.token.X509SigningSecurityToken;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.util.CausedIOException;
@@ -174,15 +175,17 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
 
             }
 
-            X509SecurityToken x509Token = null;
-            if ( token instanceof X509SecurityToken ) {
-                x509Token = (X509SecurityToken) token;
+            X509SigningSecurityToken x509Token = null;
+            if ( token instanceof X509SigningSecurityToken ) {
+                x509Token = (X509SigningSecurityToken) token;
             }
 
-            if ( x509Token != null) {
-                setVariable( context, RequireWssSignedElement.VAR_TOKEN_ELEMENT, x509Token.asElement() );
+            if ( x509Token != null ) {
+                if ( x509Token.getType() == SecurityTokenType.WSS_X509_BST ) {
+                    setVariable( context, RequireWssSignedElement.VAR_TOKEN_ELEMENT, x509Token.asElement() );
+                }
                 setVariable( context, RequireWssSignedElement.VAR_TOKEN_TYPE, "X.509" );
-                setVariable( context, RequireWssSignedElement.VAR_TOKEN_ATTRIBUTES, x509Token.getCertificate() );
+                setVariable( context, RequireWssSignedElement.VAR_TOKEN_ATTRIBUTES, x509Token.getMessageSigningCertificate() );
             }
         }
     }

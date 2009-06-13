@@ -28,7 +28,7 @@ import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.util.DomainIdInjector;
 import com.l7tech.proxy.util.SslUtils;
-import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.SecurityActor;
 import com.l7tech.security.xml.SignerInfo;
@@ -911,7 +911,7 @@ public class MessageProcessor {
         params.addExtraHeader(new GenericHttpHeader(MimeUtil.CONTENT_TYPE, request.getMimeKnob().getOuterContentType().getFullValue()));
         if (ssg.isHttpHeaderPassthrough()) {
             // Pass through all other headers from request to response, but without overwriting any Bridge header
-            HttpHeadersKnob httpHeadersKnob = (HttpHeadersKnob)request.getKnob(HttpHeadersKnob.class);
+            HttpHeadersKnob httpHeadersKnob = request.getKnob(HttpHeadersKnob.class);
             if (httpHeadersKnob != null) {
                 HttpHeader[] heads = httpHeadersKnob.getHeaders().toArray();
                 for (HttpHeader head : heads) {
@@ -1062,13 +1062,13 @@ public class MessageProcessor {
                         return encryptedKeySecretKey.getEncoded();
                     }
 
-                    public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
+                    public KerberosSigningSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
                         KerberosServiceTicket tick = context.getExistingKerberosServiceTicket();
                         if (tick == null) return null;
                         String tickId = context.getKerberosServiceTicketId();
                         if (tickId == null) return null;
                         if (!(tickId.equals(kerberosSha1))) return null;
-                        return WssProcessorUtil.makeKerberosToken(tick.getGSSAPReqTicket());
+                        return WssProcessorUtil.makeKerberosToken(tick);
                     }
                 };
 

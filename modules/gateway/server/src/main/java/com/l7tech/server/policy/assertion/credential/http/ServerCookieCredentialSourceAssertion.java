@@ -10,12 +10,12 @@ import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
+import com.l7tech.security.token.OpaqueSecurityToken;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -44,7 +44,7 @@ public class ServerCookieCredentialSourceAssertion extends ServerCredentialSourc
                 String cookieValue = cookie.getCookieValue();
                 //String login = "cookie-" + cookieName + "-" + HexUtils.encodeBase64(cookieValue.getBytes("UTF-8"), true);
                 auditor.logAndAudit(AssertionMessages.HTTPCOOKIE_FOUND, cookieName);
-                return new LoginCredentials(null, cookieValue.toCharArray(), CredentialFormat.OPAQUETOKEN, CookieCredentialSourceAssertion.class);
+                return LoginCredentials.makeLoginCredentials(new OpaqueSecurityToken(null, cookieValue.toCharArray()), CookieCredentialSourceAssertion.class);
             }
         }
 

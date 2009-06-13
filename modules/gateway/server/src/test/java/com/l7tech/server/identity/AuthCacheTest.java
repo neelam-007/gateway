@@ -2,8 +2,9 @@ package com.l7tech.server.identity;
 
 import com.l7tech.identity.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.util.TimeSource;
+import com.l7tech.security.token.http.HttpBasicToken;
 
 import java.lang.reflect.Field;
 
@@ -36,9 +37,10 @@ public class AuthCacheTest {
      */
     @Test
     public void testSuccessCache() throws Exception{
-        LoginCredentials lc = LoginCredentials.makePasswordCredentials(USER_NAME, PASSWORD.toCharArray(), Assertion.class);
+        LoginCredentials lc = LoginCredentials.makeLoginCredentials(new HttpBasicToken(USER_NAME, PASSWORD.toCharArray()), HttpBasic.class);
         final int[] authInvocations = new int[1];
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG){
+            @Override
             public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
                 authInvocations[0]++;
                 return super.authenticate(pc);
@@ -51,11 +53,11 @@ public class AuthCacheTest {
 
         final long[] time = new long[]{ System.currentTimeMillis() };
         AuthCache aC = new AuthCache("TestAuthCache", new TimeSource(){
+            @Override
             public long currentTimeMillis() {
                 return time[0];
             }
         }, 5, 3, 5, 3);
-        Class  c = aC.getClass();
 
         //First authenticate causes the idp to be contacted
         Assert.assertNotNull(aC.getCachedAuthResult(lc, tIP, MAX_AGE, MAX_AGE));
@@ -85,9 +87,10 @@ public class AuthCacheTest {
      */
     @Test
     public void testFailureCache() throws Exception{
-        LoginCredentials lc = LoginCredentials.makePasswordCredentials(USER_NAME+"miss", PASSWORD.toCharArray(), Assertion.class);
+        LoginCredentials lc = LoginCredentials.makeLoginCredentials(new HttpBasicToken(USER_NAME+"miss", PASSWORD.toCharArray()), HttpBasic.class);
         final int[] authInvocations = new int[1];
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG){
+            @Override
             public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
                 authInvocations[0]++;
                 return super.authenticate(pc);
@@ -96,11 +99,11 @@ public class AuthCacheTest {
 
         final long[] time = new long[]{ System.currentTimeMillis() };
         AuthCache aC = new AuthCache("TestAuthCache", new TimeSource(){
+            @Override
             public long currentTimeMillis() {
                 return time[0];
             }
         }, 5, 3, 5, 3);
-        Class  c = aC.getClass();
 
         //First authenticate causes the idp to be contacted
         Assert.assertNull(aC.getCachedAuthResult(lc, tIP, MAX_AGE, MAX_AGE));
@@ -136,6 +139,7 @@ public class AuthCacheTest {
 
         final int[] authInvocations = new int[1];
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG){
+            @Override
             public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
                 authInvocations[0]++;
                 return super.authenticate(pc);
@@ -146,7 +150,7 @@ public class AuthCacheTest {
         UserBean ub1 = new UserBean(tIP.getConfig().getOid(), userName);
         ub1.setCleartextPassword(PASSWORD);
         TestIdentityProvider.addUser(ub1, userName, PASSWORD.toCharArray());
-        LoginCredentials lc1 = LoginCredentials.makePasswordCredentials(userName, PASSWORD.toCharArray(), Assertion.class);
+        LoginCredentials lc1 = LoginCredentials.makeLoginCredentials(new HttpBasicToken(userName, PASSWORD.toCharArray()), HttpBasic.class);
         Assert.assertNotNull(aC.getCachedAuthResult(lc1, tIP, MAX_AGE, MAX_AGE));
 
         addSomeUsers(5, tIP, aC);
@@ -175,16 +179,17 @@ public class AuthCacheTest {
         //now that we know the failure cache has been disabled, call the success test case above
         final int[] authInvocations = new int[1];
         TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG){
+            @Override
             public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
                 authInvocations[0]++;
                 return super.authenticate(pc);
             }
         };
 
-        LoginCredentials lc1 = LoginCredentials.makePasswordCredentials(USER_NAME+"1", PASSWORD.toCharArray(), Assertion.class);
+        LoginCredentials lc1 = LoginCredentials.makeLoginCredentials(new HttpBasicToken(USER_NAME+"1", PASSWORD.toCharArray()), HttpBasic.class);
         Assert.assertNull(aC.getCachedAuthResult(lc1, tIP, MAX_AGE, MAX_AGE));
         for(int i = 0; i < 5; i++){
-            LoginCredentials lc = LoginCredentials.makePasswordCredentials(USER_NAME+"a"+i, PASSWORD.toCharArray(), Assertion.class);
+            LoginCredentials lc = LoginCredentials.makeLoginCredentials(new HttpBasicToken(USER_NAME+"a"+i, PASSWORD.toCharArray()), HttpBasic.class);
             Assert.assertNull(aC.getCachedAuthResult(lc, tIP, MAX_AGE, MAX_AGE));
         }
 
@@ -202,7 +207,7 @@ public class AuthCacheTest {
             UserBean ub = new UserBean(tIP.getConfig().getOid(), userName);
             ub.setCleartextPassword(PASSWORD);
             TestIdentityProvider.addUser(ub, userName, PASSWORD.toCharArray());
-            LoginCredentials lc = LoginCredentials.makePasswordCredentials(userName, PASSWORD.toCharArray(), Assertion.class);
+            LoginCredentials lc = LoginCredentials.makeLoginCredentials(new HttpBasicToken(userName, PASSWORD.toCharArray()), HttpBasic.class);
             Assert.assertNotNull(aC.getCachedAuthResult(lc, tIP, MAX_AGE, MAX_AGE));
         }
     } 

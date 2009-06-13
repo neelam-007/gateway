@@ -3,7 +3,6 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -20,10 +19,10 @@ import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.CausedIOException;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.message.Message;
+import com.l7tech.common.io.CertUtils;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 import org.w3c.dom.Element;
-import sun.security.x509.X500Name;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
@@ -129,15 +128,8 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
                     }
 
                     processedSignatureElement = x509Tok.getSignedElements()[0].getSignatureElement();
-                    X500Name x500name = new X500Name(signingCertificate.getSubjectX500Principal().getName());
-                    String certCN = x500name.getCommonName();
-                    authContext.addCredentials(
-                            new LoginCredentials(certCN,
-                                                null,
-                                                CredentialFormat.CLIENTCERT,
-                                                assertion.getClass(),
-                                                null,
-                                                signingCertificate));
+                    String certCN = CertUtils.extractFirstCommonNameFromCertificate(signingCertificate);
+                    authContext.addCredentials( LoginCredentials.makeLoginCredentials( x509Tok, assertion.getClass() ) );
                     auditor.logAndAudit(AssertionMessages.WSS_X509_CERT_LOADED, certCN);
                 }
             }

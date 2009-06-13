@@ -6,7 +6,7 @@ import com.l7tech.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.kerberos.KerberosClient;
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.kerberos.KerberosException;
-import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
 import org.w3c.dom.Element;
 
@@ -18,42 +18,42 @@ import org.w3c.dom.Element;
  * @author $Author$
  * @version $Revision$
  */
-public class KerberosSecurityTokenImpl extends SigningSecurityTokenImpl implements KerberosSecurityToken {
+public class KerberosSecurityTokenImpl extends SigningSecurityTokenImpl implements KerberosSigningSecurityToken {
 
     //- PUBLIC
 
-    public KerberosSecurityTokenImpl(KerberosGSSAPReqTicket ticket, String wsuId) {
+    public KerberosSecurityTokenImpl(KerberosServiceTicket ticket, String wsuId) {
         super(null);
-        this.ticket = ticket;
+        this.kerberosServiceTicket = ticket;
         this.wsuId = wsuId;
     }
 
     public KerberosSecurityTokenImpl(KerberosGSSAPReqTicket ticket, String wsuId, Element element) throws GeneralSecurityException {
         super(element);
-        this.ticket = ticket;
         this.wsuId = wsuId;
 
-        if(element!=null && ticket.getServiceTicket()==null) { // check element since we don't do auth for virtual token
+        try {
+            KerberosClient client = new KerberosClient();
+            String spn;
             try {
-                KerberosClient client = new KerberosClient();
-                String spn;
-                try {
-                    spn = KerberosClient.getKerberosAcceptPrincipal(false);
-                }
-                catch(KerberosException ke) { // fallback to system property name
-                    spn = KerberosClient.getGSSServiceName();
-                }
-                KerberosServiceTicket kerberosServiceTicket = client.getKerberosServiceTicket(spn, ticket);
-                ticket.setServiceTicket(kerberosServiceTicket);
+                spn = KerberosClient.getKerberosAcceptPrincipal(false);
             }
-            catch(KerberosException ke) {
-                throw new GeneralSecurityException("Error processing Kerberos Binary Security Token.", ke);
+            catch(KerberosException ke) { // fallback to system property name
+                spn = KerberosClient.getGSSServiceName();
             }
+            kerberosServiceTicket = client.getKerberosServiceTicket(spn, ticket);
+        }
+        catch(KerberosException ke) {
+            throw new GeneralSecurityException("Error processing Kerberos Binary Security Token.", ke);
         }
     }
 
+    public KerberosServiceTicket getServiceTicket() {
+        return kerberosServiceTicket;
+    }
+
     public KerberosGSSAPReqTicket getTicket() {
-        return ticket;
+        return kerberosServiceTicket.getGSSAPReqTicket();
     }
 
     public String getElementId() {
@@ -66,6 +66,6 @@ public class KerberosSecurityTokenImpl extends SigningSecurityTokenImpl implemen
 
     //- PRIVATE
 
-    private final KerberosGSSAPReqTicket ticket;
+    private final KerberosServiceTicket kerberosServiceTicket;
     private final String wsuId;
 }

@@ -13,6 +13,8 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.security.MockGenericHttpClient;
+import com.l7tech.security.token.UsernamePasswordSecurityToken;
+import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.audit.AuditContext;
@@ -721,7 +723,8 @@ public class PolicyProcessingTest extends TestCase {
                 UserBean user = new UserBean();
                 user.setLogin(contextAuth.getUserName());
                 user.setCleartextPassword(new String(contextAuth.getPassword()));
-                context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(user));
+                context.getDefaultAuthenticationContext().addAuthenticationResult(
+                        new AuthenticationResult(user, new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, contextAuth)));
             }
 
             status = messageProcessor.processMessage(context);

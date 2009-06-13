@@ -11,7 +11,6 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpNegotiate;
 import com.l7tech.server.audit.Auditor;
@@ -19,6 +18,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.security.token.http.HttpNegotiateToken;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -131,15 +131,8 @@ public class ServerHttpNegotiate extends ServerHttpCredentialSource<HttpNegotiat
                 spn = KerberosClient.getGSSServiceName();
             }
             KerberosServiceTicket kerberosServiceTicket = client.getKerberosServiceTicket(spn, ticket);
-            ticket.setServiceTicket(kerberosServiceTicket);
 
-            LoginCredentials loginCreds = new LoginCredentials(
-                                                        null,
-                                                        null,
-                                                        CredentialFormat.KERBEROSTICKET,
-                                                        HttpNegotiate.class,
-                                                        null,
-                                                        kerberosServiceTicket);
+            LoginCredentials loginCreds = LoginCredentials.makeLoginCredentials( new HttpNegotiateToken(kerberosServiceTicket), assertion.getClass() );
 
             setConnectionCredentials(connectionId, loginCreds);
 

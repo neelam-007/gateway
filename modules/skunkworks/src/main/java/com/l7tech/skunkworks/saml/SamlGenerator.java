@@ -7,7 +7,7 @@ import com.l7tech.gui.util.GuiCertUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
 import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SamlConstants;
@@ -16,6 +16,7 @@ import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.SoapConstants;
@@ -162,6 +163,7 @@ public class SamlGenerator {
         nameIdentifierFormatComboBox.getModel().setSelectedItem(SELECTION_NONE);
 
         issuerCertButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 GuiCertUtil.ImportedData data = GuiCertUtil.importCertificate(mainFrame, true, getCallbackHandler());
                 if (data != null) {
@@ -176,6 +178,7 @@ public class SamlGenerator {
         });
 
         subjectCertButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 GuiCertUtil.ImportedData data = GuiCertUtil.importCertificate(mainFrame, false, getCallbackHandler());
                 if (data != null) {
@@ -190,6 +193,7 @@ public class SamlGenerator {
         });
 
         generateButton.addActionListener(new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 generateSamlStatements();
             }
@@ -244,7 +248,7 @@ public class SamlGenerator {
             // Generate
             SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(issuerInfo);
             // this gets fixed up later
-            LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(subjectCertificate, RequireWssX509Cert.class);
+            LoginCredentials credentials = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(subjectCertificate), SslAssertion.class);
             SubjectStatement.Confirmation confirmationMethod = SubjectStatement.BEARER;
             if (SamlConstants.CONFIRMATION_HOLDER_OF_KEY.equals(subjectConfirmation) ||
                 SamlConstants.CONFIRMATION_SAML2_HOLDER_OF_KEY.equals(subjectConfirmation)) {
@@ -456,6 +460,7 @@ public class SamlGenerator {
      */
     private CallbackHandler getCallbackHandler() {
         return new CallbackHandler() {
+            @Override
             public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
                 PasswordCallback passwordCallback = null;
 
@@ -470,6 +475,7 @@ public class SamlGenerator {
                     JOptionPane pane = new JOptionPane(pwd, JOptionPane.QUESTION_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
                     JDialog dialog = pane.createDialog(null, "Enter " + passwordCallback.getPrompt());
                     dialog.addWindowFocusListener(new WindowAdapter(){
+                        @Override
                         public void windowGainedFocus(WindowEvent e) {
                             pwd.requestFocusInWindow();
                         }
@@ -477,7 +483,7 @@ public class SamlGenerator {
                     dialog.setVisible(true);
                     dialog.dispose();
                     Object value = pane.getValue();
-                    if (value != null && ((Integer)value).intValue() == JOptionPane.OK_OPTION)
+                    if (value != null && ((Integer)value) == JOptionPane.OK_OPTION)
                         passwordCallback.setPassword(pwd.getPassword());
                 }
             }

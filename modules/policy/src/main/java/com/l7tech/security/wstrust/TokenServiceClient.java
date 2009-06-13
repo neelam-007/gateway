@@ -515,7 +515,7 @@ public class TokenServiceClient {
                 if (signingSecurityToken != null)
                     throw new InvalidDocumentFormatException("Response body was signed with more than one security token");
                 signingSecurityToken = signedElement.getSigningSecurityToken();
-                if (!(signingSecurityToken instanceof X509SecurityToken))
+                if (!(signingSecurityToken instanceof X509SigningSecurityToken))
                     throw new InvalidDocumentFormatException("Response body was signed, but not with an X509 Security Token");
                 final X509SecurityToken x509Token = (X509SecurityToken)signingSecurityToken;
                 X509Certificate signingCert = x509Token.getCertificate();

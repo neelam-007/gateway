@@ -30,7 +30,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.server.event.system.AdminAppletEvent;
@@ -46,6 +45,7 @@ import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.gateway.common.spring.remoting.RemoteUtils;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.InvalidPasswordException;
+import com.l7tech.security.token.OpaqueSecurityToken;
 import org.springframework.beans.BeansException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -331,9 +331,8 @@ public class ManagerAppletFilter implements Filter {
                         }
 
                         if ( user != null ) {
-                            LoginCredentials creds = new LoginCredentials(user.getLogin(),
-                                    sessionId.toCharArray(),
-                                    CredentialFormat.OPAQUETOKEN,
+                            LoginCredentials creds = LoginCredentials.makeLoginCredentials(
+                                    new OpaqueSecurityToken(user.getLogin(), sessionId.toCharArray()), 
                                     CookieCredentialSourceAssertion.class);
                             authContext.addCredentials(creds);
                             hreq.setAttribute(PROP_CREDS, creds);

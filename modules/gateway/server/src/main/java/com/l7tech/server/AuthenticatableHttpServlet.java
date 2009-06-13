@@ -17,6 +17,7 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.IncludeAssertionDereferenceTranslator;
+import com.l7tech.security.token.http.HttpClientCertToken;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
@@ -232,7 +233,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         nextIdentityProvider:
         for (IdentityProvider provider : providers) {
             try {
-                AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
+                final AuthenticationResult authResult = ((AuthenticatingIdentityProvider)provider).authenticate(creds);
                 if (authResult == null) continue nextIdentityProvider;
                 User u = authResult.getUser();
                 logger.fine("Authentication success for user " + creds.getLogin() +
@@ -245,14 +246,12 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
                 if (!req.isSecure()) {
                     logger.info("HTTP Basic is being permitted without SSL");
-                    authResult.setAuthenticatedCert(null); // avoid implying that cert was authenticated
                     authResults.add(authResult);
                 } else {
                     X509Certificate requestCert = ServletUtils.getRequestCert(req);
                     Certificate dbCert = clientCertManager.getUserCert(u);
                     if (dbCert == null) {
                         logger.finest("User " + u.getLogin() + " does not have a cert in database, but authenticated successfully with HTTP Basic over SSL");
-                        authResult.setAuthenticatedCert(null);
                         authResults.add(authResult);
                     } else {
                         // there is a valid cert. make sure it was presented
@@ -270,10 +269,11 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                         }
                         if ( CertUtils.certsAreEqual(requestCert, dbCertX509)) {
                             logger.finest("Valid client cert presented as part of request.");
-                            authResult = new AuthenticationResult(authResult.getUser(),
+                            authResults.add( new AuthenticationResult(
+                                    authResult.getUser(),
+                                    new HttpClientCertToken(dbCertX509),
                                     dbCertX509,
-                                    clientCertManager.isCertPossiblyStale(dbCertX509));
-                            authResults.add(authResult);
+                                    clientCertManager.isCertPossiblyStale(dbCertX509)) );
                         } else {
                             logger.warning("the authenticated user has a valid cert but he presented a different" +
                                     "cert to the servlet");
@@ -370,7 +370,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                         user.setProviderId(Long.MAX_VALUE);
                         user.setLogin(creds.getLogin());
                         user.setCleartextPassword(new String(creds.getCredentials()));
-                        return new AuthenticationResult[] { new AuthenticationResult(user) };
+                        return new AuthenticationResult[] { new AuthenticationResult(user, creds.getSecurityToken()) };
                     }
                 }
             }

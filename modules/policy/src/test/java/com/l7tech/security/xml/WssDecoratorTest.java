@@ -7,7 +7,6 @@ import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.Message;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
@@ -18,11 +17,13 @@ import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SubjectStatement;
 import com.l7tech.security.token.UsernameToken;
 import com.l7tech.security.token.UsernameTokenImpl;
+import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.decorator.DecorationRequirements.SimpleSecureConversationSession;
 import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.Pair;
@@ -561,15 +562,15 @@ public class WssDecoratorTest extends TestCase {
         SubjectStatement.Confirmation confirmationMethod;
         if (subjectCert != null) {
             // Subject identified by cert
-            creds = new LoginCredentials(null, null,
-                                         CredentialFormat.CLIENTCERT,
-                                         RequireWssX509Cert.class,
-                                         null,
-                                         subjectCert);
+            X509BinarySecurityTokenImpl token = new X509BinarySecurityTokenImpl(subjectCert, null);
+            token.onPossessionProved();
+            creds = LoginCredentials.makeLoginCredentials(
+                    token,
+                    RequireWssX509Cert.class);
             confirmationMethod = SubjectStatement.HOLDER_OF_KEY;
         } else {
             // Subject identified by nameIdentifier
-            creds = LoginCredentials.makePasswordCredentials(subjectNameIdentifierValue, "secret".toCharArray(), HttpBasic.class);
+            creds = LoginCredentials.makeLoginCredentials(new HttpBasicToken(subjectNameIdentifierValue, "secret".toCharArray()), HttpBasic.class);
             confirmationMethod = SubjectStatement.SENDER_VOUCHES;
         }
         SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, confirmationMethod, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);

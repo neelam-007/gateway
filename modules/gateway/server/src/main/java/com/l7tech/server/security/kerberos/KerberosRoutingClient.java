@@ -85,15 +85,11 @@ public class KerberosRoutingClient extends KerberosClient {
                             KerberosTicket ticket = getTicket(delegationSubject.getPrivateCredentials(), serviceName, manager);
 
                             KerberosGSSAPReqTicket apReq = new KerberosGSSAPReqTicket(bytes);
-                            KerberosServiceTicket kst = new KerberosServiceTicket(ticket.getClient().getName(),
+                            return new KerberosServiceTicket(ticket.getClient().getName(),
                                                              servicePrincipalName,
                                                              ticket.getSessionKey().getEncoded(),
                                                              System.currentTimeMillis() + (context.getLifetime() * 1000L),
                                                              apReq);
-
-                            apReq.setServiceTicket(kst);
-
-                            return kst;
                         }
                         finally {
                             if(context!=null) context.dispose();
@@ -189,15 +185,11 @@ public class KerberosRoutingClient extends KerberosClient {
                         KerberosTicket ticket = getTicket(krbSubject.getPrivateCredentials(), serviceName, manager);
 
                         KerberosGSSAPReqTicket apReq = new KerberosGSSAPReqTicket(bytes);
-                        KerberosServiceTicket kst = new KerberosServiceTicket(ticket.getClient().getName(),
+                        return new KerberosServiceTicket(ticket.getClient().getName(),
                                                          accountName,
                                                          ticket.getSessionKey().getEncoded(),
                                                          System.currentTimeMillis() + (context.getLifetime() * 1000L),
                                                          apReq);
-
-                        apReq.setServiceTicket(kst);
-
-                        return kst;
                     }
                     finally {
                         if(context!=null) context.dispose();

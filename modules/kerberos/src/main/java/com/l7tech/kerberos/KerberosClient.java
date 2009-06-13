@@ -198,15 +198,11 @@ public class KerberosClient {
                         KerberosTicket ticket = getTicket(krbSubject.getPrivateCredentials(), serviceName, manager);
 
                         KerberosGSSAPReqTicket apReq = new KerberosGSSAPReqTicket(bytes);
-                        KerberosServiceTicket kst = new KerberosServiceTicket(ticket.getClient().getName(),
+                        return new KerberosServiceTicket(ticket.getClient().getName(),
                                                          servicePrincipalName,
                                                          ticket.getSessionKey().getEncoded(),
                                                          System.currentTimeMillis() + (context.getLifetime() * 1000L),
                                                          apReq);
-
-                        apReq.setServiceTicket(kst);
-
-                        return kst;
                     }
                     finally {
                         if(context!=null) context.dispose();
@@ -620,7 +616,7 @@ public class KerberosClient {
                 if (logger.isLoggable(Level.FINER)) {
                     logger.log(Level.FINER,
                         "Encryption type is ''{0}'', size is {1}.",
-                        new Object[]{Integer.valueOf(etype), Integer.valueOf(key.getBytes().length*8)});
+                        new Object[]{etype, key.getBytes().length*8});
                 }
                 if (etype == EncryptedData.ETYPE_ARCFOUR_HMAC ||
                     etype == EncryptedData.ETYPE_AES128_CTS_HMAC_SHA1_96 ||

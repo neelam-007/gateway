@@ -113,7 +113,7 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
      */
     protected void updateRequestXml(PolicyEnforcementContext context, XmlKnob requestXml, SecurityKnob requestSec, Document requestDoc, SamlAssertion samlAssertion, Assertion credSource) throws Exception {
         WssDecorator deco = new WssDecoratorImpl();
-        context.getAuthenticationContext(context.getRequest()).addCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, credSource.getClass()));
+        context.getAuthenticationContext(context.getRequest()).addCredentials(LoginCredentials.makeLoginCredentials(samlAssertion, credSource.getClass()));
 
         ProcessorResult processorResult = requestSec.getProcessorResult();
         DecorationRequirements decoReq = new DecorationRequirements();
@@ -288,8 +288,12 @@ public abstract class AbstractServerWsFederationPassiveRequestProfile extends Ab
     /**
      *
      */
-    private void doAuthLater(final PolicyEnforcementContext context, final GenericHttpClient httpClient, final SamlAssertion samlAssertion, final String replyUrl, final String contextUrl) {
-        context.addRoutingResultListener(new RoutingResultListener(){
+    private void doAuthLater(final PolicyEnforcementContext policyEnforcementContext,
+                             final GenericHttpClient httpClient,
+                             final SamlAssertion samlAssertion,
+                             final String replyUrl,
+                             final String contextUrl) {
+        policyEnforcementContext.addRoutingResultListener(new RoutingResultListener(){
             @Override
             public boolean reroute(URL routedUrl, int status, HttpHeaders headers, PolicyEnforcementContext context) {
                 boolean retry = false;

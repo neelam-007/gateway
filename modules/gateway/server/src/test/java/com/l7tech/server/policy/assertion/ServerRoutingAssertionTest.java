@@ -22,6 +22,7 @@ import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
+import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import static com.l7tech.server.policy.assertion.MutateOption.LEAVE_AS_SOAP;
 import static com.l7tech.server.policy.assertion.MutateOption.MUTATE_INTO_NON_SOAP;
@@ -362,7 +363,7 @@ public class ServerRoutingAssertionTest {
     }
 
     private static LoginCredentials makeLoginCredentials() {
-        return new LoginCredentials("joe", "password".toCharArray(), HttpBasic.class);
+        return LoginCredentials.makeLoginCredentials(new HttpBasicToken("joe", "password".toCharArray()), HttpBasic.class);
     }
 
     private static SignerInfo makeSignerInfo() throws Exception {

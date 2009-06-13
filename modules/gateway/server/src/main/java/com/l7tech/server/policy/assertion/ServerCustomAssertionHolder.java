@@ -38,6 +38,7 @@ import com.l7tech.server.policy.ServiceFinderImpl;
 import com.l7tech.server.policy.CertificateFinderImpl;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.security.cert.TrustedCertManager;
+import com.l7tech.security.token.OpaqueSecurityToken;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -192,9 +193,9 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 if (isAuthAssertion) {
                     AuthenticationContext authContext = context.getAuthenticationContext(context.getRequest());
                     if (principalCredentials != null) {
-                        authContext.addAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), null, false), principalCredentials);
+                        authContext.addAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), principalCredentials.getSecurityToken(),  null, false));
                     } else {
-                        authContext.addAuthenticationResult(new AuthenticationResult(new AnonymousUserReference("", -1, "<unknown>")));
+                        authContext.addAuthenticationResult(new AuthenticationResult(new AnonymousUserReference("", -1, "<unknown>"), new OpaqueSecurityToken()));
                     }
                 }
 

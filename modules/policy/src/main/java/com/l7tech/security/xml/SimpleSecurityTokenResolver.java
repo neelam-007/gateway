@@ -7,7 +7,7 @@ package com.l7tech.security.xml;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.security.auth.x500.X500Principal;
@@ -29,7 +29,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
     private final List<Cert> certs = new ArrayList<Cert>();
     private final List<MyKey> keys = new ArrayList<MyKey>();
     private Map<String, byte[]> encryptedKeys = new HashMap<String, byte[]>();
-    private Map<String, KerberosSecurityToken> kerberosTokens = new HashMap<String, KerberosSecurityToken>();
+    private Map<String, KerberosSigningSecurityToken> kerberosTokens = new HashMap<String, KerberosSigningSecurityToken>();
 
     private static class Cert extends TrustedCert {
 
@@ -235,7 +235,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         return kerberosTokens;
     }
 
-    public void setKerberosTokens(Map<String, KerberosSecurityToken> kerberosTokens) {
+    public void setKerberosTokens(Map<String, KerberosSigningSecurityToken> kerberosTokens) {
         if (kerberosTokens == null) throw new NullPointerException();
         this.kerberosTokens = kerberosTokens;
     }
@@ -248,7 +248,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
         encryptedKeys.put(encryptedKeySha1, secretKey);
     }
 
-    public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
+    public KerberosSigningSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
         return kerberosTokens.get(kerberosSha1);
     }
 }

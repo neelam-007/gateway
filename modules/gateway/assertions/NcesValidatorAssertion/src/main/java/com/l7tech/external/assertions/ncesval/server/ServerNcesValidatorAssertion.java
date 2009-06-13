@@ -113,10 +113,10 @@ public class ServerNcesValidatorAssertion extends AbstractServerAssertion<NcesVa
                 if (assertion.isSamlRequired()) {
                     saml = (SamlAssertion)token;
                 }
-            } else  if (token instanceof X509SecurityToken) {
-                X509SecurityToken x509Token = (X509SecurityToken)token;
+            } else  if (token instanceof X509SigningSecurityToken) {
+                X509SigningSecurityToken x509Token = (X509SigningSecurityToken)token;
                 if ( x509Token.isPossessionProved() ) {
-                    cert = x509Token.getCertificate();
+                    cert = x509Token.getMessageSigningCertificate();
                 }
             }
         }

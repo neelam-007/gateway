@@ -16,7 +16,6 @@ import com.l7tech.policy.PolicyPathBuilderFactory;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
@@ -26,6 +25,7 @@ import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.util.PolicyServiceClient;
 import com.l7tech.security.xml.SecurityTokenResolver;
+import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.TestDefaultKey;
 import com.l7tech.server.audit.AuditContextStub;
@@ -176,17 +176,14 @@ public class PolicyServiceTest extends TestCase {
     }
 
     private void testWithValidCredentials(final Assertion policyToTest) throws Exception {
-
-        LoginCredentials francoCreds = new LoginCredentials(TESTUSER_LOGIN, TESTUSER_PASSWD.toCharArray(),
-                                                            CredentialFormat.CLEARTEXT,
-                                                            HttpBasic.class);
+        LoginCredentials francoCreds = LoginCredentials.makeLoginCredentials(
+                new HttpBasicToken(TESTUSER_LOGIN, TESTUSER_PASSWD.toCharArray()), HttpBasic.class);
         testPolicy(policyToTest, francoCreds);
     }
 
     private void testWithInvalidCredentials(final Assertion policyToTest) throws Exception {
-        LoginCredentials francoCreds = new LoginCredentials(TESTUSER_LOGIN, BAD_PASSWD.toCharArray(),
-                                                            CredentialFormat.CLEARTEXT,
-                                                            HttpBasic.class);
+        LoginCredentials francoCreds = LoginCredentials.makeLoginCredentials(
+                new HttpBasicToken(TESTUSER_LOGIN, BAD_PASSWD.toCharArray()), HttpBasic.class);
         testPolicy(policyToTest, francoCreds);
 
     }

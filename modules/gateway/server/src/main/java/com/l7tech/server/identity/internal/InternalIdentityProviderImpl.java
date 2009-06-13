@@ -96,7 +96,7 @@ public class InternalIdentityProviderImpl
             if (format.isClientCert() || format == CredentialFormat.SAML) {
                 ar = certificateAuthenticator.authenticateX509Credentials(pc, dbUser, config.getCertificateValidationType(), auditor);
             } else {
-                ar = autenticatePasswordCredentials(pc, dbUser);
+                ar = authenticatePasswordCredentials(pc, dbUser);
             }
 
             return ar;
@@ -113,7 +113,7 @@ public class InternalIdentityProviderImpl
         return userManager.findByLogin(login);
     }
 
-    private AuthenticationResult autenticatePasswordCredentials(LoginCredentials pc, InternalUser dbUser)
+    private AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc, InternalUser dbUser)
             throws MissingCredentialsException, BadCredentialsException
     {
         CredentialFormat format = pc.getFormat();
@@ -125,7 +125,7 @@ public class InternalIdentityProviderImpl
         if (format == CredentialFormat.CLEARTEXT) {
             authPassHash = HexUtils.encodePasswd(login, new String(credentials), HttpDigest.REALM);
             if (dbPassHash.equals(authPassHash))
-                return new AuthenticationResult(dbUser);
+                return new AuthenticationResult(dbUser, pc.getSecurityToken());
             logger.info("Incorrect password for login " + login);
             throw new BadCredentialsException();
         } else if (format == CredentialFormat.DIGEST) {

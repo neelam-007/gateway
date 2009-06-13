@@ -1,15 +1,12 @@
-/**
- * Copyright (C) 2006 Layer 7 Technologies Inc.
- */
 package com.l7tech.security.token;
 
 import com.l7tech.kerberos.KerberosGSSAPReqTicket;
+import com.l7tech.kerberos.KerberosServiceTicket;
 
 /**
- * Holds a Kerberos ticket, and hopefully more later.
- *
- * TODO support for signing / principal information
+ * Kerberos security token.
  */
-public interface KerberosSecurityToken extends XmlSecurityToken, SigningSecurityToken {
+public interface KerberosSecurityToken extends SecurityToken {
     public KerberosGSSAPReqTicket getTicket();
+    public KerberosServiceTicket getServiceTicket();
 }

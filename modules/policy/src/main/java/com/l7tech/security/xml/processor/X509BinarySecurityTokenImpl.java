@@ -1,7 +1,6 @@
 package com.l7tech.security.xml.processor;
 
 import com.l7tech.security.token.SecurityTokenType;
-import com.l7tech.security.token.X509SecurityToken;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.SoapConstants;
@@ -21,7 +20,7 @@ import java.security.cert.X509Certificate;
  * <p>A "virtual" BST can be created for use with an STR-Transform using the
  * provided static method.</p>
  */
-public class X509BinarySecurityTokenImpl extends X509SigningSecurityTokenImpl implements X509SecurityToken {
+public class X509BinarySecurityTokenImpl extends X509SigningSecurityTokenImpl {
     private final X509Certificate finalcert;
     private final SecurityTokenType securityTokenType;
 
@@ -52,11 +51,6 @@ public class X509BinarySecurityTokenImpl extends X509SigningSecurityTokenImpl im
 
     @Override
     public X509Certificate getMessageSigningCertificate() {
-        return finalcert;
-    }
-
-    @Override
-    public X509Certificate getCertificate() {
         return finalcert;
     }
 

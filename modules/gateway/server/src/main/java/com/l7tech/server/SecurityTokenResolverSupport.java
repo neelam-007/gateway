@@ -2,7 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SignerInfo;
-import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.KerberosSigningSecurityToken;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.cert.X509Certificate;
@@ -14,7 +14,7 @@ import java.math.BigInteger;
 public class SecurityTokenResolverSupport implements SecurityTokenResolver {
 
     @Override
-    public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
+    public KerberosSigningSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
         return null;
     }
 

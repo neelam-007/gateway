@@ -568,12 +568,12 @@ public class WssRoundTripTest {
             assertTrue(signer.asElement().getOwnerDocument() == rts.asElement().getOwnerDocument());
             assertTrue(signer.isPossessionProved());
 
-            if (signer instanceof X509SecurityToken) {
-                assertTrue("Timestamp signing security token must match sender cert",
-                           ((X509SecurityToken)signer).getCertificate().equals(td.req.getSenderMessageSigningCertificate()));
-            } else if (signer instanceof SamlSecurityToken) {
+            if (signer instanceof SamlSecurityToken) {
                 assertTrue("Timestamp signing security token must match sender cert",
                            ((SamlSecurityToken)signer).getSubjectCertificate().equals(td.req.getSenderSamlToken().getSubjectCertificate()));
+            } else if (signer instanceof X509SigningSecurityToken) {
+                assertTrue("Timestamp signing security token must match sender cert",
+                           ((X509SigningSecurityToken)signer).getCertificate().equals(td.req.getSenderMessageSigningCertificate()));
             } else if (signer instanceof SecurityContextToken) {
                 SecurityContextToken sct = (SecurityContextToken)signer;
                 assertTrue("SecurityContextToken was supposed to have proven possession", sct.isPossessionProved());

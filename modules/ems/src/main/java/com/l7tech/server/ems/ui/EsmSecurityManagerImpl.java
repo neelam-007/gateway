@@ -27,6 +27,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.security.token.UsernamePasswordSecurityToken;
+import com.l7tech.security.token.SecurityTokenType;
 
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpServletRequest;
@@ -204,7 +206,8 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
      */
     @Override
     public boolean login( final HttpSession session, final String username, final String password ) {
-        LoginCredentials creds = new LoginCredentials(username, password.toCharArray(), null);
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(
+                new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, username, password.toCharArray()), null);
         User user = null;
 
         logger.info("Authenticating user '"+username+"'.");
@@ -278,7 +281,8 @@ public class EsmSecurityManagerImpl extends RoleManagerIdentitySourceSupport imp
 
         logger.info("Changing password for user '"+user.getLogin()+"'.");
 
-        LoginCredentials creds = new LoginCredentials(user.getLogin(), password.toCharArray(), null);
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(
+                new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, user.getLogin(), password.toCharArray()), null);
         IdentityProvider provider = null;
         try {
             provider = identityProviderFactory.getProvider( user.getProviderId() );

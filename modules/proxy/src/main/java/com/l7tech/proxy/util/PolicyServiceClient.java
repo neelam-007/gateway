@@ -213,12 +213,12 @@ public class PolicyServiceClient {
         XmlSecurityToken[] tokens = result.getXmlSecurityTokens();
         X509Certificate signingCert = null;
         for (XmlSecurityToken token : tokens) {
-            if (token instanceof X509SecurityToken) {
-                X509SecurityToken x509Token = (X509SecurityToken) token;
+            if (token instanceof X509BinarySecurityTokenImpl) {
+                X509SigningSecurityToken x509Token = (X509SigningSecurityToken) token;
                 if (x509Token.isPossessionProved()) {
                     if (signingCert != null)
                         throw new InvalidDocumentFormatException("Policy server response contained multiple proved X509 security tokens.");
-                    signingCert = x509Token.getCertificate();
+                    signingCert = x509Token.getMessageSigningCertificate();
                     if (!CertUtils.certsAreEqual(signingCert, serverCertificate)) {
                         throw new ServerCertificateUntrustedException("Policy server response was signed, but not by the server certificate we expected.");
                     }

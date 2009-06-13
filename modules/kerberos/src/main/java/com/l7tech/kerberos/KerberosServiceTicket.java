@@ -69,7 +69,12 @@ public final class KerberosServiceTicket {
      * @return the key
      */
     public byte[] getKey() {
-        return sessionOrSubKey;
+        byte[] key = null;
+        if ( sessionOrSubKey != null ) {
+            key = new byte[sessionOrSubKey.length];
+            System.arraycopy(sessionOrSubKey, 0, key, 0, key.length);
+        }
+        return key;
     }
 
     /**

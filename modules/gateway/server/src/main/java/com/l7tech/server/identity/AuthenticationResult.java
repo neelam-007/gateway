@@ -4,12 +4,13 @@ import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.security.token.SecurityToken;
 import com.whirlycott.cache.Cache;
 
 import java.security.cert.X509Certificate;
 
 /**
- * Created on successful authentication events.  Semi-threadsafe (mutators are synchronized).
+ * Created on successful authentication events.
  */
 public final class AuthenticationResult {
 
@@ -24,33 +25,89 @@ public final class AuthenticationResult {
                                                                             WhirlycacheFactory.POLICY_LFU);
     }
 
-    public AuthenticationResult(User user, X509Certificate authenticatedCert, boolean certWasSignedByStaleCA) {
+    /**
+     * Create an authentication result with given settings.
+     *
+     * <p>NOTE: The <code>authenticatedCert</code> is only set when the user
+     * authenticated using the certificate. If the user simply has a certificate
+     * the the value MUST be <code>null</code>.</p>
+     *
+     * @param user The authenticated user (required)
+     * @param securityToken The authenticating token (required)
+     * @param authenticatedCert The authenticating certificate (required if certWasSignedByStaleCA)
+     * @param certWasSignedByStaleCA True if the authenticating certificate was possibly issued by for (our) prior CA cert
+     */
+    public AuthenticationResult( final User user,
+                                 final SecurityToken securityToken,
+                                 final X509Certificate authenticatedCert,
+                                 final boolean certWasSignedByStaleCA ) {
+        if (user == null) throw new IllegalArgumentException("user is required");
+        if (securityToken == null) throw new IllegalArgumentException("security token is required");
+        if (certWasSignedByStaleCA && authenticatedCert == null) throw new IllegalArgumentException("Must include the stale cert if there is one");
+
         this.user = user;
-        if (user == null) throw new NullPointerException();
+        this.securityToken = securityToken;
         this.certSignedByStaleCA = certWasSignedByStaleCA;
         this.authenticatedCert = authenticatedCert;
-        if (certSignedByStaleCA && authenticatedCert == null) throw new IllegalArgumentException("Must include the stale cert if there is one");
     }
 
-    public AuthenticationResult(User user) {
-        this(user, null, false);
+    /**
+     * Create an authentication result for the given user.
+     *
+     * @param user The authenticated user (required)
+     * @param securityToken The authenticating token (required)
+     */
+    public AuthenticationResult( final User user,
+                                 final SecurityToken securityToken ) {
+        this(user, securityToken, null, false);
     }
 
+    /**
+     * Create an authentication result with fresh token.
+     *
+     * @param result The authentication result (required)
+     * @param securityToken The authenticating token (required)
+     */
+    public AuthenticationResult( final AuthenticationResult result,
+                                 final SecurityToken securityToken ) {
+        this(result.getUser(), securityToken, result.getAuthenticatedCert(), result.isCertSignedByStaleCA());
+    }
+
+    /**
+     * Get the authenticated User.
+     *
+     * @return The user.
+     */
     public User getUser() {
-        if (user == null) throw new UnsupportedOperationException("Unknown authenticated user");
         return user;
     }
 
+    /**
+     * Was the certificate possibly signed for one of our previous CA certs?
+     *
+     * @return True if possibly signed by a prior CA.
+     */
     public boolean isCertSignedByStaleCA() {
         return certSignedByStaleCA;
     }
 
-    public synchronized X509Certificate getAuthenticatedCert() {
+    /**
+     * Get the authenticating certificate.
+     *
+     * @return The certificate or null
+     */
+    public X509Certificate getAuthenticatedCert() {
         return authenticatedCert;
     }
 
-    public synchronized void setAuthenticatedCert(X509Certificate authenticatedCert) {
-        this.authenticatedCert = authenticatedCert;
+    /**
+     * Is this authentication result for the given token.
+     *
+     * @param token The token to check
+     * @return True if the given token is not null and matches
+     */
+    public boolean matchesSecurityToken( final SecurityToken token ) {
+        return token != null && token == securityToken;
     }
 
     public boolean equals(Object obj) {
@@ -66,8 +123,8 @@ public final class AuthenticationResult {
         //i'm not sure if I need to compare the following, but are here just in case.
         if ( authResult.isCertSignedByStaleCA() != this.certSignedByStaleCA ) return false;
         X509Certificate authenticatedCert = authResult.getAuthenticatedCert();        
-        if ( authenticatedCert == this.authenticatedCert ){
-            if ( this.authenticatedCert != null && !authenticatedCert.equals(this.authenticatedCert) ) {
+        if ( authenticatedCert != this.authenticatedCert ){
+            if ( authenticatedCert == null || !authenticatedCert.equals(this.authenticatedCert) ) {
                 return false;
             }
         }
@@ -126,9 +183,9 @@ public final class AuthenticationResult {
     public void setCachedGroupMembership(Group group, boolean isMember) {
         Cache cache = getCache();
         if (cache == null) return; // fail fast if caching disabled
-        cache.store(new CacheKey(user.getProviderId(), user.getId(),
-                                                group.getProviderId(), group.getId()),
-                                   new Long(System.currentTimeMillis() * (isMember ? 1 : -1)));
+        cache.store(
+                new CacheKey(user.getProviderId(),  user.getId(), group.getProviderId(), group.getId()),
+                System.currentTimeMillis() * (isMember ? 1 : -1));
     }
 
     public Boolean getCachedGroupMembership(Group group) {
@@ -138,7 +195,7 @@ public final class AuthenticationResult {
                 new CacheKey(user.getProviderId(), user.getId(),
                              group.getProviderId(), group.getId()));
         if (when == null) return null; // missed
-        long w = when.longValue();
+        long w = when;
         boolean success = w > 0;
         w = Math.abs(w);
         if (w < timestamp) return null; // ignore group membership checks cached before this authresult was created
@@ -153,7 +210,7 @@ public final class AuthenticationResult {
     private final User user;
     private final long timestamp = System.currentTimeMillis();
     private final boolean certSignedByStaleCA;
-
-    private X509Certificate authenticatedCert;
+    private final X509Certificate authenticatedCert;
+    private final SecurityToken securityToken; // should not be accessible
 }
 

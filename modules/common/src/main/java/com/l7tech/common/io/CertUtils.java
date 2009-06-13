@@ -948,7 +948,18 @@ public class CertUtils {
         Principal principal = cert.getSubjectDN();
         if (principal == null)
             throw new IllegalArgumentException("Cert contains no subject DN");
-        Map<String, List<String>> dnMap = dnToAttributeMap(principal.getName());
+        return extractFirstCommonNameFromDN( principal.getName() );
+    }
+
+    /**
+     * Extract a single subject common name attribute value from a DN.
+     * If multiple CN values are present, this will find and return only one of them.
+     *
+     * @param dn the DN to examine.  Required.
+     * @return One of the CN attribute values, or null if there aren't any.
+     */
+    public static String extractFirstCommonNameFromDN( final String dn ) {
+        Map<String, List<String>> dnMap = dnToAttributeMap(dn);
         List<String> cnValues = dnMap.get("CN");
         String login = null;
         if (cnValues != null && cnValues.size() >= 1) {

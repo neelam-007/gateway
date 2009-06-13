@@ -30,7 +30,6 @@ import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.saml.SubjectStatement;
 import com.l7tech.security.token.SecurityToken;
-import com.l7tech.security.token.X509SecurityToken;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SignerInfo;
@@ -217,7 +216,7 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
                 return status;
             }
 
-            context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(authenticatedUser, null, false), creds);
+            context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(authenticatedUser, creds.getSecurityToken(), null, false));
 
             if (status != AssertionStatus.NONE) {
                 String msg = "The internal policy was not respected " + status;
@@ -402,8 +401,8 @@ public class TokenServiceImpl extends ApplicationObjectSupport implements TokenS
         SecurityToken[] tokens = wssOutput.getXmlSecurityTokens();
         X509Certificate clientCert = null;
         for (SecurityToken token : tokens) {
-            if (token instanceof X509SecurityToken) {
-                X509SecurityToken x509token = (X509SecurityToken) token;
+            if (token instanceof X509BinarySecurityTokenImpl) {
+                X509BinarySecurityTokenImpl x509token = (X509BinarySecurityTokenImpl) token;
                 if (x509token.isPossessionProved()) {
                     if (clientCert != null) {
                         String msg = "Request included more than one X509 security token whose key ownership " +

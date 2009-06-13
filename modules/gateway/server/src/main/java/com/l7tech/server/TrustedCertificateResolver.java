@@ -9,7 +9,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.cert.X509Entity;
-import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
@@ -222,7 +222,7 @@ public class TrustedCertificateResolver implements SecurityTokenResolver, Applic
      * @return currently always returns null
      */
     @Override
-    public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
+    public KerberosSigningSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
         return null;
     }
 

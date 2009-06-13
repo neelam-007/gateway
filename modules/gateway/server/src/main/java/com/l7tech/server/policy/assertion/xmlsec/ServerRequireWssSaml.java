@@ -11,7 +11,6 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
@@ -24,10 +23,8 @@ import com.l7tech.server.util.MessageIdManager;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
-import sun.security.x509.X500Name;
 
 import java.io.IOException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Level;
@@ -180,25 +177,7 @@ public class ServerRequireWssSaml<AT extends RequireWssSaml> extends AbstractMes
                 }
             }
 
-            String nameIdentifier;
-            X509Certificate subjectCertificate = samlAssertion.getSubjectCertificate();
-            if (subjectCertificate != null) {
-                X500Name x500name = new X500Name(subjectCertificate.getSubjectX500Principal().getName());
-                nameIdentifier = x500name.getCommonName();
-            } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(samlAssertion.getNameIdentifierFormat())) {
-                   X500Name x500name = new X500Name(samlAssertion.getNameIdentifierValue());
-                   nameIdentifier = x500name.getCommonName();
-            } else {
-              nameIdentifier = samlAssertion.getNameIdentifierValue();
-            }
-
-            authContext.addCredentials(
-                    new LoginCredentials(nameIdentifier,
-                                        null,
-                                        CredentialFormat.SAML,
-                                        RequireWssSaml.class,
-                                        null,
-                                        samlAssertion));
+            authContext.addCredentials( LoginCredentials.makeLoginCredentials( samlAssertion, RequireWssSaml.class ) ) ;
             return AssertionStatus.NONE;
         } catch (SAXException e) {
             throw (IOException)new IOException().initCause(e);

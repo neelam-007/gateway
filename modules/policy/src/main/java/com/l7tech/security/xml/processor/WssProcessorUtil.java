@@ -5,9 +5,9 @@
 
 package com.l7tech.security.xml.processor;
 
-import com.l7tech.kerberos.KerberosGSSAPReqTicket;
+import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.security.token.EncryptedKey;
-import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.DomUtils;
@@ -46,7 +46,7 @@ public class WssProcessorUtil {
      * @param ticket  the kerberos ticket to point to.  Must not be null.
      * @return a new virtual binary security token (with a null element) that can be used as a SigningSecurityToken.
      */
-    public static KerberosSecurityToken makeKerberosToken(KerberosGSSAPReqTicket ticket) {
+    public static KerberosSigningSecurityToken makeKerberosToken(KerberosServiceTicket ticket) {
         byte[] rand = new byte[16];
         random.nextBytes(rand);
         String id = "VirtualBinarySecurityToken-1-" + HexUtils.hexDump(rand);

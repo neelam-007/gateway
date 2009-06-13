@@ -2,19 +2,15 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
-import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.identity.ldap.UserMappingConfig;
-import com.l7tech.identity.ldap.PasswdStrategy;
-import com.l7tech.identity.ldap.LdapGroup;
 import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.ldap.*;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.security.token.http.HttpBasicToken;
 import org.springframework.context.ApplicationContext;
 
 import javax.naming.directory.DirContext;
@@ -213,8 +209,8 @@ public class LdapIdentityProviderTest {
             }
             AuthenticationResult authResult = null;
             try {
-                authResult = localProvider.authenticate(
-                  new LoginCredentials(notauthenticated.getLogin(), passwd.toCharArray(), CredentialFormat.CLEARTEXT, HttpBasic.class, null, null));
+                authResult = localProvider.authenticate(LoginCredentials.makeLoginCredentials(
+                        new HttpBasicToken(notauthenticated.getLogin(), passwd.toCharArray()), HttpBasic.class));
             } catch (Exception e) {
                 System.out.println("creds do not authenticate.");
             }

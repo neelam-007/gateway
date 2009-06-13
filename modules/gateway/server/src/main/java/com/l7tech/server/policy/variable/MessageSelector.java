@@ -9,8 +9,7 @@ import com.l7tech.message.*;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.IOUtils;
 import com.l7tech.security.token.SecurityToken;
-import com.l7tech.security.token.X509SecurityToken;
-import com.l7tech.security.token.SigningSecurityToken;
+import com.l7tech.security.token.X509SigningSecurityToken;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
@@ -158,17 +157,17 @@ class MessageSelector implements ExpandVariables.Selector {
     private static int getCertificateCount(Message message, boolean signingOnly) {
         int count = 0;
         for(SecurityToken token : message.getSecurityKnob().getProcessorResult().getXmlSecurityTokens()) {
-            if ( token instanceof X509SecurityToken && (!signingOnly || ((SigningSecurityToken)token).isPossessionProved()))
+            if ( token instanceof X509SigningSecurityToken && (!signingOnly || ((X509SigningSecurityToken)token).isPossessionProved()))
                 count++;
         }
         return count;
     }
 
     private static X509Certificate getCertificate(Message message, int index, boolean signingOnly) {
-        ArrayList<X509SecurityToken> candidates = new ArrayList<X509SecurityToken>();
+        ArrayList<X509SigningSecurityToken> candidates = new ArrayList<X509SigningSecurityToken>();
         for(SecurityToken token : message.getSecurityKnob().getProcessorResult().getXmlSecurityTokens()) {
-            if(token instanceof X509SecurityToken && (!signingOnly || ((SigningSecurityToken)token).isPossessionProved()))
-                candidates.add((X509SecurityToken) token);
+            if(token instanceof X509SigningSecurityToken && (!signingOnly || ((X509SigningSecurityToken)token).isPossessionProved()))
+                candidates.add((X509SigningSecurityToken) token);
         }
         return index < 1 || index > candidates.size() ? null : candidates.get(index - 1).getCertificate();
     }

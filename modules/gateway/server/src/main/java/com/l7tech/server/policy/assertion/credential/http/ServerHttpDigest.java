@@ -8,13 +8,13 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.policy.assertion.credential.DigestSessions;
 import com.l7tech.util.HexUtils;
+import com.l7tech.security.token.http.HttpDigestToken;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -90,28 +90,28 @@ public class ServerHttpDigest extends ServerHttpCredentialSource<HttpDigest> {
         if ( (userName == null) || (realmName == null) || ( digestResponse == null) )
             return null;
 
-        return new LoginCredentials( userName, digestResponse.toCharArray(),
-                                     CredentialFormat.DIGEST, assertion.getClass(), realmName, authParams );
+        return LoginCredentials.makeLoginCredentials( new HttpDigestToken( userName, digestResponse, realmName, authParams), assertion.getClass());
     }
 
+    @SuppressWarnings({"unchecked"})
     @Override
-    protected Map findCredentialAuthParams(LoginCredentials pc, Map authParam) {
+    protected Map<String,String> findCredentialAuthParams(LoginCredentials pc, Map<String,String> authParam) {
         Object payload = pc.getPayload();
         if (payload instanceof Map) {
-            return (Map) payload;
+            return (Map<String,String>) payload;
         }
         return authParam;
     }
 
-    private Map myChallengeParams( String nonce ) {
-        Map params = new HashMap();
+    private Map<String,String> myChallengeParams( String nonce ) {
+        Map<String,String> params = new HashMap<String,String>();
         params.put( HttpDigest.PARAM_QOP, HttpDigest.QOP_AUTH );
         params.put( HttpDigest.PARAM_NONCE, nonce );
         params.put( HttpDigest.PARAM_OPAQUE, HexUtils.encodeMd5Digest( HexUtils.getMd5Digest( nonce.getBytes() ) ) );
         return params;
     }
 
-    protected Map challengeParams( Message request, Map<String, String> requestAuthParams ) {
+    protected Map<String,String> challengeParams( Message request, Map<String, String> requestAuthParams ) {
         DigestSessions sessions = DigestSessions.getInstance();
 
         String nonce = requestAuthParams == null ? null : requestAuthParams.get(HttpDigest.PARAM_NONCE);

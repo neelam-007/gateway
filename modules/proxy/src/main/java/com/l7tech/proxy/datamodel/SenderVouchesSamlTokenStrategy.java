@@ -11,6 +11,7 @@ import com.l7tech.security.saml.SamlAssertionGenerator;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.saml.SubjectStatement;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.security.xml.SignerInfo;
@@ -104,7 +105,7 @@ public class SenderVouchesSamlTokenStrategy extends AbstractSamlTokenStrategy {
             formatUri = nameIdFormatUri;
         }
 
-        LoginCredentials credentials = new LoginCredentials(username, null, HttpBasic.class);
+        LoginCredentials credentials = LoginCredentials.makeLoginCredentials(new HttpBasicToken(username, new char[0]), HttpBasic.class);
         SubjectStatement authenticationStatement = SubjectStatement.createAuthenticationStatement(credentials,
                                                                                                   SubjectStatement.SENDER_VOUCHES,
                                                                                                   KeyInfoInclusionType.STR_THUMBPRINT, NameIdentifierInclusionType.SPECIFIED, username, formatUri, null, authnMethodUri);

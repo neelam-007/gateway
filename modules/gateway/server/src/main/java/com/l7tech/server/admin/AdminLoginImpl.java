@@ -15,7 +15,6 @@ import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.system.FailedAdminLoginEvent;
@@ -25,12 +24,14 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BuildInfo;
+import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.security.token.UsernamePasswordSecurityToken;
+import com.l7tech.security.token.SecurityTokenType;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
-import javax.security.auth.login.CredentialExpiredException;
 import javax.security.auth.login.AccountLockedException;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -42,7 +43,6 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Random;
 
 public class AdminLoginImpl
         extends ApplicationObjectSupport
@@ -63,7 +63,8 @@ public class AdminLoginImpl
         this.ssgKeyStoreManager = ssgKeyStoreManager;
     }
 
-    public AdminLoginResult login(X509Certificate cert) throws AccessControlException, LoginException {
+    @Override
+    public AdminLoginResult login(final X509Certificate cert) throws AccessControlException, LoginException {
 
         //the implementation of this method will be very similar to the one that uses the username/password as
         //login credentials, except that we'll use the client certificate as the login credentials instead
@@ -73,7 +74,7 @@ public class AdminLoginImpl
         LoginCredentials creds = null;
         try {
             //make certificate login credentials
-            creds = LoginCredentials.makeCertificateCredentials(cert, null);
+            creds = LoginCredentials.makeLoginCredentials( new HttpClientCertToken(cert), null);
             User user = sessionManager.authenticate( creds );
 
             boolean remoteLogin = true;
@@ -113,7 +114,8 @@ public class AdminLoginImpl
         }
     }
 
-    public AdminLoginResult login(String username, String password)
+    @Override
+    public AdminLoginResult login( final String username, final String password )
             throws AccessControlException, LoginException
     {
         if (username == null || password == null) {
@@ -124,14 +126,15 @@ public class AdminLoginImpl
         try {
             LoginCredentials creds;
             if ( !username.equalsIgnoreCase("") ) {
-                creds = new LoginCredentials(username, password.toCharArray(), null);
+                creds = LoginCredentials.makeLoginCredentials(
+                            new UsernamePasswordSecurityToken(SecurityTokenType.UNKNOWN, username, password.toCharArray()), null);
             } else {
                 X509Certificate cert = RemoteUtils.getClientCertificate();
                 if ( cert == null ) {
                     throw new AccessControlException("Username and password or certificate is required.");
                 }
 
-                creds = LoginCredentials.makeCertificateCredentials(cert, SslAssertion.class);
+                creds = LoginCredentials.makeLoginCredentials( new HttpClientCertToken(cert), null);
                 login = creds.getLogin();
             }
 
@@ -180,7 +183,8 @@ public class AdminLoginImpl
         }
     }
 
-    public AdminLoginResult loginWithPasswordUpdate(String username, String oldPassword, String newPassword)
+    @Override
+    public AdminLoginResult loginWithPasswordUpdate( final String username, final String oldPassword, final String newPassword )
             throws AccessControlException, LoginException, InvalidPasswordException {
 
         //attempt to change the password
@@ -195,6 +199,7 @@ public class AdminLoginImpl
         return login(username, newPassword);
     }
 
+    @Override
     public void changePassword(final String currentPassword, final String newPassword) throws LoginException {
         if (currentPassword == null || newPassword == null) {
             throw new AccessControlException("currentPassword and newPassword are both required");
@@ -217,7 +222,8 @@ public class AdminLoginImpl
         } 
     }
 
-    public AdminLoginResult resume(String sessionId) throws AuthenticationException {
+    @Override
+    public AdminLoginResult resume(final String sessionId) throws AuthenticationException {
         User user = null;
         try {
             user = sessionManager.resumeSession(sessionId);
@@ -232,6 +238,7 @@ public class AdminLoginImpl
         return new AdminLoginResult(user, sessionId, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion());
     }
 
+    @Override
     public void logout() {
         User user = JaasUtils.getCurrentUser();
         getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGOFF));
@@ -256,6 +263,7 @@ public class AdminLoginImpl
      * @throws java.security.AccessControlException
      *                                  on access denied for the given credentials
      */
+    @Override
     public byte[] getServerCertificate(String username)
       throws AccessControlException {
         try {
@@ -347,6 +355,7 @@ public class AdminLoginImpl
         this.serverConfig = serverConfig;
     }
 
+    @Override
     public void afterPropertiesSet() throws Exception {
         checkidentityProviderConfigManager();
     }

@@ -5,6 +5,8 @@ import com.ibm.xml.dsig.XSignatureException;
 import com.l7tech.message.Message;
 import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.token.XmlSecurityToken;
+import com.l7tech.security.token.http.HttpClientCertToken;
+import com.l7tech.security.token.http.HttpBasicToken;
 import com.l7tech.security.xml.*;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessor;
@@ -26,8 +28,8 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.*;
@@ -129,7 +131,7 @@ public class SamlProcessingTest extends TestCase {
         samlOptions.setAttestingEntity(holderOfKeySigner);
         SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(authoritySigner);
         SubjectStatement subjectStatement =
-          SubjectStatement.createAuthenticationStatement(LoginCredentials.makeCertificateCredentials(holderOfKeySigner.getCertificateChain()[0], RequireWssX509Cert.class),
+          SubjectStatement.createAuthenticationStatement(LoginCredentials.makeLoginCredentials(new HttpClientCertToken(holderOfKeySigner.getCertificateChain()[0]), SslAssertion.class),
               SubjectStatement.HOLDER_OF_KEY,
               KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
         for (ServiceDescriptor serviceDescriptor : serviceDescriptors) {
@@ -170,7 +172,7 @@ public class SamlProcessingTest extends TestCase {
         samlOptions.setAttestingEntity(holderOfKeySigner);
         SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(authoritySigner);
         final String name = holderOfKeySigner.getCertificateChain()[0].getSubjectDN().getName();
-          final LoginCredentials credentials = LoginCredentials.makePasswordCredentials(name, new char[] {}, HttpBasic.class);
+          final LoginCredentials credentials = LoginCredentials.makeLoginCredentials(new HttpBasicToken(name, new char[] {}), HttpBasic.class);
 
         SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES, KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null, null);
 
@@ -212,7 +214,7 @@ public class SamlProcessingTest extends TestCase {
         samlOptions.setAttestingEntity(holderOfKeySigner);
         SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(authoritySigner);
         final String name = holderOfKeySigner.getCertificateChain()[0].getSubjectDN().getName();
-        final LoginCredentials credentials = LoginCredentials.makePasswordCredentials(name, new char[] {}, HttpBasic.class);
+        final LoginCredentials credentials = LoginCredentials.makeLoginCredentials(new HttpBasicToken(name, new char[] {}), HttpBasic.class);
         SubjectStatement subjectStatement = SubjectStatement.createAuthorizationStatement(
                 credentials,
                 SubjectStatement.SENDER_VOUCHES,
@@ -256,7 +258,7 @@ public class SamlProcessingTest extends TestCase {
         samlOptions.setClientAddress(InetAddress.getLocalHost());
         samlOptions.setAttestingEntity(holderOfKeySigner);
         SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(authoritySigner);
-        final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(holderOfKeySigner.getCertificateChain()[0], RequireWssX509Cert.class);
+        final LoginCredentials credentials = LoginCredentials.makeLoginCredentials(new HttpClientCertToken(holderOfKeySigner.getCertificateChain()[0]), SslAssertion.class);
         SubjectStatement subjectStatement = SubjectStatement.createAuthorizationStatement(credentials,
           SubjectStatement.HOLDER_OF_KEY, KeyInfoInclusionType.CERT, "http://wheel", null, null, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
 
@@ -449,7 +451,7 @@ public class SamlProcessingTest extends TestCase {
     }
 
     public void testStuff() throws Exception {
-        SubjectStatement stmt = SubjectStatement.createAttributeStatement(new LoginCredentials("foo", "bar".toCharArray(), CredentialFormat.BASIC, HttpBasic.class), SubjectStatement.BEARER, "foo", "urn:example.com:attributes", "bar", KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
+        SubjectStatement stmt = SubjectStatement.createAttributeStatement(LoginCredentials.makeLoginCredentials(new HttpBasicToken("foo", "bar".toCharArray()), HttpBasic.class), SubjectStatement.BEARER, "foo", "urn:example.com:attributes", "bar", KeyInfoInclusionType.CERT, NameIdentifierInclusionType.FROM_CREDS, null, null, null);
         SamlAssertionGenerator.Options opts = new SamlAssertionGenerator.Options();
         SamlAssertionGenerator sag = new SamlAssertionGenerator(holderOfKeySigner);
         Document assertionDoc = sag.createAssertion(stmt, opts);

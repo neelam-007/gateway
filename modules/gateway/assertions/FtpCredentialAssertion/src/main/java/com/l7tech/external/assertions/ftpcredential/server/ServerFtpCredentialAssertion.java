@@ -4,14 +4,13 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.FtpRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.external.assertions.ftpcredential.FtpCredentialAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
 import org.springframework.context.ApplicationContext;
 
@@ -88,13 +87,10 @@ public class ServerFtpCredentialAssertion extends ServerCredentialSourceAssertio
 
         auditor.logAndAudit(AssertionMessages.FTP_CREDENTIAL_AUTH_USER, passwordAuthentication.getUserName());
 
-        return new LoginCredentials(
+        return LoginCredentials.makeLoginCredentials( new UsernamePasswordSecurityToken(
+                SecurityTokenType.FTP_CREDENTIAL, 
                 passwordAuthentication.getUserName(),
-                passwordAuthentication.getPassword(),
-                CredentialFormat.CLEARTEXT,
-                assertion.getClass(),
-                null,
-                null,
-                SecurityTokenType.FTP_CREDENTIAL);
+                passwordAuthentication.getPassword()),
+                assertion.getClass());
     }
 }

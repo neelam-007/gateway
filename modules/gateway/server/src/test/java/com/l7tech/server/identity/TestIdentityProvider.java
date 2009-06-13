@@ -95,10 +95,10 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         MyUser mu = usernameMap.get(pc.getLogin());
         if (mu == null) return null;
         if (mu.password != null && pc.getCredentials()!=null && Arrays.equals(mu.password, pc.getCredentials())) {
-            return new AuthenticationResult(mu.user);
+            return new AuthenticationResult(mu.user, pc.getSecurityToken());
         }
         if (mu.certDn != null && pc.getClientCert()!=null && mu.certDn.equals(pc.getClientCert().getSubjectDN().getName())) {
-            return new AuthenticationResult(mu.user, pc.getClientCert(), false);
+            return new AuthenticationResult(mu.user, pc.getSecurityToken(), pc.getClientCert(), false);
         }
         throw new AuthenticationException("Invalid username or password");
     }

@@ -1,6 +1,6 @@
 package com.l7tech.security.xml;
 
-import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.KerberosSigningSecurityToken;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.cert.X509Certificate;
@@ -104,9 +104,9 @@ public class DelegatingSecurityTokenResolver implements SecurityTokenResolver {
             delegate.putSecretKeyByEncryptedKeySha1(encryptedKeySha1, secretKey);
     }
 
-    public KerberosSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
+    public KerberosSigningSecurityToken getKerberosTokenBySha1(String kerberosSha1) {
         for (SecurityTokenResolver delegate : delegates) {
-            KerberosSecurityToken result = delegate.getKerberosTokenBySha1(kerberosSha1);
+            KerberosSigningSecurityToken result = delegate.getKerberosTokenBySha1(kerberosSha1);
             if (result != null) return result;
         }
         return null;

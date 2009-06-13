@@ -47,6 +47,7 @@
             <entry name="?*.xsl"/>
             <entry name="?*.jrxml"/>
             <entry name="?*.jrtx"/>
+            <entry name="?*.config"/>
         </wildcardResourcePatterns>
     </component>
     <component name="JavacSettings">

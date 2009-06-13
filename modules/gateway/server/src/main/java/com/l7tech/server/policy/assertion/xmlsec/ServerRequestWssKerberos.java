@@ -4,11 +4,10 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.kerberos.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssKerberos;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
-import com.l7tech.security.token.KerberosSecurityToken;
+import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.security.token.SecurityContextToken;
 import com.l7tech.security.token.XmlSecurityToken;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
@@ -17,7 +16,6 @@ import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
@@ -77,11 +75,11 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
             return AssertionStatus.AUTH_REQUIRED;
         }
 
-        KerberosGSSAPReqTicket kerberosTicket = null;
+        KerberosSigningSecurityToken kerberosToken = null;
         SecureConversationSession kerberosSession = null;
         for( XmlSecurityToken tok : tokens ) {
-            if( tok instanceof KerberosSecurityToken ) {
-                kerberosTicket = ( (KerberosSecurityToken) tok ).getTicket();
+            if( tok instanceof KerberosSigningSecurityToken) {
+                kerberosToken = (KerberosSigningSecurityToken) tok;
             } else if( tok instanceof SecurityContextToken ) {
                 SecurityContext securityContext = ( (SecurityContextToken) tok ).getSecurityContext();
                 if( securityContext instanceof SecureConversationSession ) {
@@ -128,16 +126,10 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
                 }
             }
         }
-        else if (kerberosTicket != null) { // process ticket
-            KerberosServiceTicket kerberosServiceTicket = kerberosTicket.getServiceTicket();
+        else if (kerberosToken != null) { // process token
+            KerberosServiceTicket kerberosServiceTicket = kerberosToken.getServiceTicket();
             assert kerberosServiceTicket!=null;
-            LoginCredentials loginCreds = new LoginCredentials(
-                                                        null,
-                                                        null,
-                                                        CredentialFormat.KERBEROSTICKET,
-                                                        RequestWssKerberos.class,
-                                                        null,
-                                                        kerberosServiceTicket);
+            LoginCredentials loginCreds = LoginCredentials.makeLoginCredentials( kerberosToken, assertion.getClass() );
             context.getAuthenticationContext(context.getRequest()).addCredentials(loginCreds);
             context.setVariable("kerberos.realm", extractRealm(kerberosServiceTicket.getClientPrincipalName()));
 
@@ -145,7 +137,7 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
 
             // stash for later reference
             SecureConversationContextManager sccm = SecureConversationContextManager.getInstance();
-            final String sessionIdentifier = KerberosUtils.getSessionIdentifier(kerberosTicket);
+            final String sessionIdentifier = KerberosUtils.getSessionIdentifier(kerberosServiceTicket.getGSSAPReqTicket());
             try {
                 sccm.createContextForUser(sessionIdentifier, kerberosServiceTicket.getExpiry(), null, loginCreds, kerberosServiceTicket.getKey());
             }
@@ -172,8 +164,9 @@ public class ServerRequestWssKerberos extends AbstractServerAssertion<RequestWss
     private RequestWssKerberos requestWssKerberos;
 
     @SuppressWarnings( { "unchecked" } )
-    private void addDeferredAssertion(PolicyEnforcementContext context, final KerberosServiceTicket kerberosServiceTicket) {
-        context.addDeferredAssertion(this, new AbstractServerAssertion(requestWssKerberos) {
+    private void addDeferredAssertion( final PolicyEnforcementContext policyEnforcementContext,
+                                       final KerberosServiceTicket kerberosServiceTicket) {
+        policyEnforcementContext.addDeferredAssertion(this, new AbstractServerAssertion(requestWssKerberos) {
             @Override
             @SuppressWarnings( { "unchecked" } )
             public AssertionStatus checkRequest(PolicyEnforcementContext context)

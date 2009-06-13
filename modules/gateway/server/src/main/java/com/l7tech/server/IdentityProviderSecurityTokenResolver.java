@@ -2,9 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.security.token.KerberosSecurityToken;
 import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.identity.AuthenticatingIdentityProvider;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.util.Background;

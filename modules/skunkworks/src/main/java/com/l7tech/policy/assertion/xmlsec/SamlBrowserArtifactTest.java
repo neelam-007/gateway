@@ -5,18 +5,16 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.xmlsec.ServerSamlBrowserArtifact;
+import com.l7tech.security.token.http.HttpBasicToken;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.springframework.context.ApplicationContext;
 
-import java.util.logging.Logger;
-
 /**
  * Test Assertion/CompositeAssertion data structure management.
  */
 public class SamlBrowserArtifactTest extends TestCase {
-    private static Logger log = Logger.getLogger(SamlBrowserArtifactTest.class.getName());
 
     public SamlBrowserArtifactTest(String name) {
         super(name);
@@ -44,7 +42,7 @@ public class SamlBrowserArtifactTest extends TestCase {
         ServerSamlBrowserArtifact ssba = new ServerSamlBrowserArtifact(sba, spring);
 
         PolicyEnforcementContext pec = new PolicyEnforcementContext(new Message(), new Message());
-        pec.getDefaultAuthenticationContext().addCredentials(LoginCredentials.makePasswordCredentials("testuser", "passw0rd".toCharArray(), HttpBasic.class));
+        pec.getDefaultAuthenticationContext().addCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken("testuser", "passw0rd".toCharArray()), HttpBasic.class));
         ssba.checkRequest(pec);
     }
 

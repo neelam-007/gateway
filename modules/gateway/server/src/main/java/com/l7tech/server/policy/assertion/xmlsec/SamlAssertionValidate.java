@@ -266,7 +266,7 @@ public class SamlAssertionValidate {
         for (SignedElement signedElement : signedElements) {
             if (SoapUtil.isBody(signedElement.asElement())) {
                 SigningSecurityToken signingSecurityToken = signedElement.getSigningSecurityToken();
-                if (!(signingSecurityToken instanceof X509SecurityToken)) {
+                if (!(signingSecurityToken instanceof X509SigningSecurityToken)) {
                     throw new InvalidDocumentFormatException("Response body was signed, but not with an X509 Security Token");
                 }
                 return ((X509SecurityToken)signingSecurityToken).getCertificate();

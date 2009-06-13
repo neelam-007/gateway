@@ -12,11 +12,12 @@ import com.l7tech.identity.UserBean;
 import com.l7tech.message.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.security.MockGenericHttpClient;
+import com.l7tech.security.token.http.HttpBasicToken;
+import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -159,7 +160,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
                     "http://www.layer7tech.com/uuid/00000000",
                     System.currentTimeMillis() + TimeUnit.DAYS.getMultiplier(),
                     new UserBean(),
-                    new LoginCredentials( "test", "password".toCharArray(), CredentialFormat.CLEARTEXT, HttpBasic.class, null ),
+                    LoginCredentials.makeLoginCredentials(new HttpBasicToken("test", "password".toCharArray()), HttpBasic.class),
                     new byte[16]);
         }
 
@@ -527,7 +528,7 @@ public class PolicyProcessingPerformanceTest extends TestCase {
                 UserBean user = new UserBean();
                 user.setLogin("test");
                 user.setCleartextPassword("password");
-                context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(user));
+                context.getDefaultAuthenticationContext().addAuthenticationResult(new AuthenticationResult(user, new OpaqueSecurityToken()));
             }
 
             status = messageProcessor.processMessage(context);

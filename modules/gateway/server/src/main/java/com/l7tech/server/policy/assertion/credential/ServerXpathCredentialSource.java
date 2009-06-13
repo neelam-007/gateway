@@ -14,6 +14,8 @@ import com.l7tech.server.util.xml.PolicyEnforcementContextXpathVariableFinder;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathVariableContext;
 import com.l7tech.xml.xpath.XpathVariableFinderVariableContext;
+import com.l7tech.security.token.UsernamePasswordSecurityToken;
+import com.l7tech.security.token.SecurityTokenType;
 import org.jaxen.FunctionContext;
 import org.jaxen.JaxenException;
 import org.jaxen.XPathFunctionContext;
@@ -157,7 +159,13 @@ public class ServerXpathCredentialSource extends AbstractServerAssertion<XpathCr
             return AssertionStatus.AUTH_REQUIRED;
         }
 
-        context.getAuthenticationContext(context.getRequest()).addCredentials(LoginCredentials.makePasswordCredentials(login, pass.toCharArray(), XpathCredentialSource.class));
+        LoginCredentials creds = LoginCredentials.makeLoginCredentials(
+                new UsernamePasswordSecurityToken(SecurityTokenType.XPATH_CREDENTIALS,
+                        login,
+                        pass.toCharArray()),
+                XpathCredentialSource.class);
+
+        context.getAuthenticationContext(context.getRequest()).addCredentials( creds );
 
         return AssertionStatus.NONE;
     }
