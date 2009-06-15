@@ -133,7 +133,7 @@ public final class IdentityTarget implements Comparable, Serializable {
             result = Long.valueOf(identityProviderOid).compareTo(otherIdentityTarget.identityProviderOid);
         }
         if ( result == 0 && identityId!=null && otherIdentityTarget.identityId!=null) {
-            result = identityId.compareTo(otherIdentityTarget.identityId);
+            result = identityId.compareToIgnoreCase(otherIdentityTarget.identityId);
         }
         
         return result;
@@ -148,7 +148,7 @@ public final class IdentityTarget implements Comparable, Serializable {
         IdentityTarget that = (IdentityTarget) o;
 
         if (identityProviderOid != that.identityProviderOid) return false;
-        if (identityId != null ? !identityId.equals(that.identityId) : that.identityId != null) return false;
+        if (identityId != null ? !identityId.equalsIgnoreCase(that.identityId) : that.identityId != null) return false;
         if (targetIdentityType != that.targetIdentityType) return false;
 
         return true;
@@ -159,7 +159,7 @@ public final class IdentityTarget implements Comparable, Serializable {
         int result;
         result = (targetIdentityType != null ? targetIdentityType.hashCode() : 0);
         result = 31 * result + (int) (identityProviderOid ^ (identityProviderOid >>> 32));
-        result = 31 * result + (identityId != null ? identityId.hashCode() : 0);
+        result = 31 * result + (identityId != null ? identityId.toLowerCase().hashCode() : 0);
         return result;
     }
 
@@ -167,6 +167,6 @@ public final class IdentityTarget implements Comparable, Serializable {
 
     private TargetIdentityType targetIdentityType;
     private long identityProviderOid;
-    private String identityId;
+    private String identityId; // case insensitive identifier
     private String identityInfo;
 }
