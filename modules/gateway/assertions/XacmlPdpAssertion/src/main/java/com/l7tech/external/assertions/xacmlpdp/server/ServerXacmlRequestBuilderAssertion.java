@@ -276,7 +276,9 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 attributeElement.appendChild(valueElement);
 
                 for(Map.Entry<String, String> entry : attributeValue.getAttributes().entrySet()) {
-                    valueElement.setAttribute(entry.getKey(), entry.getValue());
+                    String name = ExpandVariables.process(entry.getKey(), vars, auditor, true);
+                    String value = ExpandVariables.process(entry.getValue(), vars, auditor, true);
+                    valueElement.setAttribute(name, value);
                 }
 
                 valueElement.appendChild(
