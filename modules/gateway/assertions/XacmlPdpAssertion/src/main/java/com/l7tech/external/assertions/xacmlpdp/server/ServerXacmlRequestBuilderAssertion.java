@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.message.Message;
+import com.l7tech.message.XmlKnob;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
@@ -21,6 +22,7 @@ import com.l7tech.xml.xpath.XpathResultIterator;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -91,55 +93,16 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         }
 
         for(XacmlRequestBuilderAssertion.Subject subject : assertion.getSubjects()) {
-            Element subjectElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Subject");
-            root.appendChild(subjectElement);
-
-            if(subject.getSubjectCategory().length() > 0) {
-                subjectElement.setAttribute("SubjectCategory",
-                        ExpandVariables.process(subject.getSubjectCategory(), vars, auditor, true));
-            }
-
-            addAttributes(doc, subjectElement, subject.getAttributes(), vars, context, assertion.getXacmlVersion());
+            addSubject(context, vars, doc, root, subject);
         }
 
         for(XacmlRequestBuilderAssertion.Resource resource : assertion.getResources()) {
-            Element resourceElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Resource");
-            root.appendChild(resourceElement);
-
-            if(resource.getResourceContent() != null) {
-                Element resourceContentElement = doc.createElementNS(
-                        assertion.getXacmlVersion().getNamespace(), "ResourceContent");
-                resourceElement.appendChild(resourceContentElement);
-
-                for(Map.Entry<String, String> entry : resource.getResourceContent().getAttributes().entrySet()) {
-                    resourceContentElement.setAttribute(entry.getKey(), entry.getValue());
-                }
-
-                resourceContentElement.appendChild(doc.createTextNode(resource.getResourceContent().getContent()));
-            }
-
-            addAttributes(doc, resourceElement, resource.getAttributes(), vars, context, assertion.getXacmlVersion());
+            addResource(context, vars, doc, root, resource);
         }
 
-        Element actionElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Action");
-        root.appendChild(actionElement);
-        addAttributes(doc,
-                actionElement,
-                assertion.getAction().getAttributes(),
-                vars,
-                context,
-                assertion.getXacmlVersion());
+        addAction(context, vars, doc, root);
 
-        Element environmentElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Environment");
-        root.appendChild(environmentElement);
-
-        if(assertion.getEnvironment() != null) {
-            addAttributes(doc,
-                    environmentElement,
-                    assertion.getEnvironment().getAttributes(),
-                    vars, context,
-                    assertion.getXacmlVersion());
-        }
+        addEnvironment(context, vars, doc, root);
 
         switch(assertion.getOutputMessageDestination()) {
             case DEFAULT_REQUEST:
@@ -157,6 +120,63 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
         }
 
         return AssertionStatus.NONE;
+    }
+
+    private void addEnvironment(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root) {
+        Element environmentElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Environment");
+        root.appendChild(environmentElement);
+
+        if(assertion.getEnvironment() != null) {
+            addAttributes(doc,
+                    environmentElement,
+                    assertion.getEnvironment().getAttributes(),
+                    vars, context,
+                    assertion.getXacmlVersion());
+        }
+    }
+
+    private void addAction(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root) {
+        Element actionElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Action");
+        root.appendChild(actionElement);
+        addAttributes(doc,
+                actionElement,
+                assertion.getAction().getAttributes(),
+                vars,
+                context,
+                assertion.getXacmlVersion());
+    }
+
+    private void addResource(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root, XacmlRequestBuilderAssertion.Resource resource) {
+        Element resourceElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Resource");
+        root.appendChild(resourceElement);
+
+        if(resource.getResourceContent() != null) {
+            Element resourceContentElement = doc.createElementNS(
+                    assertion.getXacmlVersion().getNamespace(), "ResourceContent");
+            resourceElement.appendChild(resourceContentElement);
+
+            for(Map.Entry<String, String> entry : resource.getResourceContent().getAttributes().entrySet()) {
+                String name = ExpandVariables.process(entry.getKey(), vars, auditor, true);
+                String value = ExpandVariables.process(entry.getValue(), vars, auditor, true);
+                resourceContentElement.setAttribute(name, value);
+            }
+
+            addContentToElementWithMessageSupport(resourceContentElement, resource.getResourceContent().getContent(), vars);
+        }
+
+        addAttributes(doc, resourceElement, resource.getAttributes(), vars, context, assertion.getXacmlVersion());
+    }
+
+    private void addSubject(PolicyEnforcementContext context, Map<String, Object> vars, Document doc, Element root, XacmlRequestBuilderAssertion.Subject subject) {
+        Element subjectElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "Subject");
+        root.appendChild(subjectElement);
+
+        if(subject.getSubjectCategory().length() > 0) {
+            subjectElement.setAttribute("SubjectCategory",
+                    ExpandVariables.process(subject.getSubjectCategory(), vars, auditor, true));
+        }
+
+        addAttributes(doc, subjectElement, subject.getAttributes(), vars, context, assertion.getXacmlVersion());
     }
 
     private void addAttribute(Document doc,
@@ -226,10 +246,12 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                 int smallestCtxVarSize = 0;
                 for(Map.Entry<String, String> entry: variableMap.entrySet()){
                     List multiCtxVarValues;
-                    if(vars.get(entry.getKey()) instanceof Object[]){
-                        multiCtxVarValues = Arrays.asList(vars.get(entry.getKey()));
-                    }else if(vars.get(entry.getKey()) instanceof List){
-                        multiCtxVarValues = (List) vars.get(entry.getKey());
+                    Object o = vars.get(entry.getKey());
+                    if(o instanceof Object[]){
+                        Object [] oArray = (Object[]) o;
+                        multiCtxVarValues = Arrays.asList(oArray);
+                    }else if(o instanceof List){
+                        multiCtxVarValues = (List) o;
                     }else{
                         throw new IllegalStateException("Unexpected type of context variable found");
                     }
@@ -245,10 +267,12 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     for(Map.Entry<String, String> entry : variableMap.entrySet()) {
 
                         List multiCtxVarValues;
-                        if(vars.get(entry.getKey()) instanceof Object[]){
-                            multiCtxVarValues = Arrays.asList(vars.get(entry.getKey()));
-                        }else if(vars.get(entry.getKey()) instanceof List){
-                            multiCtxVarValues = (List) vars.get(entry.getKey());
+                        Object o = vars.get(entry.getKey());
+                        if(o instanceof Object[]){
+                            Object [] oArray = (Object[]) o;
+                            multiCtxVarValues = Arrays.asList(oArray);
+                        }else if(o instanceof List){
+                            multiCtxVarValues = (List) o;
                         }else{
                             throw new IllegalStateException("Unexpected type of context variable found");
                         }
@@ -265,7 +289,7 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                         valueElement.setAttribute(name, attrValue);
                     }
 
-                    valueElement.appendChild(doc.createTextNode(ExpandVariables.process(content, vars, auditor, true)));
+                    addContentToElementWithMessageSupport(valueElement, content, vars);
                 }
 
                 for(String newVariableName : variableMap.values()) {
@@ -281,10 +305,67 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     valueElement.setAttribute(name, value);
                 }
 
-                valueElement.appendChild(
-                        doc.createTextNode(ExpandVariables.process(attributeValue.getContent(), vars, auditor, true)));
+                addContentToElementWithMessageSupport(valueElement, attributeValue.getContent(), vars);
             }
         }
+    }
+
+    /**
+     * Add the contents of the <AttributeValue> or <ResourceContent> elements. These schema elements can take any
+     * content. We support this through allowing a context variable of type Message to be supplied.
+     * If content has the name of a Message context variable , then the XML content of this variable is inserted as
+     * the child of element, otherwise a text node is created.
+     *
+     * It is possible that nothing will be added to the attributeValue. If content does represent a Message context
+     * variable, and there are any problems parsing it, then nothing will be added
+     * @param element the Element representing the <AttributeValue> or <ResourceContent> element. Cannot be null
+     * @param content the String representing either the string contents, with possibly string context variables or
+     * the name of a Message context variable. Cannot be null. If content does contains the name of more than one
+     * context variable of type Message and IllegalStateException will be thrown as this is not supported.
+     * @param vars all known context variables
+     */
+    private void addContentToElementWithMessageSupport(Element element, String content, Map<String, Object> vars){
+        String[] v = Syntax.getReferencedNames(content);
+
+        //If any Message type var is referenced, there can only be 1
+        boolean isAMessage = false;
+        for(String s : v) {
+            if(!vars.containsKey(s)) continue;
+            if(vars.get(s) instanceof Message){
+                isAMessage = true;
+            }
+        }
+
+        //this error message is UI specific, however this is how it happens - a user types in two Message context
+        //variables into the UI
+        if(isAMessage && v.length != 1)
+            throw new IllegalStateException(
+                    "AttributeValue content text field can only support a single message context variable");
+
+        if(isAMessage){
+            String s = v[0];
+            Object o = vars.get(s);
+            if(o instanceof Message) {
+                Message m = (Message) vars.get(s);//wont be null based on isAMessage being true
+                try {
+                    if(m.isXml()){
+                        XmlKnob xmlKnob = m.getXmlKnob();
+                        Document doc = xmlKnob.getDocumentReadOnly();
+                        Document docOwner = element.getOwnerDocument();
+                        Node newNode = docOwner.importNode(doc.getDocumentElement(), true);
+                        element.appendChild(newNode);
+                    }
+                } catch (Exception e) {
+                    //can log this - but action is that the attributeValue is not modified in this case
+                }finally{m.close();}
+            }else throw new IllegalStateException("Message expected");//will not happen based on above logic
+        }else{
+            //its not a Message, create a text node
+            element.appendChild( element.getOwnerDocument().createTextNode(
+                    ExpandVariables.process(content, vars, auditor, true)));
+        }
+
+
     }
 
     private void addAttributes(Document doc,
