@@ -8,11 +8,15 @@ import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.IdentityTagable;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.gui.widgets.OkCancelDialog;
+import com.l7tech.console.util.Registry;
 
 import java.awt.*;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Dialog for selection of a target identity.
@@ -74,6 +78,7 @@ public class IdentityTargetSelector extends OkCancelDialog<IdentityTarget> {
 
     //- PRIVATE
 
+    private static final Logger logger = Logger.getLogger( IdentityTargetSelector.class.getName() );
     private static final ResourceBundle bundle = ResourceBundle.getBundle(IdentityTargetSelector.class.getName());
     private final IdentityTargetable identityTargetable;
     private final IdentityTarget originalIdentityTarget;
@@ -103,7 +108,7 @@ public class IdentityTargetSelector extends OkCancelDialog<IdentityTarget> {
                                                               final Assertion identityTargetableAssertion,
                                                               final MessageTargetable messageTargetable  ) {
         TreeSet<IdentityTarget> targetOptions = new TreeSet<IdentityTarget>();
-        Iterator<Assertion> assertionIterator = policy.preorderIterator();
+        Iterator<Assertion> assertionIterator = inlineIncludes(policy).preorderIterator();
 
         while( assertionIterator.hasNext() ){
             Assertion assertion = assertionIterator.next();
@@ -128,6 +133,25 @@ public class IdentityTargetSelector extends OkCancelDialog<IdentityTarget> {
         }
 
         return targetOptions.toArray(new IdentityTarget[targetOptions.size()]);
+    }
+
+    /**
+     *  
+     */
+    private static Assertion inlineIncludes( final Assertion subject ) {
+        Assertion assertion = subject;
+
+        try {
+            assertion = Registry.getDefault().getPolicyPathBuilderFactory().makePathBuilder().inlineIncludes( subject, new HashSet<String>(), false );
+        } catch (InterruptedException e) {
+            // fallback to policy without includes
+            logger.log( Level.WARNING, "Error inlining inlcluded policy fragments.", e );
+        } catch (PolicyAssertionException e) {
+            // fallback to policy without includes
+            logger.log( Level.WARNING, "Error inlining inlcluded policy fragments.", e );
+        }
+
+        return assertion;
     }
 
 }
