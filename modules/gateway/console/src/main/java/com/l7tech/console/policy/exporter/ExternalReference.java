@@ -79,6 +79,8 @@ public abstract class ExternalReference {
                     references.add(IncludedPolicyReference.parseFromElement(refEl));
                 } else if (refType.equals(TrustedCertReference.class.getName())) {
                     references.add(TrustedCertReference.parseFromElement(refEl));
+                } else if (refType.equals(PrivateKeyReference.class.getName())) {
+                    references.add(PrivateKeyReference.parseFromElement(refEl));
                 }
             }
         }

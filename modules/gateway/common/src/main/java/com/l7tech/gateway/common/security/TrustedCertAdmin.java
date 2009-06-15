@@ -204,6 +204,18 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
     public List<SsgKeyEntry> findAllKeys(long keystoreId) throws IOException, CertificateException, FindException;
 
+    /**
+     * Find a key entry using the rules assertions and connectors would follow.
+     *
+     * @param keyAlias  key alias to find, or null to find default SSL key.
+     * @param preferredKeystoreOid preferred keystore OID to look in, or -1 to search all keystores (if permitted).
+     * @return the requested private key, or null if it wasn't found.
+     * @throws FindException if there is a database problem (other than ObjectNotFoundException)
+     * @throws KeyStoreException if there is a problem reading a keystore
+     */
+    @Transactional(propagation=Propagation.SUPPORTS)
+    @Secured(stereotype=FIND_ENTITY, types=SSG_KEY_ENTRY)
+    public SsgKeyEntry findKeyEntry(String keyAlias, long preferredKeystoreOid) throws FindException, KeyStoreException;
 
     /**
      * Destroys an SsgKeyEntry identified by its keystore ID and entry alias.

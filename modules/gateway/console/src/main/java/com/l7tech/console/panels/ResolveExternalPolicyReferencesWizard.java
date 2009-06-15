@@ -49,6 +49,8 @@ public class ResolveExternalPolicyReferencesWizard extends Wizard {
                 }
             } else if (refs[i] instanceof TrustedCertReference) {
                 panel = new ResolveForeignTrustedCertificatePanel(null,(TrustedCertReference)(refs[i]));
+            } else if (refs[i] instanceof PrivateKeyReference) {
+                panel = new ResolvePrivateKeyPanel(null, (PrivateKeyReference)(refs[i]));
             }
             if (panel != null) {
                 if (firstPanel == null) {

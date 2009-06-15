@@ -173,7 +173,28 @@ public class PolicyExporter {
                 }
             }
 
-            return;
+            // Since BridgeRoutingAssertion implements UsersEntities and also extends PrivateKeyable,
+            // so if it is a BridgeRoutingAssertion, we need to create private key reference for it in the next step.
+            if (! (assertion instanceof BridgeRoutingAssertion)) {
+                return;
+            }
+        }
+
+        if (assertion instanceof PrivateKeyable) {
+            PrivateKeyable keyable = (PrivateKeyable)assertion;
+
+            // Check if there exists a duplicate private key reference.
+            for (ExternalReference er: refs) {
+                if (er instanceof PrivateKeyReference) {
+                    PrivateKeyReference pkr = (PrivateKeyReference)er;
+                    if ((pkr.isDefaultKey() && keyable.isUsesDefaultKeyStore()) ||
+                        (!pkr.isDefaultKey() && pkr.getKeyAlias() != null && pkr.getKeyAlias().equals(keyable.getKeyAlias()))) {
+                        return;
+                    }
+                }
+            }
+
+            ref = new PrivateKeyReference(keyable);
         }
 
         // if an assertion was created and it's not already recorded, add it

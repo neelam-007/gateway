@@ -246,7 +246,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
      * @throws FindException if there is a database problem (other than ObjectNotFoundException)
      * @throws KeyStoreException if there is a problem reading a keystore
      */
-    SsgKeyEntry findKeyEntry(String keyAlias, long preferredKeystoreOid) throws FindException, KeyStoreException {
+    public SsgKeyEntry findKeyEntry(String keyAlias, long preferredKeystoreOid) throws FindException, KeyStoreException {
         try {
             return keyAlias == null ? defaultKey.getSslInfo() : ssgKeyStoreManager.lookupKeyByKeyAlias(keyAlias, preferredKeystoreOid);
         } catch (IOException e) {
