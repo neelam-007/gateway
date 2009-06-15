@@ -76,6 +76,7 @@ public class WssProcessorImpl implements WssProcessor {
     private long signedAttachmentSizeLimit = 0;
     private boolean rejectOnMustUnderstand = true;
     private boolean permitMultipleTimestampSignatures = false;
+    private boolean permitUnknownBinarySecurityTokens = false;
     // WARNING : Settings must be copied in undecorateMessage
 
     private Document processedDocument;
@@ -128,6 +129,7 @@ public class WssProcessorImpl implements WssProcessor {
         context.setSecurityTokenResolver(securityTokenResolver);
         context.setSignedAttachmentSizeLimit(signedAttachmentSizeLimit);
         context.setPermitMultipleTimestampSignatures(permitMultipleTimestampSignatures);
+        context.setPermitUnknownBinarySecurityTokens(permitUnknownBinarySecurityTokens);
         context.setRejectOnMustUnderstand(rejectOnMustUnderstand);
         return context.processMessage();
     }
@@ -191,6 +193,17 @@ public class WssProcessorImpl implements WssProcessor {
      */
     public void setPermitMultipleTimestampSignatures(boolean permitMultipleTimestampSignatures) {
         this.permitMultipleTimestampSignatures = permitMultipleTimestampSignatures;
+    }
+
+    /**
+     * Set whether unknown BSTs are permitted.
+     *
+     * <p>This setting is "false" by default so unknown BSTs are not permitted.</p>
+     *
+     * @param permitUnknownBinarySecurityTokens True to permit unknown BSTs.
+     */
+    public void setPermitUnknownBinarySecurityTokens(boolean permitUnknownBinarySecurityTokens) {
+        this.permitUnknownBinarySecurityTokens = permitUnknownBinarySecurityTokens;
     }
 
     /**
@@ -1264,8 +1277,13 @@ public class WssProcessorImpl implements WssProcessor {
         String encodingType = binarySecurityTokenElement.getAttribute("EncodingType");
 
         // todo use proper qname comparator rather than this hacky suffix check
-        if (!valueType.endsWith("X509v3") && !valueType.endsWith("GSS_Kerberosv5_AP_REQ"))
-            throw new ProcessorException("BinarySecurityToken has unsupported ValueType " + valueType);
+        if (!valueType.endsWith("X509v3") && !valueType.endsWith("GSS_Kerberosv5_AP_REQ")) {
+            if (permitUnknownBinarySecurityTokens) {
+                return; // ignore this token
+            } else {
+                throw new ProcessorException("BinarySecurityToken has unsupported ValueType " + valueType);
+            }
+        }
         if (!encodingType.endsWith("Base64Binary"))
             throw new ProcessorException("BinarySecurityToken has unsupported EncodingType " + encodingType);
 

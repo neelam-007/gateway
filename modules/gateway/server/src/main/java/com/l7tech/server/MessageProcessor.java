@@ -163,7 +163,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         wssSettingsReference.set( new WssSettings(
             serverConfig.getLongPropertyCached(ServerConfig.PARAM_SIGNED_PART_MAX_BYTES, 0, period - 1),
             serverConfig.getBooleanProperty(ServerConfig.PARAM_SOAP_REJECT_MUST_UNDERSTAND, true),
-            serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_ALLOW_MULTIPLE_TIMESTAMP_SIGNATURES, false)
+            serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_ALLOW_MULTIPLE_TIMESTAMP_SIGNATURES, false),
+            serverConfig.getBooleanProperty(ServerConfig.PARAM_WSS_ALLOW_UNKNOWN_BINARY_SECURITY_TOKENS, false)
         ) );
     }
 
@@ -694,6 +695,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 trogdor.setSignedAttachmentSizeLimit(settings.signedAttachmentMaxSize);
                 trogdor.setRejectOnMustUnderstand(settings.rejectOnMustUnderstand);
                 trogdor.setPermitMultipleTimestampSignatures(settings.permitMultipleTimestampSignatures);
+                trogdor.setPermitUnknownBinarySecurityTokens(settings.permitUnknownBinarySecurityTokens);
                 try {
                     final Message request = context.getRequest();
                     final SecurityKnob reqSec = request.getSecurityKnob();
@@ -831,13 +833,16 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         private final long signedAttachmentMaxSize;
         private final boolean rejectOnMustUnderstand;
         private final boolean permitMultipleTimestampSignatures;
+        private final boolean permitUnknownBinarySecurityTokens;
 
         private WssSettings( final long signedAttachmentMaxSize,
                              final boolean rejectOnMustUnderstand,
-                             final boolean permitMultipleTimestampSignatures ) {
+                             final boolean permitMultipleTimestampSignatures,
+                             final boolean permitUnknownBinarySecurityTokens ) {
             this.signedAttachmentMaxSize = signedAttachmentMaxSize;
             this.rejectOnMustUnderstand = rejectOnMustUnderstand;
             this.permitMultipleTimestampSignatures = permitMultipleTimestampSignatures;
+            this.permitUnknownBinarySecurityTokens = permitUnknownBinarySecurityTokens;
         }
     }
 }
