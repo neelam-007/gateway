@@ -176,71 +176,87 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
 
         if(assertion.getXacmlVersion() == XacmlAssertionEnums.XacmlVersionType.V1_0) {
             if(attribute.getIssueInstant().length() > 0) {
-                attributeElement.setAttribute("IssueInstant", ExpandVariables.process(attribute.getIssueInstant(), vars, auditor, true));
+                attributeElement.setAttribute("IssueInstant",
+                        ExpandVariables.process(attribute.getIssueInstant(), vars, auditor, true));
             }
         }
 
         for(XacmlRequestBuilderAssertion.AttributeValue attributeValue : attribute.getValues()) {
             HashSet<String> multiValuedVars = valueContainsMultiValuedVars(attributeValue, vars);
+
             if(attributeValue.isCanElementHaveSameTypeSibilings()
                     && multiValuedVars.size() > 0
                     && xacmlVersion == XacmlAssertionEnums.XacmlVersionType.V2_0) {
+                //context var referenced -> mapped to a new context variable name which is temporary
                 HashMap<String, String> variableMap = new HashMap<String, String>();
+
+                //we need to maintain our multi valued context variables, and yet work with each value individualy
+                //the variable ssg.internal.xacml.request.var allows code below to work with each value from a multi
+                //valued context variable individually. There is a variable created for each context variable referenced
+                //note: this mechanism allows the indiviudal values of a multi valued context variable to reference
+                //other context variables
                 int i = 1;
                 for(String s : multiValuedVars) {
                     variableMap.put(s, "ssg.internal.xacml.request.var" + i++);
                 }
 
-                HashMap<String, String> updatedAttributes = new HashMap<String, String>(attributeValue.getAttributes().size());
+                //updatedAttributes represents the original attributes, but the new single valued context variable
+                //created above is used in place of the multi valued context variable entered by the user
+                HashMap<String, String> updatedAttributes =
+                        new HashMap<String, String>(attributeValue.getAttributes().size());
+                
                 for(Map.Entry<String, String> entry : attributeValue.getAttributes().entrySet()) {
-                    String k = entry.getKey();
-                    String v = entry.getValue();
-
+                    String k = entry.getKey(); //name
+                    String v = entry.getValue();     //value
+                    //for each attribute, search variableMap seeing if it references a context var, if it does replace with new name
                     for(Map.Entry<String, String> newEntry : variableMap.entrySet()) {
                         k = k.replaceAll("\\Q${" + newEntry.getKey() + "}\\E", "\\$\\{" + newEntry.getValue() + "\\}");
                         v = v.replaceAll("\\Q${" + newEntry.getKey() + "}\\E", "\\$\\{" + newEntry.getValue() + "\\}");
                     }
-
                     updatedAttributes.put(k, v);
                 }
 
+                //same process for content
                 String content = attributeValue.getContent();
                 for(Map.Entry<String, String> entry : variableMap.entrySet()) {
                     content = content.replaceAll("\\Q${" + entry.getKey() + "}\\E", "\\$\\{" + entry.getValue() + "\\}");
                 }
 
-                int j = 0;
-                while(true) {
-                    // Check if done
-                    boolean done = true;
+                //find the smallest referenced context variable
+                int smallestCtxVarSize = 0;
+                for(Map.Entry<String, String> entry: variableMap.entrySet()){
+                    List multiCtxVarValues;
+                    if(vars.get(entry.getKey()) instanceof Object[]){
+                        multiCtxVarValues = Arrays.asList(vars.get(entry.getKey()));
+                    }else if(vars.get(entry.getKey()) instanceof List){
+                        multiCtxVarValues = (List) vars.get(entry.getKey());
+                    }else{
+                        throw new IllegalStateException("Unexpected type of context variable found");
+                    }
+
+                    smallestCtxVarSize = (multiCtxVarValues.size() < smallestCtxVarSize || smallestCtxVarSize == 0)
+                            ? multiCtxVarValues.size() : smallestCtxVarSize;
+                }
+
+                for(int z = 0; z < smallestCtxVarSize; z++){
+                    //for each iteration, find from variablemap what multi valued context variabels are referenced,
+                    //find the single value used in it's place, and updated the single valued variable with
+                    //a value for this iteration
                     for(Map.Entry<String, String> entry : variableMap.entrySet()) {
-                        if(vars.get(entry.getKey()) instanceof Object[]) {
-                            Object[] objArray = (Object[])vars.get(entry.getKey());
-                            if(objArray.length > j) {
-                                done = false;
-                                vars.put(entry.getValue(), objArray[j]);
-                            } else {
-                                vars.put(entry.getValue(), "");
-                            }
-                        } else if(vars.get(entry.getKey()) instanceof List) {
-                            List objList = (List)vars.get(entry.getKey());
-                            if(objList.size() > j) {
-                                done = false;
-                                vars.put(entry.getValue(), objList.get(j));
-                            } else {
-                                vars.put(entry.getValue(), "");
-                            }
+
+                        List multiCtxVarValues;
+                        if(vars.get(entry.getKey()) instanceof Object[]){
+                            multiCtxVarValues = Arrays.asList(vars.get(entry.getKey()));
+                        }else if(vars.get(entry.getKey()) instanceof List){
+                            multiCtxVarValues = (List) vars.get(entry.getKey());
+                        }else{
+                            throw new IllegalStateException("Unexpected type of context variable found");
                         }
+                        vars.put(entry.getValue(), multiCtxVarValues.get(z));
                     }
 
-                    if(done) {
-                        break;
-                    } else {
-                        j++;
-                    }
-
-                    // Add an AttributeValue element
-                    Element valueElement = doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "AttributeValue");
+                    Element valueElement =
+                            doc.createElementNS(assertion.getXacmlVersion().getNamespace(), "AttributeValue");
                     attributeElement.appendChild(valueElement);
 
                     for(Map.Entry<String, String> entry : updatedAttributes.entrySet()) {
@@ -250,11 +266,6 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     }
 
                     valueElement.appendChild(doc.createTextNode(ExpandVariables.process(content, vars, auditor, true)));
-
-                    // For XACML 1.0 and 1.1, there cannot be more than one attribute value
-                    if(assertion.getXacmlVersion() != XacmlAssertionEnums.XacmlVersionType.V2_0) {
-                        break;
-                    }
                 }
 
                 for(String newVariableName : variableMap.values()) {
@@ -268,7 +279,8 @@ public class ServerXacmlRequestBuilderAssertion extends AbstractServerAssertion<
                     valueElement.setAttribute(entry.getKey(), entry.getValue());
                 }
 
-                valueElement.appendChild(doc.createTextNode(ExpandVariables.process(attributeValue.getContent(), vars, auditor, true)));
+                valueElement.appendChild(
+                        doc.createTextNode(ExpandVariables.process(attributeValue.getContent(), vars, auditor, true)));
             }
         }
     }
