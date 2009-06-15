@@ -14,21 +14,18 @@ import org.w3c.dom.Element;
  * Security token implementation for Kerberos.
  *
  * <p>Created from a BST or reference to a BST used in a previous request.</p>
- *
- * @author $Author$
- * @version $Revision$
  */
-public class KerberosSecurityTokenImpl extends SigningSecurityTokenImpl implements KerberosSigningSecurityToken {
+public class KerberosSigningSecurityTokenImpl extends SigningSecurityTokenImpl implements KerberosSigningSecurityToken {
 
     //- PUBLIC
 
-    public KerberosSecurityTokenImpl(KerberosServiceTicket ticket, String wsuId) {
+    public KerberosSigningSecurityTokenImpl(KerberosServiceTicket ticket, String wsuId) {
         super(null);
         this.kerberosServiceTicket = ticket;
         this.wsuId = wsuId;
     }
 
-    public KerberosSecurityTokenImpl(KerberosGSSAPReqTicket ticket, String wsuId, Element element) throws GeneralSecurityException {
+    public KerberosSigningSecurityTokenImpl(KerberosGSSAPReqTicket ticket, String wsuId, Element element) throws GeneralSecurityException {
         super(element);
         this.wsuId = wsuId;
 

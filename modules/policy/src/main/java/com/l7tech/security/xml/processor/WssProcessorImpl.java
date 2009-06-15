@@ -1296,7 +1296,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
         else {
             try {
-                securityTokens.add(new KerberosSecurityTokenImpl(new KerberosGSSAPReqTicket(decodedValue),
+                securityTokens.add(new KerberosSigningSecurityTokenImpl(new KerberosGSSAPReqTicket(decodedValue),
                                                                  wsuId,
                                                                  binarySecurityTokenElement));
             }
