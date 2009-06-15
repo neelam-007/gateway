@@ -9,6 +9,7 @@ package com.l7tech.console.panels;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -16,6 +17,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.TextUtils;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.event.WizardEvent;
@@ -30,8 +32,9 @@ import java.awt.event.ItemEvent;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateEncodingException;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Corresponding GUI for the {@link com.l7tech.console.action.EditXmlSecurityRecipientContextAction} action.
@@ -39,6 +42,8 @@ import java.util.Iterator;
  * @author flascelles@layer7-tech.com
  */
 public class XmlSecurityRecipientContextEditor extends JDialog {
+    private static final Logger logger = Logger.getLogger( XmlSecurityRecipientContextEditor.class.getName() );
+
     private JPanel mainPanel;
     private JButton assignCertButton;
     private JTextField certSubject;
@@ -237,7 +242,7 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
         while (root.getParent() != null) {
             root = root.getParent();
         }
-        populateRecipientsFromAssertionTree(root);
+        populateRecipientsFromAssertionTree(inlineIncludes(root));
         for (Iterator i = xmlSecRecipientsFromOtherAssertions.keySet().iterator(); i.hasNext();) {
             String actorvalue = (String)i.next();
             ((DefaultComboBoxModel)actorComboBox.getModel()).addElement(actorvalue);
@@ -270,6 +275,22 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                 setFirstExistingRecipient();
             }
         }
+    }
+
+    private Assertion inlineIncludes( final Assertion subject ) {
+        Assertion assertion = subject;
+
+        try {
+            assertion = Registry.getDefault().getPolicyPathBuilderFactory().makePathBuilder().inlineIncludes( subject, new HashSet<String>(), true );
+        } catch (InterruptedException e) {
+            // fallback to policy without includes
+            logger.log( Level.WARNING, "Error inlining inlcluded policy fragments.", e );
+        } catch (PolicyAssertionException e) {
+            // fallback to policy without includes
+            logger.log( Level.WARNING, "Error inlining inlcluded policy fragments.", e );
+        }
+
+        return assertion;
     }
 
     private void setFirstExistingRecipient() {
