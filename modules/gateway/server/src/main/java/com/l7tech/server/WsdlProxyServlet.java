@@ -35,6 +35,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.ValidationUtils;
 import com.l7tech.xml.DocumentReferenceProcessor;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -463,6 +464,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
     }
 
+    /**
+     * Create a "user-friendly" display name for the document. 
+     */
     private String getName( final ServiceDocument serviceDocument ) {
         String name = serviceDocument.getUri();
 
@@ -471,7 +475,25 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             name = name.substring( index+1 );
         }
 
-        return name;
+        index = name.indexOf('?');
+        if ( index >= 0 ) {
+            name = name.substring( 0, index );
+        }
+
+        index = name.indexOf('#');
+        if ( index >= 0 ) {
+            name = name.substring( 0, index );
+        }
+
+        String permittedCharacters = ValidationUtils.ALPHA_NUMERIC  + "_-.";
+        StringBuilder nameBuilder = new StringBuilder();
+        for ( char nameChar : name.toCharArray() ) {
+            if ( permittedCharacters.indexOf(nameChar) >= 0 ) {
+                nameBuilder.append( nameChar );
+            }
+        }
+
+        return nameBuilder.toString();
     }
 
     private void substituteSoapAddressURL(Document wsdl, URL newURL) {
