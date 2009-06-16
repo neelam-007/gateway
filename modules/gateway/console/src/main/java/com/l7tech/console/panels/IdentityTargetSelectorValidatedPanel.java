@@ -51,7 +51,11 @@ public class IdentityTargetSelectorValidatedPanel extends ValidatedPanel<Identit
 
     @Override
     protected IdentityTarget getModel() {
-        return (IdentityTarget) identityComboBox.getSelectedItem();    
+        IdentityTarget target = (IdentityTarget) identityComboBox.getSelectedItem();
+        if ( target == null ) { // components not yet initialized
+            target = new IdentityTarget(identityTargetable.getIdentityTarget());
+        }
+        return target;
     }
 
     @Override

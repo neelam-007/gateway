@@ -8,10 +8,12 @@ import com.l7tech.policy.assertion.IdentityTargetable;
 import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspUpgradeUtilFrom21;
 import com.l7tech.util.Functions;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.objectmodel.EntityHeader;
 
 import java.util.*;
 
@@ -23,7 +25,7 @@ import java.util.*;
  * User: flascell<br/>
  * Date: July 14, 2004<br/>
  */
-public class RequireWssSignedElement extends XmlSecurityAssertionBase implements IdentityTargetable, SetsVariables {
+public class RequireWssSignedElement extends XmlSecurityAssertionBase implements IdentityTargetable, SetsVariables, UsesEntities {
 
     //- PUBLIC
 
@@ -91,6 +93,19 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
         }
 
         return varsUsed;
+    }
+
+    public EntityHeader[] getEntitiesUsed() {
+        return identityTarget != null ?
+                identityTarget.getEntitiesUsed():
+                new EntityHeader[0];
+    }
+
+    public void replaceEntity( final EntityHeader oldEntityHeader,
+                               final EntityHeader newEntityHeader ) {
+        if ( identityTarget != null ) {
+            identityTarget.replaceEntity(oldEntityHeader, newEntityHeader);
+        }
     }
 
     @Override

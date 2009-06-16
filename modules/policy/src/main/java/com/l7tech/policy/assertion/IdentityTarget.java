@@ -1,11 +1,16 @@
 package com.l7tech.policy.assertion;
 
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.IdentityHeader;
+
 import java.io.*;
+import java.util.*;
 
 /**
  * Bean for identity target information.
  */
-public final class IdentityTarget implements Comparable, Serializable {
+public final class IdentityTarget implements Comparable, Serializable, UsesEntities {
 
     //- PUBLIC
 
@@ -203,6 +208,66 @@ public final class IdentityTarget implements Comparable, Serializable {
         return identityBuilder.toString();
     }
 
+    /**
+     *
+     */
+    public EntityHeader[] getEntitiesUsed() {
+        Collection<EntityHeader> headers = new ArrayList<EntityHeader>();
+        if ( targetIdentityType != null ) {
+            switch (targetIdentityType) {
+                case GROUP:
+                    headers.add( new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, identityProviderName, null) );
+                    headers.add( new IdentityHeader(identityProviderOid, identityId, EntityType.GROUP, identityInfo, null, null, null) );
+                    break;
+                case PROVIDER:
+                    headers.add( new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, identityProviderName, null) );
+                    break;
+                case TAG:
+                    break;
+                case USER:
+                    headers.add( new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, identityProviderName, null) );
+                    headers.add( new IdentityHeader(identityProviderOid, identityId, EntityType.USER, identityInfo, null, null, null) );
+                    break;
+            }
+        }
+
+        return headers.toArray( new EntityHeader[headers.size()] );        
+    }
+
+    /**
+     *
+     */
+    public void replaceEntity( final EntityHeader oldEntityHeader,
+                               final EntityHeader newEntityHeader ) {
+        if ( oldEntityHeader.getType() != null &&
+             oldEntityHeader.getType() == newEntityHeader.getType() ) {
+            switch ( oldEntityHeader.getType() ) {
+                case GROUP:
+                case USER:
+                    if ( newEntityHeader instanceof IdentityHeader &&
+                         oldEntityHeader  instanceof IdentityHeader ) {
+                        IdentityHeader newIdentityHeader = (IdentityHeader) newEntityHeader;
+                        IdentityHeader oldIdentityHeader = (IdentityHeader) oldEntityHeader;
+                        if ( oldIdentityHeader.getOid() == identityProviderOid &&
+                             oldIdentityHeader.getStrId() != null &&
+                             oldIdentityHeader.getStrId().equalsIgnoreCase(identityId) ) {
+                            this.identityProviderOid = newIdentityHeader.getProviderOid();
+                            this.identityProviderName = null;
+                            this.identityId = newIdentityHeader.getStrId();
+                            this.identityInfo = newIdentityHeader.getName();
+                        }
+                    }
+                    break;
+                case ID_PROVIDER_CONFIG:
+                    if ( oldEntityHeader.getOid() == this.identityProviderOid ) {
+                        this.identityProviderOid = newEntityHeader.getOid();
+                        this.identityProviderName = null; // name in header may be stale
+                    }
+                    break;
+            }
+        }
+    }
+
     @Override
     public int compareTo( Object other ) {
         IdentityTarget otherIdentityTarget = (IdentityTarget) other;
@@ -249,7 +314,7 @@ public final class IdentityTarget implements Comparable, Serializable {
 
     private TargetIdentityType targetIdentityType;
     private long identityProviderOid;
-    private String identityProviderName;
+    private String identityProviderName; // not part of identity (eq/hash)
     private String identityId; // case insensitive identifier
-    private String identityInfo;
+    private String identityInfo; // not part of identity (eq/hash)
 }

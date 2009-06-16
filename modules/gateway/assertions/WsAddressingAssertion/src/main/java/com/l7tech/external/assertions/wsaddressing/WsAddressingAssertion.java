@@ -7,6 +7,7 @@ import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
+import com.l7tech.objectmodel.EntityHeader;
 
 import java.util.EnumSet;
 import java.util.Set;
@@ -18,7 +19,7 @@ import java.util.Set;
  *
  * <p>Optionally sets variables for the message properties found.</p> 
  */
-public class WsAddressingAssertion extends MessageTargetableAssertion implements IdentityTargetable, SetsVariables, SecurityHeaderAddressable {
+public class WsAddressingAssertion extends MessageTargetableAssertion implements IdentityTargetable, SetsVariables, SecurityHeaderAddressable, UsesEntities {
     //- PUBLIC
     
     public static final String VAR_SUFFIX_TO = "to";
@@ -175,6 +176,19 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
     public void setIdentityTarget(IdentityTarget identityTarget) {
         this.identityTarget = identityTarget;
     }
+
+    public EntityHeader[] getEntitiesUsed() {
+        return identityTarget != null ?
+                identityTarget.getEntitiesUsed():
+                new EntityHeader[0];
+    }
+
+    public void replaceEntity( final EntityHeader oldEntityHeader,
+                               final EntityHeader newEntityHeader ) {
+        if ( identityTarget != null ) {
+            identityTarget.replaceEntity(oldEntityHeader, newEntityHeader);
+        }
+    }    
 
     /**
      * Get the meta data for this assertion.

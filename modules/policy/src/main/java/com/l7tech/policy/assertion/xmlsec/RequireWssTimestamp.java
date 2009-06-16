@@ -11,9 +11,11 @@ import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.IdentityTargetable;
 import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TimeUnit;
+import com.l7tech.objectmodel.EntityHeader;
 
 import java.text.MessageFormat;
 
@@ -24,7 +26,7 @@ import java.text.MessageFormat;
  * must follow one of {@link RequireWssX509Cert}, {@link SecureConversation} or {@link RequireWssSaml}).
  */
 @RequiresSOAP(wss=true)
-public class RequireWssTimestamp extends MessageTargetableAssertion implements IdentityTargetable, SecurityHeaderAddressable {
+public class RequireWssTimestamp extends MessageTargetableAssertion implements IdentityTargetable, SecurityHeaderAddressable, UsesEntities {
 
     /**
      * The recommended max expiry time to use when creating request wss timestamps;
@@ -83,6 +85,19 @@ public class RequireWssTimestamp extends MessageTargetableAssertion implements I
     @Override
     public void setIdentityTarget(IdentityTarget identityTarget) {
         this.identityTarget = identityTarget;
+    }
+
+    public EntityHeader[] getEntitiesUsed() {
+        return identityTarget != null ?
+                identityTarget.getEntitiesUsed():
+                new EntityHeader[0];
+    }
+
+    public void replaceEntity( final EntityHeader oldEntityHeader,
+                               final EntityHeader newEntityHeader ) {
+        if ( identityTarget != null ) {
+            identityTarget.replaceEntity(oldEntityHeader, newEntityHeader);
+        }
     }
 
     @Override

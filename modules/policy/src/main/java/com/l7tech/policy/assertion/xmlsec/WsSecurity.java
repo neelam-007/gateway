@@ -3,6 +3,11 @@ package com.l7tech.policy.assertion.xmlsec;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.util.Functions;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 /**
  * Assertion for applying WS-Security to a message or removing security headers.
@@ -10,7 +15,7 @@ import com.l7tech.util.Functions;
  * @author jbufu
  */
 @RequiresSOAP(wss = true)
-public class WsSecurity extends MessageTargetableAssertion {
+public class WsSecurity extends MessageTargetableAssertion implements UsesEntities {
 
     //- PUBLIC
 
@@ -79,6 +84,26 @@ public class WsSecurity extends MessageTargetableAssertion {
 
     public void setWsSecurityVersion(String wsSecurityVersion) {
         this.wsSecurityVersion = wsSecurityVersion;
+    }
+
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
+    public EntityHeader[] getEntitiesUsed() {
+        EntityHeader[] headers = new EntityHeader[0];
+
+        if ( recipientTrustedCertificateOid != 0 ) {
+            headers = new EntityHeader[]{ new EntityHeader( recipientTrustedCertificateOid, EntityType.TRUSTED_CERT, null, null) };
+        }
+
+        return headers;
+    }
+
+    public void replaceEntity( final EntityHeader oldEntityHeader, final EntityHeader newEntityHeader ) {
+        if( oldEntityHeader.getType() == EntityType.TRUSTED_CERT &&
+            newEntityHeader.getType() == EntityType.TRUSTED_CERT &&
+            recipientTrustedCertificateOid == oldEntityHeader.getOid())
+        {
+            recipientTrustedCertificateOid = newEntityHeader.getOid();
+        }
     }
 
     @Override

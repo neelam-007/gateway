@@ -2,8 +2,11 @@ package com.l7tech.console.policy.exporter;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.BridgeRoutingAssertion;
+import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.security.cert.TrustedCert;
@@ -130,7 +133,7 @@ public class TrustedCertReference extends ExternalReference {
     boolean localizeAssertion(Assertion assertionToLocalize) {
         if (localizeType != LocaliseAction.IGNORE) {
             if (assertionToLocalize instanceof BridgeRoutingAssertion) {
-            BridgeRoutingAssertion bra = (BridgeRoutingAssertion) assertionToLocalize;
+                BridgeRoutingAssertion bra = (BridgeRoutingAssertion) assertionToLocalize;
                 if (bra.getServerCertificateOid() != null &&
                     bra.getServerCertificateOid().longValue() == oid) {
                     if (localizeType == LocaliseAction.REPLACE) {
@@ -141,6 +144,24 @@ public class TrustedCertReference extends ExternalReference {
                     } else if (localizeType == LocaliseAction.DELETE) {
                         logger.info("Deleted this assertion from the tree.");
                         return false;
+                    }
+                }
+            } else if ( assertionToLocalize instanceof UsesEntities ) {
+                UsesEntities entitiesUser = (UsesEntities)assertionToLocalize;
+                for(EntityHeader entityHeader : entitiesUser.getEntitiesUsed()) {
+                    if(entityHeader.getType().equals(EntityType.TRUSTED_CERT) && entityHeader.getOid() == oid) {
+                        if(localizeType == LocaliseAction.REPLACE) {
+                            if(localCertOid != oid) {
+                                EntityHeader newEntityHeader = new EntityHeader(localCertOid, EntityType.TRUSTED_CERT, null, null);
+                                entitiesUser.replaceEntity(entityHeader, newEntityHeader);
+                                logger.info("The server certificate oid of the imported assertion has been changed " +
+                                            "from " + oid + " to " + localCertOid);
+                                break;
+                            }
+                        } else if(localizeType == LocaliseAction.DELETE) {
+                            logger.info("Deleted this assertion from the tree.");
+                            return false;
+                        }
                     }
                 }
             }
@@ -161,7 +182,10 @@ public class TrustedCertReference extends ExternalReference {
 
         output.certName = getParamFromEl(el, CERTNAME_EL_NAME);
         output.certIssuerDn = getParamFromEl(el, ISSUERDN_EL_NAME);
-        output.certSerial = new BigInteger(getParamFromEl(el, CERTSERIAL_EL_NAME));
+        String serialValue = getParamFromEl(el, CERTSERIAL_EL_NAME);
+        if ( serialValue != null ) {
+            output.certSerial = new BigInteger( serialValue );
+        }
         return output;
     }
 

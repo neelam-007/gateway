@@ -11,13 +11,15 @@ import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.IdentityTargetable;
 import com.l7tech.policy.assertion.IdentityTarget;
+import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.objectmodel.EntityHeader;
 
 /**
  * @author mike
  */
 @RequiresSOAP(wss=true)
-public class WssReplayProtection extends MessageTargetableAssertion implements IdentityTargetable, SecurityHeaderAddressable {
+public class WssReplayProtection extends MessageTargetableAssertion implements IdentityTargetable, SecurityHeaderAddressable, UsesEntities {
 
     //- PUBLIC
 
@@ -46,6 +48,19 @@ public class WssReplayProtection extends MessageTargetableAssertion implements I
         this.identityTarget = identityTarget;
     }
 
+    public EntityHeader[] getEntitiesUsed() {
+        return identityTarget != null ?
+                identityTarget.getEntitiesUsed():
+                new EntityHeader[0];
+    }
+
+    public void replaceEntity( final EntityHeader oldEntityHeader,
+                               final EntityHeader newEntityHeader ) {
+        if ( identityTarget != null ) {
+            identityTarget.replaceEntity(oldEntityHeader, newEntityHeader);
+        }
+    }
+    
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
