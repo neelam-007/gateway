@@ -136,7 +136,7 @@ public class AdminInfo {
     }
 
     /**
-     * Invokes the callable method.
+     * Invokes the callable method with the current AdminInfo set.
      *
      * @param toWrap    Callable method
      * @return  The type specified from the callable method
