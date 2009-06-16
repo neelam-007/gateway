@@ -3,6 +3,8 @@ package com.l7tech.console.panels;
 import com.l7tech.policy.assertion.xml.RemoveElement;
 import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.console.util.VariablePrefixUtil;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -35,6 +37,11 @@ public class RemoveElementPropertiesDialog extends AssertionPropertiesEditorSupp
         getRootPane().setDefaultButton(buttonOK);
 
         _nodeSetVar.setDocument(new MaxLengthDocument(128));
+        _nodeSetVar.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable(){
+            public void run() {
+                updateEnabledState();
+            }
+        }));
 
         buttonOK.addActionListener(new ActionListener() {
             @Override
@@ -50,9 +57,9 @@ public class RemoveElementPropertiesDialog extends AssertionPropertiesEditorSupp
             }
         });
 
-
         Utilities.setEscKeyStrokeDisposes(this);
         updateView();
+        updateEnabledState();
     }
 
     private void updateView() {
@@ -65,24 +72,34 @@ public class RemoveElementPropertiesDialog extends AssertionPropertiesEditorSupp
     }
 
     @Override
-    public void setData(RemoveElement assertion) {
+    public void setData( final RemoveElement assertion ) {
         removeAssertion = assertion;
         updateView();
     }
 
     @Override
-    public RemoveElement getData(RemoveElement assertion) {
+    public RemoveElement getData( final RemoveElement assertion ) {
         return removeAssertion;
     }
 
     private void onOK() {
         confirmed = true;
-        removeAssertion.setElementFromVariable(_nodeSetVar.getText());
+        removeAssertion.setElementFromVariable(VariablePrefixUtil.fixVariableName(_nodeSetVar.getText()));
         dispose();
     }
 
     private void onCancel() {
         confirmed = false;
         dispose();
+    }
+
+    private void updateEnabledState() {
+        String variableName = _nodeSetVar.getText();
+        if ( variableName != null ) {
+            variableName = variableName.trim();
+        } else {
+            variableName = "";
+        }
+        buttonOK.setEnabled( !isReadOnly() && variableName.length() > 0 );
     }
 }

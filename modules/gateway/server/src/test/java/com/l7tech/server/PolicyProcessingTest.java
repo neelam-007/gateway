@@ -6,6 +6,7 @@ import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.*;
@@ -39,6 +40,7 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import junit.framework.Assert;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -114,7 +116,8 @@ public class PolicyProcessingTest extends TestCase {
         {"/multiplesignaturestags", "POLICY_multiplesignatures_idtags.xml"},
         {"/wssDecoration1", "POLICY_requestdecoration1.xml"},
         {"/wssDecoration2", "POLICY_requestdecoration2.xml"},
-        {"/threatprotections", "POLICY_threatprotections.xml"}
+        {"/threatprotections", "POLICY_threatprotections.xml"},
+        {"/removeelement", "POLICY_removeelement.xml"}
     };
 
     /**
@@ -650,16 +653,49 @@ public class PolicyProcessingTest extends TestCase {
     }
 
     /**
-     *
+     * Test removal of an XML element with XPath selection 
      */
-    private Result processMessage(String uri, String message, int expectedStatus) throws IOException {
-        return processMessage(uri, message, "10.0.0.1", expectedStatus, null, null);
+    public void testRemoveElement() throws Exception {
+        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        final String requestMessage = new String(loadResource("REQUEST_general.xml"));
+        Assert.assertTrue("Request message contains element to remove", XmlUtil.parse(requestMessage).getElementsByTagNameNS("http://warehouse.acme.com/ws", "delay").getLength() > 0);
+        processMessage("/removeelement", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            public void call(final PolicyEnforcementContext context) {
+                try {
+                    Assert.assertEquals("Request message elements removed", 0, context.getRequest().getXmlKnob().getDocumentReadOnly().getElementsByTagNameNS("http://warehouse.acme.com/ws", "delay").getLength());
+                } catch (Exception e) {
+                    throw ExceptionUtils.wrap(e);
+                }
+            }
+        });
     }
 
     /**
      *
      */
-    private Result processMessage(String uri, String message, String requestIp, int expectedStatus, PasswordAuthentication contextAuth, String authHeader) throws IOException {
+    private Result processMessage(String uri, String message, int expectedStatus) throws IOException {
+        return processMessage(uri, message, "10.0.0.1", expectedStatus, null, null, null);
+    }
+
+    /**
+     *
+     */
+    private Result processMessage( String uri, String message, String requestIp, int expectedStatus, PasswordAuthentication contextAuth, String authHeader ) throws IOException {
+        return processMessage(uri, message, requestIp, expectedStatus, contextAuth, authHeader, null );
+    }
+
+    /**
+     *
+     */
+    private Result processMessage( final String uri,
+                                   final String message,
+                                   final String requestIp,
+                                   final int expectedStatus,
+                                   final PasswordAuthentication contextAuth,
+                                   final String authHeader,
+                                   final Functions.UnaryVoid<PolicyEnforcementContext> validationCallback ) throws IOException {
         MockServletContext servletContext = new MockServletContext();
         MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
         MockHttpServletResponse hresponse = new MockHttpServletResponse();
@@ -802,7 +838,11 @@ public class PolicyProcessingTest extends TestCase {
                 logger.log(Level.WARNING, "Unexpected exception when flushing audit data.", e);
             }
             finally {
-                context.close();
+                try {
+                    if (validationCallback!=null) validationCallback.call( context );
+                } finally {
+                    context.close();
+                }
             }
 
             for ( PolicyEnforcementContext.AssertionResult result : context.getAssertionResults( context.getAuditContext() ) ) {

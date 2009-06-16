@@ -1,7 +1,6 @@
 package com.l7tech.policy.assertion.xml;
 
 import com.l7tech.policy.assertion.annotation.RequiresXML;
-import static com.l7tech.policy.assertion.AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
@@ -35,10 +34,11 @@ public class RemoveElement extends MessageTargetableAssertion {
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
-        meta.put(AssertionMetadata.SHORT_NAME, "Remove XML element(s).");
+        meta.put(AssertionMetadata.SHORT_NAME, "Remove XML Element(s)");
         meta.put(AssertionMetadata.DESCRIPTION, "Remove one or more XML elements from a message.");
-        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.RemoveElementPropertiesDialog");
+        meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.RemoveElementPropertiesDialog");
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xml" });
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         return meta;
     }
 

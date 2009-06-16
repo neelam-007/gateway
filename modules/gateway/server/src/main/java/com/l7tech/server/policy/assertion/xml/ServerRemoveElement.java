@@ -24,7 +24,7 @@ import org.springframework.context.ApplicationContext;
  */
 public class ServerRemoveElement extends AbstractMessageTargetableServerAssertion<RemoveElement> {
 
-    private static final Logger logger = Logger.getLogger(ServerSchemaValidation.class.getName());
+    private static final Logger logger = Logger.getLogger(ServerRemoveElement.class.getName());
     private final Auditor auditor;
 
     public ServerRemoveElement( final RemoveElement assertion, final ApplicationContext context ) {
@@ -51,10 +51,12 @@ public class ServerRemoveElement extends AbstractMessageTargetableServerAssertio
                 elementsToRemove = new Element[]{ (Element)val };
             }
 
-            Document document = message.getXmlKnob().getDocumentWritable();
-            for( Element e : elementsToRemove ) {
-                if ( document == e.getOwnerDocument() ) {
-                    e.getParentNode().removeChild(e);
+            if ( elementsToRemove.length > 0 ) {
+                Document document = message.getXmlKnob().getDocumentWritable();
+                for( Element e : elementsToRemove ) {
+                    if ( document == e.getOwnerDocument() ) {
+                        e.getParentNode().removeChild(e);
+                    }
                 }
             }
 
