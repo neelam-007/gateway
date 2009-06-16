@@ -27,6 +27,7 @@ import com.l7tech.policy.validator.DefaultPolicyValidator.DeferredValidate;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.wsdl.Wsdl;
 
 import javax.wsdl.BindingOperation;
@@ -513,6 +514,41 @@ class PathValidator {
         setSeenCredentialsSinceModified(a, true);
     }
 
+    /**
+     * Find options for the identity that preceed the given assertion in the
+     * policy for the same target message.
+     */
+    private static IdentityTarget[] getIdentityTargetOptions( final Assertion policy,
+                                                              final Assertion identityTargetableAssertion,
+                                                              final MessageTargetable messageTargetable  ) {
+        final TreeSet<IdentityTarget> targetOptions = new TreeSet<IdentityTarget>();
+        final Iterator<Assertion> assertionIterator = policy.preorderIterator();
+
+        while( assertionIterator.hasNext() ){
+            Assertion assertion = assertionIterator.next();
+            if ( assertion == identityTargetableAssertion ) {
+                break;
+            }
+
+            if ( !assertion.isEnabled() ) {
+                continue;
+            }
+
+            if ( assertion instanceof IdentityAssertion &&
+                 AssertionUtils.isSameTargetMessage( identityTargetableAssertion, messageTargetable ) ) {
+                targetOptions.add( ((IdentityAssertion)assertion).getIdentityTarget() );
+            }
+
+            if ( assertion instanceof IdentityTagable &&
+                 AssertionUtils.isSameTargetMessage( identityTargetableAssertion, messageTargetable ) &&
+                 ((IdentityTagable)assertion).getIdentityTag() != null ) {
+                targetOptions.add( new IdentityTarget(((IdentityTagable)assertion).getIdentityTag()) );
+            }
+        }
+
+        return targetOptions.toArray(new IdentityTarget[targetOptions.size()]);
+    }
+
     private void processPrecondition(final Assertion a) {
         if (a instanceof MessageTargetable) {
             if (Assertion.isRequest(a) && seenResponse) {
@@ -528,6 +564,19 @@ class PathValidator {
             if (!SecurityHeaderAddressableSupport.isLocalRecipient(a) && Assertion.isRequest(a) && !hasFlag(a, ValidatorFlag.PROCESSES_NON_LOCAL_WSS_RECIPIENT)) {
                 String msg = "A WSSRecipient other than \"Default\" will not be enforced by the gateway.  This assertion will always succeed.";
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, msg, null));
+            }
+        }
+
+        if (a instanceof IdentityTargetable && ((IdentityTargetable)a).getIdentityTarget()!=null ) {
+            MessageTargetable target = new MessageTargetableSupport();
+            if ( a instanceof MessageTargetable ) {
+                target = (MessageTargetable) a;
+            } else if ( Assertion.isResponse( a ) ) {
+                target = new MessageTargetableSupport(TargetMessageType.RESPONSE);
+            }
+            if ( !ArrayUtils.contains( getIdentityTargetOptions(a.getPath()[0], a, target), ((IdentityTargetable)a).getIdentityTarget() ) ) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "Assertion targets an invalid identity, so will always fail. The \"Target Identity\" should be corrected.", null));
             }
         }
 

@@ -75,9 +75,9 @@ public class AssertionUtils {
     public static boolean isSameTargetMessage( final Assertion a1, final Assertion a2 ) {
         boolean sameTarget = false;
 
-        if ( Assertion.isRequest(a1) && Assertion.isRequest(a1) ) {
+        if ( Assertion.isRequest(a1) && Assertion.isRequest(a2) ) {
             sameTarget = true;
-        } else if ( Assertion.isResponse(a1) && Assertion.isResponse(a1) ) {
+        } else if ( Assertion.isResponse(a1) && Assertion.isResponse(a2) ) {
             sameTarget = true;
         } else if ( a1 instanceof MessageTargetable && a2 instanceof MessageTargetable ) {
             MessageTargetable mt1 = (MessageTargetable) a1;
