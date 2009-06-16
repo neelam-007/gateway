@@ -12,6 +12,9 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.gui.widgets.OkCancelDialog;
 import com.l7tech.console.util.Registry;
+import com.l7tech.gateway.common.admin.IdentityAdmin;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.FindException;
 
 import java.awt.*;
 import java.util.*;
@@ -107,8 +110,9 @@ public class IdentityTargetSelector extends OkCancelDialog<IdentityTarget> {
     private static IdentityTarget[] getIdentityTargetOptions( final Assertion policy,
                                                               final Assertion identityTargetableAssertion,
                                                               final MessageTargetable messageTargetable  ) {
-        TreeSet<IdentityTarget> targetOptions = new TreeSet<IdentityTarget>();
-        Iterator<Assertion> assertionIterator = inlineIncludes(policy).preorderIterator();
+        final TreeSet<IdentityTarget> targetOptions = new TreeSet<IdentityTarget>();
+        final Iterator<Assertion> assertionIterator = inlineIncludes(policy).preorderIterator();
+        final Map<Long,String> identityProviderNameMap = new HashMap<Long,String>(); 
 
         while( assertionIterator.hasNext() ){
             Assertion assertion = assertionIterator.next();
@@ -122,7 +126,9 @@ public class IdentityTargetSelector extends OkCancelDialog<IdentityTarget> {
 
             if ( assertion instanceof IdentityAssertion &&
                  AssertionUtils.isSameTargetMessage( identityTargetableAssertion, messageTargetable ) ) {
-                targetOptions.add( ((IdentityAssertion)assertion).getIdentityTarget() );
+                targetOptions.add( providerName(
+                        ((IdentityAssertion)assertion).getIdentityTarget(),
+                        identityProviderNameMap) );
             }
 
             if ( assertion instanceof IdentityTagable &&
@@ -133,6 +139,37 @@ public class IdentityTargetSelector extends OkCancelDialog<IdentityTarget> {
         }
 
         return targetOptions.toArray(new IdentityTarget[targetOptions.size()]);
+    }
+
+    /**
+     * Load provider name if required 
+     */
+    private static IdentityTarget providerName( final IdentityTarget identityTarget,
+                                                final Map<Long,String> identityProviderNameMap ) {
+        if ( identityTarget.needsIdentityProviderName() ) {
+            long providerOid = identityTarget.getIdentityProviderOid();
+            String name = identityProviderNameMap.get( providerOid );
+            if ( name == null ) {
+                try {
+                    IdentityAdmin ia = Registry.getDefault().getIdentityAdmin();
+                    IdentityProviderConfig config
+                            = ia.findIdentityProviderConfigByID( providerOid );
+                    if ( config != null ) {
+                        name = config.getName();
+                        identityProviderNameMap.put( providerOid, name );
+                    }
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "Error loading provider name for '#"+providerOid+"'.", e);
+                } catch (IllegalStateException ise) {
+                    logger.log(Level.WARNING, "Identity admin not available when loading provider name for '#"+providerOid+"'.");
+                }
+            }
+            if ( name != null ) {
+                identityTarget.setIdentityProviderName( name );
+            }
+        }
+
+        return identityTarget;
     }
 
     /**

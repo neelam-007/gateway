@@ -57,7 +57,7 @@ public class AssertionUtils {
             IdentityTarget identityTarget = ((IdentityTargetable)assertion).getIdentityTarget();
             if ( identityTarget != null && identityTarget.getTargetIdentityType() != null ) {
                 newName.append(" [");
-                newName.append(identityTarget.describeIdentity()); //TODO [steve] fix identity descriptions
+                newName.append(identityTarget.describeIdentityForDisplay());
                 newName.append("]");
             }
         }

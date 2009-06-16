@@ -27,6 +27,7 @@ public final class IdentityTarget implements Comparable, Serializable {
         if ( identityTarget != null ) {
             this.targetIdentityType = identityTarget.targetIdentityType;
             this.identityProviderOid = identityTarget.identityProviderOid;
+            this.identityProviderName = identityTarget.identityProviderName;
             this.identityId = identityTarget.identityId;
             this.identityInfo = identityTarget.identityInfo;
         }
@@ -58,6 +59,19 @@ public final class IdentityTarget implements Comparable, Serializable {
         this.identityProviderOid = identityProviderOid;
     }
 
+    public boolean needsIdentityProviderName() {
+        return targetIdentityType!=TargetIdentityType.TAG && identityProviderName==null;
+    }
+
+    /**
+     * Set the identity provider name for display use only.
+     *
+     * @param identityProviderName The name to use
+     */
+    public void setIdentityProviderName( final String identityProviderName ) {
+        this.identityProviderName = identityProviderName;
+    }
+
     public String getIdentityId() {
         return identityId;
     }
@@ -72,6 +86,69 @@ public final class IdentityTarget implements Comparable, Serializable {
 
     public void setIdentityInfo( final String identityInfo ) {
         this.identityInfo = identityInfo;
+    }
+
+    /**
+     * Get a description of the identity target suitable for GUI use.
+     *
+     * @return The description of the identity target.
+     */
+    public String describeIdentityForDisplay() {
+        StringBuilder identityBuilder = new StringBuilder();
+
+        if ( targetIdentityType != null ) {
+            switch ( targetIdentityType ) {
+                case TAG:
+                    identityBuilder.append("Identity Tag: ");
+                    identityBuilder.append(identityId);
+                    break;
+                case PROVIDER:
+                    identityBuilder.append("Authenticated against: ");
+                    if ( identityProviderName != null ) {
+                        identityBuilder.append(identityProviderName);
+                    } else {
+                        identityBuilder.append("#");
+                        identityBuilder.append(identityProviderOid);
+                    }
+                    break;
+                case USER:
+                    identityBuilder.append("User: ");
+                    if ( identityInfo != null ) {
+                        identityBuilder.append(identityInfo);
+                    } else {
+                        identityBuilder.append("#");
+                        identityBuilder.append(identityId);
+                    }
+                    identityBuilder.append(", ");
+                    if ( identityProviderName != null ) {
+                        identityBuilder.append(identityProviderName);
+                    } else {
+                        identityBuilder.append("#");
+                        identityBuilder.append(identityProviderOid);
+                    }
+                    break;
+                case GROUP:
+                    identityBuilder.append("Group Membership: ");
+                    if ( identityInfo != null ) {
+                        identityBuilder.append(identityInfo);
+                    } else {
+                        identityBuilder.append("#");
+                        identityBuilder.append(identityId);
+                    }
+                    identityBuilder.append(", ");
+                    if ( identityProviderName != null ) {
+                        identityBuilder.append(identityProviderName);
+                    } else {
+                        identityBuilder.append("#");
+                        identityBuilder.append(identityProviderOid);
+                    }
+                    break;
+            }
+        } else {
+            identityBuilder.append("<Unknown>");
+        }
+
+        return identityBuilder.toString();
     }
 
     /**
@@ -92,6 +169,11 @@ public final class IdentityTarget implements Comparable, Serializable {
                 case PROVIDER:
                     identityBuilder.append("Identity Provider #");
                     identityBuilder.append(identityProviderOid);
+                    if ( identityProviderName != null ) {
+                        identityBuilder.append(", name '");
+                        identityBuilder.append(identityProviderName);
+                        identityBuilder.append("'");
+                    }
                     break;
                 case USER:
                     identityBuilder.append("User ID '");
@@ -167,6 +249,7 @@ public final class IdentityTarget implements Comparable, Serializable {
 
     private TargetIdentityType targetIdentityType;
     private long identityProviderOid;
+    private String identityProviderName;
     private String identityId; // case insensitive identifier
     private String identityInfo;
 }
