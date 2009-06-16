@@ -98,6 +98,7 @@ public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
             }
         });
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssConfidentiality");
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.RequireWssEncryptedElementValidator");
 
         return meta;
     }
