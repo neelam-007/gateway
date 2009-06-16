@@ -66,6 +66,9 @@ public final class TestDocuments {
     public static final String NON_SOAP_REQUEST = DIR + "nonSoapRequest.xml";
     public static final String BUG_3747_DSIG_XPATH = DIR + "bug3747_dsig_xpath.xml";
     public static final String BUG_3754_PING_REQ_VORDEL_SIGNED = DIR + "ping-req-vordel-signed.xml";
+    public static final String WAREHOUSE_REQUEST_UNKNOWN_BST = DIR + "warehouseRequestUnknownBST.xml";
+    public static final String WAREHOUSE_REQUEST_UNKNOWN_MUSTUNDERSTAND = DIR + "warehouseRequestUnknownMustUnderstand.xml";
+    public static final String WAREHOUSE_REQUEST_MULTIPLE_TIMESTAMP_SIGS = DIR + "warehouseRequestMultipleTimestampSignatures.xml";
 
     public static final String WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndWrappedL7Actors.xml";
     public static final String MULTIPLE_WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndMultipleL7Actors.xml";

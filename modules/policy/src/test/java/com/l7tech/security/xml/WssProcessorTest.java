@@ -53,7 +53,10 @@ public class WssProcessorTest {
     private static final Random random = new Random();
 
     private void doTest(TestDocument testDocument) throws Exception {
-        WssProcessor wssProcessor = new WssProcessorImpl();
+        doTest(testDocument, new WssProcessorImpl());
+    }
+
+    private void doTest(TestDocument testDocument, WssProcessor wssProcessor) throws Exception {
         Document request = testDocument.document;
         X509Certificate recipientCertificate = testDocument.recipientCertificate;
         PrivateKey recipientPrivateKey = testDocument.recipientPrivateKey;
@@ -392,6 +395,81 @@ public class WssProcessorTest {
                                   TestDocuments.getWssInteropAliceCert(), null,
                                   TestDocuments.getWssInteropBobCert(), null );
         doTest(result);
+    }
+
+    @Test
+    public void testUnknownBinarySecurityTokenTypeRejection() throws Exception {
+        try {
+            TestDocument result;
+            Document d = TestDocuments.getTestDocument(TestDocuments.WAREHOUSE_REQUEST_UNKNOWN_BST);
+            result = new TestDocument(TestDocuments.WAREHOUSE_REQUEST_UNKNOWN_BST, d, null, null, null, null, null );
+            doTest(result);
+            Assert.fail("Expected  ProcessorException for unknown BST");
+        } catch ( ProcessorException pe ) {
+            Assert.assertTrue("Exception is unknown bst", ExceptionUtils.getMessage(pe).contains("BinarySecurityToken"));
+        }
+    }
+
+    @Test
+    public void testUnknownBinarySecurityTokenTypeSuccess() throws Exception {
+        TestDocument result;
+        Document d = TestDocuments.getTestDocument(TestDocuments.WAREHOUSE_REQUEST_UNKNOWN_BST);
+        result = new TestDocument(TestDocuments.WAREHOUSE_REQUEST_UNKNOWN_BST, d, null, null, null, null, null );
+
+        WssProcessorImpl wssProcessor = new WssProcessorImpl();
+        wssProcessor.setPermitUnknownBinarySecurityTokens(true);
+
+        doTest(result, wssProcessor);
+    }
+
+    @Test
+    public void testUnknownMustUnderstandHeaderRejection() throws Exception {
+        try {
+            TestDocument result;
+            Document d = TestDocuments.getTestDocument(TestDocuments.WAREHOUSE_REQUEST_UNKNOWN_MUSTUNDERSTAND);
+            result = new TestDocument(TestDocuments.WAREHOUSE_REQUEST_UNKNOWN_MUSTUNDERSTAND, d, null, null, null, null, null );
+            doTest(result);
+            Assert.fail("Expected  ProcessorException for unknown header with MustUnderstand=1");
+        } catch ( InvalidDocumentFormatException idfe ) {
+            Assert.assertTrue("Exception is MustUnderstand", ExceptionUtils.getMessage(idfe).contains("mustUnderstand"));
+        }
+    }
+
+    @Test
+    public void testUnknownMustUnderstandHeaderSuccess() throws Exception {
+        TestDocument result;
+        Document d = TestDocuments.getTestDocument(TestDocuments.WAREHOUSE_REQUEST_UNKNOWN_MUSTUNDERSTAND);
+        result = new TestDocument(TestDocuments.WAREHOUSE_REQUEST_UNKNOWN_MUSTUNDERSTAND, d, null, null, null, null, null );
+
+        WssProcessorImpl wssProcessor = new WssProcessorImpl();
+        wssProcessor.setRejectOnMustUnderstand(false);
+
+        doTest(result, wssProcessor);
+    }
+
+    @Test
+    public void testMultipleTimestampSignatureRejection() throws Exception {
+        try {
+            TestDocument result;
+            Document d = TestDocuments.getTestDocument(TestDocuments.WAREHOUSE_REQUEST_MULTIPLE_TIMESTAMP_SIGS);
+            result = new TestDocument(TestDocuments.WAREHOUSE_REQUEST_MULTIPLE_TIMESTAMP_SIGS, d, null, null, null, null, null );
+            doTest(result);
+            Assert.fail("Expected  ProcessorException for multiple signatures for timestamp");
+        } catch ( IllegalStateException ise ) {
+            Assert.assertTrue("Exception is timestamp signature", ExceptionUtils.getMessage(ise).contains("Timestamp"));
+        }
+    }
+
+    @Test
+    public void testMultipleTimestampSignatureSuccess() throws Exception {
+        TestDocument result;
+        Document d = TestDocuments.getTestDocument(TestDocuments.WAREHOUSE_REQUEST_MULTIPLE_TIMESTAMP_SIGS);
+        result = new TestDocument(TestDocuments.WAREHOUSE_REQUEST_MULTIPLE_TIMESTAMP_SIGS, d, null, null, null, null, null );
+
+        WssProcessorImpl wssProcessor = new WssProcessorImpl();
+        wssProcessor.setPermitMultipleTimestampSignatures(true);
+
+        doTest(result, wssProcessor);
     }
 
     private TestDocument makeEttkTestDocument(String testname, String docname) {

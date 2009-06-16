@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope
+    xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:tns="http://warehouse.acme.com/ws">
+    <soapenv:Header>
+        <NotASecurityHeader soapenv:mustUnderstand="1" actor="secure_span"/>
+        <wsse:Security soapenv:mustUnderstand="1"
+            xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+        </wsse:Security>
+    </soapenv:Header>
+    <soapenv:Body >
+        <tns:listProducts>
+            <tns:delay>0</tns:delay>
+        </tns:listProducts>
+    </soapenv:Body>
+</soapenv:Envelope>
