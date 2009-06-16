@@ -32,7 +32,7 @@ public class AddWssTimestampPropertiesAction extends NodeAction {
      */
     @Override
     public String getName() {
-        return "Add Timestamp Assertion Properties";
+        return "Add Timestamp Properties";
     }
 
     /**
@@ -40,7 +40,7 @@ public class AddWssTimestampPropertiesAction extends NodeAction {
      */
     @Override
     public String getDescription() {
-        return "View/Edit Add Timestamp Assertion Properties";
+        return "View/Edit Add Timestamp Properties";
     }
 
     /**

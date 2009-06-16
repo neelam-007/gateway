@@ -5,7 +5,6 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.AssertionMetadata;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
-import static com.l7tech.policy.assertion.AssertionMetadata.CLIENT_ASSERTION_CLASSNAME;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.IdentityTargetable;
@@ -117,7 +116,7 @@ public class RequireWssTimestamp extends MessageTargetableAssertion implements I
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
-        meta.put(PALETTE_NODE_NAME, "Require Timestamp");
+        meta.put(SHORT_NAME, "Require Timestamp");
         meta.put(DESCRIPTION, "The message must contain a Timestamp.");
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/xmlencryption.gif");
         meta.put(PALETTE_FOLDERS, new String[] { "xmlSecurity" });

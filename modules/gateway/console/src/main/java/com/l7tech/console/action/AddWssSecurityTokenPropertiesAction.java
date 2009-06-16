@@ -29,7 +29,7 @@ public class AddWssSecurityTokenPropertiesAction extends NodeAction {
      */
     @Override
     public String getName() {
-        return "Add Security Token Assertion Properties";
+        return "Add Security Token Properties";
     }
 
     /**
@@ -37,7 +37,7 @@ public class AddWssSecurityTokenPropertiesAction extends NodeAction {
      */
     @Override
     public String getDescription() {
-        return "View/Edit Add Security Token Assertion Properties";
+        return "View/Edit Add Security Token Properties";
     }
 
     /**
