@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Policy for response signature
+-->
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:HardcodedResponse>
+            <L7p:Base64ResponseBody stringValue="PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHNvYXBlbnY6RW52ZWxvcGUKICAgIHhtbG5zOnNvYXBlbnY9Imh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3NvYXAvZW52ZWxvcGUvIgogICAgeG1sbnM6eHNkPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSIgeG1sbnM6eHNpPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYS1pbnN0YW5jZSI+CiAgICA8c29hcGVudjpCb2R5PgogICAgICAgIDx0bnM6bGlzdFByb2R1Y3RzIHhtbG5zOnRucz0iaHR0cDovL3dhcmVob3VzZS5hY21lLmNvbS93cyI+CiAgICAgICAgICAgIDx0bnM6ZGVsYXk+MDwvdG5zOmRlbGF5PgogICAgICAgIDwvdG5zOmxpc3RQcm9kdWN0cz4KICAgIDwvc29hcGVudjpCb2R5Pgo8L3NvYXBlbnY6RW52ZWxvcGU+Cg=="/>
+        </L7p:HardcodedResponse>
+        <L7p:WssSignElement>
+            <L7p:KeyReference stringValue="IssuerSerial"/>
+            <L7p:ProtectTokens booleanValue="true"/>
+            <L7p:XpathExpression xpathExpressionValue="included">
+                <L7p:Expression stringValue="/soapenv:Envelope/soapenv:Body"/>
+                <L7p:Namespaces mapValue="included">
+                    <L7p:entry>
+                        <L7p:key stringValue="soapenv"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="SOAP-ENV"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="wsp"/>
+                        <L7p:value stringValue="http://schemas.xmlsoap.org/ws/2002/12/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="tns"/>
+                        <L7p:value stringValue="http://warehouse.acme.com/ws"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="L7p"/>
+                        <L7p:value stringValue="http://www.layer7tech.com/ws/policy"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="s12"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsd"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="env"/>
+                        <L7p:value stringValue="http://www.w3.org/2003/05/soap-envelope"/>
+                    </L7p:entry>
+                    <L7p:entry>
+                        <L7p:key stringValue="xsi"/>
+                        <L7p:value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                    </L7p:entry>
+                </L7p:Namespaces>
+            </L7p:XpathExpression>
+        </L7p:WssSignElement>
+    </wsp:All>
+</wsp:Policy>

@@ -281,7 +281,7 @@ public class WspConstants {
         new AssertionMapping(new AddWssTimestamp(), "ResponseWssTimestamp"),
         new AssertionMapping(new RequireWssTimestamp(), "RequireWssTimestamp", "5.1.0"),
         new AssertionMapping(new RequireWssTimestamp(), "RequestWssTimestamp"),
-        new AssertionMapping(new AddWssSecurityToken(), "RequireWssSecurityToken", "5.1.0"),
+        new AssertionMapping(new AddWssSecurityToken(), "AddWssSecurityToken", "5.1.0"),
         new AssertionMapping(new AddWssSecurityToken(), "ResponseWssSecurityToken"),
         new AssertionMapping(new RequestWssKerberos(), "Kerberos"),
         new AssertionMapping(new WsiBspAssertion(), "WsiBspAssertion"),

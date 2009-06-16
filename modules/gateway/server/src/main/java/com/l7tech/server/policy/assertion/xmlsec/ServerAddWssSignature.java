@@ -164,6 +164,8 @@ public abstract class ServerAddWssSignature<AT extends Assertion> extends Abstra
             wssReq.setKeyInfoInclusionType(KeyInfoInclusionType.CERT);
         } else if (KeyReference.SKI.getName().equals(keyReference)) {
             wssReq.setKeyInfoInclusionType(KeyInfoInclusionType.STR_SKI);
+        } else if (KeyReference.ISSUER_SERIAL.getName().equals(keyReference)) {
+            wssReq.setKeyInfoInclusionType(KeyInfoInclusionType.ISSUER_SERIAL);
         }
 
         auditor.logAndAudit(AssertionMessages.ADD_WSS_SIGNATURE_MESSAGE_SIGNED, messageDescription, String.valueOf(howMany));

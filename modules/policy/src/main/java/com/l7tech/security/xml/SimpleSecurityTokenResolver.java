@@ -192,7 +192,7 @@ public class SimpleSecurityTokenResolver implements SecurityTokenResolver {
 
     private <C extends Cert> Object doLookupByIssuerAndSerial( final Collection<C> toSearch, final X500Principal issuer, final BigInteger serial ) {
         for (final Cert cert : toSearch) {
-            final X509Certificate certificate = (X509Certificate) cert.getPayload();
+            final X509Certificate certificate = cert.getCertificate();
             if (certificate.getIssuerX500Principal().equals(issuer) && certificate.getSerialNumber().equals(serial))
                 return cert.getPayload();
         }

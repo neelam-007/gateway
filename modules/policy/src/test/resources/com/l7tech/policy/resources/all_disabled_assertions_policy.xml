@@ -243,9 +243,9 @@
         <L7p:HardcodedResponse>
             <L7p:Enabled booleanValue="false"/>
         </L7p:HardcodedResponse>
-        <L7p:RequireWssSecurityToken>
+        <L7p:AddWssSecurityToken>
             <L7p:Enabled booleanValue="false"/>
-        </L7p:RequireWssSecurityToken>
+        </L7p:AddWssSecurityToken>
         <L7p:SetVariable>
             <L7p:Enabled booleanValue="false"/>
         </L7p:SetVariable>

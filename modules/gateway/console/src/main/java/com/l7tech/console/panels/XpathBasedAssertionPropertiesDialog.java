@@ -124,6 +124,7 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private JCheckBox tripleDESCheckBox;
     private JRadioButton bstReferenceRadioButton;
     private JRadioButton skiReferenceRadioButton;
+    private JRadioButton issuerSerialReferenceRadioButton;
     private JCheckBox signedBstCheckBox;
     private JTextField varPrefixField;
     private JLabel varPrefixLabel;
@@ -750,9 +751,12 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         ButtonGroup bg = new ButtonGroup();
         bg.add(bstReferenceRadioButton);
         bg.add(skiReferenceRadioButton);
+        bg.add(issuerSerialReferenceRadioButton);
         signedBstCheckBox.setSelected(rwssi.isProtectTokens());
         if (KeyReference.BST.getName().equals(rwssi.getKeyReference())) {
             bstReferenceRadioButton.setSelected(true);
+        } else if (KeyReference.ISSUER_SERIAL.getName().equals(rwssi.getKeyReference())) {
+            issuerSerialReferenceRadioButton.setSelected(true);
         } else {
             skiReferenceRadioButton.setSelected(true);
         }
@@ -846,6 +850,8 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             rwssi.setKeyReference(KeyReference.BST.getName());
         } else if (skiReferenceRadioButton.isSelected()) {
             rwssi.setKeyReference(KeyReference.SKI.getName());
+        } else if (issuerSerialReferenceRadioButton.isSelected()) {
+            rwssi.setKeyReference(KeyReference.ISSUER_SERIAL.getName());            
         }
     }
 

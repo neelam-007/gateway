@@ -146,7 +146,7 @@
                 </L7p:InverseHttpFormPost>
                 <L7p:WSDLOperation/>
                 <L7p:HardcodedResponse/>
-                <L7p:RequireWssSecurityToken/>
+                <L7p:AddWssSecurityToken/>
                 <L7p:SetVariable/>
                 <L7p:CookieCredentialSource/>
                 <L7p:HtmlFormDataAssertion>

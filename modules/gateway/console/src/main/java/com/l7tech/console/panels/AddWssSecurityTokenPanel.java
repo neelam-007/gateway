@@ -18,11 +18,13 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
     private JComboBox tokenTypeCombo;
     private JRadioButton bstRadio;
     private JRadioButton strRadio;
+    private JRadioButton issuerSerialRadio;
     private JCheckBox includePasswordCheckBox;
 
     private final AddWssSecurityToken assertion;
 
     private final ActionListener updater = new ActionListener() {
+        @Override
         public void actionPerformed(ActionEvent e) {
             checkSyntax();
         }
@@ -34,6 +36,7 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         init();
     }
 
+    @Override
     protected void initComponents() {
         tokenTypeCombo.setModel(new DefaultComboBoxModel(AddWssSecurityToken.SUPPORTED_TOKEN_TYPES));
         tokenTypeCombo.setSelectedItem(assertion.getTokenType());
@@ -50,16 +53,23 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
         ButtonGroup bg = new ButtonGroup();
         bg.add(bstRadio);
         bg.add(strRadio);
+        bg.add(issuerSerialRadio);
 
-        boolean bst = KeyReference.BST.getName().equals(assertion.getKeyReference());
-        bstRadio.setSelected(bst);
-        strRadio.setSelected(!bst);
+        if ( KeyReference.BST.getName().equals(assertion.getKeyReference()) ) {
+            bstRadio.setSelected(true);
+        } else if ( KeyReference.ISSUER_SERIAL.getName().equals(assertion.getKeyReference()) ) {
+            issuerSerialRadio.setSelected(true);
+        } else {
+            strRadio.setSelected(true);
+        }
         bstRadio.addActionListener(updater);
         strRadio.addActionListener(updater);
+        issuerSerialRadio.addActionListener(updater);
 
         add(mainPanel, BorderLayout.CENTER);
     }
 
+    @Override
     protected void doUpdateModel() {
         SecurityTokenType type = (SecurityTokenType)tokenTypeCombo.getSelectedItem();
         includePasswordCheckBox.setEnabled(type == SecurityTokenType.WSS_USERNAME);
@@ -69,15 +79,19 @@ public class AddWssSecurityTokenPanel extends ValidatedPanel<AddWssSecurityToken
             assertion.setKeyReference(KeyReference.BST.getName());
         } else if (strRadio.isSelected()) {
             assertion.setKeyReference(KeyReference.SKI.getName());
+        } else if (issuerSerialRadio.isSelected()) {
+            assertion.setKeyReference(KeyReference.ISSUER_SERIAL.getName());
         } else {
             throw new IllegalStateException("Neither BST nor SKI selected");
         }
     }
 
+    @Override
     protected AddWssSecurityToken getModel() {
         return assertion;
     }
 
+    @Override
     public void focusFirstComponent() {
     }
 }

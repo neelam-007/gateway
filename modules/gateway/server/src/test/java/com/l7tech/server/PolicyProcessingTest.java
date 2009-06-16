@@ -45,6 +45,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Element;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
@@ -117,7 +120,10 @@ public class PolicyProcessingTest extends TestCase {
         {"/wssDecoration1", "POLICY_requestdecoration1.xml"},
         {"/wssDecoration2", "POLICY_requestdecoration2.xml"},
         {"/threatprotections", "POLICY_threatprotections.xml"},
-        {"/removeelement", "POLICY_removeelement.xml"}
+        {"/removeelement", "POLICY_removeelement.xml"},
+        {"/addusernametoken", "POLICY_responsesecuritytoken.xml"},
+        {"/addtimestamp", "POLICY_responsetimestamp.xml"},
+        {"/addsignature", "POLICY_responsesignature.xml"}
     };
 
     /**
@@ -662,9 +668,93 @@ public class PolicyProcessingTest extends TestCase {
         final String requestMessage = new String(loadResource("REQUEST_general.xml"));
         Assert.assertTrue("Request message contains element to remove", XmlUtil.parse(requestMessage).getElementsByTagNameNS("http://warehouse.acme.com/ws", "delay").getLength() > 0);
         processMessage("/removeelement", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
             public void call(final PolicyEnforcementContext context) {
                 try {
                     Assert.assertEquals("Request message elements removed", 0, context.getRequest().getXmlKnob().getDocumentReadOnly().getElementsByTagNameNS("http://warehouse.acme.com/ws", "delay").getLength());
+                } catch (Exception e) {
+                    throw ExceptionUtils.wrap(e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Test addition of a username token to the response with creds from xpathcredsource
+     */
+    public void testAddSecurityToken() throws Exception {
+        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        final String requestMessage = new String(loadResource("REQUEST_general.xml"));
+        processMessage("/addusernametoken", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call(final PolicyEnforcementContext context) {
+                try {
+                    final Document document = context.getResponse().getXmlKnob().getDocumentReadOnly();
+                    String wsseNS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd";
+                    String dsigNS = "http://www.w3.org/2000/09/xmldsig#";
+                    NodeList userNodeList = document.getElementsByTagNameNS(wsseNS, "Username");
+                    NodeList passNodeList = document.getElementsByTagNameNS(wsseNS, "Password");
+                    Assert.assertEquals("Username found", 1, userNodeList.getLength());
+                    Assert.assertEquals("Password found", 1, passNodeList.getLength());
+                    Assert.assertEquals("Username", "steve", XmlUtil.getTextValue((Element)userNodeList.item(0)));
+                    Assert.assertEquals("Password", "password", XmlUtil.getTextValue((Element)passNodeList.item(0)));
+                    NodeList issuerSerialNodeList = document.getElementsByTagNameNS(dsigNS, "X509IssuerSerial");
+                    Assert.assertEquals("Issuer/Serial STR found", 1, issuerSerialNodeList.getLength());
+                } catch (Exception e) {
+                    throw ExceptionUtils.wrap(e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Test addition of a signed timestamp to the response
+     */
+    public void testAddTimestamp() throws Exception {
+        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        final String requestMessage = new String(loadResource("REQUEST_general.xml"));
+        processMessage("/addtimestamp", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call(final PolicyEnforcementContext context) {
+                try {
+                    final Document document = context.getResponse().getXmlKnob().getDocumentReadOnly();
+                    String wsuNS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
+                    String dsigNS = "http://www.w3.org/2000/09/xmldsig#";
+                    NodeList timestampNodeList = document.getElementsByTagNameNS(wsuNS, "Timestamp");
+                    Assert.assertEquals("Timestamp found", 1, timestampNodeList.getLength());
+                    NodeList issuerSerialNodeList = document.getElementsByTagNameNS(dsigNS, "X509IssuerSerial");
+                    Assert.assertEquals("Issuer/Serial STR found", 1, issuerSerialNodeList.getLength());
+                } catch (Exception e) {
+                    throw ExceptionUtils.wrap(e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Test addition of a signature to the response
+     */
+    public void testAddSignature() throws Exception {
+        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        final String requestMessage = new String(loadResource("REQUEST_general.xml"));
+        processMessage("/addsignature", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call(final PolicyEnforcementContext context) {
+                try {
+                    final Document document = context.getResponse().getXmlKnob().getDocumentReadOnly();
+                    String dsigNS = "http://www.w3.org/2000/09/xmldsig#";
+                    NodeList signatureNodeList = document.getElementsByTagNameNS(dsigNS, "Signature");
+                    Assert.assertEquals("Signature found", 1, signatureNodeList.getLength());
+                    NodeList signatureReferenceNodeList = document.getElementsByTagNameNS(dsigNS, "Reference");
+                    Assert.assertEquals("Signature references found", 3, signatureReferenceNodeList.getLength()); // 3, body, timestamp and protected token
+                    NodeList issuerSerialNodeList = document.getElementsByTagNameNS(dsigNS, "X509IssuerSerial");
+                    Assert.assertEquals("Issuer/Serial STR found", 1, issuerSerialNodeList.getLength());
                 } catch (Exception e) {
                     throw ExceptionUtils.wrap(e);
                 }

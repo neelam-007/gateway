@@ -16,8 +16,10 @@ public final class KeyReference implements Serializable {
     private static int index = 0;
     public static final KeyReference BST = new KeyReference(index++, "BinarySecurityToken");
     public static final KeyReference SKI = new KeyReference(index++, "SubjectKeyIdentifier");
+    public static final KeyReference ISSUER_SERIAL = new KeyReference(index++, "IssuerSerial");
+
     // for readResolve
-    private static final KeyReference[] REFERENCES = {BST, SKI};
+    private static final KeyReference[] REFERENCES = {BST, SKI, ISSUER_SERIAL};
 
     private int val;
     private final String name;
@@ -51,6 +53,8 @@ public final class KeyReference implements Serializable {
         return REFERENCES[val];
     }
 
+    @SuppressWarnings({"RedundantIfStatement"})
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -63,6 +67,7 @@ public final class KeyReference implements Serializable {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result;
         result = val;
@@ -71,6 +76,7 @@ public final class KeyReference implements Serializable {
     }
 
 
+    @Override
     public String toString() {
         return "KeyReference{" +
                  "val=" + val +

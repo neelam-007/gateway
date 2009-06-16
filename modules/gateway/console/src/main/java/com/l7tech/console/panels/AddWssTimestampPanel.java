@@ -29,6 +29,7 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
     private JPanel signingOptionsPanel;
     private JRadioButton bstRadio;
     private JRadioButton strRadio;
+    private JRadioButton issuerSerialRadio;
 
     private final AddWssTimestamp assertion;
     private TimeUnit oldTimeUnit;
@@ -39,6 +40,7 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
         init();
     }
 
+    @Override
     protected void initComponents() {
         DefaultComboBoxModel comboModel = new DefaultComboBoxModel(TimeUnit.ALL);
         final TimeUnit timeUnit = assertion.getTimeUnit();
@@ -46,33 +48,39 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
         ButtonGroup bg = new ButtonGroup();
         bg.add(bstRadio);
         bg.add(strRadio);
+        bg.add(issuerSerialRadio);
 
         oldTimeUnit = timeUnit;
         comboModel.setSelectedItem(timeUnit);
         expiryTimeUnitCombo.setModel(comboModel);
         final NumberFormatter numberFormatter = new NumberFormatter(new DecimalFormat("0.####"));
         numberFormatter.setValueClass(Double.class);
-        numberFormatter.setMinimum(Double.valueOf(0));
+        numberFormatter.setMinimum((double) 0);
 
         expiryTimeField.setFormatterFactory(new JFormattedTextField.AbstractFormatterFactory() {
+            @Override
             public JFormattedTextField.AbstractFormatter getFormatter(JFormattedTextField tf) {
                 return numberFormatter;
             }
         });
-        expiryTimeField.setValue(new Double((double)assertion.getExpiryMilliseconds() / timeUnit.getMultiplier()));
+        expiryTimeField.setValue((double) assertion.getExpiryMilliseconds() / timeUnit.getMultiplier());
         expiryTimeField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void insertUpdate(DocumentEvent e) {checkSyntax();}
+            @Override
             public void removeUpdate(DocumentEvent e) {checkSyntax();}
+            @Override
             public void changedUpdate(DocumentEvent e) {checkSyntax();}
         });
 
         expiryTimeUnitCombo.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 TimeUnit newTimeUnit = (TimeUnit)expiryTimeUnitCombo.getSelectedItem();
                 Double time = (Double)expiryTimeField.getValue();
                 if (newTimeUnit != oldTimeUnit) {
-                    long oldMillis = (long)(oldTimeUnit.getMultiplier() * time.doubleValue());
-                    expiryTimeField.setValue(new Double((double)oldMillis / newTimeUnit.getMultiplier()));
+                    long oldMillis = (long)(oldTimeUnit.getMultiplier() * time);
+                    expiryTimeField.setValue((double) oldMillis / newTimeUnit.getMultiplier());
                 }
                 checkSyntax();
                 oldTimeUnit = newTimeUnit;
@@ -80,6 +88,7 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
         });
 
         ActionListener modelUpdateActionListener = new ActionListener(){
+            @Override
             public void actionPerformed(ActionEvent e) {
                 updateComponents();
                 checkSyntax();
@@ -88,9 +97,13 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
         signatureRequiredCheckBox.addActionListener(modelUpdateActionListener);
         signatureRequiredCheckBox.setSelected(assertion.isSignatureRequired());
 
-        boolean bst = KeyReference.BST.getName().equals(assertion.getKeyReference());
-        bstRadio.setSelected(bst);
-        strRadio.setSelected(!bst);
+        if ( KeyReference.BST.getName().equals(assertion.getKeyReference()) ) {
+            bstRadio.setSelected(true);
+        } else if ( KeyReference.ISSUER_SERIAL.getName().equals(assertion.getKeyReference()) ) {
+            issuerSerialRadio.setSelected(true);
+        } else {
+            strRadio.setSelected(true);
+        }
         bstRadio.addActionListener(modelUpdateActionListener);
         strRadio.addActionListener(modelUpdateActionListener);
 
@@ -102,25 +115,30 @@ public class AddWssTimestampPanel extends ValidatedPanel<AddWssTimestamp> {
         Utilities.setEnabled(signingOptionsPanel, signatureRequiredCheckBox.isSelected());
     }
 
+    @Override
     protected void doUpdateModel() {
         TimeUnit tu = (TimeUnit)expiryTimeUnitCombo.getSelectedItem();
         Double num = (Double)expiryTimeField.getValue();
         assertion.setTimeUnit(tu);
-        assertion.setExpiryMilliseconds((int)(num.doubleValue() * tu.getMultiplier()));
+        assertion.setExpiryMilliseconds((int)(num * tu.getMultiplier()));
         assertion.setSignatureRequired(signatureRequiredCheckBox.isSelected());
         if (bstRadio.isSelected()) {
             assertion.setKeyReference(KeyReference.BST.getName());
         } else if (strRadio.isSelected()) {
             assertion.setKeyReference(KeyReference.SKI.getName());
+        } else if (issuerSerialRadio.isSelected()) {
+            assertion.setKeyReference(KeyReference.ISSUER_SERIAL.getName());
         } else {
             throw new IllegalStateException("Neither BST nor SKI selected");
         }
     }
 
+    @Override
     protected AddWssTimestamp getModel() {
         return assertion;
     }
 
+    @Override
     public void focusFirstComponent() {
         expiryTimeField.requestFocus();
     }
