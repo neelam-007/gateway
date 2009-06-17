@@ -36,6 +36,10 @@ public class GuiCertUtil {
 
     //- PUBLIC
 
+    public static final FileFilter pemFilter = buildFilter(new String[] {".pem"}, "(*.pem) PEM/BASE64 X.509 certificates.");
+    public static final FileFilter cerFilter = buildFilter(new String[] {".cer"}, "(*.cer) DER encoded X.509 certificates.");
+    public static final FileFilter p12Filter = buildFilter(new String[] {".p12", ".pfx"}, "(*.p12, *.pfx) PKCS 12 key store.");
+
     /**
      * Import a certificate from a file (PEM, CER/ASN.1, PKS12).
      *
@@ -81,6 +85,31 @@ public class GuiCertUtil {
                                            final CallbackHandler callbackHandler,
                                            final Functions.Unary<Boolean,ImportedData> importCallback ) throws AccessControlException {
         doImport( parent, privateKeyRequired, callbackHandler, 100000, importCallback );
+    }
+
+    /**
+     * Create a JFileChooser for browsing for the appropriate file types for importing a certificate,
+     * possibly including a private key.
+     * @param privateKeyRequired  if true, will accept only PKCS#12 files.  If false, will additionall accept
+     *                            .PEM and .CSR files.
+     * @return a JFileChooser configured to browser for the appropriate file types.
+     */
+    public static JFileChooser createFileChooser(boolean privateKeyRequired) {
+        final JFileChooser fc = FileChooserUtil.createJFileChooser();
+        fc.setFileHidingEnabled(false);
+        if (privateKeyRequired) {
+            fc.setDialogTitle("Load Private Key");
+            fc.addChoosableFileFilter(p12Filter);
+        } else {
+            fc.setDialogTitle("Load Certificate");
+            fc.addChoosableFileFilter(pemFilter);
+            fc.addChoosableFileFilter(cerFilter);
+            fc.addChoosableFileFilter(p12Filter);
+        }
+
+        fc.setDialogType(JFileChooser.OPEN_DIALOG);
+        fc.setMultiSelectionEnabled(false);
+        return fc;
     }
 
     /**
@@ -205,24 +234,7 @@ public class GuiCertUtil {
                                   final CallbackHandler callbackHandler,
                                   final int maximumImportedItems,
                                   final Functions.Unary<Boolean, ImportedData> importCallback ) {
-        final JFileChooser fc = FileChooserUtil.createJFileChooser();
-        fc.setFileHidingEnabled(false);
-        FileFilter pemFilter = buildFilter(new String[] {".pem"}, "(*.pem) PEM/BASE64 X.509 certificates.");
-        FileFilter cerFilter = buildFilter(new String[] {".cer"}, "(*.cer) DER encoded X.509 certificates.");
-        FileFilter p12Filter = buildFilter(new String[] {".p12", ".pfx"}, "(*.p12, *.pfx) PKCS 12 key store.");
-
-        if (privateKeyRequired) {
-            fc.setDialogTitle("Load Private Key");
-            fc.addChoosableFileFilter(p12Filter);
-        } else {
-            fc.setDialogTitle("Load Certificate");
-            fc.addChoosableFileFilter(pemFilter);
-            fc.addChoosableFileFilter(cerFilter);
-            fc.addChoosableFileFilter(p12Filter);
-        }
-
-        fc.setDialogType(JFileChooser.OPEN_DIALOG);
-        fc.setMultiSelectionEnabled(false);
+        final JFileChooser fc = createFileChooser(privateKeyRequired);
 
         boolean done = false;
         while (!done) {

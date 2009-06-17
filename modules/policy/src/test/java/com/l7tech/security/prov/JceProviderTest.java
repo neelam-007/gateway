@@ -156,7 +156,8 @@ public class JceProviderTest {
                 // Load CSR from disk
                 log.info("pretest: loading a certificate signing request...");
                 byte[] bytes = IOUtils.slurpStream( new FileInputStream("/" + dir + "ssl.cer"));
-                csr = new BouncyCastleCertificateRequest(new PKCS10CertificationRequest(bytes), asymProvName);
+                final PKCS10CertificationRequest creq = new PKCS10CertificationRequest(bytes);
+                csr = new BouncyCastleCertificateRequest(creq, creq.getPublicKey());
             } else {
                 // Make our own CSR
                 log.info("pretest: generating certificate signing requset...");

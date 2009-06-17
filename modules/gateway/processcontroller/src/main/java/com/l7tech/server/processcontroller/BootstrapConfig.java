@@ -3,7 +3,7 @@
  */
 package com.l7tech.server.processcontroller;
 
-import com.l7tech.gateway.common.security.BouncyCastleCertUtils;
+import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.HexUtils;
@@ -156,7 +156,7 @@ public class BootstrapConfig {
         try {
             logger.info("Generating keypair...");
             KeyPair keyPair = JceProvider.generateRsaKeyPair(1024);
-            X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(new X500Principal("cn=localhost"), 3652, keyPair, false);
+            X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(new X500Principal("cn=localhost"), 3652, keyPair, false, null);
             KeyStore ks = KeyStore.getInstance("PKCS12");
             ks.load(null, null);
             ks.setKeyEntry(DEFAULT_ALIAS, keyPair.getPrivate(), pass.toCharArray(), new Certificate[] {cert});

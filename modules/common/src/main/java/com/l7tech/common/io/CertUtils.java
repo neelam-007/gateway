@@ -17,10 +17,8 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.*;
-import java.security.interfaces.DSAParams;
-import java.security.interfaces.DSAPublicKey;
-import java.security.interfaces.RSAKey;
-import java.security.interfaces.RSAPublicKey;
+import java.security.interfaces.*;
+import java.security.spec.ECParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateKeySpec;
@@ -76,12 +74,18 @@ public class CertUtils {
     public static final String CERT_PROP_BASIC_CONSTRAINTS = "Basic constraints";
     public static final String CERT_PROP_KEY_USAGE = "Key usage";
     public static final String CERT_PROP_EXT_KEY_USAGE = "Ext. key usage";
+    public static final String CERT_PROP_SIG_ALG = "Signature algorithm";
     public static final String CERT_PROP_KEY_TYPE = "Key type";
     public static final String CERT_PROP_RSA_STRENGTH = "RSA strength";
     public static final String CERT_PROP_RSA_PUBLIC_EXPONENT = "RSA public exponent";
     public static final String CERT_PROP_DSA_PRIME_P = "DSA prime (P)";
     public static final String CERT_PROP_DSA_SUBPRIME_P = "DSA subprime (P)";
     public static final String CERT_PROP_DSA_BASE_P = "DSA base (P)";
+    public static final String CERT_PROP_EC_CURVE_NAME = "Curve name";
+    public static final String CERT_PROP_EC_CURVE_POINT_W_X = "Curve point-W (X)";
+    public static final String CERT_PROP_EC_CURVE_POINT_W_Y = "Curve point-W (Y)";
+    public static final String CERT_PROP_EC_ORDER = "Order";
+    public static final String CERT_PROP_EC_COFACTOR = "Cofactor";
 
     private static final Map<String,String> DN_MAP;
     static {
@@ -200,7 +204,9 @@ public class CertUtils {
     }
 
     public static boolean arePublicKeysEqual(PublicKey pubkey1, PublicKey pubkey2) {
-        return Arrays.equals(pubkey1.getEncoded(), pubkey2.getEncoded());
+        return pubkey1.getAlgorithm().equals(pubkey2.getAlgorithm()) &&
+               pubkey1.getFormat().equals(pubkey2.getFormat()) &&
+               Arrays.equals(pubkey1.getEncoded(), pubkey2.getEncoded());
     }
 
     /**
@@ -214,7 +220,7 @@ public class CertUtils {
      * available for both the key from the cert and the passed-in key.  (The modulus may not be
      * available in some cases where the Key is backed by an object stored in a PKCS#11 hardware module.)
      * <p/>
-     * In the future this method may support DSA certs as well, so it is encouraged to call this method
+     * In the future this method may support DSA or EC certs as well, so it is encouraged to call this method
      * even if you know it's not an RSA cert.
      *
      * @param cert a cert to examine.  Required.
@@ -224,8 +230,8 @@ public class CertUtils {
     public static void checkForMismatchingKey(X509Certificate cert, Key key) throws CertificateException {
         PublicKey certPublic = cert.getPublicKey();
 
-        boolean certIsRsa = certPublic instanceof RSAKey || "RSA".equalsIgnoreCase(certPublic.getAlgorithm());
-        boolean keyIsRsa = key instanceof RSAKey || "RSA".equalsIgnoreCase(key.getAlgorithm());
+        boolean certIsRsa = "RSA".equalsIgnoreCase(certPublic.getAlgorithm());
+        boolean keyIsRsa = "RSA".equalsIgnoreCase(key.getAlgorithm());
 
         if (certIsRsa != keyIsRsa)
             throw new CertificateException("The specified key does not belong to the specified certificate.");
@@ -775,6 +781,8 @@ public class CertUtils {
             l.add(new Pair<String, String>(CERT_PROP_EXT_KEY_USAGE, "<Certificate parsing error>"));
         }
 
+        l.add(new Pair<String, String>(CERT_PROP_SIG_ALG, cert.getSigAlgName()));
+
         PublicKey publicKey = cert.getPublicKey();
         if (includeKeyInfo && publicKey != null) {
             l.add(new Pair<String, String>(CERT_PROP_KEY_TYPE, nullNa(publicKey.getAlgorithm())));
@@ -789,6 +797,17 @@ public class CertUtils {
                 l.add(new Pair<String, String>(CERT_PROP_DSA_PRIME_P, params.getP().toString(16)));
                 l.add(new Pair<String, String>(CERT_PROP_DSA_SUBPRIME_P, params.getQ().toString(16)));
                 l.add(new Pair<String, String>(CERT_PROP_DSA_BASE_P, params.getG().toString(16)));
+            } else if (publicKey instanceof ECPublicKey) {
+                ECPublicKey ecKey = (ECPublicKey) publicKey;
+                ECParameterSpec params = ecKey.getParams();
+
+                // TODO look up named curve for params
+                //l.add(new Pair<String, String>(CERT_PROP_EC_CURVE_NAME, curveName.toString()));
+                l.add(new Pair<String, String>(CERT_PROP_EC_CURVE_POINT_W_X, ecKey.getW().getAffineX().toString()));
+                //noinspection SuspiciousNameCombination
+                l.add(new Pair<String, String>(CERT_PROP_EC_CURVE_POINT_W_Y, ecKey.getW().getAffineY().toString()));
+                l.add(new Pair<String, String>(CERT_PROP_EC_ORDER,  params.getOrder().toString()));
+                l.add(new Pair<String, String>(CERT_PROP_EC_COFACTOR,  Integer.toString(params.getCofactor())));
             }
         }
 

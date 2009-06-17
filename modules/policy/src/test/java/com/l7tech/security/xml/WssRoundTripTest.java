@@ -116,7 +116,7 @@ public class WssRoundTripTest {
         if (td.req.isSignUsernameToken()) {
             Map<String, String> ns = new HashMap<String, String>();
             ns.put("wsse", SoapUtil.SECURITY_NAMESPACE);
-            ProcessorResultUtil.SearchResult foo = ProcessorResultUtil.searchInResult(log, doc1, 
+            ProcessorResultUtil.SearchResult foo = ProcessorResultUtil.searchInResult(log, doc1,
                     new DomCompiledXpath(new XpathExpression("//wsse:UsernameToken", ns)), null, false, r.getElementsThatWereSigned(), "signed");
             if (securityTokenResolver == null)
                 assertEquals(foo.getResultCode(), ProcessorResultUtil.FALSIFIED);
@@ -351,6 +351,21 @@ public class WssRoundTripTest {
         NamedTestDocument ntd = new NamedTestDocument("ExplicitSignatureConfirmation",
                                                       wssDecoratorTest.getExplicitSignatureConfirmationsTestDocument());
         runRoundTripTest(ntd, false);
+    }
+
+    @Test
+    public void testSuiteBCryptoSignatureSha1() throws Exception {
+        runRoundTripTest(new NamedTestDocument("testSuiteBCryptoSignature(ECDSA-SHA384", wssDecoratorTest.getSuiteBSigningTestDocument("SHA-1")));
+    }
+
+    @Test
+    public void testSuiteBCryptoSignatureSha256() throws Exception {
+        runRoundTripTest(new NamedTestDocument("testSuiteBCryptoSignature(ECDSA-SHA384", wssDecoratorTest.getSuiteBSigningTestDocument("SHA-384")));
+    }
+
+    @Test
+    public void testSuiteBCryptoSignatureSha384() throws Exception {
+        runRoundTripTest(new NamedTestDocument("testSuiteBCryptoSignature(ECDSA-SHA384", wssDecoratorTest.getSuiteBSigningTestDocument("SHA-384")));
     }
 
     private void runRoundTripTest(NamedTestDocument ntd) throws Exception {

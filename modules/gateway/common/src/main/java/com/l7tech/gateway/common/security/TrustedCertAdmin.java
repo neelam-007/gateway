@@ -3,20 +3,20 @@
  */
 package com.l7tech.gateway.common.security;
 
+import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.admin.Administrative;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
-import static com.l7tech.objectmodel.EntityType.*;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
+import static com.l7tech.objectmodel.EntityType.*;
 import com.l7tech.security.cert.TrustedCert;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
@@ -54,7 +54,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
 
     /**
      * Retrieves every {@link com.l7tech.security.cert.TrustedCert} with the specified subject DN.
-     * 
+     *
      * @param dn the Subject DN of the {@link com.l7tech.security.cert.TrustedCert} to retrieve
      * @return a list of matching TrustedCert instances.  May be empty but never null.
      * @throws FindException if there is a problem finding the certs
@@ -252,6 +252,27 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays, boolean makeCaCert) throws FindException, GeneralSecurityException;
 
     /**
+     * Generate a new ECC key pair and self-signed certificate in the specified keystore with the specified
+     * settings.
+     *
+     * @param keystoreId the key store in which to create the new key pair and self-signed cert.
+     * @param alias the alias to use when saving the new key pair and self-signed cert.  Required.
+     * @param dn the DN to use in the new self-signed cert.  Required.
+     * @param curveName the named curve to set the ECC parameters.  Required.
+     * @param expiryDays number of days the self-signed cert should be valid.  Required.
+     * @param makeCaCert    true if the new certificate is intended to be used to sign other certs.  Normally false.
+     *                      If this is true, the new certificate will have the "cA" basic constraint and the "keyCertSign" key usage.
+     * @return the job identifier of the key generation job.  Call {@link #getJobStatus(AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
+     *         and {@link #getJobResult(JobId)} to pick up the result in the form of a self-signed X509Certificate.
+     * @throws FindException if there is a problem getting info from the database
+     * @throws java.security.GeneralSecurityException if there is a problem generating or signing the cert
+     * @throws IllegalArgumentException if the curveName is unrecognized or if the dn is improperly specified
+     */
+    @Transactional(propagation=Propagation.REQUIRED)
+    @Secured(stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
+    JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, String dn, String curveName, int expiryDays, boolean makeCaCert) throws FindException, GeneralSecurityException;
+
+    /**
      * Generate a new PKCS#10 Certification Request (aka Certificate Signing Request) using the specified private key,
      * identified by keystoreId and alias, and containing the specified DN.
      *
@@ -330,6 +351,39 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype= SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
     void importKey(long keystoreId, String alias, String[] pemChain, final byte[] privateKeyPkcs8) throws CertificateException, SaveException, InvalidKeyException;
+
+    /**
+     * Import an RSA or ECC private key and certificate chain into the specified keystore ID under the specified alias,
+     * from the specified PKCS#12 file (passed in as a byte array), decrypted with the specified passphrase.
+     * <p/>
+     * If a pkcs12alias is not provided, this method will expect there to be exactly one private key entry
+     * in the provided PKCS#12 file.
+     * <p/>
+     * This method will take care to destroy all of its copies of the passphrase and PKCS#12 bytes after
+     * completion, regardless of whether the import succeeds or fails.
+     *
+     * @param keystoreId   the target keystore ID.  Required.
+     * @param alias        the target alias within the keystore.  Required.
+     * @param pkcs12bytes  the bytes of the PKCS#12 file.  Required.
+     * @param pkcs12pass   the pass phrase for the PKCS#12 file.  Required.
+     * @param pkcs12alias  the alias of the key entry within the PKCS#12 file to import, or null to
+     *                     import exactly one entry.
+     * @return the successfully-imported key entry.  Never null.
+     * @throws ObjectNotFoundException if the specified keystore ID does not exist
+     * @throws FindException if there is some other problem finding the specified keystore
+     * @throws KeyStoreException if there is a problem parsing the specified PKCS#12 file
+     * @throws MultipleAliasesException if pkcs12alias is null and there is more than one private key entry
+     *                                  in the specified keystore
+     * @throws AliasNotFoundException if pkcs12alias is specified, but no key entry with that alias is found in the
+     *                                keystore
+     * @throws DuplicateObjectException if there is already an entry with alias "alias" in the keystore with ID
+     *                                  keystoreId
+     * @throws SaveException if there is some other problem saving the imported key entry
+     */
+    // TODO need an annotation to note that this methods arguments must never be persisted in any debug or audit traces
+    @Transactional(propagation=Propagation.REQUIRED)
+    @Secured(stereotype= SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
+    SsgKeyEntry importKeyFromPkcs12(long keystoreId, String alias, byte[] pkcs12bytes, char[] pkcs12pass, String pkcs12alias) throws FindException, SaveException, KeyStoreException, MultipleAliasesException, AliasNotFoundException;
 
     /**
      * Export a private key and certificate chain as a PKCS#12 file, if the private key is available to be exported.

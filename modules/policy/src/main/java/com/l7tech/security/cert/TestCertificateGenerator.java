@@ -16,14 +16,15 @@ import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
 import java.util.*;
 
 /**
  * Used to generate certificate chains for testing with a variety of key usage and extended key usage settings.
  */
 public class TestCertificateGenerator {
-    private static final SecureRandom random = new SecureRandom();
 
+    private SecureRandom random;
     private BigInteger serialNumber;
     private Date notBefore;
     private Date notAfter;
@@ -34,6 +35,8 @@ public class TestCertificateGenerator {
     private KeyPair keyPair;
     private int keyUsageBits;
     private BasicConstraints basicConstraints;
+    private String eccCurveName;
+    private boolean useECC;
     private boolean includeKeyUsage;
     private boolean keyUsageCriticality;
     private boolean includeSki;
@@ -45,20 +48,28 @@ public class TestCertificateGenerator {
     private List<String> extendedKeyUsageKeyPurposeOids;
     private List<String> countryOfCitizenshipCountryCodes;
 
-    /** Issuer certificate, or null to create self-signed. */
-    public Pair<X509Certificate, PrivateKey> issuer;
-
     public TestCertificateGenerator() {
         reset();
     }
 
+    /** Issuer certificate, or null to create self-signed. */
+    public Pair<X509Certificate, PrivateKey> issuer;
+
     private KeyPair getOrMakeKeyPair() {
         if (keyPair == null) {
             try {
-                KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-                kpg.initialize(rsaBits);
-                keyPair = kpg.generateKeyPair();
+                if (useECC) {
+                    KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
+                    kpg.initialize(new ECGenParameterSpec(eccCurveName), random);
+                    keyPair = kpg.generateKeyPair();
+                } else {
+                    KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+                    kpg.initialize(rsaBits, random);
+                    keyPair = kpg.generateKeyPair();
+                }
             } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            } catch (InvalidAlgorithmParameterException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -70,13 +81,16 @@ public class TestCertificateGenerator {
     }
 
     public TestCertificateGenerator reset() {
+        random = new SecureRandom();
         serialNumber = new BigInteger(64, random).abs();
         notBefore = new Date(new Date().getTime() - (10 * 60 * 1000L)); // default: 10 min ago
         daysUntilExpiry = 20 * 365;
         notAfter = null;
-        signatureAlgorithm = "SHA1WithRSA";
+        useECC = false;
+        eccCurveName = "sect163k1";
+        signatureAlgorithm = null;
         subjectDn = new X509Name("cn=test");
-        rsaBits = 512;
+        rsaBits = 768;
         keyPair = null;
         basicConstraints = new BasicConstraints(false);
         keyUsageBits = X509KeyUsage.digitalSignature | X509KeyUsage.keyEncipherment | X509KeyUsage.nonRepudiation;
@@ -103,6 +117,9 @@ public class TestCertificateGenerator {
         final KeyPair subjectKeyPair = getOrMakeKeyPair();
         final PublicKey subjectPublicKey = subjectKeyPair.getPublic();
         final PrivateKey subjectPrivateKey = subjectKeyPair.getPrivate();
+
+        if (signatureAlgorithm == null)
+            signatureAlgorithm = BouncyCastleCertUtils.getSigAlg(useECC, null);
 
         X509Name issuerDn;
         PublicKey issuerPublicKey;
@@ -169,8 +186,21 @@ public class TestCertificateGenerator {
         return new SubjectDirectoryAttributes(attrs);
     }
 
+    /**
+     * Configure the next key pair generation to produce an RSA keypair with the specified size in bits.
+     */
     public TestCertificateGenerator keySize(int keyBits) {
+        this.useECC = false;
         this.rsaBits = keyBits;
+        return this;
+    }
+
+    /**
+     * Configure the next key pair generation to produce an ECC keypair with the specified named curve.
+     */
+    public TestCertificateGenerator curveName(String curveName) {
+        this.useECC = true;
+        this.eccCurveName = curveName;
         return this;
     }
 
@@ -294,6 +324,11 @@ public class TestCertificateGenerator {
         return this;
     }
 
+    public TestCertificateGenerator signatureAlgorithm(String sigalg) {
+        this.signatureAlgorithm = sigalg;
+        return this;
+    }
+
     public void setCountryOfCitizenshipCountryCodes(List<String> countryOfCitizenshipCountryCodes) {
         this.countryOfCitizenshipCountryCodes = countryOfCitizenshipCountryCodes;
     }
@@ -350,6 +385,7 @@ public class TestCertificateGenerator {
         // The Clever Dan who wrote Bouncy Castle's JDKPKCS12KeyStore hardcoded the "BC" provider name everywhere,
         // instead of just using their own classes directly whenever such was unavoidable,
         // so we can't use their keystore implementation unless they are registered as a crypto provider
+        // TODO appears to be fixed in Bouncy Castle 1.42, so we can remove this hack after we update our repo
         if (null == Security.getProvider("BC"))
             Security.addProvider(new BouncyCastleProvider());
 

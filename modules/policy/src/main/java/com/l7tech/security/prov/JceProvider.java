@@ -29,11 +29,19 @@ public abstract class JceProvider {
     public static final String BC_ENGINE = "com.l7tech.security.prov.bc.BouncyCastleJceProviderEngine";
     public static final String SUN_ENGINE = "com.l7tech.security.prov.sun.SunJceProviderEngine";
     public static final String PKCS11_ENGINE = "com.l7tech.security.prov.pkcs11.Pkcs11JceProviderEngine";
+    public static final String LUNA_ENGINE = "com.l7tech.security.prov.luna.LunaJceProviderEngine";
+    public static final String LUNA_PKCS11_ENGINE = "com.l7tech.security.prov.lunapkcs11.LunaPkcs11JceProviderEngine";
+    public static final String CERTICOM_ENGINE = "com.l7tech.security.prov.certicom.CerticomJceProviderEngine";
+    public static final String RSA_ENGINE = "com.l7tech.security.prov.rsa.RsaJceProviderEngine";
 
     // Old driver class names
     private static final String OLD_BC_ENGINE = "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine";
     private static final String OLD_SUN_ENGINE = "com.l7tech.common.security.prov.sun.SunJceProviderEngine";
     private static final String OLD_PKCS11_ENGINE = "com.l7tech.common.security.prov.pkcs11.Pkcs11JceProviderEngine";
+
+    /** Recognized service name to pass to {@link #getProviderFor(String)}. */
+    public static String SERVICE_PBE_WITH_SHA1_AND_DESEDE = "Cipher.PBEWithSHA1AndDESede";
+
 
     private static final Map<String,String> DRIVER_MAP;
 
@@ -94,6 +102,15 @@ public abstract class JceProvider {
         return Holder.engine.getAsymmetricProvider();
     }
 
+    public static Provider getSignatureProvider() {
+        return Holder.engine.getSignatureProvider();
+    }
+
+    /** @return provider recommended for specified service, or null to recommend asking for service without specifying a provider. */
+    public static Provider getProviderFor(String service) throws NoSuchProviderException {
+        return Holder.engine.getProviderFor(service);
+    }
+
     public static Cipher getRsaNoPaddingCipher() throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException {
         return Holder.engine.getRsaNoPaddingCipher();
     }
@@ -116,6 +133,10 @@ public abstract class JceProvider {
 
     public static KeyPair generateRsaKeyPair(int keysize) {
         return Holder.engine.generateRsaKeyPair(keysize);
+    }
+
+    public static KeyPair generateEcKeyPair(String curveName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+        return Holder.engine.generateEcKeyPair(curveName);
     }
 
     public static CertificateRequest makeCsr(String username, KeyPair keyPair)

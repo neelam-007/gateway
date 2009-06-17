@@ -916,6 +916,21 @@ public class WssProcessorTest {
         assertTrue(validity);
     }
 
+    @Test
+	public void testEcdsaSha256ignedRequest() throws Exception {
+        doTest(makeEttkTestDocument("ECDSA with SHA-256 signed request", TestDocuments.ECDSA_SHA256_REQUEST));
+    }
+
+    @Test
+	public void testEcdsaSha384ignedRequest() throws Exception {
+        doTest(makeEttkTestDocument("ECDSA with SHA-384 signed request", TestDocuments.ECDSA_SHA384_REQUEST));
+    }
+
+    @Test
+    public void testEcdsaSha284RequestSignedUsingLuna() throws Exception {
+        doTest(makeEttkTestDocument("ECDSA with SHA-284 signed using Luna", XmlUtil.stringAsDocument(SIGNED_USING_SHA384_WITH_ECDSA)));
+    }
+
     private static Message makeMessage(String xml) throws SAXException {
         Message message = new Message();
         message.initialize(XmlUtil.stringToDocument(xml));
@@ -968,4 +983,36 @@ public class WssProcessorTest {
             "A4GBAKBixlrEeYq2Av8LqtFu6aC7yMINhHw5ICV+r5rsIRnbwBTeXbYAQ9HI3xZZ\n" +
             "gL//fxSkNnWKQK1JdMRmzVSq9kPvkyOF56YHNW5t6YAmOrEkNBEcl2x8mtRUl9Wy\n" +
             "EQTDNN63uJSIPSQnDkbOuBBywbxmJtgcPfOliMn/FnrD8NwO";
+
+    private static final String SIGNED_USING_SHA384_WITH_ECDSA =
+            "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" " +
+            "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><soapenv:Header><wsse:Security xmlns:wsse=\"http://docs.oasis-open.org/" +
+            "wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-ws" +
+            "security-utility-1.0.xsd\" actor=\"secure_span\" soapenv:mustUnderstand=\"1\"><wsu:Timestamp wsu:Id=\"Timestamp-2-47386e8ba38ee" +
+            "990fff2b55c6eb65b8c\"><wsu:Created>2009-04-29T18:38:49.359Z</wsu:Created><wsu:Expires>2009-04-29T18:43:49.359Z</wsu:Expires></w" +
+            "su:Timestamp><wsse:BinarySecurityToken EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-secu" +
+            "rity-1.0#Base64Binary\" ValueType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3\" wsu" +
+            ":Id=\"BinarySecurityToken-0-1cb7b9c6383e08e83467f25de2c233ab\">MIIB2TCCAV6gAwIBAgIJAJCW+P9mQT2aMAoGCCqGSM49BAMDMBgxFjAUBgNVBAMM" +
+            "DWVjY3Rlc3RjbGllbnQwHhcNMDkwNDI5MTgyODQ5WhcNMjkwNDI0MTgyODQ5WjAYMRYwFAYDVQQDDA1lY2N0ZXN0Y2xpZW50MHYwEAYHKoZIzj0CAQYFK4EEACIDYgA" +
+            "EMl9nqqnkh4KdCMuVesojNkrJ4d0X+jvfyz3sKVvNm1jS1XmCH5TeZkzjeHGsIOstiS0yZdhFRdwgfuB1FaONHW31Vw+OxZdH0/wj4qs5RdF2MLBn8GfZWAd7LEps5s" +
+            "INo3QwcjAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIF4DASBgNVHSUBAf8ECDAGBgRVHSUAMB0GA1UdDgQWBBRn+VqVeSh2MgmUHblUzjkdOHG2CDAfBgNVHSMEG" +
+            "DAWgBRn+VqVeSh2MgmUHblUzjkdOHG2CDAKBggqhkjOPQQDAwNpADBmAjEA9RBr66e/Ygzjd5GBpljgsYpi3Ht4hJcj79x7NNpJyL+b9mj6zy3NP4/RqS2yLpVpAjEA" +
+            "+Rv3Vj8FFsIq/qS82Qi+98FZc6U9rZVBpDk3qJ9yZmQ9QotQbRncZayK72efFzQK</wsse:BinarySecurityToken><ds:Signature xmlns:ds=\"http://www." +
+            "w3.org/2000/09/xmldsig#\"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"></ds:" +
+            "CanonicalizationMethod><ds:SignatureMethod Algorithm=\"http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha384\"></ds:SignatureMeth" +
+            "od><ds:Reference URI=\"#Body-1-70c6bfe2ac05e370eac521410ec6e054\"><ds:Transforms><ds:Transform Algorithm=\"http://www.w3.org/20" +
+            "01/10/xml-exc-c14n#\"></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2001/04/xmldsig-more#sha384" +
+            "\"></ds:DigestMethod><ds:DigestValue>BBbmAdQLiiyHnDEi12C659CYVN2q+wlcERpePTzP+N8OT6n9s41YnekZB3KzHIj2</ds:DigestValue></ds:Refe" +
+            "rence><ds:Reference URI=\"#Timestamp-2-47386e8ba38ee990fff2b55c6eb65b8c\"><ds:Transforms><ds:Transform Algorithm=\"http://www.w" +
+            "3.org/2001/10/xml-exc-c14n#\"></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2001/04/xmldsig-mor" +
+            "e#sha384\"></ds:DigestMethod><ds:DigestValue>danM1MmilxAzDjAW1aV7ZXt2FmYa0JyhTMK8rVaft9yIHnPQqH6xUNxuJwt2jy/u</ds:DigestValue><" +
+            "/ds:Reference></ds:SignedInfo><ds:SignatureValue>MGYCMQDC3K80d8XRHD30BpPGVuEm+ZlXg1HZw70LZtQgRqm+QP6oRpEgzWyEhsKk2RRuPIoCMQCCDm" +
+            "SqELyqSDStFAG9A+idVK9jQjrWXw4Sl19S2Yhq4qWhDgSrWp8GtIlN4o4q6w4=</ds:SignatureValue><ds:KeyInfo><wsse:SecurityTokenReference><wss" +
+            "e:Reference URI=\"#BinarySecurityToken-0-1cb7b9c6383e08e83467f25de2c233ab\" ValueType=\"http://docs.oasis-open.org/wss/2004/01/" +
+            "oasis-200401-wss-x509-token-profile-1.0#X509v3\"></wsse:Reference></wsse:SecurityTokenReference></ds:KeyInfo></ds:Signature></w" +
+            "sse:Security></soapenv:Header><soapenv:Body xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-util" +
+            "ity-1.0.xsd\" wsu:Id=\"Body-1-70c6bfe2ac05e370eac521410ec6e054\"><ns1:placeOrder xmlns:ns1=\"http://warehouse.acme.com/ws\" soa" +
+            "penv:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><productid xsi:type=\"xsd:long\">-9206260647417300294</product" +
+            "id><amount xsi:type=\"xsd:long\">1</amount><price xsi:type=\"xsd:float\">5.0</price><accountid xsi:type=\"xsd:long\">228</accou" +
+            "ntid></ns1:placeOrder></soapenv:Body></soapenv:Envelope>";
 }

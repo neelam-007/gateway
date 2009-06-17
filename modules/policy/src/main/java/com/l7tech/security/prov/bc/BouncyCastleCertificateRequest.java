@@ -22,20 +22,20 @@ import java.security.*;
 public class BouncyCastleCertificateRequest implements CertificateRequest {
     public static final String REQUEST_SIG_ALG = "SHA1withRSA";
 
-    private PKCS10CertificationRequest certReq;
-    private String providerName;
+    private final PKCS10CertificationRequest certReq;
+    private final PublicKey publicKey;
 
     /**
      * Create a CSR object that uses BouncyCastle format to serialize the CSR, but creates crypto keys using
      * the specified JCE provider.
      *
      * @param certReq
-     * @param providerName
+     * @param publicKey the public key for this req
      */
 
-    public BouncyCastleCertificateRequest(PKCS10CertificationRequest certReq, String providerName) {
+    public BouncyCastleCertificateRequest(PKCS10CertificationRequest certReq, PublicKey publicKey) {
         this.certReq = certReq;
-        this.providerName = providerName;
+        this.publicKey = publicKey;
     }
 
     public PKCS10CertificationRequest getCertReq() {
@@ -60,7 +60,7 @@ public class BouncyCastleCertificateRequest implements CertificateRequest {
      * @return the public key in this certificate request
      */
     public PublicKey getPublicKey() throws InvalidKeyException, NoSuchProviderException, NoSuchAlgorithmException {
-        return certReq.getPublicKey(providerName);
+        return publicKey;
     }
 
     /**
@@ -90,6 +90,6 @@ public class BouncyCastleCertificateRequest implements CertificateRequest {
         } catch (NoSuchProviderException e) {
             throw new RuntimeException(e); // can't happen
         }
-        return new BouncyCastleCertificateRequest(certReq, providerName);
+        return new BouncyCastleCertificateRequest(certReq, publicKey);
     }
 }

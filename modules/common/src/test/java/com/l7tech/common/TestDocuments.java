@@ -42,6 +42,7 @@ public final class TestDocuments {
     public static final String BUG6944_WSDLS_WITH_CIRCULAR_IMPORTS_B_IMPORTS_A = DIR + "bug6944-wsdls-with-circular-imports-B_Imports_A.wsdl";
     public static final String PLACEORDER_CLEARTEXT = DIR + "PlaceOrder_cleartext.xml";
     public static final String PLACEORDER_CLEARTEXT_S12 = DIR + "PlaceOrder_cleartext_soap12.xml";
+    public static final String PLACEORDER_CLEARTEXT_ONELINE = DIR + "PlaceOrder_cleartext_oneline.xml";
     public static final String PLACEORDER_WITH_MAJESTY = DIR + "PlaceOrder_with_XmlRequestSecurity.xml";
     public static final String PLACEORDER_KEYS = DIR + "PlaceOrder_with_XmlRequestSecurity_keys.properties";
     public static final String BUG_763_MONSTER_POLICY = DIR + "bug763MonsterPolicy.xml";
@@ -80,6 +81,9 @@ public final class TestDocuments {
     public static final String FIM2005APR_CLIENT_REQ = DIR +"fim/fim2005apr_client_req.xml";
     public static final String FIM2005APR_SERVER_RST = DIR + "fim/fim2005apr_server_rst.xml";
     public static final String FIM2005APR_SERVER_RSTR = DIR + "fim/fim2005apr_server_rstr.xml";
+
+    public static final String ECDSA_SHA256_REQUEST = DIR + "ecc/ecdsa_sha256_request.xml";
+    public static final String ECDSA_SHA384_REQUEST = DIR + "ecc/ecdsa_sha384_request.xml";
 
     public static final String WSS2005JUL_REQUEST = DIR + "wssInterop/regeneratedRequest.xml";
     public static final String WSS2005JUL_REQUEST_ORIG = DIR + "wssInterop2005July_request.xml";
@@ -218,7 +222,7 @@ public final class TestDocuments {
         if ( certificates != null ) {
             x509certs = new X509Certificate[certificates.length];
             for ( int c=0; c<certificates.length; c++ ) {
-                x509certs[c] = (X509Certificate) certificates[c];                
+                x509certs[c] = (X509Certificate) certificates[c];
             }
         }
 

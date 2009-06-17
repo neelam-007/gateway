@@ -32,7 +32,7 @@ public interface XpathResultIterator {
      * Attempts to creates and returns a new ElementCursor pointed at the next matching result node if it's an Element.
      *
      * Returns <code>null</code> if the next node is not an Element, or ElementCursor support is not available for this
-     * XpathResult. (see {@link ElementCursor#getXpathResult(CompiledXpath, boolean)}, second argument)
+     * XpathResult. (see {@link ElementCursor#getXpathResult(CompiledXpath, XpathVariableFinder, boolean)}, third argument)
      *
      * Note that this method can be quite expensive, as it creates new ElementCursors, while {@link #next} does not.
      *

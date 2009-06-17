@@ -5,6 +5,7 @@ package com.l7tech.security.xml.decorator;
 
 import com.l7tech.kerberos.KerberosServiceTicket;
 import com.l7tech.security.token.UsernameToken;
+import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.security.xml.processor.SecurityContext;
 import com.l7tech.util.NamespaceFactory;
@@ -492,7 +493,7 @@ public class DecorationRequirements {
         } else {
             this.securityHeaderMustUnderstand = alwaysInclude ?
                     SecurityHeaderMustUnderstand.NO :
-                    SecurityHeaderMustUnderstand.SKIP;            
+                    SecurityHeaderMustUnderstand.SKIP;
         }
     }
 
@@ -649,6 +650,24 @@ public class DecorationRequirements {
         this.protectTokens = protectTokens;
     }
 
+    /**
+     * Gets the signature message digest string (i.e. SHA-1, SHA-256, etc).
+     *
+     * @return message digest value
+     */
+    public String getSignatureMessageDigest() {
+        return signatureMessageDigest;
+    }
+
+    /**
+     * Sets the message digest algorithm value intened for signing (i.e. SHA-1, SHA-256, etc).
+     *
+     * @param signatureMessageDigest the message digest algorithm to set
+     */
+    public void setSignatureMessageDigest(String signatureMessageDigest) {
+        this.signatureMessageDigest = signatureMessageDigest;
+    }
+
     enum SecurityHeaderMustUnderstand { YES, NO, SKIP, DEFAULT }
 
     SecurityHeaderMustUnderstand getMustUnderstand() {
@@ -689,4 +708,5 @@ public class DecorationRequirements {
     private boolean useDerivedKeys = false;
     private boolean suppressSamlStrTransform = false;
     private boolean protectTokens = false;
+    private String signatureMessageDigest = DsigUtil.getDefaultMessageDigest();
 }

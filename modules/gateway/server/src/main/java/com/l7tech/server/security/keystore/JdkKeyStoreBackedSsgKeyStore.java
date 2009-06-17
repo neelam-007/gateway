@@ -1,8 +1,9 @@
 package com.l7tech.server.security.keystore;
 
 import com.l7tech.common.io.AliasNotFoundException;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.DuplicateAliasException;
-import com.l7tech.gateway.common.security.BouncyCastleCertUtils;
+import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.prov.CertificateRequest;
@@ -15,11 +16,10 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import javax.security.auth.x500.X500Principal;
-import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -101,20 +101,25 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         }
 
         // Get the private key, if we can access it
-        PrivateKey rsaPrivateKey = null;
+        PrivateKey privateKey = null;
         try {
             Key key = keystore.getKey(alias, getEntryPassword());
-            if (key instanceof PrivateKey && "RSA".equals(key.getAlgorithm()))
-                rsaPrivateKey = (PrivateKey)key;
+            key = KeyFactory.getInstance(key.getAlgorithm(), JceProvider.getAsymmetricJceProvider()).translateKey(key);
+            if (key instanceof PrivateKey)
+                privateKey = (PrivateKey) key;
+
         } catch (NoSuchAlgorithmException e) {
             getLogger().log(Level.WARNING, "Unsupported key type in cert entry in " + "Keystore " + getName() + " with alias " + alias + ": " + ExceptionUtils.getMessage(e), e);
             // Fallthrough and do without
         } catch (UnrecoverableKeyException e) {
             getLogger().log(Level.WARNING, "Unrecoverable key in cert entry in " + "Keystore " + getName() + " with alias " + alias + ": " + ExceptionUtils.getMessage(e), e);
             // Fallthrough and do without
+        } catch (InvalidKeyException e) {
+            getLogger().log(Level.WARNING, "Unable to translate key in cert entry in " + "Keystore " + getName() + " with alias " + alias + ": " + ExceptionUtils.getMessage(e), e);
+            // Fallthrough and do without
         }
 
-        return new SsgKeyEntry(getOid(), alias, x509chain, rsaPrivateKey);
+        return new SsgKeyEntry(getOid(), alias, x509chain, privateKey);
     }
 
     /**
@@ -210,11 +215,49 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
 
                 // Requires that current crypto engine already by the correct one for this keystore type
                 KeyPair keyPair = JceProvider.generateRsaKeyPair(keybits);
-                X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair, makeCaCert);
+                X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair, makeCaCert, JceProvider.getSignatureProvider());
 
                 keystore.setKeyEntry(alias, keyPair.getPrivate(), getEntryPassword(), new Certificate[] { cert });
 
                 return cert;
+            }
+        });
+    }
+
+    public Future<X509Certificate> generateEcKeyPair(Runnable transactionCallback, final String alias, final X500Principal dn, final String curveName, final int expiryDays, final boolean makeCaCert)
+            throws GeneralSecurityException
+    {
+        return mutateKeystore(transactionCallback, new Callable<X509Certificate>() {
+            public X509Certificate call() {
+                try {
+                    KeyStore keystore = keyStore();
+                    if (keystore.containsAlias(alias))
+                        throw new RuntimeException("Keystore already contains alias " + alias);
+
+                    // Requires that current crypto engine already by the correct one for this keystore type
+                    KeyPair keyPair = JceProvider.generateEcKeyPair(curveName);
+                    X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair, makeCaCert, JceProvider.getSignatureProvider());
+
+                    keystore.setKeyEntry(alias, keyPair.getPrivate(), getEntryPassword(), new Certificate[] { cert });
+
+                    return cert;
+                } catch (CertificateEncodingException e) {
+                    throw new RuntimeException(e);
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
+                } catch (SignatureException e) {
+                    throw new RuntimeException(e);
+                } catch (InvalidKeyException e) {
+                    throw new RuntimeException(e);
+                } catch (KeyStoreException e) {
+                    throw new RuntimeException(e);
+                } catch (NoSuchProviderException e) {
+                    throw new RuntimeException(e);
+                } catch (InvalidAlgorithmParameterException e) {
+                    throw new RuntimeException(e);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             }
         });
     }
@@ -235,28 +278,10 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
                     throw new KeyStoreException("Existing certificate for alias " + alias + " is not an X.509 certificate");
                 X509Certificate oldCert = (X509Certificate)oldChain[0];
                 PublicKey oldPublicKey = oldCert.getPublicKey();
-                if (!(oldPublicKey instanceof RSAPublicKey))
-                    throw new KeyStoreException("Existing certificate public key is not an RSA public key");
-                RSAPublicKey oldRsaPublicKey = (RSAPublicKey)oldPublicKey;
-                if (!(key instanceof PrivateKey) || !"RSA".equals(key.getAlgorithm()))
-                    throw new KeyStoreException("Keystore contains a key with alias " + alias + " but it is not an RSA private key: " + key);
-
                 PublicKey newPublicKey = chain[0].getPublicKey();
-                if (!(newPublicKey instanceof RSAPublicKey)) {
-                    throw new KeyStoreException("New certificate public key is not an RSA public key");
-                }
-                RSAPublicKey newRsaPublicKey = (RSAPublicKey)newPublicKey;
 
-                BigInteger newModulus = newRsaPublicKey.getModulus();
-                BigInteger oldModulus = oldRsaPublicKey.getModulus();
-                BigInteger newExponent = newRsaPublicKey.getPublicExponent();
-                BigInteger oldExponent = oldRsaPublicKey.getPublicExponent();
-
-                if (!newExponent.equals(oldExponent))
-                    throw new KeyStoreException("New certificate public key's RSA public exponent is not the same as the old certificate's public key");
-
-                if (!newModulus.equals(oldModulus))
-                    throw new KeyStoreException("New certificate public key's RSA modulus is not the same as the old certificate's public key");
+                if (!CertUtils.arePublicKeysEqual(oldPublicKey, newPublicKey))
+                    throw new KeyStoreException("New certificate does not certify the public key for this private key.");
 
                 keystore.setKeyEntry(alias, key, getEntryPassword(), chain);
 
@@ -270,21 +295,15 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             X500Principal dnObj = new X500Principal(dn);
             KeyStore keystore = keyStore();
             Key key = keystore.getKey(alias, getEntryPassword());
-            if (!(key instanceof PrivateKey) || !"RSA".equals(key.getAlgorithm()))
-                throw new InvalidKeyException("The key with alias " + alias + " is not an RSA private key");
-            PrivateKey rsaPrivate = (PrivateKey)key;
+            PrivateKey privateKey = (PrivateKey)key;
             Certificate[] chain = keystore.getCertificateChain(alias);
             if (chain == null || chain.length < 1)
                 throw new KeyStoreException("Existing certificate chain for alias " + alias + " is empty");
             if (!(chain[0] instanceof X509Certificate))
                 throw new KeyStoreException("Existing certificate for alias " + alias + " is not an X.509 certificate");
             X509Certificate cert = (X509Certificate)chain[0];
-            PublicKey publicKey = cert.getPublicKey();
-            if (!(publicKey instanceof RSAPublicKey))
-                throw new KeyStoreException("Existing certificate public key is not an RSA public key");
-            RSAPublicKey rsaPublic = (RSAPublicKey)publicKey;
-            KeyPair keyPair = new KeyPair(rsaPublic, rsaPrivate);
-            return BouncyCastleCertUtils.makeCertificateRequest(dnObj, keyPair);
+            KeyPair keyPair = new KeyPair(cert.getPublicKey(), privateKey);
+            return BouncyCastleCertUtils.makeCertificateRequest(dnObj, keyPair, JceProvider.getSignatureProvider());
         } catch (NoSuchAlgorithmException e) {
             throw new InvalidKeyException("Keystore contains no key with alias " + alias, e);
         } catch (UnrecoverableKeyException e) {
@@ -325,7 +344,8 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
      * @param transactionCallback Optional callback to invoke inside the transaction, or null.
      *                            Can be used for more detailed auditing.
      * @param mutator  a Runnable that will mutate the current keystore, which will be guaranteed
-     *                 to be up-to-date and non-null when the runnable is invoked. @throws java.security.KeyStoreException if the runnable throws a RuntimeException or if any other problem occurs during
+     *                 to be up-to-date and non-null when the runnable is invoked.
+     * @throws java.security.KeyStoreException if the runnable throws a RuntimeException or if any other problem occurs during
      *                           the process
      * @return the value returned by the mutator
      */

@@ -29,6 +29,12 @@ public interface JceProviderEngine {
     Provider getSymmetricProvider();
 
     /**
+     * Get the Provider for Signature instances.
+     * @return a Provider.
+     */
+    Provider getSignatureProvider();
+
+    /**
      * Create an RsaSignerEngine that uses the current crypto API.
      * This can be used to sign certificates.
      *
@@ -44,6 +50,16 @@ public interface JceProviderEngine {
      * @return a new RSA KeyPair instance with the specified key size.
      */
     KeyPair generateRsaKeyPair(int keysize);
+
+    /**
+     * Generate an ECC public key / private key pair using the current Crypto provider with the specified curve name.
+     *
+     * @param curveName  curve name to use, ie "p384".  Required.
+     * @return the generated key pair.  Never null.
+     * @throws NoSuchAlgorithmException  if ECC is not currently available.
+     * @throws InvalidAlgorithmParameterException if the specified curve name is unrecognized.
+     */
+    KeyPair generateEcKeyPair(String curveName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException;
 
     /**
      * Generate a CertificateRequest using the current Crypto provider.
@@ -85,4 +101,14 @@ public interface JceProviderEngine {
      * @throws NoSuchPaddingException    if this provider is unable to deliver an appropriately-configured RSA implementation.  Shouldn't happen.
      */
     Cipher getRsaPkcs1PaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException;
+
+    /**
+     * Get a Provider appropriate for the specified service.  See JceProvider for a list of recognized service
+     * names.
+     *
+     * @param service the service to get.  Uses the name from JceProvider rather than the "real" name, which may be
+     *          different if the current engine names it differently.
+     * @return a Provider for the service, or null if the default provider should be used instead.
+     */
+    Provider getProviderFor(String service);
 }

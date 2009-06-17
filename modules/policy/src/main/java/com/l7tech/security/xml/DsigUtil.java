@@ -13,6 +13,7 @@ import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.util.DomUtils;
+import com.l7tech.util.SyspropUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -24,6 +25,7 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
+import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Iterator;
 import java.util.List;
@@ -59,21 +61,35 @@ public class DsigUtil {
                                                    String keyName)
             throws SignatureException, SignatureStructureException, XSignatureException
     {
-        String signaturemethod;
-        if (senderSigningKey instanceof RSAPrivateKey || "RSA".equals(senderSigningKey.getAlgorithm()))
-            signaturemethod = SignatureMethod.RSA;
-        else if (senderSigningKey instanceof DSAPrivateKey)
-            signaturemethod = SignatureMethod.DSA;
-        else if (senderSigningKey instanceof SecretKey)
-            signaturemethod = SignatureMethod.HMAC;
-        else {
-            throw new SignatureException("PrivateKey type not supported " +
-                                               senderSigningKey.getClass().getName());
+        /* begin: signature selection block -- taken from WssDecoratorImpl.addSignature */
+        final String messageDigestAlgorithm = "SHA-1";
+        SupportedSignatureMethods signaturemethod;
+        if (senderSigningKey instanceof RSAPrivateKey || "RSA".equals(senderSigningKey.getAlgorithm())) {
+            if ("SHA-256".equals(messageDigestAlgorithm))
+                signaturemethod = SupportedSignatureMethods.RSA_SHA256;
+            else
+                signaturemethod = SupportedSignatureMethods.RSA_SHA1;
+
+        } else if (senderSigningKey instanceof ECPrivateKey || "EC".equals(senderSigningKey.getAlgorithm())) {
+            if ("SHA-384".equals(messageDigestAlgorithm))
+                signaturemethod = SupportedSignatureMethods.ECDSA_SHA384;
+            else
+                signaturemethod = SupportedSignatureMethods.ECDSA_SHA256;
+
+        } else if (senderSigningKey instanceof DSAPrivateKey) {
+            signaturemethod = SupportedSignatureMethods.DSA_SHA1;
+        } else if (senderSigningKey instanceof SecretKey) {
+            signaturemethod = SupportedSignatureMethods.HMAC_SHA1;
+        } else {
+            throw new SignatureException("Private Key type not supported " +
+                    senderSigningKey.getClass().getName());
         }
 
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
         TemplateGenerator template = new TemplateGenerator(elementToSign.getOwnerDocument(),
-                                                           XSignature.SHA1, Canonicalizer.EXCLUSIVE, signaturemethod);
+                                                           signaturemethod.getMessageDigestIdentifier(),
+                                                           Canonicalizer.EXCLUSIVE,
+                                                           signaturemethod.getAlgorithmIdentifier());
         template.setIndentation(false);
         template.setPrefix("ds");
 
@@ -273,5 +289,59 @@ public class DsigUtil {
             Element sigEl = (Element)i.next();
             sigEl.getParentNode().removeChild(sigEl);
         }
+    }
+
+    /**
+     * Examine the specified private key to determine what type of signature method it should use, based on
+     * its type and the currently in-effect default signature message digest algorithm (which defaults to "SHA-1"
+     * if not configured).
+     * <p/>
+     * This method reads the system property "com.l7tech.security.xml.decorator.digsig.messagedigest" to check
+     * the default digest algorithm.
+     *
+     * @param signingKey the key you are about to sign something with.  Required.
+     * @return the signature method to use.  Never null.
+     * @throws SignatureException if no signature method is known for the supplied private key type.
+     */
+    public static SupportedSignatureMethods getSignatureMethod(final PrivateKey signingKey) throws SignatureException {
+
+        final String md = getDefaultMessageDigest();
+
+        SupportedSignatureMethods signaturemethod;
+        if (signingKey instanceof RSAPrivateKey || "RSA".equals(signingKey.getAlgorithm())) {
+            if ("SHA-256".equals(md))
+                signaturemethod = SupportedSignatureMethods.RSA_SHA256;
+            else
+                signaturemethod = SupportedSignatureMethods.RSA_SHA1;
+
+        } else if (signingKey instanceof ECPrivateKey || "EC".equals(signingKey.getAlgorithm())) {
+            if ("SHA-256".equals(md))
+                signaturemethod = SupportedSignatureMethods.ECDSA_SHA256;
+            else if ("SHA-512".equals(md))
+                signaturemethod = SupportedSignatureMethods.ECDSA_SHA512;
+            else
+                // SHA-384 is the chosen default for GD
+                signaturemethod = SupportedSignatureMethods.ECDSA_SHA384;
+
+        } else if (signingKey instanceof DSAPrivateKey) {
+            signaturemethod = SupportedSignatureMethods.DSA_SHA1;
+        } else if (signingKey instanceof SecretKey) {
+            signaturemethod = SupportedSignatureMethods.HMAC_SHA1;
+        } else {
+            throw new SignatureException("Private Key type not supported " + signingKey.getClass().getName());
+        }
+        return signaturemethod;
+    }
+
+    /**
+     * Get the default message digest algorithm to use for signatures on this system.
+     * <p/>
+     * This method reads the system property "com.l7tech.security.xml.decorator.digsig.messagedigest" to check
+     * the default digest algorithm.
+     *
+     * @return the default digest algorithm, defaulting to "SHA-1".  Never null.
+     */
+    public static String getDefaultMessageDigest() {
+        return SyspropUtil.getString("com.l7tech.security.xml.decorator.digsig.messagedigest", "SHA-1");
     }
 }

@@ -382,6 +382,16 @@ public class ArrayUtils {
         return chars;
     }
 
+    public static char[] zero(char[] in) {
+        Arrays.fill(in, '\0');
+        return in;
+    }
+
+    public static byte[] zero(byte[] in) {
+        Arrays.fill(in, (byte)0);
+        return in;
+    }
+
     public static long[] unbox(List<Long> oids) {
         return unbox(oids.toArray(new Long[oids.size()]));
     }

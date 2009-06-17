@@ -3,11 +3,13 @@
  */
 package com.l7tech.server;
 
+import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.admin.LicenseRuntimeException;
+import com.l7tech.gateway.common.security.MultipleAliasesException;
 import com.l7tech.gateway.common.security.RevocationCheckPolicy;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
@@ -31,10 +33,7 @@ import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.http.HttpTransportModule;
-import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.util.CallableRunnable;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SslCertificateSniffer;
+import com.l7tech.util.*;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -42,6 +41,7 @@ import org.springframework.context.ApplicationEventPublisherAware;
 
 import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.Certificate;
@@ -49,6 +49,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -57,6 +58,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements ApplicationEventPublisherAware, TrustedCertAdmin {
+
+    /**
+     * Provider for parsing PKCS#12 files when someone calls {@link #importKeyFromPkcs12}.  Values:
+     *   "default" to use the system current most-preferred implementation of KeyStore.PKCS12;  "BC" to use
+     *   Bouncy Castle's implementation (note that Bouncy Castle need not be registered as a Security provider
+     *   for this to work); or else the name of any registered Security provider that offers KeyStore.PKCS12.
+     */
+    public static final String PROP_PKCS12_PARSING_PROVIDER = "com.l7tech.keyStore.pkcs12.parsing.provider";
+
     private final DefaultKey defaultKey;
     private final LicenseManager licenseManager;
     private final SsgKeyStoreManager ssgKeyStoreManager;
@@ -335,6 +345,18 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays, boolean makeCaCert) throws FindException, GeneralSecurityException {
+        SsgKeyStore keystore = checkBeforeGenerate(keystoreId, alias, dn, expiryDays);
+        return registerJob(keystore.generateKeyPair(auditAfterCreate(keystore, alias, "generated"),
+                alias, new X500Principal(dn), keybits, expiryDays, makeCaCert), X509Certificate.class);
+    }
+
+    public JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, String dn, String curveName, int expiryDays, boolean makeCaCert) throws FindException, GeneralSecurityException {
+        SsgKeyStore keystore = checkBeforeGenerate(keystoreId, alias, dn, expiryDays);
+        return registerJob(keystore.generateEcKeyPair(auditAfterCreate(keystore, alias, "generated"),
+                alias, new X500Principal(dn), curveName, expiryDays, makeCaCert), X509Certificate.class);
+    }
+
+    private SsgKeyStore checkBeforeGenerate(long keystoreId, String alias, String dn, int expiryDays) throws FindException, KeyStoreException {
         checkLicenseKeyStore();
         if (alias == null) throw new NullPointerException("alias is null");
         if (alias.length() < 1) throw new IllegalArgumentException("alias is empty");
@@ -357,9 +379,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             throw new FindException("Keystore with id " + keystoreId + " is not mutable");
         if (expiryDays < 1)
             throw new IllegalArgumentException("expiryDays must be positive");
-
-        return registerJob(keystore.generateKeyPair(auditAfterCreate(keystore, alias, "generated"),
-                alias, new X500Principal(dn), keybits, expiryDays, makeCaCert), X509Certificate.class);
+        return keystore;
     }
 
     public byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException {
@@ -411,11 +431,12 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         SsgKeyEntry entry = keystore.getCertificateChain(alias);
 
         BouncyCastleRsaSignerEngine signer =
-                new BouncyCastleRsaSignerEngine(entry.getPrivateKey(), entry.getCertificate(), JceProvider.getAsymmetricJceProvider().getName());
+                new BouncyCastleRsaSignerEngine(entry.getPrivateKey(), entry.getCertificate(),
+                        JceProvider.getSignatureProvider().getName(), JceProvider.getAsymmetricJceProvider().getName());
 
         X509Certificate cert;
         try {
-            byte[] decodedCsrBytes = CertUtils. csrPemToBinary(csrBytes);            
+            byte[] decodedCsrBytes = CertUtils. csrPemToBinary(csrBytes);
             cert = (X509Certificate) signer.createCertificate(decodedCsrBytes, null);
         } catch (GeneralSecurityException e) {
             throw e;
@@ -452,7 +473,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             throw new UpdateException("error getting keystore", e);
         } catch (FindException e) {
             throw new UpdateException("error getting keystore", e);
-        } 
+        }
 
         SsgKeyStore keystore = keyFinder.getKeyStore();
         if (keystore == null)
@@ -473,18 +494,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         checkLicenseKeyStore();
         X509Certificate[] safeChain = CertUtils.parsePemChain(pemChain);
 
-        SsgKeyFinder keyFinder;
-        try {
-            keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
-        } catch (KeyStoreException e) {
-            throw new SaveException("error getting keystore: " + ExceptionUtils.getMessage(e), e);
-        } catch (FindException e) {
-            throw new SaveException("error getting keystore: " + ExceptionUtils.getMessage(e), e);
-        } 
-
-        SsgKeyStore keystore = keyFinder.getKeyStore();
-        if (keystore == null)
-            throw new SaveException("error: keystore ID " + keystoreId + " is read-only");
+        SsgKeyStore keystore = getKeyStore(keystoreId);
 
         // Ensure all certs are instances that have come from the default certificate factory
         try {
@@ -518,6 +528,85 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         }
     }
 
+    private KeyStore createKeyStoreForParsingPkcs12() throws KeyStoreException, NoSuchProviderException {
+        String p = SyspropUtil.getString(PROP_PKCS12_PARSING_PROVIDER, "BC");
+        if (null == p || p.length() < 1 || p.equalsIgnoreCase("default"))
+            return KeyStore.getInstance("PKCS12");
+        if ("BC".equalsIgnoreCase(p))
+            return KeyStore.getInstance("PKCS12", new BouncyCastleProvider());
+        return KeyStore.getInstance("PKCS12", p);
+    }
+
+    public SsgKeyEntry importKeyFromPkcs12(long keystoreId, String alias, byte[] pkcs12bytes, char[] pkcs12pass, String pkcs12alias) throws FindException, SaveException, KeyStoreException, MultipleAliasesException, AliasNotFoundException {
+        try {
+            checkLicenseKeyStore();
+
+            KeyStore inks = createKeyStoreForParsingPkcs12();
+            inks.load(new ByteArrayInputStream(pkcs12bytes), pkcs12pass);
+
+            if (pkcs12alias == null) {
+                List<String> aliases = new ArrayList<String>(Collections.list(inks.aliases()));
+                if (aliases.isEmpty())
+                    throw new AliasNotFoundException("PKCS#12 file contains no private key entries");
+                if (aliases.size() > 1)
+                    throw new MultipleAliasesException(aliases.toArray(new String[aliases.size()]));
+                pkcs12alias = aliases.iterator().next();
+            }
+
+            Certificate[] chain = inks.getCertificateChain(pkcs12alias);
+            Key key = inks.getKey(pkcs12alias, pkcs12pass);
+            if (chain == null || key == null)
+                throw new AliasNotFoundException("alias not found in PKCS#12 file: " + pkcs12alias);
+
+            X509Certificate[] x509chain = CertUtils.asX509CertificateArray(chain);
+            if (!(key instanceof PrivateKey))
+                throw new KeyStoreException("Key entry is not a PrivateKey: " + key.getClass());
+
+            SsgKeyStore keystore = getKeyStore(keystoreId);
+            SsgKeyEntry entry = new SsgKeyEntry(keystore.getOid(), alias, x509chain, (PrivateKey)key);
+            Future<Boolean> future = keystore.storePrivateKeyEntry(auditAfterCreate(keystore, alias, "imported"), entry, false);
+            if (!future.get())
+                throw new KeyStoreException("Import operation returned false"); // can't happen
+
+            return keystore.getCertificateChain(alias);
+
+        } catch (IOException e) {
+            throw new KeyStoreException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new KeyStoreException(e);
+        } catch (CertificateException e) {
+            throw new KeyStoreException(e);
+        } catch (UnrecoverableKeyException e) {
+            throw new KeyStoreException(e);
+        } catch (ExecutionException e) {
+            throw new KeyStoreException(e);
+        } catch (InterruptedException e) {
+            throw new KeyStoreException(e);
+        } catch (NoSuchProviderException e) {
+            logger.log(Level.WARNING, "Invalid " + PROP_PKCS12_PARSING_PROVIDER + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw new KeyStoreException(e);
+        } finally {
+            ArrayUtils.zero(pkcs12bytes);
+            ArrayUtils.zero(pkcs12pass);
+        }
+    }
+
+    private SsgKeyStore getKeyStore(long keystoreId) throws SaveException {
+        SsgKeyFinder keyFinder;
+        try {
+            keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
+        } catch (KeyStoreException e) {
+            throw new SaveException("error getting keystore: " + ExceptionUtils.getMessage(e), e);
+        } catch (FindException e) {
+            throw new SaveException("error getting keystore: " + ExceptionUtils.getMessage(e), e);
+        }
+
+        SsgKeyStore keystore = keyFinder.getKeyStore();
+        if (keystore == null)
+            throw new SaveException("error: keystore ID " + keystoreId + " is read-only");
+        return keystore;
+    }
+
     public byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws FindException, KeyStoreException, UnrecoverableKeyException {
         checkLicenseKeyStore();
 
@@ -533,7 +622,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             p12alias = alias;
 
         PrivateKey privateKey = entry.getPrivateKey();
-        Certificate[] certChain = entry.getCertificateChain();        
+        Certificate[] certChain = entry.getCertificateChain();
 
         BufferPoolByteArrayOutputStream baos = new BufferPoolByteArrayOutputStream();
         KeyStore keystore = KeyStore.getInstance("PKCS12", new BouncyCastleProvider());

@@ -1,5 +1,13 @@
 package com.l7tech.server.util;
 
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.HexUtils;
+import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
+import org.bouncycastle.x509.extension.X509ExtensionUtil;
+
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.cert.CertificateException;
@@ -8,30 +16,6 @@ import java.security.cert.X509Certificate;
 import java.security.cert.X509Extension;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import javax.security.auth.x500.X500Principal;
-
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.DEREncodable;
-import org.bouncycastle.asn1.DERIA5String;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERString;
-import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.x509.AccessDescription;
-import org.bouncycastle.asn1.x509.AuthorityInformationAccess;
-import org.bouncycastle.asn1.x509.CRLDistPoint;
-import org.bouncycastle.asn1.x509.DistributionPoint;
-import org.bouncycastle.asn1.x509.DistributionPointName;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
-import org.bouncycastle.x509.extension.X509ExtensionUtil;
-
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.HexUtils;
 
 /**
  * Certificate utility methods that require server only classes.
@@ -39,31 +23,34 @@ import com.l7tech.util.HexUtils;
  * @author Steve Jones
  */
 public class ServerCertUtils {
-                       
+
     /**
      * @return an array of zero or more CRL URLs from the certificate
      */
     public static String[] getCrlUrls(X509Certificate cert) throws IOException {
-        Set urls = new LinkedHashSet();
+        Set<String> urls = new LinkedHashSet<String>();
         byte[] distibutionPointBytes = cert.getExtensionValue(CertUtils.X509_OID_CRL_DISTRIBUTION_POINTS);
         if (distibutionPointBytes != null && distibutionPointBytes.length > 0) {
             ASN1Encodable asn1 = X509ExtensionUtil.fromExtensionValue(distibutionPointBytes);
             DERObject obj = asn1.getDERObject();
             CRLDistPoint distPoint = CRLDistPoint.getInstance(obj);
             DistributionPoint[] points = distPoint.getDistributionPoints();
-            //noinspection ForLoopReplaceableByForEach
-            for (int i = 0; i < points.length; i++) {
-                DistributionPoint point = points[i];
+            for (DistributionPoint point : points) {
                 DistributionPointName dpn = point.getDistributionPoint();
                 obj = dpn.getName().toASN1Object();
-                org.bouncycastle.asn1.ASN1Sequence seq = org.bouncycastle.asn1.ASN1Sequence.getInstance(obj);
-                DERTaggedObject tag = (DERTaggedObject) seq.getObjectAt(0);
-                DERObject foo = tag.getObject();
-                if (foo instanceof DEROctetString) {
-                    DEROctetString derOctetString = (DEROctetString) foo;
-                    distibutionPointBytes = derOctetString.getOctets();
-                    //noinspection unchecked
-                    urls.add(new String(distibutionPointBytes, "ISO8859-1"));
+                ASN1Sequence seq = ASN1Sequence.getInstance(obj);
+                DEREncodable first = seq.getObjectAt(0);
+                if (first instanceof GeneralName) {
+                    GeneralName generalName = (GeneralName) first;
+                    urls.add(generalName.getName().toString());
+                } else if (first instanceof ASN1Encodable) {
+                    ASN1Encodable tag = (ASN1Encodable) first;
+                    DERObject foo = tag.getDERObject().getDERObject();
+                    if (foo instanceof DEROctetString) {
+                        DEROctetString derOctetString = (DEROctetString) foo;
+                        distibutionPointBytes = derOctetString.getOctets();
+                        urls.add(new String(distibutionPointBytes, "ISO8859-1"));
+                    }
                 }
             }
         }
@@ -72,14 +59,12 @@ public class ServerCertUtils {
         if (netscapeCrlUrlBytes != null && netscapeCrlUrlBytes.length > 0) {
             ASN1Encodable asn1 = X509ExtensionUtil.fromExtensionValue(netscapeCrlUrlBytes);
             if (asn1 instanceof DERString) {
-                //noinspection unchecked
                 urls.add(((DERString) asn1).getString());
             } else {
                 throw new IOException("Netscape CRL URL extension value is not a String");
             }
         }
-        //noinspection unchecked
-        return (String[])urls.toArray(new String[0]);
+        return urls.toArray(new String[urls.size()]);
     }
 
     /**
@@ -102,7 +87,7 @@ public class ServerCertUtils {
     public static String[] getAuthorityInformationAccessUris(final X509Certificate certificate,
                                                              final String accessMethodOid)
             throws CertificateException {
-        Set<String> uris = new LinkedHashSet();
+        Set<String> uris = new LinkedHashSet<String>();
 
         byte[] aiaBytes = certificate.getExtensionValue(CertUtils.X509_OID_AUTHORITY_INFORMATION_ACCESS);
         if (aiaBytes != null) {
@@ -121,7 +106,7 @@ public class ServerCertUtils {
 
                 // Create AIA from sequence
                 DERSequence sequence = (DERSequence) extensionSequenceObject;
-                AuthorityInformationAccess aia =(AuthorityInformationAccess) new AuthorityInformationAccess(sequence);
+                AuthorityInformationAccess aia = new AuthorityInformationAccess(sequence);
                 AccessDescription[] accessDescriptions = aia.getAccessDescriptions();
 
                 if (accessDescriptions.length == 0)
@@ -158,7 +143,7 @@ public class ServerCertUtils {
         if (cert.getVersion() < 3) return null;
         return doGetAKIStructure(cert);
     }
-    
+
     public static AuthorityKeyIdentifierStructure getAKIStructure(X509CRL crl) throws IOException {
         if (crl.getVersion() < 2) return null;
         return doGetAKIStructure(crl);
@@ -188,11 +173,7 @@ public class ServerCertUtils {
      * @return The serial number or null if there is none
      */
     public static BigInteger getAKIAuthorityCertSerialNumber(AuthorityKeyIdentifierStructure akis) {
-        BigInteger serial = null;
-
-        serial = akis.getAuthorityCertSerialNumber();
-
-        return serial;
+        return akis.getAuthorityCertSerialNumber();
     }
 
     /**

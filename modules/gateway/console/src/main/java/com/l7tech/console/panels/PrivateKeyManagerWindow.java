@@ -1,22 +1,26 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.DefaultAliasTracker;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.AsyncAdminMethods;
+import com.l7tech.gateway.common.security.MultipleAliasesException;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gui.util.*;
+import com.l7tech.gui.widgets.PasswordEntryDialog;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.IOUtils;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -24,9 +28,9 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -35,7 +39,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.*;
-import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.DateFormat;
 import java.text.MessageFormat;
@@ -362,53 +365,78 @@ public class PrivateKeyManagerWindow extends JDialog {
             return;
         final long mutableKeystoreId = mutableKeystore.getOid();
 
-        GuiCertUtil.ImportedData imported;
-        try {
-            imported = GuiCertUtil.importCertificate(this, true, new GuiPasswordCallbackHandler());
-            if (imported == null)
-                return;
-        } catch (AccessControlException ace) {
-            TopComponents.getInstance().showNoPrivilegesErrorMessage();
-            return;
-        }
-
-        X509Certificate[] chain = imported.getCertificateChain();
-        assert chain != null && chain.length > 0;
-        PrivateKey key = imported.getPrivateKey();
-
-        if (key == null) {
-            showErrorMessage("Import Failed", "Could not find a private key in the specified file.", null);
-            return;
-        }
-
-        if (!(key instanceof RSAPrivateKey) || !("RSA".equals(key.getAlgorithm()))) {
-            showErrorMessage("Import Failed", "Private key is not an RSA private key.", null);
-            return;
-        }
-
-        if (!"PKCS#8".equalsIgnoreCase(key.getFormat())) {
-            // Shouldn't be possible
-            showErrorMessage("Import Failed", "Private key cannot be encoded in PKCS#8 format.", null);
-            return;
-        }
-        
-        byte[] pkcs8Bytes = key.getEncoded();
-        if (pkcs8Bytes == null || pkcs8Bytes.length < 1) {
-            // Shouldn't be possible
-            showErrorMessage("Import Failed", "Private key PKCS#8 encoding was missing or empty.", null);
-            return;
-        }
-
         String alias = JOptionPane.showInputDialog(this, "Please enter an alias to use for the new private key entry.");
         if (alias == null || alias.trim().length() < 1)
             return;
         alias = alias.trim();
 
+        SsgKeyEntry imported = performImport(mutableKeystoreId, alias);
+        if (imported == null)
+            return;
+
+        X509Certificate[] chain = imported.getCertificateChain();
+        if (chain != null && chain.length > 0)
+            displayCertificateChainWarnings(chain);
+
+        loadPrivateKeys();
+        setSelectedKeyEntry(mutableKeystoreId, alias);
+    }
+
+
+    private SsgKeyEntry performImport(long keystoreId, String alias) {
+        Throwable err = null;
+        try {
+            JFileChooser fc = GuiCertUtil.createFileChooser(true);
+            int r = fc.showDialog(this, "Load");
+            if (r != JFileChooser.APPROVE_OPTION)
+                return null;
+            File file = fc.getSelectedFile();
+            if (file == null)
+                return null;
+
+            byte[] pkcs12bytes = IOUtils.slurpFile(file);
+
+            char[] pkcs12pass = PasswordEntryDialog.promptForPassword(this, "Enter pass phrase for PKCS#12 file");
+
+            try {
+                return Registry.getDefault().getTrustedCertManager().importKeyFromPkcs12(keystoreId, alias, pkcs12bytes, pkcs12pass, null);
+            } catch (MultipleAliasesException e) {
+                int got = JOptionPane.showOptionDialog(this, "Select alias to import", "Select Alias", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, e.getAliases(), null);
+                if (got < 0)
+                    return null;
+                String pkcs12alias = e.getAliases()[got];
+                assert pkcs12alias != null;
+                return Registry.getDefault().getTrustedCertManager().importKeyFromPkcs12(keystoreId, alias, pkcs12bytes, pkcs12pass, pkcs12alias);
+            }
+
+        } catch (AccessControlException ace) {
+            TopComponents.getInstance().showNoPrivilegesErrorMessage();
+            return null;
+        } catch (AliasNotFoundException e) {
+            err = ExceptionUtils.getDebugException(e);
+        } catch (FindException e) {
+            err = e;
+        } catch (IOException e) {
+            err = e;
+        } catch (KeyStoreException e) {
+            err = e;
+        } catch (MultipleAliasesException e) {
+            // Can't happen; we pass an alias the second time
+            err = e;
+        } catch (SaveException e) {
+            err = e;
+        }
+
+        showImportErrorMessage(err);
+
+        return null;
+    }
+
+    private void displayCertificateChainWarnings(X509Certificate[] chain) {
         boolean sawExpired = false;
         boolean sawNotYetValid = false;
         boolean sawDnMismatch = false;
         boolean sawBadSignature = false;
-        final String[] pemChain = new String[chain.length];
         for (int i = 0; i < chain.length; i++) {
             X509Certificate cert = chain[i];
 
@@ -439,49 +467,16 @@ public class PrivateKeyManagerWindow extends JDialog {
                 // TODO warn here about key usage problems that we detect
                 // can't just use KeyUsageChecker since its Gateway-side configuration isn't known
             }
-
-            try {
-                pemChain[i] = CertUtils.encodeAsPEM(cert);
-            } catch (IOException e) {
-                showErrorMessage("Import Failed", "Unable to reencode the certificate chain.", e);
-            } catch (CertificateEncodingException e) {
-                showErrorMessage("Import Failed", "Unable to reencode the certificate chain.", e);
-            }
         }
 
         if (sawExpired || sawNotYetValid || sawDnMismatch || sawBadSignature) {
-            StringBuffer mess = new StringBuffer("At lease one certificate in the chain: \n\n");
+            StringBuffer mess = new StringBuffer("The specified private key was imported successfully.  However, at lease one certificate in its chain: \n\n");
             if (sawExpired) mess.append("     * has expired\n");
             if (sawNotYetValid) mess.append("     * is not yet valid\n");
             if (sawDnMismatch) mess.append("     * has an issuer DN that does not match its issuer's DN\n");
             if (sawBadSignature) mess.append("     * has an invalid issuer signature\n");
-            mess.append("\nDo you want to import this certificate chain anyway?");
-            Object initialValue = "Do Not Import";
-            Object[] options = { "Import Anyway", initialValue };
-            int result = JOptionPane.showOptionDialog(this,
-                                                      mess.toString(),
-                                                      "Certificate Chain Warning",
-                                                      0,
-                                                      JOptionPane.WARNING_MESSAGE,
-                                                      null,
-                                                      options,
-                                                      initialValue);
-            if (result != 0)
-                return;
+            JOptionPane.showMessageDialog(this, mess.toString(), "Certificate Chain Warning", JOptionPane.WARNING_MESSAGE);
         }
-
-        try {
-            getTrustedCertAdmin().importKey(mutableKeystoreId, alias, pemChain, pkcs8Bytes);
-        } catch (CertificateException e) {
-            showImportErrorMessage(e);
-        } catch (SaveException e) {
-            showImportErrorMessage(e);
-        } catch (InvalidKeyException e) {
-            showImportErrorMessage(e);
-        } 
-
-        loadPrivateKeys();
-        setSelectedKeyEntry(mutableKeystoreId, alias);
     }
 
     private void doProperties() {
@@ -614,7 +609,7 @@ public class PrivateKeyManagerWindow extends JDialog {
         } catch ( CertificateException ce) {
             displayError( ce );
         }
-        
+
         return Collections.emptyList();
     }
 
@@ -805,7 +800,7 @@ public class PrivateKeyManagerWindow extends JDialog {
                 col.setMinWidth(model.getColumnMinWidth(i));
                 col.setPreferredWidth(model.getColumnPrefWidth(i));
                 col.setMaxWidth(model.getColumnMaxWidth(i));
-                if (model.isColumnImage(i)) col.setCellRenderer(new JTable().getDefaultRenderer(ImageIcon.class)); 
+                if (model.isColumnImage(i)) col.setCellRenderer(new JTable().getDefaultRenderer(ImageIcon.class));
             }
             setRowHeight(19);
             Utilities.setRowSorter(this, model, new int[]{1,2}, new boolean[]{true, true},
@@ -833,7 +828,7 @@ public class PrivateKeyManagerWindow extends JDialog {
             } else {
                 int viewRow = this.convertRowIndexToView(row);
                 getSelectionModel().setSelectionInterval(viewRow, viewRow);
-                scrollRectToVisible(getCellRect(viewRow, 0, true));                
+                scrollRectToVisible(getCellRect(viewRow, 0, true));
             }
         }
 

@@ -1036,4 +1036,28 @@ public class WssDecoratorTest extends TestCase {
                 System.setProperty(SoapUtil.PROPERTY_MUSTUNDERSTAND, oldPropertyValue);
         }
     }
+
+    /* Testing Suite-B Crypto support */
+    public void testSigningWithEcdsaSha256Algorithm() throws Exception {
+        runTest(getSuiteBSigningTestDocument(null)); // default to sha-256
+    }
+
+    public void testSigningWithEcdsaSha384Algorithm() throws Exception {
+        runTest(getSuiteBSigningTestDocument("SHA-384"));
+    }
+
+    public TestDocument getSuiteBSigningTestDocument(final String hashMD) throws Exception {
+        Pair<X509Certificate, PrivateKey> client = new TestCertificateGenerator().curveName("secp384r1").subject("cn=ecctestclient").generateWithKey();
+        Pair<X509Certificate, PrivateKey> server = new TestCertificateGenerator().curveName("secp384r1").subject("cn=ecctestserver").generateWithKey();
+
+        Context c = new Context(TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT_ONELINE));
+        DecorationRequirements dreq = new DecorationRequirements();
+        dreq.setRecipientCertificate(server.left);
+        dreq.setSenderMessageSigningCertificate(client.left);
+        dreq.setSenderMessageSigningPrivateKey(client.right);
+        dreq.getElementsToSign().add(c.body);
+        if (hashMD != null)
+            dreq.setSignatureMessageDigest(hashMD);
+        return new TestDocument(c, dreq, server.right, null);
+    }
 }

@@ -7,10 +7,13 @@ import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.l7tech.security.xml.AttachmentCompleteTransform;
 import com.l7tech.security.xml.AttachmentContentTransform;
 import com.l7tech.security.xml.STRTransform;
-import com.l7tech.util.SoapConstants;
+import com.l7tech.security.xml.SupportedSignatureMethods;
+import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Node;
 
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.util.Map;
 
 /**
@@ -33,8 +36,14 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
      *
      * @param strToTarget a map of SecurityTokenReference -> target nodes.  If null, STR-Transform will not be supported.
      */
+    @SuppressWarnings("unchecked")
     public WssProcessorAlgorithmFactory(Map<Node, Node> strToTarget) {
         this.strToTarget = strToTarget;
+        this.signatureMethodTable.put(SupportedSignatureMethods.RSA_SHA256.getAlgorithmIdentifier(), "SHA256withRSA");
+        this.signatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA1.getAlgorithmIdentifier(), "SHA1withECDSA");
+        this.signatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA256.getAlgorithmIdentifier(), "SHA256withECDSA");
+        this.signatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA384.getAlgorithmIdentifier(), "SHA384withECDSA");
+        this.signatureMethodTable.put(SupportedSignatureMethods.ECDSA_SHA512.getAlgorithmIdentifier(), "SHA512withECDSA");
     }
 
     public Canonicalizer getCanonicalizer(String string) {
@@ -49,15 +58,15 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     public Transform getTransform(String s) throws NoSuchAlgorithmException {
         if (Transform.ENVELOPED.equals(s)) {
             sawEnvelopedTransform = true;
-        } else if ( SoapConstants.TRANSFORM_STR.equals(s) && strToTarget != null) {
+        } else if (SoapUtil.TRANSFORM_STR.equals(s) && strToTarget != null) {
             return new STRTransform(strToTarget);
         } else if (Transform.XSLT.equals(s)
                    || Transform.XPATH.equals(s)
                    || Transform.XPATH2.equals(s)) {
             throw new NoSuchAlgorithmException(s);
-        } else if ( SoapConstants.TRANSFORM_ATTACHMENT_CONTENT.equals(s)) {
+        } else if (SoapUtil.TRANSFORM_ATTACHMENT_CONTENT.equals(s)) {
             return new AttachmentContentTransform();
-        } else if ( SoapConstants.TRANSFORM_ATTACHMENT_COMPLETE.equals(s)) {
+        } else if (SoapUtil.TRANSFORM_ATTACHMENT_COMPLETE.equals(s)) {
             return new AttachmentCompleteTransform();
         } else if (Transform.C14N_EXCLUSIVE.equals(s) && !USE_IBM_EXC_C11R) {
             return new ApacheExclusiveC14nAdaptor();
@@ -68,5 +77,21 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     /** @return true if an #enveloped-signature transform algorithm has ever been requested. */
     public boolean isSawEnvelopedTransform() {
         return sawEnvelopedTransform;
+    }
+
+    public MessageDigest getDigestMethod(String s) throws NoSuchAlgorithmException, NoSuchProviderException {
+
+        MessageDigest md;
+
+        if ("http://www.w3.org/2001/04/xmlenc#sha256".equals(s)) {
+            md = MessageDigest.getInstance("SHA-256");
+        } else if ("http://www.w3.org/2001/04/xmldsig-more#sha384".equals(s)) {
+            md = MessageDigest.getInstance("SHA-384");
+        } else if ("http://www.w3.org/2001/04/xmlenc#sha512".equals(s)) {
+            md = MessageDigest.getInstance("SHA-512");
+        } else {
+            md = super.getDigestMethod(s);
+        }
+        return md;
     }
 }

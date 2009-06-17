@@ -9,6 +9,7 @@ import com.l7tech.util.SyspropUtil;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import java.security.*;
+import java.security.spec.ECGenParameterSpec;
 import java.security.cert.X509Certificate;
 import java.io.File;
 import java.util.logging.Logger;
@@ -68,8 +69,12 @@ public class Pkcs11JceProviderEngine implements JceProviderEngine {
         return PROVIDER;
     }
 
+    public Provider getSignatureProvider() {
+        return PROVIDER;
+    }
+
     public RsaSignerEngine createRsaSignerEngine(PrivateKey caKey, X509Certificate[] caCertChain) {
-        return new BouncyCastleRsaSignerEngine(caKey, caCertChain[0], PROVIDER.getName());
+        return new BouncyCastleRsaSignerEngine(caKey, caCertChain[0], getSignatureProvider().getName(), getAsymmetricProvider().getName());
     }
 
     public KeyPair generateRsaKeyPair(int keysize) {
@@ -82,6 +87,12 @@ public class Pkcs11JceProviderEngine implements JceProviderEngine {
         } catch (NoSuchProviderException e) {
             throw new RuntimeException("PKCS11 JCE provider misconfigured: " + e.getMessage(), e);
         }
+    }
+
+    public KeyPair generateEcKeyPair(String curveName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", getAsymmetricProvider());
+        kpg.initialize(new ECGenParameterSpec(curveName));
+        return kpg.generateKeyPair();
     }
 
     public CertificateRequest makeCsr( String username, KeyPair keyPair ) throws SignatureException, InvalidKeyException {
@@ -98,5 +109,10 @@ public class Pkcs11JceProviderEngine implements JceProviderEngine {
 
     public Cipher getRsaPkcs1PaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
         return Cipher.getInstance("RSA/ECB/PKCS1Padding", PROVIDER.getName());
+    }
+
+    public Provider getProviderFor(String service) {
+        // No particular overrides required
+        return null;
     }
 }

@@ -17,6 +17,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAKey;
+import java.security.interfaces.ECKey;
 import java.security.interfaces.RSAKey;
 import java.util.List;
 import java.util.Set;
@@ -79,12 +80,12 @@ public class KeyUsageChecker {
      * Perform a key usage check that requires the specified activity with the specified cert, if the key is
      * a PublicKey of a type which requires such a check.
      * <p/>
-     * This method will fail if the key type is neither RSA, DSA, nor SecretKey; if an RSA cert
+     * This method will fail if the key type is neither RSA, DSA, EC (or ECDSA), nor SecretKey; if an RSA cert
      * is provided and it doesn't seem to match the RSA modulus of the key; if key usage enforcement is enabled
      * and an RSA or DSA public key is provided without a cert; or if key usage enforcement is enabled and an RSA or DSA
      * public key is provided with a cert whose key usage is inconsistent with the specified activity.
      * <p/>
-     * X.509 only requires key usage to be enforced on use of the public key from the certificate.  Use of the private key
+     * X.509 v3 only requires key usage to be enforced on use of the public key from the certificate.  Use of the private key
      * is not restricted.  (Of course, it would be pointless to sign something with a private key whose
      * corresponding public key is not certified for verification, but that isn't this method's concern.)
      *
@@ -99,12 +100,20 @@ public class KeyUsageChecker {
      *                              if the provided key type is not RSA, DSA, or SecretKey.
      */
     public static void requireActivityForKey(KeyUsageActivity activity, X509Certificate cert, Key key) throws CertificateException {
-        if (key instanceof RSAKey || "RSA".equalsIgnoreCase(key.getAlgorithm())) {
+        final String keyAlg = key.getAlgorithm();
+        if (key instanceof RSAKey || "RSA".equalsIgnoreCase(keyAlg)) {
+            if (cert != null)
+                CertUtils.checkForMismatchingKey(cert, key);
+            if (key instanceof PublicKey) // Key usage does not apply to usage of the private key, only the public key
+                requireActivity(activity, cert); // will succeed on null cert, if enforcement turned off
+        } else if (key instanceof ECKey || "EC".equalsIgnoreCase(keyAlg) || "ECDSA".equalsIgnoreCase(keyAlg)) {
             if (cert != null)
                 CertUtils.checkForMismatchingKey(cert, key);
             if (key instanceof PublicKey) // Key usage does not apply to usage of the private key, only the public key
                 requireActivity(activity, cert); // will succeed on null cert, if enforcement turned off
         } else if (key instanceof DSAKey) {
+            if (cert != null)
+                CertUtils.checkForMismatchingKey(cert, key);
             if (key instanceof PublicKey) // Key usage does not apply to usage of the private key, only the public key
                 requireActivity(activity, cert); // will succeed on null cert, if enforcement turned off
         } else if (key instanceof SecretKey) {

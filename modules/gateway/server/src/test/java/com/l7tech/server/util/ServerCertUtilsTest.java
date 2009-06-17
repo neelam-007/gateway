@@ -1,47 +1,32 @@
 package com.l7tech.server.util;
 
-import java.security.cert.X509Certificate;
-import java.math.BigInteger;
-
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
 import com.l7tech.common.io.CertUtils;
-
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
+import org.junit.*;
+import static org.junit.Assert.*;
+
+import java.math.BigInteger;
+import java.security.cert.X509Certificate;
 
 /**
  * Unit tests for ServerCertUtils
  *
  * @author Steve Jones
  */
-public class ServerCertUtilsTest extends TestCase {
+public class ServerCertUtilsTest {
 
-    /**
-     *
-     */
-    public static Test suite() {
-        return new TestSuite(ServerCertUtilsTest.class);
-    }
-
-    /**
-     *
-     */
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
+    @Test
     public void testCRLURL() throws Exception {
         X509Certificate certificate = CertUtils.decodeFromPEM(GOOGLE_PEM);
 
         String[] crlUrls = ServerCertUtils.getCrlUrls(certificate);
-        assertNotNull("No CRL urls", crlUrls);
-        
+        assertNotNull("Null CRL urls", crlUrls);
+        assertTrue("Empty CRL urls", crlUrls.length > 0);
         assertEquals("CRL url missing or invalid", "http://crl.thawte.com/ThawteSGCCA.crl", crlUrls[0]);
 
     }
 
+    @Test
     public void testAuthorityInformationAccessUris() throws Exception {
         X509Certificate certificate = CertUtils.decodeFromPEM(GOOGLE_PEM);
 
@@ -55,6 +40,7 @@ public class ServerCertUtilsTest extends TestCase {
 
     }
 
+    @Test
     public void testAuthorityKeyIdentifierIssuerAndSerial() throws Exception {
         X509Certificate certificate = CertUtils.decodeFromPEM(REDHAT_PEM);
 
@@ -66,6 +52,7 @@ public class ServerCertUtilsTest extends TestCase {
         assertEquals("Issuer DN not correctly processed", "EMAILADDRESS=rhns@redhat.com, CN=RHNS Certificate Authority, OU=Red Hat Network Services, O=\"Red Hat, Inc.\", L=Research Triangle Park, ST=North Carolina, C=US", issuerDn);
     }
 
+    @Test
     public void testAuthorityKeyIdentifierKeyIdentifier() throws Exception {
         X509Certificate certificate = CertUtils.decodeFromPEM(REDHAT_PEM);
 

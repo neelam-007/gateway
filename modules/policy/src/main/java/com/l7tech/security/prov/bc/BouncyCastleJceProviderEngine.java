@@ -18,6 +18,7 @@ import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import java.security.*;
 import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
 
 /**
  * BouncyCastle-specific JCE provider engine.
@@ -47,13 +48,23 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
         return PROVIDER;
     }
 
+    public Provider getSignatureProvider() {
+        return PROVIDER;
+    }
+
     public RsaSignerEngine createRsaSignerEngine(PrivateKey caKey, X509Certificate[] caCertChain) {
-        return new BouncyCastleRsaSignerEngine(caKey, caCertChain[0], "BC" );
+        return new BouncyCastleRsaSignerEngine(caKey, caCertChain[0], getSignatureProvider().getName(), getAsymmetricProvider().getName());
     }
 
     public KeyPair generateRsaKeyPair(int len) {
         JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
         kpg.initialize(len);
+        return kpg.generateKeyPair();
+    }
+
+    public KeyPair generateEcKeyPair(String curveName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", getAsymmetricProvider());
+        kpg.initialize(new ECGenParameterSpec(curveName));
         return kpg.generateKeyPair();
     }
 
@@ -81,6 +92,11 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
         return Cipher.getInstance("RSA/NONE/PKCS1Padding", PROVIDER.getName());
     }
 
+    public Provider getProviderFor(String service) {
+        // No particular overrides required
+        return null;
+    }
+
     /**
      * Generate a CertificateRequest using the specified Crypto provider.
      *
@@ -99,8 +115,8 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
 
         // Generate request
         try {
-            PKCS10CertificationRequest certReq = new PKCS10CertificationRequest(REQUEST_SIG_ALG, subject, publicKey, attrs, privateKey);
-            return new BouncyCastleCertificateRequest(certReq, providerName);
+            PKCS10CertificationRequest certReq = new PKCS10CertificationRequest(REQUEST_SIG_ALG, subject, publicKey, attrs, privateKey, providerName);
+            return new BouncyCastleCertificateRequest(certReq, publicKey);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e); // can't happen
         } catch (NoSuchProviderException e) {

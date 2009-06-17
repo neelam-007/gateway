@@ -14,6 +14,7 @@ import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import java.security.*;
+import java.security.spec.ECGenParameterSpec;
 import java.security.cert.X509Certificate;
 
 /**
@@ -43,8 +44,12 @@ public class SunJceProviderEngine implements JceProviderEngine {
         return PROVIDER;
     }
 
+    public Provider getSignatureProvider() {
+        return PROVIDER;
+    }
+
     public RsaSignerEngine createRsaSignerEngine(PrivateKey caKey, X509Certificate[] caCertChain) {
-        return new BouncyCastleRsaSignerEngine(caKey, caCertChain[0], PROVIDER.getName());
+        return new BouncyCastleRsaSignerEngine(caKey, caCertChain[0], getSignatureProvider().getName(), getAsymmetricProvider().getName());
     }
 
     /**
@@ -53,6 +58,12 @@ public class SunJceProviderEngine implements JceProviderEngine {
     public KeyPair generateRsaKeyPair(int len) {
         JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
         kpg.initialize(len);
+        return kpg.generateKeyPair();
+    }
+
+    public KeyPair generateEcKeyPair(String curveName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", getAsymmetricProvider());
+        kpg.initialize(new ECGenParameterSpec(curveName));
         return kpg.generateKeyPair();
     }
 
@@ -66,6 +77,11 @@ public class SunJceProviderEngine implements JceProviderEngine {
 
     public Cipher getRsaPkcs1PaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
         return Cipher.getInstance("RSA/ECB/PKCS1Padding", PROVIDER.getName());
+    }
+
+    public Provider getProviderFor(String service) {
+        // No particular overrides required.
+        return null;
     }
 
     public CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException {
@@ -83,7 +99,7 @@ public class SunJceProviderEngine implements JceProviderEngine {
         } catch (NoSuchProviderException e) {
             throw new RuntimeException(e); // can't happen
         }
-        return new BouncyCastleCertificateRequest(certReq, PROVIDER.getName());
+        return new BouncyCastleCertificateRequest(certReq, publicKey);
     }
 
     public static final String REQUEST_SIG_ALG = "SHA1withRSA";
