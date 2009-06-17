@@ -8,7 +8,8 @@ import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.xml.DsigUtil;
 import com.l7tech.security.xml.KeyInfoDetails;
 import com.l7tech.security.xml.KeyInfoInclusionType;
-import com.l7tech.util.DomUtils;
+import com.l7tech.security.xml.SupportedSignatureMethods;
+import com.l7tech.security.xml.processor.WssProcessorAlgorithmFactory;
 import com.l7tech.util.NamespaceFactory;
 import com.l7tech.util.TooManyChildElementsException;
 import com.l7tech.xml.soap.SoapUtil;
@@ -42,8 +43,12 @@ public class RequestSigner {
                                         final KeyInfoInclusionType keyInfoType)
             throws SignatureException
     {
+        // same logic as WSS Decorator when choosing the signature method
+        SupportedSignatureMethods sigMeth = DsigUtil.getSignatureMethod(signingKey);
+
         TemplateGenerator template =
-                new TemplateGenerator(samlpRequest, XSignature.SHA1, Canonicalizer.EXCLUSIVE, SignatureMethod.RSA);
+                new TemplateGenerator(samlpRequest, sigMeth.getMessageDigestIdentifier(),
+                                      Canonicalizer.EXCLUSIVE, sigMeth.getAlgorithmIdentifier());
 
         String idAttr = (samlVersion == 1 ? "RequestID" : "ID");
 
@@ -56,6 +61,7 @@ public class RequestSigner {
         template.addReference(ref);
 
         SignatureContext context = new SignatureContext();
+        context.setAlgorithmFactory( new WssProcessorAlgorithmFactory(null) );
         context.setEntityResolver(XmlUtil.getXss4jEntityResolver());
         context.setIDResolver(new IDResolver() {
             public Element resolveID(Document document, String s) {
@@ -154,9 +160,8 @@ public class RequestSigner {
                 throw new IllegalArgumentException("KeyInfoType must be CERT, STR_THUMBPRINT or STR_SKI");
         }
 
-        keyInfoElement.setAttributeNS(DomUtils.XMLNS_NS, "xmlns", SoapUtil.DIGSIG_URI);
+        keyInfoElement.setAttributeNS(XmlUtil.XMLNS_NS, "xmlns", SoapUtil.DIGSIG_URI);
 
         return keyInfoElement;
     }
-
 }
