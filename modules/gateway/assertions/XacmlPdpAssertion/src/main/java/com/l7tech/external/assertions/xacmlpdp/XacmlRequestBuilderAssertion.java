@@ -210,7 +210,7 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
    }
 
     public static class MultipleAttributeConfigField {
-        private String name;
+        private String name; //todo [Donal] this needs to be an enum, so it can be detected from a known set
         private String value = "";
         private boolean isXpath;
         private boolean isRelative;
@@ -251,6 +251,8 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
         }
 
         public void setIsRelative(boolean isRelative) {
+            //just update isxpath, as it has to be too for convenience
+            if(isRelative) this.isXpath = true;
             this.isRelative = isRelative;
         }
     }
@@ -348,6 +350,16 @@ public class XacmlRequestBuilderAssertion extends Assertion implements UsesVaria
 
         public void setValueField(MultipleAttributeConfigField valueField) {
             this.valueField = valueField;
+        }
+
+        public Set<MultipleAttributeConfigField> getAllFields(){
+            Set<MultipleAttributeConfigField> allFields = new HashSet<MultipleAttributeConfigField>();
+            allFields.add(idField);
+            allFields.add(dataTypeField);
+            allFields.add(issuerField);
+            allFields.add(issueInstantField);
+            allFields.add(valueField);
+            return allFields;
         }
 
         public String toString() {
