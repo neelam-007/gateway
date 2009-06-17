@@ -66,7 +66,7 @@ public class InterfaceTagTest {
     
     @Test
     public void testIsValidName() throws Exception {
-        for (String valid : new String[] {"foo", "Blat_234", "_blah23", "FRGL"})
+        for (String valid : new String[] {"foo", "Blat_234", "_blah23", "FRGL", "_", "__"})
             assertTrue("Should be accepted as valid interface tag name: " + valid, isValidName(valid));
 
         for (String invalid : new String[] {" foo", "", "234_Blat", "23blah_", null, "FRGL!!"})
