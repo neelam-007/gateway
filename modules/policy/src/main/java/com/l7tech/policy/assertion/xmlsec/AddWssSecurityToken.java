@@ -24,7 +24,7 @@ import com.l7tech.util.Functions;
  * @author alex
  */
 @RequiresSOAP
-public class AddWssSecurityToken extends MessageTargetableAssertion implements ResponseWssConfig, PrivateKeyable {
+public class AddWssSecurityToken extends MessageTargetableAssertion implements WssDecorationConfig, PrivateKeyable {
     public static final SecurityTokenType[] SUPPORTED_TOKEN_TYPES = new SecurityTokenType[] { SecurityTokenType.WSS_USERNAME };
 
     private String keyReference = KeyReference.BST.getName();
@@ -124,7 +124,7 @@ public class AddWssSecurityToken extends MessageTargetableAssertion implements R
         this.privatekeyableSupport.copyFrom( other.privatekeyableSupport );
     }
 
-   @Override
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         meta.put(PALETTE_NODE_NAME, "Add Signed Security Token");

@@ -3,7 +3,9 @@ package com.l7tech.policy.validator;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.xmlsec.WssSignElement;
+import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
 import com.l7tech.wsdl.Wsdl;
 import org.jaxen.dom.DOMXPath;
 
@@ -42,6 +44,7 @@ public class WssSignElementValidator implements AssertionValidator {
         }
     }
 
+    @Override
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         if (errString != null)
             result.addError(new PolicyValidatorResult.Error(assertion, path, errString, errThrowable));
@@ -49,8 +52,11 @@ public class WssSignElementValidator implements AssertionValidator {
         Assertion[] assertionPath = path.getPath();
         for (int i = assertionPath.length - 1; i >= 0; i--) {
             Assertion a = assertionPath[i];
-            if (a != assertion && a instanceof WssSignElement) {
-                WssSignElement ra = (WssSignElement)a;
+            if ( a != assertion &&
+                 a instanceof WssDecorationConfig &&
+                 AssertionUtils.isSameTargetRecipient( assertion, a ) &&
+                 AssertionUtils.isSameTargetMessage( assertion, a ) ) {
+                WssDecorationConfig ra = (WssDecorationConfig)a;
                 if (!ra.getKeyReference().equals(assertion.getKeyReference())) {
                     String message = "Multiple integrity assertions present with different Key Reference requirements";
                     result.addError(new PolicyValidatorResult.Error(assertion, path, message, null));

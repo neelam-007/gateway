@@ -14,8 +14,7 @@ import com.l7tech.util.Functions;
  * <code>ElementSecurity</code> list.
  * <p/>
  *
- * @author flascell<br/>
- * @version Aug 27, 2003<br/>
+ * @author flascell
  */
 public class WssEncryptElement extends XmlSecurityAssertionBase {
     public WssEncryptElement() {
@@ -78,6 +77,7 @@ public class WssEncryptElement extends XmlSecurityAssertionBase {
         });
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientResponseWssConfidentiality");
         meta.put( AssertionMetadata.CLIENT_ASSERTION_TARGETS, new String[]{"response"} );
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.WssEncryptElementValidator");
 
         return meta;
     }

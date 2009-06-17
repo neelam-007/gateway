@@ -125,14 +125,14 @@ public class IdentityTargetSelector extends OkCancelDialog<IdentityTarget> {
             }
 
             if ( assertion instanceof IdentityAssertion &&
-                 AssertionUtils.isSameTargetMessage( identityTargetableAssertion, messageTargetable ) ) {
+                 AssertionUtils.isSameTargetMessage( assertion, messageTargetable ) ) {
                 targetOptions.add( providerName(
                         ((IdentityAssertion)assertion).getIdentityTarget(),
                         identityProviderNameMap) );
             }
 
             if ( assertion instanceof IdentityTagable &&
-                 AssertionUtils.isSameTargetMessage( identityTargetableAssertion, messageTargetable ) &&
+                 AssertionUtils.isSameTargetMessage( assertion, messageTargetable ) &&
                  ((IdentityTagable)assertion).getIdentityTag() != null ) {
                 targetOptions.add( new IdentityTarget(((IdentityTagable)assertion).getIdentityTag()) );
             }

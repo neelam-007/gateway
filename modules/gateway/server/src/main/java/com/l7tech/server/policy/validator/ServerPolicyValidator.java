@@ -66,7 +66,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Sep 1, 2004<br/>
- * $Id$<br/>
  */
 public class ServerPolicyValidator extends PolicyValidator implements InitializingBean {
 
@@ -123,6 +122,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
      */
     @SuppressWarnings(value = "fallthrough")
     private void validateAssertion(Assertion a, PathContext pathContext, PolicyValidatorResult r, AssertionPath ap) {
+        final String targetName = AssertionUtils.getTargetName(a);
         if (a instanceof IdentityAssertion) {
             final IdentityAssertion identityAssertion = (IdentityAssertion)a;
             int idStatus = getIdentityStatus(identityAssertion);
@@ -147,7 +147,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 case ID_FIP:
                     { // scope
                         boolean foundUsableCredSource = false;
-                        for (Assertion credSrc : pathContext.credentialSources) {
+                        for (Assertion credSrc : pathContext.getCredentialSourceAssertions(targetName)) {
                             if (credSrc instanceof RequireWssSaml ||
                                 credSrc instanceof RequireWssX509Cert ||
                                 credSrc instanceof SecureConversation ||
@@ -173,7 +173,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 case ID_SAMLONLY:
                     { // scope
                         boolean foundUsableCredSource = false;
-                        for (Assertion credSrc : pathContext.credentialSources) {
+                        for (Assertion credSrc : pathContext.getCredentialSourceAssertions(targetName)) {
                             if (credSrc instanceof RequireWssSaml || credSrc instanceof SslAssertion) {
                                 foundUsableCredSource = true;
                                 break;
@@ -196,7 +196,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 case ID_X509ONLY:
                     { // scope
                         boolean foundUsableCredSource = false;
-                        for (Assertion credSrc : pathContext.credentialSources) {
+                        for (Assertion credSrc : pathContext.getCredentialSourceAssertions(targetName)) {
                             if (credSrc instanceof RequireWssX509Cert ||
                                     credSrc instanceof SecureConversation ||
                                     credSrc instanceof SslAssertion) {
@@ -217,7 +217,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     break;
                 case ID_LDAP:
                     if (identityAssertion instanceof SpecificUser) {
-                        if (pathContext.contains(HttpDigest.class)) {
+                        if (pathContext.contains(targetName, HttpDigest.class)) {
                             r.addWarning(new PolicyValidatorResult.Warning(a,
                               ap,
                               "This identity may not be able to authenticate with the " +
@@ -235,7 +235,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                     break;
             }
         } else if (a.isCredentialSource()) {
-            pathContext.credentialSources.add(a);
+            pathContext.seenCredentialSource(targetName, a);
         } else if (a instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsass = (JmsRoutingAssertion)a;
             if (jmsass.getEndpointOid() != null) {
@@ -243,7 +243,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
                 boolean jmsEndpointDefinedOk = false;
                 try {
                     JmsEndpoint routedRequestEndpoint = jmsEndpointManager.findByPrimaryKey(endpointid);
-                    if (routedRequestEndpoint != null) jmsEndpointDefinedOk = true;
+                    jmsEndpointDefinedOk = routedRequestEndpoint != null;
                 } catch (FindException e) {
                     logger.log(Level.FINE, "Error fetching endpoint " + endpointid, e);
                 }
@@ -572,6 +572,7 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         this.entityFinder = entityFinder;
     }
 
+    @Override
     public void afterPropertiesSet() throws Exception {
         if (jmsEndpointManager == null) {
             throw new IllegalArgumentException("JMS Endpoint manager is required");
@@ -590,13 +591,33 @@ public class ServerPolicyValidator extends PolicyValidator implements Initializi
         }
     }
 
-    class PathContext {
-        Collection<Assertion> credentialSources = new ArrayList<Assertion>();
+    private static class PathContext {
+        private final Map<String,Collection<Assertion>> credentialSources = new HashMap<String,Collection<Assertion>>();
 
-        boolean contains(Class<? extends Assertion> clz) {
-            for (Assertion ass : credentialSources) {
-                if (ass.getClass().equals(clz)) {
-                    return true;
+        void seenCredentialSource( final String targetName, final Assertion assertion ) {
+            Collection<Assertion> assertions = credentialSources.get(targetName.toLowerCase());
+            if ( assertions == null ) {
+                assertions = new ArrayList<Assertion>();
+                credentialSources.put(targetName.toLowerCase(), assertions);
+            }
+            assertions.add( assertion );
+        }
+
+        Collection<Assertion> getCredentialSourceAssertions( final String targetName ) {
+            Collection<Assertion> credentialAssertions = credentialSources.get(targetName.toLowerCase());
+            if ( credentialAssertions == null ) {
+                credentialAssertions = Collections.emptyList();
+            }
+            return credentialAssertions;
+        }
+
+        boolean contains( final String targetName, final Class<? extends Assertion> clz ) {
+            Collection<Assertion> assertions = credentialSources.get(targetName.toLowerCase());
+            if ( assertions != null ) {
+                for (Assertion ass : assertions) {
+                    if (ass.getClass().equals(clz)) {
+                        return true;
+                    }
                 }
             }
             return false;

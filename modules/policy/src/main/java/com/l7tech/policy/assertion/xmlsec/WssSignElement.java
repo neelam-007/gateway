@@ -15,10 +15,9 @@ import com.l7tech.util.Functions;
  * <code>ElementSecurity</code> list.
  * <p/>
  *
- * @author flascell<br/>
- * @version Aug 27, 2003<br/>
+ * @author flascell
  */
-public class WssSignElement extends XmlSecurityAssertionBase implements ResponseWssConfig, PrivateKeyable {
+public class WssSignElement extends XmlSecurityAssertionBase implements WssDecorationConfig, PrivateKeyable {
 
     //- PUBLIC
 
@@ -104,7 +103,8 @@ public class WssSignElement extends XmlSecurityAssertionBase implements Response
             }
         });
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientResponseWssIntegrity");
-        meta.put( AssertionMetadata.CLIENT_ASSERTION_TARGETS, new String[]{"response"} );
+        meta.put(AssertionMetadata.CLIENT_ASSERTION_TARGETS, new String[]{"response"});
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.WssSignElementValidator");
 
         return meta;
     }

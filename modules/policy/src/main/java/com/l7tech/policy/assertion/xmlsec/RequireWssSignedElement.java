@@ -13,6 +13,7 @@ import com.l7tech.policy.wsp.TypeMapping;
 import com.l7tech.policy.wsp.WspUpgradeUtilFrom21;
 import com.l7tech.util.Functions;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.objectmodel.EntityHeader;
 
 import java.util.*;
@@ -95,12 +96,14 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
         return varsUsed;
     }
 
+    @Override
     public EntityHeader[] getEntitiesUsed() {
         return identityTarget != null ?
                 identityTarget.getEntitiesUsed():
                 new EntityHeader[0];
     }
 
+    @Override
     public void replaceEntity( final EntityHeader oldEntityHeader,
                                final EntityHeader newEntityHeader ) {
         if ( identityTarget != null ) {
@@ -130,11 +133,18 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
                 return AssertionUtils.decorateName(requestWssIntegrity, name);
             }
         });
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, RequireWssSignedElement>(){
+            @Override
+            public Set<ValidatorFlag> call(RequireWssSignedElement assertion) {
+                return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION, ValidatorFlag.REQUIRE_SIGNATURE);
+            }
+        });
         meta.put(AssertionMetadata.WSP_COMPATIBILITY_MAPPINGS, new HashMap<String, TypeMapping>() {{
             put(WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping.getExternalName(),
                 WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping);            
         }});
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssIntegrity");
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.XpathBasedAssertionValidator");
 
         return meta;
     }

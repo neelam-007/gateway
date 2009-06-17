@@ -5,6 +5,9 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.util.Functions;
+import com.l7tech.policy.validator.ValidatorFlag;
+
 import java.util.*;
 
 /**
@@ -59,6 +62,13 @@ public class SqlAttackAssertion extends MessageTargetableAssertion {
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/SQLProtection16x16.gif");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.SqlAttackDialog");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_CLASSNAME, "com.l7tech.policy.validator.SqlAttackAssertionValidator");
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, SqlAttackAssertion>(){
+            @Override
+            public Set<ValidatorFlag> call(SqlAttackAssertion assertion) {
+                return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
+            }
+        });
         return meta;
     }
 

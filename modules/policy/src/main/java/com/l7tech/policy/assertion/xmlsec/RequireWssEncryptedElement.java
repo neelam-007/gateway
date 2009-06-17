@@ -4,11 +4,15 @@ import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.AssertionUtils;
+import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.security.xml.XencUtil;
 import com.l7tech.util.Functions;
 
 import java.util.List;
+import java.util.Set;
+import java.util.EnumSet;
+
 /**
  * Enforces the XML security on the message elements or entire message
  * 
@@ -95,6 +99,12 @@ public class RequireWssEncryptedElement extends XmlSecurityAssertionBase {
                     name.append(requestWssConfidentiality.getXpathExpression().getExpression());
                 }
                 return AssertionUtils.decorateName(requestWssConfidentiality, name);
+            }
+        });
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, RequireWssEncryptedElement>(){
+            @Override
+            public Set<ValidatorFlag> call(RequireWssEncryptedElement assertion) {
+                return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
             }
         });
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssConfidentiality");

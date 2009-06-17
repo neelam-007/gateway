@@ -20,6 +20,7 @@ public class RequireWssEncryptedElementValidator implements AssertionValidator {
         this.assertion = assertion;
     }
 
+    @Override
     public void validate( final AssertionPath path,
                           final Wsdl wsdl,
                           final boolean soap,
@@ -27,10 +28,12 @@ public class RequireWssEncryptedElementValidator implements AssertionValidator {
         Assertion[] assertionPath = path.getPath();
         for ( int i = assertionPath.length - 1; i >= 0; i-- ) {
             Assertion a = assertionPath[i];
-            if ( a != assertion && a instanceof RequireWssEncryptedElement ) {
+            if ( a != assertion &&
+                 a instanceof RequireWssEncryptedElement &&
+                 AssertionUtils.isSameTargetRecipient( assertion, a ) &&
+                 AssertionUtils.isSameTargetMessage( assertion, a ) ) {
                 RequireWssEncryptedElement requireWssEncryptedElement = (RequireWssEncryptedElement)a;
-                if ( AssertionUtils.isSameTargetMessage( assertion, a ) &&
-                     !new HashSet<String>(requireWssEncryptedElement.getXEncAlgorithmList()).equals(new HashSet<String>(assertion.getXEncAlgorithmList())) ) {
+                if ( !new HashSet<String>(requireWssEncryptedElement.getXEncAlgorithmList()).equals(new HashSet<String>(assertion.getXEncAlgorithmList())) ) {
                     String message = "Multiple encryption assertions are present with different encryption algorithms.";
                     result.addError(new PolicyValidatorResult.Error(assertion, path, message, null));
                 }

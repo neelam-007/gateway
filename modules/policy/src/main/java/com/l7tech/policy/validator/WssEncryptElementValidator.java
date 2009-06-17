@@ -3,6 +3,7 @@ package com.l7tech.policy.validator;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.xmlsec.WssEncryptElement;
 import com.l7tech.wsdl.Wsdl;
 import org.jaxen.dom.DOMXPath;
@@ -10,7 +11,7 @@ import org.jaxen.dom.DOMXPath;
 import java.util.logging.Logger;
 
 /**
- * Validates the <code>ResponseWssConfidentiality</code> assertion internals. This validates
+ * Validates the <code>WssEncryptElement</code> assertion internals. This validates
  * the XPath requirements and the the encryption method algorithm consistency. The processing
  * model requires that the same encryption method algorithm is used in the policy path.
  *
@@ -44,6 +45,7 @@ public class WssEncryptElementValidator implements AssertionValidator {
         }
     }
 
+    @Override
     public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {
         if (errString != null)
             result.addError(new PolicyValidatorResult.Error(assertion, path, errString, errThrowable));
@@ -51,7 +53,10 @@ public class WssEncryptElementValidator implements AssertionValidator {
         Assertion[] assertionPath = path.getPath();
         for (int i = assertionPath.length - 1; i >= 0; i--) {
             Assertion a = assertionPath[i];
-            if (a != assertion && a instanceof WssEncryptElement) {
+            if ( a != assertion &&
+                 a instanceof WssEncryptElement &&
+                 AssertionUtils.isSameTargetRecipient( assertion, a ) &&
+                 AssertionUtils.isSameTargetMessage(assertion, a)) {
                 WssEncryptElement ra = (WssEncryptElement)a;
                 if (!ra.getXEncAlgorithm().equals(assertion.getXEncAlgorithm())) {
                     String message = "Multiple confidentiality assertions present with different Encryption Method Algorithms";

@@ -24,7 +24,7 @@ import com.l7tech.util.Functions;
  * @author alex
  */
 @RequiresSOAP(wss=true)
-public class AddWssTimestamp extends MessageTargetableAssertion implements ResponseWssConfig, PrivateKeyable {
+public class AddWssTimestamp extends MessageTargetableAssertion implements WssDecorationConfig, PrivateKeyable {
 
     /**
      * The recommended expiry time to use when creating response wss timestamps;

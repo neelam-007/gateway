@@ -5,6 +5,7 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.AssertionMetadata;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
+import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.IdentityTargetable;
@@ -12,11 +13,14 @@ import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.UsesEntities;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.objectmodel.EntityHeader;
 
 import java.text.MessageFormat;
+import java.util.Set;
+import java.util.EnumSet;
 
 /**
  * This assertion verifies that the soap message contains a wsu:Timestamp element in a SOAP header.
@@ -86,12 +90,14 @@ public class RequireWssTimestamp extends MessageTargetableAssertion implements I
         this.identityTarget = identityTarget;
     }
 
+    @Override
     public EntityHeader[] getEntitiesUsed() {
         return identityTarget != null ?
                 identityTarget.getEntitiesUsed():
                 new EntityHeader[0];
     }
 
+    @Override
     public void replaceEntity( final EntityHeader oldEntityHeader,
                                final EntityHeader newEntityHeader ) {
         if ( identityTarget != null ) {
@@ -131,7 +137,16 @@ public class RequireWssTimestamp extends MessageTargetableAssertion implements I
             }
         });
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.RequireWssTimestampDialog");
-
+        meta.put(POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, RequireWssTimestamp>(){
+            @Override
+            public Set<ValidatorFlag> call(RequireWssTimestamp assertion) {
+                Set<ValidatorFlag> flags = EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
+                if ( assertion.isSignatureRequired() ) {
+                    flags.add(ValidatorFlag.REQUIRE_SIGNATURE);
+                }
+                return flags;
+            }
+        });
         meta.put(ASSERTION_FACTORY, new Functions.Unary<RequireWssTimestamp, RequireWssTimestamp>(){
             @Override
             public RequireWssTimestamp call(final RequireWssTimestamp requestWssTimestamp) {

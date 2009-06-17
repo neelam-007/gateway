@@ -5,7 +5,6 @@ import com.l7tech.wsdl.Wsdl;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.xmlsec.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -16,8 +15,7 @@ import java.util.*;
  * The class <code>ValidatorFactory</code> creates <code>AssertionValidator</code>
  * instances based on <code>Assertion</code> instances.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.1
+ * @author Emil Marceta
  * @noinspection UnusedDeclaration
  */
 class ValidatorFactory {
@@ -27,20 +25,16 @@ class ValidatorFactory {
     private static final Map<Class<? extends Assertion>, Object> useNullValidator =
             Collections.synchronizedMap(new WeakHashMap<Class<? extends Assertion>, Object>());
 
-    // maping assertions to validators
+    // mapping assertions to validators
     static {
+        // DO NOT ADD NEW VALIDATORS HERE, USE ASSERTION METADATA
         assertionMap.put(RequestXpathAssertion.class, XpathBasedAssertionValidator.class);
         assertionMap.put(ResponseXpathAssertion.class, XpathBasedAssertionValidator.class);
-        assertionMap.put(RequireWssSignedElement.class, XpathBasedAssertionValidator.class);
-        assertionMap.put(WssSignElement.class, WssSignElementValidator.class);
-        assertionMap.put(WssEncryptElement.class, WssEncryptElementValidator.class);
         assertionMap.put(RequestSwAAssertion.class, SwaRequestAssertionValidator.class);
-        assertionMap.put(RequireWssSaml.class, SamlStatementValidator.class);
-        assertionMap.put(RequireWssSaml2.class, SamlStatementValidator.class);
         assertionMap.put(WsiBspAssertion.class, WsiBspAssertionValidator.class);
         assertionMap.put(WsspAssertion.class, WsspAssertionValidator.class);
         assertionMap.put(BridgeRoutingAssertion.class, BridgeRoutingAssertionValidator.class);
-        // add mapping
+        // DO NOT ADD NEW VALIDATORS HERE, USE ASSERTION METADATA
     }
 
     private static Map<Class<? extends Assertion>, Constructor<AssertionValidator>> ctorCache =
@@ -157,6 +151,7 @@ class ValidatorFactory {
         public NullValidator(Assertion a) {
         }
 
+        @Override
         public void validate(AssertionPath path, Wsdl wsdl, boolean soap, PolicyValidatorResult result) {}
     }
 }

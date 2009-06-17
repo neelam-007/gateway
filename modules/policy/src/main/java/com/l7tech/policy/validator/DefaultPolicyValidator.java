@@ -36,8 +36,7 @@ import java.util.logging.Logger;
  * The class methods are not synchronized.
  * <p/>
  * 
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
- * @version 1.0
+ * @author Emil Marceta
  */
 public class DefaultPolicyValidator extends PolicyValidator {
     static Logger log = Logger.getLogger(DefaultPolicyValidator.class.getName());
@@ -137,14 +136,17 @@ public class DefaultPolicyValidator extends PolicyValidator {
                   Warning(lastAssertion, ap, "This path potentially allows non-xml content through.", null));
             }
         }
-        if (!pv.seenCredentials(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE) && pv.seenResponse) {
+        if (!pv.seenCredentials(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE, PathValidator.REQUEST_TARGET_NAME) && pv.seenResponse) {
             r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, ap,
               "No credential assertion is present in the policy. The" +
               " service may be exposed to public access", null));
         }
-        if (pv.seenCredentials(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE) && !pv.seenAccessControl && pv.seenResponse) {
+        if (pv.seenCredentials(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE, PathValidator.REQUEST_TARGET_NAME) && !pv.seenAccessControl(PathValidator.REQUEST_TARGET_NAME) && pv.seenResponse) {
             r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, ap, "Credentials are collected but not authenticated." +
               " This service may be exposed to public access.", null));
+        }
+        if (pv.seenCredentials(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE, PathValidator.RESPONSE_TARGET_NAME) && !pv.seenAccessControl(PathValidator.RESPONSE_TARGET_NAME) && pv.seenResponse) {
+            r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, ap, "Response credentials are collected but not authenticated.", null));
         }
     }
 

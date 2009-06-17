@@ -21,7 +21,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.MessageTargetable;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssConfig;
+import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
@@ -43,11 +43,11 @@ import java.util.logging.Logger;
  */
 public abstract class ServerAddWssSignature<AT extends Assertion> extends AbstractMessageTargetableServerAssertion<AT> {
     protected final SignerInfo signerInfo;
-    protected final ResponseWssConfig wssConfig;
+    protected final WssDecorationConfig wssConfig;
     protected final Auditor auditor;
 
     protected ServerAddWssSignature( final AT assertion,
-                                     final ResponseWssConfig responseWssAssertion,
+                                     final WssDecorationConfig responseWssAssertion,
                                      final MessageTargetable messageTargetable,
                                      final ApplicationContext spring,
                                      final Logger logger) {

@@ -1,19 +1,17 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
-import com.l7tech.policy.assertion.MessageTargetableAssertion;
-import com.l7tech.policy.assertion.IdentityTargetable;
-import com.l7tech.policy.assertion.IdentityTarget;
-import com.l7tech.policy.assertion.UsesEntities;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
+import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.util.Functions;
+
+import java.util.Set;
+import java.util.EnumSet;
 
 /**
  * @author mike
@@ -48,12 +46,14 @@ public class WssReplayProtection extends MessageTargetableAssertion implements I
         this.identityTarget = identityTarget;
     }
 
+    @Override
     public EntityHeader[] getEntitiesUsed() {
         return identityTarget != null ?
                 identityTarget.getEntitiesUsed():
                 new EntityHeader[0];
     }
 
+    @Override
     public void replaceEntity( final EntityHeader oldEntityHeader,
                                final EntityHeader newEntityHeader ) {
         if ( identityTarget != null ) {
@@ -72,6 +72,12 @@ public class WssReplayProtection extends MessageTargetableAssertion implements I
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "threatProtection", "xmlSecurity" });
         meta.put(AssertionMetadata.USED_BY_CLIENT, Boolean.TRUE);
         meta.put(AssertionMetadata.CLIENT_ASSERTION_CLASSNAME, "com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssReplayProtection");
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, WssReplayProtection>(){
+            @Override
+            public Set<ValidatorFlag> call(WssReplayProtection assertion) {
+                return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
+            }
+        });
 
         return meta;
     }

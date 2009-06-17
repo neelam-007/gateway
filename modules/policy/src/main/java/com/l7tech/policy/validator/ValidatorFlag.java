@@ -9,7 +9,7 @@ package com.l7tech.policy.validator;
 public enum ValidatorFlag {
 
     /**
-     * Flagged by an assertion if, as currently configured, it must be preceeded by a request signatuare source.
+     * Flagged by an assertion if, as currently configured, it must be preceeded by a signature source.
      */
     REQUIRE_SIGNATURE,
 
@@ -22,7 +22,18 @@ public enum ValidatorFlag {
      * "A WSSRecipient other than Default will not be enforced by the gateway.  This assertion will always succeed."
      * that would otherwise be issued if the assertion was targeted at the Request.
      */
-    PROCESSES_NON_LOCAL_WSS_RECIPIENT,    
+    PROCESSES_NON_LOCAL_WSS_RECIPIENT,
 
+    /**
+     * Flagged by an assertion if, as currently configured, it peforms validation of the target message.
+     *
+     * This is used to to display a validation warning message if the assertion targets the
+     * request after it is routed.
+     *
+     * This flag is (probably) not applicable for assertions that modify the message.
+     *
+     * NOTE: The recipient for the assertion is also checked, so the assertion does not need to do this. 
+     */
+    PERFORMS_VALIDATION,
 
 }

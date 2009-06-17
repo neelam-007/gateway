@@ -2,18 +2,14 @@ package com.l7tech.policy.validator;
 
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.TargetMessageType;
-import com.l7tech.policy.assertion.IdentityTargetable;
-import com.l7tech.policy.assertion.IdentityTarget;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
 import com.l7tech.wsdl.Wsdl;
 
 /**
  * Assertion validator for WSS X.509 Signature assertion.
  *
- * <p>This validator warns if setting the insecure variable for certificates
- * found in the message.</p>
+ * <p>This validator warns if multiple signatures are permitted.</p>
  *
  * <p>The validator also warns of any IdentityTargetable assertions that do
  * not specify an identity if multiple authentication is enabled for the
@@ -39,14 +35,15 @@ public class WssX509CertValidator implements AssertionValidator {
                           final boolean soap,
                           final PolicyValidatorResult result ) {
         if ( assertion.isAllowMultipleSignatures() ) {
-            TargetMessageType targetMessageType = assertion.getTarget();
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, path,
+                    "Multiple signatures are permitted. This is an advanced setting and should be used with caution.", null));
 
             for ( Assertion pathAssertion : path.getPath() ) {
                 if ( pathAssertion instanceof IdentityTargetable &&
-                     targetMessageType == Assertion.getTargetMessageType(pathAssertion) &&
+                     AssertionUtils.isSameTargetMessage( assertion, pathAssertion ) &&
                      new IdentityTarget().equals( new IdentityTarget(((IdentityTargetable) pathAssertion).getIdentityTarget()) ))  {
                     result.addWarning(new PolicyValidatorResult.Warning(pathAssertion, path,
-                            "Assertions Target Identity should be selected when multiple identities are in use.", null));
+                            "Multiple signatures are permitted, this assertion must specify a target identity.", null));
                 }
             }
             

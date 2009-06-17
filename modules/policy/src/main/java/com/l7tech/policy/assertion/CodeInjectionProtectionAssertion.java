@@ -3,6 +3,12 @@
  */
 package com.l7tech.policy.assertion;
 
+import com.l7tech.util.Functions;
+import com.l7tech.policy.validator.ValidatorFlag;
+
+import java.util.Set;
+import java.util.EnumSet;
+
 /**
  * Provides threat protection against code injection attacks targeting web
  * applications.
@@ -99,6 +105,12 @@ public class CodeInjectionProtectionAssertion extends MessageTargetableAssertion
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/RedYellowShield16.gif");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.CodeInjectionProtectionAssertionDialog");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, CodeInjectionProtectionAssertion>(){
+            @Override
+            public Set<ValidatorFlag> call(CodeInjectionProtectionAssertion assertion) {
+                return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
+            }
+        });
         return meta;
     }
 }

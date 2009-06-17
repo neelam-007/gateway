@@ -198,10 +198,9 @@ public class AssertionPath implements Serializable {
     public boolean contains(Assertion a) {
         if (a == null) return false;
         Assertion[] path = getPath();
-        for (int i = 0; i < path.length; i++) {
-           Assertion assertion = path[i];
-           if (a.equals(assertion)) return true;
-       }
+        for (Assertion assertion : path) {
+            if (a.equals(assertion)) return true;
+        }
         return false;
     }
 
@@ -215,10 +214,9 @@ public class AssertionPath implements Serializable {
     public boolean contains(Class assertionClass) {
         if (assertionClass == null) return false;
         Assertion[] path = getPath();
-        for (int i = 0; i < path.length; i++) {
-           Assertion assertion = path[i];
-           if (assertionClass.equals(assertion.getClass())) return true;
-       }
+        for (Assertion assertion : path) {
+            if (assertionClass.equals(assertion.getClass())) return true;
+        }
         return false;
     }
 
@@ -230,20 +228,23 @@ public class AssertionPath implements Serializable {
      *
      * @param o the Object to compare
      */
+    @Override
     public boolean equals(Object o) {
         if (o == null) return false;
         if (o == this)
             return true;
         if (o instanceof AssertionPath) {
+            AssertionPath apath = this;
             AssertionPath oAssertionPath = (AssertionPath)o;
 
             if (getPathCount() != oAssertionPath.getPathCount())
                 return false;
 
-            for (AssertionPath apath = this; apath != null; apath = apath.parentPath) {
+            while ( apath != null ) {
                 if (!(apath.lastPathComponent.equals(oAssertionPath.lastPathComponent))) {
                     return false;
                 }
+                apath = apath.parentPath;
                 oAssertionPath = oAssertionPath.parentPath;
             }
             return true;
@@ -257,13 +258,15 @@ public class AssertionPath implements Serializable {
      *
      * @return the hashCode for the object
      */
+    @Override
     public int hashCode() {
-        return lastPathComponent.hashCode();
+        return lastPathComponent.hashCode() + (parentPath==null ? 0 : (17 * parentPath.getPathCount()) + (13 * parentPath.hashCode()));
     }
 
     /**
      * @return a String representation of this object
      */
+    @Override
     public String toString() {
         StringBuffer tempSpot = new StringBuffer("[");
 

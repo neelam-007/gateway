@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.wsaddressing;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.policy.validator.ValidatorFlag;
@@ -19,7 +20,9 @@ import java.util.Set;
  *
  * <p>Optionally sets variables for the message properties found.</p> 
  */
+@RequiresSOAP
 public class WsAddressingAssertion extends MessageTargetableAssertion implements IdentityTargetable, SetsVariables, SecurityHeaderAddressable, UsesEntities {
+    
     //- PUBLIC
     
     public static final String VAR_SUFFIX_TO = "to";
@@ -177,12 +180,14 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
         this.identityTarget = identityTarget;
     }
 
+    @Override
     public EntityHeader[] getEntitiesUsed() {
         return identityTarget != null ?
                 identityTarget.getEntitiesUsed():
                 new EntityHeader[0];
     }
 
+    @Override
     public void replaceEntity( final EntityHeader oldEntityHeader,
                                final EntityHeader newEntityHeader ) {
         if ( identityTarget != null ) {

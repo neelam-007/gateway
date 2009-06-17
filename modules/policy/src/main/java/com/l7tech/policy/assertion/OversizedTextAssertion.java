@@ -8,6 +8,11 @@ package com.l7tech.policy.assertion;
 import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import static com.l7tech.policy.assertion.annotation.HardwareAccelerated.Type.TOKENSCAN;
+import com.l7tech.policy.validator.ValidatorFlag;
+import com.l7tech.util.Functions;
+
+import java.util.Set;
+import java.util.EnumSet;
 
 /**
  * Assertion that can limit length of attribute and text nodes.
@@ -175,6 +180,12 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/OversizedElement16.gif");
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.console.panels.OversizedTextDialog");
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, OversizedTextAssertion>(){
+            @Override
+            public Set<ValidatorFlag> call(OversizedTextAssertion assertion) {
+                return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
+            }
+        });
         return meta;
     }
 

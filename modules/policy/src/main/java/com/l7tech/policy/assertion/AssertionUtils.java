@@ -2,6 +2,7 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 
 /**
  * Assertion utility methods
@@ -70,7 +71,7 @@ public class AssertionUtils {
      *
      * @param a1 The first assertion
      * @param a2 The second assertion
-     * @return True if the assertion target the same message.
+     * @return True if the assertions target the same message.
      */
     public static boolean isSameTargetMessage( final Assertion a1, final Assertion a2 ) {
         boolean sameTarget = false;
@@ -116,5 +117,50 @@ public class AssertionUtils {
         return sameTarget;
     }
 
+    /**
+     * Test if the given assertions target the same actor.
+     *
+     * @param a1 The first assertion
+     * @param a2 The second assertion
+     * @return True if the assertions target the same recipient.
+     */
+    public static boolean isSameTargetRecipient( final Assertion a1, final Assertion a2 ) {
+        String actor1 = getActor(a1);
+        String actor2 = getActor(a2);
+        return a1!=null && a2!=null && actor1.equals(actor2);
+    }
 
+    /**
+     * Get a target message name for the given assertion.
+     *
+     * @param assertion The assertion to process
+     * @return The (possibly guessed) target name.
+     */
+    public static String getTargetName( final Assertion assertion ) {
+        String targetName;
+
+        if ( assertion instanceof MessageTargetable ) {
+            targetName = ((MessageTargetable)assertion).getTargetName();
+        } else if ( Assertion.isResponse(assertion) ) {
+            targetName = "Response";
+        } else {
+            targetName = "Request";            
+        }
+
+        return targetName;
+    }
+
+    private static String getActor( final Assertion assertion ) {
+        String actor = "";
+
+        if ( assertion instanceof SecurityHeaderAddressable ) {
+            SecurityHeaderAddressable securityHeaderAddressable = (SecurityHeaderAddressable) assertion;
+            XmlSecurityRecipientContext recipientContext = securityHeaderAddressable.getRecipientContext();
+            if ( recipientContext != null && recipientContext.getActor() != null ) {
+                actor = recipientContext.getActor();
+            }
+        }
+
+        return actor;
+    }
 }
