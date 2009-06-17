@@ -1,3 +1,5 @@
+package com.l7tech.internal.omp;
+
 import com.l7tech.server.util.PropertiesDecryptor;
 import com.l7tech.util.DefaultMasterPasswordFinder;
 import com.l7tech.util.MasterPasswordManager;
