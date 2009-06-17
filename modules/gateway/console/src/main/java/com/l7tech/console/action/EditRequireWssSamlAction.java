@@ -69,6 +69,7 @@ public class EditRequireWssSamlAction extends NodeAction {
                     if (requestWssSaml.getParent() != null) {
                         requestWssSaml.getParent().replaceChild(requestWssSaml, updatedAssertion);
                     }
+                    requestWssSaml = updatedAssertion; // else 2nd edit is ignored ...
 
                     final JTree tree = TopComponents.getInstance().getPolicyTree();
                     if (tree != null) {
