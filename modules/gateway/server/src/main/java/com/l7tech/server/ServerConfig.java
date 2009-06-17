@@ -1108,9 +1108,10 @@ public class ServerConfig implements ClusterPropertyListener, Config {
         if (val == null) return null;
         if (val.length() == 0) return val;
 
-        StringBuffer val2 = new StringBuffer();
+        StringBuilder val2 = new StringBuilder();
         int pos = val.indexOf('$');
         if (pos >= 0) {
+            val2.append(val.substring(0, pos));
             while (pos >= 0) {
                 if (val.charAt(pos + 1) == '{') {
                     int pos2 = val.indexOf('}', pos + 1);
@@ -1134,11 +1135,11 @@ public class ServerConfig implements ClusterPropertyListener, Config {
                         }
                     } else {
                         // there's no terminating }, pass it through literally
-                        val2.append(val);
+                        val2.append(val.substring(pos));
                         break;
                     }
                 } else {
-                    val2.append(val);
+                    val2.append(val.substring(pos));
                     break;                    
                 }
             }

@@ -12,6 +12,8 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gui.util.DocumentSizeFilter;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
 import javax.swing.text.AbstractDocument;
@@ -22,6 +24,8 @@ import java.awt.event.ItemEvent;
 import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Simple dialog to capture a property (key+value)
@@ -29,6 +33,8 @@ import java.util.ArrayList;
  * @author flascelles@layer7-tech.com
  */
 public class CaptureProperty extends JDialog {
+    private final Logger logger = Logger.getLogger(CaptureProperty.class.getName());
+
     private JPanel mainPanel;
     private JTextArea valueField;
     private JComboBox keyComboBox;
@@ -41,6 +47,7 @@ public class CaptureProperty extends JDialog {
     private String title;
     private boolean oked = false;
     private Collection<ClusterPropertyDescriptor> descriptors;
+    private Collection<ClusterProperty> existingProperties;
     private boolean isEditable;
 
     public CaptureProperty(JDialog parent, String title, String description, ClusterProperty property, Collection<ClusterPropertyDescriptor> descriptors, boolean isEditable) {
@@ -77,13 +84,16 @@ public class CaptureProperty extends JDialog {
                 keyComboBox.setEditable(true);
                 ItemListener itemListener = new ItemListener() {
                     public void itemStateChanged(ItemEvent e) {
-                        ClusterPropertyDescriptor value =
+                        ClusterPropertyDescriptor propertyDescriptor =
                                 getClusterPropertyDescriptorByName(descriptors, (String) keyComboBox.getSelectedItem());
-                        String description = value==null ? null : value.getDescription();
-                        if (description == null) description = "";
+                        // Get and set description
+                        String description = propertyDescriptor == null? "" : propertyDescriptor.getDescription();
                         descField.setText(description);
-                        String initialValue = value==null ? "" : value.getDefaultValue();
-                        valueField.setText(initialValue);
+
+                        // Get and set value
+                        String initialValue = propertyDescriptor == null? "" : propertyDescriptor.getDefaultValue();
+                        String currentValue = getCurrentPropValue((String) keyComboBox.getSelectedItem());
+                        valueField.setText(currentValue == null? initialValue : currentValue);
                     }
                 };
                 keyComboBox.addItemListener(itemListener);
@@ -109,12 +119,51 @@ public class CaptureProperty extends JDialog {
             }
         });
 
+        propulateExistingClusterProps();
+
         enableReadOnlyIfNeeded();
         Utilities.setEscKeyStrokeDisposes(this);
     }
 
+    /**
+     * Retrieve all cluster properties existing in the Global Cluster Properties table.
+     */
+    private void propulateExistingClusterProps() {
+        existingProperties = new ArrayList<ClusterProperty>();
+        try {
+            Collection<ClusterProperty> allProperties = Registry.getDefault().getClusterStatusAdmin().getAllProperties();
+            for (ClusterProperty property : allProperties) {
+                if (!property.isHiddenProperty())
+                    existingProperties.add(property);
+            }
+
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, "exception getting properties", e);
+        }
+    }
+
+    /**
+     * Get the value of the clsuter property whose name is propName.
+     * @param propName: the name of the cluster propery
+     * @return the value of the cluster property
+     */
+    private String getCurrentPropValue(String propName) {
+        String value = null;
+
+        if (existingProperties != null && !existingProperties.isEmpty()) {
+            for (ClusterProperty prop: existingProperties) {
+                if (prop.getName().equals(propName)) {
+                    value = prop.getValue();
+                    break;
+                }
+            }
+        }
+
+        return value;
+    }
+
     private String[] getNames( final Collection<ClusterPropertyDescriptor> properties ) {
-        List<String> names = new ArrayList();
+        List<String> names = new ArrayList<String>();
 
         for ( ClusterPropertyDescriptor descriptor : properties ) {
             if ( descriptor.isVisible() )
