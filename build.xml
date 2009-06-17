@@ -3332,6 +3332,7 @@
         <wsimport wsdl="uddi_v3_service_i.wsdl"/>
         <wsimport wsdl="uddi_v3_service_p.wsdl"/>
         <wsimport wsdl="uddi_v3_service_s.wsdl"/>
+        <!--<wsimport wsdl="uddi_v3_service_sub.wsdl"/>-->
 
         <echo level="info">Compiling for 1.6</echo>
         <delete dir="build/uddiclasses"/>

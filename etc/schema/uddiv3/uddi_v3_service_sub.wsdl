@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:uddi_api="urn:uddi-org:sub_v3_binding"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             targetNamespace="urn:uddi-org:api_v3_service">
+
+    <import namespace="urn:uddi-org:sub_v3_binding" location="uddi_sub_v3_binding.wsdl"/>
+
+    <service name="UDDISubscription">
+        <port name="UDDISubscriptionPort" binding="uddi_api:UDDI_Subscription_SoapBinding">
+           <soap:address location="http://127.0.0.1/uddi/subscription"/>
+        </port>
+    </service>
+
+</definitions>
