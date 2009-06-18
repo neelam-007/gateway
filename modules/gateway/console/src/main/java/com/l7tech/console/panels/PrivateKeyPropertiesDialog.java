@@ -24,7 +24,6 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.*;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
-import com.l7tech.util.HexUtils;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -419,7 +418,14 @@ public class PrivateKeyPropertiesDialog extends JDialog {
 
                             byte[] bytes;
                             if (chooser.getFileFilter() == pemFilter) {
-                                bytes = HexUtils.encodeBase64(csr).getBytes();
+                                try {
+                                    bytes = CertUtils.encodeAsPEM(csr).getBytes();
+                                } catch (IOException e) {
+                                    logger.log(Level.WARNING, "error encoding as PEM", e);
+                                    DialogDisplayer.showMessageDialog(generateCSRButton, "Error Encoding As PEM " + e.getMessage(),
+                                                              "Error", JOptionPane.ERROR_MESSAGE, null);
+                                    return;
+                                }
                             } else {
                                 bytes = csr;
                             }
