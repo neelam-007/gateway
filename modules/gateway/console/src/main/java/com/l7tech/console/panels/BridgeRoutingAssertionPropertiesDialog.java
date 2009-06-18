@@ -218,7 +218,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
 
         selectCert.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                CertSearchPanel sp = new CertSearchPanel(BridgeRoutingAssertionPropertiesDialog.this);
+                CertSearchPanel sp = new CertSearchPanel(BridgeRoutingAssertionPropertiesDialog.this, false, true);
                 sp.addCertListener(certListener);
                 sp.pack();
                 Utilities.centerOnScreen(sp);
