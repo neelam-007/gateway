@@ -419,7 +419,7 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                             byte[] bytes;
                             if (chooser.getFileFilter() == pemFilter) {
                                 try {
-                                    bytes = CertUtils.encodeAsPEM(csr).getBytes();
+                                    bytes = CertUtils.encodeCsrAsPEM(csr).getBytes();
                                 } catch (IOException e) {
                                     logger.log(Level.WARNING, "error encoding as PEM", e);
                                     DialogDisplayer.showMessageDialog(generateCSRButton, "Error Encoding As PEM " + e.getMessage(),

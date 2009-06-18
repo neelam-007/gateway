@@ -341,6 +341,28 @@ public class CertUtils {
     }
 
     /**
+     * Get the PEM (aka base64) encoded the CSR from the byte array containing the CSR encoded as ASN.1 DER.
+     * @param csr the byte array with the CSR encoded as ASN.1 and DER
+     * @return the PEM encoded CSR as a byte array
+     * @throws java.io.IOException if there is a problem encoding the CSR
+     */
+    public static String encodeCsrAsPEM(byte[] csr) throws IOException {
+        BufferPoolByteArrayOutputStream bos = new BufferPoolByteArrayOutputStream();
+        try {
+            String encoding = "UTF-8";
+            bos.write(PEM_CSR_BEGIN_MARKER.getBytes(encoding));
+            bos.write("\n".getBytes(encoding));
+            bos.write(HexUtils.encodeBase64(csr).getBytes(encoding));
+            bos.write("\n".getBytes(encoding));
+            bos.write(PEM_CSR_END_MARKER.getBytes(encoding));
+            bos.write("\n".getBytes(encoding));
+            return bos.toString(encoding);
+        } finally {
+            bos.close();
+        }
+    }
+
+    /**
      * Get the X509Certifcate that is (Base64) encoded in the given text.  PEM header/footers, if present, are ignored.
      *
      * @param certificateText The base64 encoded certficate data, possibly with PEM header/footer
