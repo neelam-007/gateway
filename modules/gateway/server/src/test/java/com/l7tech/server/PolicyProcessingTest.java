@@ -35,6 +35,7 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.TarariLoader;
+import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.tarari.GlobalTarariContext;
 import com.l7tech.test.BugNumber;
 import junit.extensions.TestSetup;
@@ -51,6 +52,7 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -125,7 +127,8 @@ public class PolicyProcessingTest extends TestCase {
         {"/removeelement", "POLICY_removeelement.xml"},
         {"/addusernametoken", "POLICY_responsesecuritytoken.xml"},
         {"/addtimestamp", "POLICY_responsetimestamp.xml"},
-        {"/addsignature", "POLICY_responsesignature.xml"}
+        {"/addsignature", "POLICY_responsesignature.xml"},
+        {"/removeheaders", "POLICY_removeheaders.xml"}
     };
 
     /**
@@ -711,8 +714,8 @@ public class PolicyProcessingTest extends TestCase {
             public void call(final PolicyEnforcementContext context) {
                 try {
                     final Document document = context.getResponse().getXmlKnob().getDocumentReadOnly();
-                    String wsseNS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd";
-                    String dsigNS = "http://www.w3.org/2000/09/xmldsig#";
+                    String wsseNS = SoapUtil.SECURITY_NAMESPACE;
+                    String dsigNS = SoapUtil.DIGSIG_URI;
                     NodeList userNodeList = document.getElementsByTagNameNS(wsseNS, "Username");
                     NodeList passNodeList = document.getElementsByTagNameNS(wsseNS, "Password");
                     Assert.assertEquals("Username found", 1, userNodeList.getLength());
@@ -741,8 +744,8 @@ public class PolicyProcessingTest extends TestCase {
             public void call(final PolicyEnforcementContext context) {
                 try {
                     final Document document = context.getResponse().getXmlKnob().getDocumentReadOnly();
-                    String wsuNS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
-                    String dsigNS = "http://www.w3.org/2000/09/xmldsig#";
+                    String wsuNS = SoapUtil.WSU_NAMESPACE;
+                    String dsigNS = SoapUtil.DIGSIG_URI;
                     NodeList timestampNodeList = document.getElementsByTagNameNS(wsuNS, "Timestamp");
                     Assert.assertEquals("Timestamp found", 1, timestampNodeList.getLength());
                     NodeList issuerSerialNodeList = document.getElementsByTagNameNS(dsigNS, "X509IssuerSerial");
@@ -767,13 +770,47 @@ public class PolicyProcessingTest extends TestCase {
             public void call(final PolicyEnforcementContext context) {
                 try {
                     final Document document = context.getResponse().getXmlKnob().getDocumentReadOnly();
-                    String dsigNS = "http://www.w3.org/2000/09/xmldsig#";
+                    String dsigNS = SoapUtil.DIGSIG_URI;
                     NodeList signatureNodeList = document.getElementsByTagNameNS(dsigNS, "Signature");
                     Assert.assertEquals("Signature found", 1, signatureNodeList.getLength());
                     NodeList signatureReferenceNodeList = document.getElementsByTagNameNS(dsigNS, "Reference");
                     Assert.assertEquals("Signature references found", 3, signatureReferenceNodeList.getLength()); // 3, body, timestamp and protected token
                     NodeList issuerSerialNodeList = document.getElementsByTagNameNS(dsigNS, "X509IssuerSerial");
                     Assert.assertEquals("Issuer/Serial STR found", 1, issuerSerialNodeList.getLength());
+                } catch (Exception e) {
+                    throw ExceptionUtils.wrap(e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Test removal of the security header from request and response messages.
+     */
+    public void testRemoveSecurityHeaders() throws Exception {
+        byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
+        MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        final String requestMessage = new String(loadResource("REQUEST_signed.xml"));
+        Assert.assertTrue("Request message contains security header to remove", XmlUtil.parse(requestMessage).getElementsByTagNameNS(SoapUtil.SECURITY_NAMESPACE, "Security").getLength() > 0);
+        processMessage("/removeheaders", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call(final PolicyEnforcementContext context) {
+                try {
+                    final Document requestDocument = context.getRequest().getXmlKnob().getDocumentReadOnly();
+                    NodeList securityHeaderNodeList1 = requestDocument.getElementsByTagNameNS(SoapUtil.SECURITY_NAMESPACE, "Security");
+                    Assert.assertEquals("Request security headers found", 0, securityHeaderNodeList1.getLength());
+
+                    // Ensure empty header is removed
+                    NodeList soapHeaderNodeList1 = requestDocument.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_ENVELOPE, "Header");
+                    Assert.assertEquals("Request soap headers found", 0, soapHeaderNodeList1.getLength());
+
+                    final Document responseDocument = context.getResponse().getXmlKnob().getDocumentReadOnly();
+                    NodeList securityHeaderNodeList2 = responseDocument.getElementsByTagNameNS(SoapUtil.SECURITY_NAMESPACE, "Security");
+                    Assert.assertEquals("Response security headers found", 0, securityHeaderNodeList2.getLength());
+
+                    NodeList soapHeaderNodeList2 = responseDocument.getElementsByTagNameNS(SOAPConstants.URI_NS_SOAP_ENVELOPE, "Header");
+                    Assert.assertEquals("Response soap headers found", 0, soapHeaderNodeList2.getLength());
                 } catch (Exception e) {
                     throw ExceptionUtils.wrap(e);
                 }

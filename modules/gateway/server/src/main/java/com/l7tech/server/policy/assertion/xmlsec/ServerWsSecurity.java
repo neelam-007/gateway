@@ -18,7 +18,6 @@ import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.InvalidDocumentFormatException;
@@ -123,6 +122,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                         securityElement.getParentNode().removeChild(securityElement);
                     }
                 }
+                SoapUtil.removeEmptySoapHeader(document);
             }
 
             return AssertionStatus.NONE;

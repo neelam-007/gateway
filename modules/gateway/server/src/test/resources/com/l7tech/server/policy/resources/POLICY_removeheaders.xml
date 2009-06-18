@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Policy to remove WS-Security headers from the request and response messages.
+-->
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:WsSecurity>
+            <L7p:ApplyWsSecurity booleanValue="false"/>
+            <L7p:RemoveUnmatchedSecurityHeaders booleanValue="true"/>
+            <L7p:ReplaceSecurityHeader booleanValue="false"/>
+            <L7p:UseSecurityHeaderMustUnderstand booleanValue="false"/>
+        </L7p:WsSecurity>
+        <L7p:HardcodedResponse>
+            <L7p:Base64ResponseBody stringValue="PHNvYXBlbnY6RW52ZWxvcGUgeG1sbnM6c29hcGVudj0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvc29hcC9lbnZlbG9wZS8iIHhtbG5zOnhzZD0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEiIHhtbG5zOnhzaT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEtaW5zdGFuY2UiPgogICAgPHNvYXBlbnY6SGVhZGVyPjx3c3NlOlNlY3VyaXR5IGFjdG9yPSJzZWN1cmVfc3BhbiIgc29hcGVudjptdXN0VW5kZXJzdGFuZD0iMSIgeG1sbnM6d3NzZT0iaHR0cDovL2RvY3Mub2FzaXMtb3Blbi5vcmcvd3NzLzIwMDQvMDEvb2FzaXMtMjAwNDAxLXdzcy13c3NlY3VyaXR5LXNlY2V4dC0xLjAueHNkIiB4bWxuczp3c3U9Imh0dHA6Ly9kb2NzLm9hc2lzLW9wZW4ub3JnL3dzcy8yMDA0LzAxL29hc2lzLTIwMDQwMS13c3Mtd3NzZWN1cml0eS11dGlsaXR5LTEuMC54c2QiPgogICAgICAgICAgICA8d3N1OlRpbWVzdGFtcD48d3N1OkNyZWF0ZWQ+MjAwOS0wNi0xOFQxNjoxOToyOC4wNjkwMTE2MjlaPC93c3U6Q3JlYXRlZD48d3N1OkV4cGlyZXM+MjAwOS0wNi0xOFQxNzoxOToyOC4wNjlaPC93c3U6RXhwaXJlcz48L3dzdTpUaW1lc3RhbXA+CiAgICAgICAgPC93c3NlOlNlY3VyaXR5Pjwvc29hcGVudjpIZWFkZXI+CiAgICA8c29hcGVudjpCb2R5IHdzdTpJZD0iQm9keS0xLWE1NzUyN2YzOGQzODYwMGQ1M2Q4OTY4YmFiZjYxMWJkIiB4bWxuczp3c3U9Imh0dHA6Ly9kb2NzLm9hc2lzLW9wZW4ub3JnL3dzcy8yMDA0LzAxL29hc2lzLTIwMDQwMS13c3Mtd3NzZWN1cml0eS11dGlsaXR5LTEuMC54c2QiPgogICAgICAgIDx0bnM6bGlzdFByb2R1Y3RzIHhtbG5zOnRucz0iaHR0cDovL3dhcmVob3VzZS5hY21lLmNvbS93cyI+CiAgICAgICAgICAgIDx0bnM6ZGVsYXk+MDwvdG5zOmRlbGF5PgogICAgICAgIDwvdG5zOmxpc3RQcm9kdWN0cz4KICAgIDwvc29hcGVudjpCb2R5Pgo8L3NvYXBlbnY6RW52ZWxvcGU+"/>
+        </L7p:HardcodedResponse>
+        <L7p:WsSecurity>
+            <L7p:ApplyWsSecurity booleanValue="false"/>
+            <L7p:RemoveUnmatchedSecurityHeaders booleanValue="true"/>
+            <L7p:ReplaceSecurityHeader booleanValue="false"/>
+            <L7p:Target target="RESPONSE"/>
+            <L7p:UseSecurityHeaderMustUnderstand booleanValue="false"/>
+        </L7p:WsSecurity>
+    </wsp:All>
+</wsp:Policy>
