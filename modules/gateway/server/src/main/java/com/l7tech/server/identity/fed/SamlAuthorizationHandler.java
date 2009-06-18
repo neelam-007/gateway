@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 /**
  * @author alex
  */
-public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
+class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
     SamlAuthorizationHandler(FederatedIdentityProvider provider,
                              TrustedCertServices trustedCertServices,
                              ClientCertManager clientCertManager,
@@ -42,7 +42,7 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
         super(provider, trustedCertServices, clientCertManager, certValidationProcessor, auditor, certOidSet);
     }
 
-        User authorize(LoginCredentials pc) throws AuthenticationException {
+    User authorize(LoginCredentials pc) throws AuthenticationException {
         if (!providerConfig.isSamlSupported())
             throw new BadCredentialsException("This identity provider is not configured to support SAML credentials");
         Object maybeAssertion = pc.getSecurityToken();

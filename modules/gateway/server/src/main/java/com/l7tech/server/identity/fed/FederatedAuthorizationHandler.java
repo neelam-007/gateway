@@ -29,7 +29,7 @@ import java.util.Set;
  * @author alex
  * @version $Revision$
  */
-public class FederatedAuthorizationHandler {
+class FederatedAuthorizationHandler {
     
     FederatedAuthorizationHandler(final FederatedIdentityProvider provider,
                                   final TrustedCertServices trustedCertServices,

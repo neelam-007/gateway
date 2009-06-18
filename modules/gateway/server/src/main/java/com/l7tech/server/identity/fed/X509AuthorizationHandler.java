@@ -19,6 +19,8 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
+import com.l7tech.common.io.CertUtils;
+import com.l7tech.util.SyspropUtil;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
@@ -31,7 +33,9 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
+class X509AuthorizationHandler extends FederatedAuthorizationHandler {
+    private static final boolean ALLOW_SELF_SIGNED_TRUSTED_CERT = SyspropUtil.getBoolean(X509AuthorizationHandler.class.getName()+".allowSelfSigned", false); 
+
     X509AuthorizationHandler(FederatedIdentityProvider provider,
                              TrustedCertServices trustedCertServices,
                              ClientCertManager clientCertManager,
@@ -89,6 +93,18 @@ public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
         Collection<TrustedCert> trustedCerts = trustedCertServices.getCertsBySubjectDnFiltered(issuerDn, true, EnumSet.of(TrustedCert.TrustedFor.SIGNING_CLIENT_CERTS), certOidSet);
         if (trustedCerts.isEmpty())
             throw new BadCredentialsException("Signer '" + issuerDn + "' is not trusted");
+
+        // This check prevents use of a self signed trusted certificate as a user certificate
+        // See bug 7257
+        if ( !ALLOW_SELF_SIGNED_TRUSTED_CERT ) {
+            for (TrustedCert trustedCert : trustedCerts) {
+                final X509Certificate trustedX509 = trustedCert.getCertificate();
+                final boolean selfSigned = trustedX509.getSubjectX500Principal().equals(trustedX509.getIssuerX500Principal());
+                if ( selfSigned && CertUtils.certsAreEqual( trustedX509, requestCert ) ) {
+                    throw new BadCredentialsException("Unable to authenticate certificate: request certificate is (self signed) trusted certificate");
+                }
+            }
+        }
 
         for (TrustedCert trustedCert : trustedCerts) {
             final X509Certificate trustedX509 = trustedCert.getCertificate();
