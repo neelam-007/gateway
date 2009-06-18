@@ -1,31 +1,29 @@
 package com.l7tech.server.security.sharedkey;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.HexUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.HexUtils;
 import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.crypto.*;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.spec.InvalidParameterSpecException;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -243,7 +241,8 @@ public class SharedKeyManagerImpl extends HibernateDaoSupport implements SharedK
             throw new IOException("Invalid shared key format: " + b64edEncKey, nfe);
         }
 
-        Cipher cipher = Cipher.getInstance(CIPHER);
+        final Provider pbeProv = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_PBE_WITH_SHA1_AND_DESEDE);
+        Cipher cipher = pbeProv == null ? Cipher.getInstance(CIPHER) : Cipher.getInstance(CIPHER, pbeProv);
         cipher.init(Cipher.DECRYPT_MODE, sharedKeyDecryptionKey, new PBEParameterSpec(saltbytes, iterationCount));
         return cipher.doFinal(cipherbytes);
     }

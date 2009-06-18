@@ -123,9 +123,9 @@ public class JceProviderTest {
 
         {
             JceProvider.init();
-            String asymProvName = JceProvider.getAsymmetricJceProvider().getName();
-            log.info("Using asymmetric cryptography provider: " + JceProvider.getAsymmetricJceProvider().getName());
-            log.info("Using symmetric cryptography provider: " + JceProvider.getSymmetricJceProvider().getName());
+            String asymProvName = JceProvider.getInstance().getAsymmetricProvider().getName();
+            log.info("Using asymmetric cryptography provider: " + JceProvider.getInstance().getAsymmetricProvider());
+            log.info("Using symmetric cryptography provider: " + JceProvider.getInstance().getSymmetricProvider());
 
             FileInputStream sslks = null;
             KeyStore ks = null;
@@ -161,8 +161,8 @@ public class JceProviderTest {
             } else {
                 // Make our own CSR
                 log.info("pretest: generating certificate signing requset...");
-                KeyPair csrKeypair = JceProvider.generateRsaKeyPair();
-                csr = JceProvider.makeCsr("mike", csrKeypair);
+                KeyPair csrKeypair = JceProvider.getInstance().generateRsaKeyPair();
+                csr = JceProvider.getInstance().makeCsr("mike", csrKeypair);
             }
             log.info("CSR username = " + csr.getSubjectAsString());
 
@@ -199,7 +199,7 @@ public class JceProviderTest {
 
         reportTime("Generate key pair", 4 * scale, concur, new Testable() {
             public void run() {
-                JceProvider.generateRsaKeyPair();
+                JceProvider.getInstance().generateRsaKeyPair();
             }
         });
 

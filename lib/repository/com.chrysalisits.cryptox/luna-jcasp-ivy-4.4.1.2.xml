@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+    <info organisation="com.chrysalisits.cryptox"
+          module="luna-jcasp"
+          revision="4.4.1.2"
+          status="release"
+          publication="20090617134439"
+          default="true">
+        <description>This is the second alpha of the 4.4.1 JSP given directly to Layer 7 by Safenet engineering around 2009-Jun-11</description>
+    </info>
+    <configurations>
+        <conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="luna-jcasp" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>

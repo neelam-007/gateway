@@ -1,17 +1,13 @@
 package com.l7tech.security.prov.pkcs11;
 
-import com.l7tech.security.prov.JceProviderEngine;
-import com.l7tech.security.prov.RsaSignerEngine;
 import com.l7tech.security.prov.CertificateRequest;
-import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.SyspropUtil;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
-import java.security.*;
-import java.security.spec.ECGenParameterSpec;
-import java.security.cert.X509Certificate;
 import java.io.File;
+import java.security.*;
 import java.util.logging.Logger;
 
 /**
@@ -19,7 +15,7 @@ import java.util.logging.Logger;
  * adds a new one using the SunPKCS11 config file from the com.l7tech.server.pkcs11ConfigFile system
  * property (defaults to "/opt/SecureSpan/Appliance/etc/pkcs11_linux.cfg").
  */
-public class Pkcs11JceProviderEngine implements JceProviderEngine {
+public class Pkcs11JceProviderEngine extends JceProvider {
     protected static final Logger logger = Logger.getLogger(Pkcs11JceProviderEngine.class.getName());
 
     /**
@@ -52,67 +48,34 @@ public class Pkcs11JceProviderEngine implements JceProviderEngine {
             if (!cf.exists() || !cf.isFile() || !cf.canRead())
                 throw new IllegalStateException("No SunPKCS11 security provider registered, and no config file to create one (checked for " + CONFIG_PATH + ")");
 
-//            TODO uncomment when nightly build is running on Java 1.6, if we want this JceProviderEngine to be self-installing
-//            found = new sun.security.pkcs11.SunPKCS11(CONFIG_PATH);
-//            Security.addProvider(found);
             throw new IllegalStateException("No sunpkcs11 security provider found in JVM");
         }
 
         PROVIDER = found;
     }
 
-    public Provider getAsymmetricProvider() {
+    @Override
+    protected Provider getDefaultProvider() {
         return PROVIDER;
     }
 
-    public Provider getSymmetricProvider() {
-        return PROVIDER;
-    }
-
-    public Provider getSignatureProvider() {
-        return PROVIDER;
-    }
-
-    public RsaSignerEngine createRsaSignerEngine(PrivateKey caKey, X509Certificate[] caCertChain) {
-        return new BouncyCastleRsaSignerEngine(caKey, caCertChain[0], getSignatureProvider().getName(), getAsymmetricProvider().getName());
-    }
-
-    public KeyPair generateRsaKeyPair(int keysize) {
-        try {
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", PROVIDER.getName());
-            kpg.initialize(keysize);
-            return kpg.generateKeyPair();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("PKCS11 JCE provider misconfigured: " + e.getMessage(), e);
-        } catch (NoSuchProviderException e) {
-            throw new RuntimeException("PKCS11 JCE provider misconfigured: " + e.getMessage(), e);
-        }
-    }
-
-    public KeyPair generateEcKeyPair(String curveName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", getAsymmetricProvider());
-        kpg.initialize(new ECGenParameterSpec(curveName));
-        return kpg.generateKeyPair();
-    }
-
+    @Override
     public CertificateRequest makeCsr( String username, KeyPair keyPair ) throws SignatureException, InvalidKeyException {
         throw new UnsupportedOperationException("Pkcs11JceProviderEngine is unable to create new Certificate Signing Request using PKCS#11 KeyPair: Unsupported operation");
     }
 
-    public Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
-        return Cipher.getInstance("RSA/NONE/NoPadding", PROVIDER.getName());
+    @Override
+    public String getRsaNoPaddingCipherName() {
+        return "RSA/NONE/NoPadding";
     }
 
-    public Cipher getRsaOaepPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
-        return Cipher.getInstance("RSA/ECB/OAEPPadding", PROVIDER.getName());
+    @Override
+    public String getRsaOaepPaddingCipherName() {
+        return "RSA/ECB/OAEPPadding";
     }
 
-    public Cipher getRsaPkcs1PaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
-        return Cipher.getInstance("RSA/ECB/PKCS1Padding", PROVIDER.getName());
-    }
-
-    public Provider getProviderFor(String service) {
-        // No particular overrides required
-        return null;
+    @Override
+    public String getRsaPkcs1PaddingCipherName() {
+        return "RSA/ECB/PKCS1Padding";
     }
 }

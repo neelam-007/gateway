@@ -150,7 +150,9 @@ public class XencUtil {
         // Create encryption context and encrypt the header subtree
         EncryptionContext ec = new EncryptionContext();
         AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
-        af.setProvider(JceProvider.getSymmetricJceProvider().getName());
+        Provider symmetricProvider = JceProvider.getInstance().getSymmetricProvider();
+        if (symmetricProvider != null)
+            af.setProvider(symmetricProvider.getName());
         ec.setAlgorithmFactory(af);
         ec.setEncryptedType(encDataElement, EncryptedData.CONTENT, null, null);
 
@@ -351,7 +353,7 @@ public class XencUtil {
         if(oaepParams != null) {
             // decrypt
             try {
-                Cipher rsa = JceProvider.getRsaOaepPaddingCipher();
+                Cipher rsa = JceProvider.getInstance().getRsaOaepPaddingCipher();
                 rsa.init(Cipher.DECRYPT_MODE, recipientKey, JDK5Dependent.buildOAEPMGF1SHA1ParameterSpec(oaepParams));
                 unencryptedKey = rsa.doFinal(encryptedKeyBytes);
             }
@@ -361,7 +363,7 @@ public class XencUtil {
         }
         else {
             // decrypt
-            Cipher rsa = JceProvider.getRsaPkcs1PaddingCipher();
+            Cipher rsa = JceProvider.getInstance().getRsaPkcs1PaddingCipher();
             rsa.init(Cipher.DECRYPT_MODE, recipientKey);
 
             return rsa.doFinal(encryptedKeyBytes);
@@ -424,7 +426,7 @@ public class XencUtil {
             throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
                                    publicKey.getClass().getName());
         KeyUsageChecker.requireActivityForKey(KeyUsageActivity.encryptXml, recipientCert, publicKey);
-        Cipher rsa = JceProvider.getRsaPkcs1PaddingCipher();
+        Cipher rsa = JceProvider.getInstance().getRsaPkcs1PaddingCipher();
         rsa.init(Cipher.ENCRYPT_MODE, publicKey);
         return rsa.doFinal(keyBytes);
     }
@@ -445,7 +447,7 @@ public class XencUtil {
             throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
                                    publicKey.getClass().getName());
 
-        Cipher rsa = JceProvider.getRsaOaepPaddingCipher();
+        Cipher rsa = JceProvider.getInstance().getRsaOaepPaddingCipher();
         try {
             KeyUsageChecker.requireActivityForKey(KeyUsageActivity.encryptXml, recipientCert, publicKey);
             rsa.init(Cipher.ENCRYPT_MODE, publicKey, JDK5Dependent.buildOAEPMGF1SHA1ParameterSpec(oaepParams));

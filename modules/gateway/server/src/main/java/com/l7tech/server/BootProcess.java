@@ -221,8 +221,8 @@ public class BootProcess
 
         auditor.logAndAudit(BootMessages.CRYPTO_INIT);
         JceProvider.init();
-        auditor.logAndAudit(BootMessages.CRYPTO_ASYMMETRIC, JceProvider.getAsymmetricJceProvider().getName());
-        auditor.logAndAudit(BootMessages.CRYPTO_SYMMETRIC, JceProvider.getSymmetricJceProvider().getName());
+        auditor.logAndAudit(BootMessages.CRYPTO_ASYMMETRIC, String.valueOf(JceProvider.getInstance().getAsymmetricProvider()));
+        auditor.logAndAudit(BootMessages.CRYPTO_SYMMETRIC, String.valueOf(JceProvider.getInstance().getSymmetricProvider()));
 
         applicationContext.publishEvent(new Initialized(this, Component.GW_SERVER, ipAddress));
 

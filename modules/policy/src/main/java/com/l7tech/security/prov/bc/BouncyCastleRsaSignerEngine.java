@@ -43,15 +43,11 @@ import java.util.logging.Logger;
 public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
     private static final Logger logger = Logger.getLogger(BouncyCastleRsaSignerEngine.class.getName());
 
-    static {
-        // Make sure our provider is installed.  Probably unnecessary.
-        JceProvider.init();
-    }
-
-    private PrivateKey caPrivateKey;
-    private X509Certificate caCert;
     private static final SecureRandom random = new SecureRandom();
-    private final String signatureProvider;
+    private final PrivateKey caPrivateKey;
+    private final X509Certificate caCert;
+    private final Provider asymmetricProvider;
+    private final Provider signatureProvider;
 
     /**
      * Constructor for the RsaCertificateSigner object sets all fields to their most common usage using
@@ -60,12 +56,13 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
      * @param caPrivateKey  PrivateKey to use when signing certs.  Required.
      * @param caCert        Certificate to use when signing certs.  Required.  No need for an entire chain here
      *                      since we do not support intermediate CA certs.
-     * @param signatureProvider  name of JCE provider implementation to use for Signature algorithm.
-     * @param rsaProvider  name of JCE provider implementation to use for RSA public key extraction.
+     * @param asymmetricProvider Provider to use for asymmetric KeyFactory instances for parsing CSRs, or null to use current most-preference provider.
+     * @param signatureProvider Provider to use for Signature instances for verifying CSRs or signing certificates, or null to use current most-preference provider.
      */
-    public BouncyCastleRsaSignerEngine(PrivateKey caPrivateKey, X509Certificate caCert, String signatureProvider, String rsaProvider) {
+    public BouncyCastleRsaSignerEngine(PrivateKey caPrivateKey, X509Certificate caCert, Provider asymmetricProvider, Provider signatureProvider) {
         this.caPrivateKey = caPrivateKey;
         this.caCert = caCert;
+        this.asymmetricProvider = asymmetricProvider;
         this.signatureProvider = signatureProvider;
     }
 
@@ -75,13 +72,13 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
     }
 
     // Find the best sig alg available on the current signature provider for the specified algorithm (EC=true, RSA=false)
-    public static String getSigAlg(boolean usingEcc) {
+    private static String getSigAlg(boolean usingEcc, Provider signatureProvider) {
         String strongSigAlg = usingEcc ? "SHA384withECDSA" : "SHA384withRSA";
         String weakSigAlg = usingEcc ? "SHA1withECDSA" : "SHA1withRSA";
         String sigAlg = strongSigAlg;
 
         try {
-            Signature.getInstance(strongSigAlg, JceProvider.getSignatureProvider());
+            JceProvider.getSignature(strongSigAlg, signatureProvider);
         } catch (NoSuchAlgorithmException e) {
             // Not available; fall back to weak sig alg
             sigAlg = weakSigAlg;
@@ -90,7 +87,8 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
     }
 
     private static X509V3CertificateGenerator makeCertGenerator( X509Name subject, Date expiration,
-                                                                 PublicKey publicKey, CertType type )
+                                                                 PublicKey publicKey, CertType type,
+                                                                 Provider signatureProvider)
             throws InvalidKeyException
     {
         Calendar cal = Calendar.getInstance();
@@ -104,7 +102,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         certgen.setSerialNumber((new BigInteger(serno)).abs());
         certgen.setNotBefore(firstDate);
         certgen.setNotAfter(expiration);
-        certgen.setSignatureAlgorithm(getSigAlg(isUsingEcc(publicKey)));
+        certgen.setSignatureAlgorithm(getSigAlg(isUsingEcc(publicKey), signatureProvider));
 
         certgen.setSubjectDN(subject);
         certgen.setPublicKey(publicKey);
@@ -153,13 +151,14 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         cal.add(Calendar.DATE, validity);
         Date lastDate = cal.getTime();
         X509Name subject = new X509Name(subjectDn);
-        X509V3CertificateGenerator certgen = makeCertGenerator(subject, lastDate, keypair.getPublic(), CertType.CA);
+        X509V3CertificateGenerator certgen = makeCertGenerator(subject, lastDate, keypair.getPublic(), CertType.CA, JceProvider.getInstance().getSignatureProvider());
 
         // Self-signed, issuer == subject
         certgen.setIssuerDN(subject);
 
         try {
-            return certgen.generate(keypair.getPrivate(), JceProvider.getAsymmetricJceProvider().getName());
+            Provider prov = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CERTIFICATE_GENERATOR);
+            return certgen.generate(keypair.getPrivate(), prov == null ? null : prov.getName());
         } catch (NoSuchProviderException e) {
             throw new SignatureException(e);
         } catch (NoSuchAlgorithmException e) {
@@ -169,12 +168,12 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         }
     }
 
-    public static X509Certificate makeSignedCertificate(String subjectDn, Date expiration,
+    public X509Certificate makeSignedCertificate(String subjectDn, Date expiration,
                                                         PublicKey subjectPublicKey,
-                                                        X509Certificate caCert, PrivateKey caKey, CertType type)
+                                                        CertType type)
             throws IOException, SignatureException, InvalidKeyException {
         X509Name subject = new X509Name(subjectDn);
-        X509V3CertificateGenerator certgen = makeCertGenerator(subject, expiration, subjectPublicKey, type);
+        X509V3CertificateGenerator certgen = makeCertGenerator(subject, expiration, subjectPublicKey, type, signatureProvider);
         certgen.setIssuerDN(new X509Name(caCert.getSubjectDN().getName()));
 
         // Add authority key info (fingerprint)
@@ -183,7 +182,8 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         certgen.addExtension(X509Extensions.AuthorityKeyIdentifier.getId(), false, aki);
 
         try {
-            return certgen.generate(caKey, JceProvider.getSignatureProvider().getName());
+            Provider prov = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CERTIFICATE_GENERATOR);
+            return certgen.generate(caPrivateKey, prov == null ? null : prov.getName());
         } catch (NoSuchProviderException e) {
             throw new SignatureException(e);
         } catch (NoSuchAlgorithmException e) {
@@ -193,14 +193,14 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         }
     }
 
-    public static X509Certificate makeSignedCertificate(String subjectDn, int validity,
+    public X509Certificate makeSignedCertificate(String subjectDn, int validity,
                                                         PublicKey subjectPublicKey,
-                                                        X509Certificate caCert, PrivateKey caKey, CertType type)
+                                                        CertType type)
             throws IOException, SignatureException, InvalidKeyException {
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DATE, validity);
         Date lastDate = cal.getTime();
-        return makeSignedCertificate(subjectDn, lastDate, subjectPublicKey, caCert, caKey, type);
+        return makeSignedCertificate(subjectDn, lastDate, subjectPublicKey, type);
     }
 
     /**
@@ -211,6 +211,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
      * @return a signed X509 client certificate
      * @throws Exception if something bad happens
      */
+    @Override
     public Certificate createCertificate(byte[] pkcs10req, String subject) throws Exception {
         return createCertificate(pkcs10req, subject, -1);
     }
@@ -224,6 +225,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
      * @return a signed X509 client certificate
      * @throws Exception if something bad happens
      */
+    @Override
     public Certificate createCertificate(byte[] pkcs10req, String subject, long expiration) throws Exception {
         PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(pkcs10req);
         CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
@@ -233,25 +235,25 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         }
         logger.info("Signing cert for subject DN = " + dn);
         PublicKey publicKey = getPublicKey(pkcs10);
-        if (!pkcs10.verify(publicKey, signatureProvider)) {
+        if (!pkcs10.verify(publicKey, signatureProvider == null ? null : signatureProvider.getName())) {
             logger.severe("POPO verification failed for " + dn);
             throw new Exception("Verification of signature (popo) on PKCS10 request failed.");
         }
         X509Certificate cert;
         if (expiration == -1) {
-            cert = makeSignedCertificate(dn, CERT_DAYS_VALID, publicKey, caCert, caPrivateKey, CertType.CLIENT);
+            cert = makeSignedCertificate(dn, CERT_DAYS_VALID, publicKey, CertType.CLIENT);
         } else {
-            cert = makeSignedCertificate(dn, new Date(expiration), publicKey, caCert, caPrivateKey, CertType.CLIENT);
+            cert = makeSignedCertificate(dn, new Date(expiration), publicKey, CertType.CLIENT);
         }
         // Verify before returning
         // Convert to Sun cert first so BC won't screw us over by asking for some goofy BC-only algorithm names
         cert = (X509Certificate)CertUtils.getFactory().generateCertificate(new ByteArrayInputStream(cert.getEncoded()));
-        cert.verify(caCert.getPublicKey(), signatureProvider);
+        cert.verify(caCert.getPublicKey(), signatureProvider == null ? null : signatureProvider.getName());
         return cert;
     }
 
 
-    public static PublicKey getPublicKey(PKCS10CertificationRequest pkcs10) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, InvalidKeySpecException {
+    private PublicKey getPublicKey(PKCS10CertificationRequest pkcs10) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, InvalidKeySpecException {
         CertificationRequestInfo reqInfo = pkcs10.getCertificationRequestInfo();
         SubjectPublicKeyInfo subjectPKInfo = reqInfo.getSubjectPublicKeyInfo();
         X509EncodedKeySpec xspec = new X509EncodedKeySpec(new DERBitString(subjectPKInfo).getBytes());
@@ -267,6 +269,6 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
                  X9ObjectIdentifiers.id_ecPublicKey.getId().equals(alg))
             alg = "EC";
 
-        return KeyFactory.getInstance(alg).generatePublic(xspec);
+        return JceProvider.getInstance().getKeyFactory(alg).generatePublic(xspec);
     }
 }

@@ -1206,7 +1206,9 @@ public class WssProcessorImpl implements WssProcessor {
             }
         };
 
-        af.setProvider(JceProvider.getSymmetricJceProvider().getName());
+        Provider symmetricProvider = JceProvider.getInstance().getSymmetricProvider();
+        if (symmetricProvider != null)
+            af.setProvider(symmetricProvider.getName());
         dc.setAlgorithmFactory(af);
         dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT,
                             null, null);

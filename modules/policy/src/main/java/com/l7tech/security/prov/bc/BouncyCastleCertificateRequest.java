@@ -45,6 +45,7 @@ public class BouncyCastleCertificateRequest implements CertificateRequest {
     /**
      * @return a string like "cn=lyonsm"
      */
+    @Override
     public String getSubjectAsString() {
         return certReq.getCertificationRequestInfo().getSubject().toString();
     }
@@ -52,6 +53,7 @@ public class BouncyCastleCertificateRequest implements CertificateRequest {
     /**
      * @return the bytes of the encoded form of this certificate request
      */
+    @Override
     public byte[] getEncoded() {
         return certReq.getEncoded();
     }
@@ -59,6 +61,7 @@ public class BouncyCastleCertificateRequest implements CertificateRequest {
     /**
      * @return the public key in this certificate request
      */
+    @Override
     public PublicKey getPublicKey() throws InvalidKeyException, NoSuchProviderException, NoSuchAlgorithmException {
         return publicKey;
     }
@@ -67,10 +70,10 @@ public class BouncyCastleCertificateRequest implements CertificateRequest {
      * Create a new CSR using Bouncy Castle's X.509 classes, but using the specified JCE provider for crypto
      * operations.
      *
-     * @param username
-     * @param keyPair
-     * @param providerName
-     * @throws InvalidKeyException
+     * @param username      username to include as CN in DN of generated CSR.  Required.
+     * @param keyPair       the client's key pair.  public key will be included in generated CSR, and private key will be used to sign it.
+     * @param providerName  alternative provider to use for Signature, or null to use current best-preference.
+     * @throws InvalidKeyException  if key type is incorrect for CSR signature algorithm (SHA1withRSA)
      * @throws SignatureException
      */
     public static CertificateRequest makeCsr(String username, KeyPair keyPair, String providerName)
@@ -81,15 +84,15 @@ public class BouncyCastleCertificateRequest implements CertificateRequest {
         PublicKey publicKey = keyPair.getPublic();
         PrivateKey privateKey = keyPair.getPrivate();
 
-        // Generate request
-        PKCS10CertificationRequest certReq = null;
         try {
-            certReq = new PKCS10CertificationRequest(REQUEST_SIG_ALG, subject, publicKey, attrs, privateKey, providerName);
+            // Generate request
+            PKCS10CertificationRequest certReq =
+                    new PKCS10CertificationRequest(REQUEST_SIG_ALG, subject, publicKey, attrs, privateKey, providerName);
+            return new BouncyCastleCertificateRequest(certReq, publicKey);
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e); // can't happen
+            throw new RuntimeException(e);
         } catch (NoSuchProviderException e) {
-            throw new RuntimeException(e); // can't happen
+            throw new RuntimeException(e);
         }
-        return new BouncyCastleCertificateRequest(certReq, publicKey);
     }
 }

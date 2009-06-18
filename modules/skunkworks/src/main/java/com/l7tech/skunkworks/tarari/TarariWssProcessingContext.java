@@ -302,7 +302,7 @@ class TarariWssProcessingContext {
     private static ThreadLocal rsaSigMethod = new ThreadLocal() {
         protected Object initialValue() {
             try {
-                AlgorithmFactory af = new AlgorithmFactory(JceProvider.getAsymmetricJceProvider().getName());
+                AlgorithmFactory af = new AlgorithmFactory(JceProvider.getInstance().getAsymmetricProvider().getName());
                 return af.getSignatureMethod(SignatureMethod.RSA, null);
             } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException(e); // can't happen

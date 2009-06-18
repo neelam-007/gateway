@@ -91,7 +91,7 @@ public class SetKeys {
                 caks.load(null,null);
 
                 log.info("Generating RSA keypair for CA cert");
-                KeyPair cakp = JceProvider.generateRsaKeyPair();
+                KeyPair cakp = JceProvider.getInstance().generateRsaKeyPair();
                 caPrivateKey = cakp.getPrivate();
 
                 log.info("Generating self-signed CA cert");
@@ -159,11 +159,11 @@ public class SetKeys {
             } else {
                 // Generate new
                 log.info( "Generating RSA keypair for SSL cert" );
-                sslkp = JceProvider.generateRsaKeyPair();
+                sslkp = JceProvider.getInstance().generateRsaKeyPair();
                 X509Certificate sslCert =
-                    BouncyCastleRsaSignerEngine.makeSignedCertificate( SSL_DN_PREFIX + hostname,
+                    new BouncyCastleRsaSignerEngine(caPrivateKey, caCert, null, null).makeSignedCertificate( SSL_DN_PREFIX + hostname,
                                                                        SSL_VALIDITY_DAYS,
-                                                                       sslkp.getPublic(), caCert, caPrivateKey, RsaSignerEngine.CertType.SSL );
+                                                                       sslkp.getPublic(), RsaSignerEngine.CertType.SSL );
                 sslChain = new X509Certificate[] { sslCert, caCert };
             }
 

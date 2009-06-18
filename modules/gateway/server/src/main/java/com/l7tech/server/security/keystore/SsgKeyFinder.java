@@ -20,7 +20,8 @@ public interface SsgKeyFinder extends NamedEntity {
     enum SsgKeyStoreType {
         OTHER,
         PKCS12_SOFTWARE,
-        PKCS11_HARDWARE
+        PKCS11_HARDWARE,
+        LUNA_HARDWARE
     }
 
     long getOid();

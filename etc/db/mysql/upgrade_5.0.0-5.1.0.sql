@@ -15,6 +15,11 @@ SET FOREIGN_KEY_CHECKS=0;
 UPDATE ssg_version SET current_version = '5.1.0';
 
 --
+-- Insert Luna placeholder row
+--
+insert into keystore_file values (3, 0, "Luna", "luna", null, null);
+
+--
 -- Reenable FK at very end of script
 --
 SET FOREIGN_KEY_CHECKS=1;

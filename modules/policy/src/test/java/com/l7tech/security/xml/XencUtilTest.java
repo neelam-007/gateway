@@ -7,8 +7,8 @@ package com.l7tech.security.xml;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.HexUtils;
-import org.junit.*;
 import static org.junit.Assert.*;
+import org.junit.*;
 
 import java.security.PrivateKey;
 import java.security.SecureRandom;
@@ -23,16 +23,14 @@ import java.util.logging.Logger;
 public class XencUtilTest {
     private static Logger logger = Logger.getLogger(XencUtilTest.class.getName());
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeClass
+    public static void setUp() throws Exception {
         // setup the provider you want to test here
-        //System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.SUN_ENGINE);
         System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE);
     }
 
     @Test
     public void testPadKey() throws Exception {
-        System.out.println("USING PROVIDER: " + JceProvider.getAsymmetricJceProvider().getName());
         SecureRandom rand = new SecureRandom();
         X509Certificate recipientCert = TestDocuments.getDotNetServerCertificate();
         RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
@@ -48,7 +46,6 @@ public class XencUtilTest {
 
     @Test
     public void testEncryptKeyWithRsaAndPad() throws Exception {
-        System.out.println("USING PROVIDER: " + JceProvider.getAsymmetricJceProvider().getName());
         X509Certificate recipientCert = TestDocuments.getDotNetServerCertificate();
         RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
         byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
@@ -59,7 +56,6 @@ public class XencUtilTest {
 
     @Test
     public void testRoundTripRsaEncryptedKey() throws Exception {
-        System.out.println("USING PROVIDER: " + JceProvider.getAsymmetricJceProvider().getName());
         PrivateKey pkey = TestDocuments.getDotNetServerPrivateKey();
         X509Certificate recipientCert = TestDocuments.getDotNetServerCertificate();
         RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
@@ -71,7 +67,6 @@ public class XencUtilTest {
 
     @Test
     public void testRoundTripRsaOaepEncryptedKey() throws Exception {
-        System.out.println("USING PROVIDER: " + JceProvider.getAsymmetricJceProvider().getName());
         PrivateKey pkey = TestDocuments.getDotNetServerPrivateKey();
         X509Certificate recipientCert = TestDocuments.getDotNetServerCertificate();
         RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
@@ -85,8 +80,7 @@ public class XencUtilTest {
     @Ignore("Disabled because it fails as of 5.0.0, and nobody remembers what the test was for originally")
     @Test
     public void testWeirdLeadin0InSunJCE() throws Exception {
-        System.out.println("USING PROVIDER: " + JceProvider.getAsymmetricJceProvider().getName());
-        if (!JceProvider.getAsymmetricJceProvider().getName().equals("BC")) {
+        if (!JceProvider.getInstance().getAsymmetricProvider().getName().equals("BC")) {
             System.out.println("This test is meant to be ran with BC provider. Aborting.");
             return;
         }
@@ -100,14 +94,14 @@ public class XencUtilTest {
     @Test
     public void testCompareCipherOutputForEncryptedKeysBetweenSUNAndBC1() throws Exception {
         System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.SUN_ENGINE);
-        System.out.println("USING PROVIDER: " + JceProvider.getAsymmetricJceProvider().getName());
+        System.out.println("USING PROVIDER: " + JceProvider.getInstance().getAsymmetricProvider().getName());
         System.out.println("SUN OUTPUT:" + getEncryptedKey());
     }
 
     @Test
     public void testCompareCipherOutputForEncryptedKeysBetweenSUNAndBC2() throws Exception {
         System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE);
-        System.out.println("USING PROVIDER: " + JceProvider.getAsymmetricJceProvider().getName());
+        System.out.println("USING PROVIDER: " + JceProvider.getInstance().getAsymmetricProvider().getName());
         System.out.println("BC OUTPUT:" + getEncryptedKey());
     }
 

@@ -504,7 +504,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
         try {
             log.info("Generating new RSA key pair (could take several seconds)...");
             ssg.getRuntime().getCredentialManager().notifyLengthyOperationStarting(ssg, "Generating new client certificate...");
-            obtainClientCertificate(credentials, JceProvider.generateRsaKeyPair());
+            obtainClientCertificate(credentials, JceProvider.getInstance().generateRsaKeyPair());
         } finally {
             ssg.getRuntime().getCredentialManager().notifyLengthyOperationFinished(ssg);
         }
@@ -529,7 +529,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
     private void obtainClientCertificate(PasswordAuthentication credentials, KeyPair keyPair)
             throws GeneralSecurityException, IOException,
             BadCredentialsException, CertificateAlreadyIssuedException, KeyStoreCorruptException, ServerFeatureUnavailableException {
-        CertificateRequest csr = JceProvider.makeCsr(ssg.getUsername(), keyPair);
+        CertificateRequest csr = JceProvider.getInstance().makeCsr(ssg.getUsername(), keyPair);
 
         X509Certificate caCert = getServerCert();
         if (caCert == null) {

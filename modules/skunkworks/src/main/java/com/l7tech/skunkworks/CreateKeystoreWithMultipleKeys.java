@@ -3,14 +3,13 @@ package com.l7tech.skunkworks;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.RsaSignerEngine;
 import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
-import com.ibm.xml.policy.xacl.builtIn.provisional_action.log;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.io.File;
-import java.io.IOException;
-import java.io.FileOutputStream;
 
 /**
  * Creates two Keystores. One containin the CA cert and the other containing multiple "client" keys
@@ -95,11 +94,11 @@ public class CreateKeystoreWithMultipleKeys {
         ks.load(null, null);
 
         for (int i = 0; i < numKeys; ++i) {
-            KeyPair kp = JceProvider.generateRsaKeyPair();
+            KeyPair kp = JceProvider.getInstance().generateRsaKeyPair();
 
             String cnPrefix = "cn=" + String.valueOf(i) + ".";
-            X509Certificate sslCert = BouncyCastleRsaSignerEngine.makeSignedCertificate( cnPrefix + hostname,
-                                                                   365, kp.getPublic(), caCert, caPrivateKey, RsaSignerEngine.CertType.SSL );
+            X509Certificate sslCert = new BouncyCastleRsaSignerEngine(caPrivateKey, caCert, null, null).makeSignedCertificate( cnPrefix + hostname,
+                                                                   365, kp.getPublic(), RsaSignerEngine.CertType.SSL );
             String alias = "clientalias-" + String.valueOf(i);
             ks.setKeyEntry(alias, kp.getPrivate(), keyspassword.toCharArray(),
                                new X509Certificate[] { sslCert, caCert } );
@@ -118,7 +117,7 @@ public class CreateKeystoreWithMultipleKeys {
         File caksFile = new File(outputDir, CA_KS_NAME);
         KeyStore caks = KeyStore.getInstance(kstype);
         caks.load(null,null);
-        KeyPair cakp = JceProvider.generateRsaKeyPair();
+        KeyPair cakp = JceProvider.getInstance().generateRsaKeyPair();
         caPrivateKey = cakp.getPrivate();
         caCert = BouncyCastleRsaSignerEngine.makeSelfSignedRootCertificate("cn=root." + hostname, 365, cakp);
         caks.setKeyEntry("ssgroot", caPrivateKey, capassword.toCharArray(), new X509Certificate[] { caCert } );

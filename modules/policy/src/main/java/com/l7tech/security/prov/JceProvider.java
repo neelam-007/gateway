@@ -5,25 +5,32 @@
 
 package com.l7tech.security.prov;
 
+import com.l7tech.security.prov.bc.BouncyCastleCertificateRequest;
+import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
 import com.l7tech.util.SyspropUtil;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import java.security.*;
 import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Provide a single point where our JCE provider can be altered.
- * @author mike
- * @version 1.0
+ * Provide a single point where our Security providers can be configured and queried,
+ * and gives us the ability to override the default
+ * provider selection, when necessary, for certain operations when using certain providers.
  */
 public abstract class JceProvider {
     public static final String ENGINE_PROPERTY = "com.l7tech.common.security.jceProviderEngine";
 
     private static final int DEFAULT_RSA_KEYSIZE = SyspropUtil.getInteger("com.l7tech.security.prov.defaultRsaKeySize", 1024);
+    private static final String REQUEST_SIG_ALG = "SHA1withRSA";
 
     // Available drivers
     public static final String BC_ENGINE = "com.l7tech.security.prov.bc.BouncyCastleJceProviderEngine";
@@ -39,9 +46,9 @@ public abstract class JceProvider {
     private static final String OLD_SUN_ENGINE = "com.l7tech.common.security.prov.sun.SunJceProviderEngine";
     private static final String OLD_PKCS11_ENGINE = "com.l7tech.common.security.prov.pkcs11.Pkcs11JceProviderEngine";
 
-    /** Recognized service name to pass to {@link #getProviderFor(String)}. */
-    public static String SERVICE_PBE_WITH_SHA1_AND_DESEDE = "Cipher.PBEWithSHA1AndDESede";
-
+    /** Recognized service names to pass to {@link #getProviderFor(String)}. */
+    public static final String SERVICE_PBE_WITH_SHA1_AND_DESEDE = "Cipher.PBEWithSHA1AndDESede";
+    public static final String SERVICE_CERTIFICATE_GENERATOR = "Signature.BouncyCastleCertificateGenerator";
 
     private static final Map<String,String> DRIVER_MAP;
 
@@ -67,18 +74,18 @@ public abstract class JceProvider {
     private static final String DEFAULT_ENGINE = BC_ENGINE;
 
     private static class Holder {
-        private static final String ENGINE = mapEngine(System.getProperty(ENGINE_PROPERTY, DEFAULT_ENGINE));
-        private static final JceProviderEngine engine = createEngine();
+        private static final String ENGINE_NAME = mapEngine(System.getProperty(ENGINE_PROPERTY, DEFAULT_ENGINE));
+        private static final JceProvider engine = createEngine();
 
-        private static JceProviderEngine createEngine() {
+        private static JceProvider createEngine() {
             try {
-                return (JceProviderEngine) Class.forName(ENGINE).getConstructors()[0].newInstance();
+                return (JceProvider) Class.forName(ENGINE_NAME).getConstructors()[0].newInstance();
             } catch (Throwable t) {
-                throw new RuntimeException("Requested JceProviderEngine could not be instantiated: " + t.getMessage(), t);
+                throw new RuntimeException("Requested JceProvider could not be instantiated: " + t.getMessage(), t);
             }
         }
 
-        private static JceProviderEngine getEngine() {
+        private static JceProvider getEngine() {
             return engine;
         }
     }
@@ -88,60 +95,278 @@ public abstract class JceProvider {
         Holder.getEngine();
     }
 
-    /** @return the JceProviderEngine class name currently being used. */
+    /** @return the JceProvider class name currently being used. */
     public static String getEngineClass() {
         init();
-        return Holder.ENGINE;
+        return Holder.ENGINE_NAME;
     }
 
-    public static Provider getSymmetricJceProvider() {
-        return Holder.engine.getSymmetricProvider();
+    public static JceProvider getInstance() {
+        return Holder.getEngine();
     }
 
-    public static Provider getAsymmetricJceProvider() {
-        return Holder.engine.getAsymmetricProvider();
+    /** @return Provider to return by default from any getFooProvider() methods that are not overridden. */
+    protected Provider getDefaultProvider() {
+        return null;
     }
 
-    public static Provider getSignatureProvider() {
-        return Holder.engine.getSignatureProvider();
+    /**
+     * Get the Provider to use for asymmetric (ie, Cipher.RSA or KeyAgreement.EC) encryption.
+     *
+     * @return the JCE Provider, or null if the usual highest-preference Provider should be used.
+     */
+    public Provider getAsymmetricProvider() {
+        return getDefaultProvider();
     }
 
-    /** @return provider recommended for specified service, or null to recommend asking for service without specifying a provider. */
-    public static Provider getProviderFor(String service) throws NoSuchProviderException {
-        return Holder.engine.getProviderFor(service);
+    /**
+     * Get the Provider to use for symmetric (ie, Cipher.DES or Cipher.AES) encryption.
+     *
+     * @return the JCE Provider, or null if the usual highest-preference Provider should be used.
+     */
+    public Provider getSymmetricProvider() {
+        return getDefaultProvider();
     }
 
-    public static Cipher getRsaNoPaddingCipher() throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException {
-        return Holder.engine.getRsaNoPaddingCipher();
+    /**
+     * Get the Provider to use for higher-level Signature support (ie, SHA1withRSA or SHA384withECDSA).
+     *
+     * @return the JCE Provider, or null if the usual highest-preference Provider should be used.
+     */
+    public Provider getSignatureProvider() {
+        return getDefaultProvider();
     }
 
-    public static Cipher getRsaOaepPaddingCipher() throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException {
-        return Holder.engine.getRsaOaepPaddingCipher();
+    /**
+     * Create an RsaSignerEngine that uses the current crypto API.
+     * This can be used to sign certificates.
+     *
+     * @param caKey       CA private key for signing.  Required.
+     * @param caCertChain CA cert chain for signing.  Required.
+     * @return an RsaSignerEngine that can be used to sign certificates.  Never null.
+     */
+    public RsaSignerEngine createRsaSignerEngine(PrivateKey caKey, X509Certificate[] caCertChain) {
+        return new BouncyCastleRsaSignerEngine(caKey, caCertChain[0], getAsymmetricProvider(), getSignatureProvider());
     }
 
-    public static Cipher getRsaPkcs1PaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
-        return Holder.engine.getRsaPkcs1PaddingCipher();
+    /**
+     * Generate an RSA public key / private key pair using the current Crypto provider with the default RSA key size.
+     *
+     * @return a new RSA key pair.  Never null.
+     */
+    public KeyPair generateRsaKeyPair() {
+        return generateRsaKeyPair(DEFAULT_RSA_KEYSIZE);
     }
 
-    public static RsaSignerEngine createRsaSignerEngine(PrivateKey caKey, X509Certificate[] caCertChain) {
-        return Holder.engine.createRsaSignerEngine(caKey, caCertChain);
+    /**
+     * Generate an RSA public key / private key pair using the current Crypto provider with the specified key size.
+     * @param keybits  desired RSA key size in bits, ie 1024.
+     * @return a new RSA KeyPair instance with the specified key size.
+     */
+    public KeyPair generateRsaKeyPair(int keybits) {
+        try {
+            KeyPairGenerator kpg = getKeyPairGenerator("RSA");
+            kpg.initialize(keybits);
+            return kpg.generateKeyPair();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("No KeyPairGenerator.RSA available; likely a misconfiguration: " + e.getMessage(), e);
+        }
     }
 
-    public static KeyPair generateRsaKeyPair() {
-        return Holder.engine.generateRsaKeyPair(DEFAULT_RSA_KEYSIZE);
+    /**
+     * Generate an ECC public key / private key pair using the current Crypto provider with the specified curve name.
+     *
+     * @param curveName  curve name to use, ie "P-384".  Required.
+     * @return the generated key pair.  Never null.
+     * @throws NoSuchAlgorithmException  if ECC is not currently available.
+     * @throws InvalidAlgorithmParameterException if the specified curve name is unrecognized.
+     */
+    public KeyPair generateEcKeyPair(String curveName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", getAsymmetricProvider());
+        kpg.initialize(new ECGenParameterSpec(curveName));
+        return kpg.generateKeyPair();
     }
 
-    public static KeyPair generateRsaKeyPair(int keysize) {
-        return Holder.engine.generateRsaKeyPair(keysize);
+    /**
+     * Generate a CertificateRequest using the current Crypto provider.
+     *
+     * @param username  the username, ie "lyonsm"
+     * @param keyPair  the public and private keys
+     * @return a new PKCS#10 CertificateRequest instance.  Never null.
+     * @throws java.security.InvalidKeyException  if the specified key is unsuitable
+     * @throws java.security.SignatureException   if there is a problem signing the CSR
+     */
+    public CertificateRequest makeCsr( String username, KeyPair keyPair ) throws SignatureException, InvalidKeyException {
+        return staticMakeCsr( username, keyPair, getSignatureProvider().getName());
     }
 
-    public static KeyPair generateEcKeyPair(String curveName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        return Holder.engine.generateEcKeyPair(curveName);
+    /**
+     * Get an implementation of RSA configured to work in raw mode, with padding disabled.
+     *
+     * @return an RSA Cipher implementation.  Never null.
+     * @throws NoSuchProviderException   if there is a configuration problem.  Shouldn't happen.
+     * @throws NoSuchAlgorithmException  if this provider is unable to deliver an appropriately-configured RSA implementation.  Shouldn't happen.
+     * @throws NoSuchPaddingException    if this provider is unable to deliver an appropriately-configured RSA implementation.  Shouldn't happen.
+     */
+    public Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return getCipher(getRsaNoPaddingCipherName(), getAsymmetricProvider());
     }
 
-    public static CertificateRequest makeCsr(String username, KeyPair keyPair)
-                 throws SignatureException, InvalidKeyException, RuntimeException
-    {
-        return Holder.engine.makeCsr(username, keyPair);
+    /** @return name to request to get RSA in ECB mode with no padding, or null to disable. */
+    protected String getRsaNoPaddingCipherName() {
+        return "RSA/NONE/NoPadding";
+    }
+
+    /**
+     * Get an implementation of RSA configured to work in raw mode, with OAEP padding.
+     *
+     * @return an RSA Cipher implementation.  Never null.
+     * @throws NoSuchProviderException   if there is a configuration problem.  Shouldn't happen.
+     * @throws NoSuchAlgorithmException  if this provider is unable to deliver an appropriately-configured RSA implementation.  Shouldn't happen.
+     * @throws NoSuchPaddingException    if this provider is unable to deliver an appropriately-configured RSA implementation.  Shouldn't happen.
+     */
+    public Cipher getRsaOaepPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return getCipher(getRsaOaepPaddingCipherName(), getAsymmetricProvider());
+    }
+
+    protected String getRsaOaepPaddingCipherName() {
+        return "RSA/NONE/OAEPPadding";
+    }
+
+    /**
+     * Get an implementation of RSA configured to work in raw mode, with PKCS#1 version 1.5 padding.
+     *
+     * @return an RSA Cipher implementation.  Never null.
+     * @throws NoSuchProviderException   if there is a configuration problem.  Shouldn't happen.
+     * @throws NoSuchAlgorithmException  if this provider is unable to deliver an appropriately-configured RSA implementation.  Shouldn't happen.
+     * @throws NoSuchPaddingException    if this provider is unable to deliver an appropriately-configured RSA implementation.  Shouldn't happen.
+     */
+    public Cipher getRsaPkcs1PaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return getCipher(getRsaPkcs1PaddingCipherName(), getAsymmetricProvider());
+    }
+
+    protected String getRsaPkcs1PaddingCipherName() {
+        return "RSA/NONE/PKCS1Padding";
+    }
+
+    /**
+     * Obtain a Signature instance from the current JceProvider.
+     *
+     * @param alg  the signature algorithm, ie "SHA1withRSA".  Required.
+     * @return a new Signature instance for the requested algorithm.  Never null.
+     * @throws NoSuchAlgorithmException if the requested algorithm name is invalid or not available from the current provider.
+     */
+    public Signature getSignature(String alg) throws NoSuchAlgorithmException {
+        return getSignature(alg, getSignatureProvider());
+    }
+
+    /**
+     * Obtain a KeyPairGenerator from the current JceProvider.
+     *
+     * @param algorithm the key pair type, ie "RSA" or "EC".  Required.
+     * @return a new KeyPairGenerator instance for the requested algorithm.  Never null.
+     * @throws NoSuchAlgorithmException if the requested algorithm name is invalid or not available from the current provider.
+     */
+    public KeyPairGenerator getKeyPairGenerator(String algorithm) throws NoSuchAlgorithmException {
+        return getKeyPairGenerator(algorithm, getSignatureProvider());
+    }
+
+    /**
+     * Obtain a KeyFactory from the current JceProvider.
+     *
+     * @param algorithm the algorithm, ie "EC" or "AES".  Required.
+     * @return a new KeyFactory isntance for the requested algorithm.  Never null.
+     * @throws NoSuchAlgorithmException if the requested algorithm name is invalid or not available from the current provider.
+     */
+    public KeyFactory getKeyFactory(String algorithm) throws NoSuchAlgorithmException {
+        return getKeyFactory(algorithm, getProviderFor("KeyFactory." + algorithm));
+    }
+
+    /**
+     * Get a Provider appropriate for the specified service.  See JceProvider for a list of recognized service
+     * names.
+     *
+     * @param service the service to get.  Uses the name from JceProvider rather than the "real" name, which may be
+     *          different if the current engine names it differently.
+     * @return a Provider for the service, or null if the default provider should be used instead.
+     */
+    public Provider getProviderFor(String service) {
+        return null;
+    }
+
+    /**
+     * Generate a CertificateRequest using the specified Crypto provider.
+     *
+     * @param username  the username to put in the cert
+     * @param keyPair the public and private keys
+     * @param providerName name of the provider to use for crypto operations.
+     * @return a new CertificateRequest instance.  Never null.
+     * @throws java.security.InvalidKeyException  if a CSR cannot be created using the specified keypair
+     * @throws java.security.SignatureException   if the CSR cannot be signed
+     */
+    public static CertificateRequest staticMakeCsr(String username, KeyPair keyPair, String providerName ) throws InvalidKeyException, SignatureException {
+        X509Name subject = new X509Name("cn=" + username);
+        ASN1Set attrs = null;
+        PublicKey publicKey = keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
+
+        // Generate request
+        try {
+            PKCS10CertificationRequest certReq = new PKCS10CertificationRequest(REQUEST_SIG_ALG, subject, publicKey, attrs, privateKey, providerName);
+            return new BouncyCastleCertificateRequest(certReq, publicKey);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (NoSuchProviderException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+    }
+
+    /**
+     * Get the specified Cipher from the specified Provider (which may be null).
+     *
+     * @param cipherName  the transformation, ie "RSA/NONE/PKCS1Padding".  Required.
+     * @param prov  the provider to get it from, or null to get it from the current highest-preference Provider for that algorithm.
+     * @return an implementation of the requested Cipher algorithm.  Never null.
+     * @throws NoSuchAlgorithmException if the requested algorithm name is invalid or not available from the specified provider.
+     * @throws NoSuchPaddingException if the requested cipher padding scheme isn't available.
+     */
+    public static Cipher getCipher(String cipherName, Provider prov) throws NoSuchAlgorithmException, NoSuchPaddingException {
+        return prov == null ? Cipher.getInstance(cipherName) : Cipher.getInstance(cipherName, prov);
+    }
+
+    /**
+     * Get the specified KeyFactory from the specified Provider (which may be null).
+     *
+     * @param alg the algorithm, ie "RSA" or "EC".  Required.
+     * @param prov the provider to get it from, or null to get it from the current highest-preference Provider for that algorithm.
+     * @return an implementation of the requested KeyFactory.  Never null.
+     * @throws NoSuchAlgorithmException if the requested algorithm name is invalid or not available from the specified provider.
+     */
+    public static KeyFactory getKeyFactory(String alg, Provider prov) throws NoSuchAlgorithmException {
+        return prov == null ? KeyFactory.getInstance(alg) : KeyFactory.getInstance(alg, prov);
+    }
+
+    /**
+     * Get the specified Signature algorithm from the specified Provider (which may be null).
+     *
+     * @param sigName  the signature alg, ie "SHA1withRSA".  Required.
+     * @param prov   the provider to get it from, or null to get it from the current highest-preference Provider for that algorithm.
+     * @return an implementation of the requested Signature algorithm.  Never null.
+     * @throws NoSuchAlgorithmException if the requested algorithm name is invalid or not available from the specified provider.
+     */
+    public static Signature getSignature(String sigName, Provider prov) throws NoSuchAlgorithmException {
+        return prov == null ? Signature.getInstance(sigName) : Signature.getInstance(sigName, prov);
+    }
+
+    /**
+     * Get the specified KeyPairGenerator algorithm from the specified Provider (which may be null).
+     *
+     * @param alg  the algorithm, ie "RSA" or "EC".  Required.
+     * @param prov the provider to get it from, or null to get it from the current highest-preference Provider for that algorithm.
+     * @return an implementation of the requested KeyPairGenerator.  Never null.
+     * @throws NoSuchAlgorithmException if the requested algorithm name is invalid or not available from the specified provider.
+     */
+    public static KeyPairGenerator getKeyPairGenerator(String alg, Provider prov) throws NoSuchAlgorithmException {
+        return prov == null ? KeyPairGenerator.getInstance(alg) : KeyPairGenerator.getInstance(alg, prov);
     }
 }

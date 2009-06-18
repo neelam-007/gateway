@@ -7,6 +7,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.security.keystore.sca.ScaSsgKeyStore;
 import com.l7tech.server.security.keystore.software.DatabasePkcs12SsgKeyStore;
+import com.l7tech.server.security.keystore.luna.LunaSsgKeyStore;
 import com.l7tech.server.security.sharedkey.SharedKeyManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.MasterPasswordManager;
@@ -45,12 +46,6 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
     private boolean initialized = false;
     private List<SsgKeyFinder> keystores = null;
 
-    private static final String GATEWAY_CONFIG_DIR = "/opt/SecureSpan/Gateway/node/default/etc/conf";
-//    private static final String SSG_VAR_DIR = "/opt/SecureSpan/Gateway/node/default/var/";
-//    private static final String HSM_INIT_FILE = "hsm_init.properties";
-//    private static final String PROPERTY_SCA_HSMINIT_PASSWORD = "hsm.sca.password";
-
-
     public SsgKeyStoreManagerImpl(SharedKeyManager skm, KeystoreFileManager kem, ServerConfig serverConfig, char[] sslKeystorePassphrase, MasterPasswordManager passwordManager) throws KeyStoreException, FindException {
         if ( sslKeystorePassphrase == null || sslKeystorePassphrase.length==0 ) throw new IllegalArgumentException("sslKeystorePassphrase is required");
         if ( kem instanceof KeystoreFileManagerImpl ) throw new IllegalArgumentException("kem autoproxy failure");
@@ -82,9 +77,10 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
             throw new KeyStoreException(msg);
         }
 
+        boolean haveLuna = isUsingLuna();
         boolean haveHsm = isHsmAvailable();
         boolean createdHsmFinder = false;
-       
+
         for (KeystoreFile dbFile : dbFiles) {
             long id = Long.parseLong(dbFile.getId());
             String name = dbFile.getName();
@@ -93,12 +89,12 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
                 throw new KeyStoreException("Database contains keystore_file with no format objectid=" + id);
             if (format.startsWith("hsm.")) {
                 if (!haveHsm) {
-                    logger.info("Ignoring keystore_file row with a format of hsm because this Gateway node does not appear to have an HSM installed or enabled");
+                    logger.info("Ignoring keystore_file row with a format of hsm because this Gateway node is not configured to use an internal HSM");
                 } else {
                     if (createdHsmFinder)
                         throw new KeyStoreException("Database contains more than one keystore_file row with a format of hsm");
 
-                    String encryptedPassword = dbFile.getProperty("passphrase");                    
+                    String encryptedPassword = dbFile.getProperty("passphrase");
                     char[] decryptedPassword = dbEncrypter.decryptPasswordIfEncrypted(encryptedPassword);
                     list.add(ScaSsgKeyStore.getInstance(id, name, decryptedPassword, keystoreFileManager));
                     createdHsmFinder = true;
@@ -106,17 +102,27 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager {
             } else if (format.equals("ss")) {
                 logger.fine("Ignoring keystore_file row with a format of ss because this keystore type is no longer supported");
             } else if (format.startsWith("sdb.")) {
-                if (haveHsm)
-                    logger.info("Ignoring keystore_file row with a format of sdb because this Gateway node is using an HSM instead");
+                if (haveHsm || haveLuna)
+                    logger.info("Ignoring keystore_file row with a format of sdb because this Gateway node is using an HSM or Luna instead");
                 else
                     list.add(new DatabasePkcs12SsgKeyStore(id, name, keystoreFileManager,  softwareKeystorePasssword));
             }
+
+            // We'll ignore the placeholder row for Luna
+        }
+
+        if (haveLuna && list.isEmpty()) {
+            list.add(new LunaSsgKeyStore(3, SsgKeyFinder.SsgKeyStoreType.LUNA_HARDWARE, "Luna"));
         }
 
         // TODO maybe offer software keystores even if HSM is available?
         // TODO support multiple software keystores?
         keystores = Collections.unmodifiableList(list);
         initialized = true;
+    }
+
+    public boolean isUsingLuna() {
+        return JceProvider.LUNA_PKCS11_ENGINE.equals(JceProvider.getEngineClass()) || JceProvider.LUNA_ENGINE.equals(JceProvider.getEngineClass());
     }
 
     public boolean isHsmAvailable() {

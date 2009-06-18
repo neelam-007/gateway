@@ -40,6 +40,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     private static final AtomicBoolean startedRef = new AtomicBoolean(false);
 
     public static final class StartupListener implements ApplicationListener {
+        @Override
         public void onApplicationEvent(ApplicationEvent event) {
             if ( event instanceof Started) {
                 logger.info("Switching to executor for keystore mutation.");
@@ -62,10 +63,12 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     /** @return the format string for this keystore, to store in the format column in the DB, ie "hsm" or "sdb". */
     protected abstract String getFormat();
 
+    @Override
     public String getId() {
         return String.valueOf(getOid());
     }
 
+    @Override
     public List<String> getAliases() throws KeyStoreException {
         KeyStore keystore = keyStore();
 
@@ -80,6 +83,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         return ret;
     }
 
+    @Override
     public SsgKeyEntry getCertificateChain(String alias) throws ObjectNotFoundException, KeyStoreException {
         KeyStore keystore = keyStore();
 
@@ -104,7 +108,6 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         PrivateKey privateKey = null;
         try {
             Key key = keystore.getKey(alias, getEntryPassword());
-            key = KeyFactory.getInstance(key.getAlgorithm(), JceProvider.getAsymmetricJceProvider()).translateKey(key);
             if (key instanceof PrivateKey)
                 privateKey = (PrivateKey) key;
 
@@ -113,9 +116,6 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             // Fallthrough and do without
         } catch (UnrecoverableKeyException e) {
             getLogger().log(Level.WARNING, "Unrecoverable key in cert entry in " + "Keystore " + getName() + " with alias " + alias + ": " + ExceptionUtils.getMessage(e), e);
-            // Fallthrough and do without
-        } catch (InvalidKeyException e) {
-            getLogger().log(Level.WARNING, "Unable to translate key in cert entry in " + "Keystore " + getName() + " with alias " + alias + ": " + ExceptionUtils.getMessage(e), e);
             // Fallthrough and do without
         }
 
@@ -163,18 +163,22 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
      */
     protected abstract char[] getEntryPassword();
 
+    @Override
     public boolean isMutable() {
         return true;
     }
 
+    @Override
     public boolean isKeyExportSupported() {
         return true;
     }
 
+    @Override
     public SsgKeyStore getKeyStore() {
         return this;
     }
 
+    @Override
     public synchronized Future<Boolean> storePrivateKeyEntry(Runnable transactionCallback, final SsgKeyEntry entry, final boolean overwriteExisting) throws KeyStoreException {
         if (entry == null) throw new NullPointerException("entry must not be null");
         if (entry.getAlias() == null) throw new NullPointerException("entry's alias must not be null");
@@ -188,6 +192,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         }
 
         return mutateKeystore(transactionCallback, new Callable<Boolean>() {
+            @Override
             public Boolean call() throws KeyStoreException {
                 storePrivateKeyEntryImpl(entry, overwriteExisting);
                 return Boolean.TRUE;
@@ -195,8 +200,10 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
+    @Override
     public synchronized Future<Boolean> deletePrivateKeyEntry(Runnable transactionCallback, final String keyAlias) throws KeyStoreException {
         return mutateKeystore(transactionCallback, new Callable<Boolean>() {
+            @Override
             public Boolean call() throws KeyStoreException {
                 keyStore().deleteEntry(keyAlias);
                 return Boolean.TRUE;
@@ -204,18 +211,20 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
+    @Override
     public synchronized Future<X509Certificate> generateKeyPair(Runnable transactionCallback, final String alias, final X500Principal dn, final int keybits, final int expiryDays, final boolean makeCaCert)
             throws GeneralSecurityException
     {
         return mutateKeystore(transactionCallback, new Callable<X509Certificate>() {
+            @Override
             public X509Certificate call() throws GeneralSecurityException, DuplicateAliasException {
                 KeyStore keystore = keyStore();
                 if (keystore.containsAlias(alias))
                     throw new DuplicateAliasException("Keystore already contains alias " + alias);
 
                 // Requires that current crypto engine already by the correct one for this keystore type
-                KeyPair keyPair = JceProvider.generateRsaKeyPair(keybits);
-                X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair, makeCaCert, JceProvider.getSignatureProvider());
+                KeyPair keyPair = JceProvider.getInstance().generateRsaKeyPair(keybits);
+                X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair, makeCaCert, JceProvider.getInstance().getSignatureProvider());
 
                 keystore.setKeyEntry(alias, keyPair.getPrivate(), getEntryPassword(), new Certificate[] { cert });
 
@@ -224,10 +233,12 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
+    @Override
     public Future<X509Certificate> generateEcKeyPair(Runnable transactionCallback, final String alias, final X500Principal dn, final String curveName, final int expiryDays, final boolean makeCaCert)
             throws GeneralSecurityException
     {
         return mutateKeystore(transactionCallback, new Callable<X509Certificate>() {
+            @Override
             public X509Certificate call() {
                 try {
                     KeyStore keystore = keyStore();
@@ -235,8 +246,8 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
                         throw new RuntimeException("Keystore already contains alias " + alias);
 
                     // Requires that current crypto engine already by the correct one for this keystore type
-                    KeyPair keyPair = JceProvider.generateEcKeyPair(curveName);
-                    X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair, makeCaCert, JceProvider.getSignatureProvider());
+                    KeyPair keyPair = JceProvider.getInstance().generateEcKeyPair(curveName);
+                    X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair, makeCaCert, JceProvider.getInstance().getSignatureProvider());
 
                     keystore.setKeyEntry(alias, keyPair.getPrivate(), getEntryPassword(), new Certificate[] { cert });
 
@@ -262,10 +273,12 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
+    @Override
     public synchronized Future<Boolean> replaceCertificateChain(Runnable transactionCallback, final String alias, final X509Certificate[] chain) throws InvalidKeyException, KeyStoreException {
         if (chain == null || chain.length < 1 || chain[0] == null)
             throw new IllegalArgumentException("Cert chain must contain at least one cert.");
         return mutateKeystore(transactionCallback, new Callable<Boolean>() {
+            @Override
             public Boolean call() throws GeneralSecurityException, AliasNotFoundException {
                 KeyStore keystore = keyStore();
                 if (!keystore.isKeyEntry(alias))
@@ -290,6 +303,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
+    @Override
     public synchronized CertificateRequest makeCertificateSigningRequest(String alias, String dn) throws InvalidKeyException, SignatureException, KeyStoreException {
         try {
             X500Principal dnObj = new X500Principal(dn);
@@ -303,7 +317,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
                 throw new KeyStoreException("Existing certificate for alias " + alias + " is not an X.509 certificate");
             X509Certificate cert = (X509Certificate)chain[0];
             KeyPair keyPair = new KeyPair(cert.getPublicKey(), privateKey);
-            return BouncyCastleCertUtils.makeCertificateRequest(dnObj, keyPair, JceProvider.getSignatureProvider());
+            return BouncyCastleCertUtils.makeCertificateRequest(dnObj, keyPair, JceProvider.getInstance().getSignatureProvider());
         } catch (NoSuchAlgorithmException e) {
             throw new InvalidKeyException("Keystore contains no key with alias " + alias, e);
         } catch (UnrecoverableKeyException e) {

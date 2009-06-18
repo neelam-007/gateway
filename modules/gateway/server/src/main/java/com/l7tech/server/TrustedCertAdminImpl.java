@@ -21,7 +21,7 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
-import com.l7tech.security.prov.bc.BouncyCastleRsaSignerEngine;
+import com.l7tech.security.prov.RsaSignerEngine;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.admin.Created;
@@ -116,18 +116,22 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         }
     }
 
+    @Override
     public List<TrustedCert> findAllCerts() throws FindException {
         return new ArrayList<TrustedCert>(getManager().findAll());
     }
 
+    @Override
     public TrustedCert findCertByPrimaryKey(final long oid) throws FindException {
         return getManager().findByPrimaryKey(oid);
     }
 
+    @Override
     public Collection<TrustedCert> findCertsBySubjectDn(final String dn) throws FindException {
         return getManager().findBySubjectDn(dn);
     }
 
+    @Override
     public long saveCert(final TrustedCert cert) throws SaveException, UpdateException {
         checkLicenseHeavy();
         long oid;
@@ -153,19 +157,23 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         return oid;
     }
 
+    @Override
     public void deleteCert(final long oid) throws FindException, DeleteException {
         checkLicenseHeavy();
         getManager().delete(oid);
     }
 
+    @Override
     public List<RevocationCheckPolicy> findAllRevocationCheckPolicies() throws FindException {
         return new ArrayList<RevocationCheckPolicy>(getRevocationCheckPolicyManager().findAll());
     }
 
+    @Override
     public RevocationCheckPolicy findRevocationCheckPolicyByPrimaryKey(long oid) throws FindException {
         return getRevocationCheckPolicyManager().findByPrimaryKey(oid);
     }
 
+    @Override
     public long saveRevocationCheckPolicy(RevocationCheckPolicy revocationCheckPolicy) throws SaveException, UpdateException, VersionException {
         checkLicenseHeavy();
 
@@ -181,16 +189,19 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         return oid;
     }
 
+    @Override
     public void deleteRevocationCheckPolicy(long oid) throws FindException, DeleteException {
         checkLicenseHeavy();
         getRevocationCheckPolicyManager().delete(oid);
     }
 
+    @Override
     public X509Certificate[] retrieveCertFromUrl(String purl) throws IOException, HostnameMismatchException {
         checkLicenseHeavy();
         return retrieveCertFromUrl(purl, false);
     }
 
+    @Override
     public X509Certificate[] retrieveCertFromUrl(String purl, boolean ignoreHostname)
       throws IOException, HostnameMismatchException {
         checkLicenseHeavy();
@@ -201,6 +212,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         }
     }
 
+    @Override
     public X509Certificate getSSGRootCert() throws IOException, CertificateException {
         SsgKeyEntry caInfo = defaultKey.getCaInfo();
         if (caInfo == null)
@@ -208,10 +220,12 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         return caInfo.getCertificate();
     }
 
+    @Override
     public X509Certificate getSSGSslCert() throws IOException, CertificateException {
         return defaultKey.getSslInfo().getCertificate();
     }
 
+    @Override
     public List<KeystoreFileEntityHeader> findAllKeystores(boolean includeHardware) throws IOException, FindException, KeyStoreException {
         List<SsgKeyFinder> finders = ssgKeyStoreManager.findAll();
         List<KeystoreFileEntityHeader> list = new ArrayList<KeystoreFileEntityHeader>();
@@ -228,6 +242,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         return list;
     }
 
+    @Override
     public List<SsgKeyEntry> findAllKeys(long keystoreId) throws IOException, CertificateException, FindException {
         try {
             SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
@@ -256,6 +271,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
      * @throws FindException if there is a database problem (other than ObjectNotFoundException)
      * @throws KeyStoreException if there is a problem reading a keystore
      */
+    @Override
     public SsgKeyEntry findKeyEntry(String keyAlias, long preferredKeystoreOid) throws FindException, KeyStoreException {
         try {
             return keyAlias == null ? defaultKey.getSslInfo() : ssgKeyStoreManager.lookupKeyByKeyAlias(keyAlias, preferredKeystoreOid);
@@ -317,6 +333,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         }
     }
 
+    @Override
     public void deleteKey(long keystoreId, String keyAlias) throws IOException, CertificateException, DeleteException {
         checkLicenseKeyStore();
         if (keyAlias == null) throw new NullPointerException("keyAlias");
@@ -344,12 +361,14 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         }
     }
 
+    @Override
     public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays, boolean makeCaCert) throws FindException, GeneralSecurityException {
         SsgKeyStore keystore = checkBeforeGenerate(keystoreId, alias, dn, expiryDays);
         return registerJob(keystore.generateKeyPair(auditAfterCreate(keystore, alias, "generated"),
                 alias, new X500Principal(dn), keybits, expiryDays, makeCaCert), X509Certificate.class);
     }
 
+    @Override
     public JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, String dn, String curveName, int expiryDays, boolean makeCaCert) throws FindException, GeneralSecurityException {
         SsgKeyStore keystore = checkBeforeGenerate(keystoreId, alias, dn, expiryDays);
         return registerJob(keystore.generateEcKeyPair(auditAfterCreate(keystore, alias, "generated"),
@@ -382,6 +401,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         return keystore;
     }
 
+    @Override
     public byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException {
         checkLicenseKeyStore();
         SsgKeyFinder keyFinder;
@@ -409,6 +429,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         }
     }
 
+    @Override
     public String[] signCSR(long keystoreId, String alias, byte[] csrBytes) throws FindException, GeneralSecurityException {
         checkLicenseKeyStore();
         SsgKeyFinder keyFinder;
@@ -430,9 +451,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
 
         SsgKeyEntry entry = keystore.getCertificateChain(alias);
 
-        BouncyCastleRsaSignerEngine signer =
-                new BouncyCastleRsaSignerEngine(entry.getPrivateKey(), entry.getCertificate(),
-                        JceProvider.getSignatureProvider().getName(), JceProvider.getAsymmetricJceProvider().getName());
+        RsaSignerEngine signer = JceProvider.getInstance().createRsaSignerEngine(entry.getPrivateKey(), entry.getCertificateChain());
 
         X509Certificate cert;
         try {
@@ -461,6 +480,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         }
     }
 
+    @Override
     public void assignNewCert(long keystoreId, String alias, String[] pemChain) throws UpdateException, CertificateException {
         checkLicenseKeyStore();
         X509Certificate[] safeChain = CertUtils.parsePemChain(pemChain);
@@ -489,6 +509,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         }
     }
 
+    @Override
     public void importKey(long keystoreId, String alias, String[] pemChain, final byte[] privateKeyPkcs8)
             throws SaveException, CertificateException, InvalidKeyException {
         checkLicenseKeyStore();
@@ -499,14 +520,17 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         // Ensure all certs are instances that have come from the default certificate factory
         try {
             PrivateKey rsaPrivateKey = (PrivateKey)KeyFactory.getInstance("RSA").translateKey(new PrivateKey() {
+                @Override
                 public String getAlgorithm() {
                     return "RSA";
                 }
 
+                @Override
                 public String getFormat() {
                     return "PKCS#8";
                 }
 
+                @Override
                 public byte[] getEncoded() {
                     return privateKeyPkcs8;
                 }
@@ -537,38 +561,12 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         return KeyStore.getInstance("PKCS12", p);
     }
 
-    public SsgKeyEntry importKeyFromPkcs12(long keystoreId, String alias, byte[] pkcs12bytes, char[] pkcs12pass, String pkcs12alias) throws FindException, SaveException, KeyStoreException, MultipleAliasesException, AliasNotFoundException {
+    @Override
+    public SsgKeyEntry importKeyFromPkcs12(long keystoreId, String alias, byte[] pkcs12bytes, char[] pkcs12pass, String pkcs12alias)
+            throws FindException, SaveException, KeyStoreException, MultipleAliasesException, AliasNotFoundException
+    {
         try {
-            checkLicenseKeyStore();
-
-            KeyStore inks = createKeyStoreForParsingPkcs12();
-            inks.load(new ByteArrayInputStream(pkcs12bytes), pkcs12pass);
-
-            if (pkcs12alias == null) {
-                List<String> aliases = new ArrayList<String>(Collections.list(inks.aliases()));
-                if (aliases.isEmpty())
-                    throw new AliasNotFoundException("PKCS#12 file contains no private key entries");
-                if (aliases.size() > 1)
-                    throw new MultipleAliasesException(aliases.toArray(new String[aliases.size()]));
-                pkcs12alias = aliases.iterator().next();
-            }
-
-            Certificate[] chain = inks.getCertificateChain(pkcs12alias);
-            Key key = inks.getKey(pkcs12alias, pkcs12pass);
-            if (chain == null || key == null)
-                throw new AliasNotFoundException("alias not found in PKCS#12 file: " + pkcs12alias);
-
-            X509Certificate[] x509chain = CertUtils.asX509CertificateArray(chain);
-            if (!(key instanceof PrivateKey))
-                throw new KeyStoreException("Key entry is not a PrivateKey: " + key.getClass());
-
-            SsgKeyStore keystore = getKeyStore(keystoreId);
-            SsgKeyEntry entry = new SsgKeyEntry(keystore.getOid(), alias, x509chain, (PrivateKey)key);
-            Future<Boolean> future = keystore.storePrivateKeyEntry(auditAfterCreate(keystore, alias, "imported"), entry, false);
-            if (!future.get())
-                throw new KeyStoreException("Import operation returned false"); // can't happen
-
-            return keystore.getCertificateChain(alias);
+            return doImportKeyFromPkcs12(keystoreId, alias, pkcs12bytes, pkcs12pass, pkcs12alias);
 
         } catch (IOException e) {
             throw new KeyStoreException(e);
@@ -591,6 +589,42 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         }
     }
 
+    private SsgKeyEntry doImportKeyFromPkcs12(long keystoreId, String alias, byte[] pkcs12bytes, char[] pkcs12pass, String pkcs12alias)
+            throws KeyStoreException, NoSuchProviderException, IOException, NoSuchAlgorithmException, CertificateException,
+            AliasNotFoundException, MultipleAliasesException, UnrecoverableKeyException, SaveException, InterruptedException, ExecutionException, ObjectNotFoundException
+    {
+        checkLicenseKeyStore();
+
+        KeyStore inks = createKeyStoreForParsingPkcs12();
+        inks.load(new ByteArrayInputStream(pkcs12bytes), pkcs12pass);
+
+        if (pkcs12alias == null) {
+            List<String> aliases = new ArrayList<String>(Collections.list(inks.aliases()));
+            if (aliases.isEmpty())
+                throw new AliasNotFoundException("PKCS#12 file contains no private key entries");
+            if (aliases.size() > 1)
+                throw new MultipleAliasesException(aliases.toArray(new String[aliases.size()]));
+            pkcs12alias = aliases.iterator().next();
+        }
+
+        Certificate[] chain = inks.getCertificateChain(pkcs12alias);
+        Key key = inks.getKey(pkcs12alias, pkcs12pass);
+        if (chain == null || key == null)
+            throw new AliasNotFoundException("alias not found in PKCS#12 file: " + pkcs12alias);
+
+        X509Certificate[] x509chain = CertUtils.asX509CertificateArray(chain);
+        if (!(key instanceof PrivateKey))
+            throw new KeyStoreException("Key entry is not a PrivateKey: " + key.getClass());
+
+        SsgKeyStore keystore = getKeyStore(keystoreId);
+        SsgKeyEntry entry = new SsgKeyEntry(keystore.getOid(), alias, x509chain, (PrivateKey)key);
+        Future<Boolean> future = keystore.storePrivateKeyEntry(auditAfterCreate(keystore, alias, "imported"), entry, false);
+        if (!future.get())
+            throw new KeyStoreException("Import operation returned false"); // can't happen
+
+        return keystore.getCertificateChain(alias);
+    }
+
     private SsgKeyStore getKeyStore(long keystoreId) throws SaveException {
         SsgKeyFinder keyFinder;
         try {
@@ -607,6 +641,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         return keystore;
     }
 
+    @Override
     public byte[] exportKey(long keystoreId, String alias, String p12alias, char[] p12passphrase) throws FindException, KeyStoreException, UnrecoverableKeyException {
         checkLicenseKeyStore();
 
@@ -664,6 +699,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
 
     private Runnable publisher(final ApplicationEvent event) {
         return new CallableRunnable<Object>(AdminInfo.find(true).wrapCallable(new Callable<Object>() {
+            @Override
             public Object call() throws Exception {
                 applicationEventPublisher.publishEvent(event);
                 return null;
@@ -683,6 +719,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     private final TrustedCertManager trustedCertManager;
     private final RevocationCheckPolicyManager revocationCheckPolicyManager;
 
+    @Override
     public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
         this.applicationEventPublisher = applicationEventPublisher;
     }

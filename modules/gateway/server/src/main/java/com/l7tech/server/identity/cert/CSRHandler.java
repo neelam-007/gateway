@@ -239,7 +239,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         final SignerInfo ca = defaultKey.getCaInfo();
         if (ca == null)
             throw new NoCaException();
-        return JceProvider.createRsaSignerEngine(ca.getPrivate(), ca.getCertificateChain());
+        return JceProvider.getInstance().createRsaSignerEngine(ca.getPrivate(), ca.getCertificateChain());
     }
 
     private Certificate sign( final byte[] csr, final String subject ) throws Exception {
