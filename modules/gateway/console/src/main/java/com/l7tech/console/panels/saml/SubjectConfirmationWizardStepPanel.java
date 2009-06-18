@@ -289,7 +289,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
         }
 
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
-        String toolTipPRoofOfPosession = "<html>Require the Proof Of Possession -  Signed Message Body" +
+        String toolTipPRoofOfPosession = "<html>Require the Proof Of Possession -  Signed Message Body or Timestamp" +
           "<br>Alternatively, Proof of Possession can be secured with SSL Client Certificate by using SSL transport.</html>";
 
         confirmationHolderOfKeyButton.setToolTipText("<html>Key Info for the Subject, that the Assertion describes<br>" +

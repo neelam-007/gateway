@@ -9,12 +9,14 @@ import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.*;
 import com.l7tech.security.xml.processor.ProcessorResult;
+import com.l7tech.security.xml.processor.WssTimestamp;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import org.apache.xmlbeans.XmlObject;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import x0Assertion.oasisNamesTcSAML1.*;
 
 import java.io.IOException;
@@ -195,21 +197,21 @@ public class SamlAssertionValidate {
                     return;
                 }
                 // validate that the assertion is the soap:Body signer
-                if (!isBodySigned(assertion.getSignedElements())) {
-                    Error result = new Error("Can't validate proof of posession; the SOAP Body has not been signed with the Subject Confirmation Certificate", null);
+                if (!isBodyOrTimestampSigned(assertion.getSignedElements(), wssResults.getTimestamp())) {
+                    Error result = new Error("Can't validate proof of posession; the SOAP Body and Timestamp are not signed with the Subject Confirmation Certificate", null);
                     validationResults.add(result);
                     logger.finer(result.toString());
                 }
             } else if (assertion.isSenderVouches() && requestWssSaml.isRequireSenderVouchesWithMessageSignature()) {
-                // make sure ther soap:Body is signed. The actual trust verification is in FIP SamlAuthorizationHandler
-                X509Certificate bodySigner = getBodySigner(wssResults);
+                // make sure ther soap:Body or timestamp is signed. The actual trust verification is in FIP SamlAuthorizationHandler
+                X509Certificate messageSigner = getBodyOrTimestampSigner(wssResults, wssResults.getTimestamp());
 
-                if (bodySigner == null) {
-                    Error result = new Error("Can't validate proof of posession; the SOAP Body has not been signed", null);
+                if ( messageSigner == null) {
+                    Error result = new Error("Can't validate proof of posession; the SOAP Body and Timestamp are not signed", null);
                     validationResults.add(result);
                     logger.finer(result.toString());
                 } else {
-                    assertion.setAttestingEntity(bodySigner);
+                    assertion.setAttestingEntity( messageSigner);
                 }
             } else {
                 X509Certificate sslCert = credentials == null ? null : credentials.getClientCert();
@@ -245,33 +247,49 @@ public class SamlAssertionValidate {
         }
     }
 
-    private boolean isBodySigned(SignedElement[] signedElements)
+    private boolean isBodyOrTimestampSigned( final SignedElement[] signedElements,
+                                             final WssTimestamp timestamp )
       throws InvalidDocumentFormatException {
+        final Element timestampElement = timestamp!=null ? timestamp.asElement() : null;
+
         for (SignedElement signedElement : signedElements) {
             if (SoapUtil.isBody(signedElement.asElement())) return true;
+            if (timestampElement != null && timestampElement == signedElement.asElement()) return true;
         }
         return false;
     }
 
     /**
-     * Get the X509Certificate that signed the soap:Body or <code>null</code> if Body
-     * has not been signed.
-     *
-     * @param wssResult
-     * @throws InvalidDocumentFormatException
+     * Get the X509Certificate that signed the soap:Body or the security header
+     * timestamp or <code>null</code> if neither has been signed.
      */
-    private X509Certificate getBodySigner(ProcessorResult wssResult)
+    private X509Certificate getBodyOrTimestampSigner( final ProcessorResult wssResult,
+                                                      final WssTimestamp timestamp )
       throws InvalidDocumentFormatException {
-        SignedElement[] signedElements = WSSecurityProcessorUtils.filterSignedElementsByIdentity(null, wssResult, null, false);
+        final SignedElement[] signedElements = WSSecurityProcessorUtils.filterSignedElementsByIdentity(null, wssResult, null, false);
         for (SignedElement signedElement : signedElements) {
             if (SoapUtil.isBody(signedElement.asElement())) {
                 SigningSecurityToken signingSecurityToken = signedElement.getSigningSecurityToken();
                 if (!(signingSecurityToken instanceof X509SigningSecurityToken)) {
-                    throw new InvalidDocumentFormatException("Response body was signed, but not with an X509 Security Token");
+                    throw new InvalidDocumentFormatException("Message body was signed, but not with an X.509 Security Token");
                 }
                 return ((X509SecurityToken)signingSecurityToken).getCertificate();
             }
         }
+
+        if ( timestamp != null ) {
+            final Element timestampElement = timestamp.asElement();
+            for (SignedElement signedElement : signedElements) {
+                if (timestampElement == signedElement.asElement()) {
+                    SigningSecurityToken signingSecurityToken = signedElement.getSigningSecurityToken();
+                    if (!(signingSecurityToken instanceof X509SigningSecurityToken)) {
+                        throw new InvalidDocumentFormatException("Message timestamp was signed, but not with an X.509 Security Token");
+                    }
+                    return ((X509SecurityToken)signingSecurityToken).getCertificate();
+                }
+            }
+        }
+
         return null;
     }
 
