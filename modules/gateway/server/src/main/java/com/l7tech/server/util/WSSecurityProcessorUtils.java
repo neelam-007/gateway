@@ -16,6 +16,7 @@ import com.l7tech.gateway.common.audit.MessageProcessingMessages;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.policy.assertion.IdentityTarget;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.identity.User;
 import com.l7tech.identity.GroupBean;
 
@@ -65,24 +66,36 @@ public class WSSecurityProcessorUtils {
      * <p>This method check that there is a single signature in the message and
      * that the required elements are signed.</p>
      *
+     * @param authContext The authorization context to use.
      * @param wssResults The Processor Results to validate.
      * @param elementsToValidate The required signed elements
+     * @param checkSigningTokenIsCredential True to check that the signing token is a credential if any identity is permitted
      * @return True if valid
      */
-    public static boolean isValidSingleSigner( final ProcessorResult wssResults,
-                                               final ParsedElement[] elementsToValidate ) {
+    public static boolean isValidSingleSigner( final AuthenticationContext authContext,
+                                               final ProcessorResult wssResults,
+                                               final ParsedElement[] elementsToValidate,
+                                               final boolean checkSigningTokenIsCredential ) {
         boolean valid = true;
 
-        SignedElement[] signedElements = wssResults.getElementsThatWereSigned();
+        final SignedElement[] signedElements = wssResults.getElementsThatWereSigned();
+        final SigningSecurityToken[] tokens = checkSigningTokenIsCredential ?
+                getSigningSecurityTokens(authContext.getCredentials()) :
+                null;
 
         // Validate that there is only a single signing identity
         // Check for a single signature element, not token or certificate (bug 7157)
-        Set securityTokenElements = WSSecurityProcessorUtils.getSecurityTokenElements(wssResults);
+        final Set securityTokenElements = WSSecurityProcessorUtils.getSecurityTokenElements(wssResults);
         Element signatureElement = null;
         for ( SignedElement signedElement : signedElements ) {
             if (!securityTokenElements.contains(signedElement.asElement())) {
                 if (signatureElement == null) {
-                    signatureElement = signedElement.getSignatureElement();
+                    if ( tokens==null || ArrayUtils.contains(tokens, signedElement.getSigningSecurityToken()) ) {
+                        signatureElement = signedElement.getSignatureElement();
+                    } else {
+                        valid = false;
+                        break;
+                    }
                 } else {
                     if (signatureElement != signedElement.getSignatureElement()) {
                         valid = false;
@@ -252,16 +265,22 @@ public class WSSecurityProcessorUtils {
      * @param authContext The authorization context to use.
      * @param wssResults The WSS processing results
      * @param identityTarget The target identity (may be null)
+     * @param checkSigningTokenIsCredential True to check that the signing token is a credential if any identity is permitted
      * @return The signed elements, may be empty but never null.
      */
     public static SignedElement[] filterSignedElementsByIdentity( final AuthenticationContext authContext,
                                                                   final ProcessorResult wssResults,
-                                                                  final IdentityTarget identityTarget ) {
+                                                                  final IdentityTarget identityTarget,
+                                                                  final boolean checkSigningTokenIsCredential ) {
         List<SignedElement> signedElementsForIdentity = new ArrayList<SignedElement>();
 
         final SignedElement[] signedElements = wssResults.getElementsThatWereSigned();
         if ( new IdentityTarget().equals( new IdentityTarget(identityTarget)) ) {
-            if ( isValidSingleSigner( wssResults, new ParsedElement[0] ) ) {
+            if ( isValidSingleSigner(
+                    authContext,
+                    wssResults,
+                    new ParsedElement[0],
+                    checkSigningTokenIsCredential ) ) {
                 signedElementsForIdentity.addAll( Arrays.asList(signedElements) );
             }
         } else if ( isValidSigningIdentity( authContext, identityTarget, signedElements, new ParsedElement[0] ) ) {
@@ -279,6 +298,28 @@ public class WSSecurityProcessorUtils {
         }
 
         return signedElementsForIdentity.toArray(new SignedElement[signedElementsForIdentity.size()]);
+    }
+
+    /**
+     * Extract any signing security tokens from the given login credentials.
+     *
+     * @param loginCredentials The credentials to process
+     * @return The signing security tokens (may be empty but never null)
+     */
+    public static SigningSecurityToken[] getSigningSecurityTokens( final Collection<LoginCredentials> loginCredentials ) {
+        final Collection<SigningSecurityToken> signingSecurityTokens = new ArrayList<SigningSecurityToken>();
+
+        if ( loginCredentials != null ) {
+            for ( LoginCredentials loginCredential : loginCredentials ) {
+                for ( SecurityToken securityToken : loginCredential.getSecurityTokens() ) {
+                    if ( securityToken instanceof SigningSecurityToken ) {
+                        signingSecurityTokens.add( (SigningSecurityToken) securityToken );
+                    }
+                }
+            }
+        }
+
+        return signingSecurityTokens.toArray(new SigningSecurityToken[signingSecurityTokens.size()]);
     }
 
     /**

@@ -69,10 +69,11 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
             this.passwordExpiryTime = passwordExpiryTime;
         }
 
-        private MyUser(UserBean user, String certDn, long passwordExpiryTime) {
+        private MyUser(UserBean user, char[] password, String certDn, long passwordExpiryTime) {
             this.user = user;
-            this.certDn = certDn;
+            this.password = password;
             this.passwordExpiryTime = passwordExpiryTime;
+            this.certDn = certDn;
         }
     }
 
@@ -81,8 +82,8 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         usernameMap.put(username, myUser);
     }
 
-    public static void addUser(UserBean user, String username, String certDn) {
-        MyUser myUser = new MyUser(user, certDn, user.getPasswordExpiry());
+    public static void addUser(UserBean user, String username, char[] password, String certDn) {
+        MyUser myUser = new MyUser(user, password, certDn, user.getPasswordExpiry());
         usernameMap.put(username, myUser);
     }
 

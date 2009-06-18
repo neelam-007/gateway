@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:EncryptedUsernameToken/>
+        <L7p:Authentication>
+            <L7p:IdentityProviderOid longValue="9898"/>
+        </L7p:Authentication>
+        <L7p:RequireWssSignedElement/>
+        <L7p:HardcodedResponse>
+            <L7p:Base64ResponseBody stringValue="PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHNvYXBlbnY6RW52ZWxvcGUKICAgIHhtbG5zOnNvYXBlbnY9Imh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3NvYXAvZW52ZWxvcGUvIgogICAgeG1sbnM6eHNkPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSIgeG1sbnM6eHNpPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYS1pbnN0YW5jZSI+CiAgICA8c29hcGVudjpIZWFkZXIvPgogICAgPHNvYXBlbnY6Qm9keT4KICAgICAgICA8dG5zOmxpc3RQcm9kdWN0cyB4bWxuczp0bnM9Imh0dHA6Ly93YXJlaG91c2UuYWNtZS5jb20vd3MiPgogICAgICAgICAgICA8dG5zOmRlbGF5PjA8L3RuczpkZWxheT4KICAgICAgICA8L3RuczpsaXN0UHJvZHVjdHM+CiAgICA8L3NvYXBlbnY6Qm9keT4KPC9zb2FwZW52OkVudmVsb3BlPgo="/>
+        </L7p:HardcodedResponse>
+    </wsp:All>
+</wsp:Policy>

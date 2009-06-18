@@ -19,7 +19,6 @@
                 xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
                 xmlns:tns="http://warehouse.acme.com/ws"
                 xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">/soapenv:Envelope/soapenv:Body</wsse:MessageParts>
-            <L7p:VariablePrefix stringValue="signature"/>
         </wsse:Integrity>
         <L7p:HttpRoutingAssertion>
             <L7p:ProtectedServiceUrl stringValue="http://hugh/ACMEWarehouseWS/Service1.asmx"/>

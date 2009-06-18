@@ -262,7 +262,7 @@ public class SamlAssertionValidate {
      */
     private X509Certificate getBodySigner(ProcessorResult wssResult)
       throws InvalidDocumentFormatException {
-        SignedElement[] signedElements = WSSecurityProcessorUtils.filterSignedElementsByIdentity(null, wssResult, null);
+        SignedElement[] signedElements = WSSecurityProcessorUtils.filterSignedElementsByIdentity(null, wssResult, null, false);
         for (SignedElement signedElement : signedElements) {
             if (SoapUtil.isBody(signedElement.asElement())) {
                 SigningSecurityToken signingSecurityToken = signedElement.getSigningSecurityToken();

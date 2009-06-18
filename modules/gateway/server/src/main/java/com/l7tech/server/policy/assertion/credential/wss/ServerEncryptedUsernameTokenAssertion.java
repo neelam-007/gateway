@@ -117,7 +117,7 @@ public class ServerEncryptedUsernameTokenAssertion extends AbstractMessageTarget
                 }
 
                 // We're happy with this username token.  Proceed.
-                LoginCredentials creds = LoginCredentials.makeLoginCredentials(utok, WssBasic.class);
+                LoginCredentials creds = LoginCredentials.makeLoginCredentials(utok, WssBasic.class, signingToken);
                 authContext.addCredentials(creds);
 
                 if ( isRequest() ) {

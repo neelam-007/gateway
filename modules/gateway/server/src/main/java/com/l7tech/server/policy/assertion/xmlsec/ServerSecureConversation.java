@@ -14,6 +14,7 @@ import com.l7tech.identity.User;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressableSupport;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -104,7 +105,7 @@ public class ServerSecureConversation extends AbstractServerAssertion<SecureConv
                 User authenticatedUser = session.getUsedBy();
                 AuthenticationContext authContext = context.getAuthenticationContext(context.getRequest());
                 authContext.addAuthenticationResult(new AuthenticationResult(authenticatedUser, secConTok, session.getCredentials().getClientCert(), false));
-                authContext.addCredentials(session.getCredentials());
+                authContext.addCredentials(LoginCredentials.makeLoginCredentials(session.getCredentials().getSecurityToken(), SecureConversation.class, secConTok));
                 context.addDeferredAssertion(this, deferredSecureConversationResponseDecoration(session));
                 auditor.logAndAudit(AssertionMessages.SC_SESSION_FOR_USER, authenticatedUser.getLogin());
                 return AssertionStatus.NONE;

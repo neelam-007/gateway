@@ -36,6 +36,7 @@ import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.tarari.GlobalTarariContext;
+import com.l7tech.test.BugNumber;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -101,6 +102,7 @@ public class PolicyProcessingTest extends TestCase {
         {"/ipaddressrange", "POLICY_iprange.xml"},
         {"/xpathcreds", "POLICY_xpathcreds.xml"},
         {"/usernametoken", "POLICY_usernametoken.xml"},
+        {"/encusernametoken", "POLICY_wss_encryptedusernametoken.xml"},
         {"/httpbasic", "POLICY_httpbasic.xml"},
         {"/httproutecookie", "POLICY_httproutecookie.xml"},
         {"/httproutenocookie", "POLICY_httproutenocookie.xml"},
@@ -212,11 +214,11 @@ public class PolicyProcessingTest extends TestCase {
     private static void buildUsers() {
         UserBean ub1 = new UserBean(9898, "Alice");
         ub1.setUniqueIdentifier( "4718592" );
-        TestIdentityProvider.addUser(ub1, "Alice", "CN=Alice, OU=OASIS Interop Test Cert, O=OASIS");
+        TestIdentityProvider.addUser(ub1, "Alice", "password".toCharArray(), "CN=Alice, OU=OASIS Interop Test Cert, O=OASIS");
 
         UserBean ub2 = new UserBean(9898, "Bob");
         ub2.setUniqueIdentifier( "4718593" );
-        TestIdentityProvider.addUser(ub2, "Bob", "CN=Bob, OU=OASIS Interop Test Cert, O=OASIS");
+        TestIdentityProvider.addUser(ub2, "Bob", "password".toCharArray(), "CN=Bob, OU=OASIS Interop Test Cert, O=OASIS");
     }
 
     /**
@@ -361,6 +363,14 @@ public class PolicyProcessingTest extends TestCase {
         processMessage("/usernametoken", requestMessage1, 0);
         processMessage("/usernametoken", requestMessage2, 0);
         processMessage("/usernametoken", requestMessage3, AssertionStatus.AUTH_REQUIRED.getNumeric());
+    }
+
+    /**
+     * Test encrypted username token
+     */
+    public void testEncryptedUsernameToken() throws Exception {
+        String requestMessage = new String(loadResource("REQUEST_encryptedusernametoken.xml"));
+        processMessage("/encusernametoken", requestMessage, 0);
     }
 
     /**
@@ -626,6 +636,15 @@ public class PolicyProcessingTest extends TestCase {
      */
     public void testMultipleSignaturesRejected() throws Exception {
         processMessage("/x509token", new String(loadResource("REQUEST_multiplesignatures.xml")), 400);
+    }
+
+    /**
+     * Test multiple request signatures are rejected by WSS X.509 assertion when not enabled.
+     */
+    @BugNumber(7285)
+    public void testEncryptedKeyWithX509TokenRejected() throws Exception {
+        // Test with com.l7tech.server.policy.requireSigningTokenCredential=false for old behaviour
+        processMessage("/x509token", new String(loadResource("REQUEST_signed_x509_and_encryptedkey.xml")), 600);
     }
 
     /**

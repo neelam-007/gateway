@@ -9,6 +9,7 @@ import com.l7tech.security.token.X509SigningSecurityToken;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.SyspropUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.IdentityTarget;
@@ -38,6 +39,7 @@ import java.util.logging.Logger;
  */
 public class ServerRequireWssSignedElement extends ServerRequireWssOperation<RequireWssSignedElement> {
     private static final Logger logger = Logger.getLogger(ServerRequireWssSignedElement.class.getName());
+    private static final boolean requireCredentialSigningToken = SyspropUtil.getBoolean( "com.l7tech.server.policy.requireSigningTokenCredential", true );
 
     public ServerRequireWssSignedElement(RequireWssSignedElement data, ApplicationContext springContext) {
         super(logger, data, springContext);
@@ -119,8 +121,10 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
         if( elements.length>0 &&
            new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
             valid = WSSecurityProcessorUtils.isValidSingleSigner(
+                context.getAuthenticationContext(message),
                 wssResults,
-                new ParsedElement[0] // we validate that the right elements are signed elsewhere
+                new ParsedElement[0], // we validate that the right elements are signed elsewhere
+                requireCredentialSigningToken
             );
         }
 

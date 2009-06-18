@@ -139,15 +139,14 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
             throw new PolicyAssertionException(assertion, e);
         }
 
-        if (!elementsFoundForAssertionAreValid(context, message, wssResults, result.getElements())) {
-            return AssertionStatus.FALSIFIED;
-        }
-
         if ( isRequest() && result.isFoundButWasntOperatedOn() )
             context.setRequestPolicyViolated();
 
         switch (result.getResultCode()) {
             case ProcessorResultUtil.NO_ERROR:
+                if (!elementsFoundForAssertionAreValid(context, message, wssResults, result.getElements())) {
+                    return AssertionStatus.FALSIFIED;
+                }
                 return onCheckRequestSuccess( context, message, messageDescription );
             case ProcessorResultUtil.FALSIFIED:
                 return AssertionStatus.FALSIFIED;
@@ -172,7 +171,7 @@ public abstract class ServerRequireWssOperation<AT extends XmlSecurityAssertionB
     }
 
     /**
-     * Check that the ParsedElements that should have been signed for this assertion are valid.
+     * Check that the ParsedElements that should have been processed for this assertion are valid.
      *
      * @param wssResults the processor results
      * @param elements the parsed elements to check.

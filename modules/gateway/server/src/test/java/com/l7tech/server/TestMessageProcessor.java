@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.security.xml.decorator.WssDecorator;
+import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -18,6 +19,7 @@ import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceMetricsServicesImpl;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.server.util.SoapFaultManager;
+import com.l7tech.common.TestDocuments;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -42,11 +44,11 @@ public class TestMessageProcessor extends MessageProcessor {
      * @throws IllegalArgumentException if any of the arguments is null
      */
     public TestMessageProcessor(ServiceCache sc, PolicyCache pc, WssDecorator wssd)
-            throws IllegalArgumentException {
+            throws Exception {
         super(  sc,
                 pc,
                 wssd,
-                null,
+                new SimpleSecurityTokenResolver( TestDocuments.getDotNetServerCertificate(), TestDocuments.getDotNetServerPrivateKey()),
                 new TestLicenseManager(),
                 new ServiceMetricsServicesImpl("yo"),
                 new AuditContextStub(),

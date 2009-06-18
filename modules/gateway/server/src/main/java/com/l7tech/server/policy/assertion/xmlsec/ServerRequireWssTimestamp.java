@@ -24,6 +24,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -36,6 +37,7 @@ import java.util.logging.Logger;
  */
 public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAssertion<RequireWssTimestamp> {
     private static final Logger logger = Logger.getLogger(ServerRequireWssTimestamp.class.getName());
+    private static final boolean requireCredentialSigningToken = SyspropUtil.getBoolean( "com.l7tech.server.policy.requireSigningTokenCredential", true );
     private static final long DEFAULT_GRACE = 60000;
     private static final int PROP_CACHE_AGE = 151013;
 
@@ -77,8 +79,15 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
             return getBadMessageStatus();
         }
 
-        final ProcessorResult processorResult = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, auditor);
-        if (processorResult == null) return AssertionStatus.NOT_APPLICABLE; // WssProcessorUtil.getWssResults has already audited the message
+        final ProcessorResult processorResult;
+        if ( isRequest() ) {
+            processorResult = msg.getSecurityKnob().getProcessorResult();
+        } else {
+            processorResult = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, auditor);
+        }
+        if (processorResult == null) {
+            return AssertionStatus.NOT_APPLICABLE; // WssProcessorUtil.getWssResults has already audited the message
+        }
 
         final WssTimestamp wssTimestamp = processorResult.getTimestamp();
         if (wssTimestamp == null) {
@@ -89,7 +98,11 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
         if ( assertion.isSignatureRequired() ) {
             final ParsedElement element = ProcessorResultUtil.getParsedElementForNode( wssTimestamp.asElement(), processorResult.getElementsThatWereSigned() );
             if ( new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
-                if ( element==null || !WSSecurityProcessorUtils.isValidSingleSigner(processorResult, new ParsedElement[]{element}) ) {
+                if ( element==null || !WSSecurityProcessorUtils.isValidSingleSigner(
+                        authContext,
+                        processorResult,
+                        new ParsedElement[]{element},
+                        requireCredentialSigningToken ) ) {
                     auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_NOT_SIGNED, what);
                     return getBadMessageStatus();
                 }

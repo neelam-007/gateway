@@ -73,18 +73,23 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
                                               final Message msg,
                                               final String targetName,
                                               final AuthenticationContext authContext ) throws IOException {
-        ProcessorResult wssResults;
+        final ProcessorResult wssResults;
         try {
             if (!msg.isSoap()) {
                 auditor.logAndAudit(MessageProcessingMessages.MESSAGE_VAR_NOT_SOAP, targetName);
                 return AssertionStatus.NOT_APPLICABLE;
             }
 
-            wssResults = WSSecurityProcessorUtils.getWssResults(msg, targetName, securityTokenResolver, auditor);
+            if ( isRequest() ) {
+                wssResults = msg.getSecurityKnob().getProcessorResult();
+            } else {
+                wssResults = WSSecurityProcessorUtils.getWssResults(msg, targetName, securityTokenResolver, auditor);
+            }
 
             if (wssResults == null) {
-                // WssProcessorUtil.getWssResults already audited any error messages
                 if ( isRequest() ) {
+                    // WssProcessorUtil.getWssResults already audited any error messages for non-request
+                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_WSS_LEVEL_SECURITY, targetName);
                     // If we're dealing with something other than the request, there's no point sending a challenge or
                     // policy URL to the original requestor.
                     context.setRequestPolicyViolated();
@@ -104,7 +109,8 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
         final SignedElement[] signedElements =  WSSecurityProcessorUtils.filterSignedElementsByIdentity(
                     authContext,
                     wssResults,
-                    assertion.getIdentityTarget() );
+                    assertion.getIdentityTarget(),
+                    false ); // Not checking signing token in case this assertion occurs before the credential assertion
         for (SignedElement signedElement : signedElements) {
             Element el = signedElement.asElement();
             if (DomUtils.elementInNamespace(el, SoapConstants.WSA_NAMESPACE_ARRAY) && SoapConstants.MESSAGEID_EL_NAME.equals(el.getLocalName())) {

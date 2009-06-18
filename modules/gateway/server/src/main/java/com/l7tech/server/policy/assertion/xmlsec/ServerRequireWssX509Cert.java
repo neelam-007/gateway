@@ -12,6 +12,7 @@ import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.SecurityTokenResolver;
 import com.l7tech.server.audit.Auditor;
+import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
@@ -21,6 +22,7 @@ import com.l7tech.util.ArrayUtils;
 import com.l7tech.message.Message;
 import com.l7tech.common.io.CertUtils;
 import org.springframework.context.ApplicationContext;
+import org.springframework.beans.factory.BeanFactory;
 import org.xml.sax.SAXException;
 import org.w3c.dom.Element;
 
@@ -43,9 +45,11 @@ public class ServerRequireWssX509Cert extends AbstractMessageTargetableServerAss
 
     //- PUBLIC
 
-    public ServerRequireWssX509Cert( final RequireWssX509Cert subject, final ApplicationContext springContext ) {
+    public ServerRequireWssX509Cert( final RequireWssX509Cert subject, final BeanFactory springContext ) {
         super(subject, subject);
-        this.auditor = new Auditor(this, springContext, logger);
+        this.auditor = springContext instanceof ApplicationContext
+                ? new Auditor(this, (ApplicationContext) springContext, logger)
+                : new LogOnlyAuditor(logger);
         this.securityTokenResolver = (SecurityTokenResolver)springContext.getBean("securityTokenResolver", SecurityTokenResolver.class);
     }
     

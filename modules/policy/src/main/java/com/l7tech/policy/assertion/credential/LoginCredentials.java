@@ -46,6 +46,20 @@ public final class LoginCredentials {
      */
     public static LoginCredentials makeLoginCredentials( final SecurityToken securityToken,
                                                          final Class<? extends Assertion> credentialSource ) {
+        return makeLoginCredentials(securityToken, credentialSource, new SecurityToken[]{});   
+    }
+
+    /**
+     * Create a LoginCredentials for the given SecurityToken.
+     *
+     * @param securityToken The token for the credentials.
+     * @param credentialSource The source assertion
+     * @param supportingSecurityTokens The supporting security tokens (if any)
+     * @return The LoginCredentials or null.
+     */
+    public static LoginCredentials makeLoginCredentials( final SecurityToken securityToken,
+                                                         final Class<? extends Assertion> credentialSource,
+                                                         final SecurityToken... supportingSecurityTokens ) {
         LoginCredentials loginCredentials;
 
         if ( securityToken instanceof HasUsernameAndPassword ) {
@@ -56,6 +70,7 @@ public final class LoginCredentials {
                     huap.getUsername(),
                     password,
                     securityToken,
+                    supportingSecurityTokens,
                     credentialSource );
         } else if ( securityToken instanceof HttpClientCertToken ) {
             HttpClientCertToken sxst = (HttpClientCertToken) securityToken;
@@ -64,6 +79,7 @@ public final class LoginCredentials {
                     null,
                     CredentialFormat.CLIENTCERT,
                     securityToken,
+                    supportingSecurityTokens,
                     credentialSource,
                     null,
                     sxst.getCertificate() );
@@ -71,6 +87,7 @@ public final class LoginCredentials {
             SamlAssertion samlAssertion = (SamlAssertion) securityToken;
             loginCredentials = makeSamlCredentials(
                     samlAssertion,
+                    supportingSecurityTokens,
                     credentialSource );
         } else if ( securityToken instanceof X509SigningSecurityToken ) {
             X509SigningSecurityToken xsst = (X509SigningSecurityToken) securityToken;
@@ -81,6 +98,7 @@ public final class LoginCredentials {
                     null,
                     CredentialFormat.CLIENTCERT,
                     securityToken,
+                    supportingSecurityTokens,
                     credentialSource,
                     null,
                     xsst.getMessageSigningCertificate() );
@@ -91,6 +109,7 @@ public final class LoginCredentials {
                     ost.getCredential(),
                     CredentialFormat.OPAQUETOKEN,
                     securityToken,
+                    supportingSecurityTokens,
                     credentialSource, null, null );
         } else if ( securityToken instanceof HttpDigestToken ) {
             HttpDigestToken hdt = (HttpDigestToken) securityToken;
@@ -99,6 +118,7 @@ public final class LoginCredentials {
                     hdt.getHa1Hex().toCharArray(),
                     CredentialFormat.DIGEST,
                     securityToken,
+                    supportingSecurityTokens,
                     credentialSource,
                     hdt.getRealm(),
                     hdt.getParams() );
@@ -109,6 +129,7 @@ public final class LoginCredentials {
                     null,
                     CredentialFormat.KERBEROSTICKET,
                     securityToken,
+                    supportingSecurityTokens,
                     credentialSource,
                     null,
                     kst.getServiceTicket() );
@@ -130,6 +151,7 @@ public final class LoginCredentials {
      * @return The new LoginCredentials
      */
     private static LoginCredentials makeSamlCredentials( final SamlAssertion samlAssertion,
+                                                         final SecurityToken[] supportingSecurityTokens,
                                                          final Class<? extends Assertion> credentialSource ) {
         String login;
         X509Certificate cert = samlAssertion.getSubjectCertificate();
@@ -141,7 +163,7 @@ public final class LoginCredentials {
             login = samlAssertion.getNameIdentifierValue();
         }
 
-        return new LoginCredentials(login, null, CredentialFormat.SAML, samlAssertion, credentialSource, null, samlAssertion);
+        return new LoginCredentials(login, null, CredentialFormat.SAML, samlAssertion, supportingSecurityTokens, credentialSource, null, samlAssertion);
     }
 
     /**
@@ -155,8 +177,9 @@ public final class LoginCredentials {
     private static LoginCredentials makePasswordCredentials( final String login,
                                                              final char[] credentials,
                                                              final SecurityToken securityToken,
+                                                             final SecurityToken[] supportingSecurityTokens,
                                                              final Class<? extends Assertion> credentialSource ) {
-        return new LoginCredentials(login, credentials, CredentialFormat.CLEARTEXT, securityToken, credentialSource, null, null);
+        return new LoginCredentials(login, credentials, CredentialFormat.CLEARTEXT, securityToken, supportingSecurityTokens, credentialSource, null, null);
     }
 
     /**
@@ -173,6 +196,7 @@ public final class LoginCredentials {
                               final char[] credentials,
                               final CredentialFormat format,
                               final SecurityToken securityToken,
+                              final SecurityToken[] supportingSecurityTokens,
                               final Class<? extends Assertion> credentialSource,
                               final String realm,
                               final Object payload ) {
@@ -181,6 +205,7 @@ public final class LoginCredentials {
         this.realm = realm;
         this.format = format;
         this.securityToken = securityToken;
+        this.supportingSecurityTokens = supportingSecurityTokens;
         this.credentialSourceAssertion = credentialSource;
         this.payload = payload;
 
@@ -228,6 +253,25 @@ public final class LoginCredentials {
      */
     public SecurityToken getSecurityToken() {
         return securityToken;
+    }
+
+    /**
+     * Get all the security tokens used to generate these credentials.
+     *
+     * @return The security tokens
+     */
+    public SecurityToken[] getSecurityTokens() {
+        SecurityToken[] tokens;
+
+        if ( supportingSecurityTokens != null ) {
+            tokens = new SecurityToken[supportingSecurityTokens.length+1];
+            tokens[0] = securityToken;
+            System.arraycopy( supportingSecurityTokens, 0, tokens, 1, supportingSecurityTokens.length );
+        } else {
+            tokens = new SecurityToken[]{ securityToken };
+        }
+
+        return tokens;
     }
 
     /**
@@ -379,6 +423,7 @@ public final class LoginCredentials {
     private final Object payload;
 
     private transient final SecurityToken securityToken; // Not part of equality since that would break auth caching
+    private transient final SecurityToken[] supportingSecurityTokens; // Not part of equality since that would break auth caching
     private transient final char[] credentials;
     private transient final Class<? extends Assertion> credentialSourceAssertion;
 

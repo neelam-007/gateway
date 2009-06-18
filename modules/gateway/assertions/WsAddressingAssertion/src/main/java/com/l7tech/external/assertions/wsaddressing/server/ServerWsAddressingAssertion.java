@@ -220,6 +220,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(ServerWsAddressingAssertion.class.getName());
+    private static final boolean requireCredentialSigningToken = SyspropUtil.getBoolean( "com.l7tech.server.policy.requireSigningTokenCredential", true );
 
     private static final String NS_WS_ADDRESSING_200408 = SoapConstants.WSA_NAMESPACE2;
     private static final String[] NS_ADDRESSING = { SoapConstants.WSA_NAMESPACE_10, NS_WS_ADDRESSING_200408 };
@@ -248,7 +249,11 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
                 throw new AddressingProcessingException("Request is not SOAP", AssertionStatus.NOT_APPLICABLE);
             }
 
-            wssResults = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, auditor);
+            if (assertion.getTarget() == TargetMessageType.REQUEST) {
+                wssResults = msg.getSecurityKnob().getProcessorResult();
+            } else {
+                wssResults = WSSecurityProcessorUtils.getWssResults(msg, what, securityTokenResolver, auditor);
+            }
         } catch (SAXException e) {
             throw new CausedIOException(e);
         } catch (Exception e) {
@@ -260,7 +265,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
             throw new AddressingProcessingException("Request does not contain any WSS security", AssertionStatus.FALSIFIED);
         }
 
-        return WSSecurityProcessorUtils.filterSignedElementsByIdentity( authContext, wssResults, assertion.getIdentityTarget() );
+        return WSSecurityProcessorUtils.filterSignedElementsByIdentity( authContext, wssResults, assertion.getIdentityTarget(), requireCredentialSigningToken );
     }
 
     /**
