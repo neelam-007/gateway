@@ -2,7 +2,9 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.annotation.RequiresSOAP;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Functions;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.migration.Migration;
@@ -86,6 +88,21 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
         this.wsSecurityVersion = wsSecurityVersion;
     }
 
+    @Override
+    public String[] getVariablesUsed() {
+        String[] usedVariables = super.getVariablesUsed();
+
+        if ( recipientTrustedCertificateName != null ) {
+            String[] referenced = Syntax.getReferencedNames( recipientTrustedCertificateName );
+            if ( referenced.length > 0 ) {
+                usedVariables = ArrayUtils.concat( usedVariables, referenced );
+            }
+        }
+
+        return usedVariables;
+    }
+
+    @Override
     @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
         EntityHeader[] headers = new EntityHeader[0];
@@ -97,6 +114,7 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
         return headers;
     }
 
+    @Override
     public void replaceEntity( final EntityHeader oldEntityHeader, final EntityHeader newEntityHeader ) {
         if( oldEntityHeader.getType() == EntityType.TRUSTED_CERT &&
             newEntityHeader.getType() == EntityType.TRUSTED_CERT &&
@@ -122,9 +140,12 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
                     nameBuilder.append("Apply ");
                 }
 
-                nameBuilder.append("WS-Security ");
-                nameBuilder.append(wsSecurity.getWsSecurityVersion());
-                
+                nameBuilder.append("WS-Security");
+                if ( wsSecurity.isApplyWsSecurity() ) {
+                    nameBuilder.append(" ");
+                    nameBuilder.append(wsSecurity.getWsSecurityVersion());
+                }
+
                 return AssertionUtils.decorateName( wsSecurity, nameBuilder );
             }
         });

@@ -214,9 +214,13 @@ public class CodeInjectionProtectionAssertionDialog extends AssertionPropertiesE
     private void onOK() {
         _assertion.setTarget( _requestRadioButton.isSelected() ? TargetMessageType.REQUEST :
                               _responseRadioButton.isSelected() ? TargetMessageType.RESPONSE : TargetMessageType.OTHER);
+        if ( _contextVariableRadioButton.isSelected() ) {
+            _assertion.setOtherTargetMessageVariable(VariablePrefixUtil.fixVariableName(_contextVarName.getText()));
+        } else {
+            _assertion.setOtherTargetMessageVariable(null);            
+        }
         _assertion.setIncludeRequestUrl(_requestUrlCheckBox.isSelected());
         _assertion.setIncludeRequestBody(_requestBodyCheckBox.isSelected());
-        _assertion.setOtherTargetMessageVariable(VariablePrefixUtil.fixVariableName(_contextVarName.getText()));
 
         final List<CodeInjectionProtectionType> protectionsToApply = new ArrayList<CodeInjectionProtectionType>();
         for (JCheckBox checkBox : _protectionCheckBoxes) {

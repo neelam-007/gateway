@@ -53,10 +53,18 @@ public class CodeInjectionProtectionAssertion extends MessageTargetableAssertion
         _includeRequestBody = b;
     }
 
+    /**
+     * @deprecated This assertion is now MessageTargetable
+     */
+    @Deprecated
     public boolean isIncludeResponseBody() {
         return _includeResponseBody;
     }
 
+    /**
+     * @deprecated This assertion is now MessageTargetable
+     */
+    @Deprecated
     public void setIncludeResponseBody(boolean b) {
         _includeResponseBody = b;
     }
@@ -94,6 +102,16 @@ public class CodeInjectionProtectionAssertion extends MessageTargetableAssertion
                     TargetMessageType.REQUEST;
         }
         return target;
+    }
+
+    @Override
+    public void setTarget( final TargetMessageType target ) {
+        super.setTarget(target);
+        if ( target == TargetMessageType.REQUEST &&
+             !( _includeRequestUrl || _includeRequestBody ) ) {
+            _includeRequestUrl = true;
+            _includeRequestBody = true;       
+        }
     }
 
     @Override
