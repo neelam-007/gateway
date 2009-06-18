@@ -3,18 +3,21 @@ package com.l7tech.util;
 import javax.xml.soap.SOAPConstants;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Collections;
 
 /**
  * @author steve
  */
 public class SoapConstants {
-    public static final List<String> ENVELOPE_URIS = new ArrayList<String>();
+    public static final List<String> ENVELOPE_URIS;
     static {
-        ENVELOPE_URIS.add( SOAPConstants.URI_NS_SOAP_ENVELOPE);
-        ENVELOPE_URIS.add("http://www.w3.org/2001/06/soap-envelope");
-        ENVELOPE_URIS.add("http://www.w3.org/2001/09/soap-envelope");
-        ENVELOPE_URIS.add("http://www.w3.org/2003/05/soap-envelope");
-        ENVELOPE_URIS.add("urn:schemas-xmlsoap-org:soap.v1");
+        List<String> uris = new ArrayList<String>();
+        uris.add(SOAPConstants.URI_NS_SOAP_ENVELOPE);
+        uris.add("http://www.w3.org/2001/06/soap-envelope");
+        uris.add("http://www.w3.org/2001/09/soap-envelope");
+        uris.add("http://www.w3.org/2003/05/soap-envelope");
+        uris.add("urn:schemas-xmlsoap-org:soap.v1");
+        ENVELOPE_URIS = Collections.unmodifiableList( uris );
     }
 
     public static final String SOAP_ENV_PREFIX = "soapenv";
