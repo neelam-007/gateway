@@ -73,7 +73,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
     private ClusterInfoManager _clusterInfoManager;
     private RoleManager _roleManager;
     private HttpClientFactory _httpClientFactory;
-    private File _ssgApplianceBinDir;
+    private File _ssgApplianceLibexecDir;
 
     @Override
     protected String getFeature() {
@@ -103,7 +103,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
         _roleManager = (RoleManager)webApplicationContext.getBean("roleManager");
         _httpClientFactory = (HttpClientFactory)webApplicationContext.getBean("internodeHttpClientFactory");
 
-        _ssgApplianceBinDir = new File(ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_SSG_HOME_DIRECTORY) + File.separator + "appliance" + File.separator + "bin");
+        _ssgApplianceLibexecDir = new File(ServerConfig.getInstance().getPropertyCached(ServerConfig.PARAM_SSG_APPLIANCE_DIRECTORY) + File.separator + "libexec");
     }
 
     @Override
@@ -363,7 +363,7 @@ public class PingServlet extends AuthenticatableHttpServlet {
             //
             // Collects additional system info using external script.
             //
-            final File scriptFile = new File(_ssgApplianceBinDir, SYSTEM_INFO_SCRIPT_NAME);
+            final File scriptFile = new File(_ssgApplianceLibexecDir, SYSTEM_INFO_SCRIPT_NAME);
             if (scriptFile.exists()) {
                 String scriptOutput;
                 try {

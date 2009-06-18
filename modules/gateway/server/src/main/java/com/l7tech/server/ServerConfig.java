@@ -55,6 +55,7 @@ public class ServerConfig implements ClusterPropertyListener, Config {
     public static final String PARAM_JMS_THREAD_POOL_SIZE = "jmsThreadPoolSize";
     public static final String PARAM_MULTICAST_ADDRESS = "multicastAddress";
     public static final String PARAM_SSG_HOME_DIRECTORY = "ssgHome";
+    public static final String PARAM_SSG_APPLIANCE_DIRECTORY = "ssgAppliance";
     public static final String PARAM_CONFIG_DIRECTORY = "configDirectory";
     public static final String PARAM_VAR_DIRECTORY = "varDirectory";
     public static final String PARAM_WEB_DIRECTORY = "webDirectory";

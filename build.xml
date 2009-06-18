@@ -2782,6 +2782,7 @@
                     <include name="gateway_control"/>
                     <include name="hardware-stats.pl"/>
                     <include name="ssgconfig_launch"/>
+                    <include name="systeminfo.sh"/>    
                 </fileset>
             </copy>
 
@@ -2792,7 +2793,6 @@
                     <include name="passServiceUsage.sh"/>
                     <include name="ssg_appliance_startup_config.sh"/>
                     <include name="firewall_control.sh"/>
-                    <include name="systeminfo.sh"/>
                     <include name="upgrade-appliance.sh"/>
                 </fileset>
             </copy>

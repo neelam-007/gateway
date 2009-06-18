@@ -6,6 +6,7 @@
 # Purpose: This script is run by SSG Ping service to collect additional system
 #          information. Text produced is appended as preformatted text to the
 #          response HTML.
+. /opt/SecureSpan/Appliance/libexec/envclean
 
 echo "********************************************************************************"
 echo "****************************** Kernel Information ******************************"
