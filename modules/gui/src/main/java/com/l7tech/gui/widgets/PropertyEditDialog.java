@@ -3,6 +3,8 @@
  */
 package com.l7tech.gui.widgets;
 
+import com.l7tech.gui.util.RunOnChangeListener;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -38,6 +40,12 @@ public class PropertyEditDialog extends JDialog {
         nameTextField.setText(propertyName);
         valueTextField.setText(propertyValue);
 
+        nameTextField.getDocument().addDocumentListener(new RunOnChangeListener(new Runnable() {
+            public void run() {
+                enableOrDisableOkButton();
+            }
+        }));
+
         okButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -55,6 +63,8 @@ public class PropertyEditDialog extends JDialog {
                 dispose();
             }
         });
+
+        enableOrDisableOkButton();
 
         add(mainPanel);
     }
@@ -101,5 +111,15 @@ public class PropertyEditDialog extends JDialog {
     private void set( final String nv, final String vv ) {
         this.propertyName = nv;
         this.propertyValue = vv;
+    }
+
+    /**
+     * Check if OK button should be enabled or not.
+     */
+    private void enableOrDisableOkButton() {
+        String propName = nameTextField.getText();
+        // Not allow empty name:
+        boolean okEnabled = (propName != null && propName.trim().length() > 0);
+        okButton.setEnabled(okEnabled);
     }
 }
