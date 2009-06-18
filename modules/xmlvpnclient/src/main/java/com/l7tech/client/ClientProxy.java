@@ -149,8 +149,8 @@ public class ClientProxy {
         URL url = new URL("http", "127.0.0.1", bindPort, "/");
 
         log.info("ClientProxy started; listening on " + url);
-        log.info("Using asymmetric cryptography provider: " + JceProvider.getInstance().getAsymmetricProvider());
-        log.info("Using symmetric cryptography provider: " + JceProvider.getInstance().getSymmetricProvider());
+        log.info("Using asymmetric cryptography provider: " + JceProvider.getInstance().getDisplayName());
+        log.info("Using symmetric cryptography provider: " + JceProvider.getInstance().getDisplayName());
 
         return url;
     }

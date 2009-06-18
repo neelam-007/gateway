@@ -54,13 +54,8 @@ public class LunaJceProviderEngine extends JceProvider {
     }
 
     @Override
-    protected Provider getDefaultProvider() {
-        return JCE_PROVIDER;
-    }
-
-    @Override
-    public Provider getSignatureProvider() {
-        return JCA_PROVIDER;
+    public String getDisplayName() {
+        return JCE_PROVIDER.toString() + " / " + JCA_PROVIDER.toString();
     }
 
     @Override

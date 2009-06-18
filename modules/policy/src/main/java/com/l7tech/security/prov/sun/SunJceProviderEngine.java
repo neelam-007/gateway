@@ -18,8 +18,8 @@ public class SunJceProviderEngine extends JceProvider {
     }
 
     @Override
-    protected Provider getDefaultProvider() {
-        return PROVIDER;
+    public String getDisplayName() {
+        return PROVIDER.toString();
     }
 
     @Override

@@ -150,7 +150,8 @@ public class XencUtil {
         // Create encryption context and encrypt the header subtree
         EncryptionContext ec = new EncryptionContext();
         AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
-        Provider symmetricProvider = JceProvider.getInstance().getSymmetricProvider();
+        // TODO we'll assume it's the same Provider for all symmetric crypto
+        Provider symmetricProvider = JceProvider.getInstance().getProviderFor("Cipher.AES");
         if (symmetricProvider != null)
             af.setProvider(symmetricProvider.getName());
         ec.setAlgorithmFactory(af);

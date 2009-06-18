@@ -38,6 +38,7 @@ class TarariWssProcessingContext {
     private static final String DIGEST_ALG_SHA1 = "http://www.w3.org/2000/09/xmldsig#sha1";
 
     private static final ThreadLocal tlSha1 = new ThreadLocal() {
+        @Override
         protected Object initialValue() {
             try {
                 return MessageDigest.getInstance("SHA-1");
@@ -51,7 +52,7 @@ class TarariWssProcessingContext {
     static { logger.info("memoizeSigs=" + memoizeSigs); }
 
     private static final Pattern spacePattern = Pattern.compile("\\s+");
-    private final Map idToElementMap = new HashMap();
+    private final Map<String, ElementCursor> idToElementMap = new HashMap<String, ElementCursor>();
     private final Message msg;
     private MessageDigest sha1;
     private boolean wasSigned = false;
@@ -62,7 +63,7 @@ class TarariWssProcessingContext {
         private static final CompiledXpath findAllElementsWithIds;
         static {
             try {
-                Map wsus = new HashMap();
+                Map<String, String> wsus = new HashMap<String, String>();
                 wsus.put("wsu", SoapUtil.WSU_NAMESPACE);
                 findAllElementsWithIds = new XpathExpression("//*[@wsu:Id]", wsus).compile();
             } catch (InvalidXpathException e) {
@@ -112,6 +113,7 @@ class TarariWssProcessingContext {
 
     private void processSecurityHeader(ElementCursor ec) throws InvalidDocumentFormatException {
         ec.visitChildElements(new ElementCursor.Visitor() {
+            @Override
             public void visit(ElementCursor ec) throws InvalidDocumentFormatException {
                 // TODO check namespaces!
                 String lname = ec.getLocalName();
@@ -146,8 +148,9 @@ class TarariWssProcessingContext {
         }
     }
 
-    private void processSignedInfo(ElementCursor ec, final List references, final List inclusiveNamespacePrefixes) throws InvalidDocumentFormatException {
+    private void processSignedInfo(ElementCursor ec, final List<Reference> references, final List<String> inclusiveNamespacePrefixes) throws InvalidDocumentFormatException {
         ec.visitChildElements(new ElementCursor.Visitor() {
+            @Override
             public void visit(ElementCursor ec) throws InvalidDocumentFormatException {
                 String lname = ec.getLocalName();
                 if ("CanonicalizationMethod".equals(lname)) {
@@ -169,6 +172,7 @@ class TarariWssProcessingContext {
                     final ElementCursor referent = getCursorById(uri);
                     final Reference ref = new Reference(uri, referent);
                     ec.visitChildElements(new ElementCursor.Visitor() {
+                        @Override
                         public void visit(ElementCursor ec) throws InvalidDocumentFormatException {
                             String lname = ec.getLocalName();
                             if ("Transforms".equals(lname)) {
@@ -198,7 +202,7 @@ class TarariWssProcessingContext {
     }
 
     private ElementCursor getCursorById(String uri) throws InvalidDocumentFormatException {
-        final ElementCursor referent = (ElementCursor)idToElementMap.get(uri);
+        final ElementCursor referent = idToElementMap.get(uri);
         if (referent == null)
             throw new InvalidDocumentFormatException("Element referenced with wsu:Id = '" + uri.substring(1) + "' could not be found");
         return referent;
@@ -212,13 +216,14 @@ class TarariWssProcessingContext {
     }
 
     private void processSignature(ElementCursor ec) throws InvalidDocumentFormatException, IOException, GeneralSecurityException {
-        final List references = new ArrayList();
-        final List inclusiveNamespacePrefixes = new ArrayList();
+        final List<Reference> references = new ArrayList<Reference>();
+        final List<String> inclusiveNamespacePrefixes = new ArrayList<String>();
         final ElementCursor[] signedInfoCursor = new ElementCursor[1];
         final X509Certificate[] signingCert = new X509Certificate[1];
         final String[] signatureValueBase64 = new String[1];
 
         ec.visitChildElements(new ElementCursor.Visitor() {
+            @Override
             public void visit(ElementCursor ec) throws InvalidDocumentFormatException {
                 String lname = ec.getLocalName();
                 if ("SignedInfo".equals(lname)) {
@@ -258,8 +263,8 @@ class TarariWssProcessingContext {
 
 
         // Check that the digests match the referents
-        for (Iterator i = references.iterator(); i.hasNext();) {
-            Reference reference = (Reference)i.next();
+        for (Object reference1 : references) {
+            Reference reference = (Reference) reference1;
             byte[] referentDigest;
             byte[] canonicalReferentBytes = reference.element.canonicalize(reference.inclusiveNamespacePrefixes);
             if (DIGEST_ALG_SHA1.equals(reference.digestAlgorithm)) {
@@ -275,7 +280,7 @@ class TarariWssProcessingContext {
             }
         }
 
-        String[] prefixes = (String[])inclusiveNamespacePrefixes.toArray(new String[0]);
+        String[] prefixes = inclusiveNamespacePrefixes.toArray(new String[inclusiveNamespacePrefixes.size()]);
         ElementCursor signedInfo = signedInfoCursor[0];
         if (signedInfo == null) throw new InvalidDocumentFormatException("No SignedInfo");
 
@@ -300,9 +305,11 @@ class TarariWssProcessingContext {
     }
 
     private static ThreadLocal rsaSigMethod = new ThreadLocal() {
+        @Override
         protected Object initialValue() {
             try {
-                AlgorithmFactory af = new AlgorithmFactory(JceProvider.getInstance().getAsymmetricProvider().getName());
+                final Provider rsaProv = JceProvider.getInstance().getProviderFor("Signature.RSA");
+                AlgorithmFactory af = new AlgorithmFactory(rsaProv == null ? null : rsaProv.getName());
                 return af.getSignatureMethod(SignatureMethod.RSA, null);
             } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException(e); // can't happen

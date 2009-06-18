@@ -41,29 +41,37 @@ public class NewPrivateKeyDialog extends JDialog {
     private static final String TITLE = "Create Private Key";
     private static final String DEFAULT_EXPIRY = Long.toString(365 * 5);
 
-    private static class KeySize {
+    private static class KeyType {
         private final int size;
         private final String label;
         private final int hsmSec;
         private final int softSec;
+        private final String curveName;
 
-        protected KeySize(int size, String label, int hsmSec, int softSec) {
+        protected KeyType(int size, String label, int hsmSec, int softSec) {
             this.size = size;
             this.label = label;
             this.hsmSec = hsmSec;
             this.softSec = softSec;
+            this.curveName = null;
         }
 
+        public KeyType(String curveName, String label) {
+            this.size = 0;
+            this.label = label;
+            this.hsmSec = 30;
+            this.softSec = 30;
+            this.curveName = curveName;
+        }
+
+        @Override
         public String toString() {
             return label;
         }
     }
 
-    private static final KeySize RSA512 = new KeySize(512, "512 bit RSA", 20, 1);
-    private static final KeySize RSA768 = new KeySize(768, "768 bit RSA", 50, 2);
-    private static final KeySize RSA1024 = new KeySize(1024, "1024 bit RSA", 100, 5);
-    private static final KeySize RSA1280 = new KeySize(1280, "1280 bit RSA", 60 * 7, 10);
-    private static final KeySize RSA2048 = new KeySize(2048, "2048 bit RSA", 60 * 20, 17);
+    private static KeyType rsasize(int bits, int hsmSec, int softSec) { return new KeyType(bits, bits + " bit RSA", hsmSec, softSec); }
+    private static KeyType curvename(String name) { return new KeyType(name, "Elliptic Curve - " + name); }
 
     private final KeystoreFileEntityHeader keystoreInfo;
 
@@ -123,6 +131,7 @@ public class NewPrivateKeyDialog extends JDialog {
         confirmed = false;
 
         validator.attachToButton(createButton, new ActionListener() {
+            @Override
             public void actionPerformed(final ActionEvent e) {
                 if (createKey()) {
                     confirmed = true;
@@ -132,6 +141,7 @@ public class NewPrivateKeyDialog extends JDialog {
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 confirmed = false;
                 dispose();
@@ -140,13 +150,17 @@ public class NewPrivateKeyDialog extends JDialog {
 
         // Populate DN field if it's uncustomized
         aliasField.setDocument(new PlainDocument() { // force to lowercase (Bug #6167)
+            @Override
             public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
                 super.insertString(offs, str.toLowerCase(), a);
             }
         });
         aliasField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
             public void insertUpdate(DocumentEvent e) { onChange(); }
+            @Override
             public void removeUpdate(DocumentEvent e) { onChange(); }
+            @Override
             public void changedUpdate(DocumentEvent e) { onChange(); }
 
             private void onChange() {
@@ -161,6 +175,7 @@ public class NewPrivateKeyDialog extends JDialog {
 
         // Have DN field select all on focus if the DN is not customized
         dnField.addFocusListener(new FocusListener() {
+            @Override
             public void focusGained(FocusEvent e) {
                 String dn = dnField.getText();
                 if (dn == null) return;
@@ -168,9 +183,11 @@ public class NewPrivateKeyDialog extends JDialog {
                     dnField.selectAll();
             }
 
+            @Override
             public void focusLost(FocusEvent e) {}
         });
         validator.constrainTextFieldToBeNonEmpty("Subject DN", dnField, new InputValidator.ComponentValidationRule(dnField) {
+            @Override
             public String getValidationError() {
                 String dn = dnField.getText();
                 try {
@@ -187,19 +204,24 @@ public class NewPrivateKeyDialog extends JDialog {
         expiryDaysField.setDocument(new NumberField(8));
         expiryDaysField.setText(DEFAULT_EXPIRY);
 
-        Collection<KeySize> sizes = new ArrayList<KeySize>(Arrays.asList(
-                RSA512,
-                RSA768,
-                RSA1024,                                                                
-                RSA1280,
-                RSA2048
+        final KeyType dflt;
+        Collection<KeyType> types = new ArrayList<KeyType>(Arrays.asList(
+                rsasize(512, 20, 1),
+                rsasize(768, 50, 2),
+         dflt = rsasize(1024, 100, 5),
+                rsasize(1280, 60 * 7, 10),
+                rsasize(2048, 60 * 20, 17),
+                curvename("secp192r1"),
+                curvename("secp256r1"),
+                curvename("secp384r1"),
+                curvename("secp521r1")
         ));
 
         if (keystoreInfo.getKeyStoreType() != null && keystoreInfo.getKeyStoreType().toLowerCase().contains("pkcs11"))
             usingHsm = true;
 
-        cbKeyType.setModel(new DefaultComboBoxModel(sizes.toArray()));
-        cbKeyType.setSelectedItem(RSA1024);
+        cbKeyType.setModel(new DefaultComboBoxModel(types.toArray()));
+        cbKeyType.setSelectedItem(dflt);
     }
 
     /** @return the default DN for the current alias, or null if there isn't one. */
@@ -207,7 +229,7 @@ public class NewPrivateKeyDialog extends JDialog {
         String alias = aliasField.getText();
         if (alias == null)
             return null;
-        alias = alias.trim().toLowerCase().replaceAll("[^a-zA-Z0-9\\.\\-\\_]", "");
+        alias = alias.trim().toLowerCase().replaceAll("[^a-zA-Z0-9\\.\\-_]", "");
         return "CN=" + alias;
     }
 
@@ -220,8 +242,8 @@ public class NewPrivateKeyDialog extends JDialog {
         final String alias = aliasField.getText();
         final String dn = dnField.getText();
         final int expiryDays = Integer.parseInt(expiryDaysField.getText());
-        final int keybits = getKeyBits();
         final boolean makeCaCert = caCheckBox.isSelected();
+        final KeyType keyType = getSelectedKeyType();
         //noinspection UnusedAssignment
         Throwable ouch = null;
         try {
@@ -233,8 +255,15 @@ public class NewPrivateKeyDialog extends JDialog {
             Utilities.centerOnScreen(waitDlg);
 
             Callable<Object> callable = new Callable<Object>() {
+                @Override
                 public Object call() throws Exception {
-                    keypairJobId = getCertAdmin().generateKeyPair(keystoreInfo.getOid(), alias, dn, keybits, expiryDays, makeCaCert);
+                    if (keyType.curveName != null) {
+                        // Elliptic curve
+                        keypairJobId = getCertAdmin().generateEcKeyPair(keystoreInfo.getOid(), alias, dn, keyType.curveName, expiryDays, makeCaCert);
+                    } else {
+                        // RSA
+                        keypairJobId = getCertAdmin().generateKeyPair(keystoreInfo.getOid(), alias, dn, keyType.size, expiryDays, makeCaCert);
+                    }
                     newAlias = alias;
                     return null;
                 }
@@ -256,15 +285,11 @@ public class NewPrivateKeyDialog extends JDialog {
         return false;
     }
 
-    private int getKeyBits() {
-        return getSelectedKeySize().size;
-    }
-
-    private KeySize getSelectedKeySize() {
+    private KeyType getSelectedKeyType() {
         Object s = cbKeyType.getSelectedItem();
-        if (s instanceof KeySize)
-            return (KeySize)s;
-        throw new IllegalStateException("Unrecognized key size: " + s);
+        if (s instanceof KeyType)
+            return (KeyType)s;
+        throw new IllegalStateException("Unrecognized key type: " + s);
     }
 
     private TrustedCertAdmin getCertAdmin() {
@@ -288,7 +313,7 @@ public class NewPrivateKeyDialog extends JDialog {
 
     /** @return recommended maximum number of minutes to wait for the "generate keypair" job to finish. */
     public int getSecondsToWaitForJobToFinish() {
-        final KeySize ks = getSelectedKeySize();
+        final KeyType ks = getSelectedKeyType();
         return usingHsm ? ks.hsmSec : ks.softSec;
     }
 

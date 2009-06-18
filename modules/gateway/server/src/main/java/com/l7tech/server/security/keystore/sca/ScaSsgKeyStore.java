@@ -122,7 +122,7 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
             }
 
             lastLoaded = System.currentTimeMillis();
-            keystore = KeyStore.getInstance("PKCS11");
+            keystore = JceProvider.getInstance().getKeyStore("PKCS11");
             keystore.load(new NullInputStream(), password);
             return keystore;
         } catch (ScaException e) {

@@ -4,8 +4,6 @@ import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.SyspropUtil;
 
-import javax.crypto.Cipher;
-import javax.crypto.NoSuchPaddingException;
 import java.io.File;
 import java.security.*;
 import java.util.logging.Logger;
@@ -55,8 +53,8 @@ public class Pkcs11JceProviderEngine extends JceProvider {
     }
 
     @Override
-    protected Provider getDefaultProvider() {
-        return PROVIDER;
+    public String getDisplayName() {
+        return PROVIDER.toString();
     }
 
     @Override

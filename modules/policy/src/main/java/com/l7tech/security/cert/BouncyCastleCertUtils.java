@@ -1,6 +1,7 @@
 package com.l7tech.security.cert;
 
 import com.l7tech.security.prov.CertificateRequest;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.bc.BouncyCastleCertificateRequest;
 import com.l7tech.util.SyspropUtil;
 import org.bouncycastle.asn1.ASN1Set;
@@ -38,6 +39,32 @@ public class BouncyCastleCertUtils {
      * @param keyPair       an RSA key pair to use for the certificate.  Required.
      * @param makeCaCert    true if the new certificate is intended to be used to sign other certs.  Normally false.
      *                      If this is true, the new certificate will have the "cA" basic constraint and the "keyCertSign" key usage.
+     * @return the new self-signed certificate.  Never null.
+     * @throws CertificateEncodingException  if there is a problem producing the new cert
+     * @throws NoSuchAlgorithmException      if a required crypto algorithm is unavailable
+     * @throws SignatureException            if there is a problem signing the new cert
+     * @throws InvalidKeyException           if there is a problem with the provided key pair
+     * @throws NoSuchProviderException       if the current asymmetric crypto provider doesn't exist
+     * @throws CertificateParsingException   if a SKI cannot be created for the public key
+     */
+    public static X509Certificate generateSelfSignedCertificate(X500Principal dn, int expiryDays, KeyPair keyPair, boolean makeCaCert)
+            throws CertificateEncodingException, NoSuchAlgorithmException, SignatureException, InvalidKeyException, NoSuchProviderException, CertificateParsingException
+    {
+        return generateSelfSignedCertificate(dn, expiryDays, keyPair, makeCaCert,
+                JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CERTIFICATE_GENERATOR));
+    }
+
+
+    /**
+     * Generate a self-signed certificate from the specified KeyPair, which is expected to be RSA.
+     * The certificate will use the SHA1withRSA signature algorithm.
+     *
+     * @param dn            the DN for the new self-signed cert.  Required.
+     * @param expiryDays    number of days before the cert should expire.  Required.
+     * @param keyPair       an RSA key pair to use for the certificate.  Required.
+     * @param makeCaCert    true if the new certificate is intended to be used to sign other certs.  Normally false.
+     *                      If this is true, the new certificate will have the "cA" basic constraint and the "keyCertSign" key usage.
+     * @param signatureProvider  Provider to use for signing the cert, or null to use current best-preference provider.
      * @return the new self-signed certificate.  Never null.
      * @throws CertificateEncodingException  if there is a problem producing the new cert
      * @throws NoSuchAlgorithmException      if a required crypto algorithm is unavailable
@@ -118,7 +145,25 @@ public class BouncyCastleCertUtils {
      *
      * @param dn  the DN for the new CSR.  Required.
      * @param keyPair  a key pair to use for the CSR.  Required.
-     * @param sigProvider  Provider to use for signature algorithm for signing the CSR.
+     * @return a new PKCS#10 certification request including the specified DN and public key, signed with the
+     *         specified private key.  Never null.
+     * @throws SignatureException        if there is a problem signing the cert
+     * @throws InvalidKeyException       if there is a problem with the provided key pair
+     * @throws NoSuchProviderException   if the current asymmetric JCE provider is incorrect
+     * @throws NoSuchAlgorithmException  if a required algorithm is not available in the current asymmetric JCE provider
+     */
+    public static CertificateRequest makeCertificateRequest(X500Principal dn, KeyPair keyPair) 
+            throws SignatureException, InvalidKeyException, NoSuchProviderException, NoSuchAlgorithmException
+    {
+        return makeCertificateRequest(dn, keyPair, JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CSR_SIGNING));
+    }
+
+    /**
+     * Create a PKCS#10 certification request using the specified DN and key pair.
+     *
+     * @param dn  the DN for the new CSR.  Required.
+     * @param keyPair  a key pair to use for the CSR.  Required.
+     * @param sigProvider  Provider to use for signature algorithm for signing the CSR, or null to use current best-preference provider.
      * @return a new PKCS#10 certification request including the specified DN and public key, signed with the
      *         specified private key.  Never null.
      * @throws SignatureException        if there is a problem signing the cert
@@ -135,7 +180,9 @@ public class BouncyCastleCertUtils {
         String sigAlg = getSigAlg(isUsingEcc(publicKey), sigProvider);
 
         // Generate request
-        final PKCS10CertificationRequest certReq = new PKCS10CertificationRequest(sigAlg, subject, publicKey, attrs, privateKey, sigProvider.getName());
+        final PKCS10CertificationRequest certReq = sigProvider == null
+                ? new PKCS10CertificationRequest(sigAlg, subject, publicKey, attrs, privateKey)
+                : new PKCS10CertificationRequest(sigAlg, subject, publicKey, attrs, privateKey, sigProvider.getName());
         return new BouncyCastleCertificateRequest(certReq, publicKey);
     }
 }

@@ -38,7 +38,7 @@ public class LunaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements Ssg
         this.type = type;
         this.name = name;
         final String keystoreType = isUsingPkcs11() ? "PKCS11" : "Luna";
-        this.keystore = KeyStore.getInstance(keystoreType);
+        this.keystore = JceProvider.getInstance().getKeyStore(keystoreType);
     }
 
     private static boolean isUsingPkcs11() {

@@ -161,7 +161,7 @@ public class SetKeys {
                 log.info( "Generating RSA keypair for SSL cert" );
                 sslkp = JceProvider.getInstance().generateRsaKeyPair();
                 X509Certificate sslCert =
-                    new BouncyCastleRsaSignerEngine(caPrivateKey, caCert, null, null).makeSignedCertificate( SSL_DN_PREFIX + hostname,
+                    new BouncyCastleRsaSignerEngine(caPrivateKey, caCert, null).makeSignedCertificate( SSL_DN_PREFIX + hostname,
                                                                        SSL_VALIDITY_DAYS,
                                                                        sslkp.getPublic(), RsaSignerEngine.CertType.SSL );
                 sslChain = new X509Certificate[] { sslCert, caCert };

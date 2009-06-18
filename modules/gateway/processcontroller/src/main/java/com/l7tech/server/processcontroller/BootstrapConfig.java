@@ -156,7 +156,7 @@ public class BootstrapConfig {
         try {
             logger.info("Generating keypair...");
             KeyPair keyPair = JceProvider.getInstance().generateRsaKeyPair();
-            X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(new X500Principal("cn=localhost"), 3652, keyPair, false, null);
+            X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(new X500Principal("cn=localhost"), 3652, keyPair, false);
             KeyStore ks = KeyStore.getInstance("PKCS12");
             ks.load(null, null);
             ks.setKeyEntry(DEFAULT_ALIAS, keyPair.getPrivate(), pass.toCharArray(), new Certificate[] {cert});

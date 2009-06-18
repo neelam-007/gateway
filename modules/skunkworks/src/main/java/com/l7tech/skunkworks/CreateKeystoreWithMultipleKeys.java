@@ -97,7 +97,7 @@ public class CreateKeystoreWithMultipleKeys {
             KeyPair kp = JceProvider.getInstance().generateRsaKeyPair();
 
             String cnPrefix = "cn=" + String.valueOf(i) + ".";
-            X509Certificate sslCert = new BouncyCastleRsaSignerEngine(caPrivateKey, caCert, null, null).makeSignedCertificate( cnPrefix + hostname,
+            X509Certificate sslCert = new BouncyCastleRsaSignerEngine(caPrivateKey, caCert, null).makeSignedCertificate( cnPrefix + hostname,
                                                                    365, kp.getPublic(), RsaSignerEngine.CertType.SSL );
             String alias = "clientalias-" + String.valueOf(i);
             ks.setKeyEntry(alias, kp.getPrivate(), keyspassword.toCharArray(),

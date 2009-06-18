@@ -46,7 +46,6 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
     private static final SecureRandom random = new SecureRandom();
     private final PrivateKey caPrivateKey;
     private final X509Certificate caCert;
-    private final Provider asymmetricProvider;
     private final Provider signatureProvider;
 
     /**
@@ -56,13 +55,11 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
      * @param caPrivateKey  PrivateKey to use when signing certs.  Required.
      * @param caCert        Certificate to use when signing certs.  Required.  No need for an entire chain here
      *                      since we do not support intermediate CA certs.
-     * @param asymmetricProvider Provider to use for asymmetric KeyFactory instances for parsing CSRs, or null to use current most-preference provider.
      * @param signatureProvider Provider to use for Signature instances for verifying CSRs or signing certificates, or null to use current most-preference provider.
      */
-    public BouncyCastleRsaSignerEngine(PrivateKey caPrivateKey, X509Certificate caCert, Provider asymmetricProvider, Provider signatureProvider) {
+    public BouncyCastleRsaSignerEngine(PrivateKey caPrivateKey, X509Certificate caCert, Provider signatureProvider) {
         this.caPrivateKey = caPrivateKey;
         this.caCert = caCert;
-        this.asymmetricProvider = asymmetricProvider;
         this.signatureProvider = signatureProvider;
     }
 
@@ -151,7 +148,8 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         cal.add(Calendar.DATE, validity);
         Date lastDate = cal.getTime();
         X509Name subject = new X509Name(subjectDn);
-        X509V3CertificateGenerator certgen = makeCertGenerator(subject, lastDate, keypair.getPublic(), CertType.CA, JceProvider.getInstance().getSignatureProvider());
+        X509V3CertificateGenerator certgen = makeCertGenerator(subject, lastDate, keypair.getPublic(), CertType.CA,
+                JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CERTIFICATE_GENERATOR));
 
         // Self-signed, issuer == subject
         certgen.setIssuerDN(subject);

@@ -80,7 +80,7 @@ public class XencUtilTest {
     @Ignore("Disabled because it fails as of 5.0.0, and nobody remembers what the test was for originally")
     @Test
     public void testWeirdLeadin0InSunJCE() throws Exception {
-        if (!JceProvider.getInstance().getAsymmetricProvider().getName().equals("BC")) {
+        if (!JceProvider.getEngineClass().equals(JceProvider.BC_ENGINE)) {
             System.out.println("This test is meant to be ran with BC provider. Aborting.");
             return;
         }
@@ -94,14 +94,14 @@ public class XencUtilTest {
     @Test
     public void testCompareCipherOutputForEncryptedKeysBetweenSUNAndBC1() throws Exception {
         System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.SUN_ENGINE);
-        System.out.println("USING PROVIDER: " + JceProvider.getInstance().getAsymmetricProvider().getName());
+        System.out.println("USING PROVIDER: " + JceProvider.getEngineClass());
         System.out.println("SUN OUTPUT:" + getEncryptedKey());
     }
 
     @Test
     public void testCompareCipherOutputForEncryptedKeysBetweenSUNAndBC2() throws Exception {
         System.setProperty(JceProvider.ENGINE_PROPERTY, JceProvider.BC_ENGINE);
-        System.out.println("USING PROVIDER: " + JceProvider.getInstance().getAsymmetricProvider().getName());
+        System.out.println("USING PROVIDER: " + JceProvider.getEngineClass());
         System.out.println("BC OUTPUT:" + getEncryptedKey());
     }
 

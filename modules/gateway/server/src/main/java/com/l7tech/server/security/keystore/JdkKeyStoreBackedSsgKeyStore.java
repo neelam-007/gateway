@@ -224,7 +224,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
 
                 // Requires that current crypto engine already by the correct one for this keystore type
                 KeyPair keyPair = JceProvider.getInstance().generateRsaKeyPair(keybits);
-                X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair, makeCaCert, JceProvider.getInstance().getSignatureProvider());
+                X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair, makeCaCert);
 
                 keystore.setKeyEntry(alias, keyPair.getPrivate(), getEntryPassword(), new Certificate[] { cert });
 
@@ -247,7 +247,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
 
                     // Requires that current crypto engine already by the correct one for this keystore type
                     KeyPair keyPair = JceProvider.getInstance().generateEcKeyPair(curveName);
-                    X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair, makeCaCert, JceProvider.getInstance().getSignatureProvider());
+                    X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair, makeCaCert);
 
                     keystore.setKeyEntry(alias, keyPair.getPrivate(), getEntryPassword(), new Certificate[] { cert });
 
@@ -317,7 +317,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
                 throw new KeyStoreException("Existing certificate for alias " + alias + " is not an X.509 certificate");
             X509Certificate cert = (X509Certificate)chain[0];
             KeyPair keyPair = new KeyPair(cert.getPublicKey(), privateKey);
-            return BouncyCastleCertUtils.makeCertificateRequest(dnObj, keyPair, JceProvider.getInstance().getSignatureProvider());
+            return BouncyCastleCertUtils.makeCertificateRequest(dnObj, keyPair);
         } catch (NoSuchAlgorithmException e) {
             throw new InvalidKeyException("Keystore contains no key with alias " + alias, e);
         } catch (UnrecoverableKeyException e) {

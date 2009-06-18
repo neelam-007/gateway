@@ -49,6 +49,7 @@ public abstract class JceProvider {
     /** Recognized service names to pass to {@link #getProviderFor(String)}. */
     public static final String SERVICE_PBE_WITH_SHA1_AND_DESEDE = "Cipher.PBEWithSHA1AndDESede";
     public static final String SERVICE_CERTIFICATE_GENERATOR = "Signature.BouncyCastleCertificateGenerator";
+    public static final String SERVICE_CSR_SIGNING = "Signature.BouncyCastleCsrSigner";
 
     private static final Map<String,String> DRIVER_MAP;
 
@@ -105,37 +106,12 @@ public abstract class JceProvider {
         return Holder.getEngine();
     }
 
-    /** @return Provider to return by default from any getFooProvider() methods that are not overridden. */
-    protected Provider getDefaultProvider() {
-        return null;
-    }
-
     /**
-     * Get the Provider to use for asymmetric (ie, Cipher.RSA or KeyAgreement.EC) encryption.
+     * Get a friendly name to use in log messages. <b>Note: Not necessarily a valid Provider name!</b>
      *
-     * @return the JCE Provider, or null if the usual highest-preference Provider should be used.
+     * @return The name of this JceProvider engine.  This is NOT necessarily a registered Provider name!
      */
-    public Provider getAsymmetricProvider() {
-        return getDefaultProvider();
-    }
-
-    /**
-     * Get the Provider to use for symmetric (ie, Cipher.DES or Cipher.AES) encryption.
-     *
-     * @return the JCE Provider, or null if the usual highest-preference Provider should be used.
-     */
-    public Provider getSymmetricProvider() {
-        return getDefaultProvider();
-    }
-
-    /**
-     * Get the Provider to use for higher-level Signature support (ie, SHA1withRSA or SHA384withECDSA).
-     *
-     * @return the JCE Provider, or null if the usual highest-preference Provider should be used.
-     */
-    public Provider getSignatureProvider() {
-        return getDefaultProvider();
-    }
+    public abstract String getDisplayName();
 
     /**
      * Create an RsaSignerEngine that uses the current crypto API.
@@ -146,7 +122,7 @@ public abstract class JceProvider {
      * @return an RsaSignerEngine that can be used to sign certificates.  Never null.
      */
     public RsaSignerEngine createRsaSignerEngine(PrivateKey caKey, X509Certificate[] caCertChain) {
-        return new BouncyCastleRsaSignerEngine(caKey, caCertChain[0], getAsymmetricProvider(), getSignatureProvider());
+        return new BouncyCastleRsaSignerEngine(caKey, caCertChain[0], getProviderFor(SERVICE_CERTIFICATE_GENERATOR));
     }
 
     /**
@@ -182,7 +158,7 @@ public abstract class JceProvider {
      * @throws InvalidAlgorithmParameterException if the specified curve name is unrecognized.
      */
     public KeyPair generateEcKeyPair(String curveName) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", getAsymmetricProvider());
+        KeyPairGenerator kpg = getKeyPairGenerator("EC", getProviderFor("KeyPairGenerator.EC"));
         kpg.initialize(new ECGenParameterSpec(curveName));
         return kpg.generateKeyPair();
     }
@@ -197,7 +173,7 @@ public abstract class JceProvider {
      * @throws java.security.SignatureException   if there is a problem signing the CSR
      */
     public CertificateRequest makeCsr( String username, KeyPair keyPair ) throws SignatureException, InvalidKeyException {
-        return staticMakeCsr( username, keyPair, getSignatureProvider().getName());
+        return staticMakeCsr( username, keyPair, getProviderFor(SERVICE_CSR_SIGNING) );
     }
 
     /**
@@ -209,7 +185,7 @@ public abstract class JceProvider {
      * @throws NoSuchPaddingException    if this provider is unable to deliver an appropriately-configured RSA implementation.  Shouldn't happen.
      */
     public Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
-        return getCipher(getRsaNoPaddingCipherName(), getAsymmetricProvider());
+        return getCipher(getRsaNoPaddingCipherName(), getProviderFor("Cipher.RSA"));
     }
 
     /** @return name to request to get RSA in ECB mode with no padding, or null to disable. */
@@ -226,7 +202,7 @@ public abstract class JceProvider {
      * @throws NoSuchPaddingException    if this provider is unable to deliver an appropriately-configured RSA implementation.  Shouldn't happen.
      */
     public Cipher getRsaOaepPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
-        return getCipher(getRsaOaepPaddingCipherName(), getAsymmetricProvider());
+        return getCipher(getRsaOaepPaddingCipherName(), getProviderFor("Cipher.RSA"));
     }
 
     protected String getRsaOaepPaddingCipherName() {
@@ -242,7 +218,7 @@ public abstract class JceProvider {
      * @throws NoSuchPaddingException    if this provider is unable to deliver an appropriately-configured RSA implementation.  Shouldn't happen.
      */
     public Cipher getRsaPkcs1PaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
-        return getCipher(getRsaPkcs1PaddingCipherName(), getAsymmetricProvider());
+        return getCipher(getRsaPkcs1PaddingCipherName(), getProviderFor("Cipher.RSA"));
     }
 
     protected String getRsaPkcs1PaddingCipherName() {
@@ -257,7 +233,7 @@ public abstract class JceProvider {
      * @throws NoSuchAlgorithmException if the requested algorithm name is invalid or not available from the current provider.
      */
     public Signature getSignature(String alg) throws NoSuchAlgorithmException {
-        return getSignature(alg, getSignatureProvider());
+        return getSignature(alg, getProviderFor("Signature." + alg));
     }
 
     /**
@@ -268,7 +244,7 @@ public abstract class JceProvider {
      * @throws NoSuchAlgorithmException if the requested algorithm name is invalid or not available from the current provider.
      */
     public KeyPairGenerator getKeyPairGenerator(String algorithm) throws NoSuchAlgorithmException {
-        return getKeyPairGenerator(algorithm, getSignatureProvider());
+        return getKeyPairGenerator(algorithm, getProviderFor("KeyPairGenerator." + algorithm));
     }
 
     /**
@@ -280,6 +256,17 @@ public abstract class JceProvider {
      */
     public KeyFactory getKeyFactory(String algorithm) throws NoSuchAlgorithmException {
         return getKeyFactory(algorithm, getProviderFor("KeyFactory." + algorithm));
+    }
+
+    /**
+     * Obtain a keystore implementation from the current JceProvider.
+     *
+     * @param kstype the keystore type, ie "PKCS12".  Required.
+     * @return an implementation of the requested keystore.  Never null.
+     * @thorws KeyStoreException if the specified keystore type is not available.
+     */
+    public KeyStore getKeyStore(String kstype) throws KeyStoreException {
+        return getKeyStore(kstype, getProviderFor("KeyStore." + kstype));
     }
 
     /**
@@ -299,12 +286,12 @@ public abstract class JceProvider {
      *
      * @param username  the username to put in the cert
      * @param keyPair the public and private keys
-     * @param providerName name of the provider to use for crypto operations.
+     * @param provider provider to use for crypto operations, or null to use best preferences.
      * @return a new CertificateRequest instance.  Never null.
      * @throws java.security.InvalidKeyException  if a CSR cannot be created using the specified keypair
      * @throws java.security.SignatureException   if the CSR cannot be signed
      */
-    public static CertificateRequest staticMakeCsr(String username, KeyPair keyPair, String providerName ) throws InvalidKeyException, SignatureException {
+    public static CertificateRequest staticMakeCsr(String username, KeyPair keyPair, Provider provider ) throws InvalidKeyException, SignatureException {
         X509Name subject = new X509Name("cn=" + username);
         ASN1Set attrs = null;
         PublicKey publicKey = keyPair.getPublic();
@@ -312,7 +299,7 @@ public abstract class JceProvider {
 
         // Generate request
         try {
-            PKCS10CertificationRequest certReq = new PKCS10CertificationRequest(REQUEST_SIG_ALG, subject, publicKey, attrs, privateKey, providerName);
+            PKCS10CertificationRequest certReq = new PKCS10CertificationRequest(REQUEST_SIG_ALG, subject, publicKey, attrs, privateKey, provider == null ? null : provider.getName());
             return new BouncyCastleCertificateRequest(certReq, publicKey);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e); // can't happen
@@ -368,5 +355,17 @@ public abstract class JceProvider {
      */
     public static KeyPairGenerator getKeyPairGenerator(String alg, Provider prov) throws NoSuchAlgorithmException {
         return prov == null ? KeyPairGenerator.getInstance(alg) : KeyPairGenerator.getInstance(alg, prov);
+    }
+
+    /**
+     * Get the specified KeyStore from the specified Provider (which may be null).
+     *
+     * @param kstype the store type, ie "PKCS12".  Required.
+     * @param prov the provider to get it from, or null to get it from the current highest-preference Provider for that service.
+     * @return an implementation of the requested KeyStore.  Never null.
+     * @throws KeyStoreException if the specified keystore type is invalid or not available from the specified provider.
+     */
+    private static KeyStore getKeyStore(String kstype, Provider prov) throws KeyStoreException {
+        return prov == null ? KeyStore.getInstance(kstype) : KeyStore.getInstance(kstype, prov);
     }
 }

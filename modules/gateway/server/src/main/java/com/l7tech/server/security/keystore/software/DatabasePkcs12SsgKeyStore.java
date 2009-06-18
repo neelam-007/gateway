@@ -2,6 +2,7 @@ package com.l7tech.server.security.keystore.software;
 
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore;
 import com.l7tech.server.security.keystore.KeystoreFile;
@@ -10,7 +11,6 @@ import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -115,7 +115,7 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
                 if (logger.isLoggable(Level.INFO)) logger.info("Creating new empty PKCS#12 file for keystore id " + getOid());
             }
 
-            KeyStore keystore = KeyStore.getInstance("PKCS12");
+            KeyStore keystore = JceProvider.getInstance().getKeyStore("PKCS12");
             keystore.load(inputStream, password); // If no existing data, null inputStream causes new keystore to be created
             return keystore;
         } catch (KeyStoreException e) {

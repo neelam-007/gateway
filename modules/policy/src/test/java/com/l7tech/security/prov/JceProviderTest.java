@@ -123,18 +123,12 @@ public class JceProviderTest {
 
         {
             JceProvider.init();
-            String asymProvName = JceProvider.getInstance().getAsymmetricProvider().getName();
-            log.info("Using asymmetric cryptography provider: " + JceProvider.getInstance().getAsymmetricProvider());
-            log.info("Using symmetric cryptography provider: " + JceProvider.getInstance().getSymmetricProvider());
+            log.info("Using cryptography provider: " + JceProvider.getInstance().getDisplayName());
 
             FileInputStream sslks = null;
             KeyStore ks = null;
             try {
-                if ( prov.equals("ncipher") ) {
-                    ks = KeyStore.getInstance(kstype,asymProvName);
-                } else {
-                    ks = KeyStore.getInstance(kstype);
-                }
+                ks = JceProvider.getInstance().getKeyStore(kstype);
                 sslks = new FileInputStream(dir + "ssl.ks");
                 ks.load(sslks,kspass.toCharArray());
             } catch ( Exception e ) {

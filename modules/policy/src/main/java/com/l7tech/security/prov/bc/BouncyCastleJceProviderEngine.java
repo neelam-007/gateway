@@ -22,7 +22,7 @@ public class BouncyCastleJceProviderEngine extends JceProvider {
     }
 
     @Override
-    protected Provider getDefaultProvider() {
-        return PROVIDER;
+    public String getDisplayName() {
+        return PROVIDER.toString();
     }
 }
