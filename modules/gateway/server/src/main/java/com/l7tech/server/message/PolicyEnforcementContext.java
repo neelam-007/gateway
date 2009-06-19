@@ -606,9 +606,13 @@ public class PolicyEnforcementContext extends ProcessingContext<AuthenticationCo
                         String encoding = ctype.getEncoding();
                         if (cvk.getOverrideEncoding() != null)
                             encoding = cvk.getOverrideEncoding();
-                        setVariable(variableName, new String(in, offset, length, encoding));
+                        final String val = new String(in, offset, length, encoding);
+                        if (!val.equals(getVariable(variableName)))
+                            setVariable(variableName, val);
                     } catch (UnsupportedEncodingException e) {
                         throw new RuntimeException(e); // can't happen
+                    } catch (NoSuchVariableException e) {
+                        throw new RuntimeException(e); // Normally not possible
                     }
                 }
             };
