@@ -15,7 +15,7 @@ public class WssVersionAssertion extends Assertion {
         meta.put(AssertionMetadata.SHORT_NAME, "Use WS-Security version 1.1");
         meta.put(AssertionMetadata.LONG_NAME, "Use WS-Security version 1.1");
         meta.put(AssertionMetadata.DESCRIPTION, "Indicates that this service should use WSS 1.1 features like SignatureConfirmation when responding to requests.");
-        meta.putNull(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME);
+        meta.putNull(AssertionMetadata.PROPERTIES_EDITOR_FACTORY);
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "xmlSecurity" });
         return meta;
     }

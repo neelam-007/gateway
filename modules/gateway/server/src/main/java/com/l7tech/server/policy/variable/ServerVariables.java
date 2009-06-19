@@ -7,7 +7,6 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.identity.User;
-import com.l7tech.identity.ldap.LdapIdentity;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequireWssX509Cert;
@@ -16,11 +15,9 @@ import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.variable.VariableNotSettableException;
-import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
 import com.l7tech.util.BufferPoolByteArrayOutputStream;
-import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 
 import javax.wsdl.Operation;
@@ -705,78 +702,6 @@ public class ServerVariables {
         @Override
         public Object get(String name, PolicyEnforcementContext context) {
             return getRequestRemoteIp(context.getRequest());
-        }
-    }
-
-    private static class AuthenticatedUserGetter implements Getter {
-        private final String prefix;
-        private final boolean multivalued;
-        private final Functions.Unary<String, AuthenticationResult> userToValue;
-
-        private static final Functions.Unary<String,AuthenticationResult> USER_TO_NAME = new Functions.Unary<String, AuthenticationResult>() {
-            @Override
-            public String call(AuthenticationResult authResult) {
-                if (authResult == null) return null;
-                User authenticatedUser = authResult.getUser();
-                String user = null;
-                if (authenticatedUser != null) {
-                    user = authenticatedUser.getName();
-                    if (user == null) user = authenticatedUser.getId();
-                }
-                return user;
-            }
-        };
-
-        private static final Functions.Unary<String,AuthenticationResult> USER_TO_DN = new Functions.Unary<String, AuthenticationResult>() {
-            @Override
-            public String call(AuthenticationResult authResult) {
-                if (authResult == null) return null;
-                User user = authResult.getUser();
-                if (user instanceof LdapIdentity) {
-                    LdapIdentity ldapIdentity = (LdapIdentity) user;
-                    return ldapIdentity.getDn();
-                }
-                return user == null ? null : user.getSubjectDn();
-            }
-        };
-
-        public AuthenticatedUserGetter(String prefix, boolean multivalued, Functions.Unary<String,AuthenticationResult> property) {
-            this.prefix = prefix;
-            this.multivalued = multivalued;
-            this.userToValue = property;
-        }
-
-        @Override
-        public Object get(String name, PolicyEnforcementContext context) {
-            final List<AuthenticationResult> authResults = context.getDefaultAuthenticationContext().getAllAuthenticationResults();
-            if (multivalued) {
-                final List<String> strings = Functions.map(authResults, userToValue);
-                return strings.toArray(new String[strings.size()]);
-            }
-
-            final int prefixLength = prefix.length();
-            String suffix = name.substring(prefixLength);
-            if (suffix.length() == 0) {
-                // Without suffix
-                return userToValue.call(context.getDefaultAuthenticationContext().getLastAuthenticationResult());
-            }
-
-            if (!suffix.startsWith("."))
-                throw new IllegalArgumentException("Variable '" + name + "' does not have a period before the parameter name.");
-
-            String indexS = name.substring(prefixLength + 1);
-            try {
-                int index = Integer.parseInt(indexS);
-                if (index < 0 || index >= authResults.size()) {
-                    logger.info((index < 0 ? "authentication result index out of range: " : "not enough authentication results: ") + index);
-                    return null;
-                }
-                AuthenticationResult ar = authResults.get(index);
-                return userToValue.call(ar);
-            } catch (NumberFormatException e) {
-                logger.info("Was expecting a number suffix with " + name + ". " + e.getMessage());
-                return null;
-            }
         }
     }
 

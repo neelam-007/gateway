@@ -70,8 +70,6 @@ public abstract class SamlAssertion extends X509SigningSecurityTokenImpl impleme
         super(ass);
     }
 
-    public abstract X509Certificate getIssuerCertificate();
-
     public abstract void setIssuerCertificate(X509Certificate issuerCertificate);
 
     public abstract X509Certificate getAttestingEntity();

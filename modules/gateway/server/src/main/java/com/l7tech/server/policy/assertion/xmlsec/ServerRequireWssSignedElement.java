@@ -4,8 +4,8 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.security.token.ParsedElement;
 import com.l7tech.security.token.SigningSecurityToken;
 import com.l7tech.security.token.SignedElement;
-import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.X509SigningSecurityToken;
+import com.l7tech.security.token.SamlSecurityToken;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.util.CausedIOException;
@@ -177,19 +177,18 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
                     setVariable( context, RequireWssSignedElement.VAR_SIGNATURE_ELEMENT, signedElements[0].getSignatureElement() );
                 }
 
-            }
-
-            X509SigningSecurityToken x509Token = null;
-            if ( token instanceof X509SigningSecurityToken ) {
-                x509Token = (X509SigningSecurityToken) token;
-            }
-
-            if ( x509Token != null ) {
-                if ( x509Token.getType() == SecurityTokenType.WSS_X509_BST ) {
+                setVariable( context, RequireWssSignedElement.VAR_TOKEN_TYPE, token.getType().getCategory() );
+                if ( token instanceof SamlSecurityToken ) {
+                    SamlSecurityToken samlToken = (SamlSecurityToken) token;
+                    setVariable( context, RequireWssSignedElement.VAR_TOKEN_ELEMENT, samlToken.asElement() );
+                    setVariable( context, RequireWssSignedElement.VAR_TOKEN_ATTRIBUTES + ".issuer.certificate", samlToken.getIssuerCertificate() );
+                    setVariable( context, RequireWssSignedElement.VAR_TOKEN_ATTRIBUTES + ".subject.certificate", samlToken.getSubjectCertificate() );
+                    setVariable( context, RequireWssSignedElement.VAR_TOKEN_ATTRIBUTES + ".signing.certificate", samlToken.getMessageSigningCertificate() );
+                } else if ( token instanceof X509SigningSecurityToken ) {
+                    X509SigningSecurityToken x509Token = (X509SigningSecurityToken) token;
                     setVariable( context, RequireWssSignedElement.VAR_TOKEN_ELEMENT, x509Token.asElement() );
-                }
-                setVariable( context, RequireWssSignedElement.VAR_TOKEN_TYPE, "X.509" );
-                setVariable( context, RequireWssSignedElement.VAR_TOKEN_ATTRIBUTES, x509Token.getMessageSigningCertificate() );
+                    setVariable( context, RequireWssSignedElement.VAR_TOKEN_ATTRIBUTES, x509Token.getMessageSigningCertificate() );
+                } 
             }
         }
     }

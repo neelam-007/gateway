@@ -300,9 +300,13 @@ public interface AssertionMetadata {
      * <p/>
      * The default value is "${basePackage}.console.${baseName}PropertiesDialog".
      * <p/>
-     * If this is null, or this class can't be found (or doesn't work), the SSM's default MetadataFinder
+     * If this is null and the assertion has editable properties a generic properties edit dialog is used.
+     * If this class can't be found (or doesn't work), the SSM's default MetadataFinder
      * for the PROPERTIES_EDITOR_FACTORY will currently just give up and return null, disabling the "Properties..."
      * action in the DefaultAssertionPolicyNode for this assertion.
+     * <p/>
+     * To disable the properties editor for an assertion set the PROPERTIES_EDITOR_FACTORY or
+     * PROPERTIES_ACTION_FACTORY to null.
      */
     String PROPERTIES_EDITOR_CLASSNAME = "propertiesEditorClassname";
 

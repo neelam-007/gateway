@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.security.token;
@@ -32,6 +30,15 @@ public interface SamlSecurityToken extends X509SigningSecurityToken {
      * @return The certificate or null if not holder of key
      */
     X509Certificate getSubjectCertificate();
+
+    /**
+     * Get the issuer certificate.
+     *
+     * This is usually (but not always) from an embedded signature.
+     *
+     * @return The issuer certificate or null.
+     */
+    X509Certificate getIssuerCertificate();
 
     boolean isHolderOfKey();
 

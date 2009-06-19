@@ -75,6 +75,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
             this.password = password;
             this.passwordExpiryTime = passwordExpiryTime;
             this.certDn = certDn;
+            user.setSubjectDn( certDn );
         }
     }
 

@@ -221,7 +221,7 @@ public class WSSecurityProcessorUtils {
      * @param authContext The authorization context
      * @param wssResults The WSS processing results
      * @param identityTarget The target identity (may be null)
-     * @return
+     * @return The token or null if not found
      */
     public static SigningSecurityToken getSigningSecurityTokenByIdentity( final AuthenticationContext authContext,
                                                                           final ProcessorResult wssResults,
@@ -230,9 +230,9 @@ public class WSSecurityProcessorUtils {
 
         final SignedElement[] signedElements = wssResults.getElementsThatWereSigned();
         if ( new IdentityTarget().equals( new IdentityTarget(identityTarget)) ) {
-            final Set securityTokenElements = WSSecurityProcessorUtils.getSecurityTokenElements(wssResults);
+            final Set<Element> securityTokenElements = WSSecurityProcessorUtils.getSecurityTokenElements(wssResults);
             for ( SignedElement signedElement : signedElements ) {
-                if ( !securityTokenElements.contains(signedElement) ) {
+                if ( !securityTokenElements.contains(signedElement.asElement()) ) {
                     token = signedElement.getSigningSecurityToken();
                     break;
                 }

@@ -7,9 +7,11 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.message.*;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.util.IOUtils;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.X509SigningSecurityToken;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
@@ -20,18 +22,26 @@ import java.util.ArrayList;
  * @author alex
 */
 class MessageSelector implements ExpandVariables.Selector {
-    // TODO these must all be lower case
+    // NOTE: Variable names must be lower case
     private static final String HTTP_HEADER_PREFIX = "http.header.";
     private static final String HTTP_HEADERVALUES_PREFIX = "http.headervalues.";
     private static final String STATUS_NAME = "http.status";
     private static final String MAINPART_NAME = "mainpart";
-    // TODO parts?
 
+    // NOTE: Variable names must be lower case
     private static final String WSS_PREFIX = "wss.";
     private static final String WSS_CERT_COUNT = WSS_PREFIX + "certificates.count";
     private static final String WSS_CERT_VALUES_PREFIX = WSS_PREFIX + "certificates.value.";
     private static final String WSS_SIGN_CERT_COUNT = WSS_PREFIX + "signingcertificates.count";
     private static final String WSS_SIGN_CERT_VALUES_PREFIX = WSS_PREFIX + "signingcertificates.value.";
+
+    // NOTE: Variable names must be lower case
+    private static final String AUTH_USER_PASSWORD = "password";
+    private static final String AUTH_USER_USERNAME = "username";
+    private static final String AUTH_USER_USER = "authenticateduser";
+    private static final String AUTH_USER_USERS = "authenticatedusers";
+    private static final String AUTH_USER_DN = "authenticateddn";
+    private static final String AUTH_USER_DNS = "authenticateddns";
 
     @Override
     public Class getContextObjectClass() {
@@ -44,7 +54,7 @@ class MessageSelector implements ExpandVariables.Selector {
         if (context instanceof Message) {
             message = (Message) context;
         } else {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(); 
         }
 
         final MessageAttributeSelector selector;
@@ -60,14 +70,56 @@ class MessageSelector implements ExpandVariables.Selector {
             selector = mainPartSelector;
         } else if (lname.startsWith(WSS_PREFIX)) {
             selector = wssSelector;
+        } else if (lname.equals(AUTH_USER_PASSWORD) || lname.equals(AUTH_USER_USERNAME)) {
+            selector = selectLastCredentials(message, lname);
+        } else if (lname.startsWith(AUTH_USER_USERS)) {
+            selector = select(new AuthenticatedUserGetter(AUTH_USER_USERS, true, AuthenticatedUserGetter.USER_TO_NAME, message));
+        } else if (lname.startsWith(AUTH_USER_USER)) {
+            selector = select(new AuthenticatedUserGetter(AUTH_USER_USER, false, AuthenticatedUserGetter.USER_TO_NAME, message));
+        } else if (lname.startsWith(AUTH_USER_DNS)) {
+            selector = select(new AuthenticatedUserGetter(AUTH_USER_DNS, true, AuthenticatedUserGetter.USER_TO_DN, message));
+        } else if (lname.startsWith(AUTH_USER_DN)) {
+            selector = select(new AuthenticatedUserGetter(AUTH_USER_DN, false, AuthenticatedUserGetter.USER_TO_DN, message));
         } else {
-            // TODO other Message attributes
             String msg = handler.handleBadVariable(name + " in " + context.getClass().getName());
             if (strict) throw new IllegalArgumentException(msg);
             return null;
         }
 
         return selector.select(message, name, handler, strict);
+    }
+
+    private MessageAttributeSelector select( final AuthenticatedUserGetter authenticatedUserGetter ) {
+        return new MessageAttributeSelector(){
+            @Override
+            public Selection select( final Message context, final String name, final Syntax.SyntaxErrorHandler handler, final boolean strict ) {
+                final PolicyEnforcementContext pec = PolicyEnforcementContext.getCurrent();
+                Object got = pec==null ? null : authenticatedUserGetter.get( name, pec );
+                return got == null ?  null : new Selection(got);
+            }
+        };
+    }
+
+    private MessageAttributeSelector selectLastCredentials( final Message message, final String credentialPart ) {
+        return new MessageAttributeSelector(){
+            @Override
+            public Selection select( final Message context, final String name, final Syntax.SyntaxErrorHandler handler, final boolean strict ) {
+                Object got = null;
+                final PolicyEnforcementContext pec = PolicyEnforcementContext.getCurrent();
+                final LoginCredentials creds = pec==null ? null : pec.getAuthenticationContext(message).getLastCredentials();
+                if ( creds != null ) {
+                    if ( AUTH_USER_USERNAME.equals( credentialPart ) ) {
+                        got = creds.getName();
+                    } else if ( AUTH_USER_PASSWORD.equals( credentialPart ) ) {
+                        final char[] pass = creds.getCredentials();
+                        if (pass != null && pass.length > 0) {
+                            got = new String(pass);
+                        }
+                    }
+                }
+                return got == null ?  null : new Selection(got);
+            }
+        };
     }
 
     private static interface MessageAttributeSelector {

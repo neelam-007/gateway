@@ -707,7 +707,17 @@ public class PolicyProcessingTest extends TestCase {
                     Assert.assertFalse("signingcert1b64", XmlUtil.getTextValue((Element)signingcert1b64NodeList.item(0)).contains( " " ));
                     Assert.assertFalse("signingcert1b64", XmlUtil.getTextValue((Element)signingcert1b64NodeList.item(0)).contains( "\n" ));
 
-                    //TODO [steve] add variables for these http://sarek.l7tech.com/mediawiki/index.php?title=Generalized_WS-Security#Context_Variables_and_Cluster_Properties
+                    NodeList creduserNodeList = document.getElementsByTagNameNS(tns, "creduser");
+                    Assert.assertEquals("creduser found", 1, creduserNodeList.getLength());
+                    Assert.assertEquals("creduser", "CN=Bob, OU=OASIS Interop Test Cert, O=OASIS", XmlUtil.getTextValue((Element)creduserNodeList.item(0)));
+
+                    NodeList authusersNodeList = document.getElementsByTagNameNS(tns, "authusers");
+                    Assert.assertEquals("authusers found", 1, authusersNodeList.getLength());
+                    Assert.assertEquals("authusers", "Alice, Bob", XmlUtil.getTextValue((Element)authusersNodeList.item(0)));
+
+                    NodeList authdnsNodeList = document.getElementsByTagNameNS(tns, "authdns");
+                    Assert.assertEquals("authdns found", 1, authdnsNodeList.getLength());
+                    Assert.assertEquals("authdns", "CN=Alice, OU=OASIS Interop Test Cert, O=OASIS, CN=Bob, OU=OASIS Interop Test Cert, O=OASIS", XmlUtil.getTextValue((Element)authdnsNodeList.item(0)));
                 } catch (Exception e) {
                     throw ExceptionUtils.wrap(e);
                 }

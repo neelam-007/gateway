@@ -21,7 +21,7 @@ public class WssBasic extends WssCredentialSourceAssertion {
 
         meta.put(AssertionMetadata.SHORT_NAME, "WSS UsernameToken Basic");
         meta.put(AssertionMetadata.DESCRIPTION, "The requestor must provide BASIC credentials in a WSS Username Token");
-        meta.putNull(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME);
+        meta.putNull(AssertionMetadata.PROPERTIES_EDITOR_FACTORY);
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/authentication.gif");
         meta.put(AssertionMetadata.POLICY_NODE_NAME, "Require WSS UsernameToken Basic Authentication");
 
