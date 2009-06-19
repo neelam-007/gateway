@@ -18,6 +18,8 @@ import org.xml.sax.SAXException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Represents an abstract Message in the system.  This can be a request or a reply; over HTTP or JMS or transport
@@ -29,6 +31,8 @@ public final class Message {
     private MessageFacet rootFacet;
     private boolean enableOriginalDocument = false; // enable this to enable XmlKnob.getOriginalDocument().
                                                     // This is off by default since only certain messages need this.
+
+    private Map<MessageRole, Message> relatedMessages = new HashMap<MessageRole, Message>();
 
     // Quick lookup knob cache
     private HttpRequestKnob httpRequestKnob;
@@ -496,6 +500,14 @@ public final class Message {
         return knob;
     }
 
+    public void notifyMessage(Message message, MessageRole role) {
+        relatedMessages.put(role, message);
+    }
+
+    public Message getRelated(MessageRole role) {
+        return relatedMessages.get(role);
+    }
+    
     /**
      * Attach the specified knob to this message if and only if it does not already provide that knob.
      *

@@ -15,10 +15,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.message.AbstractHttpResponseKnob;
-import com.l7tech.message.HttpRequestKnob;
-import com.l7tech.message.HttpResponseKnob;
-import com.l7tech.message.Message;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
@@ -256,6 +253,11 @@ public final class ServerBridgeRoutingAssertion extends AbstractServerHttpRoutin
                         auditor.logAndAudit(AssertionMessages.HTTPROUTE_OK);
                     else
                         auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_STATUS, url.getPath(), String.valueOf(status));
+
+                    // todo: move to abstract routing assertion
+                    requestMsg.notifyMessage(bridgeResponse, MessageRole.RESPONSE);
+                    bridgeResponse.notifyMessage(requestMsg, MessageRole.REQUEST);
+
 
                     HttpResponseKnob httpResponseKnob = bridgeResponse.getKnob(HttpResponseKnob.class);
                     if (httpResponseKnob != null) {

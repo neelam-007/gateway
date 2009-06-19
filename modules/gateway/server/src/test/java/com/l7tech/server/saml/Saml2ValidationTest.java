@@ -1,9 +1,5 @@
 package com.l7tech.server.saml;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import junit.framework.TestCase;
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -29,7 +25,7 @@ import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.util.Collections;
+import java.util.*;
 
 /**
  * Saml 2.0 assertion validation tests.
@@ -348,7 +344,7 @@ public class Saml2ValidationTest extends TestCase {
             public SecurityActor getProcessedActor() { return SecurityActor.NOACTOR; }
             public String getProcessedActorUri() { return null; }
             public List<String> getValidatedSignatureValues() { return Collections.emptyList(); }
-            public List<SignatureConfirmation> getSignatureConfirmationValues() { return Collections.emptyList(); }
+            public SignatureConfirmation getSignatureConfirmation() { return null; }
             public String getSecurityNS() { return SoapUtil.SECURITY_NAMESPACE; }
             public SigningSecurityToken[] getSigningTokens(Element element) { return new SigningSecurityToken[0]; }
             public WssTimestamp getTimestamp() { return null; }

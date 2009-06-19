@@ -1,6 +1,8 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.message.MimeKnob;
+import com.l7tech.message.Message;
+import com.l7tech.message.MessageRole;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.util.CausedIOException;
@@ -26,6 +28,7 @@ import java.util.logging.Logger;
 public class TestEchoAssertion extends RoutingAssertion {
     private static final Logger logger = Logger.getLogger(TestEchoAssertion.class.getName());
 
+    @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = defaultMeta();
         meta.put(AssertionMetadata.SERVER_ASSERTION_CLASSNAME, ServerTestEcho.class.getName());
@@ -37,13 +40,22 @@ public class TestEchoAssertion extends RoutingAssertion {
             super(data, applicationContext, logger);
         }
 
+        @Override
         public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
             try {
-                MimeKnob requestMime = context.getRequest().getMimeKnob();
-                context.getResponse().initialize(new ByteArrayStashManager(),
+                Message request = context.getRequest();
+                Message response = context.getResponse();
+
+                MimeKnob requestMime = request.getMimeKnob();
+                response.initialize(new ByteArrayStashManager(),
                                                  requestMime.getOuterContentType(),
                                                  new ByteArrayInputStream( IOUtils.slurpStream(
                                                          requestMime.getEntireMessageBodyAsInputStream())));
+
+                // todo: move to abstract routing assertion
+                request.notifyMessage(response, MessageRole.RESPONSE);
+                response.notifyMessage(request, MessageRole.REQUEST);
+
                 return AssertionStatus.NONE;
             } catch (NoSuchPartException e) {
                 throw new CausedIOException(e);

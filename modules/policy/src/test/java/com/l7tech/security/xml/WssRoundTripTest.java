@@ -5,6 +5,8 @@ package com.l7tech.security.xml;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.message.Message;
+import com.l7tech.message.MessageRole;
+import com.l7tech.message.SecurityKnob;
 import com.l7tech.security.WsiBSPValidator;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.saml.SamlConstants;
@@ -349,7 +351,7 @@ public class WssRoundTripTest {
     @Test
     public void testExplicitSignatureConfirmation() throws Exception {
         NamedTestDocument ntd = new NamedTestDocument("ExplicitSignatureConfirmation",
-                                                      wssDecoratorTest.getExplicitSignatureConfirmationsTestDocument());
+            wssDecoratorTest.getExplicitSignatureConfirmationsTestDocument());
         runRoundTripTest(ntd, false);
     }
 
@@ -410,12 +412,28 @@ public class WssRoundTripTest {
         byte[] decoratedMessageDocument = XmlUtil.nodeToString(soapMessage).getBytes();
         byte[] decoratedMessage = IOUtils.slurpStream(c.messageMessage.getMimeKnob().getEntireMessageBodyAsInputStream());
 
+
+        // prepare fake request and wss result
+        Message fakeRequest = new Message();
+        SecurityKnob fakeSK = fakeRequest.getSecurityKnob();
+        fakeSK.setProcessorResult(new ProcessorResultWrapper(fakeSK.getProcessorResult()) {
+            @Override
+            public List<String> getValidatedSignatureValues() {
+                return new ArrayList<String>(td.req.getSignatureConfirmations());
+            }
+            @Override
+            public EncryptedElement[] getElementsThatWereEncrypted() {
+                return new EncryptedElement[0];
+            }
+        });
+
         // ... pretend HTTP goes here ...
         final String networkRequestString = new String(decoratedMessageDocument);
 
         // Ooh, an incoming message has just arrived!
         Message incomingMessage = new Message();
         incomingMessage.initialize(c.messageMessage.getMimeKnob().getOuterContentType(), decoratedMessage);
+        incomingMessage.notifyMessage(fakeRequest, MessageRole.REQUEST);
         Document incomingSoapDocument = incomingMessage.getXmlKnob().getDocumentReadOnly();
 
         boolean isValid = !checkBSP1Compliance || validator.isValid(incomingSoapDocument);
@@ -497,12 +515,16 @@ public class WssRoundTripTest {
         }
 
         // If there were supposed to be SignatureConfirmation elements, make sure they are there
+        SignatureConfirmation confirmation = r.getSignatureConfirmation();
+        assertNotSame( Arrays.toString(confirmation.getErrors().toArray()),
+                       SignatureConfirmation.Status.INVALID, confirmation.getStatus() );
         if (!td.req.getSignatureConfirmations().isEmpty()) {
-            List<SignatureConfirmation> gotConfimationElements = r.getSignatureConfirmationValues();
-            for (SignatureConfirmation element : gotConfimationElements)
-                assertTrue(signedDomElements.contains(element.asElement()));
-            List<String> gotConfirmationValues = Functions.map(gotConfimationElements,
-                    Functions.<String, SignatureConfirmation>getterTransform(SignatureConfirmation.class.getMethod("getConfirmationValue")));
+
+            Set<String> gotConfirmationValues = confirmation.getConfirmedValues().keySet();
+
+            for (String confirmedValue : gotConfirmationValues)
+                assertTrue(signedDomElements.contains(confirmation.getElement(confirmedValue)));
+
             for (String expectedConfValue : td.req.getSignatureConfirmations())
                 assertTrue("Expect SignatureConfirmation for: " + expectedConfValue, gotConfirmationValues.contains(expectedConfValue));
         }

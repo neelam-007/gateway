@@ -281,12 +281,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                             return AssertionStatus.FAILED;
                         }
 
+                        com.l7tech.message.Message responseMessage = context.getResponse();
                         if ( jmsResponse instanceof TextMessage ) {
-                            context.getResponse().initialize(XmlUtil.stringToDocument( ((TextMessage)jmsResponse).getText() ));
+                            responseMessage.initialize(XmlUtil.stringToDocument( ((TextMessage)jmsResponse).getText() ));
                         } else if ( jmsResponse instanceof BytesMessage ) {
                             BytesMessage bmsg = (BytesMessage)jmsResponse;
                             final StashManager stashManager = stashManagerFactory.createStashManager();
-                            context.getResponse().initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bmsg));
+                            responseMessage.initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bmsg));
                         } else {
                             auditor.logAndAudit(AssertionMessages.JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE, jmsResponse.getClass().getName());
                             return AssertionStatus.FAILED;
@@ -303,7 +304,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                             inResJmsMsgProps.put(name, value);
                         }
 
-                        context.getResponse().attachJmsKnob(new JmsKnob() {
+                        responseMessage.attachJmsKnob(new JmsKnob() {
                             @Override
                             public boolean isBytesMessage() {
                                 return (jmsResponse instanceof BytesMessage);
@@ -322,10 +323,15 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         enforceJmsMessagePropertyRuleSet(context, assertion.getResponseJmsMessagePropertyRuleSet(), inResJmsMsgProps, outResJmsMsgProps);
                         // After enforcing propagation rules, replace the JMS message properties
                         // in the response JmsKnob with enforced/expanded values.
-                        context.getResponse().getJmsKnob().getJmsMsgPropMap().clear();
-                        context.getResponse().getJmsKnob().getJmsMsgPropMap().putAll(outResJmsMsgProps);
+                        responseMessage.getJmsKnob().getJmsMsgPropMap().clear();
+                        responseMessage.getJmsKnob().getJmsMsgPropMap().putAll(outResJmsMsgProps);
 
                         context.setRoutingStatus( RoutingStatus.ROUTED );
+
+                        // todo: move to abstract routing assertion
+                        requestMessage.notifyMessage(responseMessage, MessageRole.RESPONSE);
+                        responseMessage.notifyMessage(requestMessage, MessageRole.REQUEST);
+
                         return AssertionStatus.NONE;
                     } else {
                         context.routingFinished();

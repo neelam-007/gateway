@@ -6,6 +6,7 @@ package com.l7tech.external.assertions.echorouting.server;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.message.MimeKnob;
+import com.l7tech.message.MessageRole;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.util.CausedIOException;
@@ -39,6 +40,10 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion<EchoRouti
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final Message request = context.getRequest();
         final Message response = context.getResponse();
+
+        // todo: move to abstract routing assertion
+        request.notifyMessage(response, MessageRole.RESPONSE);
+        response.notifyMessage(request, MessageRole.REQUEST);
 
         final MimeKnob mimeKnob = (MimeKnob) request.getKnob(MimeKnob.class);
         final ContentTypeHeader cth = mimeKnob == null ? null : mimeKnob.getOuterContentType();

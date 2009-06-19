@@ -92,4 +92,14 @@ public interface SecurityKnob extends MessageKnob {
      * @return the DecorationRequirements for this recipient, possibly newly created.  Never null.
      */
     DecorationRequirements getAlternateDecorationRequirements(XmlSecurityRecipientContext recipient);
+
+    /**
+     * Gets the WSS version that the policy associates with a message target.
+     */
+    WsSecurityVersion getPolicyWssVersion();
+
+    /**
+     * Sets the WSS version that the policy associates with a message target.
+     */
+    void setPolicyWssVersion(WsSecurityVersion version);
 }

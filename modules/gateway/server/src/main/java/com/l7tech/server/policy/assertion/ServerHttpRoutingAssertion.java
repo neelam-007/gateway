@@ -590,6 +590,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 auditor.logAndAudit(AssertionMessages.HTTPROUTE_RESPONSE_CHALLENGE);
             }
 
+            // todo: move to abstract routing assertion
+            requestMessage.notifyMessage(routedResponseDestination, MessageRole.RESPONSE);
+            routedResponseDestination.notifyMessage(requestMessage, MessageRole.REQUEST);
+            
             HttpResponseKnob httpResponseKnob = routedResponseDestination.getKnob(HttpResponseKnob.class);
             if (readOk && httpResponseKnob != null) {
                 httpResponseKnob.setStatus(status);

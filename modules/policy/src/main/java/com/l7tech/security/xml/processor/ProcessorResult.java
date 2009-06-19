@@ -59,20 +59,24 @@ public interface ProcessorResult {
     List<String> getValidatedSignatureValues();
 
     /**
-     * Get all SignatureConfirmation elements that were seen while processing this message.
-     * <b>Important: Caller is responsible for checking that these elements were properly signed.</b>
-     * (The WssProcessor could conceivably check that the elements were signed by <i>something</i>, but not whether
-     * the signing tokens were trusted to provided the confirmations in question.)
+     * Get the SignatureConfirmation WSS Processor result. Validation is enforced in either strict or
+     * non-strict mode, and the outcome and errors are recorded in this result.
+     *
+     * <b>IMPORTANT: The WSS Processor ensures that signature confirmations are signed by <i>something</i>,
+     * however the caller is responsible for validating the that the signing identities are trusted and
+     * authoritative for signing the signature confirmations.
      *
      * @return a List of SignatureConfirmation instances.  May be empty but never null.
+     * @see com.l7tech.security.token.SignatureConfirmation
+     * @see strict // todo
      */
-    List<SignatureConfirmation> getSignatureConfirmationValues();
+    SignatureConfirmation getSignatureConfirmation();
 
     String getLastKeyEncryptionAlgorithm();
 
     /**
-     * Provides hinting about whether any WSS 1.1 features were seen while processing this message.
-     * Currently the only WSS 1.1 feature that will cause this to be true is an EncryptedHeader.
+     * Provides hinting about whether any WSS 1.1 features were seen while processing this message,
+     * such as EncryptedHeader or SignatureConfirmation.
      * <p/>
      * Note that a request can fail to use any obvious WSS 1.1 features, but the requester could still
      * be expecting a WSS 1.1 reply (with SignatureConfirmation etc).  Thus this hint should not be

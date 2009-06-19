@@ -83,7 +83,8 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                 final DecorationRequirements[] decorations = secKnob.getDecorationRequirements();
                 final SoapVersion soapVersion = SoapVersion.namespaceToSoapVersion(document.getNamespaceURI());
 
-                //TODO [steve] set WS-Security version
+                secKnob.setPolicyWssVersion(assertion.getWsSecurityVersion());
+
                 if (decorations != null && decorations.length > 0) {
                     WssDecorator decorator = new WssDecoratorImpl();
                     for (DecorationRequirements decoration : decorations) {

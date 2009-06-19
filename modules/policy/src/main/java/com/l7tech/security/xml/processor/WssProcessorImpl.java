@@ -11,8 +11,7 @@ import com.l7tech.common.mime.PartIterator;
 import com.l7tech.kerberos.KerberosConfigException;
 import com.l7tech.kerberos.KerberosGSSAPReqTicket;
 import com.l7tech.kerberos.KerberosUtils;
-import com.l7tech.message.Message;
-import com.l7tech.message.MimeKnob;
+import com.l7tech.message.*;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.keys.FlexKey;
@@ -66,7 +65,7 @@ public class WssProcessorImpl implements WssProcessor {
     private final Collection<SignedPart> partsThatWereSigned = new ArrayList<SignedPart>();
     private final Collection<XmlSecurityToken> securityTokens = new ArrayList<XmlSecurityToken>();
     private final Collection<DerivedKeyToken> derivedKeyTokens = new ArrayList<DerivedKeyToken>();
-    public final List<SignatureConfirmation> signatureConfirmationValues = new ArrayList<SignatureConfirmation>();
+    private final SignatureConfirmation signatureConfirmation = new SignatureConfirmationImpl();
     public final List<String> validatedSignatureValues = new ArrayList<String>();
 
     // WARNING : Settings must be copied in undecorateMessage
@@ -95,6 +94,7 @@ public class WssProcessorImpl implements WssProcessor {
     private boolean encryptionIgnored = false;
     private String lastKeyEncryptionAlgorithm = null;
     private boolean isWsse11Seen = false;
+    private boolean strictSignatureConfirmationValidation = true;
     private boolean isDerivedKeySeen = false; // If we see any derived keys, we'll assume we can derive our own keys in reponse
     private Resolver<String,X509Certificate> messageX509TokenResolver = null;
 
@@ -204,6 +204,19 @@ public class WssProcessorImpl implements WssProcessor {
      */
     public void setPermitUnknownBinarySecurityTokens(boolean permitUnknownBinarySecurityTokens) {
         this.permitUnknownBinarySecurityTokens = permitUnknownBinarySecurityTokens;
+    }
+
+    /**
+     * todo: document this!
+     *
+     * @return
+     */
+    public boolean isStrictSignatureConfirmationValidation() {
+        return strictSignatureConfirmationValidation;
+    }
+
+    public void setStrictSignatureConfirmationValidation(boolean strictSignatureConfirmationValidation) {
+        this.strictSignatureConfirmationValidation = strictSignatureConfirmationValidation;
     }
 
     /**
@@ -372,7 +385,8 @@ public class WssProcessorImpl implements WssProcessor {
                 }
             } else if (securityChildToProcess.getLocalName().equals("SignatureConfirmation")) {
                 if (DomUtils.elementInNamespace(securityChildToProcess, new String[] { SoapConstants.SECURITY11_NAMESPACE } )) {
-                    processSignatureConfirmation(securityChildToProcess);
+                    isWsse11Seen = true;
+                    signatureConfirmation.addConfirmationElement(securityChildToProcess, strictSignatureConfirmationValidation);
                 } else {
                     logger.fine("Encountered SignatureConfirmation element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ')');
@@ -414,6 +428,8 @@ public class WssProcessorImpl implements WssProcessor {
             if (ts != null)
                 processTimestamp(ts);
         }
+
+        validateSignatureConfirmations();
 
         // NOTE fla, we used to remove the Security header altogether but we now leave this up to the policy
         // NOTE lyonsm we don't remove the mustUnderstand attr here anymore either, since it changes the request
@@ -544,16 +560,109 @@ public class WssProcessorImpl implements WssProcessor {
         return messageX509TokenResolver;
     }
 
-    private void processSignatureConfirmation(Element securityChildToProcess) {
-        isWsse11Seen = true;
-        String value = securityChildToProcess.getAttribute("Value");
-        if (value == null || value.length() < 1) {
-            logger.fine("Ignoring empty SignatureConfirmation header");
-            return;
+    private void validateSignatureConfirmations() {
+
+        Message relatedRequest = message.getRelated(MessageRole.REQUEST);
+
+        if (relatedRequest == null) { // we're ok only if the message is using WSS 1.0 as far as we can tell
+            if (isWsse11Seen || ! signatureConfirmation.getConfirmationElements().isEmpty()) {
+                signatureConfirmation.addError("Message has WSS 1.1 elements, but there's no related request to validate SignatureConfirmations against.");
+            }
+        } else {
+            SecurityKnob requestSK = relatedRequest.getSecurityKnob();
+            ProcessorResult requestWss = requestSK.getProcessorResult();
+            WsSecurityVersion requestWssVer = requestSK.getPolicyWssVersion();
+            if (requestWss == null) {
+                signatureConfirmation.addError("SignatureConfirmations not validated: related request was not WSS processed.");
+            } else {
+                // there is a processed request to validate against
+                switch (signatureConfirmation.getConfirmationElements().size()) {
+                    case 0:
+                        if ((requestWssVer == WsSecurityVersion.WSS11 || isWsse11Seen)) {
+                            if ( strictSignatureConfirmationValidation )
+                                signatureConfirmation.addError("No SignatureConfirmation element found, expected at least one in a WSS 1.1 nessage.");
+                            else if (! requestWss.getValidatedSignatureValues().isEmpty())
+                                signatureConfirmation.addError("No signatures from the request are confirmed.");
+                        }
+                        break;
+
+                    case 1:
+                        if ( signatureConfirmation.hasNullValue() && ! requestWss.getValidatedSignatureValues().isEmpty() &&
+                             (strictSignatureConfirmationValidation && /* || ? */ requestWssVer == WsSecurityVersion.WSS11) )
+                            signatureConfirmation.addError("No signatures from the request are confirmed.");
+
+                    default:
+                        // isWsse11Seen is true at this point
+                        if(requestWssVer == WsSecurityVersion.WSS11 || strictSignatureConfirmationValidation) {
+                            List<String> requestSignatures = requestWss.getValidatedSignatureValues();
+                            Set<String> unconfirmedSignatures = signatureConfirmation.getConfirmationElements().keySet();
+                            unconfirmedSignatures.remove(null); // value-less entry already processed
+
+                            List<String> extras = new ArrayList<String>();
+                            List<String> missingOrNotSigned = new ArrayList<String>();
+                            List<String> unEncrypted = new ArrayList<String>();
+                            Set<String> encryptedSignatures = new HashSet<String>();
+
+                            for(String maybeConfirmedValue : unconfirmedSignatures) {
+                                if (! requestSignatures.contains(maybeConfirmedValue))
+                                    extras.add(maybeConfirmedValue);
+                            }
+
+                            for (EncryptedElement wasEncrypted : requestWss.getElementsThatWereEncrypted()) {
+                                Element e = wasEncrypted.asElement();
+                                if ( e.getLocalName().equals("Signature") && DomUtils.elementInNamespace(e, new String[] { SoapConstants.DIGSIG_URI } )) {
+                                    encryptedSignatures.add(DomUtils.getTextValue(e));
+                                }
+                            }
+
+                            for(String requestSig : requestSignatures) {
+                                Set < SigningSecurityToken> tokens;
+                                if ( ! unconfirmedSignatures.contains(requestSig)) {
+                                    missingOrNotSigned.add(requestSig);
+                                } else {
+                                    tokens = getSigningTokens(signatureConfirmation.getElement(requestSig));
+                                    if ( tokens.isEmpty() )
+                                        missingOrNotSigned.add(requestSig);
+                                    else
+                                        signatureConfirmation.addSigningToken(requestSig, tokens);
+
+                                    if (encryptedSignatures.contains(requestSig) && ! wasEncrypted(signatureConfirmation.getElement(requestSig)))
+                                        unEncrypted.add(requestSig);
+                                }
+                            }
+
+                            if (! missingOrNotSigned.isEmpty()) // main validation check
+                                signatureConfirmation.addError("Request signatures not confirmed: " + Arrays.toString(missingOrNotSigned.toArray()));
+
+                            if (strictSignatureConfirmationValidation) {
+                                if ( ! extras.isEmpty())
+                                    signatureConfirmation.addError("Unknown SignatureConfirmations in response: " + Arrays.toString(extras.toArray()));
+                                if ( ! unEncrypted.isEmpty())
+                                    signatureConfirmation.addError("Encrypted signatures in request not encrypted in response: " + Arrays.toString(unEncrypted.toArray()));
+                            }
+                        }
+                } // switch
+            }
         }
-        signatureConfirmationValues.add(new SignatureConfirmationImpl(securityChildToProcess, value));
     }
 
+    private Set<SigningSecurityToken> getSigningTokens(Element e) {
+        Set<SigningSecurityToken> result = new LinkedHashSet<SigningSecurityToken>();
+        for(SignedElement signed : elementsThatWereSigned) {
+            if (signed.asElement().equals(e))
+                result.add(signed.getSigningSecurityToken());
+        }
+        return result;
+    }
+
+    private boolean wasEncrypted(Element e) {
+        for(EncryptedElement encrypted : elementsThatWereEncrypted) {
+            if (encrypted.asElement().equals(e))
+                return true;
+        }
+        return false;
+    }
+    
     private XmlSecurityToken findSecurityContextTokenBySessionId(String refUri) {
         Collection tokens = securityTokens;
         for (Object o : tokens) {
@@ -771,8 +880,8 @@ public class WssProcessorImpl implements WssProcessor {
             }
 
             @Override
-            public List<SignatureConfirmation> getSignatureConfirmationValues() {
-                return signatureConfirmationValues;
+            public SignatureConfirmation getSignatureConfirmation() {
+                return signatureConfirmation;
             }
 
             @Override

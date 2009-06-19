@@ -10,6 +10,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.message.WsSecurityVersion;
 
 import javax.swing.*;
 import java.awt.*;
@@ -42,7 +43,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         assertion.setUseSecureSpanActor( actorSecureSpanDefaultRadioButton.isSelected() );
 
         if ( applyWsSecurityCheckBox.isSelected() ) {
-            assertion.setWsSecurityVersion( (String)wssVersionComboBox.getSelectedItem() );
+            assertion.setWsSecurityVersion( (WsSecurityVersion) wssVersionComboBox.getSelectedItem());
 
             assertion.setRecipientTrustedCertificateOid( 0L );
             assertion.setRecipientTrustedCertificateName( null );
@@ -52,7 +53,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 assertion.setRecipientTrustedCertificateName( lookupCertificateTextField.getText().trim() );
             }
         } else {
-            assertion.setWsSecurityVersion( "1.0" );
+            assertion.setWsSecurityVersion(WsSecurityVersion.WSS10);
             assertion.setRecipientTrustedCertificateOid( 0L );
             assertion.setRecipientTrustedCertificateName( null );
         }
@@ -99,7 +100,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     protected void initComponents() {
         super.initComponents();
 
-        wssVersionComboBox.setModel( new DefaultComboBoxModel(new String[]{ "1.0", "1.1" }) );
+        wssVersionComboBox.setModel( new DefaultComboBoxModel(EnumSet.allOf(WsSecurityVersion.class).toArray()));
 
         RunOnChangeListener stateUpdateListener = new RunOnChangeListener( new Runnable(){
             @Override

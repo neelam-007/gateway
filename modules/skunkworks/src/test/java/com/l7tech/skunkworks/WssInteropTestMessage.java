@@ -285,7 +285,7 @@ public class WssInteropTestMessage extends TestCase {
         // TODO maintain a list of signature confirmations
         // TODO maintain a list of signature confirmations
         // TODO maintain a list of signature confirmations
-        final String foundSigConf = wssResults.getSignatureConfirmationValues().get(0).getConfirmationValue();
+        final String foundSigConf = wssResults.getSignatureConfirmation().getConfirmedValues().keySet().iterator().next();
         if (expectedSigConf.equals(foundSigConf))
             log.info("Expected signature confirmation was found: " + expectedSigConf);
         else

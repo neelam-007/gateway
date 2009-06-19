@@ -37,6 +37,8 @@ public abstract class ProcessingContext<CT extends CredentialContext> implements
             response = new Message();
         this.request = request;
         this.response = response;
+        request.notifyMessage(response, MessageRole.RESPONSE);
+        response.notifyMessage(request, MessageRole.REQUEST);
     }
 
     public final Message getRequest() {

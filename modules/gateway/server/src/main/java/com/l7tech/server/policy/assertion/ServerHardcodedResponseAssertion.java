@@ -11,10 +11,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Messages;
-import com.l7tech.message.AbstractHttpResponseKnob;
-import com.l7tech.message.HttpResponseKnob;
-import com.l7tech.message.HttpServletResponseKnob;
-import com.l7tech.message.Message;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HardcodedResponseAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -83,6 +80,7 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
         }
     }
 
+    @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
       throws IOException, PolicyAssertionException
     {
@@ -92,9 +90,10 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
 
         Message response = context.getResponse();
         // fla bugfix attach the status before closing otherwise, it's lost
-        HttpResponseKnob hrk = (HttpResponseKnob)response.getKnob(HttpResponseKnob.class);
+        HttpResponseKnob hrk = response.getKnob(HttpResponseKnob.class);
         if (hrk == null) {
             hrk = new AbstractHttpResponseKnob() {
+                @Override
                 public void addCookie(HttpCookie cookie) {
                     // This was probably not an HTTP request, so cookies are meaningless anyway.
                 }
@@ -113,6 +112,12 @@ public class ServerHardcodedResponseAssertion extends AbstractServerAssertion<Ha
         }
         response.initialize(stashManager, contentType, new ByteArrayInputStream(bytes));
         response.attachHttpResponseKnob(hrk);
+
+        // todo: move to abstract routing assertion
+        Message request = context.getRequest();
+        request.notifyMessage(response, MessageRole.RESPONSE);
+        response.notifyMessage(request, MessageRole.REQUEST);
+        
         context.setRoutingStatus(RoutingStatus.ROUTED);
 
         // process early response
