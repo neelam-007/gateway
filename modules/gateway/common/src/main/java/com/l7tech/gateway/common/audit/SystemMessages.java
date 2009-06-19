@@ -16,6 +16,9 @@ public class SystemMessages extends Messages {
     public static final M DATABASE_ERROR                = m(2000, Level.WARNING, "Database error");
     public static final M DATABASE_ERROR_WITH_MORE_INFO = m(2001, Level.WARNING, "{0}. Database error");
 
+    public static final M FIPS_MODE_ENABLED             = m(2005, Level.INFO,    "FIPS mode enabled");
+    public static final M FIPS_MODE_DISABLED            = m(2006, Level.INFO,    "FIPS mode disabled");
+
     public static final M LICENSE_DB_ERROR_RETRY        = m(2010, Level.WARNING, "Database error reading license file.  Will keep current license and retry.");
     public static final M LICENSE_DB_ERROR_GAVEUP       = m(2011, Level.WARNING, "Database error reading license file.  Current license was too stale to keep.  Will keep trying.");
     public static final M LICENSE_NO_LICENSE            = m(2012, Level.WARNING, "No valid license is installed.  Some product features may be disabled.");
