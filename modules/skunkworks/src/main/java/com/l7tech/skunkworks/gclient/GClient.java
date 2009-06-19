@@ -1230,7 +1230,7 @@ public class GClient {
             RSAPrivateKey rpk = (RSAPrivateKey)clientPrivateKey;
             return new SaveableRsaPrivateKey(rpk.getModulus(), rpk.getPrivateExponent());
         }
-        logger.info("Unable to save non-RSA private key: " + clientPrivateKey.getClass().getName());
+        logger.info("Unable to save non-exportable or non-RSA private key: " + clientPrivateKey.getClass().getName());
         return null;
     }
 

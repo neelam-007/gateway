@@ -6,15 +6,15 @@
 
 package com.l7tech.skunkworks;
 
-import com.l7tech.util.HexUtils;
 import com.l7tech.test.BenchmarkRunner;
+import com.l7tech.util.HexUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
 import java.util.logging.Logger;
 
 /**
@@ -51,7 +51,7 @@ public class JceSignaturePlayground {
         String alias = (String)ks.aliases().nextElement();
 
         final X509Certificate cert = (X509Certificate)ks.getCertificate(alias);
-        final RSAPrivateKey privateKey = (RSAPrivateKey)ks.getKey(alias,keypass.toCharArray());
+        final PrivateKey privateKey = (PrivateKey)ks.getKey(alias,keypass.toCharArray());
 
         if ( provider == null ) {
             log.info("Using default provider for signature algorithm");

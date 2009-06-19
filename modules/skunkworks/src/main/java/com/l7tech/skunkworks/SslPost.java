@@ -63,9 +63,10 @@ public class SslPost {
         copyStream(sock.getInputStream(), System.out);
     }
 
-    private static RSAPrivateKey loadClientKey(String clientKeyPath, final char[] keyPass) throws IOException
+    private static PrivateKey loadClientKey(String clientKeyPath, final char[] keyPass) throws IOException
     {
         PEMReader pemReader = new PEMReader(new InputStreamReader(new FileInputStream(clientKeyPath)), new PasswordFinder() {
+            @Override
             public char[] getPassword() {
                 return keyPass;
             }
@@ -78,7 +79,7 @@ public class SslPost {
             object = ((KeyPair)object).getPrivate();
         if (!(object instanceof RSAPrivateKey))
             throw new IllegalArgumentException("Client cert private key PEM file did not contain an RSAPrivateKey.  Instead it contained: " + object.getClass());
-        return (RSAPrivateKey)object;
+        return (PrivateKey)object;
     }
 
     private static X509Certificate loadClientCert(String clientCertPath) throws FileNotFoundException, CertificateException {

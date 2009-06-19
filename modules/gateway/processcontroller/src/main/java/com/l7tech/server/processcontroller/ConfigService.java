@@ -11,8 +11,8 @@ import com.l7tech.util.Pair;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
 import java.util.Set;
 
 /** @author alex */
@@ -50,7 +50,7 @@ public interface ConfigService {
     File getApplianceLibexecDirectory();
 
     /** The certificate chain and private key for the PC's SSL listener */
-    Pair<X509Certificate[], RSAPrivateKey> getSslKeypair();
+    Pair<X509Certificate[], PrivateKey> getSslKeypair();
 
     /** The PC's SSL port. */
     int getSslPort();

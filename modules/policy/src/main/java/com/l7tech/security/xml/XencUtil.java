@@ -31,7 +31,6 @@ import javax.crypto.spec.PSource;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.MGF1ParameterSpec;
 import java.util.Random;
@@ -423,9 +422,8 @@ public class XencUtil {
      * @throws GeneralSecurityException if the key wrapping fails
      */
     public static byte[] encryptKeyWithRsaAndPad(byte[] keyBytes, X509Certificate recipientCert, PublicKey publicKey) throws GeneralSecurityException {
-        if (!(publicKey instanceof RSAPublicKey))
-            throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
-                                   publicKey.getClass().getName());
+        if (!("RSA".equalsIgnoreCase(publicKey.getAlgorithm())))
+            throw new KeyException("Unable to encrypt for recipient public key of non-RSA type: " + publicKey.getAlgorithm());
         KeyUsageChecker.requireActivityForKey(KeyUsageActivity.encryptXml, recipientCert, publicKey);
         Cipher rsa = JceProvider.getInstance().getRsaPkcs1PaddingCipher();
         rsa.init(Cipher.ENCRYPT_MODE, publicKey);
@@ -444,9 +442,8 @@ public class XencUtil {
      *                                  or no support for OAEP is available.
      */
     public static byte[] encryptKeyWithRsaOaepMGF1SHA1(byte[] keyBytes, X509Certificate recipientCert, PublicKey publicKey, byte[] oaepParams) throws GeneralSecurityException {
-        if (!(publicKey instanceof RSAPublicKey))
-            throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
-                                   publicKey.getClass().getName());
+        if (!("RSA".equalsIgnoreCase(publicKey.getAlgorithm())))
+            throw new KeyException("Unable to encrypt for recipient public key of non-RSA type: " + publicKey.getAlgorithm());
 
         Cipher rsa = JceProvider.getInstance().getRsaOaepPaddingCipher();
         try {

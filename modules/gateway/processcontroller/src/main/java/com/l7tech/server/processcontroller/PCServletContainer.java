@@ -1,38 +1,34 @@
 package com.l7tech.server.processcontroller;
 
 import com.l7tech.common.io.SingleCertX509KeyManager;
-import com.l7tech.util.Pair;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import org.apache.cxf.transport.servlet.CXFServlet;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.security.SslSocketConnector;
 import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.DefaultServlet;
 import org.mortbay.jetty.servlet.ServletHolder;
-import org.mortbay.resource.Resource;
 import org.mortbay.log.Log;
+import org.mortbay.resource.Resource;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
 import java.io.File;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
-import java.security.cert.X509Certificate;
+import java.security.PrivateKey;
 import java.security.cert.CertificateException;
-import java.security.interfaces.RSAPrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An embedded servlet container that the PC uses to host itself.
@@ -72,7 +68,7 @@ public class PCServletContainer implements ApplicationContextAware, Initializing
 
     private void initializeServletEngine() throws Exception {
         Server server = new Server();
-        Pair<X509Certificate[],RSAPrivateKey> keypair = configService.getSslKeypair();
+        Pair<X509Certificate[],PrivateKey> keypair = configService.getSslKeypair();
         final SSLContext ctx = SSLContext.getInstance("SSL");
         ctx.init(new KeyManager[] { new SingleCertX509KeyManager(keypair.left, keypair.right) }, new TrustManager[]{ new X509TrustManager(){
             @Override

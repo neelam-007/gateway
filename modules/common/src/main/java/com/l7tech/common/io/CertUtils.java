@@ -24,6 +24,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateKeySpec;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1135,7 +1136,8 @@ public class CertUtils {
         if (cert.getVersion() < 3 || derEncodedValue == null) {
             PublicKey key = cert.getPublicKey();
             if (!(key instanceof RSAPublicKey)) {
-                logger.warning("Can't get SKI for non-RSA public key in cert '" + cert.getSubjectDN().getName() + "'");
+                if (logger.isLoggable(Level.FINE))
+                    logger.log(Level.FINE, "Can't get SKI for non-RSA public key in cert '" + cert.getSubjectDN().getName() + "'");
                 return null;
             }
             byte[] encoded = key.getEncoded();

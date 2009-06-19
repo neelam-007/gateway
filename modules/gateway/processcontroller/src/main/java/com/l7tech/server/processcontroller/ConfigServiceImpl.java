@@ -25,9 +25,9 @@ import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -44,7 +44,7 @@ public class ConfigServiceImpl implements ConfigService {
     private final File nodeBaseDirectory;
     private final HostConfig host;
     private final MasterPasswordManager masterPasswordManager;
-    private final Pair<X509Certificate[], RSAPrivateKey> sslKeypair;
+    private final Pair<X509Certificate[], PrivateKey> sslKeypair;
     private final Set<X509Certificate> trustedRemoteNodeManagementCerts;
     private final int sslPort;
     private final String sslIPAddress;
@@ -203,7 +203,7 @@ public class ConfigServiceImpl implements ConfigService {
         }
     }
 
-    private Pair<X509Certificate[], RSAPrivateKey> readSslKeypair(Properties hostProps) throws IOException, GeneralSecurityException {
+    private Pair<X509Certificate[], PrivateKey> readSslKeypair(Properties hostProps) throws IOException, GeneralSecurityException {
         final String keystoreFilename = getRequiredProperty(hostProps, HOSTPROPERTIES_SSL_KEYSTOREFILE);
         final File keystoreFile = new File(keystoreFilename);
 
@@ -228,12 +228,12 @@ public class ConfigServiceImpl implements ConfigService {
             if (!ks.containsAlias(alias)) throw new IllegalStateException(keystoreFile.getAbsolutePath() + " does not contain an entry with the alias " + alias);
             key = ks.getKey(alias, keystorePass);
             if (key == null) throw new IllegalStateException("Couldn't get private key for " + alias + " in " + keystoreFile.getAbsolutePath());
-            if (!(key instanceof RSAPrivateKey)) throw new IllegalStateException(alias + " in " + keystoreFile.getAbsolutePath() + " is not an RSAPrivateKey");
+            if (!(key instanceof PrivateKey)) throw new IllegalStateException(alias + " in " + keystoreFile.getAbsolutePath() + " is not an PrivateKey");
             chain = ks.getCertificateChain(alias);
             if (chain == null) throw new IllegalStateException("Couldn't get certificate chain for " + alias + " in " + keystoreFile.getAbsolutePath());
         } else {
             // Try to find a single usable keyEntry
-            RSAPrivateKey gotKey = null;
+            PrivateKey gotKey = null;
             Certificate[] gotChain = null;
             GeneralSecurityException thrown = null;
 
@@ -244,7 +244,8 @@ public class ConfigServiceImpl implements ConfigService {
                 final Key tempKey;
                 try {
                     tempKey = ks.getKey(s, keystorePass);
-                    if (!(tempKey instanceof RSAPrivateKey)) continue;
+                    if (!(tempKey instanceof PrivateKey)) continue;
+                    if (!("RSA".equalsIgnoreCase(tempKey.getAlgorithm()))) continue;
                 } catch (GeneralSecurityException e) {
                     thrown = e;
                     continue;
@@ -254,7 +255,7 @@ public class ConfigServiceImpl implements ConfigService {
                 if (tempChain == null) continue;
 
                 if (gotKey != null) throw new IllegalStateException(keystoreFile.getAbsolutePath() + " contains multiple usable key entries; must specify one using host.keystore.alias");
-                gotKey = (RSAPrivateKey)tempKey;
+                gotKey = (PrivateKey)tempKey;
                 gotChain = tempChain;
             }
 
@@ -268,7 +269,7 @@ public class ConfigServiceImpl implements ConfigService {
         X509Certificate[] xchain = new X509Certificate[chain.length];
         //noinspection SuspiciousSystemArraycopy
         System.arraycopy(chain, 0, xchain, 0, chain.length);
-        return new Pair<X509Certificate[], RSAPrivateKey>(xchain, (RSAPrivateKey)key);
+        return new Pair<X509Certificate[], PrivateKey>(xchain, (PrivateKey)key);
     }
 
     private String getRequiredProperty(Properties hostProps, final String what) {
@@ -394,7 +395,7 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     @Override
-    public Pair<X509Certificate[], RSAPrivateKey> getSslKeypair() {
+    public Pair<X509Certificate[], PrivateKey> getSslKeypair() {
         return sslKeypair;
     }
 
