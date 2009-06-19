@@ -129,6 +129,8 @@ public abstract class Syntax {
 
     public static final Formatter DEFAULT_FORMATTER = new Formatter() {
         public String format(Syntax syntax, Object o, SyntaxErrorHandler handler, boolean strict) {
+            if (o == null) return "";
+
             boolean ok = false;
             //noinspection ForLoopReplaceableByForEach
             for (Iterator i = usefulToStringClasses.iterator(); i.hasNext();) {
