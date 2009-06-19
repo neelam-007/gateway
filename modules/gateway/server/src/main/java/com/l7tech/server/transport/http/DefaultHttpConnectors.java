@@ -3,15 +3,16 @@ package com.l7tech.server.transport.http;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.TextUtils;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
-import java.net.NetworkInterface;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.net.SocketException;
 
 /**
  * This class encapsulates the code for initializing the connectors table from the contents of server.xml.
@@ -26,11 +27,28 @@ public class DefaultHttpConnectors {
     private static final String PROP_INIT_INTERNODE_CIPHERS = "com.l7tech.server.listener.initinternodeciphers";
     private static final String PROP_INIT_INTERNODE_POOLSIZE = "com.l7tech.server.listener.initinternodepoolsize";
 
+    // Strong cipher suites for RSA server certs
+    // We omit _ECDHE_RSA_ for now since it has problems in SunJSSE with our EC providers (Certicom, RSA, and Luna)
+    private static final String RSA_256 = "TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA";
+    private static final String RSA_128 = "TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA";
+
+    // Weaker/older cipher suites for RSA server certs.  Needed in order to support older/non-Mozilla web browsers.
+    // We have to draw a line somewhere: we won't (by default) enable any suites that use DES or MD5
+    private static final String RSA_RC4 = "SSL_RSA_WITH_RC4_128_SHA";
+    private static final String RSA_3DES = "SSL_RSA_WITH_3DES_EDE_CBC_SHA,SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA";
+
+    // Strong cipher suites for ECC server certs.  We omit the _ECDH_ECDSA_ suites for now for two reasons:
+    //   1) They can only do client auth with client cert keys on exactly the same EC curve as the server cert key
+    //   2) These suites trigger fatal bugs with SunJSSE using our EC providers (Certicom, RSA, and Luna)
+    private static final String ECC_256 = "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA";
+    private static final String ECC_128 = "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA";
+
+    private static final String RSA_ECC = TextUtils.join(",", RSA_256, ECC_256, RSA_128, ECC_128).toString();
+    private static final String RSA_ECC_3DES_RC4 = TextUtils.join(",", RSA_ECC, RSA_3DES, RSA_RC4).toString();
+
     static final String defaultEndpoints = SyspropUtil.getString(PROP_INIT_LISTENER_ENDPOINTS, "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS");
-    static final String defaultListenerStrongCiphers = SyspropUtil.getString(PROP_INIT_LISTENER_CIPHERS,
-            "SSL_RSA_WITH_RC4_128_MD5,SSL_RSA_WITH_RC4_128_SHA,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA," +
-            "TLS_DHE_RSA_WITH_AES_256_CBC_SHA,SSL_RSA_WITH_3DES_EDE_CBC_SHA,SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA,SSL_RSA_WITH_DES_CBC_SHA,SSL_DHE_RSA_WITH_DES_CBC_SHA");
-    static final String defaultInternodeStrongCiphers = SyspropUtil.getString(PROP_INIT_INTERNODE_CIPHERS, "TLS_RSA_WITH_AES_256_CBC_SHA,TLS_DHE_RSA_WITH_AES_256_CBC_SHA");
+    static final String defaultListenerStrongCiphers = SyspropUtil.getString(PROP_INIT_LISTENER_CIPHERS, RSA_ECC_3DES_RC4);
+    static final String defaultInternodeStrongCiphers = SyspropUtil.getString(PROP_INIT_INTERNODE_CIPHERS, RSA_ECC);
     static final String defaultInternodePoolSize = SyspropUtil.getString(PROP_INIT_INTERNODE_POOLSIZE, "10");
 
     /**

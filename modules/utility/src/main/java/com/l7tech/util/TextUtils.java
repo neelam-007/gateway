@@ -374,7 +374,7 @@ public class TextUtils {
      * @return a new StringBuffer containing XdYdZ where X, Y and Z were members of tojoin and d is delim.  Returns
      *         a StringBuffer containing the empty string if tojoin is null or empty.
      */
-    public static StringBuffer join(String delim, CharSequence[] tojoin) {
+    public static StringBuffer join(String delim, CharSequence... tojoin) {
         return join(null, delim, tojoin);
     }
 
