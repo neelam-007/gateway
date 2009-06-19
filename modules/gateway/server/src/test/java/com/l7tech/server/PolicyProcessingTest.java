@@ -9,6 +9,7 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.UserBean;
+import com.l7tech.identity.GroupBean;
 import com.l7tech.message.*;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -105,6 +106,7 @@ public class PolicyProcessingTest extends TestCase {
         {"/xpathcreds", "POLICY_xpathcreds.xml"},
         {"/usernametoken", "POLICY_usernametoken.xml"},
         {"/encusernametoken", "POLICY_wss_encryptedusernametoken.xml"},
+        {"/encusernametokentags", "POLICY_wss_encryptedusernametokenidtag.xml"},
         {"/httpbasic", "POLICY_httpbasic.xml"},
         {"/httproutecookie", "POLICY_httproutecookie.xml"},
         {"/httproutenocookie", "POLICY_httproutenocookie.xml"},
@@ -121,6 +123,8 @@ public class PolicyProcessingTest extends TestCase {
         {"/multiplesignatures", "POLICY_multiplesignatures.xml"},
         {"/multiplesignaturesnoid", "POLICY_multiplesignature_noidentity.xml"},
         {"/multiplesignaturestags", "POLICY_multiplesignatures_idtags.xml"},
+        {"/multiplesignaturesx509SAML", "POLICY_wss_x509_and_SAML.xml"},
+        {"/multiplesignaturesvars", "POLICY_wss_multiplesigners_variables.xml"},
         {"/wssDecoration1", "POLICY_requestdecoration1.xml"},
         {"/wssDecoration2", "POLICY_requestdecoration2.xml"},
         {"/threatprotections", "POLICY_threatprotections.xml"},
@@ -222,6 +226,10 @@ public class PolicyProcessingTest extends TestCase {
         UserBean ub2 = new UserBean(9898, "Bob");
         ub2.setUniqueIdentifier( "4718593" );
         TestIdentityProvider.addUser(ub2, "Bob", "password".toCharArray(), "CN=Bob, OU=OASIS Interop Test Cert, O=OASIS");
+
+        GroupBean gb1 = new GroupBean(9898, "BobGroup");
+        gb1.setUniqueIdentifier( "4718594" );
+        TestIdentityProvider.addGroup(gb1, ub2);
     }
 
     /**
@@ -374,6 +382,14 @@ public class PolicyProcessingTest extends TestCase {
     public void testEncryptedUsernameToken() throws Exception {
         String requestMessage = new String(loadResource("REQUEST_encryptedusernametoken.xml"));
         processMessage("/encusernametoken", requestMessage, 0);
+    }
+
+    /**
+     * Test encrypted username token with idtags
+     */
+    public void testEncryptedUsernameTokenIdentityTag() throws Exception {
+        String requestMessage = new String(loadResource("REQUEST_encryptedusernametoken.xml"));
+        processMessage("/encusernametokentags", requestMessage, 0);
     }
 
     /**
@@ -639,6 +655,64 @@ public class PolicyProcessingTest extends TestCase {
      */
     public void testMultipleSignaturesRejected() throws Exception {
         processMessage("/x509token", new String(loadResource("REQUEST_multiplesignatures.xml")), 400);
+    }
+
+    /**
+     * Test multiple request signatures with X.509 and SAML credential with both tokens signing the same elements.
+     * This test also has a group identity target.
+     */
+    public void testMultipleSignaturesX509AndSAML() throws Exception {
+        processMessage("/multiplesignaturesx509SAML", new String(loadResource("REQUEST_wss_x509_and_SAML.xml")), 0);
+    }
+
+    /**
+     * Test multiple request signatures with message variables and new context variables in template response.
+     */
+    public void testMultipleSignaturesVariables() throws Exception {
+        processMessage("/multiplesignaturesvars", new String(loadResource("REQUEST_multiplesignatures3.xml")), "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call(final PolicyEnforcementContext context) {
+                try {
+                    final Document document = context.getResponse().getXmlKnob().getDocumentReadOnly();
+                    final String tns = "http://warehouse.acme.com/ws";
+
+                    NodeList certcountNodeList = document.getElementsByTagNameNS(tns, "certcount");
+                    Assert.assertEquals("certcount found", 1, certcountNodeList.getLength());
+                    Assert.assertEquals("certcount", "2", XmlUtil.getTextValue((Element)certcountNodeList.item(0)));
+
+                    NodeList signingcertcountNodeList = document.getElementsByTagNameNS(tns, "signingcertcount");
+                    Assert.assertEquals("signingcertcount found", 1, signingcertcountNodeList.getLength());
+                    Assert.assertEquals("signingcertcount", "2", XmlUtil.getTextValue((Element)signingcertcountNodeList.item(0)));
+
+                    NodeList signingcert1NodeList = document.getElementsByTagNameNS(tns, "signingcert1");
+                    Assert.assertEquals("signingcert1 found", 1, signingcert1NodeList.getLength());
+                    Assert.assertEquals("signingcert1", "CN=Alice, OU=OASIS Interop Test Cert, O=OASIS", XmlUtil.getTextValue((Element)signingcert1NodeList.item(0)));
+
+                    NodeList signingcert2NodeList = document.getElementsByTagNameNS(tns, "signingcert2");
+                    Assert.assertEquals("signingcert2 found", 1, signingcert2NodeList.getLength());
+                    Assert.assertEquals("signingcert2", "CN=Bob, OU=OASIS Interop Test Cert, O=OASIS", XmlUtil.getTextValue((Element)signingcert2NodeList.item(0)));
+
+                    NodeList signingcert1cnNodeList = document.getElementsByTagNameNS(tns, "signingcert1cn");
+                    Assert.assertEquals("signingcert1cn found", 2, signingcert1cnNodeList.getLength());
+                    Assert.assertEquals("signingcert1cn", "Alice", XmlUtil.getTextValue((Element)signingcert1cnNodeList.item(0)));
+                    Assert.assertEquals("signingcert1cn", "Alice", XmlUtil.getTextValue((Element)signingcert1cnNodeList.item(1)));
+
+                    NodeList signingcert1rdn1NodeList = document.getElementsByTagNameNS(tns, "signingcert1rdn1");
+                    Assert.assertEquals("signingcert1rdn1 found", 1, signingcert1rdn1NodeList.getLength());
+                    Assert.assertEquals("signingcert1rdn1", "CN=Alice", XmlUtil.getTextValue((Element)signingcert1rdn1NodeList.item(0)));
+
+                    NodeList signingcert1b64NodeList = document.getElementsByTagNameNS(tns, "signingcert1b64");
+                    Assert.assertEquals("signingcert1b64 found", 1, signingcert1b64NodeList.getLength());
+                    Assert.assertTrue("signingcert1b64", XmlUtil.getTextValue((Element)signingcert1b64NodeList.item(0)).startsWith( "MII" ));
+                    Assert.assertFalse("signingcert1b64", XmlUtil.getTextValue((Element)signingcert1b64NodeList.item(0)).contains( " " ));
+                    Assert.assertFalse("signingcert1b64", XmlUtil.getTextValue((Element)signingcert1b64NodeList.item(0)).contains( "\n" ));
+
+                    //TODO [steve] add variables for these http://sarek.l7tech.com/mediawiki/index.php?title=Generalized_WS-Security#Context_Variables_and_Cluster_Properties
+                } catch (Exception e) {
+                    throw ExceptionUtils.wrap(e);
+                }
+            }
+        });
     }
 
     /**

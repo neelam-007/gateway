@@ -136,7 +136,7 @@ public class ServerWssReplayProtection extends AbstractMessageTargetableServerAs
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NO_TIMESTAMP, targetName);
             return getBadMessageStatus();
         }
-        if (null==ProcessorResultUtil.getParsedElementForNode(timestamp.asElement(), signedElements)) {
+        if (ProcessorResultUtil.getParsedElementsForNode(timestamp.asElement(), signedElements).isEmpty()) {
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_NOT_SIGNED, targetName);
             return getBadMessageStatus();
         }

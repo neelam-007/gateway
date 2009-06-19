@@ -125,7 +125,7 @@ public class InternalIdentityProviderImpl
         if (format == CredentialFormat.CLEARTEXT) {
             authPassHash = HexUtils.encodePasswd(login, new String(credentials), HttpDigest.REALM);
             if (dbPassHash.equals(authPassHash))
-                return new AuthenticationResult(dbUser, pc.getSecurityToken());
+                return new AuthenticationResult(dbUser, pc.getSecurityTokens());
             logger.info("Incorrect password for login " + login);
             throw new BadCredentialsException();
         } else if (format == CredentialFormat.DIGEST) {

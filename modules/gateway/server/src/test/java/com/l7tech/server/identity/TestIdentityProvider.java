@@ -22,6 +22,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
     public static int PROVIDER_VERSION = 1;
 
     private static Map<String, MyUser> usernameMap = Collections.synchronizedMap(new HashMap<String, MyUser>());
+    private static Map<String, MyGroup> groupMap = Collections.synchronizedMap(new HashMap<String, MyGroup>());
 
     public static IdentityProviderConfig TEST_IDENTITY_PROVIDER_CONFIG =
       new IdentityProviderConfig(new IdentityProviderType(9898, "TestIdentityProvider", TestIdentityProvider.class.getName()){});
@@ -77,6 +78,16 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         }
     }
 
+    private static class MyGroup {
+        private GroupBean group;
+        private UserBean[] users;
+
+        private MyGroup(GroupBean group, UserBean[] users) {
+            this.group = group;
+            this.users = users;
+        }
+    }
+
     public static void addUser(UserBean user, String username, char[] password) {
         MyUser myUser = new MyUser(user, password, user.getPasswordExpiry());
         usernameMap.put(username, myUser);
@@ -85,6 +96,11 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
     public static void addUser(UserBean user, String username, char[] password, String certDn) {
         MyUser myUser = new MyUser(user, password, certDn, user.getPasswordExpiry());
         usernameMap.put(username, myUser);
+    }
+
+    public static void addGroup( GroupBean gb1, UserBean... users ) {
+        MyGroup myGroup = new MyGroup( gb1, users );
+        groupMap.put(gb1.getName().toLowerCase(), myGroup);
     }
 
     public static void reset(){
@@ -96,10 +112,10 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         MyUser mu = usernameMap.get(pc.getLogin());
         if (mu == null) return null;
         if (mu.password != null && pc.getCredentials()!=null && Arrays.equals(mu.password, pc.getCredentials())) {
-            return new AuthenticationResult(mu.user, pc.getSecurityToken());
+            return new AuthenticationResult(mu.user, pc.getSecurityTokens());
         }
         if (mu.certDn != null && pc.getClientCert()!=null && mu.certDn.equals(pc.getClientCert().getSubjectDN().getName())) {
-            return new AuthenticationResult(mu.user, pc.getSecurityToken(), pc.getClientCert(), false);
+            return new AuthenticationResult(mu.user, pc.getSecurityTokens(), pc.getClientCert(), false);
         }
         throw new AuthenticationException("Invalid username or password");
     }
@@ -183,12 +199,20 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         }
         @Override
         public Group findByPrimaryKey(String identifier) throws FindException {
-            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
+            Group group = null;
+            for ( MyGroup myGroup : groupMap.values() ) {
+                if ( myGroup.group.getId().equals(identifier )) {
+                    group = myGroup.group;
+                    break;
+                }
+            }
+            return group;
         }
 
         @Override
         public Group findByName(String name) throws FindException {
-            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
+            MyGroup myGroup = groupMap.get( name.toLowerCase() );
+            return myGroup==null ? null : myGroup.group;
         }
 
         @Override
@@ -247,8 +271,21 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         }
 
         @Override
-        public boolean isMember(User user, Group group) throws FindException {
-            return false;
+        public boolean isMember(final User user, final Group group) throws FindException {
+            boolean member = false;
+            outer: for ( MyGroup myGroup : groupMap.values() ) {
+                if ( myGroup.group.getId().equals(group.getId() )) {
+                    for ( UserBean groupUser : myGroup.users ) {
+                        if ( groupUser.getProviderId()==user.getProviderId() &&
+                            groupUser.getId().equals(user.getId())) {
+                            member = true;
+                            break outer;
+                        }
+                    }
+                    break;
+                }
+            }
+            return member;
         }
 
         @Override

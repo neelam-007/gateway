@@ -88,11 +88,11 @@ public class ProcessorResultUtil {
 
             foundany = true;
 
-            ParsedElement element = getParsedElementForNode( node, elementsFoundByProcessor );
-            if ( element != null ) {
+            Collection<ParsedElement> parsedElements = getParsedElementsForNode( node, elementsFoundByProcessor );
+            if ( !parsedElements.isEmpty() ) {
                 logger.finest("An element " + xpath + " was found in this " +
                         "message, and was properly " + pastTenseOperationName + ".");
-                elements.add(element);
+                elements.addAll(parsedElements);
             } else {
                 logger.info("An element " + xpath + " was found in this " +
                         "message, but was neither empty nor properly " + pastTenseOperationName + "; assertion therefore fails.");
@@ -108,7 +108,7 @@ public class ProcessorResultUtil {
     }
 
     /**
-     * Find a ParsedElement from the list of elements found by the processor.
+     * Find the ParsedElements from the list of elements found by the processor.
      *
      * The node must be a reference to a node in the exact same document as the members of
      * elementsFoundByProcessor.  A match is only detected if it is an exact match -- that
@@ -117,18 +117,16 @@ public class ProcessorResultUtil {
      *
      * @param node the node to check
      * @param elementsFoundByProcessor the list of ParsedElement to see if it is in
-     * @return The ParsedElement for the node, or null if not found 
+     * @return The ParsedElements for the node (may be empty but never null)
      */
-    public static ParsedElement getParsedElementForNode(Node node, final ParsedElement[] elementsFoundByProcessor) {
-        ParsedElement element = null;
+    public static Collection<ParsedElement> getParsedElementsForNode(Node node, final ParsedElement[] elementsFoundByProcessor) {
+        Collection<ParsedElement> elements = new ArrayList<ParsedElement>(5);
         for (ParsedElement anElementsFoundByProcessor : elementsFoundByProcessor) {
             if (anElementsFoundByProcessor.asElement() == node) {
-                // we got the bugger!
-                element = anElementsFoundByProcessor;
-                break;
+                elements.add( anElementsFoundByProcessor );
             }
         }
-        return element;
+        return elements;
     }
 
     /**
@@ -142,7 +140,7 @@ public class ProcessorResultUtil {
      * @return true if node was found in the list.
      */
     public static boolean nodeIsPresent(Node node, final ParsedElement[] elementsFoundByProcessor) {
-        return getParsedElementForNode(node, elementsFoundByProcessor) != null;
+        return !getParsedElementsForNode(node, elementsFoundByProcessor).isEmpty();
     }
 
     public static class SearchResult {

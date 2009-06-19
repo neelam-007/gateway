@@ -138,7 +138,7 @@ public final class AuthCache {
         final CacheKey ckey = new CacheKey(providerOid, creds);
         Object cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
         if (cached instanceof AuthenticationResult) {
-            return new AuthenticationResult((AuthenticationResult)cached, creds.getSecurityToken());
+            return new AuthenticationResult((AuthenticationResult)cached, creds.getSecurityTokens());
         } else if (cached != null) {
             return null;
         }
@@ -158,7 +158,7 @@ public final class AuthCache {
                 cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
                 if (cached instanceof AuthenticationResult) {
                     // Someone else got there first with a success
-                    return new AuthenticationResult((AuthenticationResult)cached, creds.getSecurityToken());
+                    return new AuthenticationResult((AuthenticationResult)cached, creds.getSecurityTokens());
                 } else if (cached != null) {
                     // Someone else got there first with a failure
                     return null;

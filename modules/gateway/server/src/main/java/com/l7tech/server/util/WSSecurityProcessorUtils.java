@@ -429,7 +429,8 @@ public class WSSecurityProcessorUtils {
                             GroupBean group = new GroupBean();
                             group.setProviderId(target.getIdentityProviderOid());
                             group.setUniqueIdentifier(target.getIdentityId());
-                            if ( result.getCachedGroupMembership(group) ) {
+                            Boolean groupMembership = result.getCachedGroupMembership(group);
+                            if ( groupMembership != null && groupMembership ) {
                                 if ( signingSecurityToken != null ) throw new IllegalStateException("Multiple tokens found for identity '"+target.describeIdentity()+"'.");
                                 signingSecurityToken = token;
                             }

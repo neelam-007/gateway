@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Policy that copies the request to a message variable (${messageVar}) then performs multiple authentications
+  New message variable context vars for X.509 certs are used to populate values in the template response
+-->
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <wsp:All wsp:Usage="Required">
+            <wsp:MessagePredicate
+                Dialect="http://www.w3.org/TR/1999/REC-xpath-19991116"
+                L7p:variablePrefix="message" wsp:Usage="wsp:Required"
+                xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+                xmlns:env="http://www.w3.org/2003/05/soap-envelope"
+                xmlns:s12="http://www.w3.org/2003/05/soap-envelope"
+                xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                xmlns:tns="http://warehouse.acme.com/ws"
+                xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">/soapenv:Envelope</wsp:MessagePredicate>
+            <L7p:SetVariable>
+                <L7p:Base64Expression stringValue="JHttZXNzYWdlLmVsZW1lbnR9"/>
+                <L7p:ContentType stringValue="text/xml"/>
+                <L7p:DataType variableDataType="message"/>
+                <L7p:VariableToSet stringValue="messageVar"/>
+            </L7p:SetVariable>
+            <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+                <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wsse:TokenType>
+                <L7p:Properties>
+                    <L7p:AllowMultipleSignatures booleanValue="true"/>
+                    <L7p:OtherTargetMessageVariable stringValue="messageVar"/>
+                    <L7p:Target target="OTHER"/>
+                </L7p:Properties>
+            </wsse:SecurityToken>
+            <L7p:SpecificUser>
+                <L7p:IdentityProviderOid longValue="9898"/>
+                <L7p:OtherTargetMessageVariable stringValue="messageVar"/>
+                <L7p:Target target="OTHER"/>
+                <L7p:UserLogin stringValue="Alice"/>
+                <L7p:UserName stringValue="Alice"/>
+                <L7p:UserUid stringValue="4718592"/>
+            </L7p:SpecificUser>
+            <L7p:SpecificUser>
+                <L7p:IdentityProviderOid longValue="9898"/>
+                <L7p:OtherTargetMessageVariable stringValue="messageVar"/>
+                <L7p:Target target="OTHER"/>
+                <L7p:UserLogin stringValue="Bob"/>
+                <L7p:UserName stringValue="Bob"/>
+                <L7p:UserUid stringValue="4718593"/>
+            </L7p:SpecificUser>
+            <L7p:RequireWssSignedElement>
+                <L7p:IdentityTarget IdentityTarget="included">
+                    <L7p:IdentityId stringValue="4718592"/>
+                    <L7p:IdentityInfo stringValue="Alice"/>
+                    <L7p:IdentityProviderOid longValue="9898"/>
+                    <L7p:TargetIdentityType identityType="USER"/>
+                </L7p:IdentityTarget>
+                <L7p:OtherTargetMessageVariable stringValue="messageVar"/>
+                <L7p:Target target="OTHER"/>
+            </L7p:RequireWssSignedElement>
+            <L7p:RequireWssSignedElement>
+                <L7p:IdentityTarget IdentityTarget="included">
+                    <L7p:IdentityId stringValue="4718593"/>
+                    <L7p:IdentityInfo stringValue="Bob"/>
+                    <L7p:IdentityProviderOid longValue="9898"/>
+                    <L7p:TargetIdentityType identityType="USER"/>
+                </L7p:IdentityTarget>
+                <L7p:OtherTargetMessageVariable stringValue="messageVar"/>
+                <L7p:Target target="OTHER"/>
+            </L7p:RequireWssSignedElement>
+            <L7p:HardcodedResponse>
+                <L7p:Base64ResponseBody stringValue="PHNvYXBlbnY6RW52ZWxvcGUgeG1sbnM6c29hcGVudj0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvc29hcC9lbnZlbG9wZS8iPgogICAgPHNvYXBlbnY6Qm9keT4KICAgICAgICA8dG5zOmxpc3RQcm9kdWN0cyB4bWxuczp0bnM9Imh0dHA6Ly93YXJlaG91c2UuYWNtZS5jb20vd3MiPgogICAgICAgICAgICA8dG5zOmNlcnRjb3VudD4ke21lc3NhZ2VWYXIud3NzLmNlcnRpZmljYXRlcy5jb3VudH08L3RuczpjZXJ0Y291bnQ+CiAgICAgICAgICAgIDx0bnM6c2lnbmluZ2NlcnRjb3VudD4ke21lc3NhZ2VWYXIud3NzLnNpZ25pbmdjZXJ0aWZpY2F0ZXMuY291bnR9PC90bnM6c2lnbmluZ2NlcnRjb3VudD4KICAgICAgICAgICAgPHRuczpzaWduaW5nY2VydDE+JHttZXNzYWdlVmFyLndzcy5zaWduaW5nY2VydGlmaWNhdGVzLnZhbHVlLjEuc3ViamVjdH08L3RuczpzaWduaW5nY2VydDE+CiAgICAgICAgICAgIDx0bnM6c2lnbmluZ2NlcnQxY24+JHttZXNzYWdlVmFyLndzcy5zaWduaW5nY2VydGlmaWNhdGVzLnZhbHVlLjEuc3ViamVjdC5kbi4xLmNufTwvdG5zOnNpZ25pbmdjZXJ0MWNuPgogICAgICAgICAgICA8dG5zOnNpZ25pbmdjZXJ0MWNuPiR7bWVzc2FnZVZhci53c3Muc2lnbmluZ2NlcnRpZmljYXRlcy52YWx1ZS4xLnN1YmplY3QuZG4uY259PC90bnM6c2lnbmluZ2NlcnQxY24+CiAgICAgICAgICAgIDx0bnM6c2lnbmluZ2NlcnQxcmRuMT4ke21lc3NhZ2VWYXIud3NzLnNpZ25pbmdjZXJ0aWZpY2F0ZXMudmFsdWUuMS5zdWJqZWN0LmRuLjF9PC90bnM6c2lnbmluZ2NlcnQxcmRuMT4KICAgICAgICAgICAgPHRuczpzaWduaW5nY2VydDFiNjQ+JHttZXNzYWdlVmFyLndzcy5zaWduaW5nY2VydGlmaWNhdGVzLnZhbHVlLjEuYmFzZTY0fTwvdG5zOnNpZ25pbmdjZXJ0MWI2ND4KICAgICAgICAgICAgPHRuczpzaWduaW5nY2VydDI+JHttZXNzYWdlVmFyLndzcy5zaWduaW5nY2VydGlmaWNhdGVzLnZhbHVlLjIuc3ViamVjdC5kbn08L3RuczpzaWduaW5nY2VydDI+CiAgICAgICAgPC90bnM6bGlzdFByb2R1Y3RzPgogICAgPC9zb2FwZW52OkJvZHk+Cjwvc29hcGVudjpFbnZlbG9wZT4="/>
+            </L7p:HardcodedResponse>
+        </wsp:All>
+    </wsp:All>
+</wsp:Policy>

@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.logging.Logger;
+import java.util.Collection;
 
 /**
  * @author alex
@@ -96,24 +97,24 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
         }
 
         if ( assertion.isSignatureRequired() ) {
-            final ParsedElement element = ProcessorResultUtil.getParsedElementForNode( wssTimestamp.asElement(), processorResult.getElementsThatWereSigned() );
+            final Collection<ParsedElement> elements = ProcessorResultUtil.getParsedElementsForNode( wssTimestamp.asElement(), processorResult.getElementsThatWereSigned() );
             if ( new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
-                if ( element==null || !WSSecurityProcessorUtils.isValidSingleSigner(
+                if ( elements.isEmpty() || !WSSecurityProcessorUtils.isValidSingleSigner(
                         authContext,
                         processorResult,
-                        new ParsedElement[]{element},
+                        elements.toArray(new ParsedElement[elements.size()]),
                         requireCredentialSigningToken ) ) {
                     auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_NOT_SIGNED, what);
                     return getBadMessageStatus();
                 }
             } else {
                 // Ensure signed with the required identity
-                if ( element==null ||
+                if ( elements.isEmpty() ||
                      !WSSecurityProcessorUtils.isValidSigningIdentity(
                              authContext,
                              assertion.getIdentityTarget(),
                              processorResult,
-                             new ParsedElement[]{element} ) ) {
+                             elements.toArray(new ParsedElement[elements.size()]) ) ) {
                     auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_NOT_SIGNED, what);
                     return getBadMessageStatus();
                 }

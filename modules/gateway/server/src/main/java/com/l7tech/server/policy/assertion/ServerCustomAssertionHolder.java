@@ -193,7 +193,7 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 if (isAuthAssertion) {
                     AuthenticationContext authContext = context.getAuthenticationContext(context.getRequest());
                     if (principalCredentials != null) {
-                        authContext.addAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), principalCredentials.getSecurityToken(),  null, false));
+                        authContext.addAuthenticationResult(new AuthenticationResult(new UserBean(principalCredentials.getLogin()), principalCredentials.getSecurityTokens(),  null, false));
                     } else {
                         authContext.addAuthenticationResult(new AuthenticationResult(new AnonymousUserReference("", -1, "<unknown>"), new OpaqueSecurityToken()));
                     }

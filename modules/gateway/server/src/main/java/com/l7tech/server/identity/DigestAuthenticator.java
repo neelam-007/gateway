@@ -72,7 +72,7 @@ public class DigestAuthenticator {
         String login = pc.getLogin();
         if (response.equals(expectedResponse)) {
             logger.info("User " + login + " authenticated successfully with digest credentials.");
-            return new AuthenticationResult(user, pc.getSecurityToken());
+            return new AuthenticationResult(user, pc.getSecurityTokens());
         } else {
             String msg = "User " + login + " failed to match.";
             logger.warning(msg);

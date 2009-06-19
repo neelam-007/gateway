@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3</wsse:TokenType>
+            <L7p:Properties>
+                <L7p:AllowMultipleSignatures booleanValue="true"/>
+            </L7p:Properties>
+        </wsse:SecurityToken>
+        <L7p:SpecificUser>
+            <L7p:IdentityProviderOid longValue="9898"/>
+            <L7p:UserLogin stringValue="Alice"/>
+            <L7p:UserName stringValue="Alice"/>
+            <L7p:UserUid stringValue="4718592"/>
+        </L7p:SpecificUser>
+        <wsse:SecurityToken xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+            <wsse:TokenType>urn:oasis:names:tc:SAML:2.0:assertion#Assertion</wsse:TokenType>
+            <L7p:SamlParams>
+                <L7p:AudienceRestriction stringValue=""/>
+                <L7p:AuthenticationStatement samlAuthenticationInfo="included">
+                    <L7p:AuthenticationMethods stringArrayValue="included">
+                        <L7p:item stringValue="urn:ietf:rfc:1510"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:unspecified"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:SPKI"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:X509-PKI"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard"/>
+                        <L7p:item stringValue="urn:ietf:rfc:3075"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken"/>
+                        <L7p:item stringValue="urn:ietf:rfc:2945"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:PreviousSession"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorUnregistered"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:MobileOneFactorContract"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:NomadTelephony"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:MobileOneFactorUnregistered"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:AuthenticatedTelephony"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:XKMS"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:PGP"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:HardwareToken"/>
+                        <L7p:item stringValue="urn:ietf:rfc:2246"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:PersonalizedTelephony"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:InternetProtocol"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:Telephony"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:InternetProtocolPassword"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI"/>
+                        <L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:password"/>
+                    </L7p:AuthenticationMethods>
+                </L7p:AuthenticationStatement>
+                <L7p:NameFormats stringArrayValue="included">
+                    <L7p:item stringValue="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"/>
+                </L7p:NameFormats>
+                <L7p:NameQualifier stringValue=""/>
+                <L7p:RequireHolderOfKeyWithMessageSignature booleanValue="true"/>
+                <L7p:SubjectConfirmations stringArrayValue="included">
+                    <L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:cm:holder-of-key"/>
+                </L7p:SubjectConfirmations>
+                <L7p:Version boxedIntegerValue="0"/>
+            </L7p:SamlParams>
+        </wsse:SecurityToken>
+        <!--<L7p:SpecificUser>-->
+            <!--<L7p:IdentityProviderOid longValue="9898"/>-->
+            <!--<L7p:UserLogin stringValue="Bob"/>-->
+            <!--<L7p:UserName stringValue="Bob"/>-->
+            <!--<L7p:UserUid stringValue="4718593"/>-->
+        <!--</L7p:SpecificUser>-->
+        <L7p:MemberOfGroup>
+            <L7p:GroupId stringValue="4718594"/>
+            <L7p:GroupName stringValue="BobGroup"/>
+            <L7p:IdentityProviderOid longValue="9898"/>
+        </L7p:MemberOfGroup>
+        <L7p:RequireWssSignedElement>
+            <L7p:IdentityTarget IdentityTarget="included">
+                <L7p:IdentityId stringValue="4718592"/>
+                <L7p:IdentityInfo stringValue="Alice"/>
+                <L7p:IdentityProviderOid longValue="9898"/>
+                <L7p:TargetIdentityType identityType="USER"/>
+            </L7p:IdentityTarget>
+        </L7p:RequireWssSignedElement>
+        <L7p:RequireWssSignedElement>
+            <L7p:IdentityTarget IdentityTarget="included">
+                <L7p:IdentityId stringValue="4718594"/>
+                <L7p:IdentityInfo stringValue="BobGroup"/>
+                <L7p:IdentityProviderOid longValue="9898"/>
+                <L7p:TargetIdentityType identityType="GROUP"/>
+            </L7p:IdentityTarget>
+        </L7p:RequireWssSignedElement>
+        <L7p:HardcodedResponse>
+            <L7p:Base64ResponseBody stringValue="PHNvYXBlbnY6RW52ZWxvcGUgeG1sbnM6c29hcGVudj0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvc29hcC9lbnZlbG9wZS8iPgogICAgPHNvYXBlbnY6Qm9keT4KICAgICAgICA8dG5zOmxpc3RQcm9kdWN0cyB4bWxuczp0bnM9Imh0dHA6Ly93YXJlaG91c2UuYWNtZS5jb20vd3MiPgogICAgICAgICAgICA8dG5zOmRlbGF5PjA8L3RuczpkZWxheT4KICAgICAgICA8L3RuczpsaXN0UHJvZHVjdHM+CiAgICA8L3NvYXBlbnY6Qm9keT4KPC9zb2FwZW52OkVudmVsb3BlPg=="/>
+        </L7p:HardcodedResponse>
+    </wsp:All>
+</wsp:Policy>

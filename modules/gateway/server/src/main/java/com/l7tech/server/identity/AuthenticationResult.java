@@ -41,14 +41,44 @@ public final class AuthenticationResult {
                                  final SecurityToken securityToken,
                                  final X509Certificate authenticatedCert,
                                  final boolean certWasSignedByStaleCA ) {
+        this(user, new SecurityToken[]{securityToken}, authenticatedCert, certWasSignedByStaleCA);            
+    }
+
+    /**
+     * Create an authentication result with given settings.
+     *
+     * <p>NOTE: The <code>authenticatedCert</code> is only set when the user
+     * authenticated using the certificate. If the user simply has a certificate
+     * the the value MUST be <code>null</code>.</p>
+     *
+     * @param user The authenticated user (required)
+     * @param securityTokens The authenticating token(s) (required)
+     * @param authenticatedCert The authenticating certificate (required if certWasSignedByStaleCA)
+     * @param certWasSignedByStaleCA True if the authenticating certificate was possibly issued by for (our) prior CA cert
+     */
+    public AuthenticationResult( final User user,
+                                 final SecurityToken[] securityTokens,
+                                 final X509Certificate authenticatedCert,
+                                 final boolean certWasSignedByStaleCA ) {
         if (user == null) throw new IllegalArgumentException("user is required");
-        if (securityToken == null) throw new IllegalArgumentException("security token is required");
+        if (securityTokens == null || securityTokens.length==0) throw new IllegalArgumentException("security token(s) are required");
         if (certWasSignedByStaleCA && authenticatedCert == null) throw new IllegalArgumentException("Must include the stale cert if there is one");
 
         this.user = user;
-        this.securityToken = securityToken;
+        this.securityTokens = securityTokens;
         this.certSignedByStaleCA = certWasSignedByStaleCA;
         this.authenticatedCert = authenticatedCert;
+    }
+
+    /**
+     * Create an authentication result for the given user.
+     *
+     * @param user The authenticated user (required)
+     * @param securityTokens The authenticating token(s) (required)
+     */
+    public AuthenticationResult( final User user,
+                                 final SecurityToken[] securityTokens ) {
+        this(user, securityTokens, null, false);
     }
 
     /**
@@ -66,11 +96,11 @@ public final class AuthenticationResult {
      * Create an authentication result with fresh token.
      *
      * @param result The authentication result (required)
-     * @param securityToken The authenticating token (required)
+     * @param securityTokens The authenticating token(s) (required)
      */
     public AuthenticationResult( final AuthenticationResult result,
-                                 final SecurityToken securityToken ) {
-        this(result.getUser(), securityToken, result.getAuthenticatedCert(), result.isCertSignedByStaleCA());
+                                 final SecurityToken[] securityTokens ) {
+        this(result.getUser(), securityTokens, result.getAuthenticatedCert(), result.isCertSignedByStaleCA());
     }
 
     /**
@@ -107,9 +137,21 @@ public final class AuthenticationResult {
      * @return True if the given token is not null and matches
      */
     public boolean matchesSecurityToken( final SecurityToken token ) {
-        return token != null && token == securityToken;
+        boolean matches = false;
+
+        if ( token != null ) {
+            for ( SecurityToken securityToken : securityTokens ) {
+                if ( token == securityToken ) {
+                    matches = true;
+                    break;
+                }
+            }
+        }
+
+        return matches;
     }
 
+    @Override
     public boolean equals(Object obj) {
 
         if (this == obj) return true;
@@ -131,6 +173,14 @@ public final class AuthenticationResult {
         return true;
     }
 
+    @Override
+    public int hashCode() {
+        int result = user.hashCode();
+        result = 31 * result + ( certSignedByStaleCA ? 1 : 0 );
+        result = 31 * result + ( authenticatedCert != null ? authenticatedCert.hashCode() : 0 );
+        return result;
+    }
+
     private static class CacheKey {
         private final long userProviderOid;
         private final String userId;
@@ -148,6 +198,7 @@ public final class AuthenticationResult {
         }
 
         /** @noinspection RedundantIfStatement*/
+        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
@@ -162,6 +213,7 @@ public final class AuthenticationResult {
             return true;
         }
 
+        @Override
         public int hashCode() {
             return hashCode;
         }
@@ -211,6 +263,6 @@ public final class AuthenticationResult {
     private final long timestamp = System.currentTimeMillis();
     private final boolean certSignedByStaleCA;
     private final X509Certificate authenticatedCert;
-    private final SecurityToken securityToken; // should not be accessible
+    private final SecurityToken[] securityTokens; // should not be accessible
 }
 

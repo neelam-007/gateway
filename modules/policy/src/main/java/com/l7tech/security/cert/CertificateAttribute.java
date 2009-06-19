@@ -60,9 +60,9 @@ public enum CertificateAttribute {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             try {
-                return makeMap(this.toString(), HexUtils.encodeBase64(certificate.getEncoded()));
+                return makeMap(this.toString(), HexUtils.encodeBase64(certificate.getEncoded(), true));
             } catch (CertificateEncodingException e) {
-                logger.log(Level.WARNING, "Error getting DER-encoded certificate" +
+                logger.log(Level.WARNING, "Error getting BASE64-encoded certificate" +
                                           ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
                 return new HashMap<String, Collection<Object>>();
             }
@@ -677,7 +677,7 @@ public enum CertificateAttribute {
          * 2.5.29.9
          *
          * @param cert  the certificate to examine.  Required.
-         * @param s
+         * @param attrName The attribute name
          * @return a List containing zero or more ISO country codes (ie, "US", "CA")
          */
         private static Map<String, Collection<Object>> extractCitizenshipCountries(final X509Certificate cert, String attrName) {
