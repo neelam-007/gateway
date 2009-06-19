@@ -15,6 +15,9 @@ import com.l7tech.util.Functions;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.PropertyResolver;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 
 import java.util.*;
 
@@ -97,6 +100,7 @@ public class RequireWssSignedElement extends XmlSecurityAssertionBase implements
     }
 
     @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.USERGROUP)
     public EntityHeader[] getEntitiesUsed() {
         return identityTarget != null ?
                 identityTarget.getEntitiesUsed():

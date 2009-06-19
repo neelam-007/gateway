@@ -17,6 +17,9 @@ import com.l7tech.policy.validator.ValidatorFlag;
 import com.l7tech.util.Functions;
 import com.l7tech.util.TimeUnit;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 
 import java.text.MessageFormat;
 import java.util.Set;
@@ -91,6 +94,7 @@ public class RequireWssTimestamp extends MessageTargetableAssertion implements I
     }
 
     @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.USERGROUP)
     public EntityHeader[] getEntitiesUsed() {
         return identityTarget != null ?
                 identityTarget.getEntitiesUsed():

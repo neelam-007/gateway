@@ -211,6 +211,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
     /**
      *
      */
+    @Override
     public EntityHeader[] getEntitiesUsed() {
         Collection<EntityHeader> headers = new ArrayList<EntityHeader>();
         if ( targetIdentityType != null ) {
@@ -237,6 +238,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
     /**
      *
      */
+    @Override
     public void replaceEntity( final EntityHeader oldEntityHeader,
                                final EntityHeader newEntityHeader ) {
         if ( oldEntityHeader.getType() != null &&
@@ -248,7 +250,7 @@ public final class IdentityTarget implements Comparable, Serializable, UsesEntit
                          oldEntityHeader  instanceof IdentityHeader ) {
                         IdentityHeader newIdentityHeader = (IdentityHeader) newEntityHeader;
                         IdentityHeader oldIdentityHeader = (IdentityHeader) oldEntityHeader;
-                        if ( oldIdentityHeader.getOid() == identityProviderOid &&
+                        if ( oldIdentityHeader.getProviderOid() == identityProviderOid &&
                              oldIdentityHeader.getStrId() != null &&
                              oldIdentityHeader.getStrId().equalsIgnoreCase(identityId) ) {
                             this.identityProviderOid = newIdentityHeader.getProviderOid();
