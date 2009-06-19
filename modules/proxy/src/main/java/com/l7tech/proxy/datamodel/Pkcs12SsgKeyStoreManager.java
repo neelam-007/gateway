@@ -5,7 +5,6 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.io.AliasNotFoundException;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.IOUtils;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.ssl.CertLoader;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
@@ -14,6 +13,8 @@ import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.IOUtils;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.io.*;
 import java.net.PasswordAuthentication;
@@ -42,6 +43,8 @@ import java.util.logging.Logger;
  * key and an unused copy of the client certificate.
  */
 public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
+    private static final Logger log = Logger.getLogger(Pkcs12SsgKeyStoreManager.class.getName());
+
     private static final String CLIENT_CERT_ALIAS = "clientCert";
     private static final String SERVER_CERT_ALIAS = "serverCert";
 
@@ -52,9 +55,11 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
     private static final char[] TRUSTSTORE_PASSWORD = "lwbnasudg".toCharArray();
 
     private static final String IMPORT_KEYSTORE_TYPE = "PKCS12";
-    private static final String OUR_KEYSTORE_TYPE = "BCPKCS12";
+    private static final String OUR_KEYSTORE_TYPE = "PKCS12";
+
+    // Must use Bouncy Castle for trust store since Sun PKCS12 doesn't support trusted cert entries
     private static final String TRUSTSTORE_TYPE = "BCPKCS12";
-    private static final Logger log = Logger.getLogger(SsgKeyStoreManager.class.getName());
+    private static final Provider TRUSTSTORE_PROVIDER = new BouncyCastleProvider();
 
     private final Ssg ssg;
 
@@ -317,7 +322,7 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
         if (ssg.getRuntime().trustStore() == null) {
             KeyStore trustStore;
             try {
-                trustStore = KeyStore.getInstance(TRUSTSTORE_TYPE);
+                trustStore = KeyStore.getInstance(TRUSTSTORE_TYPE, TRUSTSTORE_PROVIDER);
             } catch (KeyStoreException e) {
                 log.log(Level.SEVERE, "Security provider configuration problem", e);
                 throw new RuntimeException(e); // can't happen unless VM misconfigured
