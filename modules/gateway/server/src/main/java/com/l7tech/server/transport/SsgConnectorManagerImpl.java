@@ -152,7 +152,7 @@ public class SsgConnectorManagerImpl
         // Try to look up as interface tag
         Pair<String, Set<InterfaceTag>> info = getInterfaceTagsCached();
         if (info == null)
-            throw new ListenerException("No interface tags exist; unable to find match for listen port " + port + " using interface " + bindAddress);
+            throw new ListenerException("No interface definitions exist; unable to find match for listen port " + port + " using interface " + bindAddress);
 
         List<InetAddress> localAddrs;
         try {
@@ -164,7 +164,7 @@ public class SsgConnectorManagerImpl
 
         InterfaceTag tag = findTagByName(info.right, bindAddress);
         if (tag == null)
-            throw new ListenerException("No interface tag named " + bindAddress + " is known (for listen port " + port + ")");
+            throw new ListenerException("No interface definition named " + bindAddress + " is known (for listen port " + port + ")");
 
         Set<String> patterns = tag.getIpPatterns();
         InetAddress match = null;
@@ -172,14 +172,14 @@ public class SsgConnectorManagerImpl
             for (String pattern : patterns) {
                 if (InetAddressUtil.patternMatchesAddress(pattern, addr)) {
                     if (match != null)
-                        logger.log(Level.WARNING, "Interface tag " + bindAddress + " contains patterns matching more than one network addresses on this node.  Will use first match of " + match);
+                        logger.log(Level.WARNING, "Interface " + bindAddress + " contains patterns matching more than one network addresses on this node.  Will use first match of " + match);
                     match = addr;
                 }
             }
         }
 
         if (match == null)
-            throw new ListenerException("No address pattern for interface tag named " + bindAddress + " matches any network address on thsi node (for listen port " + port + ")");
+            throw new ListenerException("No address pattern for interface named " + bindAddress + " matches any network address on thsi node (for listen port " + port + ")");
 
         return match.getHostAddress();
     }
@@ -236,9 +236,9 @@ public class SsgConnectorManagerImpl
                 tagInfo = loadInterfaceTags();
                 interfaceTags.set(tagInfo);
             } catch (FindException e) {
-                logger.log(Level.WARNING, "Unable to load interface tags: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                logger.log(Level.WARNING, "Unable to load interface definitions: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             } catch (ParseException e) {
-                logger.log(Level.WARNING, "Invalid interface tags: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                logger.log(Level.WARNING, "Invalid interface definition: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
         return tagInfo;
@@ -269,7 +269,7 @@ public class SsgConnectorManagerImpl
                     oids.add(connector.getOid());
             }
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to update connectors using interface tags: unable to fetch list of connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getMessage(e));
+            logger.log(Level.WARNING, "Unable to update connectors using interface definitions: unable to fetch list of connectors: " + ExceptionUtils.getMessage(e), ExceptionUtils.getMessage(e));
         }
 
         EntityInvalidationEvent eie = new EntityInvalidationEvent(this, SsgConnector.class, ArrayUtils.unbox(oids), ArrayUtils.fill(new char[oids.size()], 'U'));

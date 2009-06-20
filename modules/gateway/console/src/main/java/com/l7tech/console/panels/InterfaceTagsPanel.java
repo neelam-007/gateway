@@ -233,7 +233,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
                 final String name = option.toString();
                 if (!InterfaceTag.isValidName(name)) {
                     DialogDisplayer.showMessageDialog(InterfaceTagsPanel.this, "An interface name must start with a letter or underscore, and can contain only ASCII letters, uderscores, or numbers.",
-                            "Invalid Interface Tag Name", JOptionPane.ERROR_MESSAGE, null);
+                            "Invalid Interface Name", JOptionPane.ERROR_MESSAGE, null);
                     return;
                 }
                 nameUser.call(name);
