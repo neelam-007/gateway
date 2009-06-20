@@ -142,6 +142,8 @@ public class RequestSigner {
                 // Replace cert with STR?
                 try {
                     String thumb = CertUtils.getSki(signingCertChain[0]);
+                    if (thumb == null)
+                        throw new SignatureException("Unable to sign with SKI reference: unable to obtain SKI for signing certificate");
                     KeyInfoDetails.makeKeyId(thumb, true, SoapUtil.VALUETYPE_SKI).
                             populateExistingKeyInfoElement(new NamespaceFactory(), keyInfoElement);
                 } catch (Exception e) {

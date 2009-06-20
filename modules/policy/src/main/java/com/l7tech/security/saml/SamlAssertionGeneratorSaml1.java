@@ -232,7 +232,10 @@ class SamlAssertionGeneratorSaml1 {
             case STR_SKI: {
                 Element subjConfEl = (Element)subjectConfirmation.getDomNode();
                 NamespaceFactory nsf = new NamespaceFactory();
-                KeyInfoDetails.makeKeyId(CertUtils.getSKIBytesFromCert(cert), SoapConstants.VALUETYPE_SKI).
+                final byte[] ski = CertUtils.getSKIBytesFromCert(cert);
+                if (ski == null)
+                    throw new CertificateException("Unable to use SKI reference: no SKI available for cert");
+                KeyInfoDetails.makeKeyId(ski, SoapConstants.VALUETYPE_SKI).
                         createAndAppendKeyInfoElement(nsf, subjConfEl);
                 break;
             }

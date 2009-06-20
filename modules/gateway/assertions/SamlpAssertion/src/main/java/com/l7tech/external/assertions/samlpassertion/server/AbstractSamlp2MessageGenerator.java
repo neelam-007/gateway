@@ -7,6 +7,7 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.security.saml.SubjectStatement;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.saml.NameIdentifierInclusionType;
+import com.l7tech.security.xml.KeyInfoInclusionType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 import saml.support.ds.KeyInfoType;
@@ -226,7 +227,16 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
         JAXBElement<?> dataContents = null;
 
         try {
-            switch(assertion.getSubjectConfirmationKeyInfoType()) {
+            byte[] certSki = null;
+            KeyInfoInclusionType confType = assertion.getSubjectConfirmationKeyInfoType();
+            if (confType == KeyInfoInclusionType.STR_SKI) {
+                 certSki = CertUtils.getSKIBytesFromCert(cert);
+                if (certSki == null) {
+                    logger.log(Level.FINE, "No SKI available for cert -- switching to embedded cert");
+                    confType = KeyInfoInclusionType.CERT;
+                }
+            }
+            switch(confType) {
                 case CERT: {
                     dataContents = digsigFactory.createX509DataTypeX509Certificate(cert.getEncoded());
                     break;
@@ -239,7 +249,7 @@ public abstract class AbstractSamlp2MessageGenerator<SAMLP_MSG extends RequestAb
                     break;
                 }
                 case STR_SKI: {
-                    dataContents = digsigFactory.createX509DataTypeX509SKI(CertUtils.getSKIBytesFromCert(cert));
+                    dataContents = digsigFactory.createX509DataTypeX509SKI(certSki);
                     break;
                 }
                 case STR_THUMBPRINT: {

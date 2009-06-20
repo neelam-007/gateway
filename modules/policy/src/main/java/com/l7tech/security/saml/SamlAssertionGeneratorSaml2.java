@@ -49,7 +49,7 @@ public class SamlAssertionGeneratorSaml2 {
      */
     private AssertionType createStatementType(SubjectStatement subjectStatement,
                                               SamlAssertionGenerator.Options options,
-                                              String caDn) throws CertificateEncodingException {
+                                              String caDn) throws CertificateException {
         Calendar now = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         AssertionType assertionType = getGenericAssertion(
                 now, options.getExpiryMinutes(),
@@ -125,7 +125,7 @@ public class SamlAssertionGeneratorSaml2 {
      */
     private void populateSubjectStatement(SubjectType subjectType,
                                           SubjectStatement subjectStatement,
-                                          String alternateNameId) throws CertificateEncodingException {
+                                          String alternateNameId) throws CertificateException {
 
         if (subjectStatement.getNameIdentifierType() != NameIdentifierInclusionType.NONE) {
             NameIDType nameIdentifierType = subjectType.addNewNameID();
@@ -196,7 +196,10 @@ public class SamlAssertionGeneratorSaml2 {
                 case STR_SKI: {
                     Node node = kicdt.getDomNode();
                     NamespaceFactory nsf = new NamespaceFactory();
-                    KeyInfoDetails kid = KeyInfoDetails.makeKeyId(CertUtils.getSKIBytesFromCert(cert),
+                    final byte[] ski = CertUtils.getSKIBytesFromCert(cert);
+                    if (ski == null)
+                        throw new CertificateException("Unable to create SKI reference: no SKI available for cert");
+                    KeyInfoDetails kid = KeyInfoDetails.makeKeyId(ski,
                                              SoapConstants.VALUETYPE_SKI);
                     kid.createAndAppendKeyInfoElement(nsf, node);
                     break;
@@ -302,11 +305,11 @@ public class SamlAssertionGeneratorSaml2 {
         }
     }
 
-    public Document createStatementDocument(SubjectStatement[] statements, SamlAssertionGenerator.Options options, String caDn) throws CertificateEncodingException {
+    public Document createStatementDocument(SubjectStatement[] statements, SamlAssertionGenerator.Options options, String caDn) throws CertificateException {
         return assertionToDocument(createXmlBeansAssertion(statements, options, caDn));
     }
 
-    private AssertionType createXmlBeansAssertion(SubjectStatement[] statements, SamlAssertionGenerator.Options options, String caDn) throws CertificateEncodingException {
+    private AssertionType createXmlBeansAssertion(SubjectStatement[] statements, SamlAssertionGenerator.Options options, String caDn) throws CertificateException {
         Calendar now = Calendar.getInstance(SamlAssertionGenerator.utcTimeZone);
         AssertionType assertionType = getGenericAssertion(
                 now, options.getExpiryMinutes(),
