@@ -79,7 +79,7 @@ public class WssReplayProtection extends MessageTargetableAssertion implements I
         meta.put(AssertionMetadata.POLICY_VALIDATOR_FLAGS_FACTORY, new Functions.Unary<Set<ValidatorFlag>, WssReplayProtection>(){
             @Override
             public Set<ValidatorFlag> call(WssReplayProtection assertion) {
-                return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION);
+                return EnumSet.of(ValidatorFlag.PERFORMS_VALIDATION, ValidatorFlag.REQUIRE_SIGNATURE);
             }
         });
 

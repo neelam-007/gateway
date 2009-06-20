@@ -81,7 +81,7 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
             if ( assertion.isApplyWsSecurity() ) {
                 final SecurityKnob secKnob = message.getSecurityKnob();
                 final DecorationRequirements[] decorations = secKnob.getDecorationRequirements();
-                final SoapVersion soapVersion = SoapVersion.namespaceToSoapVersion(document.getNamespaceURI());
+                final SoapVersion soapVersion = SoapVersion.namespaceToSoapVersion(document.getDocumentElement().getNamespaceURI());
 
                 secKnob.setPolicyWssVersion(assertion.getWsSecurityVersion());
 
@@ -114,7 +114,8 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
             }
 
             if ( assertion.isRemoveUnmatchedSecurityHeaders() ) {
-                Element l7SecHeader = securityHeaderActors.contains(null) ?
+                // If the L7_SOAP_ACTOR is used we have to match the element since the actor can be multiple values 
+                Element l7SecHeader = securityHeaderActors.contains(SoapConstants.L7_SOAP_ACTOR) ?
                         SoapUtil.getSecurityElementForL7(document) :
                         null;
                 for ( Element securityElement : SoapUtil.getSecurityElements(document) ) {
@@ -168,10 +169,11 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
              decoration.getSecurityHeaderActor() == null ) {
             if ( useSecureSpanActor ) {
                 decoration.setSecurityHeaderActor( SoapConstants.L7_SOAP_ACTOR );
+                securityHeaderActors.add( SoapConstants.L7_SOAP_ACTOR );
             } else {
                 decoration.setSecurityHeaderActor( null );
+                securityHeaderActors.add( null );
             }
-            securityHeaderActors.add( null );
         } else {
             securityHeaderActors.add( decoration.getSecurityHeaderActor() );
         }
@@ -192,15 +194,26 @@ public class ServerWsSecurity extends AbstractMessageTargetableServerAssertion<W
                 securityHeader.getParentNode().removeChild( securityHeader );
                 decoration.setSecurityHeaderMustUnderstand( useSecurityHeaderMustUnderstand, false );
             } else {
+                final String soapUri = document.getDocumentElement().getNamespaceURI();
                 decoration.setSecurityHeaderReusable(true);
                 if ( SoapVersion.SOAP_1_2.isPriorVersion( soapVersion ) ) {
-                    securityHeader.removeAttributeNS( document.getNamespaceURI(), SoapConstants.ACTOR_ATTR_NAME );
+                    // SOAP 1.1 or earlier
+                    securityHeader.removeAttributeNS( soapUri, SoapConstants.ACTOR_ATTR_NAME );
                     if ( decoration.getSecurityHeaderActor() != null )
                         SoapUtil.setSoapAttr( securityHeader, SoapConstants.ACTOR_ATTR_NAME, decoration.getSecurityHeaderActor() );
+                    if ( useSecurityHeaderMustUnderstand )
+                        SoapUtil.setSoapAttr( securityHeader, SoapConstants.MUSTUNDERSTAND_ATTR_NAME, "1");
+                    else
+                        securityHeader.removeAttributeNS( soapUri, SoapConstants.MUSTUNDERSTAND_ATTR_NAME );
                 } else {
-                    securityHeader.removeAttributeNS( document.getNamespaceURI(), SoapConstants.ROLE_ATTR_NAME );
+                    // SOAP 1.2 or later
+                    securityHeader.removeAttributeNS( soapUri, SoapConstants.ROLE_ATTR_NAME );
                     if ( decoration.getSecurityHeaderActor() != null )
                         SoapUtil.setSoapAttr( securityHeader, SoapConstants.ROLE_ATTR_NAME, decoration.getSecurityHeaderActor() );
+                    if ( useSecurityHeaderMustUnderstand )
+                        SoapUtil.setSoapAttr( securityHeader, SoapConstants.MUSTUNDERSTAND_ATTR_NAME, "true");
+                    else
+                        securityHeader.removeAttributeNS( soapUri, SoapConstants.MUSTUNDERSTAND_ATTR_NAME );
                 }
             }
         } else {

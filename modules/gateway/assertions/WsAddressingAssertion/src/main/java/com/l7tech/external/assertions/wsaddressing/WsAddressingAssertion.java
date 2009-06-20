@@ -263,7 +263,7 @@ public class WsAddressingAssertion extends MessageTargetableAssertion implements
             public Set<ValidatorFlag> call(WsAddressingAssertion assertion) {
                 Set<ValidatorFlag> flags = EnumSet.noneOf(ValidatorFlag.class);
 
-                if ( assertion.getTarget() == TargetMessageType.REQUEST && assertion.isRequireSignature() ) {
+                if ( assertion.isRequireSignature() ) {
                     flags.add(ValidatorFlag.REQUIRE_SIGNATURE);
                 }
 

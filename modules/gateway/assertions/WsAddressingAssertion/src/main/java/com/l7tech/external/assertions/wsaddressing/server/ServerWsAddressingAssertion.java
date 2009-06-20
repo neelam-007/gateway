@@ -70,7 +70,9 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         AssertionStatus status = AssertionStatus.FALSIFIED;
         final Message msg;
+        final String messageDescription;
         try {
+            messageDescription = assertion.getTargetName();
             msg = context.getTargetMessage(assertion);
         } catch (NoSuchVariableException e) {
             auditor.logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, e.getVariable());
@@ -80,7 +82,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
         try {
             Map<QName, String> addressingProperties = new HashMap<QName,String>();
             if ( assertion.isRequireSignature() ) {
-                populateAddressingFromSignedElements(getSignedElements(context.getAuthenticationContext(msg), msg, null), addressingProperties);
+                populateAddressingFromSignedElements(getSignedElements(context.getAuthenticationContext(msg), msg, messageDescription), addressingProperties);
             } else {
                 populateAddressingFromMessage(getElementCursor(msg), addressingProperties);
             }
@@ -237,7 +239,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
     private final Auditor auditor;
 
     /**
-     * Get signed elements for request message of given context. 
+     * Get signed elements for message of given context.
      */
     private SignedElement[] getSignedElements(final AuthenticationContext authContext, final Message msg, final String what)
             throws AddressingProcessingException, IOException {
@@ -246,7 +248,7 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
         try {
             if (!msg.isSoap()) {
                 auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP);
-                throw new AddressingProcessingException("Request is not SOAP", AssertionStatus.NOT_APPLICABLE);
+                throw new AddressingProcessingException("Message is not SOAP", AssertionStatus.NOT_APPLICABLE);
             }
 
             if (assertion.getTarget() == TargetMessageType.REQUEST) {
@@ -262,14 +264,14 @@ public class ServerWsAddressingAssertion extends AbstractServerAssertion<WsAddre
 
         if ( wssResults == null ) {
             auditor.logAndAudit(MessageProcessingMessages.MESSAGE_NO_WSS);
-            throw new AddressingProcessingException("Request does not contain any WSS security", AssertionStatus.FALSIFIED);
+            throw new AddressingProcessingException("Message does not contain any WSS security", AssertionStatus.FALSIFIED);
         }
 
         return WSSecurityProcessorUtils.filterSignedElementsByIdentity( authContext, wssResults, assertion.getIdentityTarget(), requireCredentialSigningToken );
     }
 
     /**
-     * Get the ElementCursor for the request message
+     * Get the ElementCursor for the message
      */
     private ElementCursor getElementCursor(final Message msg) throws IOException {
         try {
