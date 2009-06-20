@@ -53,6 +53,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
         init();
     }
 
+    @Override
     protected Set<InterfaceTag> getModel() {
         return model;
     }
@@ -67,17 +68,20 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
         }
     }
     
+    @Override
     protected void initComponents() {
         Utilities.deuglifySplitPane(splitPane);
-        Utilities.equalizeButtonSizes(createTagButton, deleteTagButton, addAddressButton, removeAddressButton);
+        Utilities.equalizeButtonSizes(createTagButton, deleteTagButton, addAddressButton, removeAddressButton, editAddressButton);
 
         connectors = Functions.grep(loadAllConnectors(), new Functions.Unary<Boolean, SsgConnector>() {
+            @Override
             public Boolean call(SsgConnector ssgConnector) {
                 return ssgConnector.isEnabled();
             }
         });
 
         final DefaultListCellRenderer cellRenderer = new DefaultListCellRenderer() {
+            @Override
             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 if (value instanceof InterfaceTag) {
                     InterfaceTag tag = (InterfaceTag) value;
@@ -88,6 +92,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
         };
         tagList.setCellRenderer(cellRenderer);
         tagListModel = new SortedListModel<InterfaceTag>(new Comparator<InterfaceTag>() {
+            @Override
             public int compare(InterfaceTag a, InterfaceTag b) {
                 return a.getName().compareTo(b.getName());
             }
@@ -95,6 +100,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
         tagListModel.addAll(model.toArray(new InterfaceTag[model.size()]));
         tagList.setModel(tagListModel);
         tagList.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 populatePatternList(getSelectedTag());
             }
@@ -103,16 +109,20 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
 
         Utilities.enableGrayOnDisabled(patternList);
         patternList.addListSelectionListener(new ListSelectionListener() {
+            @Override
             public void valueChanged(ListSelectionEvent e) {
                 updateEnableState();
             }
         });
 
         createTagButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 promptForInterfaceName(new Functions.UnaryVoid<String>() {
+                    @Override
                     public void call(final String interfaceName) {
                         promptForAddressPattern(null, new Functions.UnaryVoid<String>() {
+                            @Override
                             public void call(String addressPattern) {
                                 final InterfaceTag added = new InterfaceTag(interfaceName, new LinkedHashSet<String>(Arrays.asList(addressPattern)));
                                 tagListModel.add(added);
@@ -126,20 +136,33 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
         });
 
         deleteTagButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
-                InterfaceTag tag = getSelectedTag();
+                final InterfaceTag tag = getSelectedTag();
                 if (tag == null)
                     return;
 
                 if (warnIfInUse(tag))
                     return;
 
-                tagListModel.removeElement(tag);
-                populatePatternList(null);
+                DialogDisplayer.showConfirmDialog(InterfaceTagsPanel.this,
+                        "Are you sure you wish to delete the interface " + tag.getName() + "?",
+                        "Delete Interface",
+                        JOptionPane.OK_CANCEL_OPTION,
+                        new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (JOptionPane.OK_OPTION != option)
+                            return;
+                        tagListModel.removeElement(tag);
+                        populatePatternList(null);
+                    }
+                });
             }
         });
 
         addAddressButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 final InterfaceTag tag = getSelectedTag();
                 if (tag == null)
@@ -149,6 +172,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
                     return;
 
                 promptForAddressPattern(null, new Functions.UnaryVoid<String>() {
+                    @Override
                     public void call(String address) {
                         tag.getIpPatterns().add(address);
                         populatePatternList(tag);
@@ -159,6 +183,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
         });
 
         removeAddressButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 final InterfaceTag tag = getSelectedTag();
                 if (tag == null)
@@ -177,6 +202,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
         });
 
         editAddressButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 final InterfaceTag tag = getSelectedTag();
                 if (tag == null)
@@ -190,6 +216,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
                     return;
 
                 promptForAddressPattern(oldAddress, new Functions.UnaryVoid<String>() {
+                    @Override
                     public void call(String address) {
                         if (oldAddress.equals(address))
                             return;
@@ -227,6 +254,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
 
     private void promptForInterfaceName(final Functions.UnaryVoid<String> nameUser) {
         DialogDisplayer.showInputDialog(InterfaceTagsPanel.this, "Please enter a name for the new interface.", "Interface Name", JOptionPane.PLAIN_MESSAGE, null, null, null, new DialogDisplayer.InputListener() {
+            @Override
             public void reportResult(Object option) {
                 if (option == null || option.toString().length() < 1)
                     return;
@@ -243,6 +271,7 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
 
     private void promptForAddressPattern(String initialValue, final Functions.UnaryVoid<String> patternUser) {
         DialogDisplayer.showInputDialog(InterfaceTagsPanel.this, "Please enter an address pattern.", "Address Pattern", JOptionPane.PLAIN_MESSAGE, null, null, initialValue, new DialogDisplayer.InputListener() {
+            @Override
             public void reportResult(Object option) {
                 if (option == null || option.toString().length() < 1)
                     return;
@@ -292,10 +321,12 @@ public class InterfaceTagsPanel extends ValidatedPanel<Set<InterfaceTag>> {
         checkSemantic();
     }
 
+    @Override
     public void focusFirstComponent() {
         tagList.requestFocus();
     }
 
+    @Override
     protected void doUpdateModel() {
         model.clear();
         model.addAll(tagListModel.toList());
