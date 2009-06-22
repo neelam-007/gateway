@@ -38,6 +38,7 @@ public class LunaJceProviderEngine extends JceProvider {
         } else {
             LunaTokenManager.getInstance().Login(new String(pin));
         }
+        LunaTokenManager.getInstance().SetSecretKeysExtractable(true);
     }
 
     /** @return the client password, ie "///6-6KWT-SCMH-N3FE". */
