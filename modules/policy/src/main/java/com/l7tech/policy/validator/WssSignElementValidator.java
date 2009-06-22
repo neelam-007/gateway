@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.assertion.xmlsec.WssSignElement;
 import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
+import com.l7tech.policy.assertion.xmlsec.WsSecurity;
 import com.l7tech.wsdl.Wsdl;
 import org.jaxen.dom.DOMXPath;
 
@@ -22,11 +23,13 @@ import java.util.logging.Logger;
 public class WssSignElementValidator implements AssertionValidator {
     private static final Logger logger = Logger.getLogger(WssSignElementValidator.class.getName());
     private final WssSignElement assertion;
+    private final boolean requiresDecoration;
     private String errString;
     private Throwable errThrowable;
 
     public WssSignElementValidator(WssSignElement ra) {
         assertion = ra;
+        requiresDecoration = !Assertion.isResponse( assertion );
         String pattern = null;
         if (assertion.getXpathExpression() != null)
             pattern = assertion.getXpathExpression().getExpression();
@@ -49,6 +52,8 @@ public class WssSignElementValidator implements AssertionValidator {
         if (errString != null)
             result.addError(new PolicyValidatorResult.Error(assertion, path, errString, errThrowable));
 
+        boolean seenSelf = true;
+        boolean seenDecoration = false;
         Assertion[] assertionPath = path.getPath();
         for (int i = assertionPath.length - 1; i >= 0; i--) {
             Assertion a = assertionPath[i];
@@ -68,6 +73,16 @@ public class WssSignElementValidator implements AssertionValidator {
                     logger.info(message);
                 }
             }
+            if ( a == assertion ) {
+                seenSelf = false; // loop is backwards
+            }
+            if ( seenSelf && a instanceof WsSecurity && ((WsSecurity)a).isApplyWsSecurity() && AssertionUtils.isSameTargetMessage( assertion, a ) ) {
+                seenDecoration = true;
+            }
+        }
+
+        if ( requiresDecoration && !seenDecoration ) {
+            result.addWarning(new PolicyValidatorResult.Warning(assertion, path, "This assertion will be ignored. An \"Add or remove WS-Security\" assertion should be used to apply security.", null));            
         }
     }
 }

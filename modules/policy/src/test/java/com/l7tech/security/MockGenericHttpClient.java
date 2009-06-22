@@ -14,8 +14,7 @@ import java.io.IOException;
  * This client is only useful in instances where there is one request
  * (extend as required ...)
  *
- * @author $Author$
- * @version $Revision$
+ * @author alex
  */
 public class MockGenericHttpClient implements GenericHttpClient {
 
@@ -47,6 +46,7 @@ public class MockGenericHttpClient implements GenericHttpClient {
      * @param params
      * @throws com.l7tech.common.http.GenericHttpException
      */
+    @Override
     public GenericHttpRequest createRequest(HttpMethod method, GenericHttpRequestParams params) throws GenericHttpException {
         this.method = method;
         this.params = params;
@@ -129,6 +129,12 @@ public class MockGenericHttpClient implements GenericHttpClient {
         }
     }
 
+    //- PROTECTED
+
+    protected byte[] getResponseBody() {
+        return responseBody;
+    }
+
     //- PRIVATE
 
     private volatile boolean holdResponses = false;
@@ -147,6 +153,7 @@ public class MockGenericHttpClient implements GenericHttpClient {
     {
         private InputStream in;
 
+        @Override
         public GenericHttpResponse getResponse() throws GenericHttpException {
             try {
                 requestBody = in == null ? null : IOUtils.slurpStream(in);
@@ -170,14 +177,17 @@ public class MockGenericHttpClient implements GenericHttpClient {
             return new MockGenericHttpResponse();
         }
 
+        @Override
         public void addParameter(String paramName, String paramValue) throws IllegalArgumentException, IllegalStateException {
             throw new IllegalStateException("this impl does not support addParameter");
         }
 
+        @Override
         public void close() {
             // mock ...
         }
 
+        @Override
         public void setInputStream(InputStream bodyInputStream) {
             in = bodyInputStream;
         }
@@ -185,28 +195,50 @@ public class MockGenericHttpClient implements GenericHttpClient {
 
     private class MockGenericHttpResponse extends GenericHttpResponse
     {
-        public InputStream getInputStream() throws GenericHttpException {
-            return new ByteArrayInputStream(responseBody);
+        private long responseLength;
+        private byte[] responseData;
+
+        private void initResponse() {
+            if ( responseData == null ) {
+                responseData = getResponseBody();
+                if ( contentLength==null ) {
+                    contentLength = (long) responseData.length;
+                } else {
+                    responseLength = contentLength;
+                }
+            }
         }
 
+        @Override
+        public InputStream getInputStream() throws GenericHttpException {
+            initResponse();
+            return new ByteArrayInputStream(responseData);
+        }
+
+        @Override
         public void close() {
             // - mock
         }
 
+        @Override
         public int getStatus() {
             return responseStatus;
         }
 
+        @Override
         public HttpHeaders getHeaders() {
             return headers;
         }
 
+        @Override
         public ContentTypeHeader getContentType() {
             return contentTypeHeader;
         }
 
+        @Override
         public Long getContentLength() {
-            return contentLength;
+            initResponse();
+            return responseLength;
         }
     }
 }

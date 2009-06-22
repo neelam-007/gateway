@@ -4,7 +4,6 @@
 package com.l7tech.message;
 
 import com.l7tech.security.token.SecurityToken;
-import com.l7tech.security.token.SignatureConfirmation;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorException;
@@ -25,7 +24,7 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
     private DecorationRequirements decorationRequirements = null;
     private Map<String,DecorationRequirements> decorationRequirementsForAlternateRecipients = new HashMap<String,DecorationRequirements>();
     private ProcessorResultFactory lazyProcessor = null;
-    private WsSecurityVersion wsSecurityVersion = WsSecurityVersion.WSS10;
+    private WsSecurityVersion wsSecurityVersion;
 
     /**
      * @param message  the Message that owns this aspect

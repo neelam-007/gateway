@@ -4,11 +4,13 @@ import com.l7tech.policy.assertion.xmlsec.WsSecurity;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.RunOnChangeListener;
+import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.console.event.CertListenerAdapter;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.message.WsSecurityVersion;
 
@@ -17,6 +19,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -100,7 +103,15 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
     protected void initComponents() {
         super.initComponents();
 
-        wssVersionComboBox.setModel( new DefaultComboBoxModel(EnumSet.allOf(WsSecurityVersion.class).toArray()));
+        List<WsSecurityVersion> options = new ArrayList<WsSecurityVersion>(EnumSet.allOf(WsSecurityVersion.class));
+        options.add( 0, null );
+        wssVersionComboBox.setModel( new DefaultComboBoxModel(options.toArray(new WsSecurityVersion[options.size()])));
+        wssVersionComboBox.setRenderer( new TextListCellRenderer<WsSecurityVersion>( new Functions.Unary<String,WsSecurityVersion>(){
+            @Override
+            public String call( final WsSecurityVersion wsSecurityVersion ) {
+                return wsSecurityVersion != null ? wsSecurityVersion.toString() : "<Not Specified>";
+            }
+        }, null, true ) );
 
         RunOnChangeListener stateUpdateListener = new RunOnChangeListener( new Runnable(){
             @Override

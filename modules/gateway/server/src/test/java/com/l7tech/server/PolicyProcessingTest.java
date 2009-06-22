@@ -18,6 +18,7 @@ import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
+import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.LogOnlyAuditor;
@@ -132,7 +133,9 @@ public class PolicyProcessingTest extends TestCase {
         {"/addusernametoken", "POLICY_responsesecuritytoken.xml"},
         {"/addtimestamp", "POLICY_responsetimestamp.xml"},
         {"/addsignature", "POLICY_responsesignature.xml"},
-        {"/removeheaders", "POLICY_removeheaders.xml"}
+        {"/removeheaders", "POLICY_removeheaders.xml"},
+        {"/signatureconfirmation1", "POLICY_signatureconfirmation1.xml"},
+        {"/signatureconfirmation2", "POLICY_signatureconfirmation2.xml"}
     };
 
     /**
@@ -903,6 +906,69 @@ public class PolicyProcessingTest extends TestCase {
     }
 
     /**
+     * This simulates one SSG routing to another SSG.
+     *
+     * The first policy signs the message and routes then validates the
+     * signature confirmation in the response message.
+     *
+     * The second policy validates the signature and sends a signed
+     * response with signature confirmation.
+     */
+    public void testSignatureConfirmation() throws Exception {
+        MockGenericHttpClient mockClient = buildCallbackMockHttpClient(null, new Functions.Unary<byte[], byte[]>(){
+            @Override
+            public byte[] call( final byte[] requestBytes ) {
+                final byte[][] responseHolder = new byte[1][];
+                try {
+                    final Document outboundRequest = XmlUtil.parse( new String(requestBytes) );
+                    // Ensure there's a signature in there
+                    NodeList signatureValueNodeList = outboundRequest.getElementsByTagNameNS(SoapUtil.DIGSIG_URI, "SignatureValue");
+                    Assert.assertEquals("Request signature value found", 1, signatureValueNodeList.getLength());
+                    final String signatureValue = XmlUtil.getTextValue( (Element)signatureValueNodeList.item(0) );
+
+                    //System.out.println( XmlUtil.nodeToFormattedString( outboundRequest ) );
+                    processMessage("/signatureconfirmation2", new String(requestBytes), "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+                        @Override
+                        public void call(final PolicyEnforcementContext context) {
+                            try {
+                                responseHolder[0] = IOUtils.slurpStream( context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream() );
+                            } catch (Exception e) {
+                                throw ExceptionUtils.wrap(e);
+                            }
+                        }
+                    });
+                    final Document inboundResponse = XmlUtil.parse( new String(responseHolder[0]) );
+                    //System.out.println( XmlUtil.nodeToFormattedString( inboundResponse ) );
+
+                    // Ensure there's a signature confirmation in there
+                    NodeList signatureConfirmationNodeList = inboundResponse.getElementsByTagNameNS(SoapConstants.SECURITY11_NAMESPACE, "SignatureConfirmation");
+                    Assert.assertEquals("Response signature confirmation found", 1, signatureConfirmationNodeList.getLength());
+                    Assert.assertEquals("Signature confirmation matches signature value", signatureValue, ((Element)signatureConfirmationNodeList.item(0)).getAttribute("Value"));
+                } catch (Exception e) {
+                    throw ExceptionUtils.wrap(e);
+                }
+                return responseHolder[0];
+            }
+        });
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+        final String requestMessage = new String(loadResource("REQUEST_general.xml"));
+        processMessage("/signatureconfirmation1", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
+            @Override
+            public void call( final PolicyEnforcementContext context ) {
+                final ProcessorResult result = context.getResponse().getSecurityKnob().getProcessorResult();
+                Assert.assertNotNull( "Response message should have WSS processing results", result );
+                Assert.assertNotNull( "Response message should have signature confirmation", result.getSignatureConfirmation() );
+                System.out.println( result.getSignatureConfirmation().getErrors() );
+// TODO : This should work
+//                Assert.assertTrue( "Signature confirmation should not have errors", result.getSignatureConfirmation().getErrors().isEmpty() );
+            }
+        });
+
+        // reset the mock client, as some unit tests don't set this before running 
+        testingHttpClientFactory.setMockHttpClient(buildMockHttpClient(null, loadResource("RESPONSE_general.xml")));
+    }
+
+    /**
      *
      */
     private Result processMessage(String uri, String message, int expectedStatus) throws IOException {
@@ -1193,6 +1259,33 @@ public class PolicyProcessingTest extends TestCase {
                                          (long)message.length,
                                          message);
 
+    }
+
+    /**
+     *
+     */
+    private static MockGenericHttpClient buildCallbackMockHttpClient( GenericHttpHeaders headers,
+                                                                      final Functions.Unary<byte[],byte[]> router ) {
+        if (headers == null) {
+            HttpHeader[] responseHeaders = new HttpHeader[]{
+                    new GenericHttpHeader("Content-Type","text/xml; charset=utf8"),
+            };
+            headers = new GenericHttpHeaders(responseHeaders);
+        }
+
+        final MockGenericHttpClient[] clients = new MockGenericHttpClient[1];
+        clients[0] = new MockGenericHttpClient(200,
+                headers,
+                ContentTypeHeader.XML_DEFAULT,
+                null,
+                null){
+            @Override
+            protected byte[] getResponseBody() {
+                return router.call( clients[0].getRequestBody() );
+            }
+        };
+
+        return clients[0];
     }
 
     /**

@@ -147,7 +147,7 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
                 }
 
                 nameBuilder.append("WS-Security");
-                if ( wsSecurity.isApplyWsSecurity() ) {
+                if ( wsSecurity.isApplyWsSecurity() && wsSecurity.getWsSecurityVersion() != null ) {
                     nameBuilder.append(" ");
                     nameBuilder.append(wsSecurity.getWsSecurityVersion());
                 }
@@ -169,7 +169,7 @@ public class WsSecurity extends MessageTargetableAssertion implements UsesEntiti
     private boolean useSecurityHeaderMustUnderstand = true;
     private boolean useSecureSpanActor = false;
     private boolean applyWsSecurity = true;
-    private WsSecurityVersion wsSecurityVersion = WsSecurityVersion.WSS10;
+    private WsSecurityVersion wsSecurityVersion;
     private long recipientTrustedCertificateOid;
     private String recipientTrustedCertificateName;
 

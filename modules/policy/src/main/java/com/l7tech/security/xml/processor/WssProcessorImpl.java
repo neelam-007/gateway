@@ -571,7 +571,7 @@ public class WssProcessorImpl implements WssProcessor {
         } else {
             SecurityKnob requestSK = relatedRequest.getSecurityKnob();
             ProcessorResult requestWss = requestSK.getProcessorResult();
-            WsSecurityVersion requestWssVer = requestSK.getPolicyWssVersion();
+            WsSecurityVersion requestWssVer = requestSK.getPolicyWssVersion(); // may be null
             if (requestWss == null) {
                 signatureConfirmation.addError("SignatureConfirmations not validated: related request was not WSS processed.");
             } else {
