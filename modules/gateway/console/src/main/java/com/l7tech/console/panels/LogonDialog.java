@@ -50,9 +50,9 @@ public class LogonDialog extends JDialog {
     private PasswordAuthentication authenticationCredentials = null;
 
     /**
-     * True if "remember id" pref is enabled and a remembered ID was found.
+     * The component to focus when the dialog is shown
      */
-    private boolean rememberUser = false;
+    private JComponent focusComponent = null;
 
     /**
      *
@@ -95,7 +95,6 @@ public class LogonDialog extends JDialog {
     private JComboBox certSelection = null;
     private JButton manageCertBtn = null;
     private JLabel certLabel = null;
-    private ButtonGroup selection = null;
     private JLabel passwordLabel = null;
     private JLabel userNameLabel = null;
     private Hashtable<String, X509Certificate> certsHash = new Hashtable<String, X509Certificate>();
@@ -145,6 +144,7 @@ public class LogonDialog extends JDialog {
         //setTitle (resources.getString("dialog.title"));
 
         addWindowListener(new WindowAdapter() {
+            @Override
             public void windowClosing(WindowEvent event) {
                 // user hit window manager close button
                 windowAction(CMD_CANCEL);
@@ -156,6 +156,7 @@ public class LogonDialog extends JDialog {
           .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "close-it");
         layeredPane.getActionMap().put("close-it",
                                        new AbstractAction() {
+                                           @Override
                                            public void actionPerformed(ActionEvent evt) {
                                                windowAction(CMD_CANCEL);
                                            }
@@ -184,32 +185,13 @@ public class LogonDialog extends JDialog {
             contents.add(new JLabel(imageIcon), constraints);
         }
 
-        selection = new ButtonGroup();
-
         useCreds = new JRadioButton(resources.getString("logon.radio.usernamePassword"));
-        useCreds.setSelected(true);
         useCreds.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
-                if (useCreds.isSelected()) {
-                    //enable to enter username and password
-                    userNameLabel.setEnabled(true);
-                    userNameTextField.setEnabled(true);
-                    passwordLabel.setEnabled(true);
-                    passwordField.setEnabled(true);
-
-                    //disable certificate usage
-                    useCert.setSelected(false);
-                    certLabel.setEnabled(false);
-                    manageCertBtn.setEnabled(false);
-                    certSelection.setEnabled(false);
-
-                    //set login button
-                    loginButton.setEnabled(!userNameTextField.getText().equalsIgnoreCase("") &&
-                            (serverComboBox.getSelectedItem() != null && !((String)serverComboBox.getSelectedItem()).equalsIgnoreCase("")));
-                }
+                updateEnabledState();
             }
         });
-        selection.add(useCreds);
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = 1;
@@ -225,29 +207,32 @@ public class LogonDialog extends JDialog {
         userNameLabel.setToolTipText(resources.getString("userNameTextField.tooltip"));
         userNameTextField.setDocument(new FilterDocument(200,
                                                          new FilterDocument.Filter() {
+                                                             @Override
                                                              public boolean accept(String str) {
                                                                  return str != null;
                                                              }
                                                          }));
 
         DocumentListener inputValidDocumentListener = new DocumentListener() {
+            @Override
             public void insertUpdate(DocumentEvent e) {
                 if (loginButton != null)
                     loginButton.setEnabled(isInputValid());
             }
 
+            @Override
             public void removeUpdate(DocumentEvent e) {
                 if (loginButton != null)
                     loginButton.setEnabled(isInputValid());
             }
 
+            @Override
             public void changedUpdate(DocumentEvent e) {
                 if (loginButton != null)
                     loginButton.setEnabled(isInputValid());
             }
         };
 
-        userNameTextField.getDocument().addDocumentListener(inputValidDocumentListener);
         userNameLabel.setDisplayedMnemonic(resources.getString("userNameTextField.label").charAt(0));
         userNameLabel.setLabelFor(userNameTextField);
         userNameLabel.setText(resources.getString("userNameTextField.label"));
@@ -276,40 +261,30 @@ public class LogonDialog extends JDialog {
         constraints.fill = GridBagConstraints.HORIZONTAL;
         contents.add(Box.createHorizontalStrut(100), constraints);
 
+        final JPanel buttonPanel = createButtonPanel(); // sets global loginButton
+        passwordField = new JPasswordField(); // needed below
 
         // last ID logic
-        final String lastID;
-        rememberUser = false;
+        focusComponent = userNameTextField;
         preferences = TopComponents.getInstance().getPreferences();
-        lastID = preferences.rememberLoginId() ?
-                 preferences.getString(SsmPreferences.LAST_LOGIN_ID) :
-                 null;
+        final String lastID;
+        final boolean lastIDWasCert;
+        if ( preferences.rememberLoginId() ) {
+            lastID = preferences.getString(SsmPreferences.LAST_LOGIN_ID);
+            lastIDWasCert = "certificate".equals( preferences.getString(SsmPreferences.LAST_LOGIN_TYPE) );
 
-        if (preferences.rememberLoginId()) {
-            userNameTextField.setText(lastID);
-            if (lastID != null)
-                rememberUser = true;
-        }
-
-        final String fLastID = lastID; // anon class requires final
-        userNameTextField.
-          addFocusListener(new FocusAdapter() {
-            private boolean hasbeenInvoked = false;
-
-            /**
-             * Invoked when a component gains the keyboard focus.
-             */
-            public void focusGained(FocusEvent e) {
-                if (!hasbeenInvoked) {
-                    if (fLastID != null) {
-                        LogonDialog.this.userNameTextField.transferFocus();
-                    }
-                }
-                hasbeenInvoked = true;
+            if ( !lastIDWasCert )
+                userNameTextField.setText(lastID);
+            if ( lastID != null ) {
+                focusComponent = lastIDWasCert ?
+                        loginButton :
+                        passwordField;
             }
-        });
-
-        passwordField = new JPasswordField(); // needed below
+        } else {
+            lastID = null;
+            lastIDWasCert = false;
+        }
+        userNameTextField.getDocument().addDocumentListener(inputValidDocumentListener);
 
         // password label
         passwordLabel = new JLabel();
@@ -328,10 +303,6 @@ public class LogonDialog extends JDialog {
 
         // password field
         passwordField.setToolTipText(resources.getString("passwordField.tooltip"));
-//    Font echoCharFont = new Font("Lucida Sans", Font.PLAIN, 12);
-//    passwordField.setFont(echoCharFont);
-//    passwordField.setEchoChar('\u2022');
-
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
         constraints.gridy = 3;
@@ -349,30 +320,12 @@ public class LogonDialog extends JDialog {
         contents.add(Box.createHorizontalStrut(100), constraints);
 
         useCert = new JRadioButton(resources.getString("logon.radio.clientCert"));
-        useCert.setSelected(false);
         useCert.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
-                if (useCert.isSelected()) {
-                    //disable to enter username and password
-                    userNameLabel.setEnabled(false);
-                    userNameTextField.setEnabled(false);
-                    passwordLabel.setEnabled(false);
-                    passwordField.setEnabled(false);
-
-                    //enable certificate usage
-                    useCert.setSelected(true);
-                    certLabel.setEnabled(true);
-                    certSelection.setEnabled(true);
-                    populateCertificateChoices();
-                    manageCertBtn.setEnabled(true);
-
-                    //set ok button enabled
-                    loginButton.setEnabled(certSelection.getItemCount() > 0 &&
-                            (serverComboBox.getSelectedItem() != null && !((String)serverComboBox.getSelectedItem()).equalsIgnoreCase("")));
-                }
+                updateEnabledState();
             }
         });
-        selection.add(useCert);
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = 4;
@@ -380,6 +333,12 @@ public class LogonDialog extends JDialog {
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(15,0,0,0);
         contents.add(useCert, constraints);
+
+        ButtonGroup selection = new ButtonGroup();
+        selection.add(useCreds);
+        selection.add(useCert);
+        useCreds.setSelected(!lastIDWasCert);
+        useCert.setSelected(lastIDWasCert);
 
         certLabel = new JLabel(resources.getString("logon.certificateLabel"));
         certLabel.setEnabled(false);
@@ -402,12 +361,19 @@ public class LogonDialog extends JDialog {
         constraints.insets = new Insets(2, 15, 0, 10);
         constraints.fill = GridBagConstraints.HORIZONTAL;
         contents.add(certSelection, constraints);
+        if (lastID!=null && lastIDWasCert && certSelection.getModel().getSize() > 0) {
+            certSelection.setSelectedItem(lastID);
+            if ( !lastID.equals( certSelection.getSelectedItem() ) ) {
+                certSelection.setSelectedIndex(0);
+            }
+        }
 
         JPanel certBtnPanel = new JPanel();
         certBtnPanel.setLayout(new BoxLayout(certBtnPanel, 0));
         manageCertBtn = new JButton(resources.getString("logon.importCert"));
         manageCertBtn.setActionCommand(CMD_MANAGE_CERT);
         manageCertBtn.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 windowAction(event.getActionCommand());
             }
@@ -477,6 +443,7 @@ public class LogonDialog extends JDialog {
         }
 
         Runnable runnable = new Runnable() {
+            @Override
             public void run() {
                 updateServerUrlHistory();
             }
@@ -484,6 +451,7 @@ public class LogonDialog extends JDialog {
 
         SwingUtilities.invokeLater(runnable);
         serverComboBox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 loginButton.setEnabled(isInputValid());
             }
@@ -496,11 +464,42 @@ public class LogonDialog extends JDialog {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.CENTER;
         constraints.insets = new Insets(10, 0, 10, 10);
-        JPanel buttonPanel = createButtonPanel(); // sets global loginButton
         contents.add(buttonPanel, constraints);
 
+        this.addComponentListener( new ComponentAdapter(){
+            @Override
+            public void componentShown( ComponentEvent e ) {
+                if ( focusComponent != null ) {
+                    focusComponent.requestFocus();
+                    if ( focusComponent instanceof JTextField ) {
+                        ((JTextField)focusComponent).selectAll();    
+                    }
+                    focusComponent = null;
+                }
+            }
+        } );
+
+        updateEnabledState();
         loginButton.setEnabled(isInputValid());
         getRootPane().setDefaultButton(loginButton);
+    }
+
+    private void updateEnabledState() {
+        final boolean isCredentials = useCreds.isSelected();
+
+        userNameLabel.setEnabled(isCredentials);
+        userNameTextField.setEnabled(isCredentials);
+        passwordLabel.setEnabled(isCredentials);
+        passwordField.setEnabled(isCredentials);
+
+        useCert.setSelected(!isCredentials);
+        certLabel.setEnabled(!isCredentials);
+        certSelection.setEnabled(!isCredentials);
+        manageCertBtn.setEnabled(!isCredentials);
+        if ( !!isCredentials )
+            populateCertificateChoices();
+
+        loginButton.setEnabled(isInputValid());
     }
 
     /*
@@ -544,6 +543,7 @@ public class LogonDialog extends JDialog {
         loginButton.setToolTipText(resources.getString("loginButton.tooltip"));
         loginButton.setActionCommand(CMD_LOGIN);
         loginButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 windowAction(event.getActionCommand());
             }
@@ -558,6 +558,7 @@ public class LogonDialog extends JDialog {
         cancelButton.setText(resources.getString("cancelButton.label"));
         cancelButton.setActionCommand(CMD_CANCEL);
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent event) {
                 windowAction(event.getActionCommand());
             }
@@ -586,21 +587,12 @@ public class LogonDialog extends JDialog {
         } else if (actionCommand.equals(CMD_LOGIN)) {
             setVisible(false);
             SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
                     doLogon(null, null);
                 }
             });
         } else if (actionCommand.equals(CMD_MANAGE_CERT) ){
-
-            //popup a dialog to manage user certificate
-            X509Certificate cert = null;
-            try {
-                cert = getSelectedCertificate((String)certSelection.getSelectedItem());
-            } catch (Exception e) {
-                //do nothing
-                log.finest("Unable to get selected X509Certificate.");
-            }
-
             UserIdentificationRequestDialog certManager = new UserIdentificationRequestDialog(certsHash);
             Utilities.centerOnScreen(certManager);
             Utilities.setAlwaysOnTop(this, false);
@@ -624,14 +616,14 @@ public class LogonDialog extends JDialog {
             certsHash.clear();
             int i=0;
             for (X509Certificate cert : certs) {
-                certsHash.put((String) cert.getSubjectDN().getName(), cert);
-                items[i++] = ((String) cert.getSubjectDN().getName());
+                certsHash.put(cert.getSubjectDN().getName(), cert);
+                items[i++] = cert.getSubjectDN().getName();
                 //certSelection.addItem((String) cert.getSubjectDN().getName());
             }
 
             Arrays.sort(items);
-            for (int j=0; j < items.length; j++) {
-                certSelection.addItem(items[j]);
+            for ( String item : items ) {
+                certSelection.addItem( item );
             }
 
         } catch (Exception e) {
@@ -656,6 +648,8 @@ public class LogonDialog extends JDialog {
         if(selectedHost!=null) selectedHost = selectedHost.trim();
         final String sHost = selectedHost;
 
+        focusComponent = useCert.isSelected() ? certSelection : passwordField;
+
         LogonInProgressDialog progressDialog = null;
         try {
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
@@ -672,6 +666,7 @@ public class LogonDialog extends JDialog {
               new SwingWorker() {
                   private Throwable memoException = null;
 
+                  @Override
                   public Object construct() {
                       try {
                           AuthenticationProvider authProv = securityProvider.getAuthenticationProvider();
@@ -708,6 +703,7 @@ public class LogonDialog extends JDialog {
                       return null;
                   }
 
+                  @Override
                   public void finished() {
                       boolean showLogin = true;
                       if (memoException != null) {
@@ -723,9 +719,10 @@ public class LogonDialog extends JDialog {
                           preferences.updateSystemProperties();
                           if (logonListener != null) {
                               if (useCert.isSelected()){
-                                  logonListener.onAuthSuccess(certsHash.get((String) certSelection.getSelectedItem()).getSubjectDN().getName());
+                                  String selected = (String) certSelection.getSelectedItem();
+                                  logonListener.onAuthSuccess(certsHash.get(selected).getSubjectDN().getName(), true);
                               } else {
-                                  logonListener.onAuthSuccess(authenticationCredentials.getUserName());
+                                  logonListener.onAuthSuccess(authenticationCredentials.getUserName(), false);
                               }
                           }
                       } else {
@@ -743,6 +740,7 @@ public class LogonDialog extends JDialog {
             sw.start();
             progressDialog.setSwingWorker(sw);
             DialogDisplayer.display(progressDialog, new Runnable() {
+                @Override
                 public void run() {
                     parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                     progressDialog1.dispose();
@@ -771,22 +769,6 @@ public class LogonDialog extends JDialog {
      */
     private void setSelectedCertificateByDn(String dn) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
         preferences.setClientCertificate(certsHash.get(dn));
-    }
-
-    /**
-     * Tries to find the certificate matching the provide DN.
-     *
-     * @param dn    Dn that will be used for searching
-     * @return      X509Certificate if found, otherwise NULL
-     * @throws KeyStoreException
-     * @throws NoSuchAlgorithmException
-     * @throws IOException
-     * @throws CertificateException
-     */
-    private X509Certificate getSelectedCertificate(String dn) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
-        //based on the select dn, find the certificate from the list
-        X509Certificate certificate = certsHash.get(dn);//preferences.getClientCertificate();
-        return certificate;
     }
 
     /**
@@ -837,22 +819,6 @@ public class LogonDialog extends JDialog {
                             resources.getString("logon.lock.account"),
                             "Warning",
                             JOptionPane.WARNING_MESSAGE);
-    }
-
-    /**
-     * Before displaying dialog, ensure that correct fields are selected.
-     */
-    public void setVisible(boolean visible) {
-        if(visible) {
-            if (rememberUser) {
-                passwordField.requestFocus();
-                passwordField.selectAll();
-            } else {
-                userNameTextField.requestFocus();
-                userNameTextField.selectAll();
-            }
-        }
-        super.setVisible(visible);
     }
 
     private static SecurityProvider getCredentialManager() {
@@ -916,6 +882,7 @@ public class LogonDialog extends JDialog {
             panel.add(Box.createHorizontalStrut(100));
             JButton cancelButton = new JButton("Cancel");
             cancelButton.addActionListener(new ActionListener() {
+                @Override
                 public void actionPerformed(ActionEvent e) {
                     worker.interrupt();
                     dispose();
@@ -1014,8 +981,7 @@ public class LogonDialog extends JDialog {
                 doLogon(newPassword, newPasswordAuth);  //try logon again
             }
         }
-        else if (cause instanceof LoginException || cause instanceof BadCredentialsException || cause instanceof AuthenticationException ||
-                cause instanceof LoginRequireClientCertificateException) {
+        else if (cause instanceof LoginException || cause instanceof BadCredentialsException || cause instanceof AuthenticationException) {
             log.log(Level.WARNING, "Could not connect, authentication error.");
             if (cause instanceof LoginRequireClientCertificateException) {
                 showRequireClientCertificateMessage();
@@ -1049,8 +1015,11 @@ public class LogonDialog extends JDialog {
             InvalidHostNameException ihne = (InvalidHostNameException) cause;
             String msg = MessageFormat.format(resources.getString("logon.hostname.mismatch"),
                                               ihne.getExpectedHost(), ihne.getActualHost());
-            JOptionPane.showMessageDialog(parentFrame, msg, "Warning", JOptionPane.WARNING_MESSAGE);
-            acceptedInvalidHosts.add(ihne.getExpectedHost());
+            int option = JOptionPane.showOptionDialog(parentFrame, msg, "Warning", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
+            if ( option == JOptionPane.OK_OPTION ) {
+                acceptedInvalidHosts.add(ihne.getExpectedHost());
+                doLogon( null, null );
+            }
         }
         else if (cause instanceof InvalidHostCertificateException) {
             X509Certificate cert = ((InvalidHostCertificateException)cause).getCertificate();
@@ -1075,6 +1044,7 @@ public class LogonDialog extends JDialog {
                 if ( imported ) {
                     // try again
                     SwingUtilities.invokeLater(new Runnable(){
+                        @Override
                         public void run() {
                             doLogon(null, null);
                         }
@@ -1098,8 +1068,9 @@ public class LogonDialog extends JDialog {
          * invoked on successful authentication
          *
          * @param id the id of the authenticated user
+         * @param usedCertificate true if an X.509 certificate was used
          */
-        void onAuthSuccess(String id);
+        void onAuthSuccess(String id, boolean usedCertificate);
 
         /**
          * invoked on authentication failure

@@ -895,7 +895,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         }
 
         if ( validId ) {
-            logonListenr.onAuthSuccess( sessionId );
+            logonListenr.onAuthSuccess( sessionId, false );
         }
 
         return validId;
@@ -2917,7 +2917,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     LogonDialog.LogonListener logonListenr =
       new LogonDialog.LogonListener() {
           /* invoked on authentication success */
-          public void onAuthSuccess(String id) {
+          public void onAuthSuccess( final String id, final boolean usedCertificate ) {
               connectionID = id;
               String statusMessage = connectionID;
               connectionContext = "";
@@ -2939,6 +2939,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                    * is true or false.  Also see {@link AbstractSsmPreferences#rememberLoginId}
                    */
                   prefs.putProperty(SsmPreferences.LAST_LOGIN_ID, id);
+                  prefs.putProperty(SsmPreferences.LAST_LOGIN_TYPE, usedCertificate ? "certificate" : "password" );
                   prefs.store();
               } catch (IOException e) {
                   log.log(Level.WARNING, "onAuthSuccess()", e);

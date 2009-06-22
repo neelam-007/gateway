@@ -34,6 +34,10 @@ public interface SsmPreferences {
      */
     String LAST_LOGIN_ID = "last.login.id";
     /**
+     * last login type
+     */
+    String LAST_LOGIN_TYPE = "last.login.type";
+    /**
      * remember last login id
      */
     String SAVE_LAST_LOGIN_ID = "last.login.id.save";
