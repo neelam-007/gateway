@@ -313,6 +313,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                     return null;
                 if (!cipherSuiteListModel.isAnyEntryChecked())
                     return "At least one cipher suite must be enabled for an SSL listener.";
+                if (isEccCertButHasRsaCiphersEnabled())
+                    return "The server private key uses elliptic curve crypto, but at least one RSA cipher suite is enabled.";
                 return null;
             }
         });
@@ -340,6 +342,14 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         modelToView();
         if (nameField.getText().length() < 1)
             nameField.requestFocusInWindow();
+    }
+
+    private boolean isEccCertButHasRsaCiphersEnabled() {
+        String alg = privateKeyComboBox.getSelectedKeyAlgorithm();
+        if (!("EC".equals(alg) || "ECDSA".equals(alg)))
+            return false;
+        final String cipherList = cipherSuiteListModel.asCipherListString();
+        return cipherList == null || cipherList.indexOf("RSA_") > 0;
     }
 
     private void editProperty(final Pair<String, String> origPair) {
@@ -658,7 +668,10 @@ public class SsgConnectorPropertiesDialog extends JDialog {
      *         in new connectors).  False if this cipher suite should be hidden in the UI.
      */
     public static boolean cipherSuiteShouldBeVisible(String cipherSuiteName) {
-        return !contains(cipherSuiteName, "_WITH_NULL_") && !contains(cipherSuiteName, "_anon_") && contains(cipherSuiteName, "_RSA_");
+        return !contains(cipherSuiteName, "_WITH_NULL_") && !contains(cipherSuiteName, "_anon_") && (
+                contains(cipherSuiteName, "_RSA_") ||
+                contains(cipherSuiteName, "_ECDSA_") 
+        );
     }
 
     /**

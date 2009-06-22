@@ -30,17 +30,20 @@ public class PrivateKeysComboBox extends JComboBox {
         public long keystoreId;
         public String keystoreName;
         public String keyAlias;
-        public PrivateKeyItem(final long keystoreId, final String keystoreName, final String keyAlias) {
+        public String keyAlgorithm;
+
+        public PrivateKeyItem(final long keystoreId, final String keystoreName, final String keyAlias, final String keyAlgorithm) {
             this.keystoreId = keystoreId;
             this.keystoreName = keystoreName;
             this.keyAlias = keyAlias;
+            this.keyAlgorithm = keyAlgorithm;
         }
         public String toString() {
             return "'" + keyAlias + "'" + " in " + keystoreName;
         }
     }
 
-    private static final PrivateKeyItem ITEM_DEFAULT_SSL = new PrivateKeyItem(-1, null, null) {
+    private static final PrivateKeyItem ITEM_DEFAULT_SSL = new PrivateKeyItem(-1, null, null, "NONE") {
         public String toString() {
             return DEFAULT_PRIVATE_KEY;
         }
@@ -94,7 +97,7 @@ public class PrivateKeysComboBox extends JComboBox {
             items.add(ITEM_DEFAULT_SSL);
             for (KeystoreFileEntityHeader keystore : keystores) {
                 for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.getOid())) {
-                    items.add(new PrivateKeyItem(keystore.getOid(), keystore.getName(), entry.getAlias()));
+                    items.add(new PrivateKeyItem(keystore.getOid(), keystore.getName(), entry.getAlias(), entry.getCertificate().getPublicKey().getAlgorithm()));
                 }
             }
             Collections.sort(items, new PrivateKeyItemComparator());
@@ -184,6 +187,13 @@ public class PrivateKeysComboBox extends JComboBox {
         final PrivateKeyItem item = (PrivateKeyItem)getSelectedItem();
         if (item == null) return null;
         return item.keyAlias;
+    }
+
+    /** @return key algorithm of current select ("RSA", "EC", "ECDSA") or null if none selected. */
+    public String getSelectedKeyAlgorithm() {
+        final PrivateKeyItem item = (PrivateKeyItem)getSelectedItem();
+        if (item == null) return null;
+        return item.keyAlgorithm;
     }
 
     /**
