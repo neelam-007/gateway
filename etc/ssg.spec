@@ -14,6 +14,9 @@ Prefix: /opt/SecureSpan/Gateway
 # Prevents rpm build from erroring and halting
 #%undefine       __check_files
 
+# Need this to build RHEL5 rpm from Fedora 11
+%define _binary_filedigest_algorithm md5
+
 %description
 SecureSpan Gateway Software Package
 

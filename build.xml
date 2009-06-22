@@ -1699,9 +1699,27 @@
 
     <!--
       Package Signer multiple signature utility (Always invoked by hand)
+      May need to run "compile-tests" first.
+      The resulting JAR requires the "lib" directory from the SSM minus any
+      layer7-* jars.
     -->
     <target name="package.signer"
-            depends="package.skunkworks">
+            depends="package.skunkworks"> 
+        <mkdir dir="build/signer/lib"/>
+
+        <ivy:resolve resolveId="signer.deps" file="modules/gateway/console/ivy.xml" conf="default" showprogress="false" log="quiet"/>
+        <ivy:retrieve resolveId="signer.deps" pattern="build/signer/lib/[artifact]-[revision].[ext]" type="jar"/>
+
+        <delete>
+            <fileset dir="build/signer/lib" includes="layer7-*.jar"/>
+        </delete>
+        <copy todir="build/signer" file="modules/skunkworks/build/Signer.jar"/>
+
+        <tar destfile="build/Signer.tar.gz" compression="gzip">
+            <tarfileset dir="build" mode="444" username="root" group="root">
+                <include name="signer/**/*"/>
+            </tarfileset>
+        </tar>
     </target>
 
     <target name="package.internal" depends="prepare.base">
@@ -1909,6 +1927,13 @@
     <target name="package.installgateway.work.rpm.check" if="makerpm.enabled" depends="prepare.base">
         <available property="package.installgateway.work.rpm.sourceavailable" file="${tarball}"/>
         <available property="package.installgateway.work.rpm.appliance.sourceavailable" file="${appliance-tarball}"/>
+        <condition property="package.installgateway.work.rpm.i386.appliance.required">
+          <and>
+            <isset property="install.jdk.tar.gz"/>
+            <available file="${install.jdk.tar.gz}"/>
+            <isset property="package.installgateway.work.rpm.appliance.sourceavailable"/>
+          </and>
+        </condition>
         <condition property="package.installgateway.work.rpm.x86_64.appliance.required">
           <and>
             <isset property="install.jdk64.tar.gz"/>
@@ -1978,9 +2003,7 @@
         <property name="package.installgateway.work.appliance.rpmspec" value="etc/appliance/ssg-appliance.spec"/>
         <echo level="info">Using spec file : ${package.installgateway.work.appliance.rpmspec}</echo>
         <echo level="info">Using source TGZ: ${appliance-tarball}</echo>
-        <echo level="info">Using source JDK: ${install.jdk.tar.gz}</echo>
         <copy file="${appliance-tarball}" tofile="${build.rpm}/SOURCES/ssg-appliance.tar.gz"/>
-        <copy file="${install.jdk.tar.gz}" tofile="${build.rpm}/SOURCES/jdk.tar.gz"/>
         <copy file="${package.installgateway.work.appliance.rpmspec}" todir="${build.rpm}/SPECS">
             <filterchain>
                 <tokenfilter>
@@ -1989,8 +2012,6 @@
                 </tokenfilter>
             </filterchain>
         </copy>
-
-        <rpm specFile="ssg-appliance.spec" topDir="${build.rpm}" command="-bb --target i386" failOnError="true"/>
     </target>
 
     <target name="package.installgateway.work.rpm.stig" depends="init, package.readversion, package.checkrelease" if="makerpm.enabled">
@@ -2077,9 +2098,18 @@
     </target>
 
     <!--
+      Create the SSG RPM (i386)
+    -->
+    <target name="package.installgateway.work.rpm.appliance.i386" depends="package.installgateway.work.rpm.check, package.readversion, package.checkrelease" if="package.installgateway.work.rpm.i386.appliance.required">
+        <echo level="info">Using source JDK: ${install.jdk.tar.gz}</echo>
+        <copy file="${install.jdk.tar.gz}" tofile="${build.rpm}/SOURCES/jdk.tar.gz" overwrite="true"/>
+        <rpm specFile="ssg-appliance.spec" topDir="${build.rpm}" command="-bb --target i386" failOnError="true"/>
+    </target>
+
+    <!--
       Create the SSG RPM
     -->
-    <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.core, package.installgateway.work.rpm.appliance, package.installgateway.work.rpm.appliance.x86_64" if="makerpm.enabled">
+    <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.core, package.installgateway.work.rpm.appliance, package.installgateway.work.rpm.appliance.i386, package.installgateway.work.rpm.appliance.x86_64" if="makerpm.enabled">
         <echo level="info">RPM build completed.</echo>
     </target>
 
@@ -2704,10 +2734,13 @@
         <fail unless="install.jdk.tar.gz" message="Set the install.jdk.tar.gz property or create install.properties!"/>
 
         <condition property="jdk.exists">
-            <available file="${install.jdk.tar.gz}"/>
+            <or>
+                <available file="${install.jdk.tar.gz}"/>
+                <available file="${install.jdk64.tar.gz}"/>
+            </or>
         </condition>
 
-        <fail unless="jdk.exists" message="Couldn't find ${install.jdk.tar.gz}! Check your install.properties file!"/>
+        <fail unless="jdk.exists" message="Couldn't find ${install.jdk.tar.gz} or ${install.jdk64.tar.gz}! Check your install.properties file!"/>
     </target>
 
     <!--

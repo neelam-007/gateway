@@ -63,14 +63,16 @@ public class Signer extends JDialog {
     private JButton clearSigningListButton;
     private JCheckBox protectTokensCheckBox;
     private JComboBox keyReferenceType;
+    private JCheckBox useEncryptedKeyCheckBox;
 
     private Viewer viewer;
+    private Document document;
     private Set<String> elementsToSign = new LinkedHashSet<String>();
     private X509Certificate clientCertificate;
     private PrivateKey clientPrivateKey;
 
     public Signer() throws Exception {
-        setTitle("WS-Security Signing Utility 0.2");
+        setTitle("WS-Security Signing Utility 0.3");
         setContentPane(contentPane);
         setModal(true);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -129,7 +131,7 @@ public class Signer extends JDialog {
                     if ( trans != null ) {
                         Object obj = trans.getTransferData(DataFlavor.selectBestTextFlavor(trans.getTransferDataFlavors()));
                         if ( obj instanceof String ) {
-                            Document document = XmlUtil.parse((String)obj);
+                            document = XmlUtil.parse((String)obj);
                             viewer.setContent( XmlUtil.nodeToString(document) );                            
                             onClearSigningList();
                         }
@@ -140,12 +142,17 @@ public class Signer extends JDialog {
             }
         });
 
-
         exportClipboardButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                StringSelection data = new StringSelection(viewer.getContent());
-                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(data, data);                
+                if ( document != null ) {
+                    try {
+                        StringSelection data = new StringSelection(XmlUtil.nodeToString(document));
+                        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(data, data);
+                    } catch (IOException ex) {
+                        throw ExceptionUtils.wrap(ex);
+                    }
+                }
             }
         });
 
@@ -171,6 +178,37 @@ public class Signer extends JDialog {
         } );
         viewerPanel.setLayout(new BorderLayout());
         viewerPanel.add( viewer );
+
+        Utilities.setDoubleClickAction( signList, new ActionListener(){
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doEditSignListXpath();
+            }
+        }, signList, null);
+    }
+
+    private void doEditSignListXpath() {
+        String xpath = (String) signList.getSelectedValue();
+        String updatedXpath = (String) JOptionPane.showInputDialog( this, "Element XPath", "Edit XPath", JOptionPane.QUESTION_MESSAGE, null, null, xpath );
+        if ( updatedXpath != null ) {
+            DefaultListModel model = new DefaultListModel();
+            Set<String> updatedElementsToSign = new LinkedHashSet<String>();
+
+            for ( String signXpath : elementsToSign ) {
+                if ( signXpath.equals(xpath) ) {
+                    signXpath = updatedXpath;
+                }
+                updatedElementsToSign.add( signXpath );
+            }
+                        
+            for ( String elementPath : updatedElementsToSign ) {
+                model.addElement( elementPath );
+            }
+
+            signList.setModel( model );
+            elementsToSign = updatedElementsToSign;
+        }
+
     }
 
     private void onLoad() {
@@ -182,7 +220,7 @@ public class Signer extends JDialog {
             FileInputStream fis = null;
             try {
                 fis = new FileInputStream(selected);
-                Document document = XmlUtil.parse(fis);
+                document = XmlUtil.parse(fis);
                 viewer.setContent( XmlUtil.nodeToString(document) );
                 onClearSigningList();
             }
@@ -196,7 +234,7 @@ public class Signer extends JDialog {
     }
 
     private void onLoadCert() {
-        GuiCertUtil.ImportedData data = GuiCertUtil.importCertificate(this, true, new GuiPasswordCallbackHandler());
+        GuiCertUtil.ImportedData data = GuiCertUtil.importCertificate(this, false, new GuiPasswordCallbackHandler());
         if (data != null) {
             clientCertificate = data.getCertificate();
             clientPrivateKey = data.getPrivateKey();
@@ -214,46 +252,47 @@ public class Signer extends JDialog {
     }
 
     private void onSign() {
-        String content = viewer.getContent();
+        if ( document != null ) {
+            try {
+                final Set<Element> elements = new LinkedHashSet<Element>();
+                final XPathFactory xpf = XPathFactory.newInstance();
+                final Map<String,String> docns = DomUtils.findAllNamespaces(document.getDocumentElement());
 
-        try {
-            final Document document = XmlUtil.parse(content);
-            final Set<Element> elements = new LinkedHashSet<Element>();
-            final XPathFactory xpf = XPathFactory.newInstance();
-            final Map<String,String> docns = DomUtils.findAllNamespaces(document.getDocumentElement());
-
-            for ( String xpathExpression : elementsToSign ) {
-                XPath xpath = xpf.newXPath();
-                xpath.setNamespaceContext( new NamespaceContextImpl(docns) );
-                NodeList nodeList = (NodeList) xpath.evaluate( xpathExpression, document, XPathConstants.NODESET );
-                for ( int n=0; n<nodeList.getLength(); n++ ) {
-                    Node node = nodeList.item(n);
-                    if ( node.getNodeType() == Node.ELEMENT_NODE ) {
-                        elements.add( (Element) node );
+                for ( String xpathExpression : elementsToSign ) {
+                    XPath xpath = xpf.newXPath();
+                    xpath.setNamespaceContext( new NamespaceContextImpl(docns) );
+                    NodeList nodeList = (NodeList) xpath.evaluate( xpathExpression, document, XPathConstants.NODESET );
+                    for ( int n=0; n<nodeList.getLength(); n++ ) {
+                        Node node = nodeList.item(n);
+                        if ( node.getNodeType() == Node.ELEMENT_NODE ) {
+                            elements.add( (Element) node );
+                        }
                     }
                 }
+
+                onClearSigningList();
+
+                signDocument(
+                        document,
+                        signTimestampCheckBox.isSelected(),
+                        protectTokensCheckBox.isSelected(),
+                        useEncryptedKeyCheckBox.isSelected(),
+                        elements,
+                        clientCertificate,
+                        clientPrivateKey,
+                        (KeyInfoInclusionType) keyReferenceType.getSelectedObjects()[0] );
+
+                viewer.setContent( XmlUtil.nodeToString(document) );
+            } catch (Exception e) {
+                throw ExceptionUtils.wrap(e);
             }
-
-            onClearSigningList();
-
-            signDocument(
-                    document,
-                    signTimestampCheckBox.isSelected(),
-                    protectTokensCheckBox.isSelected(),
-                    elements,
-                    clientCertificate,
-                    clientPrivateKey,
-                    (KeyInfoInclusionType) keyReferenceType.getSelectedObjects()[0] );
-
-            viewer.setContent( XmlUtil.nodeToString(document) );
-        } catch (Exception e) {
-            throw ExceptionUtils.wrap(e);
         }
     }
 
     private void signDocument( final Document document,
                                final boolean signTimeStamp,
                                final boolean protectTokens,
+                               final boolean useEncryptedKey,
                                final Set<Element> elements,
                                final X509Certificate clientCertificate,
                                final PrivateKey clientPrivateKey,
@@ -264,8 +303,13 @@ public class Signer extends JDialog {
         decReq.setIncludeTimestamp(signTimeStamp);
         decReq.getElementsToSign().addAll(elements);
         decReq.setProtectTokens(protectTokens);
-        decReq.setSenderMessageSigningCertificate(clientCertificate);
-        decReq.setSenderMessageSigningPrivateKey(clientPrivateKey);
+        if ( useEncryptedKey ) {
+            decReq.setEncryptedKey(new byte[32]); // nice and secure ..
+            decReq.setRecipientCertificate(clientCertificate);
+        } else {
+            decReq.setSenderMessageSigningCertificate(clientCertificate);
+            decReq.setSenderMessageSigningPrivateKey(clientPrivateKey);
+        }
         decReq.setSecurityHeaderReusable(true);
         decReq.setSecurityHeaderActor(null);
         new WssDecoratorImpl().decorateMessage( new Message(document), decReq );
@@ -275,6 +319,7 @@ public class Signer extends JDialog {
     public static void main(String[] args) throws Exception {
         Signer dialog = new Signer();
         dialog.pack();
+        Utilities.centerOnScreen(dialog);
         dialog.setVisible(true);
         System.exit(0);
     }

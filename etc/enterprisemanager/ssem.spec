@@ -12,6 +12,9 @@ buildroot: %{_builddir}/%{name}-%{version}
 requires: ssg-appliance >= 5.0
 Prefix: /opt/SecureSpan/EnterpriseManager
 
+# Need this to build RHEL5 rpm from Fedora 11
+%define _binary_filedigest_algorithm md5
+
 %description
 SecureSpan Enterprise Service Manager Software Package
 
