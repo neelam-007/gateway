@@ -154,6 +154,7 @@ public class PreferencesDialog extends JDialog {
         // inactivity timeout enable/disable
         JLabel inactivityLabel =
           new JLabel(resources.getString(("inactivityTimeout.label")));
+        inactivityLabel.setToolTipText(resources.getString(("inactivityTimeout.tooltip")));
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = 12;
@@ -222,7 +223,7 @@ public class PreferencesDialog extends JDialog {
 
         // new in 4.0 checkbox to turn on/off validation
         JLabel validationStateLabel = new JLabel("Policy Validation Feedback:");
-        rememberLastIdLabel.setToolTipText("Enable/Disable Policy Validation Feedback");
+        validationStateLabel.setToolTipText("Enable/Disable Policy Validation Feedback");
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = 16;
@@ -267,6 +268,7 @@ public class PreferencesDialog extends JDialog {
 
         //new in 5.0 allow configurable SSG history in Logon dialog
         JLabel numHostsHistoryLabel = new JLabel(resources.getString(("numHostsHistory.label")));
+        numHostsHistoryLabel.setToolTipText(resources.getString(("numHostsHistory.tooltip")));
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = 18;
