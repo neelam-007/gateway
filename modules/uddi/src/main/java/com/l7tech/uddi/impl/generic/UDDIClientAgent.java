@@ -36,6 +36,7 @@ public class UDDIClientAgent implements UddiAgent {
      *
      * @param props The properties of the UDDI Agent.
      */
+    @Override
     public void init(Properties props) {
         if (resultRowsMax != -1) throw new IllegalStateException("already initialized");
 
@@ -60,6 +61,7 @@ public class UDDIClientAgent implements UddiAgent {
      * @return WsdlInfo[] an array of WSDL info.
      * @throws UddiAgentException   if there was a problem accessing the requested information.
      */
+    @Override
     public WsdlInfo[] getWsdlByServiceName(final String inquiryUrl,
                                            final UDDIRegistryInfo info,
                                            final String username,
@@ -70,9 +72,14 @@ public class UDDIClientAgent implements UddiAgent {
         // % denotes wildcard of string (any number of characters), underscore denotes wildcard of a single character
 
         String pwStr = password == null ? null : new String(password);
-        UDDIClient uddi = info == null ?
+        UDDIClient uddi;
+        try {
+            uddi = info == null ?
                 UDDIClientFactory.getInstance().newUDDIClient(inquiryUrl, null, null, username, pwStr, null) :
                 UDDIClientFactory.getInstance().newUDDIClient(inquiryUrl, info, username, pwStr, null);
+        } catch ( IllegalArgumentException iae ) {
+            throw new UddiAgentException("Error creating UDDI client", iae);   
+        }
         List<WsdlInfo> wsdlInfos = new ArrayList<WsdlInfo>();
         try {
             for (int i=0; wsdlInfos.size() < resultRowsMax; i++) {

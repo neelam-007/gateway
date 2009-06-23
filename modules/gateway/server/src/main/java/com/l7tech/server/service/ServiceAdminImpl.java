@@ -13,7 +13,6 @@ import com.l7tech.policy.assertion.PolicyReference;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -35,10 +34,7 @@ import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -63,7 +59,7 @@ import java.util.logging.Logger;
  * Date: Jun 6, 2003
  * @noinspection OverloadedMethodsWithSameNumberOfParameters,ValidExternallyBoundObject,NonJaxWsWebServices
  */
-public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextAware, DisposableBean {
+public final class ServiceAdminImpl implements ServiceAdmin, DisposableBean {
     private static final ServiceHeader[] EMPTY_ENTITY_HEADER_ARRAY = new ServiceHeader[0];
 
     private SSLContext sslContext;
@@ -85,9 +81,7 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     private final ServiceTemplateManager serviceTemplateManager;
 
     private final AsyncAdminMethodsImpl asyncSupport = new AsyncAdminMethodsImpl();
-    private final BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
     private final ExecutorService validatorExecutor;
-    private Auditor auditor;
 
     private CollectionUpdateProducer<ServiceHeader, FindException> publishedServicesUpdateProducer =
             new CollectionUpdateProducer<ServiceHeader, FindException>(5 * 60 * 1000, 100, new ServiceHeaderDifferentiator()) {
@@ -131,7 +125,8 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
         this.serviceTemplateManager = serviceTemplateManager;
 
         int maxConcurrency = serverConfig.getIntProperty(ServerConfig.PARAM_POLICY_VALIDATION_MAX_CONCURRENCY, 15);
-        validatorExecutor = new ThreadPoolExecutor(1, maxConcurrency, 5 * 60, TimeUnit.SECONDS, validatorQueue);
+        BlockingQueue<Runnable> validatorQueue = new LinkedBlockingQueue<Runnable>();
+        validatorExecutor = new ThreadPoolExecutor(1, maxConcurrency, 5 * 60, TimeUnit.SECONDS, validatorQueue );
     }
 
     @Override
@@ -534,9 +529,17 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
             }, false));
             return wsdlInfo;
         } catch (UddiAgentException e) {
-            String msg = "Error searching UDDI registry";
-            logger.log(Level.WARNING, msg, e);
-            throw new FindException(msg + ": " + ExceptionUtils.getMessage(e));
+            String msg = "Error searching UDDI registry '"+ExceptionUtils.getMessage(e)+"'";
+            if ( ExceptionUtils.causedBy( e, MalformedURLException.class ) ||
+                 ExceptionUtils.causedBy( e, URISyntaxException.class ) ||
+                 ExceptionUtils.causedBy( e, UnknownHostException.class ) ||
+                 ExceptionUtils.causedBy( e, ConnectException.class ) ||
+                 ExceptionUtils.causedBy( e, NoRouteToHostException.class )) {
+                logger.log(Level.WARNING, msg + " : '" + ExceptionUtils.getMessage(ExceptionUtils.unnestToRoot(e ))+ "'", ExceptionUtils.getDebugException( e ));
+            } else {
+                logger.log(Level.WARNING, msg, e);
+            }
+            throw new FindException(msg);
         }
     }
 
@@ -690,11 +693,6 @@ public final class ServiceAdminImpl implements ServiceAdmin, ApplicationContextA
     @Override
     public <OUT extends Serializable> JobResult<OUT> getJobResult(JobId<OUT> jobId) throws UnknownJobException, JobStillActiveException {
         return asyncSupport.getJobResult(jobId);
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.auditor = new Auditor(this, applicationContext, logger);
     }
 
     @Override
