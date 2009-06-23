@@ -42,6 +42,7 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
         super(IdentityProviderType.LDAP);
     }
 
+    @Override
     @Transient
     public boolean isWritable() {
         return false;
@@ -309,6 +310,12 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
      */
     public void setTemplateName(String name) {
         setProperty(BASE_TEMPLATE, name);
+    }
+
+    @Override
+    @Transient
+    protected String[] getUnexportablePropKeys() {
+        return new String[]{BIND_PASS};
     }
 
     public static final String URL = "ldapurl";
