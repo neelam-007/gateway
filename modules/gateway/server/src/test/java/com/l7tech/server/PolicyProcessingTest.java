@@ -93,14 +93,16 @@ public class PolicyProcessingTest extends TestCase {
      * - URL (may be null)
      * - Policy resource path (policy/tests/XXX)
      * - WSDL resource path (Optional)
+     * - Lax Resolution (true/false optional)
+     * - SOAP Service (true/false)
      *
      * NOTE: Currently there's just one service with a WSDL which allows the
      * JMS service resolution to function correctly.
      */
     private static final String[][] TEST_SERVICES = new String[][]{
-        {"/sqlattack", "POLICY_sqlattack.xml"},
+        {"/sqlattack", "POLICY_sqlattack.xml", null, null, "false"},
         {"/requestsizelimit", "POLICY_requestsizelimit.xml"},
-        {"/documentstructure", "POLICY_documentstructure.xml"},
+        {"/documentstructure", "POLICY_documentstructure.xml", "WSDL_noops.wsdl", "true"},
         {"/stealthfault", "POLICY_stealthfault.xml"},
         {"/faultlevel", "POLICY_faultlevel.xml"},
         {"/ipaddressrange", "POLICY_iprange.xml"},
@@ -195,6 +197,21 @@ public class PolicyProcessingTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
+    private long getServiceOid( String resolutionUri ) {
+        long oid = 0;
+
+        for ( int i=0; i<TEST_SERVICES.length; i++ ) {
+            if ( TEST_SERVICES[i][0].equals( resolutionUri ) ) {
+                oid = i+1;
+                break;
+            }
+        }
+
+        Assert.assertTrue( "Service not found", oid > 0 );
+
+        return oid;
+    }
+
     /**
      * Populate the service cache with the test services.
      */
@@ -209,11 +226,20 @@ public class PolicyProcessingTest extends TestCase {
             ps.setRoutingUri(serviceInfo[0]);
             ps.getPolicy().setXml(new String(loadResource(serviceInfo[1])));
             ps.getPolicy().setOid(ps.getOid());
-            ps.setSoap(true);
 
-            if (serviceInfo.length > 2) {
+            if (serviceInfo.length > 4 && serviceInfo[4] != null) {
+                ps.setSoap(Boolean.parseBoolean( serviceInfo[4] ));
+            } else {
+                ps.setSoap(true);
+            }
+
+            if (serviceInfo.length > 2 && serviceInfo[2] != null) {
                 ps.setWsdlXml(new String(loadResource(serviceInfo[2])));
-                ps.setLaxResolution(false);
+                if (serviceInfo.length > 3 && serviceInfo[3] != null) {
+                    ps.setLaxResolution(Boolean.parseBoolean( serviceInfo[3] ));
+                } else {
+                    ps.setLaxResolution(false);
+                }
             } else {
                 ps.setLaxResolution(true);
             }
@@ -482,7 +508,7 @@ public class PolicyProcessingTest extends TestCase {
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
 
-        processJmsMessage(requestMessage1, 0);
+        processJmsMessage(requestMessage1, 0, 0);
     }
 
     /**
@@ -1051,6 +1077,22 @@ public class PolicyProcessingTest extends TestCase {
         testingHttpClientFactory.setMockHttpClient(buildMockHttpClient(null, loadResource("RESPONSE_general.xml")));
     }
 
+    @BugNumber(7253)
+    public void testHardcodedResolution() throws Exception {
+        // Test a SOAP message resolves to an XML service
+        String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
+        processJmsMessage(requestMessage1, 0, getServiceOid("/sqlattack")); // 1 is /sqlattack
+
+        // Test a SOAP message does not resolve to a SOAP service if lax resolution is
+        // disabled and the request does not match an operation
+        String requestMessage2 = new String(loadResource("RESPONSE_general.xml")); // the response is not a valid request message
+        processJmsMessage(requestMessage2, 404, getServiceOid("/httproutejms"));
+
+        // Test a SOAP message resolves to a SOAP service if lax resolution is
+        // enabled and the request does not match an operation
+        processJmsMessage(requestMessage2, 0, getServiceOid("/documentstructure"));
+    }
+
     /**
      *
      */
@@ -1237,7 +1279,9 @@ public class PolicyProcessingTest extends TestCase {
     /**
      *
      */
-    private Result processJmsMessage(String message, int expectedStatus) throws IOException {
+    private Result processJmsMessage( final String message,
+                                      final int expectedStatus,
+                                      final long serviceOid ) throws IOException {
         // Initialize processing context
         final Message response = new Message();
         final Message request = new Message();
@@ -1251,12 +1295,15 @@ public class PolicyProcessingTest extends TestCase {
             }
             @Override
             public Map<String, Object> getJmsMsgPropMap() {
-                //noinspection unchecked
-                return Collections.EMPTY_MAP;
+                return Collections.emptyMap();
             }
             @Override
             public String getSoapAction() {
                 return null;
+            }
+            @Override
+            public long getServiceOid() {
+                return serviceOid;
             }
         });
 

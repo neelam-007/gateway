@@ -16,7 +16,7 @@ public class EmailFacet extends MessageFacet {
     }
 
     public MessageKnob getKnob(Class c) {
-        if (c == EmailKnob.class || c == HasSoapAction.class) {
+        if (c == EmailKnob.class || c == HasSoapAction.class || c == HasServiceOid.class) {
             return emailKnob;
         }
         return super.getKnob(c);

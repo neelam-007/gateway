@@ -4,18 +4,15 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
-import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.*;
 import com.l7tech.util.ValidationUtils;
-import com.l7tech.util.Functions;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
-import javax.swing.event.*;
 import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.*;
@@ -31,7 +28,6 @@ import java.text.MessageFormat;
  * User: njordan
  * Date: 26-Jun-2008
  * Time: 4:27:22 PM
- * To change this template use File | Settings | File Templates.
  */
 public class EmailListenerPropertiesDialog extends JDialog {
     public static final String TITLE = "Email Listener Properties";
@@ -109,23 +105,8 @@ public class EmailListenerPropertiesDialog extends JDialog {
         }
     }
 
-    private class ComponentEnabler implements ActionListener {
-           private final Functions.Nullary<Boolean> f;
-           private final JComponent[] components;
-
-           public ComponentEnabler(Functions.Nullary<Boolean> f, JComponent... components) {
-               this.f = f;
-               this.components = components;
-           }
-
-           public void actionPerformed(ActionEvent e) {
-               for (JComponent component : components) {
-                   component.setEnabled(f.call());
-               }
-           }
-       }
-
         private RunOnChangeListener formPreener = new RunOnChangeListener(new Runnable() {
+           @Override
            public void run() {
                enableOrDisableComponents();
            }
@@ -208,18 +189,21 @@ public class EmailListenerPropertiesDialog extends JDialog {
 
         // Attach the validator to the OK button
         inputValidator.attachToButton(okButton, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onOk();
             }
         });
 
         inputValidator.attachToButton(testButton, new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onTest();
             }
         });
 
         cancelButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
             }
@@ -233,12 +217,14 @@ public class EmailListenerPropertiesDialog extends JDialog {
         serverType.setSelectedItem(EmailServerType.POP3);
         serverType.setRenderer(new KeyedResourceRenderer(resources, "settings.serverType.{0}.text"));
         serverType.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 updatePortAndFolder();
             }
         });
 
         useSSLCheckbox.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent evt) {
                 if(useSSLCheckbox.isSelected()) {
                     port.setValue(((EmailServerType)serverType.getSelectedItem()).getDefaultSslPort());
@@ -251,6 +237,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         // Name field must not be empty and must not be longer than 128 characters
         ((AbstractDocument)name.getDocument()).setDocumentFilter(new DocumentSizeFilter(128));
         inputValidator.constrainTextFieldToBeNonEmpty("Name", name, new InputValidator.ComponentValidationRule(name) {
+            @Override
             public String getValidationError() {
                 if( name.getText().trim().length()==0 ) {
                     return resources.getString("settings.name.errors.empty");
@@ -264,6 +251,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         // Hostname field must not be empty and must not be longer than 128 characters
         ((AbstractDocument)hostname.getDocument()).setDocumentFilter(new DocumentSizeFilter(128));
         inputValidator.constrainTextFieldToBeNonEmpty("Hostname", hostname, new InputValidator.ComponentValidationRule(hostname) {
+            @Override
             public String getValidationError() {
                 if( hostname.getText().trim().length()==0 ) {
                     return resources.getString("settings.hostname.errors.empty");
@@ -285,6 +273,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         // Username field must not be empty and must not be longer than 255 characters
         ((AbstractDocument)username.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
         inputValidator.constrainTextFieldToBeNonEmpty("Username", username, new InputValidator.ComponentValidationRule(username) {
+            @Override
             public String getValidationError() {
                 if( username.getText().trim().length()==0 ) {
                     return resources.getString("settings.username.errors.empty");
@@ -300,6 +289,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         // Password field must not be empty and must not be longer than 32 characters
         ((AbstractDocument)password.getDocument()).setDocumentFilter(new DocumentSizeFilter(32));
         inputValidator.constrainTextFieldToBeNonEmpty("Password", password, new InputValidator.ComponentValidationRule(password) {
+            @Override
             public String getValidationError() {
                 if( password.getPassword().length==0 ) {
                     return resources.getString("settings.password.errors.empty");
@@ -313,6 +303,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         // Folder field must not be empty and must not be longer than 255 characters
         ((AbstractDocument)folderName.getDocument()).setDocumentFilter(new DocumentSizeFilter(255));
         inputValidator.constrainTextFieldToBeNonEmpty("Folder", folderName, new InputValidator.ComponentValidationRule(folderName) {
+            @Override
             public String getValidationError() {
                 if( folderName.getText().trim().length()==0 ) {
                     return resources.getString("settings.folder.errors.empty");
@@ -326,6 +317,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         inputValidator.validateWhenDocumentChanges(folderName);
 
         folderBrowseButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 onBrowse();
             }
@@ -356,6 +348,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         return Registry.getDefault().getServiceManager();
     }
 
+    @Override
     public void setVisible(boolean b) {
         if (b && !isVisible()) confirmed = false;
         super.setVisible(b);
@@ -368,7 +361,6 @@ public class EmailListenerPropertiesDialog extends JDialog {
             return;
         }
 
-        EmailServerType emailServerType = (EmailServerType)serverType.getSelectedItem();
         boolean useSSL = useSSLCheckbox.isSelected();
         String host = hostname.getText().trim();
         int portNum = ((Number)port.getValue()).intValue();
@@ -480,10 +472,10 @@ public class EmailListenerPropertiesDialog extends JDialog {
  	 	long hardWiredId = 0;
 
         Properties props = emailListener.properties();
- 	 	String tmp = props.getProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE);
+ 	 	String tmp = props.getProperty(EmailListener.PROP_IS_HARDWIRED_SERVICE);
  	 	if (tmp != null) {
             if (Boolean.parseBoolean(tmp)) {
-                tmp = props.getProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID);
+                tmp = props.getProperty(EmailListener.PROP_HARDWIRED_SERVICE_ID);
                 isHardWired = true;
                 hardWiredId = Long.parseLong(tmp);
             }
@@ -530,10 +522,10 @@ public class EmailListenerPropertiesDialog extends JDialog {
         Properties properties = new Properties();
         if (associateWithPublishedService.isSelected()) {
  	 	    PublishedService svc = getSelectedHardwiredService();
- 	 	    properties.setProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE, (Boolean.TRUE).toString());
- 	 	    properties.setProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID, (new Long(svc.getOid())).toString());
+ 	 	    properties.setProperty(EmailListener.PROP_IS_HARDWIRED_SERVICE, (Boolean.TRUE).toString());
+ 	 	    properties.setProperty(EmailListener.PROP_HARDWIRED_SERVICE_ID, (new Long(svc.getOid())).toString());
  	 	} else {
- 	 	    properties.setProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE, (Boolean.FALSE).toString());
+ 	 	    properties.setProperty(EmailListener.PROP_IS_HARDWIRED_SERVICE, (Boolean.FALSE).toString());
  	 	}
 
         emailListener.properties(properties);
@@ -566,6 +558,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
             this.keyFormat = keyFormat;
         }
 
+        @Override
         public Component getListCellRendererComponent( JList list,
                                                        Object value,
                                                        int index,

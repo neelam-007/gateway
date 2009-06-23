@@ -2,7 +2,6 @@ package com.l7tech.server.transport.email;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.message.EmailKnob;
 import com.l7tech.message.MimeKnob;
 import com.l7tech.message.XmlKnob;
@@ -21,6 +20,7 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
+import com.l7tech.gateway.common.transport.email.EmailListener;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -60,6 +60,7 @@ public class EmailHandlerImpl implements EmailHandler {
         messageProcessingEventChannel = (EventChannel) ctx.getBean("messageProcessingEventChannel", EventChannel.class);
     }
 
+    @Override
     public void onMessage( final EmailListenerConfig emailListenerCfg,
                            final MimeMessage message )
             throws EmailListenerRuntimeException
@@ -120,34 +121,40 @@ public class EmailHandlerImpl implements EmailHandler {
         emailResponse = buildMessageFromTemplate(emailListenerCfg, message);
 
         try {
+            final long[] hardWiredServiceOidHolder = new long[]{0};
+            try {
+                Properties props = emailListenerCfg.getEmailListener().properties();
+                String tmp = props.getProperty(EmailListener.PROP_IS_HARDWIRED_SERVICE);
+                if (tmp != null) {
+                    if (Boolean.parseBoolean(tmp)) {
+                        tmp = props.getProperty( EmailListener.PROP_HARDWIRED_SERVICE_ID);
+                        hardWiredServiceOidHolder[0] = Long.parseLong(tmp);
+                    }
+                }
+            } catch (Exception e) {
+                _logger.log(Level.WARNING, "Error processing hardwired service", e);
+            }
+
             com.l7tech.message.Message request = new com.l7tech.message.Message();
             request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream );
             request.attachEmailKnob(new EmailKnob() {
+                @Override
                 public Map<String, Object> getEmailMsgPropMap() {
                     return reqEmailMsgProps;
                 }
+                @Override
                 public String getSoapAction() {
                     return soapAction;
+                }
+
+                @Override
+                public long getServiceOid() {
+                    return hardWiredServiceOidHolder[0];
                 }
             });
 
             final PolicyEnforcementContext context = new PolicyEnforcementContext(request,
                     new com.l7tech.message.Message());
-
-            try {
-                Properties props = emailListenerCfg.getEmailListener().properties();
-                String tmp = props.getProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE);
-                if (tmp != null) {
-                    if (Boolean.parseBoolean(tmp)) {
-                        tmp = props.getProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID);
-                        long hardwiredserviceid = Long.parseLong(tmp);
-                        context.setHardwiredService(hardwiredserviceid);
-                    }
-                }
-            } catch (Exception e) {
-                _logger.log(Level.WARNING, "problem testing for hardwired service", e);
-            }
-
 
             String faultMessage = null;
             String faultCode = null;

@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.message;
@@ -22,7 +20,7 @@ public class JmsFacet extends MessageFacet {
     }
 
     public MessageKnob getKnob(Class c) {
-        if (c == JmsKnob.class || c == HasSoapAction.class) {
+        if (c == JmsKnob.class || c == HasSoapAction.class || c == HasServiceOid.class) {
             return jmsKnob;
         }
         return super.getKnob(c);

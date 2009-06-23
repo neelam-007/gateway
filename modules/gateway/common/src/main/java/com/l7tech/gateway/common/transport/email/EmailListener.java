@@ -40,8 +40,12 @@ public class EmailListener extends NamedEntityImp {
     private String properties;
 
     public static final String PREFIX = "com.l7tech.server.email.prop";
-    public static final String PROP_IS_HARDWIRED_SERVICE = PREFIX + ".hardwired.service.bool";
-    public static final String PROP_HARDWIRED_SERVICE_ID = PREFIX + ".hardwired.service.id";
+
+    // Due to a bug, these properties were incorrect. Since this has been shipped, we
+    // now use "JMS" properties for email listeners. Any new properties should use the
+    // above prefix for email props.
+    public static final String PROP_IS_HARDWIRED_SERVICE = "com.l7tech.server.jms.prop.hardwired.service.bool";
+    public static final String PROP_HARDWIRED_SERVICE_ID = "com.l7tech.server.jms.prop.hardwired.service.id";
 
     public EmailListener() {
         super();

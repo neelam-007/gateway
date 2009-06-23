@@ -90,6 +90,7 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
      * @param jmsRequest The request message to process
      * @throws com.l7tech.server.transport.jms.JmsRuntimeException if an error occurs
      */
+    @Override
     public void onMessage( final JmsEndpointConfig endpointCfg,
                            final JmsBag bag,
                            final boolean transacted,
@@ -162,36 +163,42 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
             }
 
             try {
+                final long[] hardwiredserviceOidHolder = new long[]{0};
+                try {
+                    String tmp = props.getProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE);
+                    if (tmp != null) {
+                        if (Boolean.parseBoolean(tmp)) {
+                            tmp = props.getProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID);
+                            hardwiredserviceOidHolder[0] = Long.parseLong(tmp);
+                        }
+                    }
+                } catch (Exception e) {
+                    _logger.log(Level.WARNING, "Error processing hardwired service", e);
+                }
+
                 com.l7tech.message.Message request = new com.l7tech.message.Message();
                 request.initialize(stashManagerFactory.createStashManager(), ctype, requestStream );
                 request.attachJmsKnob(new JmsKnob() {
+                    @Override
                     public boolean isBytesMessage() {
                         return jmsRequest instanceof BytesMessage;
                     }
+                    @Override
                     public Map<String, Object> getJmsMsgPropMap() {
                         return reqJmsMsgProps;
                     }
+                    @Override
                     public String getSoapAction() {
                         return soapAction;
+                    }
+                    @Override
+                    public long getServiceOid() {
+                        return hardwiredserviceOidHolder[0];
                     }
                 });
 
                 final PolicyEnforcementContext context = new PolicyEnforcementContext(request,
                                                                                       new com.l7tech.message.Message());
-
-                try {
-
-                    String tmp = props.getProperty(JmsConnection.PROP_IS_HARDWIRED_SERVICE);
-                    if (tmp != null) {
-                        if (Boolean.parseBoolean(tmp)) {
-                            tmp = props.getProperty(JmsConnection.PROP_HARDWIRED_SERVICE_ID);
-                            long hardwiredserviceid = Long.parseLong(tmp);
-                            context.setHardwiredService(hardwiredserviceid);
-                        }
-                    }
-                } catch (Exception e) {
-                    _logger.log(Level.WARNING, "problem testing for hardwired service", e);
-                }
 
                 String faultMessage = null;
                 String faultCode = null;

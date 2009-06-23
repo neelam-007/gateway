@@ -84,7 +84,6 @@ public class PolicyEnforcementContext extends ProcessingContext<AuthenticationCo
     private long routingEndTime;
     private long routingTotalTime;
     private AssertionStatus policyoutcome;
-    private Long hardwiredService = null;
     private static ThreadLocal<PolicyEnforcementContext> instanceHolder = new ThreadLocal<PolicyEnforcementContext>();
     private List<MessageContextMapping> mappings = new ArrayList<MessageContextMapping>(5);
     private boolean requestWasCompressed;
@@ -663,15 +662,6 @@ public class PolicyEnforcementContext extends ProcessingContext<AuthenticationCo
 
     public void setPolicyResult(AssertionStatus policyoutcome) {
         this.policyoutcome = policyoutcome;
-    }
-
-
-    public Long getHardwiredService() {
-        return hardwiredService;
-    }
-
-    public void setHardwiredService(Long hardwiredService) {
-        this.hardwiredService = hardwiredService;
     }
 
     public List<MessageContextMapping> getMappings() {
