@@ -228,6 +228,18 @@ public class XmlUtilTest {
         assertEquals(nsmap.get("sec2"), "http://schemas.xmlsoap.org/ws/2002/12/secext");
     }
 
+    /**
+     * Test that redeclared namespace prefixes are handled correctly 
+     */
+    @Test
+    public void testFindNamespacesInScope() throws Exception {
+        Document test = XmlUtil.parse( "<a xmlns='http://a'><b xmlns:b='http://b'><c xmlns:b='http://c'><d><e xmlns=''></e></d></c></b></a>" );
+        Element eElement = (Element) test.getDocumentElement().getElementsByTagNameNS( "", "e" ).item( 0 );
+        Map<String,String> nsMap = DomUtils.getNamespaceMap( eElement );
+        Assert.assertEquals( "b namespace", "http://c", nsMap.get("b"));
+        Assert.assertEquals( "Default namespace", "", nsMap.get(""));
+    }
+
     @Test
     public void testStripWhitespace() throws Exception {
         Document d = XmlUtil.stringToDocument(DOC_WITH_SEC_HEADERS);

@@ -61,40 +61,6 @@ public class DomUtils {
     }
 
     /**
-     * Generates a Map of the namespace URIs and prefixes of the specified Node and all of its ancestor Elements.
-     * <p>
-     * URIs that were default namespaces will get a prefix starting with "default".
-     * TODO this needs to be merged with getNamespaceMap()
-     * @param n the node from which to gather namespaces
-     * @return a Map of namespace URIs to prefixes.
-     */
-    public static Map getAncestorNamespaces(Node n) {
-        Node current = n;
-        int dflt = 0;
-        Map<String,String> namespaces = new HashMap<String,String>();
-        while (current != null) {
-            if (current instanceof Element) {
-                Element el = (Element)current;
-                NamedNodeMap attributes = el.getAttributes();
-                for ( int i = 0; i < attributes.getLength(); i++ ) {
-                    Attr attr = (Attr)attributes.item(i);
-                    String name = attr.getName();
-                    String uri = attr.getValue();
-                    String prefix = null;
-                    if ("xmlns".equals(name)) {
-                        prefix = "default" + ++dflt;
-                    } else if (name.startsWith("xmlns:")) {
-                        prefix = name.substring(6);
-                    }
-                    if (prefix != null) namespaces.put(uri, prefix);
-                }
-            }
-            current = current.getParentNode();
-        }
-        return namespaces;
-    }
-
-    /**
      * Finds the first child {@link Element} of a parent {@link Element}
      * with the specified name that is in the specified namespace.
      *<p>
@@ -768,9 +734,11 @@ public class DomUtils {
     }
 
     /**
-     * Get the map of all namespace declrations in scope for the current element.  If there is a default
-     * namespace in scope, it will have the empty string "" as its key.
-     * TODO this needs to be merged with getAncestorNamespaces()
+     * Get the map of all namespace declarations in scope for the current element.
+     *
+     * If there is a default namespace in scope, it will have the empty string
+     * "" as its key.
+     *
      * @param element the element whose in-scope namespace declrations will be extracted.  Must not be null.
      * @return The map of namespace declarations in scope for this elements immediate children.
      */
@@ -1013,7 +981,9 @@ public class DomUtils {
     private static final Pattern MATCH_QNAME = Pattern.compile("^\\s*([^:\\s]+):(\\S+?)\\s*$");
 
     /**
-     * Add the specified element's namespace declarations to the specified map(prefix -> namespace).
+     * Add the specified element's namespace declarations to the specified map(prefix -> namespace)
+     * if they do not already exist.
+     * 
      * The default namespace is represented with the prefix "" (empty string).
      */
     private static void addToNamespaceMap(Element element, Map<String,String> nsmap) {
@@ -1021,10 +991,13 @@ public class DomUtils {
         int numAttr = attrs.getLength();
         for (int i = 0; i < numAttr; ++i) {
             Attr attr = (Attr)attrs.item(i);
-            if ("xmlns".equals(attr.getName()))
-                nsmap.put("", attr.getValue()); // new default namespace
-            else if ("xmlns".equals(attr.getPrefix())) // new namespace decl for prefix
-                nsmap.put(attr.getLocalName(), attr.getValue());
+            if ("xmlns".equals(attr.getName())) {
+                if ( !nsmap.containsKey(""))
+                    nsmap.put("", attr.getValue()); // new default namespace
+            } else if ("xmlns".equals(attr.getPrefix())) { // new namespace decl for prefix
+                if ( !nsmap.containsKey(attr.getLocalName()))
+                    nsmap.put(attr.getLocalName(), attr.getValue());
+            }
         }
     }
     /**
