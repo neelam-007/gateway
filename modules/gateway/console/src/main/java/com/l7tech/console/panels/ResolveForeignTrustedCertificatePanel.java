@@ -81,7 +81,7 @@ public class ResolveForeignTrustedCertificatePanel extends WizardStepPanel {
 
         selectCert.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                CertSearchPanel sp = new CertSearchPanel(owner);
+                CertSearchPanel sp = new CertSearchPanel(owner, false, true);
                 sp.addCertListener(certListener);
                 sp.pack();
                 Utilities.centerOnScreen(sp);
