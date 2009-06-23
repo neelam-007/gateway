@@ -25,10 +25,10 @@ import java.util.regex.Pattern;
  *
  * Also resolves using the HasServiceOid message facet.
  */
-public class OriginalUrlServiceOidResolver extends NameValueServiceResolver<String> {
+public class ServiceOidResolver extends NameValueServiceResolver<String> {
     private final Pattern[] regexPatterns;
 
-    public OriginalUrlServiceOidResolver(final ApplicationContext spring) {
+    public ServiceOidResolver(final ApplicationContext spring) {
         super(spring);
         List<Pattern> compiled = new ArrayList<Pattern>();
 

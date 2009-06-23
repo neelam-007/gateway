@@ -137,7 +137,7 @@ public class ServiceCache
         ApplicationContext spring = getApplicationContext();
 
         activeResolvers = new ServiceResolver[] {
-            new OriginalUrlServiceOidResolver(spring),
+            new ServiceOidResolver(spring),
             new UriResolver(spring),
             new SoapActionResolver(spring),
             new UrnResolver(spring),
