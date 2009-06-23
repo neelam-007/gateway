@@ -56,7 +56,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 assertion.setRecipientTrustedCertificateName( lookupCertificateTextField.getText().trim() );
             }
         } else {
-            assertion.setWsSecurityVersion(WsSecurityVersion.WSS10);
+            assertion.setWsSecurityVersion(null);
             assertion.setRecipientTrustedCertificateOid( 0L );
             assertion.setRecipientTrustedCertificateName( null );
         }
