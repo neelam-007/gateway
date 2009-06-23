@@ -92,11 +92,17 @@ public class PrivateKeysComboBox extends JComboBox {
 
     private void populate() {
         try {
-            final java.util.List<KeystoreFileEntityHeader> keystores = getTrustedCertAdmin().findAllKeystores(_includeHardwareKeystore);
+            final TrustedCertAdmin certAdmin = getTrustedCertAdmin();
+            if (certAdmin == null) {
+                _logger.log(Level.WARNING, "Unable to populate PrivateKeysComboBox: No TrustedCertAdmin available (not connected to Gateway?)");
+                setModel(new DefaultComboBoxModel(new PrivateKeyItem[0]));
+                return;
+            }
+            final java.util.List<KeystoreFileEntityHeader> keystores = certAdmin.findAllKeystores(_includeHardwareKeystore);
             final List<PrivateKeyItem> items = new ArrayList<PrivateKeyItem>();
             items.add(ITEM_DEFAULT_SSL);
             for (KeystoreFileEntityHeader keystore : keystores) {
-                for (SsgKeyEntry entry : getTrustedCertAdmin().findAllKeys(keystore.getOid())) {
+                for (SsgKeyEntry entry : certAdmin.findAllKeys(keystore.getOid())) {
                     items.add(new PrivateKeyItem(keystore.getOid(), keystore.getName(), entry.getAlias(), entry.getCertificate().getPublicKey().getAlgorithm()));
                 }
             }
@@ -206,5 +212,9 @@ public class PrivateKeysComboBox extends JComboBox {
 
     public void selectDefaultSsl() {
         setSelectedIndex(0);
+    }
+
+    public static void main(String[] args) {
+        new PrivateKeysComboBox();
     }
 }
