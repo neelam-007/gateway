@@ -130,6 +130,8 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 doSelectRecipientTrustedCertificate();
             }
         } );
+
+        lookupCertificateTextField.getDocument().addDocumentListener( stateUpdateListener );
     }
 
     @Override
@@ -178,6 +180,7 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
                 selectedCertificateNameTextField.setText( cert.getName() );
                 selectedCertificateSubjectTextField.setText( cert.getSubjectDn() );
                 selectedCertificateIssuerTextField.setText( cert.getIssuerDn() );
+                updateState();
             }
         });
         sp.pack();
@@ -190,6 +193,16 @@ public class WsSecurityPropertiesDialog extends AssertionPropertiesOkCancelSuppo
         Utilities.setEnabled(applySecuritySettingsPanel, enableApplySettings );
 
         boolean enableSelection = selectedRecipientCertificateRadioButton.isSelected();
-        selectButton.setEnabled( !isReadOnly() && enableSelection );        
+        selectButton.setEnabled( !isReadOnly() && enableSelection );
+
+        boolean enableCertName = namedRecipientCertificateRadioButton.isSelected();
+        lookupCertificateTextField.setEnabled( !isReadOnly() && enableCertName );
+
+        boolean canOk =
+                (namedRecipientCertificateRadioButton.isSelected() && !lookupCertificateTextField.getText().trim().isEmpty()) ||
+                (selectedRecipientCertificateRadioButton.isSelected() && !selectedCertificateNameTextField.getText().isEmpty()) ||
+                defaultRecipientCertificateRadioButton.isSelected();
+
+        getOkButton().setEnabled( !isReadOnly() && canOk );
     }
 }
