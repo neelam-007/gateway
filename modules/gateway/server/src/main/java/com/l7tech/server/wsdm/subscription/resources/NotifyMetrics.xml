@@ -6,7 +6,8 @@
                xmlns:muws1="http://docs.oasis-open.org/wsdm/muws1-2.xsd"
                xmlns:muws2="http://docs.oasis-open.org/wsdm/muws2-2.xsd"
                xmlns:mows="http://docs.oasis-open.org/wsdm/mows-2.xsd"
-               xmlns:qosm="http://metadata.dod.mil/mdr/ns/netops/esm/qosm">
+               xmlns:qosm="http://metadata.dod.mil/mdr/ns/netops/esm/qosm"
+               xmlns:mowse="http://docs.oasis-open.org/wsdm/mowse-2.xml">
   <soap:Header>
     <wsa:Action>http://docs.oasis-open.org/wsn/bw-2/NotificationConsumer/Notify</wsa:Action>
     <wsa:To>^$^$^_WSA_TARGET_^$^$^</wsa:To>

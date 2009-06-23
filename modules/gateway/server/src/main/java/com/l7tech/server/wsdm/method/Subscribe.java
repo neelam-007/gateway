@@ -17,6 +17,7 @@ import java.net.URL;
 import java.net.MalformedURLException;
 import java.text.MessageFormat;
 import java.util.Date;
+import java.util.Map;
 
 /**
  * Abstraction for the wsnt:Subscribe method
@@ -28,15 +29,13 @@ import java.util.Date;
  * Date: Nov 2, 2007<br/>
  */
 public class Subscribe extends ESMMethod {
-    private Element subscribeEl;
     private String callBackAddress;
     private long termination;
     private boolean terminationParsed;
     private String topicValue;
     private String serviceId;
 
-    private Subscribe(Element subscribeEl) throws GenericNotificationExceptionFault {
-        this.subscribeEl = subscribeEl;
+    private Subscribe( final Element subscribeEl ) throws GenericNotificationExceptionFault {
         try {
             // extract ConsumerReference/Address/Text()
             Element consumerReferenceEl = XmlUtil.findOnlyOneChildElementByName(subscribeEl, Namespaces.WSNT, "ConsumerReference");
@@ -89,7 +88,7 @@ public class Subscribe extends ESMMethod {
             if (topicExpressionEl == null) {
                 throw new InvalidMessageContentExpressionFault("wsnt:TopicExpression element must be present");
             }
-            topicValue = XmlUtil.getTextValue(topicExpressionEl);
+            topicValue = getStandardizeQName(XmlUtil.getTextValue(topicExpressionEl), XmlUtil.getNamespaceMap(topicExpressionEl));
             if (topicValue == null || topicValue.length() < 1) {
                 throw new InvalidMessageContentExpressionFault("wsnt:TopicExpression must contain a value");
             }
@@ -124,6 +123,14 @@ public class Subscribe extends ESMMethod {
         return terminationParsed;
     }
 
+    /**
+     * Get the topic value.
+     *
+     * <p>If the QName used a non-default prefix this will have been modified
+     * to the "standard" namespace prefix for the namespace.</p> 
+     *
+     * @return The value.
+     */
     public String getTopicValue() {
         return topicValue;
     }
@@ -137,7 +144,7 @@ public class Subscribe extends ESMMethod {
     }
 
     public String respond(String thisURL, String subscriptionid) {
-        String output =
+        return
         "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\" xmlns:wsa=\"" + Namespaces.WSA + "\">\n" +
         "  <soap:Header>\n" +
         "    <wsa:Action>\n" +
@@ -161,7 +168,31 @@ public class Subscribe extends ESMMethod {
         "    </wsnt:SubscribeResponse>\n" +
         "  </soap:Body>\n" +
         "</soap:Envelope>";
-        return output;
+    }
+
+    private String getStandardizeQName( final String qname, final Map<String,String> namespaces ) {
+        String canonical = qname;
+
+        if ( canonical != null ) {
+            String[] parts = canonical.split(":",2);
+            if ( parts.length == 2 ) {
+                String namespace = namespaces.get( parts[0] );
+                if ( namespace != null ) {
+                    if ( Namespaces.MOWSE.equals(namespace) ) {
+                        canonical = "mowse:" + parts[1];
+                    } else if ( Namespaces.MUWS_EV.equals(namespace) ) {
+                        canonical = "muws-ev:" + parts[1];
+                    } else if ( parts[0].equals( "mowse" ) ||
+                                parts[0].equals( "muws-ev" ) ) {
+                        // This prevents use of the "standard" prefixes
+                        // with other namespaces
+                        canonical = parts[1];
+                    }
+                }
+            }
+        }
+
+        return canonical;
     }
 }
 
