@@ -201,7 +201,8 @@ public class FolderAdminImpl implements FolderAdmin {
                 throw exceptionBuilder.call("Parent folder cannot be the same as folder id", null);
 
             if (referenceFolderDepth > targetMaxDepth)
-                throw exceptionBuilder.call("The maximum folder depth is " + MAX_FOLDER_DEPTH + ".\nTarget folder can accept a folder hierarchy at most " + targetMaxDepth + " levels deep.", null);
+                throw exceptionBuilder.call("The maximum folder depth is " + MAX_FOLDER_DEPTH + ".\nTarget folder can accept a folder hierarchy at most "
+                    + targetMaxDepth + (targetMaxDepth == 1? " level":" levels") + " deep.", null);
         }
     }
 }
