@@ -123,6 +123,8 @@ public class LunaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements Ssg
     @Override
     protected <OUT> Future<OUT> mutateKeystore(Runnable transactionCallback, Callable<OUT> mutator) throws KeyStoreException {
         // Luna doesn't use the DB, so just run in foreground and return result
+        if (transactionCallback != null)
+            transactionCallback.run();
         final FutureTask<OUT> task = new FutureTask<OUT>(mutator);
         task.run();
         return task;
