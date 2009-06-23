@@ -27,6 +27,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import javax.crypto.SecretKey;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -413,17 +414,22 @@ public class WssRoundTripTest {
         byte[] decoratedMessage = IOUtils.slurpStream(c.messageMessage.getMimeKnob().getEntireMessageBodyAsInputStream());
 
 
-        // prepare fake request and wss result
-        Message fakeRequest = new Message();
+        // prepare fake request and wss result, to accomodate the signature confirmation expectations
+        final Message fakeRequest = new Message();
         SecurityKnob fakeSK = fakeRequest.getSecurityKnob();
-        fakeSK.setProcessorResult(new ProcessorResultWrapper(fakeSK.getProcessorResult()) {
+        fakeSK.setDecorationResult(new WssDecorator.DecorationResult() {
             @Override
-            public List<String> getValidatedSignatureValues() {
-                return new ArrayList<String>(td.req.getSignatureConfirmations());
-            }
+            public String getEncryptedKeySha1() { return null; }
+
             @Override
-            public EncryptedElement[] getElementsThatWereEncrypted() {
-                return new EncryptedElement[0];
+            public SecretKey getEncryptedKeySecretKey() { return null; }
+
+            @Override
+            public Map<String, Boolean> getSignatures() {
+                Map<String, Boolean> signatures = new HashMap<String, Boolean>();
+                for(String sig : td.req.getSignatureConfirmations())
+                    signatures.put(sig, false);
+                return signatures;
             }
         });
 
@@ -516,17 +522,19 @@ public class WssRoundTripTest {
 
         // If there were supposed to be SignatureConfirmation elements, make sure they are there
         SignatureConfirmation confirmation = r.getSignatureConfirmation();
-        assertNotSame( Arrays.toString(confirmation.getErrors().toArray()),
-                       SignatureConfirmation.Status.INVALID, confirmation.getStatus() );
-        if (!td.req.getSignatureConfirmations().isEmpty()) {
+        SignatureConfirmation.Status confirmationStatus = confirmation.getStatus();
 
+        assertNotSame( Arrays.toString(confirmation.getErrors().toArray()), SignatureConfirmation.Status.INVALID, confirmationStatus);
+
+        Set<String> signaturesInRequest = fakeRequest.getSecurityKnob().getDecorationResult().getSignatures().keySet();
+        if (confirmationStatus == SignatureConfirmation.Status.CONFIRMED) {
             Set<String> gotConfirmationValues = confirmation.getConfirmedValues().keySet();
-
             for (String confirmedValue : gotConfirmationValues)
                 assertTrue(signedDomElements.contains(confirmation.getElement(confirmedValue)));
-
-            for (String expectedConfValue : td.req.getSignatureConfirmations())
+            for (String expectedConfValue : signaturesInRequest)
                 assertTrue("Expect SignatureConfirmation for: " + expectedConfValue, gotConfirmationValues.contains(expectedConfValue));
+        } else  {
+            assertTrue("No signatures from the request were confirmed: " + signaturesInRequest, signaturesInRequest.isEmpty());
         }
 
         if (td.req.isProtectTokens()) {

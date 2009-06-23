@@ -3,18 +3,18 @@ package com.l7tech.server.util;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.security.xml.SecurityTokenResolver;
-import com.l7tech.security.token.SigningSecurityToken;
-import com.l7tech.security.token.SignedElement;
-import com.l7tech.security.token.ParsedElement;
-import com.l7tech.security.token.SecurityToken;
+import com.l7tech.security.token.*;
 import com.l7tech.message.Message;
 import com.l7tech.message.SecurityKnob;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ArrayUtils;
+import com.l7tech.util.Functions;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.MessageProcessingMessages;
+import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.audit.Auditor;
 import com.l7tech.policy.assertion.IdentityTarget;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.identity.User;
@@ -106,11 +106,17 @@ public class WSSecurityProcessorUtils {
         }
 
         // Validate that the required elements are signed
+        List<Element> signed = Functions.map(Arrays.asList(signedElements), new Functions.Unary<Element, SignedElement>() {
+            @Override
+            public Element call(SignedElement signedElement) {
+                return signedElement.asElement();
+            }
+        });
         for ( ParsedElement element : elementsToValidate ) {
-            if (!ArrayUtils.contains( signedElements, element ) ) {
+            if ( ! signed.contains(element.asElement()) ) {
                 valid = false;
                 break;
-            }            
+            }
         }
 
         return valid;
@@ -451,5 +457,36 @@ public class WSSecurityProcessorUtils {
         }
 
         return signingSecurityToken;
+    }
+
+    /**
+     * Processes the signature confirmations for this message, as extracted in the
+     * SignatureConfirmation result by the WSS Processor.
+     *
+     * @return the full list of elements, including the signature confirmations, for which the signature must be checked
+     */
+    public static ParsedElement[] processSignatreConfirmations(SecurityKnob securityKnob, ProcessorResult wssResults, ParsedElement[] elements) {
+        ParsedElement[] elementsToCheck = elements;
+        SignatureConfirmation.Status status = wssResults.getSignatureConfirmation().getStatus();
+
+        if (! securityKnob.isSignatureConfirmationValidated()) {
+            securityKnob.setSignatureConfirmationValidated(true);
+            if (status == SignatureConfirmation.Status.CONFIRMED) {
+                List<ParsedElement> newElements = new ArrayList<ParsedElement>(Arrays.asList(elementsToCheck));
+                newElements.addAll(wssResults.getSignatureConfirmation().getConfirmationElements().values());
+                elementsToCheck = newElements.toArray(new ParsedElement[newElements.size()]);
+            }
+        }
+
+        return elementsToCheck;
+    }
+
+    public static boolean isValidSignatureConfirmations(SignatureConfirmation signatureConfirmation, Auditor auditor) {
+        if (signatureConfirmation.getStatus() == SignatureConfirmation.Status.INVALID) {
+            auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_SIGNATURE_CONFIRMATION_FAILED, Arrays.toString(signatureConfirmation.getErrors().toArray()));
+            return false;
+        }
+
+        return true;
     }
 }

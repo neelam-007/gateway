@@ -17,6 +17,7 @@ import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.token.SignatureConfirmation;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.prov.JceProvider;
@@ -986,8 +987,7 @@ public class PolicyProcessingTest extends TestCase {
                 Assert.assertNotNull( "Response message should have WSS processing results", result );
                 Assert.assertNotNull( "Response message should have signature confirmation", result.getSignatureConfirmation() );
                 System.out.println( result.getSignatureConfirmation().getErrors() );
-// TODO : This should work
-//                Assert.assertTrue( "Signature confirmation should not have errors", result.getSignatureConfirmation().getErrors().isEmpty() );
+                Assert.assertTrue( "Signature confirmation should not have errors", result.getSignatureConfirmation().getStatus() != SignatureConfirmation.Status.INVALID );
             }
         });
 
@@ -1051,13 +1051,14 @@ public class PolicyProcessingTest extends TestCase {
             @Override
             public void call( final PolicyEnforcementContext context ) {
                 // Test that the inbound response was validated
-                final ProcessorResult result = context.getResponse().getSecurityKnob().getProcessorResult();
-// TODO : This probably won't work since the reponse has been redecorated, if so it can be removed. Is there another way to check that validation was performed?
-//                Assert.assertNotNull( "Response message should have WSS processing results", result );
-//                Assert.assertNotNull( "Response message should have signature confirmation", result.getSignatureConfirmation() );
-//                System.out.println( result.getSignatureConfirmation().getErrors() );
-// TODO : This should work
-//                Assert.assertTrue( "Signature confirmation should not have errors", result.getSignatureConfirmation().getErrors().isEmpty() );
+                SecurityKnob responseSK = context.getResponse().getSecurityKnob();
+                final ProcessorResult result = responseSK.getProcessorResult();
+
+                Assert.assertNotNull( "Response message should have WSS processing results", result );
+                Assert.assertTrue( "Validation of signature confirmations was not performed for the message.", responseSK.isSignatureConfirmationValidated() );
+                System.out.println( result.getSignatureConfirmation().getErrors() );
+                Assert.assertTrue( "Signature confirmation validation failed: " + result.getSignatureConfirmation().getErrors(), 
+                                   result.getSignatureConfirmation().getStatus() != SignatureConfirmation.Status.INVALID );
 
                 // Test that the outbound response is confirmed
                 try {

@@ -6,6 +6,7 @@ package com.l7tech.message;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import org.xml.sax.SAXException;
@@ -102,4 +103,28 @@ public interface SecurityKnob extends MessageKnob {
      * Sets the WSS version that the policy associates with a message target.
      */
     void setPolicyWssVersion(WsSecurityVersion version);
+
+    /**
+     * Store the decoration results for this Message, if it has been decorated.
+     */
+    void setDecorationResult(WssDecorator.DecorationResult dr);
+
+    /**
+     * Obtain the decoration results for this Message, if it was undecorated.
+     *
+     * @return the DecorationResult if the Message was decorated, or null otherwise
+     */
+    WssDecorator.DecorationResult getDecorationResult();
+
+    /**
+     * @return true if signature confirmations were validated for this message,
+     *         false if validation was not (yet) performed
+     */
+    boolean isSignatureConfirmationValidated();
+
+    /**
+     * Sets the status for signature confirmation validation.
+     * Should be called by assertions that process and validate signature confirmations.
+     */
+    void setSignatureConfirmationValidated(boolean validated);
 }

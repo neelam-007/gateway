@@ -98,11 +98,14 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
 
         if ( assertion.isSignatureRequired() ) {
             final Collection<ParsedElement> elements = ProcessorResultUtil.getParsedElementsForNode( wssTimestamp.asElement(), processorResult.getElementsThatWereSigned() );
+            ParsedElement[] elementsToCheck = WSSecurityProcessorUtils.processSignatreConfirmations(msg.getSecurityKnob(), processorResult, elements.toArray(new ParsedElement[elements.size()]));
             if ( new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
-                if ( elements.isEmpty() || !WSSecurityProcessorUtils.isValidSingleSigner(
+                if ( elements.isEmpty() ||
+                    ! WSSecurityProcessorUtils.isValidSignatureConfirmations(processorResult.getSignatureConfirmation(), auditor) ||
+                    ! WSSecurityProcessorUtils.isValidSingleSigner(
                         authContext,
                         processorResult,
-                        elements.toArray(new ParsedElement[elements.size()]),
+                        elementsToCheck,
                         requireCredentialSigningToken ) ) {
                     auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_NOT_SIGNED, what);
                     return getBadMessageStatus();
@@ -110,11 +113,12 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
             } else {
                 // Ensure signed with the required identity
                 if ( elements.isEmpty() ||
-                     !WSSecurityProcessorUtils.isValidSigningIdentity(
+                     ! WSSecurityProcessorUtils.isValidSignatureConfirmations(processorResult.getSignatureConfirmation(), auditor) ||
+                     ! WSSecurityProcessorUtils.isValidSigningIdentity(
                              authContext,
                              assertion.getIdentityTarget(),
                              processorResult,
-                             elements.toArray(new ParsedElement[elements.size()]) ) ) {
+                             elementsToCheck )) {
                     auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_NOT_SIGNED, what);
                     return getBadMessageStatus();
                 }
@@ -163,6 +167,10 @@ public class ServerRequireWssTimestamp extends AbstractMessageTargetableServerAs
                 auditor.logAndAudit(AssertionMessages.REQUIRE_WSS_TIMESTAMP_EXPIRED, what);
                 return getBadMessageStatus();
             }
+        }
+
+        if (! WSSecurityProcessorUtils.isValidSignatureConfirmations(processorResult.getSignatureConfirmation(), auditor)) {
+            return AssertionStatus.FALSIFIED;
         }
 
         return AssertionStatus.NONE;

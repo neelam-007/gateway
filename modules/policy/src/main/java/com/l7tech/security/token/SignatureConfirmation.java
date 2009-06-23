@@ -10,7 +10,7 @@ import org.w3c.dom.Element;
 /**
  * WSS Processor's result for SignatureConfirmation.
  */
-public interface SignatureConfirmation  {
+public interface SignatureConfirmation {
 
     enum Status {
         /**
@@ -33,7 +33,7 @@ public interface SignatureConfirmation  {
      */
     void addConfirmationElement(Element e, boolean strict);
 
-    public Map<String, Element> getConfirmationElements();
+    public Map<String, ParsedElement> getConfirmationElements();
 
     /**
      * @return the Element that contained the provided @param signatureConfirmation
@@ -43,7 +43,7 @@ public interface SignatureConfirmation  {
     /**
      * Records the signing tokens which signed the validated signature confirmations.
      */
-    public void addSigningToken(String signatureConfirmation, Set<SigningSecurityToken> newTokens);
+    public void addSignedElement(String signatureConfirmation, Set<SignedElement> newSigned);
 
     /**
      * @return true if a value-less SignatureConfirmation was found in the message, false otherwise
@@ -63,7 +63,7 @@ public interface SignatureConfirmation  {
     /**
      * @return a list of successfully validated SignatureConfirmation values and their signing tokens
      */
-    Map<String,List<SigningSecurityToken>> getConfirmedValues();
+    Map<String,List<SignedElement>> getConfirmedValues();
 
     /**
      * @return SignatureConfirmation validation status

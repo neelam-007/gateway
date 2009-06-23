@@ -1,7 +1,8 @@
 package com.l7tech.security.xml.processor;
 
 import com.l7tech.security.token.SignatureConfirmation;
-import com.l7tech.security.token.SigningSecurityToken;
+import com.l7tech.security.token.ParsedElement;
+import com.l7tech.security.token.SignedElement;
 import org.w3c.dom.Element;
 
 import java.util.*;
@@ -14,10 +15,10 @@ class SignatureConfirmationImpl implements SignatureConfirmation {
     private static final String VALUE_ATTRIBUTE_NAME = "Value";
 
     // signature confirmation values -> ConfirmedSignature element
-    private final Map<String,Element> confirmationElements = new HashMap<String, Element>();
+    private final Map<String, ParsedElement> confirmationElements = new HashMap<String, ParsedElement>();
 
     // validated signature confirmations -> signing tokens
-    private final Map<String,List<SigningSecurityToken>> signingTokens = new HashMap<String, List<SigningSecurityToken>>();
+    private final Map<String,List<SignedElement>> signedElements = new HashMap<String, List<SignedElement>>();
 
     // "strict" SignatureConfirmation processing errors; will fail signature confirmation verification when done in strict mode
     private final List<String> errors = new ArrayList<String>();
@@ -33,30 +34,31 @@ class SignatureConfirmationImpl implements SignatureConfirmation {
             }
             hasNullValue = true;
         }
-        confirmationElements.put(e.getAttribute(VALUE_ATTRIBUTE_NAME), e);
+        confirmationElements.put(e.getAttribute(VALUE_ATTRIBUTE_NAME), new ParsedElementImpl(e));
     }
 
     @Override
-    public Map<String, Element> getConfirmationElements() {
+    public Map<String, ParsedElement> getConfirmationElements() {
         return confirmationElements;
     }
 
     @Override
     public Element getElement(String signatureConfirmation) {
-        return confirmationElements.get(signatureConfirmation);
+        ParsedElement parsedElement = confirmationElements.get(signatureConfirmation);
+        return parsedElement == null ? null : parsedElement.asElement();
     }
 
     @Override
-    public void addSigningToken(String signatureConfirmation, Set<SigningSecurityToken> newTokens) {
+    public void addSignedElement(String signatureConfirmation, Set<SignedElement> newSigned) {
         if (! confirmationElements.containsKey(signatureConfirmation))
             throw new IllegalArgumentException("Unknown signature confirmation: " + signatureConfirmation);
 
-        List<SigningSecurityToken> tokens = signingTokens.get(signatureConfirmation);
-        if (tokens == null) {
-            tokens = new ArrayList<SigningSecurityToken>();
-            signingTokens.put(signatureConfirmation, tokens);
+        List<SignedElement> signed = signedElements.get(signatureConfirmation);
+        if (signed == null) {
+            signed = new ArrayList<SignedElement>();
+            signedElements.put(signatureConfirmation, signed);
         }
-        tokens.addAll(newTokens);
+        signed.addAll(newSigned);
     }
 
     @Override
@@ -65,11 +67,11 @@ class SignatureConfirmationImpl implements SignatureConfirmation {
     }
 
     @Override
-    public Map<String, List<SigningSecurityToken>> getConfirmedValues() {
+    public Map<String, List<SignedElement>> getConfirmedValues() {
         if (getStatus() != Status.CONFIRMED)
             throw new IllegalStateException("No signature confirmation values can be retrieved if their validation failed.");
         else
-            return signingTokens;
+            return signedElements;
     }
 
     @Override

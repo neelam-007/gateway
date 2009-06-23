@@ -12,6 +12,7 @@ import com.l7tech.message.Message;
 import javax.crypto.SecretKey;
 import java.security.GeneralSecurityException;
 import java.io.IOException;
+import java.util.Map;
 
 import org.xml.sax.SAXException;
 
@@ -46,5 +47,12 @@ public interface WssDecorator {
          * @return the SecretKey encoded into an included EncryptedKey, or null if no EncryptedKey was generated.
          */
         SecretKey getEncryptedKeySecretKey();
+
+        /**
+         * Retrieves the signature values added by the decorator and their encryption status in the decorated message.
+         *
+         * @return A map with signature values as key; a true value for a signature means the signature value was encrypted in the decorated message.
+         */
+        Map<String,Boolean> getSignatures();
     }
 }

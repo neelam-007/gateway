@@ -75,6 +75,7 @@ public class WssDecoratorImpl implements WssDecorator {
         SecretKey lastEncryptedKeySecretKey = null;
         AttachmentEntityResolver attachmentResolver;
         DecorationRequirements dreq;
+        Map<String,Boolean> signatures = new HashMap<String, Boolean>();
 
         String getBase64EncodingTypeUri() {
             return SoapConstants.SECURITY_NAMESPACE.equals(nsf.getWsseNs())
@@ -463,6 +464,11 @@ public class WssDecoratorImpl implements WssDecorator {
                 dreq.isSuppressSamlStrTransform());
             if (xencDesiredNextSibling == null)
                 xencDesiredNextSibling = signature;
+
+            NodeList sigValues = signature.getElementsByTagNameNS(SoapConstants.DIGSIG_URI, "SignatureValue");
+            for(int i=0; i < sigValues.getLength(); i++) {
+                c.signatures.put(sigValues.item(i).getTextContent(), isEncrypted(cryptList, sigValues.item(i)));
+            }
         }
 
         if (cryptList.size() > 0) {
@@ -662,6 +668,22 @@ public class WssDecoratorImpl implements WssDecorator {
                 soapHeader.getParentNode().removeChild(soapHeader);
         }
 
+        DecorationResult result = produceResult(c);
+        message.getSecurityKnob().setDecorationResult(result);
+        return result;
+    }
+
+    private boolean isEncrypted(Set<Element> cryptList, Node node) {
+        Node n = node;
+        while(n != null) {
+            if (cryptList.contains(n))
+                return true;
+            n = n.getParentNode();
+        }
+        return false;
+    }
+
+    private DecorationResult produceResult(final Context c) {
         return new DecorationResult() {
             private String encryptedKeySha1 = null;
 
@@ -677,6 +699,11 @@ public class WssDecoratorImpl implements WssDecorator {
             @Override
             public SecretKey getEncryptedKeySecretKey() {
                 return c.lastEncryptedKeySecretKey;
+            }
+
+            @Override
+            public Map<String, Boolean> getSignatures() {
+                return c.signatures;
             }
         };
     }

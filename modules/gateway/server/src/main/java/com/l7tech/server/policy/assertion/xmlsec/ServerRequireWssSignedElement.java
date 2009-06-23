@@ -1,11 +1,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.security.token.ParsedElement;
-import com.l7tech.security.token.SigningSecurityToken;
-import com.l7tech.security.token.SignedElement;
-import com.l7tech.security.token.X509SigningSecurityToken;
-import com.l7tech.security.token.SamlSecurityToken;
+import com.l7tech.security.token.*;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.util.CausedIOException;
@@ -64,7 +60,7 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
                 }
             }
         }
-        
+
         return AssertionStatus.NONE;
     }
 
@@ -120,12 +116,14 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
         // the assertion.
         if( elements.length>0 &&
            new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
-            valid = WSSecurityProcessorUtils.isValidSingleSigner(
-                context.getAuthenticationContext(message),
-                wssResults,
-                new ParsedElement[0], // we validate that the right elements are signed elsewhere
-                requireCredentialSigningToken
-            );
+            WSSecurityProcessorUtils.processSignatreConfirmations(message.getSecurityKnob(), wssResults, elements);
+            valid = WSSecurityProcessorUtils.isValidSignatureConfirmations(wssResults.getSignatureConfirmation(), auditor) &&
+                    WSSecurityProcessorUtils.isValidSingleSigner(
+                        context.getAuthenticationContext(message),
+                        wssResults,
+                        new ParsedElement[0], // we validate that the right elements are signed elsewhere
+                        requireCredentialSigningToken
+                    );
         }
 
         return valid;
@@ -142,12 +140,16 @@ public class ServerRequireWssSignedElement extends ServerRequireWssOperation<Req
         // matched. Therefore we only perform this check if there is a target identity for
         // the assertion.
         if ( !new IdentityTarget().equals( new IdentityTarget(assertion.getIdentityTarget() )) ) {
-            return WSSecurityProcessorUtils.isValidSigningIdentity(
-                context.getAuthenticationContext(message),
-                assertion.getIdentityTarget(),
-                wssResults,
-                elements
-            );            
+
+            ParsedElement[] elementsToCheck = WSSecurityProcessorUtils.processSignatreConfirmations(message.getSecurityKnob(), wssResults, elements);
+
+            return WSSecurityProcessorUtils.isValidSignatureConfirmations(wssResults.getSignatureConfirmation(), auditor) &&
+                   WSSecurityProcessorUtils.isValidSigningIdentity(
+                       context.getAuthenticationContext(message),
+                       assertion.getIdentityTarget(),
+                       wssResults,
+                       elementsToCheck
+                   );
         }
 
         return valid;

@@ -268,6 +268,7 @@ public class AssertionMessages extends Messages {
     // ServerRequestWssIntegrity
     public static final M REQUIRE_WSS_SIGNATURE_RESPONSE_NOT_SOAP      = m(5550, Level.FINE, "Response not SOAP; cannot return SignatureConfirmation");
     public static final M REQUIRE_WSS_SIGNATURE_REQUEST_MULTI_SIGNED   = m(5551, Level.WARNING, true, false, "Request has multiple signers; failing");
+    public static final M REQUIRE_WSS_SIGNATURE_CONFIRMATION_FAILED    = m(5552, Level.WARNING, true, false, "Signature confirmation failed: {0}");
 
     // ServerSchemaValidation
     /** @deprecated */ @Deprecated public static final M _UNUSED_SCHEMA_VALIDATION_VALIDATE_REQUEST                = m(5600, Level.FINEST, "Validating request document");

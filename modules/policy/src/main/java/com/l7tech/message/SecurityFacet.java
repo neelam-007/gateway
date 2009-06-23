@@ -5,6 +5,7 @@ package com.l7tech.message;
 
 import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.xml.decorator.DecorationRequirements;
+import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.ProcessorException;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
@@ -25,6 +26,8 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
     private Map<String,DecorationRequirements> decorationRequirementsForAlternateRecipients = new HashMap<String,DecorationRequirements>();
     private ProcessorResultFactory lazyProcessor = null;
     private WsSecurityVersion wsSecurityVersion;
+    private WssDecorator.DecorationResult decorationResult;
+    private boolean signatureConfirmationValidated = false;
 
     /**
      * @param message  the Message that owns this aspect
@@ -143,6 +146,26 @@ public class SecurityFacet extends MessageFacet implements SecurityKnob {
     @Override
     public void setPolicyWssVersion(WsSecurityVersion wsSecurityVersion) {
         this.wsSecurityVersion = wsSecurityVersion;
+    }
+
+    @Override
+    public void setDecorationResult(WssDecorator.DecorationResult dr) {
+        decorationResult = dr;
+    }
+
+    @Override
+    public WssDecorator.DecorationResult getDecorationResult() {
+        return decorationResult;
+    }
+
+    @Override
+    public void setSignatureConfirmationValidated(boolean validated) {
+        this.signatureConfirmationValidated = validated;
+    }
+
+    @Override
+    public boolean isSignatureConfirmationValidated() {
+        return signatureConfirmationValidated;
     }
 
     @Override

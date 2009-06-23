@@ -19,6 +19,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.*;
 import com.l7tech.security.xml.*;
+import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.util.*;
 import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.UnsupportedDocumentFormatException;
@@ -563,94 +564,82 @@ public class WssProcessorImpl implements WssProcessor {
     private void validateSignatureConfirmations() {
 
         Message relatedRequest = message.getRelated(MessageRole.REQUEST);
+        SecurityKnob requestSK = relatedRequest == null ? null : relatedRequest.getSecurityKnob();
+        WssDecorator.DecorationResult requestDecResult = requestSK == null ? null : requestSK.getDecorationResult();
+        Map<String, Boolean> reqSignatures = requestDecResult == null ? null : requestDecResult.getSignatures();
+        WsSecurityVersion requestWssVer = requestSK == null ? null : requestSK.getPolicyWssVersion(); // may be null
 
-        if (relatedRequest == null) { // we're ok only if the message is using WSS 1.0 as far as we can tell
+        if (reqSignatures == null) { // we're ok only if the message is using WSS 1.0 as far as we can tell
             if (isWsse11Seen || ! signatureConfirmation.getConfirmationElements().isEmpty()) {
-                signatureConfirmation.addError("Message has WSS 1.1 elements, but there's no related request to validate SignatureConfirmations against.");
+                signatureConfirmation.addError("Message has WSS 1.1 elements, but related request signatures are not available.");
             }
         } else {
-            SecurityKnob requestSK = relatedRequest.getSecurityKnob();
-            ProcessorResult requestWss = requestSK.getProcessorResult();
-            WsSecurityVersion requestWssVer = requestSK.getPolicyWssVersion(); // may be null
-            if (requestWss == null) {
-                signatureConfirmation.addError("SignatureConfirmations not validated: related request was not WSS processed.");
-            } else {
-                // there is a processed request to validate against
-                switch (signatureConfirmation.getConfirmationElements().size()) {
-                    case 0:
-                        if ((requestWssVer == WsSecurityVersion.WSS11 || isWsse11Seen)) {
-                            if ( strictSignatureConfirmationValidation )
-                                signatureConfirmation.addError("No SignatureConfirmation element found, expected at least one in a WSS 1.1 nessage.");
-                            else if (! requestWss.getValidatedSignatureValues().isEmpty())
-                                signatureConfirmation.addError("No signatures from the request are confirmed.");
-                        }
-                        break;
-
-                    case 1:
-                        if ( signatureConfirmation.hasNullValue() && ! requestWss.getValidatedSignatureValues().isEmpty() &&
-                             (strictSignatureConfirmationValidation && /* || ? */ requestWssVer == WsSecurityVersion.WSS11) )
+            // there is a decorated request to validate against
+            switch (signatureConfirmation.getConfirmationElements().size()) {
+                case 0:
+                    if ((requestWssVer == WsSecurityVersion.WSS11 || isWsse11Seen)) {
+                        if (strictSignatureConfirmationValidation)
+                            signatureConfirmation.addError("No SignatureConfirmation element found, expected at least one in a WSS 1.1 nessage.");
+                        else if (!reqSignatures.isEmpty())
                             signatureConfirmation.addError("No signatures from the request are confirmed.");
+                    }
+                    break;
 
-                    default:
-                        // isWsse11Seen is true at this point
-                        if(requestWssVer == WsSecurityVersion.WSS11 || strictSignatureConfirmationValidation) {
-                            List<String> requestSignatures = requestWss.getValidatedSignatureValues();
-                            Set<String> unconfirmedSignatures = signatureConfirmation.getConfirmationElements().keySet();
-                            unconfirmedSignatures.remove(null); // value-less entry already processed
+                case 1:
+                    if (signatureConfirmation.hasNullValue() && !reqSignatures.isEmpty() &&
+                        (strictSignatureConfirmationValidation || requestWssVer == WsSecurityVersion.WSS11))
+                        signatureConfirmation.addError("No signatures from the request are confirmed.");
 
-                            List<String> extras = new ArrayList<String>();
-                            List<String> missingOrNotSigned = new ArrayList<String>();
-                            List<String> unEncrypted = new ArrayList<String>();
-                            Set<String> encryptedSignatures = new HashSet<String>();
+                default:
+                    // isWsse11Seen is true at this point
+                    if (requestWssVer == WsSecurityVersion.WSS11 || strictSignatureConfirmationValidation) {
+                        Set<String> unconfirmedSignatures = signatureConfirmation.getConfirmationElements().keySet();
+                        unconfirmedSignatures.remove(null);// value-less entry already processed
 
-                            for(String maybeConfirmedValue : unconfirmedSignatures) {
-                                if (! requestSignatures.contains(maybeConfirmedValue))
-                                    extras.add(maybeConfirmedValue);
-                            }
+                        List<String> extras = new ArrayList<String>();
+                        List<String> missingOrNotSigned = new ArrayList<String>();
+                        List<String> unEncrypted = new ArrayList<String>();
 
-                            for (EncryptedElement wasEncrypted : requestWss.getElementsThatWereEncrypted()) {
-                                Element e = wasEncrypted.asElement();
-                                if ( e.getLocalName().equals("Signature") && DomUtils.elementInNamespace(e, new String[] { SoapConstants.DIGSIG_URI } )) {
-                                    encryptedSignatures.add(DomUtils.getTextValue(e));
-                                }
-                            }
+                        for (String maybeConfirmedValue : unconfirmedSignatures) {
+                            if (!reqSignatures.containsKey(maybeConfirmedValue))
+                                extras.add(maybeConfirmedValue);
+                        }
 
-                            for(String requestSig : requestSignatures) {
-                                Set < SigningSecurityToken> tokens;
-                                if ( ! unconfirmedSignatures.contains(requestSig)) {
+                        for (String requestSig : reqSignatures.keySet()) {
+                            Set<SignedElement> signed;
+                            if (!unconfirmedSignatures.contains(requestSig)) {
+                                missingOrNotSigned.add(requestSig);
+                            } else {
+                                signed = getSignedElements(signatureConfirmation.getElement(requestSig));
+                                if (signed.isEmpty())
                                     missingOrNotSigned.add(requestSig);
-                                } else {
-                                    tokens = getSigningTokens(signatureConfirmation.getElement(requestSig));
-                                    if ( tokens.isEmpty() )
-                                        missingOrNotSigned.add(requestSig);
-                                    else
-                                        signatureConfirmation.addSigningToken(requestSig, tokens);
+                                else
+                                    signatureConfirmation.addSignedElement(requestSig, signed);
 
-                                    if (encryptedSignatures.contains(requestSig) && ! wasEncrypted(signatureConfirmation.getElement(requestSig)))
-                                        unEncrypted.add(requestSig);
-                                }
-                            }
-
-                            if (! missingOrNotSigned.isEmpty()) // main validation check
-                                signatureConfirmation.addError("Request signatures not confirmed: " + Arrays.toString(missingOrNotSigned.toArray()));
-
-                            if (strictSignatureConfirmationValidation) {
-                                if ( ! extras.isEmpty())
-                                    signatureConfirmation.addError("Unknown SignatureConfirmations in response: " + Arrays.toString(extras.toArray()));
-                                if ( ! unEncrypted.isEmpty())
-                                    signatureConfirmation.addError("Encrypted signatures in request not encrypted in response: " + Arrays.toString(unEncrypted.toArray()));
+                                if (reqSignatures.get(requestSig) && !wasEncrypted(signatureConfirmation.getElement(requestSig)))
+                                    unEncrypted.add(requestSig);
                             }
                         }
-                } // switch
-            }
+
+                        if (!missingOrNotSigned.isEmpty())// main validation check
+                            signatureConfirmation.addError("Request signatures not confirmed: " + Arrays.toString(missingOrNotSigned.toArray()));
+
+                        if (strictSignatureConfirmationValidation) {
+                            if (!extras.isEmpty())
+                                signatureConfirmation.addError("Unknown SignatureConfirmations in response: " + Arrays.toString(extras.toArray()));
+                            if (!unEncrypted.isEmpty())
+                                signatureConfirmation.addError("Encrypted signatures in request not encrypted in response: " + Arrays.toString(unEncrypted.toArray()));
+                        }
+                    }
+            } // switch
         }
     }
 
-    private Set<SigningSecurityToken> getSigningTokens(Element e) {
-        Set<SigningSecurityToken> result = new LinkedHashSet<SigningSecurityToken>();
+    private Set<SignedElement> getSignedElements(Element e) {
+        Set<SignedElement> result = new HashSet<SignedElement>();
         for(SignedElement signed : elementsThatWereSigned) {
             if (signed.asElement().equals(e))
-                result.add(signed.getSigningSecurityToken());
+                result.add(signed);
         }
         return result;
     }
