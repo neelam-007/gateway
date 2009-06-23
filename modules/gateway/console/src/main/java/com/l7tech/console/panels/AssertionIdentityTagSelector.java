@@ -78,7 +78,12 @@ public class AssertionIdentityTagSelector extends JDialog {
                         }
                     });
         } else {
-            identityTagable.setIdentityTag(_identityTag.getText().trim());
+            String tag = _identityTag.getText().trim();
+            if ( tag.isEmpty() ) {
+                identityTagable.setIdentityTag( null );                
+            } else {
+                identityTagable.setIdentityTag( tag );
+            }
             wasOKed = true;
             dispose();
         }
