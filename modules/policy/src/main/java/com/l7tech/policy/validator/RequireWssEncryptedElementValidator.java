@@ -33,7 +33,7 @@ public class RequireWssEncryptedElementValidator implements AssertionValidator {
                  AssertionUtils.isSameTargetRecipient( assertion, a ) &&
                  AssertionUtils.isSameTargetMessage( assertion, a ) ) {
                 RequireWssEncryptedElement requireWssEncryptedElement = (RequireWssEncryptedElement)a;
-                if ( !new HashSet<String>(requireWssEncryptedElement.getXEncAlgorithmList()).equals(new HashSet<String>(assertion.getXEncAlgorithmList())) ) {
+                if ( !getXEncAlgorithms(requireWssEncryptedElement).equals(getXEncAlgorithms(assertion)) ) {
                     String message = "Multiple encryption assertions are present with different encryption algorithms.";
                     result.addError(new PolicyValidatorResult.Error(assertion, path, message, null));
                 }
@@ -44,4 +44,16 @@ public class RequireWssEncryptedElementValidator implements AssertionValidator {
     //- PRIVATE
 
     private final RequireWssEncryptedElement assertion;
+
+    private Set<String> getXEncAlgorithms( final RequireWssEncryptedElement assertion ) {
+        Set<String> algorithms = new HashSet<String>();
+
+        if ( assertion.getXEncAlgorithmList() != null ) {
+            algorithms.addAll( assertion.getXEncAlgorithmList() );
+        } else {
+            algorithms.add( assertion.getXEncAlgorithm() );   
+        }
+
+        return algorithms;
+    }
 }
