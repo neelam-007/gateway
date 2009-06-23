@@ -93,6 +93,13 @@ public abstract class XmlSecurityAssertionBase extends XpathBasedAssertion imple
         }
     }
 
+    @Override
+    public XmlSecurityAssertionBase clone() {
+        XmlSecurityAssertionBase xmlSecurityAssertionBase = (XmlSecurityAssertionBase) super.clone();
+        xmlSecurityAssertionBase.messageTargetableSupport = new MessageTargetableSupport( messageTargetableSupport );
+        return xmlSecurityAssertionBase;
+    }
+
     //- PROTECTED
 
     protected XmlSecurityAssertionBase( final TargetMessageType defaultTargetMessageType ) {

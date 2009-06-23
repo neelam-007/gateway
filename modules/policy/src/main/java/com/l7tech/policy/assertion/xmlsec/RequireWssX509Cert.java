@@ -109,10 +109,17 @@ public class RequireWssX509Cert extends SecurityHeaderAddressableSupport impleme
         return used;
     }
 
+    @Override
+    public RequireWssX509Cert clone() {
+        RequireWssX509Cert requireWssX509Cert = (RequireWssX509Cert) super.clone();
+        requireWssX509Cert.messageTargetableSupport = new MessageTargetableSupport( messageTargetableSupport );
+        return requireWssX509Cert;
+    }
+
     //- PRIVATE
 
     private boolean allowMultipleSignatures = false;
     private String signatureElementVariable;
-    private final MessageTargetableSupport messageTargetableSupport
+    private MessageTargetableSupport messageTargetableSupport
             = new MessageTargetableSupport(TargetMessageType.REQUEST);
 }
