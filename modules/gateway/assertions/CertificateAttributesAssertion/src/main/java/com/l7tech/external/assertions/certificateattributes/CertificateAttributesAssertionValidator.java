@@ -27,6 +27,7 @@ public class CertificateAttributesAssertionValidator implements AssertionValidat
         int firstIdentity = -1;
         for (int i = 0; i < path.getPath().length; i++) {
             Assertion ass = path.getPath()[i];
+            if (!ass.isEnabled()) continue;
             if (ass.isCredentialSource()) {
                 if (ass instanceof RequireWssX509Cert || ass instanceof SslAssertion || ass instanceof SecureConversation) {
                     firstCertCred = i;

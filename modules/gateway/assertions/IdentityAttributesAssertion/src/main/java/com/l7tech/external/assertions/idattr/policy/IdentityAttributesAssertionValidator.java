@@ -30,6 +30,7 @@ public class IdentityAttributesAssertionValidator implements AssertionValidator 
         Set<Long> authenticatedProviders = new HashSet<Long>();
         for (int i = 0; i < path.getPath().length; i++) {
             Assertion assertion = path.getPath()[i];
+            if (!assertion.isEnabled()) continue;
             if (assertion instanceof IdentityAssertion) {
                 if (firstIdPos == -1) firstIdPos = i;
                 authenticatedProviders.add(((IdentityAssertion)assertion).getIdentityProviderOid());

@@ -39,6 +39,7 @@ public class WssX509CertValidator implements AssertionValidator {
                     "Multiple signatures are permitted. This is an advanced setting and should be used with caution.", null));
 
             for ( Assertion pathAssertion : path.getPath() ) {
+                if (!pathAssertion.isEnabled()) continue;
                 if ( pathAssertion instanceof IdentityTargetable &&
                      AssertionUtils.isSameTargetMessage( assertion, pathAssertion ) &&
                      new IdentityTarget().equals( new IdentityTarget(((IdentityTargetable) pathAssertion).getIdentityTarget()) ))  {

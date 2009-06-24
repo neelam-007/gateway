@@ -43,6 +43,7 @@ public class WsspAssertionValidator implements AssertionValidator {
         Assertion[] assertions = path.getPath();
         for (int i = 0; i < assertions.length; i++) {
             Assertion assertion = assertions[i];
+            if (!assertion.isEnabled()) continue;
             assertionsToTypes.put(assertion, assertion.getClass());
         }
 

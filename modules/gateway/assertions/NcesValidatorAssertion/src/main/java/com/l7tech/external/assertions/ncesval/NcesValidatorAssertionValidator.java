@@ -24,6 +24,7 @@ public class NcesValidatorAssertionValidator implements AssertionValidator {
         int firstSaml = -1;
         for (int i = 0; i < path.getPath().length; i++) {
             Assertion ass = path.getPath()[i];
+            if (!ass.isEnabled()) continue;
             if (ass instanceof RequireWssSaml) {
                 firstSaml = i;
             } else if (ass instanceof NcesValidatorAssertion) {

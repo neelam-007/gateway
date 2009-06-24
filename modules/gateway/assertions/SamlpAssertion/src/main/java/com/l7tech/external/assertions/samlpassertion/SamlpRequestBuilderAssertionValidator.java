@@ -34,6 +34,7 @@ public class SamlpRequestBuilderAssertionValidator implements AssertionValidator
             int firstRoute = -1;
             for (int i = 0; i < path.getPath().length; i++) {
                 Assertion ass = path.getPath()[i];
+                if (!ass.isEnabled()) continue;
                 if (ass instanceof RoutingAssertion) {
                     firstRoute = i;
                 } else if (ass.isCredentialSource()) {

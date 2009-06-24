@@ -50,6 +50,7 @@ public class SqlAttackAssertionValidator implements AssertionValidator {
         boolean hasWss = false;
 
         for ( Assertion assertion : path ) {
+            if (!assertion.isEnabled()) continue;
             if ( AssertionUtils.isSameTargetMessage( assertion, messageTargetable ) &&
                  Assertion.isWSSecurity(assertion) ) {
                 hasWss = true;

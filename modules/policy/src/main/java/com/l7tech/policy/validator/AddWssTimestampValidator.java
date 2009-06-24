@@ -29,8 +29,8 @@ public class AddWssTimestampValidator implements AssertionValidator {
             boolean seenSelf = false;
             boolean seenDecoration = false;
             Assertion[] assertionPath = path.getPath();
-            for (int i = assertionPath.length - 1; i >= 0; i--) {
-                Assertion a = assertionPath[i];
+            for (Assertion a : assertionPath) {
+                if (!a.isEnabled()) continue;
                 if ( a == assertion ) {
                     seenSelf = true;
                 }

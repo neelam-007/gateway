@@ -110,6 +110,7 @@ public class SamlStatementValidator implements AssertionValidator {
 
         Assertion[] pathArray = path.getPath();
         for (Assertion assertion : pathArray) {
+            if (!assertion.isEnabled()) continue;
             if (assertion instanceof SslAssertion) {
                 sslAssertions.add((SslAssertion)assertion);
             }

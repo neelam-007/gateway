@@ -28,6 +28,7 @@ public class RequireWssEncryptedElementValidator implements AssertionValidator {
         Assertion[] assertionPath = path.getPath();
         for ( int i = assertionPath.length - 1; i >= 0; i-- ) {
             Assertion a = assertionPath[i];
+            if (!a.isEnabled()) continue;
             if ( a != assertion &&
                  a instanceof RequireWssEncryptedElement &&
                  AssertionUtils.isSameTargetRecipient( assertion, a ) &&
