@@ -4,7 +4,9 @@
 package com.l7tech.server;
 
 import com.l7tech.common.io.AliasNotFoundException;
+import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.gateway.common.AsyncAdminMethodsImpl;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
@@ -362,17 +364,17 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays, boolean makeCaCert) throws FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
         SsgKeyStore keystore = checkBeforeGenerate(keystoreId, alias, dn, expiryDays);
         return registerJob(keystore.generateKeyPair(auditAfterCreate(keystore, alias, "generated"),
-                alias, new X500Principal(dn), keybits, expiryDays, makeCaCert), X509Certificate.class);
+                alias, new KeyGenParams(keybits), new CertGenParams(dn, expiryDays, makeCaCert, sigAlg)), X509Certificate.class);
     }
 
     @Override
-    public JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, String dn, String curveName, int expiryDays, boolean makeCaCert) throws FindException, GeneralSecurityException {
+    public JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, String dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException {
         SsgKeyStore keystore = checkBeforeGenerate(keystoreId, alias, dn, expiryDays);
-        return registerJob(keystore.generateEcKeyPair(auditAfterCreate(keystore, alias, "generated"),
-                alias, new X500Principal(dn), curveName, expiryDays, makeCaCert), X509Certificate.class);
+        return registerJob(keystore.generateKeyPair(auditAfterCreate(keystore, alias, "generated"),
+                alias, new KeyGenParams(curveName), new CertGenParams(dn, expiryDays, makeCaCert, sigAlg)), X509Certificate.class);
     }
 
     private SsgKeyStore checkBeforeGenerate(long keystoreId, String alias, String dn, int expiryDays) throws FindException, KeyStoreException {
@@ -402,7 +404,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException {
+    public byte[] generateCSR(long keystoreId, String alias, String dn, String sigAlg) throws FindException {
         checkLicenseKeyStore();
         SsgKeyFinder keyFinder;
         try {
@@ -421,7 +423,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             throw new FindException("cannot find keystore");
         }
         try {
-            CertificateRequest res = keystore.makeCertificateSigningRequest(alias, dn);
+            CertificateRequest res = keystore.makeCertificateSigningRequest(alias, new CertGenParams(dn, 0, false, sigAlg));
             return res.getEncoded();
         } catch (Exception e) {
             logger.log(Level.WARNING, "error getting keystore", e);
@@ -430,7 +432,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public String[] signCSR(long keystoreId, String alias, byte[] csrBytes) throws FindException, GeneralSecurityException {
+    public String[] signCSR(long keystoreId, String alias, byte[] csrBytes, String sigAlg) throws FindException, GeneralSecurityException {
         checkLicenseKeyStore();
         SsgKeyFinder keyFinder;
         try {
@@ -455,8 +457,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
 
         X509Certificate cert;
         try {
-            byte[] decodedCsrBytes = CertUtils. csrPemToBinary(csrBytes);
-            cert = (X509Certificate) signer.createCertificate(decodedCsrBytes, null);
+            byte[] decodedCsrBytes = CertUtils.csrPemToBinary(csrBytes);
+            cert = (X509Certificate) signer.createCertificate(decodedCsrBytes, new CertGenParams(null, 0, false, sigAlg));
         } catch (GeneralSecurityException e) {
             throw e;
         } catch (Exception e) {

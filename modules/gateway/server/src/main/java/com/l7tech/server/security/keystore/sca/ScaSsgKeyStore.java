@@ -74,18 +74,22 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
         this.password = password;
     }
 
+    @Override
     public long getOid() {
         return id;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public SsgKeyStoreType getType() {
         return PKCS11_HARDWARE;
     }
 
+    @Override
     public boolean isKeyExportSupported() {
         return false;
     }
@@ -164,12 +168,14 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
     @Override
     protected <OUT> Future<OUT> mutateKeystore(final Runnable transactionCallback, final Callable<OUT> mutator) throws KeyStoreException {
         return submitMutation(AdminInfo.find(false).wrapCallable(new Callable<OUT>() {
+            @Override
             public OUT call() throws Exception {
 
                 final Object[] out = new Object[] { null };
                 try {
                     synchronized (ScaSsgKeyStore.this) {
                         KeystoreFile updated = kem.updateDataBytes(getOid(), new Functions.Unary<byte[], byte[]>() {
+                            @Override
                             public byte[] call(byte[] bytes) {
                                 if (transactionCallback != null)
                                     transactionCallback.run();

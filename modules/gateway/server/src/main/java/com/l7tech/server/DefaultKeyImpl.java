@@ -1,5 +1,7 @@
 package com.l7tech.server;
 
+import com.l7tech.common.io.CertGenParams;
+import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
@@ -16,7 +18,6 @@ import com.l7tech.util.Pair;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.net.ssl.KeyManager;
@@ -140,9 +141,9 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
     }
 
     private void generateKeyPair(SsgKeyStore sks, String alias) throws IOException {
-        X500Principal dn = findDefaultSslKeyDn();
+        String dn = findDefaultSslKeyDn();
         try {
-            Future<X509Certificate> job = sks.generateKeyPair(null, alias, dn, 1024, 365 * 10, false);
+            Future<X509Certificate> job = sks.generateKeyPair(null, alias, new KeyGenParams(), new CertGenParams(dn, 365 * 10, false, null));
             job.get();
         } catch (GeneralSecurityException e) {
             throw new IOException("Unable to create initial default SSL key: " + ExceptionUtils.getMessage(e), e);
@@ -153,12 +154,12 @@ public class DefaultKeyImpl implements DefaultKey, PropertyChangeListener {
         }
     }
 
-    private X500Principal findDefaultSslKeyDn() {
+    private String findDefaultSslKeyDn() {
         String hostname = serverConfig.getProperty( "clusterHost" );
         if ( hostname == null || hostname.trim().length() == 0) {
             hostname = serverConfig.getHostname();
         }
-        return new X500Principal("cn=" + hostname);
+        return new X500Principal("cn=" + hostname).getName();
     }
 
     private SsgKeyStore findFirstMutableKeystore() throws IOException {

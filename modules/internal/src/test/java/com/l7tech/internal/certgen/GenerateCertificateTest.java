@@ -142,6 +142,20 @@ public class GenerateCertificateTest {
     }
 
     @Test
+    public void testBasicConstraintsCa() throws Exception {
+        X509Certificate got = CertUtils.decodeFromPEM(generate("-basicConstraintsCa", "4", "-keyUsage", "keyCertSign"));
+        assertNotNull(got.getExtensionValue(X509Extensions.BasicConstraints.getId()));
+        assertEquals(got.getBasicConstraints(), 4);
+    }
+
+    @Test
+    public void testBasicConstraintsNoCa() throws Exception {
+        X509Certificate got = CertUtils.decodeFromPEM(generate("-basicConstraintsNoCa"));
+        assertNotNull(got.getExtensionValue(X509Extensions.BasicConstraints.getId()));
+        assertEquals(got.getBasicConstraints(), -1);
+    }
+
+    @Test
     public void testMakeCaAndSslCerts() throws Exception {
         final String cafile = "CertificateGeneratorTest-ca.p12";
         final String sslfile = "CertificateGeneratorTest-ssl.p12";

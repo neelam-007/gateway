@@ -197,24 +197,6 @@ public class JceProviderTest {
             }
         });
 
-        // TODO restore when not testing nCipher (which can't create CSRs)
-//        final byte[] csrEnc = csr.getEncoded();
-//        reportTime("Sign CSR", 50 * scale, concur, new Testable() {
-//            public void run() throws Exception {
-//                signer.createCertificate(csrEnc);
-//            }
-//        });
-
-//        final Document testDoc = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument().c.message;
-//        final String testXml = XmlIOUtils.nodeToString(testDoc);
-
-//        reportTime("Parse document (baseline)", 1000 * scale, concur, new Testable() {
-//            public void run() throws Throwable {
-//                XmlIOUtils.stringToDocument(testXml);
-//            }
-//        });
-//
-//        log.info("Before encryption: " + testXml);
         final String encryptedXml;
         {
             WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();

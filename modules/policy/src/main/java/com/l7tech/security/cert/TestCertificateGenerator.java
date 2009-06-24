@@ -1,14 +1,14 @@
 package com.l7tech.security.cert;
 
+import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
-import org.bouncycastle.asn1.*;
-import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -16,7 +16,6 @@ import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.spec.ECGenParameterSpec;
 import java.util.*;
 
 /**
@@ -24,29 +23,11 @@ import java.util.*;
  */
 public class TestCertificateGenerator {
 
+    private CertGenParams c;
+    private KeyGenParams k;
+
     private SecureRandom random;
-    private BigInteger serialNumber;
-    private Date notBefore;
-    private Date notAfter;
-    private int daysUntilExpiry;
-    private String signatureAlgorithm;
-    private X509Name subjectDn;
-    private int rsaBits;
     private KeyPair keyPair;
-    private int keyUsageBits;
-    private BasicConstraints basicConstraints;
-    private String eccCurveName;
-    private boolean useECC;
-    private boolean includeKeyUsage;
-    private boolean keyUsageCriticality;
-    private boolean includeSki;
-    private boolean includeAki;
-    private boolean includeExtendedKeyUsage;
-    private boolean extendedKeyUsageCriticality;
-    private boolean includeSubjectDirectoryAttributes;
-    private boolean subjectDirectoryAttributesCriticality;
-    private List<String> extendedKeyUsageKeyPurposeOids;
-    private List<String> countryOfCitizenshipCountryCodes;
 
     public TestCertificateGenerator() {
         reset();
@@ -58,15 +39,7 @@ public class TestCertificateGenerator {
     private KeyPair getOrMakeKeyPair() {
         if (keyPair == null) {
             try {
-                if (useECC) {
-                    KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
-                    kpg.initialize(new ECGenParameterSpec(eccCurveName), random);
-                    keyPair = kpg.generateKeyPair();
-                } else {
-                    KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-                    kpg.initialize(rsaBits, random);
-                    keyPair = kpg.generateKeyPair();
-                }
+                keyPair = new ParamsKeyGenerator(k, random).generateKeyPair();
             } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException(e);
             } catch (InvalidAlgorithmParameterException e) {
@@ -82,29 +55,33 @@ public class TestCertificateGenerator {
 
     public TestCertificateGenerator reset() {
         random = new SecureRandom();
-        serialNumber = new BigInteger(64, random).abs();
-        notBefore = new Date(new Date().getTime() - (10 * 60 * 1000L)); // default: 10 min ago
-        daysUntilExpiry = 20 * 365;
-        notAfter = null;
-        useECC = false;
-        eccCurveName = "sect163k1";
-        signatureAlgorithm = null;
-        subjectDn = new X509Name("cn=test");
-        rsaBits = 768;
         keyPair = null;
-        basicConstraints = new BasicConstraints(false);
-        keyUsageBits = X509KeyUsage.digitalSignature | X509KeyUsage.keyEncipherment | X509KeyUsage.nonRepudiation;
-        includeKeyUsage = true;
-        keyUsageCriticality = true;
-        includeSki = true;
-        includeAki = true;
-        includeExtendedKeyUsage = true;
-        extendedKeyUsageCriticality = true;
-        extendedKeyUsageKeyPurposeOids = Arrays.asList(KeyPurposeId.anyExtendedKeyUsage.getId());
         issuer = null;
-        includeSubjectDirectoryAttributes = false;
-        subjectDirectoryAttributesCriticality = false;
-        countryOfCitizenshipCountryCodes = Collections.emptyList();
+
+        k = new KeyGenParams();
+        k.setAlgorithm("RSA");
+        k.setNamedParam("sect163k1");
+        k.setKeySize(768);
+
+        c = new CertGenParams();
+        c.setSerialNumber(new BigInteger(64, random).abs());
+        c.setNotBefore(new Date(new Date().getTime() - (10 * 60 * 1000L))); // default: 10 min ago
+        c.setDaysUntilExpiry(20 * 365);
+        c.setNotAfter(null);
+        c.setSignatureAlgorithm(null);
+        c.setSubjectDn("cn=test");
+        c.setIncludeBasicConstraints(false);
+        c.setKeyUsageBits(X509KeyUsage.digitalSignature | X509KeyUsage.keyEncipherment | X509KeyUsage.nonRepudiation);
+        c.setIncludeKeyUsage(true);
+        c.setKeyUsageCritical(true);
+        c.setIncludeSki(true);
+        c.setIncludeAki(true);
+        c.setIncludeExtendedKeyUsage(true);
+        c.setExtendedKeyUsageCritical(true);
+        c.setExtendedKeyUsageKeyPurposeOids(Arrays.asList(KeyPurposeId.anyExtendedKeyUsage.getId()));
+        c.setIncludeSubjectDirectoryAttributes(false);
+        c.setSubjectDirectoryAttributesCritical(false);
+        c.setCountryOfCitizenshipCountryCodes(Collections.<String>emptyList());
         return this;
     }
 
@@ -118,80 +95,32 @@ public class TestCertificateGenerator {
         final PublicKey subjectPublicKey = subjectKeyPair.getPublic();
         final PrivateKey subjectPrivateKey = subjectKeyPair.getPrivate();
 
-        if (signatureAlgorithm == null)
-            signatureAlgorithm = BouncyCastleCertUtils.getSigAlg(useECC, null);
-
-        X509Name issuerDn;
-        PublicKey issuerPublicKey;
-        PrivateKey issuerPrivateKey;
-        if (issuer == null) {
-            // Self-signed
-            issuerDn = subjectDn;
-            issuerPrivateKey = subjectPrivateKey;
-            issuerPublicKey = subjectPublicKey;
-        } else {
-            // Specified signing cert chain
-            issuerDn = new X509Name(issuer.left.getSubjectDN().getName());
-            issuerPrivateKey = issuer.right;
-            issuerPublicKey = issuer.left.getPublicKey();
+        try {
+            ParamsCertificateGenerator certgen = new ParamsCertificateGenerator(c);
+            X509Certificate cert =
+                    issuer == null
+                            ? certgen.generateCertificate(subjectPublicKey, subjectPrivateKey, null)
+                            : certgen.generateCertificate(subjectPublicKey, issuer.right, issuer.left);
+            return new Pair<X509Certificate, PrivateKey>(asJdkCertificate(cert), subjectPrivateKey);
+        } catch (CertificateGeneratorException e) {
+            throw new CertificateException(e);
         }
-
-        if (notAfter == null)
-            notAfter = new Date(notBefore.getTime() + (daysUntilExpiry * 24 * 60 * 60 * 1000L));
-
-        X509V3CertificateGenerator certgen = new X509V3CertificateGenerator();
-
-        certgen.setSerialNumber(serialNumber);
-        certgen.setNotBefore(notBefore);
-        certgen.setNotAfter(notAfter);
-        certgen.setSignatureAlgorithm(signatureAlgorithm);
-        certgen.setSubjectDN(subjectDn);
-        certgen.setIssuerDN(issuerDn);
-        certgen.setPublicKey(subjectPublicKey);
-
-        if (basicConstraints != null)
-            certgen.addExtension(X509Extensions.BasicConstraints.getId(), true, basicConstraints);
-
-        if (includeKeyUsage)
-            certgen.addExtension(X509Extensions.KeyUsage, keyUsageCriticality, new X509KeyUsage(keyUsageBits));
-
-        if (includeExtendedKeyUsage)
-            certgen.addExtension(X509Extensions.ExtendedKeyUsage, extendedKeyUsageCriticality, createExtendedKeyUsage(extendedKeyUsageKeyPurposeOids));
-
-        if (includeSki)
-            certgen.addExtension(X509Extensions.SubjectKeyIdentifier.getId(), false, createSki(subjectPublicKey));
-
-        if (includeAki)
-            certgen.addExtension(X509Extensions.AuthorityKeyIdentifier.getId(), false, createAki(issuerPublicKey));
-
-        if (includeSubjectDirectoryAttributes)
-            certgen.addExtension(X509Extensions.SubjectDirectoryAttributes.getId(), subjectDirectoryAttributesCriticality, createSubjectDirectoryAttributes(countryOfCitizenshipCountryCodes));
-
-        serialNumber = serialNumber.add(BigInteger.ONE);
-        X509Certificate generatedCert = certgen.generate(issuerPrivateKey, random);
-
-        // Ensure cert and private key are using the Sun implementation
-        return new Pair<X509Certificate, PrivateKey>(asJdkCertificate(generatedCert), subjectPrivateKey);
     }
 
-    private SubjectDirectoryAttributes createSubjectDirectoryAttributes(List<String> citizenshipCountryCodes) {
-        Vector<Attribute> attrs = new Vector<Attribute>();
-
-        // Add countries of citizenship
-        if (citizenshipCountryCodes != null) for (String code : citizenshipCountryCodes)
-            attrs.add(new Attribute(X509Name.COUNTRY_OF_CITIZENSHIP, new DERSet(new DERPrintableString(code))));
-
-        // Add further supported attrs here, if any
-
-        return new SubjectDirectoryAttributes(attrs);
+    /**
+     * Configure the next key pair generation to use the provided SecureRandom instead of the system default.
+     */
+    public TestCertificateGenerator random(SecureRandom random) {
+        this.random = random;
+        return this;
     }
 
     /**
      * Configure the next key pair generation to produce an RSA keypair with the specified size in bits.
      */
     public TestCertificateGenerator keySize(int keyBits) {
-        this.useECC = false;
-        this.rsaBits = keyBits;
+        k.setAlgorithm("RSA");
+        k.setKeySize(keyBits);
         return this;
     }
 
@@ -199,8 +128,8 @@ public class TestCertificateGenerator {
      * Configure the next key pair generation to produce an ECC keypair with the specified named curve.
      */
     public TestCertificateGenerator curveName(String curveName) {
-        this.useECC = true;
-        this.eccCurveName = curveName;
+        k.setAlgorithm("EC");
+        k.setNamedParam(curveName);
         return this;
     }
 
@@ -214,72 +143,59 @@ public class TestCertificateGenerator {
     }
 
     public TestCertificateGenerator subject(String subject) {
-        this.subjectDn = new X509Name(true, subject);
+        c.setSubjectDn(subject);
         return this;
     }
 
     public TestCertificateGenerator noExtensions() {
-        includeAki = false;
-        includeSki = false;
-        basicConstraints = null;
-        includeKeyUsage = false;
-        includeExtendedKeyUsage = false;
+        c.disableAllExtensions();
         return this;
     }
 
     public TestCertificateGenerator noBasicConstraints() {
-        basicConstraints = null;
+        c.setIncludeBasicConstraints(false);
         return this;
     }
 
     public TestCertificateGenerator basicConstraintsNoCa() {
-        basicConstraints = new BasicConstraints(false);
+        c.setIncludeBasicConstraints(true);
+        c.setBasicConstraintsCa(false);
         return this;
     }
 
     public TestCertificateGenerator basicConstraintsCa(int pathlen) {
-        basicConstraints = new BasicConstraints(pathlen);
+        c.setIncludeBasicConstraints(true);
+        c.setBasicConstraintsCa(true);
+        c.setBasicConstratinsPathLength(pathlen);
         return this;
     }
 
     public TestCertificateGenerator noKeyUsage() {
-        includeKeyUsage = false;
+        c.setIncludeKeyUsage(false);
         return this;
     }
 
     public TestCertificateGenerator keyUsage(boolean critical, int kubits) {
-        includeKeyUsage = true;
-        keyUsageCriticality = critical;
-        keyUsageBits = kubits;
+        c.setIncludeKeyUsage(true);
+        c.setKeyUsageCritical(critical);
+        c.setKeyUsageBits(kubits);
         return this;
     }
 
-    public void setKeyUsageBits(int keyUsageBits) {
-        this.keyUsageBits = keyUsageBits;
-    }
-
-    public int getKeyUsageBits() {
-        return keyUsageBits;
-    }
-
-    public boolean keyUsageCriticality() {
-        return keyUsageCriticality;
-    }
-
     public TestCertificateGenerator keyUsageCriticality(boolean keyUsageCriticality) {
-        this.keyUsageCriticality = keyUsageCriticality;
+        c.setKeyUsageCritical(keyUsageCriticality);
         return this;
     }
 
     public TestCertificateGenerator noExtKeyUsage() {
-        includeExtendedKeyUsage = false;
+        c.setIncludeExtendedKeyUsage(false);
         return this;
     }
 
     public TestCertificateGenerator extKeyUsage(boolean critical, List<String> keyPurposeOids) {
-        includeExtendedKeyUsage = true;
-        extendedKeyUsageCriticality = critical;
-        extendedKeyUsageKeyPurposeOids = keyPurposeOids;
+        c.setIncludeExtendedKeyUsage(true);
+        c.setExtendedKeyUsageCritical(critical);
+        c.setExtendedKeyUsageKeyPurposeOids(keyPurposeOids);
         return this;
     }
 
@@ -296,74 +212,58 @@ public class TestCertificateGenerator {
     }
 
     public void setExtendedKeyUsageKeyPurposeOids(List<String> extendedKeyUsageKeyPurposeOids) {
-        this.extendedKeyUsageKeyPurposeOids = extendedKeyUsageKeyPurposeOids;
-    }
-
-    public List<String> getExtendedKeyUsageKeyPurposeOids() {
-        return extendedKeyUsageKeyPurposeOids;
+        c.setExtendedKeyUsageKeyPurposeOids(extendedKeyUsageKeyPurposeOids);
     }
 
     public boolean extendedKeyUsageCriticality() {
-        return extendedKeyUsageCriticality;
+        return c.isExtendedKeyUsageCritical();
     }
 
     public TestCertificateGenerator extendedKeyUsageCriticality(boolean extendedKeyUsageCriticality) {
-        this.extendedKeyUsageCriticality = extendedKeyUsageCriticality;
+        c.setExtendedKeyUsageCritical(extendedKeyUsageCriticality);
         return this;
     }
 
     public TestCertificateGenerator countriesOfCitizenship(boolean critical, String... countryCodes) {
-        includeSubjectDirectoryAttributes = true;
-        subjectDirectoryAttributesCriticality = critical;
-        countryOfCitizenshipCountryCodes = Arrays.asList(countryCodes);
+        c.setIncludeSubjectDirectoryAttributes(true);
+        c.setSubjectDirectoryAttributesCritical(critical);
+        c.setCountryOfCitizenshipCountryCodes(Arrays.asList(countryCodes));
         return this;
     }
 
     public TestCertificateGenerator daysUntilExpiry(int daysUntilExpiry) {
-        this.daysUntilExpiry = daysUntilExpiry;
+        c.setDaysUntilExpiry(daysUntilExpiry);
         return this;
     }
 
     public TestCertificateGenerator signatureAlgorithm(String sigalg) {
-        this.signatureAlgorithm = sigalg;
+        c.setSignatureAlgorithm(sigalg);
         return this;
     }
 
-    public void setCountryOfCitizenshipCountryCodes(List<String> countryOfCitizenshipCountryCodes) {
-        this.countryOfCitizenshipCountryCodes = countryOfCitizenshipCountryCodes;
+    /**
+     * Obtain the raw pending certificate generation parameters.
+     * <p/>
+     * This returns a live reference to the pending parameters.  Changes made to the returned parameters
+     * will affect the future behavior of this TestCertificateGenerator.
+     *
+     * @return the pending cert gen params.  Never null.
+     */
+    public CertGenParams getCertGenParams() {
+        return c;
     }
 
-    public List<String> getCountryOfCitizenshipCountryCodes() {
-        return countryOfCitizenshipCountryCodes;
-    }
-
-    private AuthorityKeyIdentifier createAki(PublicKey issuerPublicKey) throws InvalidKeyException {
-        return new AuthorityKeyIdentifier(makeSubjectPublicKeyInfo(issuerPublicKey));
-    }
-
-    private SubjectKeyIdentifier createSki(PublicKey subjectPublicKey) throws InvalidKeyException {
-        return new SubjectKeyIdentifier(makeSubjectPublicKeyInfo(subjectPublicKey));
-    }
-
-    private ExtendedKeyUsage createExtendedKeyUsage(List<String> keyPurposeOids) {
-        Collection<DERObject> derObjects = new ArrayList<DERObject>();
-
-        for (String oid : keyPurposeOids)
-            derObjects.add(new DERObjectIdentifier(oid));
-
-        return new ExtendedKeyUsage(new Vector<DERObject>(derObjects));
-    }
-
-    private SubjectPublicKeyInfo makeSubjectPublicKeyInfo(PublicKey publicKey) throws InvalidKeyException {
-        ASN1InputStream asn1Stream = null;
-        try {
-            asn1Stream = new ASN1InputStream(new ByteArrayInputStream(publicKey.getEncoded()));
-            return new SubjectPublicKeyInfo(ASN1Sequence.getInstance(asn1Stream.readObject()));
-        } catch (IOException e) {
-            throw new InvalidKeyException(e); // shouldn't be possible
-        } finally {
-            ResourceUtils.closeQuietly(asn1Stream);
-        }
+    /**
+     * Obtain the raw pending key generation parameters.
+     * <p/>
+     * This returns a live reference to the pending parameters.  Changes made to the returned parameters
+     * willa ffect the future behavior of this TestCertificateGenerator (unless it has already generated
+     * its keypair or has been provided one to work with).
+     *
+     * @return the pending key gen params.  Never null.
+     */
+    public KeyGenParams getKeyGenParams() {
+        return k;
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.l7tech.internal.certgen;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.CertGenParams;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
@@ -50,6 +51,7 @@ public class GenerateCertificate {
             this.numArgs = numArgs;
         }
 
+        @Override
         public void configure(GenerateCertificate target, Iterator<String> remainingArgs) {
             invoke(target, remainingArgs);
         }
@@ -83,6 +85,7 @@ public class GenerateCertificate {
             super(desc, methodName, numArgs);
         }
 
+        @Override
         public void configure(GenerateCertificate target, Iterator<String> remainingArgs) {
             invoke(target.generator, remainingArgs);
         }
@@ -241,6 +244,7 @@ public class GenerateCertificate {
             super(desc + list(KEY_PURPOSE_IDS_BY_NAME.keySet()));
         }
 
+        @Override
         public void configure(GenerateCertificate target, Iterator<String> remainingArgs) {
             if (!target.sawExplicitExtKeyUsage) {
                 target.generator.noExtKeyUsage();
@@ -260,9 +264,9 @@ public class GenerateCertificate {
                     throw new IllegalArgumentException("Extended key purpose ID is neither a dotted decimal OID nor a recognized key purpose name: " + keyPurposeNameOrOid);
             }
 
-            List<String> oids = new ArrayList<String>(target.generator.getExtendedKeyUsageKeyPurposeOids());
+            List<String> oids = new ArrayList<String>(target.generator.getCertGenParams().getExtendedKeyUsageKeyPurposeOids());
             oids.add(oid);
-            target.generator.setExtendedKeyUsageKeyPurposeOids(oids);
+            target.generator.getCertGenParams().setExtendedKeyUsageKeyPurposeOids(oids);
         }
     }
 
@@ -271,10 +275,11 @@ public class GenerateCertificate {
             super(desc);
         }
 
+        @Override
         public void configure(GenerateCertificate target, Iterator<String> remainingArgs) {
             String countryCode = remainingArgs.next().toUpperCase();
             remainingArgs.remove();
-            List<String> codes = new ArrayList<String>(target.generator.getCountryOfCitizenshipCountryCodes());
+            List<String> codes = new ArrayList<String>(target.generator.getCertGenParams().getCountryOfCitizenshipCountryCodes());
             codes.add(countryCode);
             target.generator.countriesOfCitizenship(true, codes.toArray(new String[codes.size()]));
         }
@@ -285,6 +290,7 @@ public class GenerateCertificate {
             super(desc + list(KEY_USAGE_BITS_BY_NAME.keySet()));
         }
 
+        @Override
         public void configure(GenerateCertificate target, Iterator<String> remainingArgs) {
             if (!target.sawExplicitKeyUsage) {
                 target.generator.noKeyUsage();
@@ -298,7 +304,8 @@ public class GenerateCertificate {
             Integer bit = KEY_USAGE_BITS_BY_NAME.get(keyUsageName);
             if (bit == null)
                 throw new IllegalArgumentException("Unrecognized key usage bit name: " + keyUsageName);
-            target.generator.setKeyUsageBits(target.generator.getKeyUsageBits() | bit);
+            CertGenParams cgp = target.generator.getCertGenParams();
+            cgp.setKeyUsageBits(cgp.getKeyUsageBits() | bit);
         }
     }
 }

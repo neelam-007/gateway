@@ -1,48 +1,49 @@
 package com.l7tech.server.ems.setup;
 
+import com.l7tech.common.io.CertGenParams;
+import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.Role;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.identity.*;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.audit.AuditContextUtils;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.ems.enterprise.EnterpriseFolder;
 import com.l7tech.server.ems.enterprise.EnterpriseFolderManager;
 import com.l7tech.server.ems.listener.ListenerConfigurationUpdatedEvent;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.InternalUserManager;
-import com.l7tech.server.security.keystore.KeystoreFile;
-import com.l7tech.server.security.keystore.KeystoreFileManager;
-import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import com.l7tech.server.security.keystore.SsgKeyFinder;
-import com.l7tech.server.security.keystore.SsgKeyStore;
+import com.l7tech.server.security.keystore.*;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.core.io.Resource;
-import static org.springframework.transaction.annotation.Propagation.REQUIRED;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionTemplate;
+import static org.springframework.transaction.annotation.Propagation.REQUIRED;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.ApplicationEvent;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.security.auth.x500.X500Principal;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StreamTokenizer;
-import java.security.PrivateKey;
-import java.security.KeyStoreException;
 import java.security.GeneralSecurityException;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -51,8 +52,8 @@ import java.sql.Statement;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.Future;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -432,7 +433,7 @@ public class SetupManagerImpl implements InitializingBean, SetupManager, Applica
                                  final RsaKeySize rsaKeySize) throws IOException {
         X500Principal dn = new X500Principal("cn=" + hostname);
         try {
-            Future<X509Certificate> job = sks.generateKeyPair(null, alias, dn, rsaKeySize.getKeySize(), 365 * 10, false);
+            Future<X509Certificate> job = sks.generateKeyPair(null, alias, new KeyGenParams(rsaKeySize.getKeySize()), new CertGenParams(dn.getName(), 365 * 10, false, null));
             job.get();
         } catch (GeneralSecurityException e) {
             throw new IOException("Unable to create initial default SSL key: " + ExceptionUtils.getMessage(e), e);

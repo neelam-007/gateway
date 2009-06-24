@@ -5,31 +5,25 @@
 
 package com.l7tech.security.prov.bc;
 
+import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.security.cert.ParamsCertificateGenerator;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.RsaSignerEngine;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
-import org.bouncycastle.jce.X509KeyUsage;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.logging.Logger;
 
 /**
@@ -43,7 +37,6 @@ import java.util.logging.Logger;
 public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
     private static final Logger logger = Logger.getLogger(BouncyCastleRsaSignerEngine.class.getName());
 
-    private static final SecureRandom random = new SecureRandom();
     private final PrivateKey caPrivateKey;
     private final X509Certificate caCert;
     private final Provider signatureProvider;
@@ -63,193 +56,33 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         this.signatureProvider = signatureProvider;
     }
 
-    public static boolean isUsingEcc(PublicKey publicKey) {
-        String publicKeyAlg = publicKey.getAlgorithm();
-        return "EC".equalsIgnoreCase(publicKeyAlg) || "ECDSA".equalsIgnoreCase(publicKeyAlg);
-    }
-
-    // Find the best sig alg available on the current signature provider for the specified algorithm (EC=true, RSA=false)
-    private static String getSigAlg(boolean usingEcc, Provider signatureProvider) {
-        String strongSigAlg = usingEcc ? "SHA384withECDSA" : "SHA384withRSA";
-        String weakSigAlg = usingEcc ? "SHA1withECDSA" : "SHA1withRSA";
-        String sigAlg = strongSigAlg;
-
-        try {
-            JceProvider.getSignature(strongSigAlg, signatureProvider);
-        } catch (NoSuchAlgorithmException e) {
-            // Not available; fall back to weak sig alg
-            sigAlg = weakSigAlg;
-        }
-        return sigAlg;
-    }
-
-    private static X509V3CertificateGenerator makeCertGenerator( X509Name subject, Date expiration,
-                                                                 PublicKey publicKey, CertType type,
-                                                                 Provider signatureProvider)
-            throws InvalidKeyException
-    {
-        Calendar cal = Calendar.getInstance();
-        // Set back startdate ten minutes to avoid some problems with wrongly set clocks.
-        cal.add(Calendar.MINUTE, -10);
-        Date firstDate = cal.getTime();
-
-        X509V3CertificateGenerator certgen = new X509V3CertificateGenerator();
-        byte[] serno = new byte[8];
-        random.nextBytes(serno);
-        certgen.setSerialNumber((new BigInteger(serno)).abs());
-        certgen.setNotBefore(firstDate);
-        certgen.setNotAfter(expiration);
-        certgen.setSignatureAlgorithm(getSigAlg(isUsingEcc(publicKey), signatureProvider));
-
-        certgen.setSubjectDN(subject);
-        certgen.setPublicKey(publicKey);
-
-        BasicConstraints bc = type == CertType.CA ? new BasicConstraints(0) : new BasicConstraints(false);
-        certgen.addExtension(X509Extensions.BasicConstraints.getId(), true, bc);
-
-        // Set key usage (signing only for CA certs)
-        int usage = 0;
-        if ( type == CertType.CA ) {
-            usage |= X509KeyUsage.keyCertSign;
-        } else {
-            usage |= X509KeyUsage.digitalSignature;
-            usage |= X509KeyUsage.keyEncipherment;
-            usage |= X509KeyUsage.nonRepudiation;
-        }
-
-        certgen.addExtension(X509Extensions.KeyUsage, true, new X509KeyUsage(usage));
-
-        // Add subject public key info for fingerprint (not critical)
-        final SubjectPublicKeyInfo spki;
-        try {
-            spki = new SubjectPublicKeyInfo(ASN1Sequence.getInstance(new ASN1InputStream(new ByteArrayInputStream(publicKey.getEncoded())).readObject()));
-        } catch ( IOException e ) {
-            throw new InvalidKeyException(e);
-        }
-        SubjectKeyIdentifier ski = new SubjectKeyIdentifier(spki);
-        certgen.addExtension(X509Extensions.SubjectKeyIdentifier.getId(), false, ski);
-
-        return certgen;
-    }
-
-    /**
-     * Creates and signs a self-signed {@link X509Certificate}.
-     * @param subjectDn The distinguished name of the certificate's subject (usually 'cn=hostname')
-     * @param validity The period during which the cert should be valid, in days.
-     * @param keypair The keypair belonging to the certificate's subject.
-     * @return The self-signed {@link X509Certificate}.
-     * @throws SignatureException if the certificate cannot be found
-     * @throws InvalidKeyException if all or part of the keypair is invalid
-     */
-    public static X509Certificate makeSelfSignedRootCertificate( String subjectDn, int validity, KeyPair keypair )
-            throws SignatureException, InvalidKeyException
-    {
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DATE, validity);
-        Date lastDate = cal.getTime();
-        X509Name subject = new X509Name(subjectDn);
-        X509V3CertificateGenerator certgen = makeCertGenerator(subject, lastDate, keypair.getPublic(), CertType.CA,
-                JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CERTIFICATE_GENERATOR));
-
-        // Self-signed, issuer == subject
-        certgen.setIssuerDN(subject);
-
-        try {
-            Provider prov = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CERTIFICATE_GENERATOR);
-            return certgen.generate(keypair.getPrivate(), prov == null ? null : prov.getName());
-        } catch (NoSuchProviderException e) {
-            throw new SignatureException(e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new SignatureException(e);
-        } catch (CertificateEncodingException e) {
-            throw new SignatureException(e);
-        }
-    }
-
-    public X509Certificate makeSignedCertificate(String subjectDn, Date expiration,
-                                                        PublicKey subjectPublicKey,
-                                                        CertType type)
-            throws IOException, SignatureException, InvalidKeyException {
-        X509Name subject = new X509Name(subjectDn);
-        X509V3CertificateGenerator certgen = makeCertGenerator(subject, expiration, subjectPublicKey, type, signatureProvider);
-        certgen.setIssuerDN(new X509Name(caCert.getSubjectDN().getName()));
-
-        // Add authority key info (fingerprint)
-        SubjectPublicKeyInfo apki = new SubjectPublicKeyInfo(ASN1Sequence.getInstance(new ASN1InputStream(new ByteArrayInputStream(caCert.getPublicKey().getEncoded())).readObject()));
-        AuthorityKeyIdentifier aki = new AuthorityKeyIdentifier(apki);
-        certgen.addExtension(X509Extensions.AuthorityKeyIdentifier.getId(), false, aki);
-
-        try {
-            Provider prov = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CERTIFICATE_GENERATOR);
-            return certgen.generate(caPrivateKey, prov == null ? null : prov.getName());
-        } catch (NoSuchProviderException e) {
-            throw new SignatureException(e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new SignatureException(e);
-        } catch (CertificateEncodingException e) {
-            throw new SignatureException(e);
-        }
-    }
-
-    public X509Certificate makeSignedCertificate(String subjectDn, int validity,
-                                                        PublicKey subjectPublicKey,
-                                                        CertType type)
-            throws IOException, SignatureException, InvalidKeyException {
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DATE, validity);
-        Date lastDate = cal.getTime();
-        return makeSignedCertificate(subjectDn, lastDate, subjectPublicKey, type);
-    }
-
-    /**
-     * Create a certificate from the given PKCS10 Certificate Request.
-     *
-     * @param pkcs10req  the PKCS10 certificate signing request, expressed in binary form.
-     * @param subject the subject for the cert, if null, use the subject contained in the csr
-     * @return a signed X509 client certificate
-     * @throws Exception if something bad happens
-     */
     @Override
-    public Certificate createCertificate(byte[] pkcs10req, String subject) throws Exception {
-        return createCertificate(pkcs10req, subject, -1);
-    }
-
-    /**
-     * Create a certificate from the given PKCS10 Certificate Request.
-     *
-     * @param pkcs10req  the PKCS10 certificate signing request, expressed in binary form.
-     * @param expiration the desired expiration date of the cert, -1 to fallback on default
-     * @param subject the subject for the cert, if null, use the subject contained in the csr
-     * @return a signed X509 client certificate
-     * @throws Exception if something bad happens
-     */
-    @Override
-    public Certificate createCertificate(byte[] pkcs10req, String subject, long expiration) throws Exception {
+    public Certificate createCertificate(byte[] pkcs10req, CertGenParams certGenParams) throws Exception {
         PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(pkcs10req);
         CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
-        String dn = subject;
-        if (dn == null) {
-            dn = certReqInfo.getSubject().toString();
-        }
-        logger.info("Signing cert for subject DN = " + dn);
+
+        if (certGenParams == null)
+            certGenParams = new CertGenParams();
+
+        if (certGenParams.getSubjectDn() == null)
+            certGenParams.setSubjectDn(certReqInfo.getSubject().toString());
+
+        logger.info("Signing cert for subject DN = " + certGenParams.getSubjectDn());
+
         PublicKey publicKey = getPublicKey(pkcs10);
         if (!pkcs10.verify(publicKey, signatureProvider == null ? null : signatureProvider.getName())) {
-            logger.severe("POPO verification failed for " + dn);
+            logger.severe("POPO verification failed for " + certGenParams.getSubjectDn());
             throw new Exception("Verification of signature (popo) on PKCS10 request failed.");
         }
-        X509Certificate cert;
-        if (expiration == -1) {
-            cert = makeSignedCertificate(dn, CERT_DAYS_VALID, publicKey, CertType.CLIENT);
-        } else {
-            cert = makeSignedCertificate(dn, new Date(expiration), publicKey, CertType.CLIENT);
-        }
+
+        X509Certificate cert = new ParamsCertificateGenerator(certGenParams).generateCertificate(publicKey, caPrivateKey, caCert);
+
         // Verify before returning
         // Convert to Sun cert first so BC won't screw us over by asking for some goofy BC-only algorithm names
         cert = (X509Certificate)CertUtils.getFactory().generateCertificate(new ByteArrayInputStream(cert.getEncoded()));
         cert.verify(caCert.getPublicKey(), signatureProvider == null ? null : signatureProvider.getName());
         return cert;
     }
-
 
     private PublicKey getPublicKey(PKCS10CertificationRequest pkcs10) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, InvalidKeySpecException {
         CertificationRequestInfo reqInfo = pkcs10.getCertificationRequestInfo();

@@ -1,13 +1,12 @@
 package com.l7tech.server.security.keystore;
 
-import com.l7tech.common.io.AliasNotFoundException;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.DuplicateAliasException;
-import com.l7tech.security.cert.BouncyCastleCertUtils;
+import com.l7tech.common.io.*;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.security.cert.BouncyCastleCertUtils;
+import com.l7tech.security.cert.CertificateGeneratorException;
+import com.l7tech.security.cert.ParamsKeyGenerator;
 import com.l7tech.security.prov.CertificateRequest;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.event.system.Stopped;
 import com.l7tech.util.ExceptionUtils;
@@ -15,10 +14,8 @@ import com.l7tech.util.NotFuture;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
-import javax.security.auth.x500.X500Principal;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -212,63 +209,23 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     }
 
     @Override
-    public synchronized Future<X509Certificate> generateKeyPair(Runnable transactionCallback, final String alias, final X500Principal dn, final int keybits, final int expiryDays, final boolean makeCaCert)
+    public synchronized Future<X509Certificate> generateKeyPair(Runnable transactionCallback, final String alias, final KeyGenParams keyGenParams, final CertGenParams certGenParams)
             throws GeneralSecurityException
     {
         return mutateKeystore(transactionCallback, new Callable<X509Certificate>() {
             @Override
-            public X509Certificate call() throws GeneralSecurityException, DuplicateAliasException {
+            public X509Certificate call() throws GeneralSecurityException, DuplicateAliasException, CertificateGeneratorException {
                 KeyStore keystore = keyStore();
                 if (keystore.containsAlias(alias))
                     throw new DuplicateAliasException("Keystore already contains alias " + alias);
 
                 // Requires that current crypto engine already by the correct one for this keystore type
-                KeyPair keyPair = JceProvider.getInstance().generateRsaKeyPair(keybits);
-                X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair, makeCaCert);
+                KeyPair keyPair = new ParamsKeyGenerator(keyGenParams).generateKeyPair();
+                X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(certGenParams, keyPair);
 
                 keystore.setKeyEntry(alias, keyPair.getPrivate(), getEntryPassword(), new Certificate[] { cert });
 
                 return cert;
-            }
-        });
-    }
-
-    @Override
-    public Future<X509Certificate> generateEcKeyPair(Runnable transactionCallback, final String alias, final X500Principal dn, final String curveName, final int expiryDays, final boolean makeCaCert)
-            throws GeneralSecurityException
-    {
-        return mutateKeystore(transactionCallback, new Callable<X509Certificate>() {
-            @Override
-            public X509Certificate call() {
-                try {
-                    KeyStore keystore = keyStore();
-                    if (keystore.containsAlias(alias))
-                        throw new RuntimeException("Keystore already contains alias " + alias);
-
-                    // Requires that current crypto engine already by the correct one for this keystore type
-                    KeyPair keyPair = JceProvider.getInstance().generateEcKeyPair(curveName);
-                    X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(dn, expiryDays, keyPair, makeCaCert);
-
-                    keystore.setKeyEntry(alias, keyPair.getPrivate(), getEntryPassword(), new Certificate[] { cert });
-
-                    return cert;
-                } catch (CertificateEncodingException e) {
-                    throw new RuntimeException(e);
-                } catch (NoSuchAlgorithmException e) {
-                    throw new RuntimeException(e);
-                } catch (SignatureException e) {
-                    throw new RuntimeException(e);
-                } catch (InvalidKeyException e) {
-                    throw new RuntimeException(e);
-                } catch (KeyStoreException e) {
-                    throw new RuntimeException(e);
-                } catch (NoSuchProviderException e) {
-                    throw new RuntimeException(e);
-                } catch (InvalidAlgorithmParameterException e) {
-                    throw new RuntimeException(e);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
             }
         });
     }
@@ -304,9 +261,10 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     }
 
     @Override
-    public synchronized CertificateRequest makeCertificateSigningRequest(String alias, String dn) throws InvalidKeyException, SignatureException, KeyStoreException {
+    public synchronized CertificateRequest makeCertificateSigningRequest(String alias, CertGenParams certGenParams) throws InvalidKeyException, SignatureException, KeyStoreException {
         try {
-            X500Principal dnObj = new X500Principal(dn);
+            if (certGenParams.getSubjectDn() == null)
+                throw new KeyStoreException("A subjectDn is required to create a CSR");
             KeyStore keystore = keyStore();
             Key key = keystore.getKey(alias, getEntryPassword());
             PrivateKey privateKey = (PrivateKey)key;
@@ -317,7 +275,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
                 throw new KeyStoreException("Existing certificate for alias " + alias + " is not an X.509 certificate");
             X509Certificate cert = (X509Certificate)chain[0];
             KeyPair keyPair = new KeyPair(cert.getPublicKey(), privateKey);
-            return BouncyCastleCertUtils.makeCertificateRequest(dnObj, keyPair);
+            return BouncyCastleCertUtils.makeCertificateRequest(certGenParams, keyPair);
         } catch (NoSuchAlgorithmException e) {
             throw new InvalidKeyException("Keystore contains no key with alias " + alias, e);
         } catch (UnrecoverableKeyException e) {

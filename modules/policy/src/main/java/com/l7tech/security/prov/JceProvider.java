@@ -29,8 +29,8 @@ import java.util.Map;
 public abstract class JceProvider {
     public static final String ENGINE_PROPERTY = "com.l7tech.common.security.jceProviderEngine";
 
-    private static final int DEFAULT_RSA_KEYSIZE = SyspropUtil.getInteger("com.l7tech.security.prov.defaultRsaKeySize", 1024);
-    private static final String REQUEST_SIG_ALG = "SHA1withRSA";
+    public static final int DEFAULT_RSA_KEYSIZE = SyspropUtil.getInteger("com.l7tech.security.prov.defaultRsaKeySize", 1024);
+    public static final String DEFAULT_CSR_SIG_ALG = SyspropUtil.getString("com.l7tech.security.prov.defaultCsrSigAlg", "SHA1withRSA");
 
     // Available drivers
     public static final String BC_ENGINE = "com.l7tech.security.prov.bc.BouncyCastleJceProviderEngine";
@@ -299,7 +299,7 @@ public abstract class JceProvider {
 
         // Generate request
         try {
-            PKCS10CertificationRequest certReq = new PKCS10CertificationRequest(REQUEST_SIG_ALG, subject, publicKey, attrs, privateKey, provider == null ? null : provider.getName());
+            PKCS10CertificationRequest certReq = new PKCS10CertificationRequest(DEFAULT_CSR_SIG_ALG, subject, publicKey, attrs, privateKey, provider == null ? null : provider.getName());
             return new BouncyCastleCertificateRequest(certReq, publicKey);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e); // can't happen

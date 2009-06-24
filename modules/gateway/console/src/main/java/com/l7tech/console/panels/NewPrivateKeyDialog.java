@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 /**
  * Dialog that offers ways of creating a new key pair and associated metadata.
  */
-public class NewPrivateKeyDialog extends JDialog {
+public class  NewPrivateKeyDialog extends JDialog {
     protected static final Logger logger = Logger.getLogger(NewPrivateKeyDialog.class.getName());
 
     private static final String TITLE = "Create Private Key";
@@ -73,6 +73,29 @@ public class NewPrivateKeyDialog extends JDialog {
     private static KeyType rsasize(int bits, int hsmSec, int softSec) { return new KeyType(bits, bits + " bit RSA", hsmSec, softSec); }
     private static KeyType curvename(String name) { return new KeyType(name, "Elliptic Curve - " + name); }
 
+    private static class SigHash {
+        private final String label;
+        private final String rsaSigAlg;
+        private final String eccSigAlg;
+
+        private SigHash(String label, String rsaSigAlg, String eccSigAlg) {
+            this.label = label;
+            this.rsaSigAlg = rsaSigAlg;
+            this.eccSigAlg = eccSigAlg;
+        }
+
+        @Override
+        public String toString() {
+            return label;
+        }
+    }
+
+    private static SigHash sighash(String label, String alg) {
+        return new SigHash(label,
+                alg == null ? null : alg + "withRSA",
+                alg == null ? null : alg + "withECDSA");
+    }
+
     private final KeystoreFileEntityHeader keystoreInfo;
 
     private JPanel rootPanel;
@@ -83,6 +106,7 @@ public class NewPrivateKeyDialog extends JDialog {
     private JButton cancelButton;
     private JTextField expiryDaysField;
     private JCheckBox caCheckBox;
+    private JComboBox cbSigHash;
 
     private String defaultDn;
     private String lastDefaultDn;
@@ -204,24 +228,32 @@ public class NewPrivateKeyDialog extends JDialog {
         expiryDaysField.setDocument(new NumberField(8));
         expiryDaysField.setText(DEFAULT_EXPIRY);
 
-        final KeyType dflt;
+        final KeyType dfltk;
         Collection<KeyType> types = new ArrayList<KeyType>(Arrays.asList(
                 rsasize(512, 20, 1),
                 rsasize(768, 50, 2),
-         dflt = rsasize(1024, 100, 5),
+        dfltk = rsasize(1024, 100, 5),
                 rsasize(1280, 60 * 7, 10),
                 rsasize(2048, 60 * 20, 17),
-                curvename("secp192r1"),
-                curvename("secp256r1"),
-                curvename("secp384r1"),
-                curvename("secp521r1")
+                curvename("secp384r1")
         ));
 
         if (keystoreInfo.getKeyStoreType() != null && keystoreInfo.getKeyStoreType().toLowerCase().contains("pkcs11"))
             usingHsm = true;
 
         cbKeyType.setModel(new DefaultComboBoxModel(types.toArray()));
-        cbKeyType.setSelectedItem(dflt);
+        cbKeyType.setSelectedItem(dfltk);
+
+        final SigHash dflth;
+        Collection<SigHash> hashes = new ArrayList<SigHash>(Arrays.asList(
+        dflth = sighash("Auto", null),
+                sighash("SHA-1", "SHA1"),
+                sighash("SHA-256", "SHA256"),
+                sighash("SHA-384", "SHA384"),
+                sighash("SHA-512", "SHA512")
+        ));
+        cbSigHash.setModel(new DefaultComboBoxModel(hashes.toArray()));
+        cbSigHash.setSelectedItem(dflth);
     }
 
     /** @return the default DN for the current alias, or null if there isn't one. */
@@ -259,10 +291,10 @@ public class NewPrivateKeyDialog extends JDialog {
                 public Object call() throws Exception {
                     if (keyType.curveName != null) {
                         // Elliptic curve
-                        keypairJobId = getCertAdmin().generateEcKeyPair(keystoreInfo.getOid(), alias, dn, keyType.curveName, expiryDays, makeCaCert);
+                        keypairJobId = getCertAdmin().generateEcKeyPair(keystoreInfo.getOid(), alias, dn, keyType.curveName, expiryDays, makeCaCert, getSigAlg(true));
                     } else {
                         // RSA
-                        keypairJobId = getCertAdmin().generateKeyPair(keystoreInfo.getOid(), alias, dn, keyType.size, expiryDays, makeCaCert);
+                        keypairJobId = getCertAdmin().generateKeyPair(keystoreInfo.getOid(), alias, dn, keyType.size, expiryDays, makeCaCert, getSigAlg(false));
                     }
                     newAlias = alias;
                     return null;
@@ -283,6 +315,18 @@ public class NewPrivateKeyDialog extends JDialog {
         logger.log(Level.WARNING, mess, ouch);
         JOptionPane.showMessageDialog(this, mess, "Key Pair Error", JOptionPane.ERROR_MESSAGE);
         return false;
+    }
+
+    private String getSigAlg(boolean useEcc) {
+        SigHash hash = getSelectedSigHash();
+        return useEcc ? hash.eccSigAlg : hash.rsaSigAlg;
+    }
+
+    private SigHash getSelectedSigHash() {
+        Object h = cbSigHash.getSelectedItem();
+        if (h instanceof SigHash)
+            return (SigHash) h;
+        throw new IllegalStateException("Unrecognized sig hash: " + h);
     }
 
     private KeyType getSelectedKeyType() {

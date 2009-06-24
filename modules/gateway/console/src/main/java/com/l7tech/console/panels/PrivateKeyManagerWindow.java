@@ -271,7 +271,7 @@ public class PrivateKeyManagerWindow extends JDialog {
 
         final String[] pemCertChain;
         try {
-            pemCertChain = getTrustedCertAdmin().signCSR(subject.getKeyEntry().getKeystoreId(), subject.getKeyEntry().getAlias(), csrBytes[0]);
+            pemCertChain = getTrustedCertAdmin().signCSR(subject.getKeyEntry().getKeystoreId(), subject.getKeyEntry().getAlias(), csrBytes[0], null);
         } catch (CertificateException e) {
             showErrorMessage("Unable to Sign Certificate", "Unable to process certificate signing request: " + ExceptionUtils.getMessage(e), e);
             return;

@@ -3,6 +3,7 @@
  */
 package com.l7tech.server.processcontroller;
 
+import com.l7tech.common.io.CertGenParams;
 import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.DefaultMasterPasswordFinder;
@@ -10,18 +11,17 @@ import com.l7tech.util.HexUtils;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.ResourceUtils;
 
-import javax.security.auth.x500.X500Principal;
 import java.io.*;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.MessageFormat;
 
 /** @author alex */
 public class BootstrapConfig {
@@ -156,7 +156,10 @@ public class BootstrapConfig {
         try {
             logger.info("Generating keypair...");
             KeyPair keyPair = JceProvider.getInstance().generateRsaKeyPair();
-            X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(new X500Principal("cn=localhost"), 3652, keyPair, false);
+            CertGenParams cgp = new CertGenParams();
+            cgp.setSubjectDn("cn=localhost");
+            cgp.setDaysUntilExpiry(3652);
+            X509Certificate cert = BouncyCastleCertUtils.generateSelfSignedCertificate(cgp, keyPair);
             KeyStore ks = KeyStore.getInstance("PKCS12");
             ks.load(null, null);
             ks.setKeyEntry(DEFAULT_ALIAS, keyPair.getPrivate(), pass.toCharArray(), new Certificate[] {cert});

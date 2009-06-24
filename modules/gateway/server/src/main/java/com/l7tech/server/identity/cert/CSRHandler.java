@@ -3,8 +3,8 @@
  */
 package com.l7tech.server.identity.cert;
 
+import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.util.IOUtils;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.identity.*;
@@ -22,6 +22,7 @@ import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.system.CertificateSigningServiceEvent;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.transport.ListenerException;
+import com.l7tech.util.IOUtils;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -31,6 +32,7 @@ import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Date;
 import java.util.logging.Level;
 
 /**
@@ -149,17 +151,16 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
         // sign request
         try {
+            CertGenParams cgp = new CertGenParams(certSubject, 0, false, null);
+
             // for internal users, if an account expiration is specified, make sure the cert created matches it
             if (authenticatedUser instanceof InternalUser) {
-                InternalUser iu = (InternalUser)authenticatedUser;
-                if (iu.getExpiration() != -1) {
-                    cert = sign(csr, certSubject, iu.getExpiration());
-                } else {
-                    cert = sign(csr, certSubject);
-                }
-            } else {
-                cert = sign(csr, certSubject);
+                long expiryDate = ((InternalUser)authenticatedUser).getExpiration();
+                if (expiryDate != -1)
+                    cgp.setNotAfter(new Date(expiryDate));
             }
+
+            cert = getSigner().createCertificate(csr, cgp);
         } catch (NoCaException ncae) {
             response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Gateway CA service not available");
             logger.log(Level.WARNING, "This Gateway does not currently have a default CA key configured.");
@@ -240,14 +241,6 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         if (ca == null)
             throw new NoCaException();
         return JceProvider.getInstance().createRsaSignerEngine(ca.getPrivate(), ca.getCertificateChain());
-    }
-
-    private Certificate sign( final byte[] csr, final String subject ) throws Exception {
-        return getSigner().createCertificate(csr, subject);
-    }
-
-    private Certificate sign( final byte[] csr, final String subject, final long expiration ) throws Exception {
-        return getSigner().createCertificate(csr, subject, expiration);
     }
 
     private static final class NoCaException extends Exception {}

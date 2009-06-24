@@ -241,6 +241,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @param expiryDays number of days the self-signed cert should be valid.  Required.
      * @param makeCaCert    true if the new certificate is intended to be used to sign other certs.  Normally false.
      *                      If this is true, the new certificate will have the "cA" basic constraint and the "keyCertSign" key usage.
+     * @param sigAlg signature algorithm for the initial self-signed cert, ie "SHA1withRSA", or null to select one automatically.
      * @return the job identifier of the key generation job.  Call {@link #getJobStatus(com.l7tech.gateway.common.AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
      *         and {@link #getJobResult(JobId)} to pick up the result in the form of a self-signed X509Certificate.
      * @throws FindException if there is a problem getting info from the database
@@ -249,7 +250,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
-    JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays, boolean makeCaCert) throws FindException, GeneralSecurityException;
+    JobId<X509Certificate> generateKeyPair(long keystoreId, String alias, String dn, int keybits, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
 
     /**
      * Generate a new ECC key pair and self-signed certificate in the specified keystore with the specified
@@ -262,7 +263,8 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @param expiryDays number of days the self-signed cert should be valid.  Required.
      * @param makeCaCert    true if the new certificate is intended to be used to sign other certs.  Normally false.
      *                      If this is true, the new certificate will have the "cA" basic constraint and the "keyCertSign" key usage.
-     * @return the job identifier of the key generation job.  Call {@link #getJobStatus(AsyncAdminMethods.JobId) getJobStatus} to poll for job completion
+     * @param sigAlg signature algorithm for the initial self-signed cert, ie "SHA384withECDSA", or null to select one automatically.
+     * @return the job identifier of the key generation job.  Call {@link #getJobStatus} to poll for job completion
      *         and {@link #getJobResult(JobId)} to pick up the result in the form of a self-signed X509Certificate.
      * @throws FindException if there is a problem getting info from the database
      * @throws java.security.GeneralSecurityException if there is a problem generating or signing the cert
@@ -270,7 +272,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
-    JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, String dn, String curveName, int expiryDays, boolean makeCaCert) throws FindException, GeneralSecurityException;
+    JobId<X509Certificate> generateEcKeyPair(long keystoreId, String alias, String dn, String curveName, int expiryDays, boolean makeCaCert, String sigAlg) throws FindException, GeneralSecurityException;
 
     /**
      * Generate a new PKCS#10 Certification Request (aka Certificate Signing Request) using the specified private key,
@@ -279,12 +281,13 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @param keystoreId the ID of the key store in which the private key can be found.  Required.
      * @param alias the alias of the private key with which to sign the CSR.  Required.
      * @param dn the DN to include in the new CSR, ie "CN=mymachine.example.com".  Required.
+     * @param sigAlg signature algorithm for the CSR, ie "SHA1withRSA", or null to select one automatically based on the private key type.
      * @return the bytes of the encoded form of this certificate request, in PKCS#10 format.
      * @throws FindException if there is a problem getting info from the database
      */
     @Transactional(readOnly=true)
     @Secured(stereotype=SET_PROPERTY_BY_UNIQUE_ATTRIBUTE, types=SSG_KEY_ENTRY)
-    byte[] generateCSR(long keystoreId, String alias, String dn) throws FindException;
+    byte[] generateCSR(long keystoreId, String alias, String dn, String sigAlg) throws FindException;
 
     /**
      * Process a PKCS#10 Certificate Signing Request, producing a new signed certificate from it
@@ -296,13 +299,14 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @param keystoreId the ID of the key store in which the CA private key can be found.  Required.
      * @param alias the alias of the private key to use the CA key for processing this CSR.  Required.
      * @param csrBytes binary or PEM encoded PKCS#10 certificate signing request.
+     * @param sigAlg signature algorithm, ie "SHA1withRSA", or null to select one automatically based on the CA key type.
      * @return a PEM-encoded certificate chain including the newly-signed cert.  Never null.
      * @throws FindException if there is a problem getting info from the database
      * @throws java.security.GeneralSecurityException if there is a problem signing the specified certificate.
      */
     @Transactional(propagation=Propagation.REQUIRED)
     @Secured(stereotype=FIND_ENTITIES, types=SSG_KEY_ENTRY)
-    String[] signCSR(long keystoreId, String alias, byte[] csrBytes) throws FindException, GeneralSecurityException;
+    String[] signCSR(long keystoreId, String alias, byte[] csrBytes, String sigAlg) throws FindException, GeneralSecurityException;
 
     /**
      * Replace the certificate chain for the specified private key with a new one whose subject cert

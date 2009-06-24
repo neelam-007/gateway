@@ -1,10 +1,11 @@
 package com.l7tech.server.security.keystore;
 
+import com.l7tech.common.io.CertGenParams;
+import com.l7tech.common.io.KeyGenParams;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.security.auth.x500.X500Principal;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
@@ -23,33 +24,14 @@ public interface SsgKeyStore extends SsgKeyFinder {
      * @param transactionCallback Optional callback to invoke inside the transaction, or null.
      *                            Can be used for more detailed auditing.
      * @param alias   the alias for the new key entry.  Required.  Must not collide with any existing alias.
-     * @param dn      the DN for the new self-signed certificate.  Required.
-     * @param keybits the number of bits the new RSA key should contain, ie 512, 768, 1024 or 2048.  Required.
-     * @param expiryDays  the number of days before the new self-signed certificate will expire.  Required.
-     * @param makeCaCert    true if the new certificate is intended to be used to sign other certs.  Normally false.
-     *                      If this is true, the new certificate will have the "cA" basic constraint and the "keyCertSign" key usage.
+     * @param keyGenParams  parameters controlling the key to generate (type and either size or curve name).  Required.
+     * @param certGenParams parameters controlling the self-signed cert to generate.  Must include a subjectDn.  Required.
      * @return immediately returns a Future which returns the new self-signed certificate, already added to this key store.  Never null.
      * @throws GeneralSecurityException if there is a problem generating, signing, or saving the new certificate or key pair
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    Future<X509Certificate> generateKeyPair(Runnable transactionCallback, String alias, X500Principal dn, int keybits, int expiryDays, boolean makeCaCert) throws GeneralSecurityException;
-
-    /**
-     * Generate a new elliptic curve key pair and self-signed certificate within this keystore.
-     *
-     * @param transactionCallback Optional callback to invoke inside the transaction, or null.
-     *                            Can be used for more detailed auditing.
-     * @param alias   the alias for the new key entry.  Required.  Must not collide with any existing alias.
-     * @param dn      the DN for the new self-signed certificate.  Required.
-     * @param curveName a recognized ECC curve name, ie "secp384r1".   Required.
-     * @param expiryDays  the number of days before the new self-signed certificate will expire.  Required.
-     * @param makeCaCert    true if the new certificate is intended to be used to sign other certs.  Normally false.
-     *                      If this is true, the new certificate will have the "cA" basic constraint and the "keyCertSign" key usage.
-     * @return immediately returns a Future which returns the new self-signed certificate, already added to this key store.  Never null.
-     * @throws GeneralSecurityException if there is a problem generating, signing, or saving the new certificate or key pair
-     */
-    @Transactional(propagation=Propagation.REQUIRED)
-    Future<X509Certificate> generateEcKeyPair(Runnable transactionCallback, String alias, X500Principal dn, String curveName, int expiryDays, boolean makeCaCert) throws GeneralSecurityException;
+    public Future<X509Certificate> generateKeyPair(Runnable transactionCallback, final String alias, final KeyGenParams keyGenParams, final CertGenParams certGenParams)
+            throws GeneralSecurityException;
 
     /**
      * Replace the certificate for the specified alias with a new certificate based on the same key pair.

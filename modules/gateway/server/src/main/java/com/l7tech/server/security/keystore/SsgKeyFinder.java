@@ -1,5 +1,6 @@
 package com.l7tech.server.security.keystore;
 
+import com.l7tech.common.io.CertGenParams;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.ObjectNotFoundException;
@@ -63,12 +64,13 @@ public interface SsgKeyFinder extends NamedEntity {
      * it just makes and signs a new CSR with the private key, and returns the CSR.
      *
      * @param alias thye alias of the key pair whose public key to embed in the CSR and whose private key to use to sign it.  Required.
-     * @param dn  DN to use in the CSR.  Must contain valid X.509 fields.  Required.
+     * @param certGenParams parameters describing the certificate to create.  Required.
+     *                      This can be used to override the dn from the cert request, if desired.
      * @return a CertificateRequest that can be exported as bytes and sent to a CA service.  Never null.
      * @throws java.security.InvalidKeyException  if the key cannot be used for this purpose
      * @throws java.security.SignatureException   if there was a problem signing the CSR
      * @throws java.security.KeyStoreException  if there is a problem reading the key store
      */
     @Transactional(propagation=Propagation.SUPPORTS, readOnly=true)
-    CertificateRequest makeCertificateSigningRequest(String alias, String dn) throws InvalidKeyException, SignatureException, KeyStoreException;
+    CertificateRequest makeCertificateSigningRequest(String alias, CertGenParams certGenParams) throws InvalidKeyException, SignatureException, KeyStoreException;
 }
