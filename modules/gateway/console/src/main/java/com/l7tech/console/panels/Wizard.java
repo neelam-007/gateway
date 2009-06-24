@@ -4,6 +4,7 @@ import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
 import com.l7tech.gui.util.FontUtil;
+import com.l7tech.gui.util.InputValidator;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -48,6 +49,7 @@ public class Wizard extends JDialog {
     private JButton buttonHelp;
 
     protected EventListenerList listenerList = new EventListenerList();
+    protected InputValidator inputValidator = new InputValidator(this, "Wizard Warning");;
 
     /**
      * Creates new wizard
@@ -560,7 +562,7 @@ public class Wizard extends JDialog {
         if (buttonFinish == null) {
             buttonFinish = new JButton();
             buttonFinish.setText("Finish");
-            buttonFinish.addActionListener(new ActionListener() {
+            inputValidator.attachToButton(buttonFinish, new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {
                     if (wizardIterator.current().onNextButton()) {
                         finish(evt);
@@ -571,6 +573,21 @@ public class Wizard extends JDialog {
         return buttonFinish;
     }
 
+    /**
+     * Add validation rules defined in a WizardStepPanel into the InputValidator defined in this wizard.
+     * @param fromPanelClass: the Class of a WizardStepPanel, which owns these validation rules.
+     * @param firstStepPanel: the first WizardStepPanel of this wizard, used to find the "from" WizardStepPanel.
+     */
+    public void addValidationRulesFromStepPanelIntoWizard(Class fromPanelClass, WizardStepPanel firstStepPanel) {
+        WizardStepPanel stepPanel = firstStepPanel;
+        while (stepPanel != null && !stepPanel.getClass().equals(fromPanelClass)) {
+            stepPanel = stepPanel.nextPanel();
+        }
+
+        if (stepPanel != null && inputValidator != null) {
+            inputValidator.addRules(stepPanel.getValidationRules());
+        }
+    }
 
     protected JButton getButtonNext() {
         if (buttonNext == null) {

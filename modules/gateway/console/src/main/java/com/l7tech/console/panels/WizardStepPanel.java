@@ -1,12 +1,15 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.event.WeakEventListenerList;
+import com.l7tech.gui.util.InputValidator;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
 import java.util.EventListener;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * <code>JPanel</code> that represent a step in the wizard extend the
@@ -17,6 +20,7 @@ import java.util.EventListener;
  */
 public abstract class WizardStepPanel extends JPanel {
     protected JDialog owner;
+    protected List<InputValidator.ValidationRule> validationRules = new ArrayList<InputValidator.ValidationRule>();
     private EventListenerList listenerList = new WeakEventListenerList();
     private WizardStepPanel nextPanel;
     private boolean showDescriptionPanel = true;
@@ -62,6 +66,10 @@ public abstract class WizardStepPanel extends JPanel {
 
     public final WizardStepPanel nextPanel() {
         return nextPanel;
+    }
+
+    public List<InputValidator.ValidationRule> getValidationRules() {
+        return validationRules;
     }
 
     /**
@@ -115,7 +123,7 @@ public abstract class WizardStepPanel extends JPanel {
      */
     public boolean canFinish() {
         return (canAdvance() || isSkipped())
-                && (nextPanel==null ? true : nextPanel.canFinish());
+                && (nextPanel == null || nextPanel.canFinish());
     }
 
 
@@ -149,8 +157,8 @@ public abstract class WizardStepPanel extends JPanel {
     protected void notifyListeners() {
         ChangeEvent event = new ChangeEvent(this);
         EventListener[] listeners = listenerList.getListeners(ChangeListener.class);
-        for (int i = 0; i < listeners.length; i++) {
-            ((ChangeListener)listeners[i]).stateChanged(event);
+        for (EventListener listener : listeners) {
+            ((ChangeListener) listener).stateChanged(event);
         }
     }
 

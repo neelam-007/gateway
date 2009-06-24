@@ -92,6 +92,55 @@ public class InputValidator implements FocusListener {
     }
 
     /**
+     * Validation Rule associated with a number spinner.
+     */
+    public static class NumberSpinnerValidationRule extends ComponentValidationRule {
+        private String numberTextFieldName;
+        private Integer min;
+        private Integer max;
+
+        public NumberSpinnerValidationRule(JSpinner numSpinner, String numberTextFieldName, Integer min, Integer max) {
+            super(numSpinner);
+            if (! (numSpinner.getModel() instanceof SpinnerNumberModel)) {
+                throw new IllegalArgumentException("This spinner is not a number spinner.");
+            } else if (numberTextFieldName == null || numberTextFieldName.isEmpty()) {
+                throw new IllegalArgumentException("The number field name is empty or not specified.");
+            } else if (min != null && max != null && min > max) {
+                throw new IllegalArgumentException("Invalid minimum and maximum.");
+            }
+
+            this.numberTextFieldName = numberTextFieldName;
+            this.min = min;
+            this.max = max;
+        }
+
+        @Override
+        public String getValidationError() {
+            Object currentValue = ((JSpinner)component).getValue();
+
+            if (currentValue instanceof Integer) {
+                Integer value = (Integer) currentValue;
+                if (min == null && max != null) {
+                    if (value > max) {
+                        return "'" + currentValue + "' is greater than the maximum limit " + max + ".";
+                    }
+                } else if (min != null && max == null) {
+                    if (value < min) {
+                        return "'" + currentValue + "' is less than the minimum limit " + min + ".";
+                    }
+                } else if (min != null && max != null) {
+                    if (value < min || value > max) {
+                        return "'" + numberTextFieldName + "' must be a number between " + min + " and " + max + ".";
+                    }
+                }
+            } else {
+                return "'" + currentValue + "' is not an integer number.";
+            }
+            return null;
+        }
+    }
+
+    /**
      * Register a custom validation rule that has already been configured to monitor a component for changes.
      * @param rule the rule to add
      */
@@ -103,6 +152,16 @@ public class InputValidator implements FocusListener {
             Component c = compRule.getComponent();
             if (c instanceof JTextComponent && c instanceof ModelessFeedback)
                 monitorFocus(c);
+        }
+    }
+
+    /**
+     * Add a list of rules into the original rule list.
+     * @param others: a list of validation rules to be added.
+     */
+    public void addRules(Collection<ValidationRule> others) {
+        if (others != null && !others.isEmpty()) {
+            rules.addAll(others);
         }
     }
 
