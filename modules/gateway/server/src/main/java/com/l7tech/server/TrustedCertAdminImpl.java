@@ -458,7 +458,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         X509Certificate cert;
         try {
             byte[] decodedCsrBytes = CertUtils.csrPemToBinary(csrBytes);
-            cert = (X509Certificate) signer.createCertificate(decodedCsrBytes, new CertGenParams(null, 0, false, sigAlg));
+            cert = (X509Certificate) signer.createCertificate(decodedCsrBytes, new CertGenParams(null, 0, false, sigAlg).useUserCertDefaults());
         } catch (GeneralSecurityException e) {
             throw e;
         } catch (Exception e) {

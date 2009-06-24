@@ -497,16 +497,27 @@ public class CertUtils {
         return login;
     }
 
+    // Key usage bits (as used by bouncy castle; or them together to make a key usage)
+    public static final int KU_encipherOnly = 1;
+    public static final int KU_cRLSign = 2;
+    public static final int KU_keyCertSign = 4;
+    public static final int KU_keyAgreement = 8;
+    public static final int KU_dataEncipherment = 16;
+    public static final int KU_keyEncipherment = 32;
+    public static final int KU_nonRepudiation = 64;
+    public static final int KU_digitalSignature = 128;
+    public static final int KU_decipherOnly = 32768;
+
     public static final Map<String, Integer> KEY_USAGE_BITS_BY_NAME = Collections.unmodifiableMap(new HashMap<String, Integer>() {{
-        put("encipherOnly", 1);
-        put("cRLSign", 2);
-        put("keyCertSign", 4);
-        put("keyAgreement", 8);
-        put("dataEncipherment", 16);
-        put("keyEncipherment", 32);
-        put("nonRepudiation", 64);
-        put("digitalSignature", 128);
-        put("decipherOnly", 32768);
+        put("encipherOnly", KU_encipherOnly);
+        put("cRLSign", KU_cRLSign);
+        put("keyCertSign", KU_keyCertSign);
+        put("keyAgreement", KU_keyAgreement);
+        put("dataEncipherment", KU_dataEncipherment);
+        put("keyEncipherment", KU_keyEncipherment);
+        put("nonRepudiation", KU_nonRepudiation);
+        put("digitalSignature", KU_digitalSignature);
+        put("decipherOnly", KU_decipherOnly);
     }});
 
     public static final Map<String, String> KEY_PURPOSE_IDS_BY_NAME = Collections.unmodifiableMap(new HashMap<String, String>() {{
@@ -533,6 +544,7 @@ public class CertUtils {
         KEY_PURPOSE_NAMES_BY_OID_STR = Collections.unmodifiableMap(oidToName);
     }
 
+    // Key usage indexes (position in boolean array returned from X509Certificate.getKeyUsage())
     public static final class KeyUsage {
         public static final int digitalSignature = 0;
         public static final int nonRepudiation = 1;

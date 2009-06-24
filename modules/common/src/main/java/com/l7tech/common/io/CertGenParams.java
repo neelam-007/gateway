@@ -76,7 +76,7 @@ public class CertGenParams implements Serializable {
             setBasicConstratinsPathLength(1);
             setIncludeKeyUsage(true);
             setKeyUsageCritical(true);
-            setKeyUsageBits((1 << 2) | (1 << 1));
+            setKeyUsageBits(CertUtils.KU_cRLSign | CertUtils.KU_keyCertSign);
         }        
     }
 
@@ -245,13 +245,32 @@ public class CertGenParams implements Serializable {
      * Disable all extensions.
      * This currently disables inclusion of a SKI, AKI, basic constraints, key usage, and extended key usage.
      * In the future, if further extensions are supported by CertGenParams, this method will disable them as well.
+     *
+     * @return this CertGenParams object itself, for chaining.
      */
-    public void disableAllExtensions() {
+    public CertGenParams disableAllExtensions() {
         includeAki = false;
         includeSki = false;
         includeBasicConstraints = false;
         includeKeyUsage = false;
         includeExtendedKeyUsage = false;
+        return this;
+    }
+
+    /**
+     * Enable settings that used to be provided by default by RsaSigner: critical non-CA basic constraints, and a critical
+     * key usage that allows only digitalSignature, keyEncipherment, and nonRepudiation.
+     *
+     * @return this CertGenParams object itself, for chaining.
+     */
+    public CertGenParams useUserCertDefaults() {
+        includeBasicConstraints = true;
+        basicConstraintsCa = false;
+
+        includeKeyUsage = true;
+        keyUsageCritical = true;
+        keyUsageBits = CertUtils.KU_digitalSignature | CertUtils.KU_keyEncipherment | CertUtils.KU_nonRepudiation;
+        return this;
     }
 }
 
