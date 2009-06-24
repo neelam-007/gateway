@@ -24,7 +24,7 @@ public class MetricsRequestContext {
     private final boolean operational;
     private final long serviceId;
     private final long serviceTime;
-    private final double throughput;
+    private final long throughput;
     private final long periodStart;
     private final long lastUpdated;
     private final String duration;
@@ -75,7 +75,7 @@ public class MetricsRequestContext {
         }
 
         this.throuputPeriod = tperiod;
-        this.throughput = tval;
+        this.throughput = (long)tval;
     }
 
     public long getAvgResponseTime() {
@@ -114,7 +114,7 @@ public class MetricsRequestContext {
         return serviceTime;
     }
 
-    public double getThroughput() {
+    public long getThroughput() {
         return throughput;
     }
 
