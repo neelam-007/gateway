@@ -1741,7 +1741,7 @@ public class WssProcessorImpl implements WssProcessor {
             } else if (secHeaderActor == SecurityActor.NOACTOR) {
                 logger.log(Level.INFO, "We do not appear to be the intended recipient for this " +
                                        "EncryptedKey. Will leave it alone since the security header is not " +
-                                       "explicitly addressed to us.", e);
+                                       "explicitly addressed to us.", ExceptionUtils.getDebugException( e ));
                 encryptionIgnored = true;
                 return null;
             }
