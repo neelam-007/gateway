@@ -266,6 +266,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
 
         // Port must be an integer between 1 and 65535
         port.setModel(new SpinnerNumberModel(EmailServerType.POP3.getDefaultClearPort(), 1, 65535, 1));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(port, "Port"));
 
         serverType.setModel(new DefaultComboBoxModel(EmailServerType.values()));
         serverType.setSelectedItem(EmailServerType.POP3);
@@ -326,7 +327,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
         // Interval must be an integer between greater than or equal to 1
         checkInterval.setModel(new SpinnerNumberModel(5, 1, Integer.MAX_VALUE, 1));
         JSpinner.NumberEditor jsne = new JSpinner.NumberEditor(checkInterval,"#");  //number format for parse and display 
-        checkInterval.setEditor(jsne);        
+        checkInterval.setEditor(jsne);
         ((JSpinner.DefaultEditor) checkInterval.getEditor()).getTextField().setFocusLostBehavior(JFormattedTextField.PERSIST);  //we'll do our own checking
 
     }

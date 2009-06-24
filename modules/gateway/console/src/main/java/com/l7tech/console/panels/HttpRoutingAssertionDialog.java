@@ -1,9 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.gui.util.ImageCache;
-import com.l7tech.gui.util.PauseListener;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
-import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.IpListPanel;
 import com.l7tech.policy.Policy;
 import com.l7tech.wsdl.Wsdl;
@@ -104,7 +101,6 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JCheckBox connectTimeoutDefaultCheckBox;
     private JSpinner readTimeoutSpinner;
     private JCheckBox readTimeoutDefaultCheckBox;
-    private JTabbedPane tabbedPane1;
     private JRadioButton resHeadersAll;
     private JRadioButton resHeadersCustomize;
     private JTable resHeadersTable;
@@ -143,6 +139,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private final Policy policy;
     private final Wsdl wsdl;
     private Assertion assertionToUseInSearchForPredecessorVariables;
+    private InputValidator inputValidator;
 
     /**
      * Creates new form ServicePanel
@@ -150,11 +147,12 @@ public class HttpRoutingAssertionDialog extends JDialog {
     public HttpRoutingAssertionDialog(Frame owner, HttpRoutingAssertion assertion, Policy policy, Wsdl wsdl, boolean readOnly) {
         super(owner, true);
         setTitle(resources.getString("dialog.title"));
+        inputValidator = new InputValidator(this, resources.getString("dialog.title"));
         this.assertion = assertion;
         this.policy = policy;
         this.wsdl = wsdl;
         this.httpAuthPanel = new HttpRoutingHttpAuthPanel(assertion);
-        this.samlAuthPanel = new HttpRoutingSamlAuthPanel(assertion);
+        this.samlAuthPanel = new HttpRoutingSamlAuthPanel(assertion, inputValidator);
         this.windowsAuthPanel = new HttpRoutingWindowsIntegratedAuthPanel(assertion);
 
         okButtonAction = new BaseAction() {
@@ -250,7 +248,11 @@ public class HttpRoutingAssertionDialog extends JDialog {
         add(mainPanel);
 
         connectTimeoutSpinner.setModel(new SpinnerNumberModel(1,1,86400,1));  // 1 day in seconds
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectTimeoutSpinner, "Connection timeout"));
+
         readTimeoutSpinner.setModel(new SpinnerNumberModel(1,1,86400,1));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(readTimeoutSpinner, "Read timeout"));
+
         ActionListener enableSpinners = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 connectTimeoutSpinner.setEnabled(!connectTimeoutDefaultCheckBox.isSelected());
@@ -350,7 +352,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
         initializeHttpRulesTabs();
 
-        okButton.setAction(okButtonAction);
+        inputValidator.attachToButton(okButton, okButtonAction);
         okButton.setEnabled( !readOnly );
 
         cancelButton.addActionListener(new ActionListener() {

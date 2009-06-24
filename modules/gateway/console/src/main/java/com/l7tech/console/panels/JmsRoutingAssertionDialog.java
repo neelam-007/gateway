@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.InputValidator;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -44,7 +45,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
      */
     public JmsRoutingAssertionDialog(Frame owner, JmsRoutingAssertion a, boolean readOnly) {
         super(owner, true);
-        setTitle("JMS Routing Properties");
+        setTitle(DIALOG_TITLE);
         assertion = a;
         initComponents(readOnly);
         initFormData();
@@ -94,6 +95,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
     //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(JmsRoutingAssertionDialog.class.getName());
+    private static final String DIALOG_TITLE = "JMS Routing Properties";
 
     // model, etc
     private JmsRoutingAssertion assertion;
@@ -174,7 +176,9 @@ public class JmsRoutingAssertionDialog extends JDialog {
         secButtonGroup.add(authNoneRadio);
         secButtonGroup.add(authSamlRadio);
         samlVersionComboBox.setModel(new DefaultComboBoxModel(new String[]{"1.1", "2.0"}));
-        samlExpiryInMinutesSpinner.setModel(new SpinnerNumberModel(new Integer(5), new Integer(1), new Integer(120), new Integer(1)));
+        samlExpiryInMinutesSpinner.setModel(new SpinnerNumberModel(5, 1, 120, 1));
+        InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(samlExpiryInMinutesSpinner, "Ticket expiry"));
 
         authSamlRadio.addChangeListener(new ChangeListener(){
             public void stateChanged(ChangeEvent e) {
@@ -208,7 +212,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
         });
 
         okButton.setEnabled( !readOnly );
-        okButton.addActionListener(new ActionListener() {
+        inputValidator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 RoutingDialogUtils.configSecurityHeaderHandling(assertion, RoutingAssertion.CLEANUP_CURRENT_SECURITY_HEADER, secHdrButtons);
 

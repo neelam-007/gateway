@@ -1,10 +1,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.event.BeanEditSupport;
-import com.l7tech.gui.util.PauseListener;
-import com.l7tech.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.gui.util.*;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.widgets.SquigglyTextArea;
 import com.l7tech.policy.assertion.Regex;
 import com.l7tech.policy.assertion.TargetMessageType;
@@ -30,6 +28,8 @@ import java.util.regex.PatternSyntaxException;
  * @version 22-Mar-2005
  */
 public class RegexDialog extends JDialog {
+    private static final String DIALOG_TITLE = "Regular Expression Assertion";
+
     private JPanel mainPanel;
     private JButton cancelButton;
     private JButton okButton;
@@ -64,7 +64,7 @@ public class RegexDialog extends JDialog {
 
     public RegexDialog(Frame owner, Regex regexAssertion, boolean postRouting, boolean readOnly) throws HeadlessException {
         super(owner, true);
-        setTitle("Regular Expression Assertion");
+        setTitle(DIALOG_TITLE);
         if (regexAssertion == null) {
             throw new IllegalArgumentException();
         }
@@ -111,7 +111,8 @@ public class RegexDialog extends JDialog {
             }
         });
 
-        okButton.addActionListener(new ActionListener() {
+        InputValidator inputValidator = new InputValidator(this, DIALOG_TITLE);
+        inputValidator.attachToButton(okButton, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
@@ -188,8 +189,8 @@ public class RegexDialog extends JDialog {
         catch(NumberFormatException nfe) {
             mimePartIndex = 0;
         }
-        mimePartSpinner.setModel(new SpinnerNumberModel(0, 0, 9999, 1));
-        mimePartSpinner.setValue(mimePartIndex);
+        mimePartSpinner.setModel(new SpinnerNumberModel(mimePartIndex.intValue(), 0, 9999, 1));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(mimePartSpinner, "MIME Part"));
 
         ItemListener encodingRadioListener = new ItemListener() {
             @Override

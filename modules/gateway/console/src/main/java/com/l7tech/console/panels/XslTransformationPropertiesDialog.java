@@ -5,6 +5,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.InputValidator;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.AssertionResourceType;
 import com.l7tech.policy.AssertionResourceInfo;
@@ -99,6 +100,8 @@ public class XslTransformationPropertiesDialog extends JDialog {
         });
 
         whichMimePartSpinner.setModel(new SpinnerNumberModel(0, 0, 9999, 1));
+        InputValidator inputValidator = new InputValidator(this, resources.getString("window.title"));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(whichMimePartSpinner, "MIME part"));
         //noinspection UnnecessaryBoxing
         whichMimePartSpinner.setValue(new Integer(assertion.getWhichMimePart()));
 
@@ -116,7 +119,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
 
         // create callbacks
         okButton.setEnabled( !readOnly );
-        okButton.addActionListener(new ActionListener() {
+        inputValidator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ok();
             }

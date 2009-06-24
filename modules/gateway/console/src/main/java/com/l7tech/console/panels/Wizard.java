@@ -575,12 +575,12 @@ public class Wizard extends JDialog {
 
     /**
      * Add validation rules defined in a WizardStepPanel into the InputValidator defined in this wizard.
-     * @param fromPanelClass: the Class of a WizardStepPanel, which owns these validation rules.
-     * @param firstStepPanel: the first WizardStepPanel of this wizard, used to find the "from" WizardStepPanel.
+     * @param targetWizardStepPanel: the Class of a target WizardStepPanel, which owns these validation rules.
+     * @param firstWizardStepPanel: the first WizardStepPanel of this wizard, used to find the target WizardStepPanel.
      */
-    public void addValidationRulesFromStepPanelIntoWizard(Class fromPanelClass, WizardStepPanel firstStepPanel) {
-        WizardStepPanel stepPanel = firstStepPanel;
-        while (stepPanel != null && !stepPanel.getClass().equals(fromPanelClass)) {
+    public void addValidationRulesDefinedInWizardStepPanel(Class targetWizardStepPanel, WizardStepPanel firstWizardStepPanel) {
+        WizardStepPanel stepPanel = firstWizardStepPanel;
+        while (stepPanel != null && !stepPanel.getClass().equals(targetWizardStepPanel)) {
             stepPanel = stepPanel.nextPanel();
         }
 

@@ -9,6 +9,7 @@ import com.l7tech.policy.assertion.TimeOfDay;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.util.InputValidator;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
@@ -96,6 +97,8 @@ public class TimeRangePropertiesDialog extends JDialog {
                              resources.getString("week.thursday"),
                              resources.getString("week.friday"),
                              resources.getString("week.saturday")};
+
+        inputValidator = new InputValidator(this, resources.getString("window.title"));
 
         setTitle(resources.getString("window.title"));
         Container contents = getContentPane();
@@ -221,7 +224,7 @@ public class TimeRangePropertiesDialog extends JDialog {
     }
 
     private void setCallbacks() {
-        okButton.addActionListener(new ActionListener() {
+        inputValidator.attachToButton(okButton, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 ok();
             }
@@ -449,6 +452,7 @@ public class TimeRangePropertiesDialog extends JDialog {
         itemsToToggleForTimeOfDay.add(toto);
         timeOfDayPanel.add(toto, new GridBagConstraints(0, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         startHr = new JSpinner(new SpinnerNumberModel(8, 0, 23, 1));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(startHr, "Start hour"));
         itemsToToggleForTimeOfDay.add(startHr);
         itemsToToggleForTimeOfDay.add(startHr);
         timeOfDayPanel.add(startHr, new GridBagConstraints(1, 0, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
@@ -456,6 +460,7 @@ public class TimeRangePropertiesDialog extends JDialog {
         itemsToToggleForTimeOfDay.add(toto);
         timeOfDayPanel.add(toto, new GridBagConstraints(2, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         startMin = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(startMin, "Start minute"));
         itemsToToggleForTimeOfDay.add(startMin);
         timeOfDayPanel.add(startMin, new GridBagConstraints(3, 0, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
 
@@ -463,6 +468,7 @@ public class TimeRangePropertiesDialog extends JDialog {
         itemsToToggleForTimeOfDay.add(toto);
         timeOfDayPanel.add(toto, new GridBagConstraints(4, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         startSec = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(startSec, "Start second"));
         itemsToToggleForTimeOfDay.add(startSec);
         timeOfDayPanel.add(startSec, new GridBagConstraints(5, 0, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
         toto = new JLabel(resources.getString("general.sec"));
@@ -473,18 +479,21 @@ public class TimeRangePropertiesDialog extends JDialog {
         itemsToToggleForTimeOfDay.add(toto);
         timeOfDayPanel.add(toto, new GridBagConstraints(0, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         endHr = new JSpinner(new SpinnerNumberModel(17, 0, 23, 1));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(endHr, "End hour"));
         itemsToToggleForTimeOfDay.add(endHr);
         timeOfDayPanel.add(endHr, new GridBagConstraints(1, 1, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
         toto = new JLabel(resources.getString("general.hr"));
         itemsToToggleForTimeOfDay.add(toto);
         timeOfDayPanel.add(toto, new GridBagConstraints(2, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         endMin = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(endMin, "End minute"));
         itemsToToggleForTimeOfDay.add(endMin);
         timeOfDayPanel.add(endMin, new GridBagConstraints(3, 1, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
         toto = new JLabel(resources.getString("general.min"));
         itemsToToggleForTimeOfDay.add(toto);
         timeOfDayPanel.add(toto, new GridBagConstraints(4, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         endSec = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(endSec, "End second"));
         itemsToToggleForTimeOfDay.add(endSec);
         timeOfDayPanel.add(endSec, new GridBagConstraints(5, 1, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
         toto = new JLabel(resources.getString("general.sec"));
@@ -669,7 +678,7 @@ public class TimeRangePropertiesDialog extends JDialog {
     private int minoffset;
 
     private boolean wasoked = false;
-
+    private InputValidator inputValidator;
     private ResourceBundle resources;
 
     private final static int BORDER_PADDING = 20;

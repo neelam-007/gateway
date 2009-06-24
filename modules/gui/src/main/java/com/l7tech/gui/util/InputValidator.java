@@ -96,46 +96,70 @@ public class InputValidator implements FocusListener {
      */
     public static class NumberSpinnerValidationRule extends ComponentValidationRule {
         private String numberTextFieldName;
-        private Integer min;
-        private Integer max;
+        private Comparable minimum;
+        private Comparable maximum;
 
-        public NumberSpinnerValidationRule(JSpinner numSpinner, String numberTextFieldName, Integer min, Integer max) {
+        public NumberSpinnerValidationRule(JSpinner numSpinner, String numberTextFieldName) {
             super(numSpinner);
+
             if (! (numSpinner.getModel() instanceof SpinnerNumberModel)) {
                 throw new IllegalArgumentException("This spinner is not a number spinner.");
             } else if (numberTextFieldName == null || numberTextFieldName.isEmpty()) {
                 throw new IllegalArgumentException("The number field name is empty or not specified.");
-            } else if (min != null && max != null && min > max) {
-                throw new IllegalArgumentException("Invalid minimum and maximum.");
             }
 
+            // Keep the current value in the spinner.  This is good for user watching the validation result.
+            ((JSpinner.DefaultEditor) numSpinner.getEditor()).getTextField().setFocusLostBehavior(JFormattedTextField.PERSIST);
+
             this.numberTextFieldName = numberTextFieldName;
-            this.min = min;
-            this.max = max;
+            minimum = ((SpinnerNumberModel)numSpinner.getModel()).getMinimum();
+            maximum = ((SpinnerNumberModel)numSpinner.getModel()).getMaximum();
+
+            if (minimum != null && !(minimum instanceof Integer || minimum instanceof Long)) {
+                throw new IllegalArgumentException("Invalid minimum");
+            } else if (maximum != null && !(maximum instanceof Integer || maximum instanceof Long)) {
+                throw new IllegalArgumentException("Invalid maximum");
+            } else if (minimum != null && maximum != null) {
+                long min = (minimum instanceof Integer)? (Integer)minimum : (Long)minimum;
+                long max = (maximum instanceof Integer)? (Integer)maximum : (Long)maximum;
+                if (min > max) throw new IllegalArgumentException("Minimum must not be greater than Maximum");
+            }
         }
 
         @Override
         public String getValidationError() {
-            Object currentValue = ((JSpinner)component).getValue();
+            JSpinner spinner = (JSpinner)component;
+            String valueText = ((JSpinner.DefaultEditor) spinner.getEditor()).getTextField().getText();
 
-            if (currentValue instanceof Integer) {
-                Integer value = (Integer) currentValue;
-                if (min == null && max != null) {
-                    if (value > max) {
-                        return "'" + currentValue + "' is greater than the maximum limit " + max + ".";
+            try {
+                Number currentNum = ((JSpinner.NumberEditor)spinner.getEditor()).getFormat().parse(valueText);
+                long currentValue;
+                if (currentNum instanceof Integer) currentValue = (Integer)currentNum;
+                else if (currentNum instanceof Long) currentValue = (Long)currentNum;
+                else throw new NumberFormatException("Invalid number in the spinner");
+
+                if (minimum == null && maximum != null) {
+                    long max = (maximum instanceof Integer)? (Integer)maximum : (Long)maximum;
+                    if (currentValue > max) {
+                        return "'" + valueText + "' is greater than the maximum limit " + maximum + ".";
                     }
-                } else if (min != null && max == null) {
-                    if (value < min) {
-                        return "'" + currentValue + "' is less than the minimum limit " + min + ".";
+                } else if (minimum != null && maximum == null) {
+                    long min = (minimum instanceof Integer)? (Integer)minimum : (Long)minimum;
+                    if (currentValue < min) {
+                        return "'" + valueText + "' is less than the minimum limit " + minimum + ".";
                     }
-                } else if (min != null && max != null) {
-                    if (value < min || value > max) {
-                        return "'" + numberTextFieldName + "' must be a number between " + min + " and " + max + ".";
+                } else if (minimum != null && maximum != null) {
+                    long min = (minimum instanceof Integer)? (Integer)minimum : (Long)minimum;
+                    long max = (maximum instanceof Integer)? (Integer)maximum : (Long)maximum;
+                    if (currentValue < min || currentValue > max) {
+                        return "'" + numberTextFieldName + "' must be a number between " + minimum + " and " + maximum + ".";
                     }
                 }
-            } else {
-                return "'" + currentValue + "' is not an integer number.";
+                spinner.commitEdit();
+            } catch (Exception e) {
+                return "'" + valueText + "' is not a number. A valid number must be between " + minimum + " and " + maximum + ".";
             }
+
             return null;
         }
     }

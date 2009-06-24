@@ -110,6 +110,7 @@ public abstract class MinMaxPredicatePanel<P extends MinMaxPredicate> extends Pr
         {
             try {
                 min = smin == null || smin.length() == 0 ? 0 : Integer.valueOf(smin);
+                if (min < 0) return ComparisonAssertion.resources.getString("minMaxPredicatePanel.minBoundError");
             } catch (NumberFormatException e) {
                 String msg = ComparisonAssertion.resources.getString("minMaxPredicatePanel.formatError");
                 return MessageFormat.format(msg, smin);
@@ -120,6 +121,7 @@ public abstract class MinMaxPredicatePanel<P extends MinMaxPredicate> extends Pr
         {
             try {
                 max = smax == null || smax.length() == 0 ? 0 : Integer.valueOf(smax);
+                if (max < 0) return ComparisonAssertion.resources.getString("minMaxPredicatePanel.maxBoundError");
             } catch (NumberFormatException e) {
                 String msg = ComparisonAssertion.resources.getString("minMaxPredicatePanel.formatError");
                 return MessageFormat.format(msg, smax);

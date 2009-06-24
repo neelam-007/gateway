@@ -50,6 +50,7 @@ public class SamlIssuerAssertionPropertiesEditor implements AssertionPropertiesE
             @Override
             public void wizardFinished(WizardEvent e) { confirmed = true; }
         });
+        wiz.addValidationRulesDefinedInWizardStepPanel(ConditionsWizardStepPanel.class, p);
         wizard = wiz;
     }
 

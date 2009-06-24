@@ -4,6 +4,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.gui.util.InputValidator;
 
 import javax.swing.*;
 
@@ -21,7 +22,7 @@ public class HttpRoutingSamlAuthPanel extends JPanel {
 
     public HttpRoutingSamlAuthPanel(final HttpRoutingAssertion assertion) {
         this.assertion = assertion;
-        expirySpinner.setModel(new SpinnerNumberModel(new Integer(5), new Integer(1), new Integer(120), new Integer(1)));
+        expirySpinner.setModel(new SpinnerNumberModel(5, 1, 120, 1));
         expiryLabel.setLabelFor(expirySpinner);
 
         samlVersionComboBox.setModel(new DefaultComboBoxModel(new String[]{"1.1", "2.0"}));
@@ -33,11 +34,18 @@ public class HttpRoutingSamlAuthPanel extends JPanel {
             expiry = 5;
         }
 
-        expirySpinner.setValue(new Integer(expiry));
+        expirySpinner.setValue(expiry);
 
         samlVersionComboBox.setSelectedItem(assertion.getSamlAssertionVersion()==1 ? "1.1" : "2.0");
 
         add(mainPanel);
+    }
+
+    public HttpRoutingSamlAuthPanel(final HttpRoutingAssertion assertion, final InputValidator inputValidator) {
+        this(assertion);
+
+        // Add an input validator to expirySpinner
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(expirySpinner, "Ticket expiry"));
     }
 
     public void setEnabled(boolean enabled) {
@@ -51,6 +59,6 @@ public class HttpRoutingSamlAuthPanel extends JPanel {
     public void updateModel() {
         final Integer sv = (Integer) expirySpinner.getValue();        
         assertion.setSamlAssertionVersion("1.1".equals(samlVersionComboBox.getSelectedItem()) ? 1 : 2);
-        assertion.setSamlAssertionExpiry(sv.intValue());
+        assertion.setSamlAssertionExpiry(sv);
     }
 }

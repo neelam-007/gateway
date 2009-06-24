@@ -9,6 +9,7 @@ import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.policy.assertion.xmlsec.RequireWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlPolicyAssertion;
 import com.l7tech.policy.assertion.SamlIssuerAssertion;
+import com.l7tech.gui.util.InputValidator;
 
 import javax.swing.*;
 import java.awt.*;
@@ -119,7 +120,9 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
         if (issueMode) {
             checkBoxCheckAssertionValidity.setVisible(false);
             notBeforeSpinner.setModel(new SpinnerNumberModel(120, 0, 3600, 1));
+            validationRules.add(new InputValidator.NumberSpinnerValidationRule(notBeforeSpinner, "Not Before seconds in past"));
             notOnOrAfterSpinner.setModel(new SpinnerNumberModel(300, 30, 3600, 1));
+            validationRules.add(new InputValidator.NumberSpinnerValidationRule(notOnOrAfterSpinner, "Not On Or After seconds in future"));
             validityCheckbox.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     final boolean b = validityCheckbox.isSelected();
